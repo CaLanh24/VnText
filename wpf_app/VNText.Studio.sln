@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VNText.Studio.App", "VNText.Studio.App\VNText.Studio.App.csproj", "{7AD32E8E-CFCA-46E8-85FA-375524B9F5D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VNText.Studio.Workflow.Tests", "VNText.Studio.Workflow.Tests\VNText.Studio.Workflow.Tests.csproj", "{BD3F778B-9BDD-4197-A231-624D5A910FAC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7AD32E8E-CFCA-46E8-85FA-375524B9F5D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AD32E8E-CFCA-46E8-85FA-375524B9F5D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AD32E8E-CFCA-46E8-85FA-375524B9F5D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AD32E8E-CFCA-46E8-85FA-375524B9F5D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD3F778B-9BDD-4197-A231-624D5A910FAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD3F778B-9BDD-4197-A231-624D5A910FAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD3F778B-9BDD-4197-A231-624D5A910FAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD3F778B-9BDD-4197-A231-624D5A910FAC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,4 @@
+{
+  "manifest_url": "",
+  "manifest_url_note": "No remote update source is enabled by default. Configure VNTEXT_UPDATE_URL or provide RELEASE.json beside the legacy Python executable."
+}

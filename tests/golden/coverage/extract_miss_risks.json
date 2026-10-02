@@ -1,0 +1,44 @@
+[
+  {
+    "id": "large_unity_resource",
+    "group": "large serialized resource",
+    "how_to_know": "Bounded inventory and memory behavior must be measured on an explicit external fixture.",
+    "related_family": "F_TEXT_ASSET"
+  },
+  {
+    "id": "duplicate_locator",
+    "group": "duplicate locator",
+    "how_to_know": "Repeated source text must remain keyed by its complete locator; a source-only match is not safe.",
+    "related_family": "F_PLAIN"
+  },
+  {
+    "id": "resource_vs_component",
+    "group": "resource versus component",
+    "how_to_know": "The extracted resource and the rendered component may differ; runtime evidence is required before claiming coverage.",
+    "related_family": "F_UI"
+  },
+  {
+    "id": "raw_script_candidate",
+    "group": "raw script candidate",
+    "how_to_know": "Raw or fixed-slot candidates remain EXTRACT_ONLY/REVIEW_REQUIRED until a symmetric writer is proven.",
+    "related_family": "F_NANINOVEL"
+  },
+  {
+    "id": "font_glyph",
+    "group": "font glyph coverage",
+    "how_to_know": "UTF-8 bytes can be correct while rendered glyphs are missing; record render evidence separately.",
+    "related_family": "F_UI"
+  },
+  {
+    "id": "extensionless_resource",
+    "group": "extensionless resource",
+    "how_to_know": "Resource-kind detection must use content signatures and fail closed when no symmetric writer exists.",
+    "related_family": "F_TEXT_ASSET"
+  },
+  {
+    "id": "long_line_truncation",
+    "group": "long-line truncation",
+    "how_to_know": "The patch gate and read-back must preserve UTF-8 text, newline style, and locator boundaries for long translations.",
+    "related_family": "F_PLAIN"
+  }
+]

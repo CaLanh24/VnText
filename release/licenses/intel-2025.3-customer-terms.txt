@@ -1,0 +1,33 @@
+VNText Studio Intel oneAPI Redistributable Customer Terms
+
+These terms apply only to the Intel-provided executable Redistributables
+identified in the accompanying Intel oneAPI 2025.3 notices and included in
+VNText Studio. They do not change the Apache License 2.0 terms for VNText
+Studio source code or restrict reverse engineering of that source code.
+
+Intel Redistributables must remain in executable form and may be used only as
+part of VNText Studio. You may not reverse engineer, decompile, or disassemble
+those Intel Redistributables. This restriction applies only to the Intel
+Redistributables, not to VNText Studio source code.
+
+The following limitations of liability with respect to Intel are incorporated
+into and made binding on each customer acquiring the Intel Redistributables:
+
+7.1 Intel will not be liable for any of the following losses or damages
+(whether such losses or damages were foreseen, foreseeable, known or otherwise):
+(i) loss of revenue; (ii) loss of actual or anticipated profits; (iii) loss of
+the use of money; (iv) loss of anticipated savings; (v) loss of business;
+(vi) loss of opportunity; (vii) loss of goodwill; (viii) loss of use of the
+Materials; (ix) loss of reputation; (x) loss of, damage to, or corruption of
+data; or (xi) any indirect, incidental, special or consequential loss of damage
+however caused (including loss or damage of the type specified in this Section
+7).
+
+7.2 Intel’s total cumulative liability to You, including for direct damages
+for claims relating to this Agreement, and whether for breach of contract,
+negligence, or for any other reason, will not exceed $100.
+
+The complete Intel End User License Agreement for Developer Tools (Version
+August 2024), including the source provisions for these terms, is available in
+the Setup before acceptance and is installed at
+app/licenses/native/intel-2025.3-cpp-eula.rtf.

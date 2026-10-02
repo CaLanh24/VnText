@@ -1,0 +1,46 @@
+.venv/
+VNText_Output/
+models/
+!wpf_app/VNText.Studio.App/Models/
+!wpf_app/VNText.Studio.App/Models/*.cs
+out/
+.codex/
+.scratch/
+_codex_worktrees/
+.local/
+.config/
+**/__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+tests/golden/_work/
+
+# .NET/WPF build output
+**/bin/
+**/obj/
+DEV_RUN/
+release/wpf_publish/
+release/patch_installer_publish/
+release/backup/
+release/tools/
+
+# Runtime output, logs and temporary files
+**/logs/
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.dmp
+*.sqlite3
+*.db
+
+# Local game/package and generated archive data
+*.bundle.bak
+*.zip
+*.7z
+*.rar
+tests/**/game_copy/
+tests/**/game_test/
+*.bundle.bak

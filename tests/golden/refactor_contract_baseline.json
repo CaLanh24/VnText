@@ -1,0 +1,197 @@
+{
+  "schema": 1,
+  "csv_fields": [
+    "key",
+    "source_text",
+    "translation",
+    "context",
+    "file_path",
+    "object_info",
+    "import_method",
+    "safety",
+    "backend",
+    "byte_limit",
+    "patch_note"
+  ],
+  "entry": {
+    "key": "01b63d355786ab8b",
+    "csv_field_order": [
+      "key",
+      "source_text",
+      "translation",
+      "context",
+      "file_path",
+      "object_info",
+      "import_method",
+      "safety",
+      "backend",
+      "byte_limit",
+      "patch_note"
+    ],
+    "csv_row": {
+      "key": "01b63d355786ab8b",
+      "source_text": "Hello {name}\\n",
+      "translation": "",
+      "context": "line:0",
+      "file_path": "dialogue.txt",
+      "object_info": "",
+      "import_method": "plain_text_line",
+      "safety": "unsafe",
+      "backend": "",
+      "byte_limit": "",
+      "patch_note": "Patch tự động"
+    },
+    "manifest": {
+      "key": "01b63d355786ab8b",
+      "source_text": "Hello {name}\\n",
+      "file_path": "dialogue.txt",
+      "context": "line:0",
+      "object_info": "",
+      "import_method": "plain_text_line",
+      "safety": "unsafe",
+      "locator": {
+        "line": 0
+      },
+      "backend": "",
+      "review_only": false,
+      "duplicate_locations": [],
+      "patch_proof": {
+        "reader": true,
+        "writer": true,
+        "preflight": true,
+        "reopen": true,
+        "semantic_verify": true
+      }
+    },
+    "known_key": "9508b6f9c86556fc"
+  },
+  "extract": {
+    "csv_fields": [
+      "key",
+      "source_text",
+      "translation",
+      "context",
+      "file_path",
+      "object_info",
+      "import_method",
+      "safety",
+      "backend",
+      "byte_limit",
+      "patch_note"
+    ],
+    "rows": 2,
+    "key_set_sha256": "ba099611312e8eb60923a9b0a03d1817821db1eb2f1f2e62aaccb49b3888336c",
+    "identity_sha256": "dc930382ae551249c0de7f5c922c1e37e1890b0a08ff4b983f44471772d5e0de",
+    "manifest_format": 2,
+    "manifest_entries": 3,
+    "manifest_identity_sha256": "0dbc8bb93c519a144a7c14db96ce654fd0a81457078b653c5cc8aac4a20c5597",
+    "side_csvs": {
+      "raw_candidates.csv": {
+        "exists": false,
+        "fields": [],
+        "rows": 0
+      },
+      "review_only.csv": {
+        "exists": false,
+        "fields": [],
+        "rows": 0
+      },
+      "raw_unpatchable.csv": {
+        "exists": false,
+        "fields": [],
+        "rows": 0
+      },
+      "raw_candidates_rejected.csv": {
+        "exists": false,
+        "fields": [],
+        "rows": 0
+      },
+      "technical_skipped.csv": {
+        "exists": false,
+        "fields": [],
+        "rows": 0
+      }
+    },
+    "stats": {
+      "mode": "safe",
+      "extract_level": "balanced",
+      "files_scanned": 2,
+      "main_entries": 2,
+      "review_entries": 1,
+      "translation_csv_keys": 2,
+      "translation_csv_methods": {
+        "plain_text_line": 1,
+        "unity_textasset_line": 1
+      },
+      "technical_skipped_entries": 0
+    }
+  },
+  "patch": {
+    "translation_fields": [
+      "key",
+      "source_text",
+      "translation",
+      "context",
+      "file_path",
+      "object_info",
+      "import_method",
+      "safety",
+      "backend",
+      "byte_limit",
+      "patch_note"
+    ],
+    "report": {
+      "patched_lines": "1",
+      "skipped_lines": "0",
+      "duplicate_locations_patched_or_attempted": "0"
+    },
+    "stats": {
+      "filled_plain_text_rows": 1,
+      "patched_lines": "1",
+      "skipped_lines": "0"
+    }
+  },
+  "unity_patch": {
+    "status": "external-fixture-only",
+    "translation_fields": [
+      "key",
+      "source_text",
+      "translation",
+      "context",
+      "file_path",
+      "object_info",
+      "import_method",
+      "safety",
+      "backend",
+      "byte_limit",
+      "patch_note"
+    ],
+    "report": {
+      "patched_lines": "0",
+      "skipped_lines": "0"
+    }
+  },
+  "frozen_files": {
+    "vntext/unity_fs.py": "2ef242485cbc91978e6ebd9bc54a13f3045c8752d06e0f86cf2138106b7dc15c",
+    "vntext/addressables.py": "f2a22890da471a27f0980d71b705661855e5d3a1121b7998b701b75c9ea8030a"
+  },
+  "worker_protocol": {
+    "version": 1,
+    "complete_payload": {
+      "v": 1,
+      "type": "complete",
+      "id": "baseline",
+      "ok": true,
+      "summary": "ok",
+      "error": "",
+      "complete": false,
+      "pending": 2,
+      "review_only": 3,
+      "blocked": 4,
+      "translated": 5,
+      "applied": 6,
+      "copied_vi": 7,
+      "pipeline_liveness": true
+    }
+  }
+}

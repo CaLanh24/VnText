@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AppHostDotNetSearch>AppRelative;EnvironmentVariable</AppHostDotNetSearch>
+    <ApplicationIcon>Assets\vntext_studio.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="obj\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\vntext_studio.ico" />
+    <Resource Include="Assets\vntext_studio_logo_128.png" />
+    <Resource Include="Assets\vntext_studio_logo_256.png" />
+    <Resource Include="Assets\Fonts\Inter-Regular.ttf" />
+    <Resource Include="Assets\Fonts\Inter-Medium.ttf" />
+    <Resource Include="Assets\Fonts\Inter-SemiBold.ttf" />
+    <Resource Include="Assets\Fonts\Inter-Bold.ttf" />
+    <None Include="Assets\Fonts\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

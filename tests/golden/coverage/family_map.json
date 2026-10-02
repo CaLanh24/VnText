@@ -1,0 +1,41 @@
+{
+  "snapshot": "synthetic-generic",
+  "fixture_policy": "no bundled game or translation corpus",
+  "raw_extract_only_methods": [
+    "naninovel_raw_candidate",
+    "naninovel_blob_string",
+    "raw_fixed_slot"
+  ],
+  "families": [
+    {
+      "id": "F_PLAIN",
+      "import_method": "plain_text_line",
+      "file_class": "loose_text",
+      "coverage": "unit_roundtrip"
+    },
+    {
+      "id": "F_TEXT_ASSET",
+      "import_method": "unity_textasset_line",
+      "file_class": "unity_resource",
+      "coverage": "microfixture"
+    },
+    {
+      "id": "F_UI",
+      "import_method": "unity_ui_text",
+      "file_class": "serialized_component",
+      "coverage": "microfixture"
+    },
+    {
+      "id": "F_TYPETREE",
+      "import_method": "unity_typetree_field",
+      "file_class": "serialized_component",
+      "coverage": "symmetry_gate"
+    },
+    {
+      "id": "F_NANINOVEL",
+      "import_method": "naninovel_script_string",
+      "file_class": "script_object",
+      "coverage": "microfixture"
+    }
+  ]
+}

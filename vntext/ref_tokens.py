@@ -1,0 +1,89 @@
+"""Design tokens measured from reference image @ 1360×820 client area."""
+from __future__ import annotations
+
+# Window
+WIN_W = 1360
+WIN_H = 820
+
+# Chrome / layout (scaled from 1536×1024 reference)
+SIDEBAR_W = 240
+CONTENT_PAD_X = 22
+CONTENT_PAD_TOP = 10
+CONTENT_PAD_BOTTOM = 14
+SECTION_GAP = 10
+CARD_GAP = 12  # between paths | settings
+
+# Cards
+CARD_RADIUS = 14
+CARD_PAD = 18
+CARD_HEADER_GAP = 4
+CARD_SHADOW_BLUR = 20
+CARD_SHADOW_Y = 3
+CARD_SHADOW_ALPHA = 12
+
+# Colors (sampled)
+C_WINDOW = "#FCFBFA"
+C_SIDEBAR = "#F7F7FA"
+C_SURFACE = "#FFFFFF"
+C_BORDER = "#D1D1D6"
+C_BORDER_LIGHT = "#E5E5EA"
+C_TEXT = "#1D1D1F"
+C_TEXT_SEC = "#3A3A3C"
+C_TEXT_MUTED = "#6E6E73"
+C_TEXT_TER = "#8E8E93"
+C_ACCENT = "#007AFF"
+C_ACCENT_HOVER = "#006FE8"
+C_ACCENT_SUBTLE = "#DDE8F7"
+C_NAV_ICON_BG = "#CCCED3"
+C_SUCCESS = "#34C759"
+
+# Typography (pt)
+FONT_FAMILY = '"Segoe UI", "SF Pro Text", system-ui, sans-serif'
+FS_BRAND = 14.0
+FS_SECTION = 8.0
+FS_NAV_TITLE = 11.0
+FS_NAV_SUB = 9.5
+FS_CARD_TITLE = 13.0
+FS_CARD_SUB = 10.0
+FS_HERO_TITLE = 19.0
+FS_HERO_HINT = 10.0
+FS_BODY = 10.0
+FS_FIELD = 10.0
+FS_FOOTER = 10.0
+
+# Icons
+ICON_NAV = 28
+ICON_CARD = 36
+ICON_HERO = 52
+ICON_FOOTER = 16
+
+# Controls
+CTRL_H = 36
+CTRL_RADIUS = 9
+PATH_BTN_GAP = 7
+PATH_BTN_PAD_X = 14
+PATH_BTN_MIN_W = 66
+SWITCH_W = 52
+SWITCH_H = 30
+DROPDOWN_W = 176
+
+# Nav
+NAV_H2 = 64
+NAV_H1 = 42
+NAV_PAD_X = 10
+
+# Panels collapsed
+PANEL_H = 64
+PANEL_ICON = 34
+
+# Hero / primary
+HERO_H = 84
+PRIMARY_H = 42
+PRIMARY_MIN_W = 120
+
+# Footer
+FOOTER_H = 48
+
+SETTINGS_ROW_GAP = 6
+PATHS_COL = 574
+SETTINGS_COL = 508
