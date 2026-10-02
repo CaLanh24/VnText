@@ -22,6 +22,17 @@ Updated: 2026-10-03. This short pointer is not release acceptance evidence.
 - Final suite: 778 tests, 0 failures/errors, 5 skips; wrapper outcome remains
   `CANCELLED` (`runner interrupted by keyboard interrupt`) and cleanup is
   independently `PASS`. Real installed-app GitHub update discovery/apply/
-  rollback remains NOT VERIFIED; do not call this `RELEASE_VERIFIED`.
+  rollback remains NOT VERIFIED; do not call this `RELEASE_VERIFIED`. Owner
+  reports the update action reopened 1.45.1, but App-test still recorded app/
+  RELEASE 1.45.0, executable SHA-256
+  `0b491bc6ed39e34ae9bd70cdff0724caefc576d53a1f99867867d4f01ae111ea`, no
+  update in `update.log`, and unchanged install-manifest hash prefix `1EAEAF…`.
+  A read-only contract comparison found reported marker owner `Calanh24` versus
+  GitHub API asset path owner `CaLanh24`; `TryValidateWpfAsset` compares the
+  complete path ordinally, so the mismatch rejects the asset before download/
+  apply. The mock test uses identical owner casing and does not cover this
+  mismatch. Main has read/confirmed the exact App-test install path and public
+  API asset URL. This explains asset rejection for that configuration; installed
+  update acceptance remains NOT VERIFIED and no GitHub UI PASS is claimed.
 - Preserve extract → translate/import → validate/patch → read-back, user/game
   data, and fail-closed validation.
