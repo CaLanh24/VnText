@@ -74,7 +74,8 @@ internal static class Program
         Run("WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing", WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing, failures);
         Run("WpfUpdate_InvalidOfferIsHiddenAndRejected", WpfUpdate_InvalidOfferIsHiddenAndRejected, failures);
         Run("WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup", WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup, failures);
-        Run("WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset", WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset, failures);
+    Run("WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset", WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset, failures);
+        Run("WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation", WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation, failures);
         Run("WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback", WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback, failures);
         Run("WpfUpdate_GitHubRejectsChunkedOversizedMetadata", WpfUpdate_GitHubRejectsChunkedOversizedMetadata, failures);
         Run("WpfUpdate_GitHubClassifiesMalformedAndMissingPackages", WpfUpdate_GitHubClassifiesMalformedAndMissingPackages, failures);
@@ -1450,6 +1451,28 @@ internal static class Program
         AssertFalse(WpfUpdateService.IsStrictlyNewerVersion("1.44.9-alpha", "1.44.9-dev"));
     }
 
+    private static void WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation()
+    {
+        if (!WpfUpdateService.TryParseStableTag("v0.1", out var normalized, out var version) ||
+            normalized != "0.1.0" || version != new Version(0, 1, 0))
+            throw new InvalidOperationException("The planned v0.1 tag must normalize to stable version 0.1.0.");
+        if (WpfUpdateService.TryParseStableTag("v0.01", out _, out _))
+            throw new InvalidOperationException("Non-canonical two-part version tags must remain invalid.");
+
+        const string owner = "test-owner";
+        const string repository = "test-repo";
+        const string tag = "v0.1";
+        const string asset = "wpf-update-0.1.0.zip";
+        bool Matches(string path) => WpfUpdateService.IsExpectedGitHubAssetPath(path, owner, repository, tag, asset);
+
+        if (!Matches("/Test-Owner/Test-Repo/releases/download/v0.1/wpf-update-0.1.0.zip"))
+            throw new InvalidOperationException("GitHub owner/repository path casing should not invalidate a trusted asset.");
+        if (Matches("/test-owner/test-repo/Releases/download/v0.1/wpf-update-0.1.0.zip") ||
+            Matches("/test-owner/test-repo/releases/download/V0.1/wpf-update-0.1.0.zip") ||
+            Matches("/test-owner/test-repo/releases/download/v0.1/WPF-UPDATE-0.1.0.ZIP"))
+            throw new InvalidOperationException("Release route, tag and asset filename must remain exact.");
+    }
+
     private static void WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset()
     {
         var fixture = CreateUpdateFixture("1.0.1");
@@ -1461,7 +1484,7 @@ internal static class Program
             var package = File.ReadAllBytes(fixture.PackagePath);
             var digest = HashBytes(package);
             var assetName = $"wpf-update-1.0.1-{digest[..16]}.zip";
-            var downloadUrl = $"https://github.com/test-owner/test-repo/releases/download/v1.0.1/{assetName}";
+            var downloadUrl = $"https://github.com/Test-Owner/Test-Repo/releases/download/v1.0.1/{assetName}";
             var setupUrl = "https://github.com/test-owner/test-repo/releases/download/v1.0.1/Setup.exe";
             var releases = JsonSerializer.Serialize(new object[]
             {

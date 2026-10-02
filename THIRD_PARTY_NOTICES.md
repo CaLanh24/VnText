@@ -75,15 +75,7 @@ The currently inspected local model tree had ten files and no standalone
 publisher source now copies the root `LICENSE`, `NOTICE`, this file, and the
 CTranslate2 MIT license into `app/licenses/`, and its layout check requires
 those files. The focused Setup package test verifies that these entries survive
-packaging. The private p1451 review Setup was built from curated source
-`b54615aa93b1b9f8f3835e03c2cebfc6debe0fcb` (version 1.45.0). Its embedded
-payload audit verified all ten model files against that immutable revision,
-the project/Inter notices, CPython 3.12.10 and .NET 8.0.30 notices, and recorded
-70 Python distributions plus 13 model-cache metadata files (2,984 bytes).
-Evidence is retained in the local review root's `Updates/evidence/`; this is
-not a blanket redistribution approval or `RELEASE_VERIFIED` claim. A changed
-payload needs a new inventory; a model-card URL or manifest label is not a
-substitute for that inventory.
+packaging. The immutable Hugging Face model revision `c22547827b876e8ee939d6a9363965e5c9f769e1` above is the model-file provenance; it is not a claim about Setup contents or model redistribution rights. No private review root or historical payload inventory is required by this public clone. Every future Setup needs its own exact payload inventory and redistribution review; no release or legal PASS is inferred here.
 
 ## Dependencies
 
@@ -111,12 +103,11 @@ subtree from the staged public worker environment, while preserving the Python
 helper and its MIT notice. The pruner and pre-Setup layout guard enforce this
 boundary without modifying developer dependencies. VNText's Unity text route
 does not use audio samples/export; audio export is outside the product scope.
-The old p1451 Setup remains review-only and still contains FMOD. The separate
-`VNText_Public_1.45.0_NoFMOD` review Setup, built from
-`39bb4a27ad77e891bcbdcd8ef62e62a503bfbf05`, has an audited FMOD-free payload
-while retaining the helper/MIT text. Its SHA-256 is
-`e2058025b06b30f82196be39305ed7020893620b788bd38169673034c15c6f68`.
-This does not change the old artifact or establish general redistribution rights.
+Private review-Setup inventories and payload reports are intentionally omitted;
+they are not needed to clone, build or test this source and establish no current
+payload or general redistribution right. Review each future Setup from its own
+exact payload while preserving the vendor exclusion and license obligations
+above.
 
 Python requirements use minimum-version constraints, not locked versions. A
 read-only walk of installed `Requires-Dist` metadata in `.venv` on 2026-10-01
@@ -141,13 +132,11 @@ versioned upstream license files:
 - safetensors 0.8.0 and tokenizers 0.23.2 — Apache-2.0 ([safetensors license](https://github.com/safetensors/safetensors/blob/v0.8.0/LICENSE),
   [tokenizers license](https://github.com/huggingface/tokenizers/blob/v0.23.2/LICENSE)).
 
-#### Four exact bundled components — bounded notice check, 2026-10-02
+#### Four pinned dependencies — upstream license sources
 
-The NoFMOD review Setup's metadata inventory confirms the four versions below.
-Their installed wheel RECORD/metadata contents and that Setup inventory have no
-adjacent license/NOTICE file for these four distributions; absence alone does
-not establish a violation. The exact-tag root listings have LICENSE but no
-root NOTICE. The shared `app/licenses/APACHE-2.0.txt` supplies the Apache terms
+The upstream tags and license-source hashes below identify the pinned versions;
+they do not describe or prove any installed Setup payload. The exact-tag root
+listings have LICENSE but no root NOTICE. The shared `app/licenses/APACHE-2.0.txt` supplies the Apache terms
 for FlatBuffers, SentencePiece and Tokenizers; do not duplicate that text merely
 for adjacency. The existing `app/licenses/python/ctranslate2-MIT.txt` preserves
 the SYSTRAN/OpenNMT copyright and permission text of the exact CT2 license

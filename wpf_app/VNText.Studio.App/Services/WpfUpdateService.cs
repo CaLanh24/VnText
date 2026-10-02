@@ -601,10 +601,12 @@ public static class WpfUpdateService
         return releases;
     }
 
-    private static bool TryParseStableTag(string tag, out string versionText, out Version version)
+    internal static bool TryParseStableTag(string tag, out string versionText, out Version version)
     {
         versionText = tag.StartsWith('v') ? tag[1..] : tag;
         version = new Version(0, 0, 0);
+        if (versionText.Split('.', StringSplitOptions.None).Length == 2)
+            versionText += ".0";
         return TryParseStableVersion(versionText, out version);
     }
 
@@ -674,14 +676,22 @@ public static class WpfUpdateService
             error = "GitHub WPF asset URL must use the trusted GitHub HTTPS host.";
             return false;
         }
-        var expectedPath = $"/{source.GitHubOwner}/{source.GitHubRepository}/releases/download/{release.Tag}/{expectedName}";
-        if (!string.Equals(uri.AbsolutePath, expectedPath, StringComparison.Ordinal) || uri.Query.Length != 0)
+        if (!IsExpectedGitHubAssetPath(uri.AbsolutePath, source.GitHubOwner, source.GitHubRepository, release.Tag, expectedName) || uri.Query.Length != 0)
         {
             error = "GitHub WPF asset URL does not match the configured repository, release tag and expected asset.";
             return false;
         }
         downloadUri = uri;
         return true;
+    }
+
+    internal static bool IsExpectedGitHubAssetPath(
+        string actualPath, string owner, string repository, string tag, string assetName)
+    {
+        var identityPrefix = $"/{owner}/{repository}/";
+        var expectedRouteAndAsset = $"releases/download/{tag}/{assetName}";
+        return actualPath.StartsWith(identityPrefix, StringComparison.OrdinalIgnoreCase) &&
+               string.Equals(actualPath[identityPrefix.Length..], expectedRouteAndAsset, StringComparison.Ordinal);
     }
 
     private static bool IsTrustedHttpsUri(Uri uri) =>

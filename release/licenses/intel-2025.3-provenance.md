@@ -1,8 +1,10 @@
 # Intel oneAPI 2025.3 runtime notice provenance
 
-Checked 2026-10-02 for the `libiomp5md.dll` already present in the inspected
-1.45.0 Setup inventory. This records package identity, redistribution
-designation, and notice-copy provenance. It is not EULA acceptance or blanket
+Historical private inspection dated 2026-10-02 recorded `libiomp5md.dll` in a
+1.45.0 Setup inventory. The underlying private inventory is unavailable in this
+public clone, is not a clone prerequisite, and is not evidence about a current
+or future Setup. This record preserves package identity, redistribution
+designation, and notice-copy provenance; it is not EULA acceptance or blanket
 legal clearance.
 
 The downloaded package and extracted evidence were held in the task-owned
@@ -14,7 +16,7 @@ report.
 - Source: [Intel oneAPI Base Toolkit 2025.3.0.372 offline package](https://registrationcenter-download.intel.com/akdlm/IRC_NAS/1f18901e-877d-469d-a41a-a10f11b39336/intel-oneapi-base-toolkit-2025.3.0.372_offline.exe)
 - Downloaded file: `intel-oneapi-base-toolkit-2025.3.0.372_offline.exe`, 2,691,346,600 bytes, SHA-256 `f4dde6e5ea732b1624f0a50df546401712bccdf45766c9a23b0865f95863f541`.
 - Extracted DLL: `openmp\_installdir\compiler\2025.3\bin\libiomp5md.dll`, 1,614,192 bytes, SHA-256 `982233366b0afcda1e0f55a0b134097e35b779613f54ddb69e685e6cd06b755f`. PE metadata: Intel Corporation; copyright 1997-2025; FileVersion `20250910`.
-- Existing Setup inventory `../VNText_Public_1.45.0_Vendor/Updates/evidence/setup-payload-inventory.json` parses to `app/worker/.venv/Lib/site-packages/ctranslate2/libiomp5md.dll`, with the same size and SHA-256. The JSON was parsed with `ConvertFrom-Json`; it was not searched as minified text.
+- The cited historical private Setup inventory is unavailable in this public clone. It is neither a clone prerequisite nor evidence about a current Setup. Preserve the source-package, DLL, CUP-archive and license hashes/provenance recorded here; inventory every future Setup from that build's own exact payload before making a payload claim.
 
 Intel's compiler `credist.txt`, line 41, names the exact component:
 

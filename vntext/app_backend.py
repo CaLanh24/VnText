@@ -29,7 +29,7 @@ from vntext.package_io import (
     write_package,
 )
 
-VERSION = "1.45.0"
+VERSION = "0.1.0"
 
 from vntext.extract import (
     ASSET_INDEX_FIELDS,

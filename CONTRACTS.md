@@ -210,9 +210,11 @@ Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. �
 
 **Owner:** `tests/lib/work_paths.py`, `tests/tools/cleanup_work_artifacts.py`, `tests/tools/run_with_cleanup.py`, `release/run_regression.ps1`.
 
-**Owner decision, 2026-09-28:** Quy tắc lifecycle và cleanup tại mục này là
-nguồn canonical. Registry/epoch dưới `_work` đã bị Owner dọn; bằng chứng cũ
-không còn hiện diện, không được suy từ report lịch sử thành PASS hiện tại.
+**Public-clone rule:** This section is canonical for current artifact lifecycle
+and cleanup. A fresh checkout has no private registry/epoch or its historical
+evidence; do not import or reconstruct them. Assess only the current checkout's
+registered artifacts, and do not infer current cleanup or Release PASS from
+unavailable historical reports.
 
 **Invariant:**
 
@@ -234,37 +236,32 @@ không còn hiện diện, không được suy từ report lịch sử thành PA
 
 `tests/tools/cleanup_work_artifacts.py` owns the additive prospective epoch transition. `--prospective-epoch-plan` and `--verify-prospective-epoch` are read-only; `--apply-prospective-epoch` may write only a retained epoch scope and the canonical manifest metadata. Apply is fail-closed on a dirty tree, source SHA mismatch, active writer marker, incomplete/budget-limited inventory, invalid schema/provenance, missing or mismatched rollback snapshot, or conflicting active epoch. It never deletes artifacts.
 
-Each active epoch retains an exact pre-transition manifest rollback snapshot, policy, rollback metadata and a current filesystem ledger under `tests/golden/_work/artifact-registry-epochs/<epoch-id>/`. The ledger is prospective only: registered evidence keeps its lifecycle, current unproven paths remain `UNKNOWN`, and incident-preserved historical data is distinct from the rollback snapshot and new ledger. The historical 19,030-entry registry remains `NOT_RECOVERABLE/UNVERIFIABLE`; epoch activation alone cannot make historical hygiene or Release acceptance PASS.
+Each active epoch retains an exact pre-transition manifest rollback snapshot, policy, rollback metadata and a current filesystem ledger under `tests/golden/_work/artifact-registry-epochs/<epoch-id>/`. The ledger is prospective only: registered evidence keeps its lifecycle, current unproven paths remain `UNKNOWN`, and preserved historical data is distinct from the rollback snapshot and new ledger. Private historical registries or reports are not present in a public clone, are not clone prerequisites, and cannot establish current cleanup or Release acceptance. Assess a new checkout and each release from its own evidence; do not infer historical PASS.
 
-The previously active epoch files were removed with the Owner's `_work`
-cleanup on 2026-09-28. The preceding paragraph defines an epoch **when one
-exists**, not a claim that it still exists. Do not reuse its `effective_at`,
-hashes or old verification reports. A new prospective baseline requires new
-primary evidence; lost historical evidence is not reconstructed.
-When incident-preservation evidence is missing, plan/apply must block unless
-the caller supplies an explicit non-empty `--owner-reset-authorization`
-statement, whether the current registry file is absent or was recreated after
-the Owner's cleanup. A present registry must be a readable regular file with a
-valid schema; malformed, partial, linked or unreadable state blocks. The record
-separates the Owner-reported reset state from the exact apply-time registry
-state. A present manifest is captured byte-for-byte with its SHA-256 and size
-as the rollback snapshot; an absent manifest records an empty rollback. The
-authorization, missing incident identity and rollback metadata are retained
-and hash-verified. Historical status/count/hash remain
-`NOT_RECOVERABLE/UNVERIFIABLE`, with no reconstructed history or historical
-PASS. A preflight race must not remove another writer's lock. Do not apply a
-live epoch before the source is committed cleanly; isolated tests may exercise
-apply and rollback only inside a disposable fixture.
+Mỗi public clone mới bắt đầu mà không có artifact epoch của checkout riêng
+trước đó. Không nhập/tái tạo incident registry riêng, không tái dùng timestamp,
+hash hay report lịch sử, và không yêu cầu tìm artifact private làm điều kiện
+cho clone mới. Khi helper khởi tạo epoch mà incident-preservation history vắng,
+helper hiện vẫn yêu cầu caller cung cấp statement tường minh qua
+`--owner-reset-authorization`. Với clone mới, statement chỉ ghi nhận đây là
+fresh public clone không có private history; nó không chứng minh history đã
+được khôi phục, cleanup PASS hay incident đã được giải quyết. Chỉ đăng ký
+evidence của checkout hiện tại theo canonical tool. Registry hiện tại nếu có
+vẫn phải là regular file đọc được và đúng schema; state malformed, partial,
+linked hoặc unreadable phải block. Nếu manifest hiện tại tồn tại, giữ snapshot
+rollback nguyên byte cùng SHA-256 và size; nếu không có thì snapshot ghi nhận
+trạng thái absent. Preflight race không được xóa lock của writer khác. Không
+apply epoch live trước khi source được commit sạch; test chỉ apply/rollback
+trong disposable fixture.
 
-### Prospective portable Release acceptance (Owner decision, 2026-09-23)
+### Prospective portable Release acceptance
 
-This tracked acceptance contract applies only to a portable RC built at or after
-the `effective_at` of a **new, currently present** prospective epoch. The
-previous epoch and incident-preserved files were removed by Owner; their hash
-gate cannot be reused or marked PASS. Their loss is disclosed as historical
-`UNVERIFIABLE`, not repaired by the new baseline. `RELEASE_VERIFIED` for this
-bounded portable scope requires all of the following primary evidence tied to
-one clean final source SHA:
+This tracked acceptance contract applies to a portable RC with a new prospective
+evidence epoch created from the current public checkout. It does not depend on a
+private epoch or incident registry; the current initialization statement described above is still required by the helper. Historical private evidence
+is unavailable and is not reconstructed or counted as current PASS/FAIL.
+`RELEASE_VERIFIED` for this bounded portable scope requires all of the following
+primary evidence tied to one clean final source SHA:
 
 - Read-only verification of the **new** epoch's identity, schema, policy,
   rollback snapshot and ledger hashes succeeds. The canonical live registry
@@ -275,7 +272,7 @@ one clean final source SHA:
 - WPF build and worker smoke, installer restore/build/tests, portable publish/layout, `--release-verify`, Release worker smoke from Release cwd and an independent cwd, and the real RC GUI launch/close/worker-reap test pass with retained commands, raw outputs, exit codes and cleanup reports. Mandatory failures cannot be relabeled as skips.
 - `RELEASE.json` source SHA, version, executable and installer hashes match the final commit and retained inventory. The RC is new, outside the tracked repository, free of forbidden source/test/cache/debug artifacts, and its payload/tree manifest and key SHA256 values are retained. No source change follows the exact-final regression; otherwise commit and rerun the affected acceptance gates on a new RC.
 
-The 19,030-entry pre-incident registry was lost and remains `NOT_RECOVERABLE/UNVERIFIABLE`. Five pre-epoch `MISSING` records lack deletion provenance; they remain unresolved historical hygiene and are disclosed verbatim, never deleted, archived or reclassified to obtain PASS. They do not count as current-scope prospective cleanup failures. Prospective epoch hygiene and historical hygiene receive separate verdicts.
+Historical private registry counts, incident records and cleanup evidence are not distributed with the public source and are not required to use or test a fresh clone. Their absence is not evidence of cleanup PASS or FAIL for this clone. Keep prospective cleanup verification scoped to evidence created and registered in the current checkout; preserve the separate UNKNOWN/unverified outcome for any unavailable history.
 
 Owner explicitly defers real-game E2E and defects found there to a later version. Visual/pixel interaction, full-game support and semantic translation quality remain `NOT VERIFIED`; no such capability is implied by portable `RELEASE_VERIFIED`. External publishing requires separate authorization.
 

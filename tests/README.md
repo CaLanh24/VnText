@@ -5,7 +5,7 @@ tests/
   golden/          # Dữ liệu golden + _work tạm; game copy/output nặng dọn sau mọi outcome
   lib/             # Thư viện dùng chung (work_paths, fixture Unity, E2E lib)
   unit/            # unittest: test_*.py (publish gate chạy ở đây)
-  harness/         # Script E2E/điều tra; một số script game-specific không phát hành công khai
+  harness/         # Harness E2E/điều tra; game-specific probes được track nhưng cần fixture bên ngoài
   tools/           # Dọn _work, capture golden (maintenance)
 ```
 
@@ -24,8 +24,8 @@ tests/
 # Mirror Release Output (read-only nguồn) → work_package trong _work
 .\.venv\Scripts\python.exe tests/tools/mirror_release_package.py
 
-# The retained vh_parity harnesses are external/manual evidence only; they are
-# not the current public-core workflow and require explicit external fixtures.
+# Tracked vh_parity/Naninovel probe scripts are optional/manual and need
+# explicitly supplied external game/reference fixtures; they are not unit gates.
 ```
 
 ## Import trong code test
@@ -49,5 +49,6 @@ không xóa game/user data hay nguồn ngoài `_work`. Theo chính sách và ng�
 ở `AGENTS.md`.
 `cleanup_work_artifacts.py --dry-run` chỉ đọc; `--output` ngoài `_work` mới
 được phép ghi báo cáo dry-run.
-Game-specific runtime probes are not part of the curated public source
-snapshot. The unit suite uses synthetic fixtures and does not require game data.
+Game-specific runtime probe scripts are tracked in this public source snapshot,
+but game/reference packages and game data are not. The probes are opt-in/manual;
+the unit suite uses synthetic fixtures and does not require game data.
