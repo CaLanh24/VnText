@@ -37,6 +37,6 @@ Chỉ sửa file trong scope; giữ nguyên thay đổi ngoài scope. Không xó
 
 Phiên bản source lấy từ `VERSION.txt` cùng các version owner liên quan. Mỗi Setup/release cần evidence riêng từ đúng source, payload, hash và test của chính lần build đó; không suy ra phát hành từ tag dự kiến, metadata, mock hay artifact cục bộ.
 
-Mục tiêu Owner hiện tại là stable release tag `v0.1`, hiển thị `0.1`; đây là yêu cầu, không phải xác nhận đã publish. GitHub release discovery và đường update WPF giới hạn có trong source; acceptance update trên bản cài với stable release công khai vẫn chưa VERIFIED. Worker/runtime/installer hoặc file ngoài allowlist cần Setup mới. `Updates` cạnh Setup cục bộ không phải dịch vụ public update.
+Owner chọn dòng phiên bản public `0.1` (tag `v0.1`, source `0.1.0`); trạng thái giao bản và giới hạn kiểm chứng nằm trong `AI_STATE.md` và trang Release, không suy ra PASS từ tag. GitHub release discovery và đường update WPF giới hạn có trong source; acceptance update trên bản cài với stable release công khai vẫn chưa VERIFIED. Worker/runtime/installer hoặc file ngoài allowlist cần Setup mới. `Updates` cạnh Setup cục bộ không phải dịch vụ public update.
 
 Không push, upload, tạo/xóa release hoặc thay đổi dịch vụ/dữ liệu ngoài repository nếu Owner chưa ủy quyền rõ cho task đó. Tuân thủ license, notices và provenance trong `THIRD_PARTY_NOTICES.md`; package metadata không tự chứng minh quyền phân phối.

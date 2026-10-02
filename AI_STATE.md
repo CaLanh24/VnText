@@ -1,8 +1,12 @@
-# Current project state
+# Trạng thái hiện tại — VNText Studio
 
-- Public source target: stable release `v0.1`, displayed as `0.1`; source version is `0.1.0` and Windows file version is `0.1.0.0`.
-- This is a release requirement, not evidence that `v0.1` or a Setup has been published. The Owner requested one new public release in place of the old private-era release line; do not carry old private release evidence into this clone.
-- Product translation remains CTranslate2/OPUS-MT. The current game support is limited; Unity is the first implementation, not a promise of universal Unity compatibility.
-- GitHub stable-release discovery and a constrained WPF-only update path exist in source with mocked coverage. Installed-app update acceptance against an actual public stable release is NOT VERIFIED. Worker/runtime/installer changes require a new Setup.
-- `Updates` beside a local Setup is a separate local preview feed, not the public GitHub update service.
-- Historical private registry/setup inventories are unavailable in this public clone, are not clone prerequisites, and do not establish current cleanup, payload or release PASS. Verify each current build from its own exact source and artifacts.
+- Repository chính thức: [CaLanh24/VnText](https://github.com/CaLanh24/VnText), nhánh `main`. Clone mới chỉ cần source public và dependency theo `docs/DEVELOPMENT.md`; không tìm candidate, checkout hoặc lịch sử private.
+- Owner yêu cầu một bản công khai `0.1`, README tiếng Việt dành cho người dùng và giữ mã test cần thiết, không đưa dữ liệu chạy test vào Git.
+- [Release v0.1](https://github.com/CaLanh24/VnText/releases/tag/v0.1) đã công bố. Source build/tag: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.
+- Setup mới: 221.765.120 byte; SHA-256 `4ec759a72114a87570fd1e6bbf9b4b239f32f02a5dd02b365b4f5294bb998e2e`. Digest asset GitHub khớp file build. Release chỉ chứa `Setup.exe` và `SHA256SUMS.txt`; hai Release/tag `v1.45.0`, `v1.45.1` đã xóa theo yêu cầu Owner.
+- Publisher, build, release verify và smoke hai cwd đạt. Đối chiếu trực tiếp toàn bộ 7.134 file payload với manifest không có hash/size sai, file thiếu hoặc thừa; Intel/NVIDIA DLL và notice khớp provenance. Không có FMOD native binary hoặc Argos; helper Python `fmod_toolkit`/`pyfmodex` vẫn có trong payload, không đồng nghĩa có quyền phân phối FMOD native binary.
+- Unittest trên source build: 651 test, 0 fail, 0 error, 7 skip, 0 warning. Sau build, kiểm tra installer 2/2 và GUI shutdown/worker reap 1/1 đạt; WPF harness 7/7 và DEV smoke đạt. Các skip cần game ngoài không chứng minh hỗ trợ mọi game hoặc chất lượng dịch.
+- Canonical wrapper của full regression vẫn ghi `CANCELLED` dù child exit 0; nguồn keyboard interrupt chưa xác định. Cleanup hai lượt focused artifact là `REVIEW_REQUIRED`, có cảnh báo đường dẫn bị xóa ngoài registered scope. Không đổi các trạng thái này thành PASS; **RELEASE_VERIFIED chưa đạt**.
+- Route dịch sản phẩm: CT2/OPUS-MT; phạm vi engine/định dạng có giới hạn. Cập nhật GitHub trên bản cài thực tế vẫn **NOT VERIFIED**. Chỉ thay WPF trong allowlist mới được dùng gói WPF; worker/runtime/installer cần Setup mới.
+- Người dùng bản 1.45.x cần sao lưu dữ liệu và cài Setup 0.1, không tự cập nhật xuống version thấp hơn. Gói WPF 0.1.1 do publisher tạo trong môi trường build không được đăng lên Release 0.1. `Updates` local không phải feed GitHub.
+- Source Git không chứa `DEV_RUN`, `_work`, game, model hoặc artifact binary. Dữ liệu/evidence local không phải prerequisite hay bằng chứng PASS cho clone mới; giữ outcome hiện tại và không dựng lại lịch sử đã mất.
