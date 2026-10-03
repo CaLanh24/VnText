@@ -55,7 +55,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe --version
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -m pip inspect > DEV_RUN/cache/pip-inspect.json
+.\.venv\Scripts\python.exe -X utf8 -m pip inspect > DEV_RUN/cache/pip-inspect.json
 ```
 
 Release cần thêm `pip install -r release/requirements-build.txt`. Không cần PyTorch/Argos/VinAI;
