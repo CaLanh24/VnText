@@ -11,7 +11,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        if (e.Args.Contains("--apply-wpf-update") || e.Args.Contains("--apply-github-wpf-update"))
+        if (e.Args.Contains("--apply-wpf-update") || e.Args.Contains("--apply-github-wpf-update") ||
+            e.Args.Contains("--apply-full-app-update") || e.Args.Contains("--apply-github-full-app-update") ||
+            e.Args.Contains("--recover-full-app-update"))
         {
             Shutdown(WpfUpdateService.RunUpdater(e.Args));
             return;
@@ -20,6 +22,26 @@ public partial class App : Application
         if (e.Args.Contains("--update-health-check"))
         {
             Shutdown(WpfUpdateService.RunHealthCheck());
+            return;
+        }
+
+        try
+        {
+            if (WorkerPaths.IsReleaseLayout())
+            {
+                var installRoot = Path.GetDirectoryName(WorkerPaths.MainExePath())!;
+                if (FullAppUpdateService.StartInterruptedRecovery(installRoot))
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("VNText Studio could not recover an interrupted update. Keep the install folder intact and contact support:\n" + ex.Message,
+                "VNText Studio Update Recovery", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(6);
             return;
         }
 

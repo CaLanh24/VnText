@@ -148,9 +148,9 @@ def _package_size(updates: Path) -> tuple[int, int]:
     packages = []
     for path in updates.iterdir():
         _assert_regular_path(path)
-        if path.name == FEED_NAME or path.name.endswith(".tmp"):
+        if path.name in {FEED_NAME, "full-app-update-current.json"} or path.name.endswith(".tmp"):
             continue
-        if path.is_file() and path.name.startswith(PACKAGE_PREFIX) and path.suffix == ".zip":
+        if path.is_file() and path.name.startswith((PACKAGE_PREFIX, "full-app-update-")) and path.suffix == ".zip":
             packages.append(path)
         else:
             raise ValueError(f"Unexpected item in Updates: {path.name}")

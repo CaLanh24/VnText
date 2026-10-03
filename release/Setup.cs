@@ -27,6 +27,7 @@ public static class Setup
 {
     private const string ManifestName = "payload-manifest.json";
     private const string InstallManifestName = "data/install-manifest.json";
+    private const string FullAppOwnershipName = ".update/owned-files.json";
     private const string LegacyShortcutName = "VNText Studio.lnk";
     private const string UpdateSourceName = ".vntext-update-source.json";
     private const string GitHubUpdateSourceResourceName = "VNText.Studio.GitHubUpdateSource.json";
@@ -300,17 +301,47 @@ public static class Setup
                 RemoveEmptyProgramDirectories(root, obsolete);
                 WriteUpdateSource(root);
                 WriteInstallManifest(statePath, next);
+                var fullAppOwnershipPath = SafeTarget(root, FullAppOwnershipName);
+                if (File.Exists(fullAppOwnershipPath)) File.Delete(fullAppOwnershipPath);
             }
         }
     }
 
     private static List<string> ReadInstallManifest(string path, string root)
     {
-        if (!File.Exists(path)) return new List<string>();
         var serializer = new JavaScriptSerializer { MaxJsonLength = Int32.MaxValue };
-        var names = serializer.Deserialize<List<string>>(File.ReadAllText(path, Encoding.UTF8));
-        if (names == null) throw new InvalidDataException("Install manifest is invalid.");
-        foreach (var name in names) SafeTarget(root, name);
+        var names = new List<string>();
+        var nameSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (File.Exists(path))
+        {
+            var installed = serializer.Deserialize<List<string>>(File.ReadAllText(path, Encoding.UTF8));
+            if (installed == null) throw new InvalidDataException("Install manifest is invalid.");
+            foreach (var name in installed)
+            {
+                SafeTarget(root, name);
+                if (nameSet.Add(name)) names.Add(name);
+            }
+        }
+
+        var ownershipPath = SafeTarget(root, FullAppOwnershipName);
+        if (Directory.Exists(ownershipPath)) throw new InvalidDataException("Full-app ownership manifest path is a directory.");
+        if (File.Exists(ownershipPath))
+        {
+            if (new FileInfo(ownershipPath).Length > 8 * 1024 * 1024)
+                throw new InvalidDataException("Full-app ownership manifest is too large.");
+            var updated = serializer.Deserialize<List<string>>(File.ReadAllText(ownershipPath, Encoding.UTF8));
+            if (updated == null) throw new InvalidDataException("Full-app ownership manifest is invalid.");
+            var updateSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var name in updated)
+            {
+                if (!String.Equals(name, "VNText Studio.exe", StringComparison.OrdinalIgnoreCase)
+                    && !name.StartsWith("app/", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("Full-app ownership manifest contains a protected path: " + name);
+                SafeTarget(root, name);
+                if (!updateSet.Add(name)) throw new InvalidDataException("Full-app ownership manifest contains a duplicate path: " + name);
+                if (nameSet.Add(name)) names.Add(name);
+            }
+        }
         return names;
     }
 

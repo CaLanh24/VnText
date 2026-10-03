@@ -35,7 +35,8 @@ internal sealed record GitHubUpdateCheckResult(
     string PackagePath = "",
     string PackageSha256 = "",
     string ReleasesUrl = "",
-    string Message = "");
+    string Message = "",
+    bool FullAppPackage = false);
 
 internal sealed class GitHubUpdatePackageLease : IDisposable
 {
@@ -150,27 +151,29 @@ public static class WpfUpdateService
                 .ToArray();
             foreach (var release in newer)
             {
-                var wpfAssets = release.Assets.Where(asset =>
-                    asset.Name.StartsWith("wpf-update-" + release.VersionText, StringComparison.OrdinalIgnoreCase) &&
-                    asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)).ToArray();
-                if (wpfAssets.Length > 1)
+                var updateAssets = release.Assets.Where(asset =>
+                    (asset.Name.StartsWith("wpf-update-" + release.VersionText, StringComparison.Ordinal) ||
+                     asset.Name.StartsWith("full-app-update-" + release.VersionText, StringComparison.Ordinal)) &&
+                    asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
+                if (updateAssets.Length > 1)
                     return new(GitHubUpdateState.InvalidMetadata, Version: release.VersionText, ReleasesUrl: releasesUrl,
-                        Message: "The stable release contains ambiguous WPF update assets.");
+                        Message: "The stable release contains ambiguous update assets.");
 
-                if (wpfAssets.Length == 0)
+                if (updateAssets.Length == 0)
                     return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
-                        Message: "This stable release has no applicable WPF package; install Setup from the official Releases page.");
+                        Message: "This stable release has no applicable in-app update package; install Setup from the official Releases page.");
 
-                var asset = wpfAssets[0];
-                if (!TryValidateWpfAsset(source, release, asset, out var packageDigest, out var assetUri, out var metadataError))
+                var asset = updateAssets[0];
+                var fullAppPackage = asset.Name.StartsWith("full-app-update-", StringComparison.Ordinal);
+                if (!TryValidateUpdateAsset(source, release, asset, fullAppPackage, out var packageDigest, out var assetUri, out var metadataError))
                     return new(GitHubUpdateState.InvalidMetadata, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: metadataError);
                 if (asset.Size <= 0 || asset.Size > MaxGitHubUpdatePackageBytes)
                     return new(GitHubUpdateState.InvalidPackage, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: "The GitHub WPF package has an invalid or oversized declared size.");
 
-                downloadedPackage = Path.Combine(source.WorkRoot,
-                    $"github-wpf-{release.VersionText}-{Guid.NewGuid():N}.zip");
+                    downloadedPackage = Path.Combine(source.WorkRoot,
+                    $"github-update-{release.VersionText}-{Guid.NewGuid():N}.zip");
                 try
                 {
                     EnsureNoReparsePath(root, downloadedPackage, "GitHub update package");
@@ -190,10 +193,20 @@ public static class WpfUpdateService
                     if (!FixedEquals(downloadedDigest, packageDigest))
                         throw new InvalidDataException("GitHub asset SHA-256 digest mismatch.");
 
-                    var update = ReadAndValidateGitHubPackage(root, source, downloadedPackage, packageDigest,
-                        release.VersionText);
+                    if (fullAppPackage)
+                        _ = FullAppUpdateService.ReadGitHubPackage(root, Path.Combine(root, SourceName), downloadedPackage,
+                            packageDigest, release.VersionText);
+                    else
+                        _ = ReadAndValidateGitHubPackage(root, source, downloadedPackage, packageDigest, release.VersionText);
                     return new(GitHubUpdateState.UpdateAvailable, release.VersionText, downloadedPackage,
-                        packageDigest, releasesUrl, $"Stable WPF update available: v{release.VersionText}.");
+                        packageDigest, releasesUrl, $"Stable {(fullAppPackage ? "full-app" : "WPF")} update available: v{release.VersionText}.", fullAppPackage);
+                }
+                catch (FullAppBaselineMismatchException ex)
+                {
+                    TryDeleteGitHubPackage(downloadedPackage, source, root);
+                    downloadedPackage = null;
+                    return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
+                        Message: "This full-app package does not apply to the installed baseline; install Setup. " + ex.Message);
                 }
                 catch (BaselineMismatchException ex)
                 {
@@ -262,7 +275,8 @@ public static class WpfUpdateService
             throw new InvalidDataException("There is no verified GitHub WPF update to apply.");
         var root = InstallRoot();
         StartUpdaterProcess(root, Path.Combine(root, SourceName), workerPid,
-            update.PackagePath, update.PackageSha256, update.Version, packageLease.TransferToUpdater);
+            update.PackagePath, update.PackageSha256, update.Version, packageLease.TransferToUpdater,
+            fullAppPackage: update.FullAppPackage);
     }
 
     internal static bool TryGetAvailableUpdateVersion(string installRoot, out string version) =>
@@ -275,6 +289,8 @@ public static class WpfUpdateService
         try
         {
             var root = Path.GetFullPath(installRoot);
+            if (FullAppUpdateService.HasLocalFeed(root))
+                return FullAppUpdateService.TryGetAvailableVersion(root, out version, out status);
             var marker = Path.Combine(root, SourceName);
             EnsureNoReparsePath(root, marker, "Update source configuration");
             var source = ReadSource(marker);
@@ -312,11 +328,12 @@ public static class WpfUpdateService
         var sourcePath = Path.Combine(root, SourceName);
         if (!TryGetAvailableUpdateVersion(root, out _))
             throw new InvalidDataException("Không có bản cập nhật hợp lệ, mới hơn cho bản cài này.");
-        StartUpdaterProcess(root, sourcePath, workerPid, null, "", "");
+        StartUpdaterProcess(root, sourcePath, workerPid, null, "", "", fullAppPackage: FullAppUpdateService.HasLocalFeed(root));
     }
 
     private static void StartUpdaterProcess(string root, string sourcePath, int? workerPid,
-        string? packagePath, string packageSha256, string version, Action? packageHandedOff = null)
+        string? packagePath, string packageSha256, string version, Action? packageHandedOff = null,
+        bool fullAppPackage = false)
     {
         EnsureNoReparsePath(root, sourcePath, "Update source configuration");
         var source = ReadSource(sourcePath);
@@ -341,7 +358,9 @@ public static class WpfUpdateService
         var runtime = Path.Combine(root, "app", "dotnet");
         start.Environment["DOTNET_ROOT"] = runtime;
         start.Environment["DOTNET_ROOT_X64"] = runtime;
-        start.ArgumentList.Add(packagePath is null ? "--apply-wpf-update" : "--apply-github-wpf-update");
+        start.ArgumentList.Add(packagePath is null
+            ? (fullAppPackage ? "--apply-full-app-update" : "--apply-wpf-update")
+            : (fullAppPackage ? "--apply-github-full-app-update" : "--apply-github-wpf-update"));
         start.ArgumentList.Add(sourcePath);
         start.ArgumentList.Add(root);
         start.ArgumentList.Add(Environment.ProcessId.ToString());
@@ -359,9 +378,23 @@ public static class WpfUpdateService
 
     public static int RunUpdater(string[] args)
     {
+        if (args.Length == 4 && string.Equals(args[0], "--recover-full-app-update", StringComparison.Ordinal) &&
+            int.TryParse(args[3], out var recoveryAppPid))
+            return FullAppUpdateService.RunRecoveryUpdater(args[1], args[2], recoveryAppPid);
         if (args.Length < 5 || !int.TryParse(args[3], out var appPid))
             return 2;
         int? workerPid = int.TryParse(args[4], out var parsedWorkerPid) ? parsedWorkerPid : null;
+        if (string.Equals(args[0], "--apply-github-full-app-update", StringComparison.Ordinal))
+        {
+            if (args.Length != 8 || !IsSha256(args[6]) || !TryParseStableVersion(args[7], out _)) return 2;
+            return FullAppUpdateService.RunUpdater(args[1], args[2], appPid, workerPid, fromGitHub: true,
+                packagePath: args[5], packageSha256: args[6], version: args[7]);
+        }
+        if (string.Equals(args[0], "--apply-full-app-update", StringComparison.Ordinal))
+        {
+            if (args.Length != 5) return 2;
+            return FullAppUpdateService.RunUpdater(args[1], args[2], appPid, workerPid, fromGitHub: false);
+        }
         if (string.Equals(args[0], "--apply-github-wpf-update", StringComparison.Ordinal))
         {
             if (args.Length != 8 || !IsSha256(args[6]) || !TryParseStableVersion(args[7], out _))
@@ -651,34 +684,36 @@ public static class WpfUpdateService
     private static string GetReleasesUrl(UpdateSource source) =>
         $"https://github.com/{source.GitHubOwner}/{source.GitHubRepository}/releases/latest";
 
-    private static bool TryValidateWpfAsset(UpdateSource source, GitHubReleaseInfo release, GitHubAssetInfo asset,
-        out string digest, out Uri downloadUri, out string error)
+    private static bool TryValidateUpdateAsset(UpdateSource source, GitHubReleaseInfo release, GitHubAssetInfo asset,
+        bool fullAppPackage, out string digest, out Uri downloadUri, out string error)
     {
         digest = "";
         downloadUri = new Uri("https://github.com/");
-        error = "GitHub WPF asset metadata is invalid.";
+        var packageLabel = fullAppPackage ? "full-app" : "WPF";
+        var packagePrefix = fullAppPackage ? "full-app-update-" : "wpf-update-";
+        error = $"GitHub {packageLabel} asset metadata is invalid.";
         if (!asset.Digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
             !IsSha256(asset.Digest[7..]))
         {
-            error = "GitHub WPF asset is missing its SHA-256 digest.";
+            error = $"GitHub {packageLabel} asset is missing its SHA-256 digest.";
             return false;
         }
         digest = asset.Digest[7..].ToLowerInvariant();
-        var expectedName = $"wpf-update-{release.VersionText}-{digest[..16]}.zip";
+        var expectedName = $"{packagePrefix}{release.VersionText}-{digest[..16]}.zip";
         if (!string.Equals(asset.Name, expectedName, StringComparison.Ordinal))
         {
-            error = "GitHub WPF asset name does not match its version and SHA-256 digest.";
+            error = $"GitHub {packageLabel} asset name does not match its version and SHA-256 digest.";
             return false;
         }
         if (!Uri.TryCreate(asset.DownloadUrl, UriKind.Absolute, out var uri) ||
             !IsTrustedHttpsUri(uri) || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
         {
-            error = "GitHub WPF asset URL must use the trusted GitHub HTTPS host.";
+            error = $"GitHub {packageLabel} asset URL must use the trusted GitHub HTTPS host.";
             return false;
         }
         if (!IsExpectedGitHubAssetPath(uri.AbsolutePath, source.GitHubOwner, source.GitHubRepository, release.Tag, expectedName) || uri.Query.Length != 0)
         {
-            error = "GitHub WPF asset URL does not match the configured repository, release tag and expected asset.";
+            error = $"GitHub {packageLabel} asset URL does not match the configured repository, release tag and expected asset.";
             return false;
         }
         downloadUri = uri;

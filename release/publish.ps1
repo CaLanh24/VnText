@@ -9,6 +9,7 @@ param(
     [string]$ModelRoot = "",
     [string]$SourceRevision = "",
     [string]$WpfUpdateVersion = "",
+    [string]$FullAppUpdateBaselineRoot = "",
     [string]$GitHubOwner = "",
     [string]$GitHubRepository = "",
     [string]$ArtifactScopeId = "",
@@ -78,6 +79,9 @@ if (-not [string]::IsNullOrWhiteSpace($GitHubOwner)) {
         throw "GitHubOwner or GitHubRepository contains unsupported characters."
     }
 }
+if (-not [string]::IsNullOrWhiteSpace($GitHubOwner) -and [string]::IsNullOrWhiteSpace($FullAppUpdateBaselineRoot)) {
+    throw "FullAppUpdateBaselineRoot is required when configuring GitHub in-app update sources."
+}
 $WpfUpdateVersionNumeric = "{0}.{1}.{2}.0" -f $wpfUpdateVersionMatch.Groups[1].Value, $wpfUpdateVersionMatch.Groups[2].Value, $wpfUpdateVersionMatch.Groups[3].Value
 $DevRoot = Split-Path -Parent $PSScriptRoot
 $DevRoot = [System.IO.Path]::GetFullPath($DevRoot)
@@ -109,6 +113,16 @@ if ([string]::IsNullOrWhiteSpace($ReleaseRoot)) {
     $ReleaseRoot = Join-Path (Split-Path -Parent $DevRoot) "VNText_Studio_Release"
 } else {
     $ReleaseRoot = [System.IO.Path]::GetFullPath($ReleaseRoot)
+}
+$FullAppUpdateBaselineRoot = if ([string]::IsNullOrWhiteSpace($FullAppUpdateBaselineRoot)) { "" } else { [System.IO.Path]::GetFullPath($FullAppUpdateBaselineRoot) }
+if ($FullAppUpdateBaselineRoot) {
+    if (-not (Test-Path -LiteralPath $FullAppUpdateBaselineRoot -PathType Container)) {
+        throw "FullAppUpdateBaselineRoot must be an existing install from the intended update baseline: $FullAppUpdateBaselineRoot"
+    }
+    $baselineItem = Get-Item -LiteralPath $FullAppUpdateBaselineRoot -Force
+    if (($baselineItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "FullAppUpdateBaselineRoot cannot be a junction or symbolic link: $FullAppUpdateBaselineRoot"
+    }
 }
 $ReleaseRoot = [System.IO.Path]::GetFullPath($ReleaseRoot)
 $WorkRoot = $ArtifactWorkRoot
@@ -205,6 +219,22 @@ function Get-Sha256([string]$Path) {
         $stream.Dispose()
     }
 }
+
+function Get-TextSha256([string]$Text) {
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
+    $digest = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return ([System.BitConverter]::ToString($digest.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
+    } finally {
+        $digest.Dispose()
+    }
+}
+
+$sourceTreeObject = (& git -C $DevRoot rev-parse --verify "$SourceSha^{tree}").Trim()
+if ($LASTEXITCODE -ne 0 -or $sourceTreeObject -notmatch '^[0-9a-f]{40}$') {
+    throw "Cannot resolve the Git tree for the Release source SHA"
+}
+$SourceTreeSha256 = Get-TextSha256 ("git-tree-sha1:" + $sourceTreeObject)
 
 function Register-WorkPath([string]$Scope, [string]$Path, [string]$Purpose, [string]$Lifecycle = "DISPOSABLE", [string]$ScopeRoot = $publishArtifactRoot) {
     $register = "import sys; from pathlib import Path; sys.path.insert(0,sys.argv[1]); from work_paths import register_artifact; register_artifact(artifact_id='publish:'+sys.argv[2]+':'+Path(sys.argv[3]).name,path=Path(sys.argv[3]),kind='release_staging',created_by='release/publish.ps1',owner='release/publish.ps1',purpose=sys.argv[4],lifecycle=sys.argv[5],scope_id=sys.argv[2],run_id=sys.argv[2],scope_root=Path(sys.argv[6]))"
@@ -921,12 +951,19 @@ $pendingSetup = Join-Path $ReleaseRoot "Setup.pending.exe"
 $previousSetup = Join-Path $ReleaseRoot "Setup.previous.exe"
 $failedSetup = Join-Path $ReleaseRoot "Setup.failed.exe"
 $pendingPackage = $null
+$pendingFullAppPackage = $null
 $pendingUpdateFeed = $null
+$pendingFullAppFeed = $null
 $currentUpdateFeed = $null
+$currentFullAppFeed = $null
 $previousUpdateFeed = $null
+$previousFullAppFeed = $null
 $failedUpdateFeed = $null
+$failedFullAppFeed = $null
 $updateFeedCommitted = $false
+$fullAppFeedCommitted = $false
 $hadPreviousUpdateFeed = $false
+$hadPreviousFullAppFeed = $false
 $registerScript = "import sys; sys.path.insert(0,sys.argv[1]); from pathlib import Path; from work_paths import register_artifacts; scope=sys.argv[2]; base=Path(sys.argv[3]); paths=[Path(p) for p in sys.argv[4:]]; register_artifacts([dict(artifact_id='setup-publish:'+scope+':'+str(i),path=p,kind='release_staging',created_by='release/publish.ps1',owner='release/publish.ps1',purpose='staged Setup, package and install transaction paths',lifecycle='DISPOSABLE',scope_id=scope,run_id=scope,scope_root=base) for i,p in enumerate(paths)])"
 & $Python -B -c $registerScript $ArtifactHelpersRoot $publishScope $workRoot $staging $payloadZip $setupExe $wpfUpdatePublish $updatesStaging
 if ($LASTEXITCODE -ne 0) { throw "Cannot register portable Setup staging scope" }
@@ -1049,6 +1086,7 @@ $exeUrl = ""
 $manifest = [ordered]@{
     version = $version
     source_sha = $SourceSha
+    source_tree_sha256 = $SourceTreeSha256
     sha256  = $sha
     built   = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     notes   = "VNText Studio $version (WPF)"
@@ -1158,6 +1196,21 @@ if ($finalCaches) {
 }
 Write-Host "Final Release audit: no pyc/pyo/log/PDB artifacts" -ForegroundColor Green
 
+if ($FullAppUpdateBaselineRoot) {
+    Write-Host "Build source-bound full-app update from baseline $FullAppUpdateBaselineRoot..." -ForegroundColor Yellow
+    & $Python -B (Join-Path $DevRoot "release\publish_full_app_update.py") `
+        --baseline-root $FullAppUpdateBaselineRoot `
+        --candidate-root $staging `
+        --updates-root $updatesStaging `
+        --version $version `
+        --source-sha $SourceSha `
+        --source-tree-sha256 $SourceTreeSha256 `
+        --notes "VNText Studio $version (full-app update)"
+    if ($LASTEXITCODE -ne 0) { throw "Full-app Updates package generation failed" }
+} else {
+    Write-Host "Full-app Updates package not built: no installed baseline supplied; releases without this feed require Setup for full-app changes." -ForegroundColor DarkYellow
+}
+
 Write-Host "Build and hash-check the complete Setup payload..." -ForegroundColor Yellow
 $payloadBytes = [long](Get-ChildItem -LiteralPath $staging -Recurse -File -Force | Measure-Object Length -Sum).Sum
 $payloadCount = (Get-ChildItem -LiteralPath $staging -Recurse -File -Force).Count
@@ -1261,7 +1314,62 @@ try {
             throw "Current WPF Updates manifest must be a regular file: $currentUpdateFeed"
         }
     }
+    $currentFullAppFeed = Join-Path $updatesRoot "full-app-update-current.json"
+    $pendingFullAppFeed = Join-Path $updatesRoot ".full-app-update-current.json.pending"
+    $previousFullAppFeed = Join-Path $updatesRoot ".full-app-update-current.json.previous"
+    $failedFullAppFeed = Join-Path $updatesRoot ".full-app-update-current.json.failed"
+    if ((Test-Path -LiteralPath $pendingFullAppFeed) -or (Test-Path -LiteralPath $previousFullAppFeed) -or (Test-Path -LiteralPath $failedFullAppFeed)) {
+        throw "Stale full-app Updates manifest transaction file exists under $updatesRoot"
+    }
+    $hadPreviousFullAppFeed = Test-Path -LiteralPath $currentFullAppFeed -PathType Leaf
+    if (Test-Path -LiteralPath $currentFullAppFeed) {
+        $currentFullFeedItem = Get-Item -LiteralPath $currentFullAppFeed -Force
+        if ($currentFullFeedItem.PSIsContainer -or (($currentFullFeedItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0)) {
+            throw "Current full-app Updates manifest must be a regular file: $currentFullAppFeed"
+        }
+    }
+    $stagedFullAppFeedPath = Join-Path $updatesStaging "full-app-update-current.json"
+    $hasStagedFullAppFeed = Test-Path -LiteralPath $stagedFullAppFeedPath -PathType Leaf
+    if ($FullAppUpdateBaselineRoot -and -not $hasStagedFullAppFeed) {
+        throw "Full-app Update baseline was supplied but the full-app Updates manifest was not generated."
+    }
+    if ($hasStagedFullAppFeed) {
+        $stagedFullAppFeed = Get-Content -LiteralPath $stagedFullAppFeedPath -Raw | ConvertFrom-Json
+        $fullAppPackageFile = [string]$stagedFullAppFeed.package_file
+        $fullAppPackageSha = [string]$stagedFullAppFeed.package_sha256
+        $fullManifest = $stagedFullAppFeed.manifest
+        if ([int]$stagedFullAppFeed.schema -ne 1 -or
+            [System.IO.Path]::GetFileName($fullAppPackageFile) -ne $fullAppPackageFile -or
+            $fullAppPackageFile -notmatch '^full-app-update-.+\.zip$' -or
+            $fullAppPackageSha -notmatch '^[0-9a-f]{64}$' -or
+            $fullManifest.version -ne $version -or $fullManifest.source_sha -ne $SourceSha -or
+            $fullManifest.source_tree_sha256 -ne $SourceTreeSha256) {
+            throw "Staged full-app Updates manifest has invalid source identity, version, package path or hash"
+        }
+        $stagedFullAppPackage = Join-Path $updatesStaging $fullAppPackageFile
+        $releaseFullAppPackage = Join-Path $updatesRoot $fullAppPackageFile
+        $pendingFullAppPackage = Join-Path $updatesRoot ("." + $fullAppPackageFile + ".pending")
+        if (-not (Test-Path -LiteralPath $stagedFullAppPackage -PathType Leaf) -or (Get-Sha256 $stagedFullAppPackage) -ne $fullAppPackageSha) {
+            throw "Staged full-app Updates package is missing or has a SHA-256 mismatch"
+        }
+        if (Test-Path -LiteralPath $releaseFullAppPackage) {
+            $fullPackageItem = Get-Item -LiteralPath $releaseFullAppPackage -Force
+            if ($fullPackageItem.PSIsContainer -or (($fullPackageItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) -or
+                (Get-Sha256 $releaseFullAppPackage) -ne $fullAppPackageSha) {
+                throw "Immutable full-app Updates package collision: $releaseFullAppPackage"
+            }
+        } else {
+            if (Test-Path -LiteralPath $pendingFullAppPackage) { throw "Stale full-app package transaction file exists: $pendingFullAppPackage" }
+            Copy-Item -LiteralPath $stagedFullAppPackage -Destination $pendingFullAppPackage -ErrorAction Stop
+            if ((Get-Sha256 $pendingFullAppPackage) -ne $fullAppPackageSha) { throw "Copied full-app Updates package hash mismatch" }
+            [System.IO.File]::Move($pendingFullAppPackage, $releaseFullAppPackage)
+        }
+        $fullAppFeedSha = Get-Sha256 $stagedFullAppFeedPath
+        Copy-Item -LiteralPath $stagedFullAppFeedPath -Destination $pendingFullAppFeed -ErrorAction Stop
+        if ((Get-Sha256 $pendingFullAppFeed) -ne $fullAppFeedSha) { throw "Copied full-app Updates manifest hash mismatch" }
+    }
     $updateFeedCommitted = $false
+    $fullAppFeedCommitted = $false
     $cleanupScript = "import sys; sys.path.insert(0,sys.argv[2]); sys.path.insert(0,sys.argv[1]); from pathlib import Path; from cleanup_work_artifacts import cleanup_after_test; report=cleanup_after_test([Path(sys.argv[4]),Path(sys.argv[5]),Path(sys.argv[6]),Path(sys.argv[7]),Path(sys.argv[8])],reason='release/publish.ps1',outcome='PASS',scope_id=sys.argv[3],run_id=sys.argv[3]); print(report); raise SystemExit(0 if report.get('ok') else 1)"
     & $Python -B -c $cleanupScript (Join-Path $ArtifactHelpersRoot "..\tools") $ArtifactHelpersRoot $publishScope $staging $payloadZip $setupExe $wpfUpdatePublish $updatesStaging
     if ($LASTEXITCODE -ne 0) { throw "Portable Setup staging cleanup did not complete; old Release contents preserved" }
@@ -1280,6 +1388,17 @@ try {
         [System.IO.File]::Move($pendingUpdateFeed, $currentUpdateFeed)
     }
     $updateFeedCommitted = $true
+    if ($hasStagedFullAppFeed) {
+        if ($hadPreviousFullAppFeed) {
+            [System.IO.File]::Replace($pendingFullAppFeed, $currentFullAppFeed, $previousFullAppFeed)
+        } else {
+            [System.IO.File]::Move($pendingFullAppFeed, $currentFullAppFeed)
+        }
+        $fullAppFeedCommitted = $true
+    } elseif ($hadPreviousFullAppFeed) {
+        [System.IO.File]::Move($currentFullAppFeed, $previousFullAppFeed)
+        $fullAppFeedCommitted = $true
+    }
     $transactionNames = @(Get-ChildItem -LiteralPath $ReleaseRoot -Force | Select-Object -ExpandProperty Name | Sort-Object)
     $expectedTransactionNames = if ($hadPreviousSetup) { @("Setup.exe", "Setup.previous.exe", "Updates") } else { @("Setup.exe", "Updates") }
     if ($finalSha -ne $setupSha -or ($transactionNames -join "|") -ne ($expectedTransactionNames -join "|")) {
@@ -1287,6 +1406,7 @@ try {
     }
     if (Test-Path -LiteralPath $previousSetup) { Remove-Item -LiteralPath $previousSetup -Force -ErrorAction Stop }
     if (Test-Path -LiteralPath $previousUpdateFeed) { Remove-Item -LiteralPath $previousUpdateFeed -Force -ErrorAction Stop }
+    if (Test-Path -LiteralPath $previousFullAppFeed) { Remove-Item -LiteralPath $previousFullAppFeed -Force -ErrorAction Stop }
     $finalFiles = @(Get-ChildItem -LiteralPath $ReleaseRoot -Force)
     if ($finalFiles.Count -ne 2 -or @($finalFiles | Where-Object { $_.Name -notin @("Setup.exe", "Updates") }).Count -gt 0 -or
         -not ($finalFiles | Where-Object { $_.Name -eq "Setup.exe" -and -not $_.PSIsContainer }) -or
@@ -1296,6 +1416,22 @@ try {
         throw "Final Release invariant failed: entries=[$names]; hash=$(if (Test-Path -LiteralPath $setupReleasePath -PathType Leaf) { Get-Sha256 $setupReleasePath } else { 'missing' })"
     }
 } catch {
+    if ($fullAppFeedCommitted) {
+        try {
+            if ($hadPreviousFullAppFeed -and (Test-Path -LiteralPath $previousFullAppFeed -PathType Leaf)) {
+                if (Test-Path -LiteralPath $currentFullAppFeed -PathType Leaf) {
+                    [System.IO.File]::Replace($previousFullAppFeed, $currentFullAppFeed, $failedFullAppFeed)
+                    if (Test-Path -LiteralPath $failedFullAppFeed) { Remove-Item -LiteralPath $failedFullAppFeed -Force -ErrorAction Stop }
+                } else {
+                    [System.IO.File]::Move($previousFullAppFeed, $currentFullAppFeed)
+                }
+            } elseif (-not $hadPreviousFullAppFeed -and (Test-Path -LiteralPath $currentFullAppFeed)) {
+                Remove-Item -LiteralPath $currentFullAppFeed -Force -ErrorAction Stop
+            }
+        } catch {
+            Write-Warning "Could not restore previous full-app Updates manifest; recovery file: $previousFullAppFeed"
+        }
+    }
     if ($updateFeedCommitted) {
         try {
             if ($hadPreviousUpdateFeed -and (Test-Path -LiteralPath $previousUpdateFeed -PathType Leaf)) {
@@ -1329,7 +1465,9 @@ try {
     }
     if (Test-Path -LiteralPath $pendingSetup) { Remove-Item -LiteralPath $pendingSetup -Force -ErrorAction SilentlyContinue }
     if (Test-Path -LiteralPath $pendingUpdateFeed) { Remove-Item -LiteralPath $pendingUpdateFeed -Force -ErrorAction SilentlyContinue }
+    if ($pendingFullAppFeed -and (Test-Path -LiteralPath $pendingFullAppFeed)) { Remove-Item -LiteralPath $pendingFullAppFeed -Force -ErrorAction SilentlyContinue }
     if ($pendingPackage -and (Test-Path -LiteralPath $pendingPackage)) { Remove-Item -LiteralPath $pendingPackage -Force -ErrorAction SilentlyContinue }
+    if ($pendingFullAppPackage -and (Test-Path -LiteralPath $pendingFullAppPackage)) { Remove-Item -LiteralPath $pendingFullAppPackage -Force -ErrorAction SilentlyContinue }
     throw
 }
 
@@ -1338,3 +1476,6 @@ Write-Host "Final ReleaseRoot contains Setup.exe and retained Updates: $ReleaseR
 $publishedPackages = @(Get-ChildItem -LiteralPath (Join-Path $ReleaseRoot "Updates") -File -Filter "wpf-update-*.zip" -Force)
 $publishedPackageBytes = [long]($publishedPackages | Measure-Object Length -Sum).Sum
 Write-Host "WPF Updates retention: $($publishedPackages.Count) immutable packages, $publishedPackageBytes bytes" -ForegroundColor DarkGray
+$publishedFullAppPackages = @(Get-ChildItem -LiteralPath (Join-Path $ReleaseRoot "Updates") -File -Filter "full-app-update-*.zip" -Force)
+$publishedFullAppPackageBytes = [long]($publishedFullAppPackages | Measure-Object Length -Sum).Sum
+Write-Host "Full-app Updates retention: $($publishedFullAppPackages.Count) immutable packages, $publishedFullAppPackageBytes bytes" -ForegroundColor DarkGray

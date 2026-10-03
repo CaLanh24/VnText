@@ -17,9 +17,25 @@ namespace VNText.Studio.Workflow.Tests;
 
 internal static class Program
 {
-    private static int Main()
+    private static int Main(string[] args)
     {
         var failures = new List<string>();
+        if (args.Contains("--full-app-update-only", StringComparer.Ordinal))
+        {
+            Run("FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel", FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel, failures);
+            Run("FullAppUpdate_HealthFailureRollsBack", FullAppUpdate_HealthFailureRollsBack, failures);
+            Run("FullAppUpdate_InterruptedTransactionRecovers", FullAppUpdate_InterruptedTransactionRecovers, failures);
+            Run("FullAppUpdate_TamperAndBaselineMismatchFailClosed", FullAppUpdate_TamperAndBaselineMismatchFailClosed, failures);
+            Run("FullAppUpdate_GitHubAssetPathSizeAndHashAreBound", FullAppUpdate_GitHubAssetPathSizeAndHashAreBound, failures);
+            if (failures.Count == 0)
+            {
+                Console.WriteLine("Focused full-app updater tests: PASS (5)");
+                return 0;
+            }
+            Console.Error.WriteLine($"Focused full-app updater tests: FAIL ({failures.Count})");
+            foreach (var f in failures) Console.Error.WriteLine(" - " + f);
+            return 1;
+        }
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
         Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -74,7 +90,11 @@ internal static class Program
         Run("WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing", WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing, failures);
         Run("WpfUpdate_InvalidOfferIsHiddenAndRejected", WpfUpdate_InvalidOfferIsHiddenAndRejected, failures);
         Run("WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup", WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup, failures);
-    Run("WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset", WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset, failures);
+        Run("FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel", FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel, failures);
+        Run("FullAppUpdate_HealthFailureRollsBack", FullAppUpdate_HealthFailureRollsBack, failures);
+        Run("FullAppUpdate_InterruptedTransactionRecovers", FullAppUpdate_InterruptedTransactionRecovers, failures);
+        Run("FullAppUpdate_TamperAndBaselineMismatchFailClosed", FullAppUpdate_TamperAndBaselineMismatchFailClosed, failures);
+        Run("WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset", WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset, failures);
         Run("WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation", WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation, failures);
         Run("WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback", WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback, failures);
         Run("WpfUpdate_GitHubRejectsChunkedOversizedMetadata", WpfUpdate_GitHubRejectsChunkedOversizedMetadata, failures);
@@ -89,7 +109,7 @@ internal static class Program
 
         if (failures.Count == 0)
         {
-            Console.WriteLine("WPF workflow tests: PASS (59)");
+            Console.WriteLine("WPF workflow tests: PASS (70)");
             return 0;
         }
 
@@ -2153,6 +2173,319 @@ internal static class Program
         }
         finally { DeleteUpdateFixture(fixture); }
     }
+
+    private static void FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var dataPath = Path.Combine(fixture.Root, "data", "keep.bin");
+            var dataHash = HashFile(dataPath);
+            var modelPath = Path.Combine(fixture.Root, "app", "worker", "models", "pinned.bin");
+            var modelHash = HashFile(modelPath);
+            var starts = 0;
+            var exit = FullAppUpdateService.RunForTest(fixture.SourcePath, fixture.Root, restartApp: true,
+                healthCheck: (exe, root) => root == fixture.Root &&
+                    HashFile(exe) == fixture.CandidateExeHash &&
+                    File.Exists(Path.Combine(root, "app", "worker", "added.txt")),
+                startApp: _ => starts++);
+
+            if (exit != 0) throw new InvalidOperationException($"expected exit 0, got {exit}; log: {ReadFullAppUpdateLog(fixture)}");
+            AssertEqual(0, exit);
+            AssertEqual(1, starts);
+            AssertEqual(dataHash, HashFile(dataPath));
+            AssertEqual(modelHash, HashFile(modelPath));
+            AssertEqual("candidate content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
+            AssertEqual("new worker file", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "added.txt")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, "app", "worker", "obsolete.txt")));
+            AssertTrue(File.Exists(Path.Combine(fixture.Root, FullAppUpdateService.OwnershipName.Replace('/', Path.DirectorySeparatorChar))));
+            var owned = JsonSerializer.Deserialize<string[]>(File.ReadAllText(Path.Combine(fixture.Root, FullAppUpdateService.OwnershipName.Replace('/', Path.DirectorySeparatorChar))))!;
+            AssertTrue(owned.Contains("app/worker/added.txt", StringComparer.Ordinal));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private static void FullAppUpdate_HealthFailureRollsBack()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var baselineExeHash = fixture.BaselineExeHash;
+            var dataPath = Path.Combine(fixture.Root, "data", "keep.bin");
+            var dataHash = HashFile(dataPath);
+            var starts = 0;
+            var exit = FullAppUpdateService.RunForTest(fixture.SourcePath, fixture.Root, restartApp: true,
+                healthCheck: (exe, _) => HashFile(exe) == baselineExeHash,
+                startApp: _ => starts++);
+
+            AssertEqual(5, exit);
+            AssertEqual(1, starts);
+            AssertEqual(baselineExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertEqual("baseline content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
+            AssertTrue(File.Exists(Path.Combine(fixture.Root, "app", "worker", "obsolete.txt")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, "app", "worker", "added.txt")));
+            AssertEqual(dataHash, HashFile(dataPath));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private static void FullAppUpdate_InterruptedTransactionRecovers()
+    {
+        var fixture = CreateFullAppUpdateFixture(faultInject: true);
+        try
+        {
+            var exit = FullAppUpdateService.RunForTest(fixture.SourcePath, fixture.Root);
+            if (exit != 7) throw new InvalidOperationException($"expected exit 7, got {exit}; log: {ReadFullAppUpdateLog(fixture)}");
+            AssertEqual(7, exit);
+            AssertEqual(fixture.CandidateExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertTrue(File.ReadAllText(Path.Combine(fixture.Root, "app", "RELEASE.json")).Contains("source_tree_sha256"));
+            AssertTrue(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+            AssertTrue(FullAppUpdateService.RecoverInterruptedUpdate(fixture.Root));
+            AssertEqual(fixture.BaselineExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertEqual("baseline content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
+            AssertTrue(File.Exists(Path.Combine(fixture.Root, "app", "worker", "obsolete.txt")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, "app", "worker", "added.txt")));
+            AssertEqual("user data remains unchanged", File.ReadAllText(Path.Combine(fixture.Root, "data", "keep.bin")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private static void FullAppUpdate_TamperAndBaselineMismatchFailClosed()
+    {
+        var tampered = CreateFullAppUpdateFixture();
+        try
+        {
+            File.AppendAllText(tampered.PackagePath, "tamper");
+            AssertEqual(5, FullAppUpdateService.RunForTest(tampered.SourcePath, tampered.Root));
+            AssertEqual(tampered.BaselineExeHash, HashFile(Path.Combine(tampered.Root, "VNText Studio.exe")));
+            AssertEqual("baseline content", File.ReadAllText(Path.Combine(tampered.Root, "app", "worker", "replace.txt")));
+        }
+        finally { DeleteFullAppUpdateFixture(tampered); }
+
+        var mismatch = CreateFullAppUpdateFixture();
+        try
+        {
+            File.WriteAllText(Path.Combine(mismatch.Root, "app", "unowned.txt"), "not in the pinned baseline");
+            AssertEqual(5, FullAppUpdateService.RunForTest(mismatch.SourcePath, mismatch.Root));
+            AssertEqual(mismatch.BaselineExeHash, HashFile(Path.Combine(mismatch.Root, "VNText Studio.exe")));
+            AssertTrue(File.Exists(Path.Combine(mismatch.Root, "app", "unowned.txt")));
+        }
+        finally { DeleteFullAppUpdateFixture(mismatch); }
+    }
+
+    private static void FullAppUpdate_GitHubAssetPathSizeAndHashAreBound()
+    {
+        var valid = CreateFullAppUpdateFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(valid.PackagePath);
+            var digest = HashBytes(bytes);
+            var url = FullAppAssetUrl(valid, digest);
+            var handler = CreateFullAppGitHubHandler(valid, digest, bytes.LongLength, url, bytes);
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(valid.Root, handler).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.UpdateAvailable, result.State);
+            AssertTrue(result.FullAppPackage);
+            AssertEqual(digest, result.PackageSha256);
+            AssertEqual(2, handler.Requests.Count);
+            AssertEqual(digest, HashFile(result.PackagePath));
+            AssertTrue(FullAppUpdateService.IsExpectedFullAppAssetPath(
+                new Uri(url).AbsolutePath, "test-owner", "test-repo", "v" + ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!),
+                $"full-app-update-{ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!)}-{digest[..16]}.zip"));
+            WpfUpdateService.DeleteGitHubUpdateCandidate(valid.Root, result);
+        }
+        finally { DeleteFullAppUpdateFixture(valid); }
+
+        var oversized = CreateFullAppUpdateFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(oversized.PackagePath);
+            var digest = HashBytes(bytes);
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(oversized.Root,
+                CreateFullAppGitHubHandler(oversized, digest, WpfUpdateService.MaxGitHubUpdatePackageBytes + 1,
+                    FullAppAssetUrl(oversized, digest), bytes)).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.InvalidPackage, result.State);
+        }
+        finally { DeleteFullAppUpdateFixture(oversized); }
+
+        var wrongPath = CreateFullAppUpdateFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(wrongPath.PackagePath);
+            var digest = HashBytes(bytes);
+            var url = FullAppAssetUrl(wrongPath, digest).Replace("/test-repo/", "/other-repo/", StringComparison.Ordinal);
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(wrongPath.Root,
+                CreateFullAppGitHubHandler(wrongPath, digest, bytes.LongLength, url, bytes)).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.InvalidMetadata, result.State);
+        }
+        finally { DeleteFullAppUpdateFixture(wrongPath); }
+
+        var badHash = CreateFullAppUpdateFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(badHash.PackagePath);
+            var actualDigest = HashBytes(bytes);
+            var publishedDigest = new string(actualDigest[0] == '0' ? '1' : '0', 64);
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(badHash.Root,
+                CreateFullAppGitHubHandler(badHash, publishedDigest, bytes.LongLength,
+                    FullAppAssetUrl(badHash, publishedDigest), bytes)).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.InvalidPackage, result.State);
+        }
+        finally { DeleteFullAppUpdateFixture(badHash); }
+    }
+
+    private static string FullAppAssetUrl(FullAppUpdateFixture fixture, string digest)
+    {
+        var version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!);
+        var name = $"full-app-update-{version}-{digest[..16]}.zip";
+        return $"https://github.com/test-owner/test-repo/releases/download/v{version}/{name}";
+    }
+
+    private static TestHttpMessageHandler CreateFullAppGitHubHandler(FullAppUpdateFixture fixture,
+        string digest, long size, string downloadUrl, byte[] packageBytes)
+    {
+        var source = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(fixture.SourcePath))!;
+        source["github_owner"] = "test-owner";
+        source["github_repository"] = "test-repo";
+        File.WriteAllText(fixture.SourcePath, JsonSerializer.Serialize(source));
+        var version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!);
+        var assetName = $"full-app-update-{version}-{digest[..16]}.zip";
+        var releases = JsonSerializer.Serialize(new[]
+        {
+            GitHubRelease("v" + version, false, false,
+                GitHubAsset(assetName, "sha256:" + digest, size, downloadUrl)),
+        });
+        var apiUrl = new Uri("https://api.github.com/repos/test-owner/test-repo/releases?per_page=100");
+        return new TestHttpMessageHandler((request, _) =>
+        {
+            if (request.RequestUri == apiUrl) return Task.FromResult(JsonResponse(releases));
+            if (request.RequestUri == new Uri(downloadUrl)) return Task.FromResult(BinaryResponse(packageBytes));
+            throw new HttpRequestException("Unexpected HTTP target: " + request.RequestUri);
+        });
+    }
+
+    private static FullAppUpdateFixture CreateFullAppUpdateFixture(bool faultInject = false)
+    {
+        var baselineExePath = Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE");
+        var candidateExePath = Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE");
+        if (string.IsNullOrWhiteSpace(baselineExePath) || !File.Exists(baselineExePath) ||
+            string.IsNullOrWhiteSpace(candidateExePath) || !File.Exists(candidateExePath))
+            throw new InvalidOperationException("versioned WPF A/B executables are required for full-app updater tests");
+
+        var baselineVersion = ReadExecutableProductVersion(baselineExePath);
+        var candidateVersion = ReadExecutableProductVersion(candidateExePath);
+        if (!Version.TryParse(candidateVersion, out var newVersion) || !Version.TryParse(baselineVersion, out var oldVersion) || newVersion <= oldVersion)
+            throw new InvalidOperationException("full-app update test candidate executable must be newer than the baseline executable");
+
+        var root = Path.Combine(TestTempRoot(), "full_app_update_" + Guid.NewGuid().ToString("N"));
+        var updates = Path.Combine(TestTempRoot(), "full_app_updates_" + Guid.NewGuid().ToString("N"));
+        var app = Path.Combine(root, "app");
+        var worker = Path.Combine(app, "worker");
+        var model = Path.Combine(worker, "models");
+        Directory.CreateDirectory(model);
+        Directory.CreateDirectory(Path.Combine(root, "data"));
+        Directory.CreateDirectory(updates);
+
+        var baselineExe = File.ReadAllBytes(baselineExePath);
+        var candidateExe = File.ReadAllBytes(candidateExePath);
+        var baselineExeHash = HashBytes(baselineExe);
+        var candidateExeHash = HashBytes(candidateExe);
+        File.WriteAllBytes(Path.Combine(root, "VNText Studio.exe"), baselineExe);
+        File.WriteAllText(Path.Combine(root, "data", "keep.bin"), "user data remains unchanged");
+        File.WriteAllText(Path.Combine(app, "VERSION.txt"), baselineVersion + "\n");
+        File.WriteAllText(Path.Combine(app, "RELEASE.json"), JsonSerializer.Serialize(new { version = baselineVersion, sha256 = baselineExeHash }));
+        File.WriteAllText(Path.Combine(app, "keep.txt"), "unchanged");
+        File.WriteAllText(Path.Combine(worker, "replace.txt"), "baseline content");
+        File.WriteAllText(Path.Combine(worker, "obsolete.txt"), "delete this file");
+        File.WriteAllText(Path.Combine(model, "pinned.bin"), "model bytes must stay pinned");
+
+        const string sourceSha = "0000000000000000000000000000000000000000";
+        const string sourceTreeSha256 = "1111111111111111111111111111111111111111111111111111111111111111";
+        var targetBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            ["VNText Studio.exe"] = candidateExe,
+            ["app/RELEASE.json"] = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+            {
+                version = candidateVersion, sha256 = candidateExeHash, source_sha = sourceSha, source_tree_sha256 = sourceTreeSha256,
+            })),
+            ["app/VERSION.txt"] = Encoding.UTF8.GetBytes(candidateVersion + "\n"),
+            ["app/keep.txt"] = Encoding.UTF8.GetBytes("unchanged"),
+            ["app/worker/replace.txt"] = Encoding.UTF8.GetBytes("candidate content"),
+            ["app/worker/added.txt"] = Encoding.UTF8.GetBytes("new worker file"),
+            ["app/worker/models/pinned.bin"] = Encoding.UTF8.GetBytes("model bytes must stay pinned"),
+        };
+        var baselineBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+        {
+            ["VNText Studio.exe"] = baselineExe,
+            ["app/RELEASE.json"] = File.ReadAllBytes(Path.Combine(app, "RELEASE.json")),
+            ["app/VERSION.txt"] = Encoding.UTF8.GetBytes(baselineVersion + "\n"),
+            ["app/keep.txt"] = Encoding.UTF8.GetBytes("unchanged"),
+            ["app/worker/replace.txt"] = Encoding.UTF8.GetBytes("baseline content"),
+            ["app/worker/obsolete.txt"] = Encoding.UTF8.GetBytes("delete this file"),
+            ["app/worker/models/pinned.bin"] = Encoding.UTF8.GetBytes("model bytes must stay pinned"),
+        };
+        static Dictionary<string, object> Records(Dictionary<string, byte[]> files) => files.ToDictionary(
+            pair => pair.Key,
+            pair => (object)new { sha256 = HashBytes(pair.Value), size = pair.Value.LongLength },
+            StringComparer.Ordinal);
+        var targetRecords = Records(targetBytes);
+        var baseRecords = Records(baselineBytes);
+        var addRecords = new Dictionary<string, object>(StringComparer.Ordinal) { ["app/worker/added.txt"] = targetRecords["app/worker/added.txt"] };
+        var replaceRecords = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["VNText Studio.exe"] = targetRecords["VNText Studio.exe"],
+            ["app/RELEASE.json"] = targetRecords["app/RELEASE.json"],
+            ["app/VERSION.txt"] = targetRecords["app/VERSION.txt"],
+            ["app/worker/replace.txt"] = targetRecords["app/worker/replace.txt"],
+        };
+        var manifest = new
+        {
+            schema = 2, kind = "full-app", version = candidateVersion, source_sha = sourceSha,
+            source_tree_sha256 = sourceTreeSha256, notes = "test full-app update",
+            files = targetRecords, base_files = baseRecords, add_files = addRecords, replace_files = replaceRecords,
+            delete_files = new[] { "app/worker/obsolete.txt" },
+        };
+        var packagePath = Path.Combine(updates, "full-app-update-test.zip");
+        using (var archive = ZipFile.Open(packagePath, ZipArchiveMode.Create))
+        {
+            WriteZipEntry(archive, FullAppUpdateService.PackageManifestName, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(manifest)));
+            foreach (var name in addRecords.Keys.Concat(replaceRecords.Keys)) WriteZipEntry(archive, name, targetBytes[name]);
+        }
+        var sourcePath = Path.Combine(root, ".vntext-update-source.json");
+        File.WriteAllText(sourcePath, JsonSerializer.Serialize(new
+        {
+            updates_root = updates,
+            work_root = Path.Combine(root, ".update", "work"),
+            backup_root = Path.Combine(root, ".update", "backup"),
+            staging_root = Path.Combine(root, ".update", "staging"),
+            updater_path = Path.Combine(root, ".update", "updater.exe"),
+            log_path = Path.Combine(root, ".update", "update.log"),
+            fault_inject_interrupt_after_first_replace = faultInject,
+        }));
+        var feed = new
+        {
+            schema = 1, package_file = Path.GetFileName(packagePath), package_sha256 = HashFile(packagePath), manifest,
+        };
+        File.WriteAllText(Path.Combine(updates, FullAppUpdateService.FeedName), JsonSerializer.Serialize(feed));
+        return new FullAppUpdateFixture(root, updates, sourcePath, packagePath, baselineExeHash, candidateExeHash);
+    }
+
+    private static void DeleteFullAppUpdateFixture(FullAppUpdateFixture fixture)
+    {
+        if (Directory.Exists(fixture.Root)) Directory.Delete(fixture.Root, recursive: true);
+        if (Directory.Exists(fixture.UpdatesRoot)) Directory.Delete(fixture.UpdatesRoot, recursive: true);
+    }
+
+    private static string ReadFullAppUpdateLog(FullAppUpdateFixture fixture)
+    {
+        var path = Path.Combine(fixture.Root, ".update", "update.log");
+        return File.Exists(path) ? File.ReadAllText(path) : "<no updater log>";
+    }
+
+    private sealed record FullAppUpdateFixture(string Root, string UpdatesRoot, string SourcePath, string PackagePath,
+        string BaselineExeHash, string CandidateExeHash);
 
     private static UpdateFixture CreateUpdateFixture(
         string? candidateVersion = null,
