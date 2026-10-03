@@ -21,15 +21,18 @@ def _bootstrap_tests():
 TESTS, ROOT, _LIB = _bootstrap_tests()
 sys.path.insert(0, str(ROOT / "release"))
 import publish_full_app_update
-from work_paths import new_scope_id, register_artifact, work_temp_dir
+from work_paths import ambient_scope, new_scope_id, register_artifact, work_temp_dir
 sys.path.insert(0, str(TESTS / "tools"))
 from cleanup_work_artifacts import cleanup_after_test
 
 
 class FullAppUpdatePublisherTests(unittest.TestCase):
     def test_changed_worker_file_is_in_package_with_candidate_bytes(self):
-        scope = new_scope_id("full-app-publisher")
-        run_id = scope
+        ambient = ambient_scope()
+        scope = ambient["scope_id"]
+        run_id = ambient["run_id"]
+        if scope == "legacy":
+            scope = run_id = new_scope_id("full-app-publisher")
         work = work_temp_dir("full-app-publisher", scope_id=scope, run_id=run_id)
         register_artifact(
             artifact_id=f"full-app-publisher:{scope}", path=work,
@@ -110,6 +113,7 @@ class FullAppUpdatePublisherTests(unittest.TestCase):
                 outcome=outcome, scope_id=scope, run_id=run_id,
             )
         if outcome == "PASS":
+            self.assertTrue(report["ok"], report)
             self.assertFalse(work.exists(), report)
             self.assertFalse(report.get("errors"), report)
 

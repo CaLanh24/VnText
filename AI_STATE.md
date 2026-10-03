@@ -38,3 +38,17 @@
   bản cài thực tiếp tục **NOT VERIFIED**. `DEV_RUN/v01_audit`, `test-temp` và
   artifact chưa đủ ownership được giữ nguyên; scoped cleanup không chứng minh
   cleanup toàn checkout hoặc giải quyết lịch sử UNKNOWN.
+
+- Clone sạch tại `3d07265`: venv mới Python 3.12.14 từ runtime local, requirements
+  public qua PyPI/cache, pip install/check/inspect UTF-8 exit 0; SDK 8.0.424 và
+  SDK 10.0.401 có sẵn từ Microsoft; 10 model file khớp revision/ETag. Epoch verify
+  và cleanup preflight exit 0. DEV build 0 warning/error, smoke lỗi model exit 24
+  có diagnostic và smoke model thật exit 0; đây là DEV, không là candidate.
+- Full regression `3d07265`: 652 test, 0 fail/error, 7 skip, child exit 0 nhưng
+  wrapper exit 1 / cleanup REVIEW_REQUIRED. UNKNOWN là container rỗng
+  `tmp/full-app-publisher`: helper đăng ký RETAINED dưới scope riêng của test,
+  khác scope wrapper. Test được sửa kế thừa ambient scope và assert `report["ok"]`;
+  report cũ không đổi thành PASS. EXE DEV mặc định mang 1.0.0, nên project app được
+  sửa đọc VERSION.txt; override fixture vẫn riêng. Cần validation trên SHA sạch
+  mới sau các sửa này. Hai installer skip vẫn cần build/acceptance; Tk legacy và
+  bốn game opt-in skip không chứng minh acceptance sản phẩm.
