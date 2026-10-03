@@ -220,6 +220,21 @@ function Get-Sha256([string]$Path) {
     }
 }
 
+function Assert-WpfBrandAssets([string]$GeneratedRoot, [string]$SourceRoot) {
+    foreach ($relative in @(
+        "release\assets\vntext_studio.ico",
+        "wpf_app\VNText.Studio.App\Assets\vntext_studio.ico",
+        "wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_128.png",
+        "wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_256.png"
+    )) {
+        $generated = Join-Path $GeneratedRoot $relative
+        $source = Join-Path $SourceRoot $relative
+        if ((Get-Sha256 $generated) -ne (Get-Sha256 $source)) {
+            throw "Generated icon differs from tracked source: $relative"
+        }
+    }
+}
+
 function Get-TextSha256([string]$Text) {
     $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
     $digest = [System.Security.Cryptography.SHA256]::Create()
@@ -800,18 +815,7 @@ if (-not $SkipBuild) {
         $iconOutputRoot = Join-Path $DevRunRoot "_work\make_icon"
         & $Python -B (Join-Path $DevRoot "release\make_icon.py") --output-root $iconOutputRoot
         if ($LASTEXITCODE -ne 0) { throw "make_icon.py failed" }
-        $iconPairs = @(
-            @("release\assets\vntext_studio.ico", "release\assets\vntext_studio.ico"),
-            @("wpf_app\VNText.Studio.App\Assets\vntext_studio.ico", "wpf_app\VNText.Studio.App\Assets\vntext_studio.ico"),
-            @("wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_128.png", "wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_128.png"),
-            @("wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_256.png", "wpf_app\VNText.Studio.App\Assets\vntext_studio_logo_256.png"),
-            @("qml_ui\icons\logo.png", "qml_ui\icons\logo.png")
-        )
-        foreach ($pair in $iconPairs) {
-            $generated = Join-Path $iconOutputRoot $pair[0]
-            $source = Join-Path $DevRoot $pair[1]
-            if ((Get-Sha256 $generated) -ne (Get-Sha256 $source)) { throw "Generated icon differs from tracked source: $($pair[1])" }
-        }
+        Assert-WpfBrandAssets $iconOutputRoot $DevRoot
     }
     $wpfProj = Join-Path $DevRoot "wpf_app\VNText.Studio.App\VNText.Studio.App.csproj"
     $wpfObj = Join-Path $DevRunRoot "obj\VNText.Studio.App"

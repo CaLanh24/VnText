@@ -26,12 +26,38 @@ TESTS, ROOT, _LIB = _bootstrap_tests()
 sys.path.insert(0, str(ROOT / "release"))
 import package_installer
 import publish_owner_wpf_update
-from work_paths import new_scope_id, register_artifact
+from work_paths import new_scope_id, register_artifact, artifact_scope
 sys.path.insert(0, str(TESTS / "tools"))
 from cleanup_work_artifacts import cleanup_after_test
 
 
 class SetupPackageTests(unittest.TestCase):
+    def test_wpf_brand_assets_require_all_product_files_and_exact_hashes(self):
+        import shutil
+        names = ("release/assets/vntext_studio.ico",
+                 "wpf_app/VNText.Studio.App/Assets/vntext_studio.ico",
+                 "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_128.png",
+                 "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png")
+        generated = TESTS / "golden" / "_work" / f"wpf-brand-{uuid4().hex}"
+        with artifact_scope(generated, artifact_id=generated.name, kind="test_fixture",
+                            owner="test_setup_package.py", purpose="WPF brand integrity test"):
+            for name in names:
+                target = generated / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(ROOT / name, target)
+            command = f"Assert-WpfBrandAssets '{generated}' '{ROOT}'"
+            helpers = ["Get-Sha256", "Assert-WpfBrandAssets"]
+            result = self._publisher_call(helpers, command)
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            for name in names:
+                target = generated / name
+                original = target.read_bytes()
+                target.write_bytes(b"tampered")
+                self.assertNotEqual(0, self._publisher_call(helpers, command).returncode, name)
+                target.unlink()
+                self.assertNotEqual(0, self._publisher_call(helpers, command).returncode, name)
+                target.write_bytes(original)
+
     def _publisher_call(self, names, command):
         source = str(ROOT / "release" / "publish.ps1").replace("'", "''")
         selected = ",".join("'" + name + "'" for name in names)
