@@ -128,5 +128,8 @@ chọn gate. Publisher `publish.ps1` là local build, không upload/phát hành.
 build sau source commit sạch, epoch hợp lệ và cleanup complete <=1 GiB. Baseline
 WPF/full-app phải có version và payload thực, không tạo metadata giả hoặc nới
 validator để qua gate. Version package phải mới hơn baseline; version Owner chọn
-cho candidate phải khớp source/EXE/manifests. SDK/dependency/worker/model đầy đủ
+cho candidate phải khớp source/EXE/manifests. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app từ baseline mới.
+Dùng `publish.ps1 -SkipWpfUpdatePackage` để build Setup không kèm WPF delta
+version cao hơn chưa được chọn. Chỉ yêu cầu full-app delta khi baseline thực
+nhỏ hơn candidate và provenance/inventory khớp. SDK/dependency/worker/model đầy đủ
 không tự chứng minh Release PASS. Public stable GitHub update **NOT VERIFIED**.

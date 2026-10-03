@@ -1,8 +1,10 @@
 # DEV → RELEASE
 
-Chạy `release/publish.ps1 -WpfUpdateVersion <version>` để tạo `Setup.exe` và
-thư mục `Updates` tại `ReleaseRoot`. Bắt buộc chọn version WPF cao hơn version
-của Setup A mà publisher đang dựng.
+Chạy `release/publish.ps1 -SkipWpfUpdatePackage` để tạo Setup từ source hiện tại
+không kèm WPF compatibility delta. Chỉ dùng `-WpfUpdateVersion <version>` khi
+yêu cầu gói WPF riêng, và version đó phải cao hơn Setup baseline đang dựng.
+Full-app delta riêng cần `-FullAppUpdateBaselineRoot` có provenance, version cũ
+hơn candidate và toàn bộ inventory đúng baseline.
 Setup nhúng EXE WPF chính, runtime .NET riêng trong `app/dotnet/`,
 `VERSION.txt`, manifests và `app/worker/` cùng SHA256 inventory. Sau khi chọn
 thư mục cài, `VNText Studio.exe` và `Uninstall.exe` nằm ngay ở đó;
@@ -43,10 +45,10 @@ chỉ dọn file cũ khi manifest của bản cài trước sở hữu chúng.
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\release\publish.ps1 `
-  -WpfUpdateVersion <newer-version>
+  -SkipWpfUpdatePackage
 ```
 
-Tùy chọn: `-SkipTests`, `-BuildLegacy`. `-SkipBuild` không được hỗ trợ cho
+Tùy chọn: `-SkipTests`, `-BuildLegacy`, `-FullAppUpdateBaselineRoot`. `-SkipBuild` không được hỗ trợ cho
 publish Setup chuẩn vì mỗi lượt phải dựng WPF Update mới.
 Publisher dùng SDK .NET 10 ở `DEV_RUN\dotnet-sdk-10`, target runtime .NET 8
 và đóng runtime riêng trong `app/dotnet/` để EXE chạy không cần cài .NET ngoài.
@@ -62,14 +64,16 @@ giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đ�
 
 ## Chuẩn bị 0.1.2
 
-`v0.1` là bản public đầu tiên, `0.1.2` là source đang chuẩn bị. Publisher hiện
-cần `-WpfUpdateVersion` lớn hơn version Setup đang build; đặt cả hai 0.1.2 sẽ
-bị validator từ chối. Không nâng version hoặc tạo baseline giả để chạy qua gate.
-Bản v0.1 nhận WPF asset có version đúng stable tag; nhận bridge 0.1.2 rồi nhận
-full-app 0.1.2 bị strictly-newer gate chặn. Kế hoạch bridge 0.1.1 riêng trước
-full-app 0.1.2 hoặc Setup 0.1.2 cần quyết định Owner; thao tác publish chỉ sau
-ủy quyền riêng. `-FullAppUpdateBaselineRoot` cần baseline thực có inventory/hash
-và provenance; package provenance giả trong harness không là Release evidence.
+`v0.1` là bản public đầu tiên, `0.1.2` là source đang chuẩn bị. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app dùng từ baseline mới.
+Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
+`-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
+Không kết hợp switch này với `-WpfUpdateVersion`; gói được yêu cầu vẫn phải qua
+integrity/baseline/version validation. `-FullAppUpdateBaselineRoot` cần bản cài
+thực có inventory/hash và provenance; package dùng provenance giả trong harness
+không là Release evidence. Một gói full-app nội bộ 0.1.2 từ payload public v0.1
+có thể kiểm engine bằng helper mới; nó không chứng minh binary v0.1 tự update.
+Mọi package kiểm dùng version override phải ghi rõ test-only, nguồn và giới hạn;
+không upload hoặc coi là asset public đã nghiệm thu.
 
 DEV setup và danh sách prerequisite/gate nằm trong `docs/DEVELOPMENT.md`.
 Trước candidate: commit source/version sạch, epoch hợp lệ, scoped cleanup <=1GiB,

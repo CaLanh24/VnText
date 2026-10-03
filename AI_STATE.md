@@ -52,3 +52,8 @@
   sửa đọc VERSION.txt; override fixture vẫn riêng. Cần validation trên SHA sạch
   mới sau các sửa này. Hai installer skip vẫn cần build/acceptance; Tk legacy và
   bốn game opt-in skip không chứng minh acceptance sản phẩm.
+
+- Owner đã chọn Setup 0.1.2 cho người còn ở v0.1; full-app cập nhật từ baseline
+  mới. Không phát hành bridge riêng và không hứa một lần Setup cho baseline cũ.
+  Publisher đang được sửa để không bắt buộc tạo gói WPF version cao hơn Setup;
+  provenance/hash/model/data validators giữ nguyên. Chưa có candidate nghiệm thu.

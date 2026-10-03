@@ -14,6 +14,7 @@ param(
     [string]$GitHubRepository = "",
     [string]$ArtifactScopeId = "",
     [switch]$SkipTests,
+    [switch]$SkipWpfUpdatePackage,
     [switch]$SkipBuild,
     [switch]$BuildLegacy,
     [switch]$UsePreinstalledDependencies,
@@ -62,12 +63,20 @@ if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLeg
     throw "Isolated publish requires the focused preflight/build path: -SkipTests, WPF build enabled, and Python preview build disabled."
 }
 if ($SkipBuild) {
-    throw "Standard Setup publishing requires a fresh WPF Updates build; -SkipBuild is not supported."
+    throw "Standard Setup publishing requires a fresh WPF app build; -SkipBuild is not supported."
 }
-$wpfUpdateVersionMatch = [regex]::Match($WpfUpdateVersion, '^(\d+)\.(\d+)\.(\d+)(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?$')
-if (-not $wpfUpdateVersionMatch.Success) {
-    throw "WpfUpdateVersion must be an explicit semantic version such as 1.44.10-dev."
+function Get-WpfUpdateVersionNumeric([string]$Version, [bool]$SkipPackage) {
+    if ($SkipPackage) {
+        if (-not [string]::IsNullOrWhiteSpace($Version)) {
+            throw "SkipWpfUpdatePackage cannot be combined with WpfUpdateVersion."
+        }
+        return $null
+    }
+    $match = [regex]::Match($Version, '^(\d+)\.(\d+)\.(\d+)(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?$')
+    if (-not $match.Success) { throw "WpfUpdateVersion must be an explicit semantic version when requesting a WPF package." }
+    return "{0}.{1}.{2}.0" -f $match.Groups[1].Value, $match.Groups[2].Value, $match.Groups[3].Value
 }
+$WpfUpdateVersionNumeric = Get-WpfUpdateVersionNumeric $WpfUpdateVersion ([bool]$SkipWpfUpdatePackage)
 if ([string]::IsNullOrWhiteSpace($GitHubOwner) -ne [string]::IsNullOrWhiteSpace($GitHubRepository)) {
     throw "GitHubOwner and GitHubRepository must either both be supplied or both be blank."
 }
@@ -79,10 +88,6 @@ if (-not [string]::IsNullOrWhiteSpace($GitHubOwner)) {
         throw "GitHubOwner or GitHubRepository contains unsupported characters."
     }
 }
-if (-not [string]::IsNullOrWhiteSpace($GitHubOwner) -and [string]::IsNullOrWhiteSpace($FullAppUpdateBaselineRoot)) {
-    throw "FullAppUpdateBaselineRoot is required when configuring GitHub in-app update sources."
-}
-$WpfUpdateVersionNumeric = "{0}.{1}.{2}.0" -f $wpfUpdateVersionMatch.Groups[1].Value, $wpfUpdateVersionMatch.Groups[2].Value, $wpfUpdateVersionMatch.Groups[3].Value
 $DevRoot = Split-Path -Parent $PSScriptRoot
 $DevRoot = [System.IO.Path]::GetFullPath($DevRoot)
 $DevRunRoot = if ([string]::IsNullOrWhiteSpace($DevRunRoot)) { Join-Path $DevRoot "DEV_RUN" } else { $DevRunRoot }
@@ -217,6 +222,30 @@ function Get-Sha256([string]$Path) {
     } finally {
         $digest.Dispose()
         $stream.Dispose()
+    }
+}
+
+function Switch-UpdateFeed([string]$Pending, [string]$Current, [string]$Previous, [bool]$HasStaged, [bool]$HadPrevious) {
+    if ($HasStaged) {
+        if ($HadPrevious) { [System.IO.File]::Replace($Pending, $Current, $Previous) }
+        else { [System.IO.File]::Move($Pending, $Current) }
+        return $true
+    }
+    if ($HadPrevious) {
+        [System.IO.File]::Move($Current, $Previous)
+        return $true
+    }
+    return $false
+}
+
+function Restore-UpdateFeed([string]$Current, [string]$Previous, [string]$Failed, [bool]$HadPrevious) {
+    if ($HadPrevious -and (Test-Path -LiteralPath $Previous -PathType Leaf)) {
+        if (Test-Path -LiteralPath $Current -PathType Leaf) {
+            [System.IO.File]::Replace($Previous, $Current, $Failed)
+            if (Test-Path -LiteralPath $Failed) { Remove-Item -LiteralPath $Failed -Force -ErrorAction Stop }
+        } else { [System.IO.File]::Move($Previous, $Current) }
+    } elseif (-not $HadPrevious -and (Test-Path -LiteralPath $Current)) {
+        Remove-Item -LiteralPath $Current -Force -ErrorAction Stop
     }
 }
 
@@ -891,31 +920,33 @@ if (-not $SkipBuild) {
     if ($LASTEXITCODE -ne 0) { throw "WPF dotnet publish failed" }
     if (-not (Test-Path $wpfBuiltExe)) { throw "WPF build missing: $wpfBuiltExe" }
     Write-Host "Built WPF: $wpfBuiltExe" -ForegroundColor Green
-    Write-Host "Build WPF Updates candidate $WpfUpdateVersion..." -ForegroundColor Yellow
-    if (Test-Path -LiteralPath $wpfUpdatePublish) { Remove-Item -LiteralPath $wpfUpdatePublish -Recurse -Force }
-    & $dotnet publish $wpfProj `
-        -c Release -r win-x64 --self-contained false --no-restore `
-        -p:Version=$WpfUpdateVersion `
-        -p:InformationalVersion=$WpfUpdateVersion `
-        -p:IncludeSourceRevisionInInformationalVersion=false `
-        -p:AssemblyVersion=$WpfUpdateVersionNumeric `
-        -p:FileVersion=$WpfUpdateVersionNumeric `
-        -p:PublishSingleFile=true `
-        -p:AppHostRelativeDotNet=app/dotnet `
-        -p:IncludeNativeLibrariesForSelfExtract=false `
-        $targetsArg `
-        $wpfObjArg $wpfExtensionsArg $wpfOutputArg `
-        -o $wpfUpdatePublish
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $wpfUpdatePublish "VNText.Studio.App.exe"))) {
-        throw "WPF Updates candidate publish failed: $WpfUpdateVersion"
+    if (-not $SkipWpfUpdatePackage) {
+        Write-Host "Build WPF Updates candidate $WpfUpdateVersion..." -ForegroundColor Yellow
+        if (Test-Path -LiteralPath $wpfUpdatePublish) { Remove-Item -LiteralPath $wpfUpdatePublish -Recurse -Force }
+        & $dotnet publish $wpfProj `
+            -c Release -r win-x64 --self-contained false --no-restore `
+            -p:Version=$WpfUpdateVersion `
+            -p:InformationalVersion=$WpfUpdateVersion `
+            -p:IncludeSourceRevisionInInformationalVersion=false `
+            -p:AssemblyVersion=$WpfUpdateVersionNumeric `
+            -p:FileVersion=$WpfUpdateVersionNumeric `
+            -p:PublishSingleFile=true `
+            -p:AppHostRelativeDotNet=app/dotnet `
+            -p:IncludeNativeLibrariesForSelfExtract=false `
+            $targetsArg `
+            $wpfObjArg $wpfExtensionsArg $wpfOutputArg `
+            -o $wpfUpdatePublish
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $wpfUpdatePublish "VNText.Studio.App.exe"))) {
+            throw "WPF Updates candidate publish failed: $WpfUpdateVersion"
+        }
+        $wpfUpdateExe = Join-Path $wpfUpdatePublish "VNText.Studio.App.exe"
+        $wpfUpdateProductVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($wpfUpdateExe).ProductVersion
+        if ($null -ne $wpfUpdateProductVersion) { $wpfUpdateProductVersion = $wpfUpdateProductVersion.Split('+', 2)[0].Trim() }
+        if ($wpfUpdateProductVersion -ne $WpfUpdateVersion) {
+            throw "WPF Updates candidate executable version mismatch: expected $WpfUpdateVersion, found '$wpfUpdateProductVersion'."
+        }
+        Write-Host "Built WPF Updates candidate: $wpfUpdatePublish" -ForegroundColor Green
     }
-    $wpfUpdateExe = Join-Path $wpfUpdatePublish "VNText.Studio.App.exe"
-    $wpfUpdateProductVersion = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($wpfUpdateExe).ProductVersion
-    if ($null -ne $wpfUpdateProductVersion) { $wpfUpdateProductVersion = $wpfUpdateProductVersion.Split('+', 2)[0].Trim() }
-    if ($wpfUpdateProductVersion -ne $WpfUpdateVersion) {
-        throw "WPF Updates candidate executable version mismatch: expected $WpfUpdateVersion, found '$wpfUpdateProductVersion'."
-    }
-    Write-Host "Built WPF Updates candidate: $wpfUpdatePublish" -ForegroundColor Green
     Write-Host "`n[3b/5] Build patch installer..." -ForegroundColor Yellow
     $installerProj = Join-Path $DevRoot "wpf_app\VNText.PatchInstaller\VNText.PatchInstaller.csproj"
     $installerPublish = Join-Path $DevRunRoot "patch_installer_publish"
@@ -1102,6 +1133,11 @@ $manifest = [ordered]@{
     (New-Object System.Text.UTF8Encoding $false)
 )
 
+New-Item -ItemType Directory -Path $updatesStaging -Force | Out-Null
+if ($SkipWpfUpdatePackage) {
+    # A disposable workspace, not an executable/package placeholder.
+    New-Item -ItemType Directory -Path $wpfUpdatePublish -Force | Out-Null
+} else {
 Write-Host "Build immutable WPF package and Updates manifest..." -ForegroundColor Yellow
 $updatePublisher = Join-Path $DevRoot "release\publish_owner_wpf_update.py"
 & $Python -B $updatePublisher `
@@ -1112,6 +1148,8 @@ $updatePublisher = Join-Path $DevRoot "release\publish_owner_wpf_update.py"
     --source-sha $SourceSha `
     --notes "VNText Studio $WpfUpdateVersion (WPF update)"
 if ($LASTEXITCODE -ne 0) { throw "WPF Updates package generation failed" }
+
+}
 
 Write-Host "Rewrite portable pyvenv.cfg for final Release path..." -ForegroundColor Yellow
 & $Python (Join-Path $DevRoot "release\make_venv_portable.py") `
@@ -1277,29 +1315,34 @@ try {
         New-Item -ItemType Directory -Path $updatesRoot -ErrorAction Stop | Out-Null
     }
     $stagedFeedPath = Join-Path $updatesStaging "wpf-update-current.json"
-    if (-not (Test-Path -LiteralPath $stagedFeedPath -PathType Leaf)) { throw "Staged WPF Updates manifest is missing" }
-    $stagedFeed = Get-Content -LiteralPath $stagedFeedPath -Raw | ConvertFrom-Json
-    $packageFile = [string]$stagedFeed.package_file
-    $packageSha = [string]$stagedFeed.package_sha256
-    if ([System.IO.Path]::GetFileName($packageFile) -ne $packageFile -or $packageFile -notmatch '^wpf-update-.+\.zip$' -or $packageSha -notmatch '^[0-9a-f]{64}$') {
-        throw "Staged WPF Updates manifest has an unsafe package path or hash"
+    $hasStagedWpfFeed = Test-Path -LiteralPath $stagedFeedPath -PathType Leaf
+    if ([bool]$hasStagedWpfFeed -eq [bool]$SkipWpfUpdatePackage) {
+        throw "Staged WPF feed presence does not match the requested publisher mode"
     }
-    $stagedPackage = Join-Path $updatesStaging $packageFile
-    $releasePackage = Join-Path $updatesRoot $packageFile
-    $pendingPackage = Join-Path $updatesRoot ("." + $packageFile + ".pending")
-    if (-not (Test-Path -LiteralPath $stagedPackage -PathType Leaf) -or (Get-Sha256 $stagedPackage) -ne $packageSha) {
-        throw "Staged WPF Updates package is missing or has a SHA-256 mismatch"
-    }
-    if (Test-Path -LiteralPath $releasePackage) {
-        $packageItem = Get-Item -LiteralPath $releasePackage -Force
-        if ($packageItem.PSIsContainer -or (($packageItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) -or (Get-Sha256 $releasePackage) -ne $packageSha) {
-            throw "Immutable WPF Updates package collision: $releasePackage"
+    if ($hasStagedWpfFeed) {
+        $stagedFeed = Get-Content -LiteralPath $stagedFeedPath -Raw | ConvertFrom-Json
+        $packageFile = [string]$stagedFeed.package_file
+        $packageSha = [string]$stagedFeed.package_sha256
+        if ([System.IO.Path]::GetFileName($packageFile) -ne $packageFile -or $packageFile -notmatch '^wpf-update-.+\.zip$' -or $packageSha -notmatch '^[0-9a-f]{64}$') {
+            throw "Staged WPF Updates manifest has an unsafe package path or hash"
         }
-    } else {
-        if (Test-Path -LiteralPath $pendingPackage) { throw "Stale WPF package transaction file exists: $pendingPackage" }
-        Copy-Item -LiteralPath $stagedPackage -Destination $pendingPackage -ErrorAction Stop
-        if ((Get-Sha256 $pendingPackage) -ne $packageSha) { throw "Copied WPF Updates package hash mismatch" }
-        [System.IO.File]::Move($pendingPackage, $releasePackage)
+        $stagedPackage = Join-Path $updatesStaging $packageFile
+        $releasePackage = Join-Path $updatesRoot $packageFile
+        $pendingPackage = Join-Path $updatesRoot ("." + $packageFile + ".pending")
+        if (-not (Test-Path -LiteralPath $stagedPackage -PathType Leaf) -or (Get-Sha256 $stagedPackage) -ne $packageSha) {
+            throw "Staged WPF Updates package is missing or has a SHA-256 mismatch"
+        }
+        if (Test-Path -LiteralPath $releasePackage) {
+            $packageItem = Get-Item -LiteralPath $releasePackage -Force
+            if ($packageItem.PSIsContainer -or (($packageItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) -or (Get-Sha256 $releasePackage) -ne $packageSha) {
+                throw "Immutable WPF Updates package collision: $releasePackage"
+            }
+        } else {
+            if (Test-Path -LiteralPath $pendingPackage) { throw "Stale WPF package transaction file exists: $pendingPackage" }
+            Copy-Item -LiteralPath $stagedPackage -Destination $pendingPackage -ErrorAction Stop
+            if ((Get-Sha256 $pendingPackage) -ne $packageSha) { throw "Copied WPF Updates package hash mismatch" }
+            [System.IO.File]::Move($pendingPackage, $releasePackage)
+        }
     }
     $currentUpdateFeed = Join-Path $updatesRoot "wpf-update-current.json"
     $pendingUpdateFeed = Join-Path $updatesRoot ".wpf-update-current.json.pending"
@@ -1308,9 +1351,11 @@ try {
     if ((Test-Path -LiteralPath $pendingUpdateFeed) -or (Test-Path -LiteralPath $previousUpdateFeed) -or (Test-Path -LiteralPath $failedUpdateFeed)) {
         throw "Stale WPF Updates manifest transaction file exists under $updatesRoot"
     }
-    $stagedFeedSha = Get-Sha256 $stagedFeedPath
-    Copy-Item -LiteralPath $stagedFeedPath -Destination $pendingUpdateFeed -ErrorAction Stop
-    if ((Get-Sha256 $pendingUpdateFeed) -ne $stagedFeedSha) { throw "Copied WPF Updates manifest hash mismatch" }
+    if ($hasStagedWpfFeed) {
+        $stagedFeedSha = Get-Sha256 $stagedFeedPath
+        Copy-Item -LiteralPath $stagedFeedPath -Destination $pendingUpdateFeed -ErrorAction Stop
+        if ((Get-Sha256 $pendingUpdateFeed) -ne $stagedFeedSha) { throw "Copied WPF Updates manifest hash mismatch" }
+    }
     $hadPreviousUpdateFeed = Test-Path -LiteralPath $currentUpdateFeed -PathType Leaf
     if (Test-Path -LiteralPath $currentUpdateFeed) {
         $currentFeedItem = Get-Item -LiteralPath $currentUpdateFeed -Force
@@ -1386,12 +1431,7 @@ try {
     [System.IO.File]::Move($pendingSetup, $setupReleasePath)
     $finalSha = if (Test-Path -LiteralPath $setupReleasePath -PathType Leaf) { Get-Sha256 $setupReleasePath } else { "missing" }
     if ($finalSha -ne $setupSha) { throw "Installed Setup hash mismatch before WPF Updates manifest publication" }
-    if ($hadPreviousUpdateFeed) {
-        [System.IO.File]::Replace($pendingUpdateFeed, $currentUpdateFeed, $previousUpdateFeed)
-    } else {
-        [System.IO.File]::Move($pendingUpdateFeed, $currentUpdateFeed)
-    }
-    $updateFeedCommitted = $true
+    $updateFeedCommitted = Switch-UpdateFeed $pendingUpdateFeed $currentUpdateFeed $previousUpdateFeed ([bool]$hasStagedWpfFeed) ([bool]$hadPreviousUpdateFeed)
     if ($hasStagedFullAppFeed) {
         if ($hadPreviousFullAppFeed) {
             [System.IO.File]::Replace($pendingFullAppFeed, $currentFullAppFeed, $previousFullAppFeed)
@@ -1422,28 +1462,14 @@ try {
 } catch {
     if ($fullAppFeedCommitted) {
         try {
-            if ($hadPreviousFullAppFeed -and (Test-Path -LiteralPath $previousFullAppFeed -PathType Leaf)) {
-                if (Test-Path -LiteralPath $currentFullAppFeed -PathType Leaf) {
-                    [System.IO.File]::Replace($previousFullAppFeed, $currentFullAppFeed, $failedFullAppFeed)
-                    if (Test-Path -LiteralPath $failedFullAppFeed) { Remove-Item -LiteralPath $failedFullAppFeed -Force -ErrorAction Stop }
-                } else {
-                    [System.IO.File]::Move($previousFullAppFeed, $currentFullAppFeed)
-                }
-            } elseif (-not $hadPreviousFullAppFeed -and (Test-Path -LiteralPath $currentFullAppFeed)) {
-                Remove-Item -LiteralPath $currentFullAppFeed -Force -ErrorAction Stop
-            }
+            Restore-UpdateFeed $currentFullAppFeed $previousFullAppFeed $failedFullAppFeed ([bool]$hadPreviousFullAppFeed)
         } catch {
             Write-Warning "Could not restore previous full-app Updates manifest; recovery file: $previousFullAppFeed"
         }
     }
     if ($updateFeedCommitted) {
         try {
-            if ($hadPreviousUpdateFeed -and (Test-Path -LiteralPath $previousUpdateFeed -PathType Leaf)) {
-                [System.IO.File]::Replace($previousUpdateFeed, $currentUpdateFeed, $failedUpdateFeed)
-                if (Test-Path -LiteralPath $failedUpdateFeed) { Remove-Item -LiteralPath $failedUpdateFeed -Force -ErrorAction Stop }
-            } elseif (-not $hadPreviousUpdateFeed -and (Test-Path -LiteralPath $currentUpdateFeed)) {
-                Remove-Item -LiteralPath $currentUpdateFeed -Force -ErrorAction Stop
-            }
+            Restore-UpdateFeed $currentUpdateFeed $previousUpdateFeed $failedUpdateFeed ([bool]$hadPreviousUpdateFeed)
         } catch {
             Write-Warning "Could not restore previous WPF Updates manifest; recovery file: $previousUpdateFeed"
         }

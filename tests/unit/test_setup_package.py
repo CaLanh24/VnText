@@ -58,6 +58,64 @@ class SetupPackageTests(unittest.TestCase):
                 self.assertNotEqual(0, self._publisher_call(helpers, command).returncode, name)
                 target.write_bytes(original)
 
+    def test_setup_mode_rejects_ambiguous_or_invalid_wpf_versions(self):
+        helper = ["Get-WpfUpdateVersionNumeric"]
+        self.assertEqual(0, self._publisher_call(helper, "Get-WpfUpdateVersionNumeric '' $true").returncode)
+        for command in ("Get-WpfUpdateVersionNumeric '0.1.2' $true",
+                        "Get-WpfUpdateVersionNumeric '' $false",
+                        "Get-WpfUpdateVersionNumeric 'invalid' $false"):
+            self.assertNotEqual(0, self._publisher_call(helper, command).returncode, command)
+        valid = self._publisher_call(helper, "Get-WpfUpdateVersionNumeric '0.1.3' $false")
+        self.assertEqual(0, valid.returncode, valid.stdout + valid.stderr)
+        self.assertEqual("0.1.3.0", valid.stdout.strip())
+
+    def test_update_feed_switch_preserves_backup_and_fails_without_pending(self):
+        work = TESTS / "golden" / "_work" / f"feed-switch-{uuid4().hex}"
+        with artifact_scope(work, artifact_id=work.name, kind="test_fixture",
+                            owner="test_setup_package.py", purpose="Actual atomic feed switch and no-feed mode"):
+            work.mkdir()
+            pending, current, previous = (work / name for name in ("pending", "current", "previous"))
+            def switch(has_staged, had_previous):
+                return self._publisher_call(["Switch-UpdateFeed"],
+                    f"Switch-UpdateFeed '{pending}' '{current}' '{previous}' ${str(has_staged).lower()} ${str(had_previous).lower()}")
+            empty = switch(False, False)
+            self.assertEqual(0, empty.returncode, empty.stderr)
+            self.assertEqual("False", empty.stdout.strip())
+            self.assertFalse(current.exists())
+            current.write_bytes(b"old feed")
+            removed = switch(False, True)
+            self.assertEqual(0, removed.returncode, removed.stderr)
+            self.assertFalse(current.exists())
+            self.assertEqual(b"old feed", previous.read_bytes())
+            def restore(had_previous):
+                return self._publisher_call(["Restore-UpdateFeed"],
+                    f"Restore-UpdateFeed '{current}' '{previous}' '{work / 'failed'}' ${str(had_previous).lower()}")
+            rollback_removed = restore(True)
+            self.assertEqual(0, rollback_removed.returncode, rollback_removed.stderr)
+            self.assertEqual(b"old feed", current.read_bytes())
+            missing = switch(True, True)
+            self.assertNotEqual(0, missing.returncode)
+            self.assertEqual(b"old feed", current.read_bytes())
+            pending.write_bytes(b"new feed")
+            replaced = switch(True, True)
+            self.assertEqual(0, replaced.returncode, replaced.stderr)
+            self.assertEqual(b"new feed", current.read_bytes())
+            self.assertEqual(b"old feed", previous.read_bytes())
+            self.assertFalse(pending.exists())
+            rollback_replaced = restore(True)
+            self.assertEqual(0, rollback_replaced.returncode, rollback_replaced.stderr)
+            self.assertEqual(b"old feed", current.read_bytes())
+            self.assertFalse(previous.exists())
+            current.unlink()
+            pending.write_bytes(b"first feed")
+            created = switch(True, False)
+            self.assertEqual(0, created.returncode, created.stderr)
+            self.assertEqual(b"first feed", current.read_bytes())
+            self.assertFalse(previous.exists())
+            rollback_first = restore(False)
+            self.assertEqual(0, rollback_first.returncode, rollback_first.stderr)
+            self.assertFalse(current.exists())
+
     def _publisher_call(self, names, command):
         source = str(ROOT / "release" / "publish.ps1").replace("'", "''")
         selected = ",".join("'" + name + "'" for name in names)
@@ -300,7 +358,7 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             self.assertIn("$updatesStaging", publish_source)
             self.assertIn("GetVersionInfo($wpfUpdateExe).ProductVersion", publish_source)
             self.assertIn("$wpfUpdateProductVersion -ne $WpfUpdateVersion", publish_source)
-            feed_commit = publish_source.index("[System.IO.File]::Replace($pendingUpdateFeed, $currentUpdateFeed, $previousUpdateFeed)")
+            feed_commit = publish_source.index("$updateFeedCommitted = Switch-UpdateFeed")
             setup_hash_check = publish_source.index("if ((Get-Sha256 $pendingSetup) -ne $setupSha)")
             self.assertLess(setup_hash_check, feed_commit, "Updates feed must not replace its manifest before the new Setup hash is verified.")
             self.assertIn("WPF Updates retention:", publish_source)
