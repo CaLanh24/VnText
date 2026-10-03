@@ -20,7 +20,7 @@ Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/v
 - Harness/Release: thêm SDK .NET 10 tại `DEV_RUN/dotnet-sdk-10`; harness hiện pin
   runtime/ref pack 8.0.30 và apphost pack 10.0.12. Publisher còn cần matching
   .NET 8 core/WPF runtime + ref packs + hostfxr dưới Program Files, .NET Framework
-  `csc.exe`, Python 3.12.x portable, Pillow (`requirements-ui.txt`), pinned model,
+  `csc.exe`, Python 3.12.x portable, Pillow (`release/requirements-build.txt`), pinned model,
   baseline có provenance và registry/epoch hợp lệ. SDK 10 không thay SDK/runtime8.
 
 Nếu thiếu, báo **một danh sách gộp**, đường dẫn/version đã kiểm, gate bị chặn,
@@ -58,7 +58,7 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip inspect > DEV_RUN/cache/pip-inspect.json
 ```
 
-Release cần thêm `pip install -r requirements-ui.txt`. Không cần PyTorch/Argos/VinAI;
+Release cần thêm `pip install -r release/requirements-build.txt`. Không cần PyTorch/Argos/VinAI;
 CTranslate2 pin `4.8.1`. Ghi source URL, resolved version, install command/exit code;
 package metadata không thay thế quyền phân phối trong `THIRD_PARTY_NOTICES.md`.
 

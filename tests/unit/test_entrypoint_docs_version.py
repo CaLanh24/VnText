@@ -1,6 +1,7 @@
 """Regression checks for the shipped entrypoint, docs, and WPF version fallback."""
 
 from pathlib import Path
+import re
 import unittest
 
 
@@ -37,6 +38,11 @@ class EntrypointDocsVersionTests(unittest.TestCase):
         self.assertIn("--smoke-worker", development)
         self.assertIn("publish.ps1", development)
         self.assertIn("TEST_MATRIX.md", development)
+        # Every requirements path in the clone instructions must exist publicly.
+        requirement_paths = set(re.findall(r"(?:release/)?requirements[\w-]*\.txt", development))
+        self.assertTrue(requirement_paths)
+        for relative in requirement_paths:
+            self.assertTrue((ROOT / relative).is_file(), f"Missing documented prerequisite: {relative}")
         self.assertNotIn("DEV_RUN", readme + readme_vi)
         self.assertNotIn("-IncludeVinAI", readme + readme_vi + development)
         self.assertNotIn("-VinaiModelDir", readme + readme_vi + development)
