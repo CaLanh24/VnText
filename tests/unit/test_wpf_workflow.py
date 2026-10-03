@@ -108,7 +108,7 @@ def _build_versioned_exe_fixture(
         "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup>"
         "<OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework>"
         f"<Version>{version}</Version><InformationalVersion>{version}</InformationalVersion>"
-        "<AssemblyVersion>1.0.0.0</AssemblyVersion><FileVersion>1.0.0.0</FileVersion>"
+        f"<AssemblyVersion>{version}.0</AssemblyVersion><FileVersion>{version}.0</FileVersion>"
         "<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>"
         "</PropertyGroup></Project>\n",
         encoding="utf-8",
@@ -402,7 +402,7 @@ class WpfWorkflowTests(unittest.TestCase):
                     _build_versioned_exe_fixture(
                         baseline_root,
                         artifacts_root / "update-baseline",
-                        "1.0.0-dev",
+                        "1.0.0",
                         nuget_config,
                         layout_targets,
                     )

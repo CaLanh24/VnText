@@ -505,7 +505,7 @@ internal static class FullAppUpdateService
         using var release = JsonDocument.Parse(File.ReadAllText(releasePath));
         var releaseVersion = GetString(release.RootElement, "version");
         var exeHash = HashFile(exePath);
-        var productVersion = FileVersionInfo.GetVersionInfo(exePath).ProductVersion?.Split('+', 2)[0].Trim();
+        var productVersion = WpfUpdateService.ReadExecutableProductVersion(exePath);
         if (version != releaseVersion || version != productVersion || !files.TryGetValue("VNText Studio.exe", out var record) ||
             !FixedEquals(exeHash, record.Sha256) || !FixedEquals(exeHash, GetString(release.RootElement, "sha256")))
             throw new InvalidDataException("Installed executable, VERSION.txt and RELEASE.json disagree.");
@@ -523,7 +523,7 @@ internal static class FullAppUpdateService
             var exePath = Path.Combine(validationRoot, "VNText Studio.exe");
             using (var input = archive.GetEntry("VNText Studio.exe")!.Open())
             using (var output = new FileStream(exePath, FileMode.CreateNew, FileAccess.Write, FileShare.None)) input.CopyTo(output);
-            if (FileVersionInfo.GetVersionInfo(exePath).ProductVersion?.Split('+', 2)[0].Trim() != manifest.Version)
+            if (WpfUpdateService.ReadExecutableProductVersion(exePath) != manifest.Version)
                 throw new InvalidDataException("Full-app executable version does not match its manifest.");
             var versionBytes = ReadEntry(archive, "app/VERSION.txt");
             if (Encoding.UTF8.GetString(versionBytes).Trim() != manifest.Version)

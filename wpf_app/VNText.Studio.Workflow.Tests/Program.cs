@@ -88,6 +88,7 @@ internal static class Program
         Run("AnalyzeComplete_StaysOnExtractAndShowsEvidence", AnalyzeComplete_StaysOnExtractAndShowsEvidence, failures);
         Run("ReleaseManagedPaths_StayUnderInstallRoot", ReleaseManagedPaths_StayUnderInstallRoot, failures);
         Run("WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing", WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing, failures);
+        Run("WpfUpdate_ReadsVersionBeyondMaxPath", WpfUpdate_ReadsVersionBeyondMaxPath, failures);
         Run("WpfUpdate_InvalidOfferIsHiddenAndRejected", WpfUpdate_InvalidOfferIsHiddenAndRejected, failures);
         Run("WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup", WpfUpdate_FaultThenRetryIgnoresPriorStagingAndBackup, failures);
         Run("FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel", FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel, failures);
@@ -1471,6 +1472,27 @@ internal static class Program
         AssertFalse(WpfUpdateService.IsStrictlyNewerVersion("1.44.9-alpha", "1.44.9-dev"));
     }
 
+    private static void WpfUpdate_ReadsVersionBeyondMaxPath()
+    {
+        var candidate = Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")
+            ?? throw new InvalidOperationException("candidate fixture executable missing");
+        var root = TestTempRoot();
+        var nameLength = 265 - root.Length - 2 - "VNText Studio.exe".Length;
+        if (nameLength is < 1 or > 200)
+            throw new InvalidOperationException("test work root cannot create a 265-character executable path");
+        var directory = Path.Combine(root, new string('x', nameLength));
+        var longPath = Path.Combine(directory, "VNText Studio.exe");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.Copy(candidate, longPath);
+            AssertEqual(265, longPath.Length);
+            AssertEqual(HashFile(candidate), HashFile(longPath));
+            AssertEqual(ReadExecutableProductVersion(candidate), WpfUpdateService.ReadExecutableProductVersion(longPath));
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+    }
+
     private static void WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation()
     {
         if (!WpfUpdateService.TryParseStableTag("v0.1", out var normalized, out var version) ||
@@ -1853,12 +1875,12 @@ internal static class Program
         {
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
-            var firstCandidate = Directory.GetFiles(packageDirectory, "github-wpf-*.zip").Single();
+            var firstCandidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
 
             vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
 
-            var currentCandidates = Directory.GetFiles(packageDirectory, "github-wpf-*.zip");
+            var currentCandidates = Directory.GetFiles(packageDirectory, "github-update-*.zip");
             AssertFalse(File.Exists(firstCandidate));
             AssertEqual(1, currentCandidates.Length);
             AssertTrue(!string.Equals(firstCandidate, currentCandidates[0], StringComparison.OrdinalIgnoreCase));
@@ -1880,7 +1902,7 @@ internal static class Program
         {
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
-            var candidate = Directory.GetFiles(packageDirectory, "github-wpf-*.zip").Single();
+            var candidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
 
             vm.Dispose();
 
@@ -1972,7 +1994,7 @@ internal static class Program
             AssertEqual(GitHubUpdateState.InvalidPackage, result.State);
             AssertEqual(2, handler.Requests.Count);
             AssertFalse(handler.Requests.Contains(untrustedUrl));
-            AssertEqual(0, Directory.GetFiles(Path.Combine(rejected.Root, ".update", "work"), "github-wpf-*.zip").Length);
+            AssertEqual(0, Directory.GetFiles(Path.Combine(rejected.Root, ".update", "work"), "github-update-*.zip").Length);
         }
         finally { DeleteUpdateFixture(rejected); }
     }

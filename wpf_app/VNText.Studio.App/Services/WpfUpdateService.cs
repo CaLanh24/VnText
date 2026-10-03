@@ -579,7 +579,7 @@ public static class WpfUpdateService
             var exe = Path.Combine(root, "VNText Studio.exe");
             using var release = JsonDocument.Parse(File.ReadAllText(releasePath));
             var version = File.ReadAllText(versionPath).Trim();
-            var productVersion = FileVersionInfo.GetVersionInfo(exe).ProductVersion?.Split('+', 2)[0].Trim();
+            var productVersion = ReadExecutableProductVersion(exe);
             return version.Length > 0
                 && release.RootElement.GetProperty("version").GetString() == version
                 && productVersion == version
@@ -654,6 +654,16 @@ public static class WpfUpdateService
         return true;
     }
 
+    internal static string? ReadExecutableProductVersion(string path)
+    {
+        var fullPath = Path.GetFullPath(path);
+        if (fullPath.Length >= 260 && !fullPath.StartsWith(@"\\?\", StringComparison.Ordinal))
+            fullPath = fullPath.StartsWith(@"\\", StringComparison.Ordinal)
+                ? @"\\?\UNC\" + fullPath[2..]
+                : @"\\?\" + fullPath;
+        return FileVersionInfo.GetVersionInfo(fullPath).ProductVersion?.Split('+', 2)[0].Trim();
+    }
+
     private static bool TryReadInstalledVersion(string root, out string version)
     {
         version = "";
@@ -665,7 +675,7 @@ public static class WpfUpdateService
             version = File.ReadAllText(versionPath).Trim();
             if (!TryParseAppVersion(version, out _, out _)) return false;
             using var release = JsonDocument.Parse(File.ReadAllText(releasePath));
-            var productVersion = FileVersionInfo.GetVersionInfo(exePath).ProductVersion?.Split('+', 2)[0].Trim();
+            var productVersion = ReadExecutableProductVersion(exePath);
             return release.RootElement.GetProperty("version").GetString() == version && productVersion == version &&
                 FixedEquals(HashFile(exePath), release.RootElement.GetProperty("sha256").GetString() ?? "");
         }
@@ -908,7 +918,7 @@ public static class WpfUpdateService
         var baselineReleasePath = SafeTarget(root, "app/RELEASE.json");
         using var baselineRelease = JsonDocument.Parse(File.ReadAllText(baselineReleasePath));
         var baselineExePath = SafeTarget(root, "VNText Studio.exe");
-        var baselineProductVersion = FileVersionInfo.GetVersionInfo(baselineExePath).ProductVersion?.Split('+', 2)[0].Trim();
+        var baselineProductVersion = ReadExecutableProductVersion(baselineExePath);
         if (baselineRelease.RootElement.GetProperty("version").GetString() != baselineVersion ||
             baselineProductVersion != baselineVersion ||
             !FixedEquals(HashFile(baselineExePath), baselineRelease.RootElement.GetProperty("sha256").GetString() ?? ""))
@@ -985,7 +995,7 @@ public static class WpfUpdateService
             if (new FileInfo(validationExe).Length != manifest.Files["VNText Studio.exe"].Size ||
                 !FixedEquals(HashFile(validationExe), manifest.Files["VNText Studio.exe"].Sha256))
                 throw new InvalidDataException("Candidate executable changed while it was validated.");
-            var productVersion = FileVersionInfo.GetVersionInfo(validationExe).ProductVersion?.Split('+', 2)[0].Trim();
+            var productVersion = ReadExecutableProductVersion(validationExe);
             if (productVersion != manifest.Version)
                 throw new InvalidDataException("Candidate executable version does not match its manifest.");
         }
@@ -1020,7 +1030,7 @@ public static class WpfUpdateService
     {
         using var release = JsonDocument.Parse(File.ReadAllText(staged["app/RELEASE.json"]));
         var stagedVersion = File.ReadAllText(staged["app/VERSION.txt"]).Trim();
-        var productVersion = FileVersionInfo.GetVersionInfo(staged["VNText Studio.exe"]).ProductVersion?.Split('+', 2)[0].Trim();
+        var productVersion = ReadExecutableProductVersion(staged["VNText Studio.exe"]);
         if (stagedVersion != manifest.Version || productVersion != manifest.Version ||
             release.RootElement.GetProperty("version").GetString() != manifest.Version ||
             !FixedEquals(release.RootElement.GetProperty("sha256").GetString() ?? "", manifest.Files["VNText Studio.exe"].Sha256))
