@@ -1067,6 +1067,7 @@ internal static class FullAppUpdateService
                 RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
             };
             start.ArgumentList.Add("-m"); start.ArgumentList.Add("vntext_worker.worker_main");
+            WorkerPaths.ConfigureReleaseEnvironment(start.Environment);
             start.Environment["PYTHONDONTWRITEBYTECODE"] = "1";
             start.Environment["TEMP"] = start.Environment["TMP"] = Path.Combine(root, ".update", "health-temp");
             Directory.CreateDirectory(start.Environment["TEMP"]!);

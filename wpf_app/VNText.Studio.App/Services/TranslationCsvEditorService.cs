@@ -590,6 +590,7 @@ public static class TranslationCsvEditorService
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        WorkerPaths.ConfigureReleaseEnvironment(psi.Environment);
         psi.Environment["PYTHONUTF8"] = "1";
         psi.Environment["PYTHONIOENCODING"] = "utf-8";
 

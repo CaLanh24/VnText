@@ -127,6 +127,14 @@ public static class WorkerPaths
         environment["TRANSFORMERS_CACHE"] = Path.Combine(cache, "huggingface", "transformers");
         environment["TORCH_HOME"] = Path.Combine(cache, "torch");
         environment["VNTEXT_DIRECT_GPU_ROOT"] = Path.Combine(cache, "gpu");
+        // Execute bundled CPython directly: the Windows venv launcher requires
+        // rewriting pyvenv.cfg after relocation, which would invalidate the
+        // exact full-app baseline. Keep every shipped file immutable.
+        var worker = WorkerRoot();
+        environment["PYTHONHOME"] = Path.Combine(worker, "python");
+        environment["PYTHONPATH"] = Path.Combine(worker, ".venv", "Lib", "site-packages");
+        environment["PYTHONNOUSERSITE"] = "1";
+        environment["PYTHONDONTWRITEBYTECODE"] = "1";
     }
 
     public static string MainExePath()
@@ -174,7 +182,10 @@ public static class WorkerPaths
         if (File.Exists(portable))
         {
             if (IsReleaseLayout())
+            {
                 EnsurePortablePyvenvCfg(worker);
+                return Path.Combine(worker, "python", "python.exe");
+            }
             return portable;
         }
 
@@ -192,8 +203,8 @@ public static class WorkerPaths
     }
 
     /// <summary>
-    /// Keep pyvenv.cfg home pointed at worker/python (bundled), never system Python or a stale
-    /// absolute build path. Windows venv launcher requires an absolute home path.
+    /// Validate the shipped runtime without rewriting its hashed inventory.
+    /// Release callers execute bundled CPython with ConfigureReleaseEnvironment.
     /// </summary>
     public static void EnsurePortablePyvenvCfg(string workerRoot)
     {
@@ -206,28 +217,8 @@ public static class WorkerPaths
         if (!File.Exists(cfgPath))
             throw new InvalidOperationException($"Release pyvenv.cfg missing: {cfgPath}");
 
-        var version = "3.12.10";
-        foreach (var line in File.ReadAllLines(cfgPath))
-        {
-            if (line.StartsWith("version", StringComparison.OrdinalIgnoreCase))
-            {
-                var parts = line.Split('=', 2);
-                if (parts.Length == 2 && !string.IsNullOrWhiteSpace(parts[1]))
-                    version = parts[1].Trim();
-                break;
-            }
-        }
-
-        var home = Path.GetFullPath(bundled);
-        var desired =
-            $"home = {home}\n" +
-            "include-system-site-packages = false\n" +
-            $"version = {version}\n";
-        var existing = File.ReadAllText(cfgPath);
-        if (!string.Equals(existing.Replace("\r\n", "\n"), desired.Replace("\r\n", "\n"), StringComparison.Ordinal))
-            File.WriteAllText(cfgPath, desired);
-
-        // Hard fail if cfg still mentions system/build Python after rewrite.
+        if (!Directory.Exists(Path.Combine(workerRoot, ".venv", "Lib", "site-packages")))
+            throw new InvalidOperationException("Release worker site-packages missing.");
         var check = File.ReadAllText(cfgPath);
         if (check.Contains("Programs\\Python", StringComparison.OrdinalIgnoreCase)
             || check.Contains("Programs/Python", StringComparison.OrdinalIgnoreCase)

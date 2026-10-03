@@ -1400,6 +1400,12 @@ internal static class Program
         Directory.CreateDirectory(Path.Combine(worker, "vntext_worker"));
         Directory.CreateDirectory(Path.Combine(worker, ".venv", "Scripts"));
         File.WriteAllText(Path.Combine(worker, ".venv", "Scripts", "python.exe"), "fixture");
+        Directory.CreateDirectory(Path.Combine(worker, "python"));
+        Directory.CreateDirectory(Path.Combine(worker, ".venv", "Lib", "site-packages"));
+        File.WriteAllText(Path.Combine(worker, "python", "python.exe"), "bundled-runtime-fixture");
+        var cfg = Path.Combine(worker, ".venv", "pyvenv.cfg");
+        var cfgBytes = Encoding.UTF8.GetBytes("home = __VNText_INSTALL_ROOT__\\app\\worker\\python\ninclude-system-site-packages = false\nversion = 3.12.14\n");
+        File.WriteAllBytes(cfg, cfgBytes);
         File.WriteAllText(Path.Combine(root, WorkerPaths.MainExeName), "fixture");
         File.WriteAllText(Path.Combine(app, "VERSION.txt"), "1.0");
         var prior = Environment.CurrentDirectory;
@@ -1418,6 +1424,12 @@ internal static class Program
             WorkerPaths.ConfigureReleaseEnvironment(childEnvironment);
             AssertEqual(Path.Combine(data, "temp"), childEnvironment["TEMP"]);
             AssertEqual(Path.Combine(data, "tools"), childEnvironment["VNTEXT_RENPY_TOOL_ROOT"]);
+            AssertEqual(Path.Combine(worker, "python", "python.exe"), WorkerPaths.PythonExecutable());
+            AssertTrue(cfgBytes.SequenceEqual(File.ReadAllBytes(cfg)));
+            AssertEqual(Path.Combine(worker, "python"), childEnvironment["PYTHONHOME"]);
+            AssertEqual(Path.Combine(worker, ".venv", "Lib", "site-packages"), childEnvironment["PYTHONPATH"]);
+            AssertEqual("1", childEnvironment["PYTHONNOUSERSITE"]);
+            AssertEqual("1", childEnvironment["PYTHONDONTWRITEBYTECODE"]);
             using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
             AssertEqual(Path.Combine(data, "output"), vm.OutputPath);
             var partial = Path.Combine(work, "partial-release");

@@ -57,3 +57,19 @@
   mới. Không phát hành bridge riêng và không hứa một lần Setup cho baseline cũ.
   Publisher đang được sửa để không bắt buộc tạo gói WPF version cao hơn Setup;
   provenance/hash/model/data validators giữ nguyên. Chưa có candidate nghiệm thu.
+
+- Candidate nội bộ tại `6e5598f`: full 654 test, 0 fail/error, 7 skip,
+  child/wrapper 0, cleanup PASS; publisher exit/wrapper 0 và cleanup PASS,
+  Release verify + smoke hai cwd đạt. Payload 7.134 file; installer 2/2 và GUI
+  close 1/1 đạt trên executable lấy từ Setup. Hậu kiểm GUI phát hiện duy nhất
+  `app/worker/.venv/pyvenv.cfg` đổi token thành absolute install path, làm hỏng
+  exact baseline. Candidate không nghiệm thu. Runtime launcher đang sửa để
+  giữ inventory bất biến; cần gate trên SHA sạch mới. Setup UI thật/upgrade,
+  rollback/recovery exact candidate và stable GitHub vẫn NOT VERIFIED.
+- Sửa launcher bất biến: precommit focused WPF 7/7, affected release-verify
+  7/7; wrapper/child 0 và cleanup PASS, UNKNOWN 0. DEV build 0 warning/error,
+  smoke model vắng 24 có worker diagnostic, model thật 0. Probe Python bundled
+  trên payload public v0.1 import CT2/UnityPy/Marian thành công, cfg hash không
+  đổi; probe này không thay thế acceptance candidate mới. Một focused run ở
+  snapshot lồng sâu thất bại WinError 206; snapshot ngắn chạy đạt, không sửa
+  test long-path hay validator để bỏ qua lỗi.
