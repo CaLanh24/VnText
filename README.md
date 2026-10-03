@@ -21,6 +21,6 @@ Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nh�
 
 ## Mã nguồn và phát triển
 
-Phiên bản source hiện tại: `0.1.0` (phiên bản file Windows `0.1.0.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
+Phiên bản source hiện tại: `0.1.2` (phiên bản file Windows `0.1.2.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
 
 Hướng dẫn thiết lập môi trường phát triển và các giới hạn khi chạy test nằm trong [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Quyền sử dụng và ghi nhận dependency được nêu trong [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); mã nguồn được cấp phép theo [LICENSE](LICENSE).
