@@ -2005,6 +2005,30 @@ class CleanupLifecycleTests(unittest.TestCase):
     def test_canonical_wrapper_disposes_game_copy_after_each_terminal_outcome(self):
         with self.canonical_runner_harness() as (harness, runner_path, work):
             game_copy = work / "game_copy"
+            ready = harness / "fixture.ready"
+            ready_runner = harness / "ready_runner.py"
+            ready_runner.write_text(
+                "import sys, time\n"
+                "from pathlib import Path\n"
+                "sys.path.insert(0, 'tests/tools')\n"
+                "import run_with_cleanup as runner\n"
+                "original = runner.subprocess.Popen\n"
+                "def start_ready_child(command, **kwargs):\n"
+                "    proc = original(command, **kwargs)\n"
+                "    if len(command) > 2 and command[1] == '-c':\n"
+                "        deadline = time.monotonic() + 10\n"
+                "        while not Path('fixture.ready').is_file():\n"
+                "            if proc.poll() is not None:\n"
+                "                raise RuntimeError('fixture child exited before readiness')\n"
+                "            if time.monotonic() >= deadline:\n"
+                "                runner._request_stop(proc)\n"
+                "                raise RuntimeError('fixture readiness deadline exceeded')\n"
+                "            time.sleep(0.01)\n"
+                "    return proc\n"
+                "runner.subprocess.Popen = start_ready_child\n"
+                "sys.exit(runner.main())\n",
+                encoding="utf-8",
+            )
             cases = (
                 ("PASS", [], "raise SystemExit(0)", 0),
                 ("FAIL", [], "raise SystemExit(7)", 1),
@@ -2012,7 +2036,11 @@ class CleanupLifecycleTests(unittest.TestCase):
             )
             for outcome, runner_args, child_end, wrapper_exit in cases:
                 report_path = work / f"game_copy_{outcome.lower()}.json"
+                # The TIMEOUT child deliberately sets up slower than its run
+                # budget. The fixture-only launcher waits for registration before
+                # returning Popen, so the real runner's timed wait starts ready.
                 child_code = (
+                    ("import time; time.sleep(0.2); " if outcome == "TIMEOUT" else "") +
                     "import sys; from pathlib import Path; sys.path.insert(0, 'tests/lib'); "
                     "from work_paths import E2E_GAME_COPY, register_artifact; "
                     "E2E_GAME_COPY.mkdir(parents=True, exist_ok=True); "
@@ -2020,12 +2048,13 @@ class CleanupLifecycleTests(unittest.TestCase):
                     f"register_artifact(artifact_id='e2e_game_copy', path=E2E_GAME_COPY, kind='e2e_game_copy', "
                     "created_by='canonical wrapper test', owner='work_paths', "
                     "purpose='temporary game copy', lifecycle='PROTECTED'); "
+                    f"Path({str(ready)!r}).write_text('FIXTURE_READY', encoding='utf-8'); "
                     f"{child_end}"
                 )
                 result = subprocess.run(
                     [
                         sys.executable,
-                        str(runner_path),
+                        str(ready_runner if outcome == "TIMEOUT" else runner_path),
                         *runner_args,
                         "--report",
                         str(report_path),
@@ -2042,7 +2071,12 @@ class CleanupLifecycleTests(unittest.TestCase):
                 payload = json.loads(report_path.read_text(encoding="utf-8"))
                 self.assertEqual(outcome, payload["outcome"], result.stdout + result.stderr)
                 self.assertEqual(wrapper_exit, result.returncode)
+                self.assertEqual("EXITED", payload["child_process_state"])
+                self.assertIsNotNone(payload["child_exit_code"])
+                self.assertEqual("FIXTURE_READY", ready.read_text(encoding="utf-8"))
+                ready.unlink()
                 self.assertFalse(game_copy.exists())
+                self.assertIn("game_copy_disposal", payload["cleanup"], f"{outcome}: {payload}")
                 self.assertEqual(
                     {"path": str(game_copy), "removed": True, "ok": True},
                     payload["cleanup"]["game_copy_disposal"],
