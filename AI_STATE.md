@@ -12,3 +12,29 @@
 - Người dùng bản 1.45.x cần sao lưu dữ liệu và cài Setup 0.1, không tự cập nhật xuống version thấp hơn. Gói WPF 0.1.1 do publisher tạo trong môi trường build không được đăng lên Release 0.1. `Updates` local không phải feed GitHub.
 - Source Git không chứa `DEV_RUN`, `_work`, game, model hoặc artifact binary. Dữ liệu/evidence local không phải prerequisite hay bằng chứng PASS cho clone mới; giữ outcome hiện tại và không dựng lại lịch sử đã mất.
 - Owner chọn `0.1.2` cho source chuẩn bị gate updater toàn app. Đây chưa phải Release candidate đã nghiệm thu; chỉ chạy Release gates trên một commit sạch trong snapshot cô lập sau khi registry/epoch và cleanup đạt. Public stable-GitHub update vẫn `NOT VERIFIED`.
+
+## Chuẩn bị 0.1.2 — evidence đã ingest
+
+- Tại `e59c3aac67890bdede8312f681f247120ea8b686`: focused cleanup 74/74,
+  affected runner 3/3; full regression 651 test, 0 fail/error, 8 skip,
+  child/wrapper exit 0 và scoped cleanup PASS. Các skip: 2 installer và 1 GUI
+  chưa có executable build; 1 legacy Tk thiếu Tcl usable; 1 work-path và 3
+  worker-QA cần game opt-in. Installer/GUI là gate cần chạy sau build; external
+  game/visual/semantic acceptance vẫn theo phạm vi deferred của CONTRACTS.
+  Evidence này gắn riêng SHA đó, không xác nhận candidate/source sau sửa.
+- Publisher blocker QML tại `38123f94962ca96c82036535995f1da289f11ed9` đã sửa:
+  focused integrity 1/1, affected Setup package 5/5, exit 0 và cleanup PASS.
+  Giữ hash của cả bốn asset WPF; không tạo asset QML giả. Chưa chạy Release build
+  trên SHA này. Raw evidence giữ trong snapshot local, không đưa vào Git.
+- Smoke diagnostic thay đổi đang được kiểm bằng worker thật: model vắng trả 24
+  ở bước translate với error/summary, model hiện có trả 0 qua đủ năm bước;
+  đây là precommit DEV evidence, không phải nghiệm thu candidate.
+- Source v0.1 chỉ chọn asset WPF theo version tag; manifest/EXE phải khớp version.
+  Bridge 0.1.2 rồi full-app 0.1.2 không hợp lệ vì updater yêu cầu strictly newer.
+  Publisher hiện còn dùng Setup A 0.1.2 làm baseline WPF nên không thể tạo B
+  0.1.2 theo command cũ. Đã xin Owner chọn bridge 0.1.1 riêng trước full-app
+  0.1.2, hoặc dùng Setup 0.1.2 làm điểm bắt đầu full-app. Chưa quyết định/publish.
+- Không push/upload/sửa Release. Candidate 0.1.2 và stable GitHub update trên
+  bản cài thực tiếp tục **NOT VERIFIED**. `DEV_RUN/v01_audit`, `test-temp` và
+  artifact chưa đủ ownership được giữ nguyên; scoped cleanup không chứng minh
+  cleanup toàn checkout hoặc giải quyết lịch sử UNKNOWN.

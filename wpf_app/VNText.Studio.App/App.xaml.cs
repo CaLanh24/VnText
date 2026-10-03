@@ -62,7 +62,7 @@ public partial class App : Application
             int code;
             try
             {
-                code = Task.Run(SmokeWorker.Run).GetAwaiter().GetResult();
+                code = Task.Run(() => SmokeWorker.Run(ArgumentValue(e.Args, "--report"))).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {

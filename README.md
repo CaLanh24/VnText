@@ -15,7 +15,7 @@ Khả năng trích xuất và patch phụ thuộc định dạng cụ thể củ
 
 ## Cập nhật và gỡ cài đặt
 
-Ứng dụng có mã kiểm tra GitHub Releases và một luồng cập nhật giới hạn cho một số cập nhật chỉ gồm file WPF được cho phép. Cập nhật worker, runtime, installer hoặc file khác cần Setup mới. Luồng cập nhật GitHub trên một bản cài thực tế chưa được xác nhận; trong lúc chờ, hãy lấy Setup mới từ trang Releases. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
+`v0.1` là bản công khai đầu tiên. Source `0.1.2` đang chuẩn bị updater toàn app để thay WPF, worker, dependency và runtime an toàn; candidate và cập nhật qua stable GitHub trên bản cài thực chưa được nghiệm thu (**NOT VERIFIED**). Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; đường chuyển tiếp cần được kiểm chứng trước khi hứa cài Setup một lần. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
 
 Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nhận gỡ sẽ xóa toàn bộ nội dung trong thư mục cài, **bao gồm `data/` và dữ liệu do ứng dụng tạo**; thư mục cài còn lại nhưng rỗng. Sao lưu dữ liệu cần giữ trước khi gỡ.
 

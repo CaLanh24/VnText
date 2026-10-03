@@ -19,10 +19,12 @@ Publisher dựng WPF B từ cùng source, kiểm version thực của EXE, basel
 allowlist và hash; chép package bất biến đã xác minh trước rồi mới thay manifest
 hiện hành nguyên tử sau khi Setup mới được hash-check. Các package cũ được giữ
 và dung lượng retention được báo. Owner cài Setup, mở app, bấm **Kiểm tra cập
-nhật** rồi **Cập nhật**; không cần chạy script hay sửa cấu hình. Updater chỉ
+nhật** rồi **Cập nhật**; không cần chạy script hay sửa cấu hình. Updater WPF của baseline v0.1 chỉ
 thay `VNText Studio.exe`, `app/RELEASE.json`, `app/VERSION.txt`, có rollback và
-giữ `data/`. Nếu worker, runtime, installer hoặc file khác đổi thì cần Setup
-mới. Feed chỉ dùng từ thư mục `Updates` cạnh Setup trên máy này; đây không
+giữ `data/`. Source hiện có full-app updater thay worker/dependency/runtime với
+exact baseline inventory, health check và rollback theo CONTRACTS; chưa có
+Release candidate hoặc stable GitHub acceptance. Thay installer/uninstaller
+hoặc quyền hệ thống vẫn cần Setup mới. Feed chỉ dùng từ thư mục `Updates` cạnh Setup trên máy này; đây không
 phải nguồn cập nhật GitHub và không hỗ trợ thông báo stable release trên máy
 khác. WPF source đã có stable-release discovery trên GitHub và đường cập nhật
 WPF-only; unit/mock tests không thay thế acceptance trên app đã cài. Chưa có
@@ -57,3 +59,21 @@ atomically công bố feed; ReleaseRoot chỉ còn `Setup.exe` và `Updates`. B�
 version, source SHA, Setup/package SHA256, payload size và số package/byte được
 giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đạt mới gọi
 `RELEASE_VERIFIED`.
+
+## Chuẩn bị 0.1.2
+
+`v0.1` là bản public đầu tiên, `0.1.2` là source đang chuẩn bị. Publisher hiện
+cần `-WpfUpdateVersion` lớn hơn version Setup đang build; đặt cả hai 0.1.2 sẽ
+bị validator từ chối. Không nâng version hoặc tạo baseline giả để chạy qua gate.
+Bản v0.1 nhận WPF asset có version đúng stable tag; nhận bridge 0.1.2 rồi nhận
+full-app 0.1.2 bị strictly-newer gate chặn. Kế hoạch bridge 0.1.1 riêng trước
+full-app 0.1.2 hoặc Setup 0.1.2 cần quyết định Owner; thao tác publish chỉ sau
+ủy quyền riêng. `-FullAppUpdateBaselineRoot` cần baseline thực có inventory/hash
+và provenance; package provenance giả trong harness không là Release evidence.
+
+DEV setup và danh sách prerequisite/gate nằm trong `docs/DEVELOPMENT.md`.
+Trước candidate: commit source/version sạch, epoch hợp lệ, scoped cleanup <=1GiB,
+full regression + affected gates trên SHA cuối. Sau build: payload audit/hash,
+release verify, smoke hai cwd, installer/GUI và installed upgrade/rollback/recovery.
+Giữ raw command/output/exit code/skip/warning và lifecycle trước disposal. Không
+suy candidate đạt từ focused gate; public stable GitHub vẫn **NOT VERIFIED**.

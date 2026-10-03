@@ -1,67 +1,132 @@
 # Phát triển VNText Studio
 
-Tài liệu này mô tả thiết lập mới, độc lập với máy và checkout khác. Windows cần thiết để build/chạy ứng dụng WPF. Không sao chép virtualenv, cache NuGet, model, game hoặc artifact từ một máy khác.
+Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
+virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
+đầu tiên; source `0.1.2` đang chuẩn bị, chưa phải candidate đã nghiệm thu.
 
-## Yêu cầu
+## Kiểm prerequisite trước khi tải
 
-- Python 3.11 trở lên.
-- .NET SDK 8 để build ứng dụng WPF `net8.0-windows`.
-- .NET SDK 10 cho workflow harness và release tooling hiện tại.
-- Git và kết nối mạng cho lần cài package. CTranslate2 được pin trong `requirements.txt`; model không được đóng gói trong source.
+Python 3.11+ cho DEV; publisher hiện yêu cầu Python **3.12.x** khi đóng runtime.
+Kiểm `.venv` nếu có, `py -0p`, `Get-Command python,py,dotnet,git,pwsh`, và các
+runtime/cache đã có trên máy. Ghi đường dẫn thực, `python --version`,
+`dotnet --list-sdks`, `dotnet --list-runtimes`, `pip check` và version package.
+Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/version/hash
+được chứng minh; không dùng ZIP private hoặc suy provenance từ tên thư mục.
 
-## Python worker
+- Build DEV: Git, Python 3.11+, `requirements.txt`, SDK .NET 8 với WindowsDesktop
+  targeting pack. NuGet restore cần nguồn chính thức hoặc cache package đủ.
+- Smoke: các điều kiện DEV, model CT2/OPUS-MT đủ tokenizer/config/model, worker
+  Python đúng `.venv`, và output/work root ghi được. Thiếu model không phải PASS.
+- Harness/Release: thêm SDK .NET 10 tại `DEV_RUN/dotnet-sdk-10`; harness hiện pin
+  runtime/ref pack 8.0.30 và apphost pack 10.0.12. Publisher còn cần matching
+  .NET 8 core/WPF runtime + ref packs + hostfxr dưới Program Files, .NET Framework
+  `csc.exe`, Python 3.12.x portable, Pillow (`requirements-ui.txt`), pinned model,
+  baseline có provenance và registry/epoch hợp lệ. SDK 10 không thay SDK/runtime8.
 
-Từ thư mục gốc repository, tạo môi trường mới rồi cài dependency đã khai báo:
+Nếu thiếu, báo **một danh sách gộp**, đường dẫn/version đã kiểm, gate bị chặn,
+nguồn tải và quyền cần thiết. Không cài admin, thay ACL/profile, chấp thuận license
+hoặc tải model khi chưa được phép. Nguồn: [Python](https://www.python.org/downloads/windows/),
+[Microsoft .NET](https://dotnet.microsoft.com/download/dotnet),
+[script Microsoft](https://learn.microsoft.com/dotnet/core/tools/dotnet-install-script),
+[PyPI](https://pypi.org), [NuGet](https://api.nuget.org/v3/index.json).
+
+SDK 10.0.401 có thể cài local bằng script chính thức sau khi được phép:
 
 ```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+New-Item -ItemType Directory -Force DEV_RUN/cache | Out-Null
+Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile DEV_RUN/cache/dotnet-install.ps1
+Get-FileHash DEV_RUN/cache/dotnet-install.ps1 -Algorithm SHA256
+powershell -NoProfile -ExecutionPolicy Bypass -File DEV_RUN/cache/dotnet-install.ps1 -Version 10.0.401 -Architecture x64 -InstallDir DEV_RUN/dotnet-sdk-10 -NoPath -Verbose
+.\DEV_RUN\dotnet-sdk-10\dotnet.exe --list-sdks
 ```
 
-Chạy focused test Python theo phạm vi task và `TEST_MATRIX.md`, ví dụ:
+Giữ URL SDK thực trong raw output và đối chiếu SHA512 với release metadata của
+Microsoft; hash tự tính chỉ chứng minh file hiện có. Script local không tự cung
+cấp matching runtime8 dưới Program Files mà publisher hiện kiểm.
+
+## Tạo Python worker mới
+
+Chọn executable đã kiểm phiên bản (không giả định `py` có trên mọi máy):
 
 ```powershell
-python tests/unit/test_entrypoint_docs_version.py
+New-Item -ItemType Directory -Force DEV_RUN/cache | Out-Null
+# Nếu launcher có Python 3.12; có thể thay bằng đường dẫn Python 3.12 đã xác minh.
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe --version
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip check
+.\.venv\Scripts\python.exe -m pip inspect > DEV_RUN/cache/pip-inspect.json
 ```
 
-Một số kiểm tra dịch cần model OPUS-MT riêng và thời gian tải lớn. Model không nằm trong clone; chỉ lấy model theo quy trình/điều khoản của nguồn tương ứng. Test dùng dữ liệu game thật là opt-in, không thuộc unit suite mặc định.
+Release cần thêm `pip install -r requirements-ui.txt`. Không cần PyTorch/Argos/VinAI;
+CTranslate2 pin `4.8.1`. Ghi source URL, resolved version, install command/exit code;
+package metadata không thay thế quyền phân phối trong `THIRD_PARTY_NOTICES.md`.
 
-## WPF development app
-
-`DEV_RUN` là thư mục output local tổng quát, được ignore bởi Git; có thể dùng để
-build/run ứng dụng trong lúc phát triển và không đưa nội dung của nó vào commit.
-Build app từ repository root bằng .NET SDK 8 vào thư mục đó:
+Model sản phẩm khai báo tại `vntext/mt_ct2_constants.py`: repo
+`dekthedev/opus-mt-en-vi-ct2-int8`, revision
+`c22547827b876e8ee939d6a9363965e5c9f769e1`. Sau quyền tải model, dùng đúng pin:
 
 ```powershell
-dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN
+$env:VNTEXT_CT2_MODEL = "$PWD/DEV_RUN/cache/models/opus-mt-en-vi-int8"
+.\.venv\Scripts\python.exe -B -c "from vntext.mt_ct2_model import ensure_model; print(ensure_model())"
+$env:VNTEXT_CT2_NO_DOWNLOAD = '1'
+Get-ChildItem $env:VNTEXT_CT2_MODEL -Recurse -File | Get-FileHash -Algorithm SHA256
 ```
 
-Chạy app và kiểm tra worker:
+Giữ pin, log tải và inventory/hash. `ensure_model` chỉ kiểm `model.bin` có sẵn;
+không chứng minh cache cũ đúng revision. Release phải đối chiếu inventory model
+và license/provenance; model ngoài clone không phải source được commit.
+
+## Build DEV và smoke
+
+`DEV_RUN` ignored là output DEV. Không ghi đè bản cài/user data bên trong root này.
+Có thể dùng config NuGet riêng để tránh phụ thuộc profile cũ:
 
 ```powershell
+'<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>' | Set-Content DEV_RUN/cache/NuGet.Config
+$env:NUGET_PACKAGES = "$PWD/DEV_RUN/cache/nuget"
+$env:DOTNET_CLI_HOME = "$PWD/DEV_RUN/cache/dotnet-home"
+$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN --configfile DEV_RUN/cache/NuGet.Config
+$env:VNTEXT_WORKER_CWD = "$PWD"
+$env:VNTEXT_WORKER_PYTHON = "$PWD/.venv/Scripts/python.exe"
+$env:VNTEXT_DATA_ROOT = "$PWD/DEV_RUN/cache/dev-data"
 .\DEV_RUN\VNText.Studio.App.exe
-.\DEV_RUN\VNText.Studio.App.exe --smoke-worker
 ```
 
-Workflow harness được gọi qua Python và cần .NET SDK 10 cùng các input/runtime test được mô tả trong script. Xem `tests/README.md` và `TEST_MATRIX.md` để chọn gate phù hợp; command harness:
+Smoke báo JSON gồm `exit_code`, `failed_step`, error/summary của worker `complete`.
+Cancel và crash là phép thử chủ động nên sự kiện `ok=false` của hai bước đó là
+mong đợi; extract/translate/patch cần `ok=true` và assertion output thực đạt.
+Với WPF GUI executable, dùng tiến trình chờ và `--report` để giữ evidence:
 
 ```powershell
-python tests/unit/test_wpf_workflow.py
+$smoke = Start-Process -FilePath "$PWD/DEV_RUN/VNText.Studio.App.exe" -ArgumentList '--smoke-worker','--report',"`"$PWD/DEV_RUN/cache/smoke.json`"" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput DEV_RUN/cache/smoke.stdout.log -RedirectStandardError DEV_RUN/cache/smoke.stderr.log
+$smoke.ExitCode
+Get-Content DEV_RUN/cache/smoke.json
 ```
 
-## Release build
+Exit 24 là translate không thành công; đọc error/summary thực, không đổi thành
+PASS từ worker readiness. Lỗi ghi report trả 1. `cleanup_error` không được che;
+cleanup gate độc lập vẫn phải đạt. Lưu command, cwd, env liên quan không có secret,
+stdout/stderr, report và exit code thực. Smoke không thay acceptance GUI/installer.
 
-Release tooling cần .NET SDK 10. Dùng `TEST_MATRIX.md` để chọn build, smoke và
-acceptance gates phù hợp trước khi tạo package. Lệnh publisher local từ root
-repository:
+## Test và Release
+
+Test ghi artifact phải qua wrapper; đăng ký root trước tạo, giữ evidence ngoài
+payload trước disposal. Clone/snapshot, staging/candidate, installed copy cần owner,
+scope/lifecycle theo `CONTRACTS.md` §10a/b; private history vắng không là PASS/FAIL.
+Không dọn `test-temp`, `DEV_RUN/v01_audit` hoặc đường dẫn chưa đủ ownership.
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File release/publish.ps1 -WpfUpdateVersion 0.1.1
+.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p test_entrypoint_docs_version.py -v
+.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B tests/unit/test_wpf_workflow.py
 ```
 
-Publisher có thể ghi vào delivery directory local; kiểm tra options và boundary
-trong `release/publish.ps1`/`TEST_MATRIX.md` trước khi chạy. Lệnh này không upload
-hoặc tạo GitHub Release; thao tác publish ra ngoài cần Owner ủy quyền riêng.
-
-Build hoặc mock/harness PASS không xác nhận cài đặt, cập nhật GitHub, installer, game compatibility hay release. Mỗi kết luận phải nêu chính xác command và phạm vi đã chạy.
+Harness fixture version độc lập với version sản phẩm; readiness phải đạt trước
+bắt đầu timeout. Xem `tests/README.md`, `TEST_MATRIX.md`, `release/README.md` để
+chọn gate. Publisher `publish.ps1` là local build, không upload/phát hành. Chỉ
+build sau source commit sạch, epoch hợp lệ và cleanup complete <=1 GiB. Baseline
+WPF/full-app phải có version và payload thực, không tạo metadata giả hoặc nới
+validator để qua gate. Version package phải mới hơn baseline; version Owner chọn
+cho candidate phải khớp source/EXE/manifests. SDK/dependency/worker/model đầy đủ
+không tự chứng minh Release PASS. Public stable GitHub update **NOT VERIFIED**.

@@ -1,49 +1,77 @@
 using System.IO;
+using System.Text.Json;
 using VNText.Studio.App.Models;
 
 namespace VNText.Studio.App.Services;
 
 public static class SmokeWorker
 {
-    public static int Run()
+    public static int Run(string? reportPath = null)
     {
-        var cancelCode = RunSampleCancelSmoke();
-        if (cancelCode != 0)
-            return cancelCode;
-
-        var workRoot = PrepareWorkRoot(WorkerPaths.WorkArtifactsRoot());
+        var steps = new List<object>();
+        string? failedStep = null;
+        string? workRoot = null;
+        var code = 1;
+        int Step(string name, Func<Action<WorkerEvent>, int> run)
+        {
+            failedStep = name;
+            var events = new List<object>();
+            void Observe(WorkerEvent evt)
+            {
+                if (evt.Type is "complete" or "error")
+                    events.Add(new { type = evt.Type, id = evt.Id, ok = evt.Ok,
+                        error = evt.Error, summary = evt.Summary,
+                        diagnostic_stage = evt.DiagnosticStage,
+                        diagnostic_root_cause = evt.DiagnosticRootCause });
+            }
+            int result;
+            string? exception = null;
+            try { result = run(Observe); }
+            catch (Exception ex) { result = 1; exception = ex.ToString(); }
+            steps.Add(new { step = name, exit_code = result, events, exception });
+            if (result == 0) failedStep = null;
+            return result;
+        }
         try
         {
-            var extractCode = RunExtractSmoke(workRoot);
-            if (extractCode != 0)
-                return extractCode;
-
-            var translateCode = RunTranslateSmoke(workRoot);
-            if (translateCode != 0)
-                return translateCode;
-
-            var patchCode = RunPatchSmoke(workRoot);
-            if (patchCode != 0)
-                return patchCode;
-
-            return RunWorkerCrashSmoke();
+            code = Step("cancel", RunSampleCancelSmoke);
+            if (code == 0)
+            {
+                failedStep = "prepare_work_root";
+                workRoot = PrepareWorkRoot(WorkerPaths.WorkArtifactsRoot());
+                code = Step("extract", observe => RunExtractSmoke(workRoot, observe));
+                if (code == 0) code = Step("translate", observe => RunTranslateSmoke(workRoot, observe));
+                if (code == 0) code = Step("patch", observe => RunPatchSmoke(workRoot, observe));
+                if (code == 0) code = Step("crash", RunWorkerCrashSmoke);
+            }
+        }
+        catch (Exception ex)
+        {
+            code = 1;
+            steps.Add(new { step = failedStep, exit_code = code, exception = ex.ToString() });
         }
         finally
         {
-            try
+            string? cleanupError = null;
+            if (workRoot is not null)
             {
-                Directory.Delete(workRoot, recursive: true);
+                try { Directory.Delete(workRoot, recursive: true); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                { cleanupError = ex.ToString(); }
             }
-            catch (IOException)
+            string Report() => JsonSerializer.Serialize(new { schema = 1, ok = code == 0,
+                exit_code = code, failed_step = failedStep, steps, cleanup_error = cleanupError });
+            try { if (reportPath is not null) File.WriteAllText(reportPath, Report()); }
+            catch (Exception ex)
             {
-                // Smoke output is disposable; a locked child must not hide the
-                // functional smoke result or make the next run reuse it.
+                failedStep = "write_report";
+                code = 1;
+                steps.Add(new { step = failedStep, exit_code = code, exception = ex.ToString() });
+                Console.Error.WriteLine(ex);
             }
-            catch (UnauthorizedAccessException)
-            {
-                // See the IOException case above.
-            }
+            Console.WriteLine(Report());
         }
+        return code;
     }
 
     public static string PrepareWorkRoot(string artifactsRoot)
@@ -104,7 +132,7 @@ public static class SmokeWorker
         }
     }
 
-    private static int RunSampleCancelSmoke()
+    private static int RunSampleCancelSmoke(Action<WorkerEvent> observe)
     {
         using var host = new PythonWorkerHost();
         var ready = new ManualResetEventSlim(false);
@@ -113,6 +141,7 @@ public static class SmokeWorker
 
         host.EventReceived += (_, evt) =>
         {
+            observe(evt);
             switch (evt.Type)
             {
                 case "ready":
@@ -145,7 +174,7 @@ public static class SmokeWorker
         return 0;
     }
 
-    private static int RunExtractSmoke(string workRoot)
+    private static int RunExtractSmoke(string workRoot, Action<WorkerEvent> observe)
     {
         using var host = new PythonWorkerHost();
         var ready = new ManualResetEventSlim(false);
@@ -155,6 +184,7 @@ public static class SmokeWorker
 
         host.EventReceived += (_, evt) =>
         {
+            observe(evt);
             switch (evt.Type)
             {
                 case "ready":
@@ -199,7 +229,7 @@ public static class SmokeWorker
         return 0;
     }
 
-    private static int RunTranslateSmoke(string workRoot)
+    private static int RunTranslateSmoke(string workRoot, Action<WorkerEvent> observe)
     {
         using var host = new PythonWorkerHost();
         var ready = new ManualResetEventSlim(false);
@@ -208,6 +238,7 @@ public static class SmokeWorker
 
         host.EventReceived += (_, evt) =>
         {
+            observe(evt);
             switch (evt.Type)
             {
                 case "ready":
@@ -242,7 +273,7 @@ public static class SmokeWorker
         return 0;
     }
 
-    private static int RunPatchSmoke(string workRoot)
+    private static int RunPatchSmoke(string workRoot, Action<WorkerEvent> observe)
     {
         using var host = new PythonWorkerHost();
         var ready = new ManualResetEventSlim(false);
@@ -252,6 +283,7 @@ public static class SmokeWorker
 
         host.EventReceived += (_, evt) =>
         {
+            observe(evt);
             switch (evt.Type)
             {
                 case "ready":
@@ -309,7 +341,7 @@ public static class SmokeWorker
         return 0;
     }
 
-    private static int RunWorkerCrashSmoke()
+    private static int RunWorkerCrashSmoke(Action<WorkerEvent> observe)
     {
         using var host = new PythonWorkerHost();
         var ready = new ManualResetEventSlim(false);
@@ -318,6 +350,7 @@ public static class SmokeWorker
 
         host.EventReceived += (_, evt) =>
         {
+            observe(evt);
             switch (evt.Type)
             {
                 case "ready":

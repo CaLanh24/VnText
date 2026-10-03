@@ -286,5 +286,5 @@ Owner explicitly defers real-game E2E and defects found there to a later version
 
 - Không có test tự động riêng mô phỏng double-click UI thật; WPF harness/build và Release smoke không thay thế hoàn toàn kiểm tra pixel/click thủ công.
 - Chưa có active Ren’Py full-game E2E trong runtime test matrix; native unit/read-back/delivery coverage không thay thế exact external game và Release evidence.
-- `app.py` giữ QML branch chỉ cho explicit legacy selection và gọi `qml_ui.bridge`, nhưng source hiện chỉ có asset `qml_ui/icons/logo.png`; QML-ready path là UNKNOWN cho tới khi bridge tồn tại và `--release-verify-qml` PASS. Shipped/default UI là WPF.
+- `app.py` giữ QML branch chỉ cho explicit legacy selection và gọi `qml_ui.bridge`, nhưng source public hiện không có `qml_ui.bridge` hoặc `qml_ui/icons/logo.png`; QML-ready path là UNKNOWN cho tới khi bridge tồn tại và `--release-verify-qml` PASS. Shipped/default UI là WPF.
 - Worker tests còn `ResourceWarning` liên quan pipe/process theo AI_STATE; không tự sửa trong context task.
