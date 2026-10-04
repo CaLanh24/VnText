@@ -80,6 +80,7 @@ internal static class Program
         Run("TranslateCsvSelection_InvalidKeepsCurrent", TranslateCsvSelection_InvalidKeepsCurrent, failures);
         Run("CompletionNotification_ExactlyOncePerOutcome", CompletionNotification_ExactlyOncePerOutcome, failures);
         Run("ReleaseVerifyRunner_ForwardsReport", ReleaseVerifyRunner_ForwardsReport, failures);
+        Run("ReleaseVerifyRunner_ValidatesExactPortablePythonHome", ReleaseVerifyRunner_ValidatesExactPortablePythonHome, failures);
         Run("WorkerPaths_FallsBackFromUnusableArtifactsRoot", WorkerPaths_FallsBackFromUnusableArtifactsRoot, failures);
         Run("SmokeWorker_UsesFreshWorkPath", SmokeWorker_UsesFreshWorkPath, failures);
         Run("SmokeWorker_FindsLegacyPatchOutput", SmokeWorker_FindsLegacyPatchOutput, failures);
@@ -1285,6 +1286,21 @@ internal static class Program
         AssertTrue(notifications[0].Message.Contains("Lấy text"));
         AssertTrue(notifications[1].Message.Contains("pending 2"));
         AssertEqual("CSV lỗi", notifications[2].Message);
+    }
+
+    private static void ReleaseVerifyRunner_ValidatesExactPortablePythonHome()
+    {
+        var work = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT")
+            ?? throw new InvalidOperationException("Portable-home test needs its owned work root.");
+        var bundled = Path.GetFullPath(Path.Combine(work, "portable-home", "python"));
+        AssertTrue(ReleaseVerifyRunner.PortablePythonHomeMatches("home = " + bundled + "\nversion = 3.12.14\n", bundled));
+        AssertTrue(ReleaseVerifyRunner.PortablePythonHomeMatches("home = __VNText_INSTALL_ROOT__\\app\\worker\\python\n", bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("home = __VNText_INSTALL_ROOT__\\outside\\python\n", bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("home = __VNText_INSTALL_ROOT__\\app\\worker\\python\\extra\n", bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("# " + bundled + "\nhome = C:\\other-python\n", bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("home = ..\\python\n", bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("home = " + bundled + "\nhome = " + bundled, bundled));
+        AssertFalse(ReleaseVerifyRunner.PortablePythonHomeMatches("version = 3.12.14\n", bundled));
     }
 
     private static void ReleaseVerifyRunner_ForwardsReport()

@@ -8,6 +8,27 @@ namespace VNText.Studio.App.Services;
 
 public static class ReleaseVerifyRunner
 {
+    public static bool PortablePythonHomeMatches(string cfgText, string bundledHome)
+    {
+        var homes = cfgText.Split('\n')
+            .Select(line => line.Split('=', 2))
+            .Where(parts => parts.Length == 2 && string.Equals(parts[0].Trim(), "home", StringComparison.OrdinalIgnoreCase))
+            .Select(parts => parts[1].Trim()).ToArray();
+        if (homes.Length != 1) return false;
+        // Publisher writes this exact immutable token before hashing the payload.
+        // Release workers execute bundled CPython directly with PYTHONHOME;
+        // relocation must not rewrite shipped pyvenv.cfg or its baseline hash.
+        if (homes[0] == @"__VNText_INSTALL_ROOT__\app\worker\python") return true;
+        if (!Path.IsPathFullyQualified(homes[0])) return false;
+        try
+        {
+            return string.Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(homes[0])),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(bundledHome)), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (ArgumentException) { return false; }
+        catch (NotSupportedException) { return false; }
+    }
+
     private static int WriteReleaseVersion(string? reportPath)
     {
         var version = (File.Exists(WorkerPaths.MainExePath())
@@ -112,7 +133,7 @@ public static class ReleaseVerifyRunner
                 Console.Error.WriteLine("Release pyvenv.cfg still references system/build Python paths.");
                 return 1;
             }
-            if (!cfgText.Contains(Path.Combine(worker, "python"), StringComparison.OrdinalIgnoreCase))
+            if (!PortablePythonHomeMatches(cfgText, Path.Combine(worker, "python")))
             {
                 Console.Error.WriteLine("Release pyvenv.cfg home must point at worker/python.");
                 return 1;

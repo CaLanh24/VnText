@@ -2,6 +2,21 @@
 
 ## Stable update 0.1.3 đang chuẩn bị (2026-10-04)
 
+- Source52ad5e7: prospective epoch trong s13 được Owner duyệt tại Brain
+  turn01a10716; verify/full679tests,0fail/error,8skip,child/wrapper0,cleanupPASS.
+  Snapshot terminal đã preserve lossless rồi dispose exit0. Raw lượt lỗi đầu
+  và cấu hình remediation vẫn giữ; WPF0x80070497 chưa chứng minh root cause,
+  không tái hiện ở focused và full lượt cuối, không sửa updater theo suy đoán.
+- Package source52ad5e7 b19b556d (1978170byte) KHÔNG ĐƯỢC publish: actual
+  release-verify exit1 vì guard chỉ nhận home tuyệt đối, trái token immutable
+  mà publisher ghi trong Setup public. Sửa đúng ReleaseVerifyRunner và thêm
+  harness positive/negative home checks; không sửa package/path/model validator.
+  Focused/affected23/23 và DEV build/smoke0 trước commit phần sửa. Candidate
+  phải build và chạy lại gates trên source sạch cuối sau phần sửa này.
+- GUI/patch installer trên candidate52ad5e7 đạt3/3,child/wrapper0,cleanupPASS
+  ở lượt cuối; wrapper1 đầu giữ nguyên do caller chưa khai báo3mutable dirs.
+  Staging lỗi đã dispose trong đúng scope; baseline stable-012 vẫn pristine.
+
 - Owner chọn0.1.3 tại Brain turn01a106e6, mục tiêu full-app update thực từ
   Setup0.1.2 qua nút GitHub. Publish sau gates và Brain review; không dùng lại
   package/source test-only f314a52. Version owner đồng bộ, fixture version riêng.

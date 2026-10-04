@@ -300,6 +300,14 @@ trong disposable fixture.
 
 ### Prospective portable Release acceptance
 
+Release verification reads the single `home` field in shipped `pyvenv.cfg`.
+It must equal the bundled `worker/python` absolute path or the publisher's
+exact token `__VNText_INSTALL_ROOT__\app\worker\python`; duplicate home fields,
+relative paths, altered tokens and unrelated absolute paths are rejected.
+The token is immutable inventory metadata: Release workers execute bundled
+CPython with the pinned `PYTHONHOME`/site-packages environment, without
+rewriting the configuration after installation or update.
+
 This tracked acceptance contract applies to a portable RC with a new prospective
 evidence epoch created from the current public checkout. It does not depend on a
 private epoch or incident registry; the current initialization statement described above is still required by the helper. Historical private evidence
