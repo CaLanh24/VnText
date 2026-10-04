@@ -1,5 +1,24 @@
 # Trạng thái hiện tại — VNText Studio
 
+## Setup 0.1.2 public prerelease (2026-10-04)
+
+- Owner yêu cầu tải thử Setup mới tại Brain turn01a106d0. Đã publish
+  [v0.1.2 prerelease](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2),
+  không stable/latest; tag đúng candidate source060180f8ba6c4c970dab7f3261d65b5c5d654f95.
+- [Setup.exe](https://github.com/CaLanh24/VnText/releases/download/v0.1.2/Setup.exe)
+  221.787.648byte, SHA256b374c2e24293d5a8bf9aa5e4b08863f97cde6ab61a6238eaf1fe659a529826e5.
+  Upload/create và API read-back exit0;6assets size/digest khớp local: Setup,
+  SHA256SUMS, RELEASE.json, payload-manifest, candidate-manifest và notices.
+  Metadata/notices lấy từ chính Setup;7133manifest records khớp evidence.
+- v0.1 tag/assets/metadata và latest giữ nguyên. Không upload full-app delta
+  baselinev0.1 hoặc test-only013. Không rebuild/copy Setup/environment.
+  Receipt tại DEV_RUN/candidate-0.1.2/publication/publication-summary.json;
+  cleanup pre/post upload exit0/PASS, whole-root cap1+5GiB vẫn đạt.
+- Bản thử chưa RELEASE_VERIFIED: Setup upgrade process exit UNKNOWN,
+  uninstall UI/native runtime version migration chưa nghiệm thu. Public stable
+  GitHub updater NOT VERIFIED; app bỏ qua prerelease. Backup data trước nâng cấp;
+  uninstall xóa cả data. Đây là quyền publish bản thử, không quyền promote stable.
+
 ## Source prepublication review (2026-10-04)
 
 - Owner yêu cầu tự kiểm/hoàn thiện và đẩy GitHub tại Brain turn01a106a1;
