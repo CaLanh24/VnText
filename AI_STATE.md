@@ -1,5 +1,32 @@
 # Trạng thái hiện tại — VNText Studio
 
+## Source prepublication review (2026-10-04)
+
+- Owner yêu cầu tự kiểm/hoàn thiện và đẩy GitHub tại Brain turn01a106a1;
+  scope hiện tại là source push sau Brain review, chưa upload/publish Release.
+  Chỉ thị không-push cũ trong chronology bên dưới không còn là quyền hiện tại.
+- Remote read ngoài sandbox: main0958358, v0.1 tag4d22170; gh api user trả
+  CaLanh24. Sandbox credential/401 failures không chứng minh login hỏng.
+  Main là descendant của remote, không force/rewrite/config change.
+- Candidate giữ SHA060180f/hash riêng: Setup b374c2e2 (221.787.648byte),
+  full-app757e78cc (14.131.877byte); không relabel theo HEAD tooling/docs.
+  Raw full656/0error/7skip và publisher/verify/two-cwd smoke đã đối chiếu;
+  installer2/2 và GUI1/1 sau build khép3 executable-dependent skips,4 external
+  Unity/game opt-in vẫn deferred. Build có2 sacremoses warnings và thông báo
+  thiếu optional PyTorch; không cài PyTorch cho routeCT2.
+- Setup upgrade audit7133files không mismatch, data fixture giữ nguyên;
+  process exit vẫn UNKNOWN, không suy exit0 từ báo cáo Owner/cài thành công.
+  Full-app test-only013 sourcef314a52 thay python312.zip, giữ23model/data/
+  uninstaller, smoke0; đổi phiên bản native Python/.NET và stable GitHub button
+  acceptance chưa chứng minh. Studio Setup uninstall UI chưa có acceptance.
+- Bổ sung2 prerequisite-negative fixtures cho bootstrap; focused/affected33test,
+  0fail/error/skip,exit0. Đây là modeled missing dependency/tool detection,
+  không VM/fresh-machine install. Production bootstrap/runtime không đổi.
+  Bounded tracked audit370file: không runtime/build/cache/log/game artifact
+  paths hoặc credential-pattern hits; không claim exhaustive secret audit.
+- Packet/raw audit: `.scratch/prepublication`; không tạo environment/candidate,
+  tải/cài dependency hoặc sửa Release. Public GitHub update NOT VERIFIED.
+
 ## Public DEV bootstrap (2026-10-04)
 
 - Owner yêu cầu triển khai kế hoạch sau cleanup tại Brain turn01a105cc;

@@ -124,6 +124,36 @@ class DevBootstrapTests(unittest.TestCase):
     def test_smoke_cleanup_error_cannot_pass(self):
         self.assertFalse(dev.smoke_success({"schema": 1, "ok": True, "exit_code": 0, "cleanup_error": "locked"}))
 
+    def test_missing_runtime_sdk_and_model_are_one_actionable_list(self):
+        inventory = {"root": str(dev.ROOT), "complete": True, "within_limit": True}
+        with patch.object(dev, "discover_python", return_value=(None, [])), \
+             patch.object(dev, "run", return_value=receipt("", 1)), \
+             patch.object(dev, "quota", return_value=(inventory, True)), \
+             patch.object(Path, "is_file", return_value=False), \
+             patch.object(Path, "is_dir", return_value=False):
+            result = dev.preflight(model="missing-model", gate="smoke")
+        items = result["missing"]
+        self.assertTrue(any(item["item"] == "Python 3.11+" for item in items))
+        self.assertTrue(any(item["item"] == "SDK 8 + WindowsDesktop targeting pack" for item in items))
+        self.assertTrue(any(item["item"] == "WPF runtime 8" for item in items))
+        self.assertTrue(any(item["gate"] == "smoke" and item["item"] == list(dev.MODEL_FILES) for item in items))
+        self.assertTrue(all(item["permission"] for item in items))
+
+    def test_missing_packages_block_before_apply_without_pip_install(self):
+        inventory = {"root": str(dev.ROOT), "complete": True, "within_limit": True}
+        identity = {"path": "selected-python", "version": [3, 12, 14]}
+        with patch.object(dev, "discover_python", return_value=(identity, [])), \
+             patch.object(dev, "requirements", return_value=({"missing": ["ctranslate2==4.8.1"], "resolved": {}}, receipt())), \
+             patch.object(dev, "run", return_value=receipt("", 1)) as command, \
+             patch.object(dev, "quota", return_value=(inventory, True)), \
+             patch.object(Path, "is_file", return_value=False), \
+             patch.object(Path, "is_dir", return_value=False):
+            result = dev.preflight()
+        self.assertTrue(any(item["item"] == ["ctranslate2==4.8.1"] for item in result["missing"]))
+        calls = [call.args[0] for call in command.call_args_list]
+        self.assertIn(["selected-python", "-B", "-m", "pip", "check"], calls)
+        self.assertFalse(any("install" in args for args in calls))
+
 
 if __name__ == "__main__":
     unittest.main()
