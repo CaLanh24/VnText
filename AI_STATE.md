@@ -12,11 +12,18 @@
   all-file hashes khớp sau move; r12i và v01_audit/installed không đổi hash.
 - 14/15 root disposal hoàn tất. Remaining root rc-14840e5-source chỉ còn wheel
   11.090 byte: Remove-Item thường và extended-length đều Access denied; ACL
-  query cũng bị từ chối. Không sửa ACL/bypass; giữ raw errors/receipts.
-- Complete main-root inventory sau tests: non-exempt 761.249.773 byte,
+  query cũng bị từ chối. Owner turn01a105b5 duyệt ACL exact file/cha; cấp
+  quyền cha thành công, cấp quyền file vẫn Access denied, deletion vẫn thất
+  bại. Chưa take ownership/admin escalation; quyền bước này đang pending.
+- Complete main-root inventory sau tests: non-exempt 761.716.347 byte,
   combined exempt 3.854.821.885 byte, đạt hai cap dung lượng. Đây là số tại
-  lúc đo, không phải cleanup PASS. Whole cleanup dry-run REVIEW_REQUIRED:
-  ba UNKNOWN (signal-probe, report135byte, test-temp); giữ nguyên nội dung.
+  lúc đo, không phải disposition toàn task PASS. Owner turn01a105b5 đã duyệt
+  giữ signal-probe/report135byte và test-temp rỗng tại chỗ: đăng ký RETAINED
+  với provenance quyết định giữ hiện tại, lịch sử UNVERIFIED; hash report
+  85559f3a...4876 không đổi. Canonical _work dry-run PASS, UNKNOWN0,
+  unexpected missing0, LOCKED0; wheel ngoài _work vẫn blocked riêng.
+  Root chính không có active epoch; epoch snapshot giữ nguyên trong evidence,
+  không import/recreate và không suy Release acceptance từ dry-run này.
   Mười missing claim đã khép bằng deletion provenance có sẵn trong raw report
   rc-53cb9f8-full-unit-20261003, không dựng lại hoặc đổi outcome lịch sử.
 - Focused/affected quota, cleanup, Release runner, work-path/write-policy:
