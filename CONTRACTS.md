@@ -254,6 +254,15 @@ unavailable historical reports.
 `DEV_RUN/v01_audit/installed` (protected installed baseline with its data/models),
 and `DEV_RUN/baselines/fullapp-013` (real installed full-app acceptance witness)
 share the same combined 5 GiB cap with the existing environment exemptions.
+Owner approval (2026-10-04, Brain turn `01a10703`): one additional exact root
+`DEV_RUN/baselines/stable-012` may hold a copy of the verified public Setup
+0.1.2 installation for stable 0.1.3 update/rollback acceptance, within the same
+combined 5 GiB cap. Keep the Owner installation read-only during preparation;
+do not copy its user data. After retaining manifests, hashes and publication
+receipts and checking the public Setup digest, dispose only
+`DEV_RUN/candidate-0.1.2/Release/Setup.exe` and
+`DEV_RUN/candidate-0.1.2/Release/Updates/full-app-update-0.1.2-757e78cc88aed6a4.zip`.
+This approval does not authorize disposal of other retained baselines or files.
 Their siblings, duplicate payloads, candidate packages and evidence are not
 exempt. Candidate `DEV_RUN/candidate-0.1.2` and evidence
 `DEV_RUN/evidence/cleanup-20261004` count toward the non-exempt 1 GiB cap.

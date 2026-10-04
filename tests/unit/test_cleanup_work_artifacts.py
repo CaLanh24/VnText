@@ -368,6 +368,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         with self.isolated_workspace() as (root, _work, _game, _manifest):
             for relative, payload in [(".venv", b"123"), ("DEV_RUN/cache", b"456"),
                                       ("DEV_RUN/baselines/fullapp-013", b"7"),
+                                      ("DEV_RUN/baselines/stable-012", b"a"),
                                       ("DEV_RUN/baselines/unapproved", b"89")]:
                 folder = root / relative
                 folder.mkdir(parents=True, exist_ok=True)
@@ -375,7 +376,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             with patch.object(cleanup, "PROJECT_EXEMPT_SIZE_LIMIT_BYTES", 6):
                 result = cleanup._project_size_snapshot()
             self.assertTrue(result["complete"], result)
-            self.assertEqual(7, result["exempt_bytes"])
+            self.assertEqual(8, result["exempt_bytes"])
             self.assertEqual(2, result["non_exempt_bytes"])
             self.assertFalse(result["within_limit"], result)
 

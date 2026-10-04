@@ -77,6 +77,7 @@ PROJECT_SIZE_EXEMPTIONS = {
     "tests/golden/_work/r12i": "Owner-approved pristine public v0.1 installed baseline",
     "DEV_RUN/v01_audit/installed": "Owner-approved protected installed baseline with data/models",
     "DEV_RUN/baselines/fullapp-013": "Owner-approved real installed full-app acceptance witness",
+    "DEV_RUN/baselines/stable-012": "Owner-approved single public Setup 0.1.2 copy for stable 0.1.3 acceptance",
 }
 
 # Keep relative to WORK_ROOT

@@ -13,9 +13,11 @@
   đã kiểm read-only: version0.1.2/source060180f, đủ7133file/hash/size khớp
   Setup public,0missing/extra/mismatch/errors,GitHubCaLanh24/VnText configured.
 - Whole-root non-exempt khoảng770MB, free khoảng303MB; payload đầy đủ516MB.
-  Chưa tạo staging/baseline copy lớn trước khi đủ budget/ownership. Các request
-  exact disposition candidate012 Setup/delta và baseline stable-012 exemption
-  đang pending; không xử lý data/r12i/v01_audit/fullapp-013 chưa được phép.
+  Owner Brain turn01a10703 đã duyệt đúng2file candidate012 Setup/delta và
+  exemption một copy `DEV_RUN/baselines/stable-012` trong tổng5GiB. Đã giữ
+  manifest/hash/receipt, readback public Setup digest khớp và disposal2file
+  exit0; receipt `.scratch/stable013/approved-disposition.json`. Chưa tạo
+  staging/baseline copy lớn; không xử lý data/r12i/v01_audit/fullapp-013.
 - Giữ installer/framework/native runtime/model; dependency dùng chung,
   không tạo environment/SDK/model cache copy. Public GitHub update NOT VERIFIED.
 - Focused version4/4 và DEV build/worker smoke exit0 trên version changes
