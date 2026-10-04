@@ -7,11 +7,22 @@
 - Preflight mặc định chỉ đọc; build/smoke offline dùng dependency chung,
   marker output riêng và quota toàn root, dự phòng128MiB. Không cài/tải,
   copy venv/SDK/model hoặc đổi product/updater. Release preconditions tách riêng.
-- Focused/affected31tests,0fail/error/skip,exit0. DEV build/smoke trên source
-  tooling đang sửa: exit0,0build warnings, đủ5bước, complete extract/translate/
-  patch ok=true,cleanup_error=null. Raw commands/stdout/stderr/exit ở
-  `.scratch/bootstrap-dev`; lỗi NuGet profile và Unicode redirect trước đó
-  giữ riêng, không đổi verdict. Commit/SHA cuối và checkout sạch kiểm sau commit.
+- Tooling commit `3b43b29aa30cefbd237143ceb76ff07b0a18d8c1`:
+  focused/affected31tests,0fail/error/skip,exit0 trước commit, source tool/test
+  không đổi sau validation. Clean local Git source checkout tại đúng SHA này
+  build/smoke và repeated run exit0,0build warnings; đủ5bước, complete
+  extract/translate/patch ok=true,cleanup_error=null. Checkout20.311.250byte,
+  không có venv/SDK/cache riêng, dùng dependency chung với path tường minh.
+- Raw commands/stdout/stderr/exit ở `.scratch/bootstrap-dev`; lỗi NuGet profile,
+  Unicode redirect và disposal read-only Git pack trước đó giữ verdict riêng.
+  Disposal đầu exit1; bỏ read-only3packfile của exact owned disposable clone,
+  hash không đổi, retry exit0; clone đã absent. Canonical dry-run exit0/PASS,
+  UNKNOWN/LOCKED/errors/unexpected missing0. Whole-root inventory complete:
+  non-exempt767.982.458byte,exempt3.854.852.003byte, cả hai dưới cap1+5GiB.
+  Peak quan sát trong repeated run: non-exempt787.016.568byte,exempt3.854.852.003.
+- Clone kiểm là source sạch từ Git local, không phải remote clone/fresh machine
+  dependency installation. Model hashes/package metadata không thay provenance
+  download/revision/license; thiếu dependency cần quyền riêng trước cài/tải.
 - Đây không phải bằng chứng cài dependency trên máy mới hoặc Release candidate
   exact-HEAD. Candidate/runtime evidence vẫn SHA060180f; public GitHub NOT VERIFIED.
 
