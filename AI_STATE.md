@@ -1,43 +1,50 @@
 # Trạng thái hiện tại — VNText Studio
 
-## Stable update 0.1.3 đang chuẩn bị (2026-10-04)
+## Stable update 0.1.3 đã public; chờ acceptance nút GitHub (2026-10-05)
 
-- Source52ad5e7: prospective epoch trong s13 được Owner duyệt tại Brain
-  turn01a10716; verify/full679tests,0fail/error,8skip,child/wrapper0,cleanupPASS.
-  Snapshot terminal đã preserve lossless rồi dispose exit0. Raw lượt lỗi đầu
-  và cấu hình remediation vẫn giữ; WPF0x80070497 chưa chứng minh root cause,
-  không tái hiện ở focused và full lượt cuối, không sửa updater theo suy đoán.
-- Package source52ad5e7 b19b556d (1978170byte) KHÔNG ĐƯỢC publish: actual
-  release-verify exit1 vì guard chỉ nhận home tuyệt đối, trái token immutable
-  mà publisher ghi trong Setup public. Sửa đúng ReleaseVerifyRunner và thêm
-  harness positive/negative home checks; không sửa package/path/model validator.
-  Focused/affected23/23 và DEV build/smoke0 trước commit phần sửa. Candidate
-  phải build và chạy lại gates trên source sạch cuối sau phần sửa này.
-- GUI/patch installer trên candidate52ad5e7 đạt3/3,child/wrapper0,cleanupPASS
-  ở lượt cuối; wrapper1 đầu giữ nguyên do caller chưa khai báo3mutable dirs.
-  Staging lỗi đã dispose trong đúng scope; baseline stable-012 vẫn pristine.
-
-- Owner chọn0.1.3 tại Brain turn01a106e6, mục tiêu full-app update thực từ
-  Setup0.1.2 qua nút GitHub. Publish sau gates và Brain review; không dùng lại
-  package/source test-only f314a52. Version owner đồng bộ, fixture version riêng.
-- Owner báo mục1/2 Setup/uninstall đã thử: Owner-reported; raw process exit vẫn
-  UNKNOWN nếu chưa có receipt, không gọi RELEASE_VERIFIED từ lời báo.
-- Baseline package có thể đối chiếu7133manifest records của Setup0.1.2 public,
-  source060180f/hashb374c2e2. Các baseline đã giữ hiện tại là0.1.0/0.1.1/
-  test-only0.1.3, không giả thành0.1.2. Bản cài Owner tại folder `Release 0.1`
-  đã kiểm read-only: version0.1.2/source060180f, đủ7133file/hash/size khớp
-  Setup public,0missing/extra/mismatch/errors,GitHubCaLanh24/VnText configured.
-- Whole-root non-exempt khoảng770MB, free khoảng303MB; payload đầy đủ516MB.
-  Owner Brain turn01a10703 đã duyệt đúng2file candidate012 Setup/delta và
-  exemption một copy `DEV_RUN/baselines/stable-012` trong tổng5GiB. Đã giữ
-  manifest/hash/receipt, readback public Setup digest khớp và disposal2file
-  exit0; receipt `.scratch/stable013/approved-disposition.json`. Chưa tạo
-  staging/baseline copy lớn; không xử lý data/r12i/v01_audit/fullapp-013.
-- Giữ installer/framework/native runtime/model; dependency dùng chung,
-  không tạo environment/SDK/model cache copy. Public GitHub update NOT VERIFIED.
-- Focused version4/4 và DEV build/worker smoke exit0 trên version changes
-  trước commit;0build warnings,semantic5steps/cleanup_error=null. Evidence tại
-  `.scratch/stable013`; không gọi đây là final candidate/Release gate.
+- Owner trực tiếp xác nhận trong chat DEV: "Cho phép push và publish stable
+  0.1.3", sau các gate và Brain review. Main/tag `v0.1.3` đã push exit0;
+  [Release v0.1.3](https://github.com/CaLanh24/VnText/releases/tag/v0.1.3)
+  public stable/latest, không draft/prerelease. Source artifact/tag giữ đúng
+  `cdf3ee0e11afa9fc85caab18959a59a9bdc6aed3`; docs sau publication không
+  relabel candidate/evidence theo HEAD mới.
+- Full-app ZIP `full-app-update-0.1.3-0e29640bce9604ca.zip`, 1.978.560byte,
+  SHA256 `0e29640bce9604ca0ea6177dcd897285d393546cc7c2ed4dc7bce12e0476d106`.
+  API read-back5asset size/digest/state khớp, remote tag/source đúng; tải ZIP
+  public không đăng nhập cũng khớp byte/hash/manifest/source. v0.1/v0.1.2
+  body/tag/flags/assets giữ nguyên. Receipt tại
+  `DEV_RUN/candidate-0.1.3/publication/publication-summary.json`.
+- Exact sourcecdf: full679tests,0failure/error,8skip,0warning,child/wrapper0,
+  epoch verify0,cleanupPASS; build WPF/Release verify/two-cwd five-step smoke0;
+  actual Patch Installer/GUI3/3,child/wrapper0,cleanupPASS. Ba skip thiếu EXE
+  trong snapshot được kiểm riêng bằng candidate3/3; một legacy Tk/init.tcl và
+  bốn external Unity/game opt-in vẫn skip, không quảng bá đã kiểm. Evidence:
+  `DEV_RUN/candidate-0.1.3/evidence/REVIEW_PACKET.md` và `review-packet.json`.
+- Bản sao `DEV_RUN/baselines/stable-012` có provenance đúng Setup0.1.2 public
+  source060180f/7133records, không copy dữ liệu Owner. Actual local tests:
+  baseline mismatch/tamper/health-failure exit5; interruption7, startup/helper
+  recovery0; apply0.1.2→0.1.3 và installed smoke0; normal GUI close/reap0.
+  Target7132app records khớp; fixture data,23model và Uninstall giữ nguyên.
+  Root này hiện là witness0.1.3, không còn là pristine0.1.2. Bản cài Owner tại
+  `C:\Users\Hiu\Downloads\Compressed\Release 0.1` được re-audit chỉ đọc sau
+  tests, vẫn đủ7133hash/size của public0.1.2, không bị agent apply.
+- Snapshot s13/staging p13 đã preserve SHA-checked lossless evidence rồi
+  dispose đúng scope exit0. Whole-root inventory hoàn chỉnh, UNKNOWN/LOCKED/
+  STALE/unexpectedMISSING0; khoảng558MB nonexempt và4,37GB exempt, trong caps
+  1+5GiB. Giữ r12i/v01_audit/fullapp-013/dữ liệu Owner và root chưa đủ ownership.
+  Runtime/cache dùng chung; không tạo environment/SDK/model cache mới.
+  Bản sao payload duy nhất trong lượt này nằm ở baseline Owner đã duyệt.
+- Package52ad5e7 b19b556d và test-onlyf314 không publish. Raw failures/skip và
+  caller remediation được giữ, không đổi failed wrapper thành PASS. Guard
+  portable Python home đã sửa đúng owner cdf, focused/affected23/23; không nới
+  package/path/model validator. Historical WPF0x80070497 root cause UNKNOWN,
+  không tái hiện ở focused/full cuối; không sửa updater theo suy đoán.
+- **Public stable GitHub button update NOT VERIFIED**: API/download/local-copy
+  acceptance không thay nút Check/Apply trên bản cài Owner. Đang chờ ảnh/trạng
+  thái offer từ bản0.1.2 trước Apply. Setup/uninstall UI là Owner-reported,
+  raw native process exit UNKNOWN; native/framework/dependency/model version
+  migration không kiểm trong gói này vì bytes kế thừa nguyên từ Setup0.1.2.
+  Không gọi RELEASE_VERIFIED. Người mới/v0.1 dùng Setup0.1.2; không có Setup013.
 
 ## Setup 0.1.2 public prerelease (2026-10-04)
 
