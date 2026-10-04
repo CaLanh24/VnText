@@ -1,7 +1,7 @@
 # Domain docs
 
 VNText dùng một context chung. Trước khi phân tích source hoặc viết spec,
-đọc context spine theo thứ tự trong `AGENTS.md`; các tài liệu đó và source/test
+chọn mục context spine liên quan theo `AGENTS.md`; các tài liệu đó và source/test
 là nguồn sự thật, không phải tài liệu Matt Pocock.
 
 `CONTEXT.md` và `docs/adr/` là tùy chọn; chỉ đọc ADR liên quan nếu có. Không

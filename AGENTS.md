@@ -5,17 +5,25 @@
 ## Quyền quyết định và điều phối
 
 - Owner/PM-PO quyết định mục tiêu sản phẩm, ưu tiên, acceptance và hướng product/công nghệ. Lead xác định premise, owner kỹ thuật, contract, test và boundary; không tự thay product decision. Worker/Coder chỉ implement task đã bounded.
-- Với implementation không tầm thường, task phải nêu mục tiêu, premise đã chứng minh, file/owner được phép sửa, contract cần giữ, cấm phạm vi nào, validation, điều kiện dừng và terminal outcome.
-- Mỗi task có đúng một Coordinator đang hoạt động, một lớp `Owner → Coordinator → Child` tối đa và một source writer tại một thời điểm. Coordinator route tuần tự cho đúng một child phù hợp; child không spawn child, không dùng parallel/council/loop và không tự mở task khác.
+- Task implementation nêu ngắn mục tiêu, owner/phạm vi được sửa, quyền thực hiện, acceptance và điểm cần Owner quyết định. Coordinator tự tìm premise, contract và validation liên quan trước khi sửa; ghi rõ UNKNOWN khi chưa chứng minh. Prompt trỏ tới luật trong repo thay vì chép lại toàn bộ luật hoặc chỉ định từng lệnh.
+- Mỗi task có đúng một Coordinator đang hoạt động, một lớp `Owner → Coordinator → Child` tối đa và một source writer tại một thời điểm. Coordinator có thể tự thực hiện task; chỉ route tuần tự cho một child khi có phần việc bounded cần bàn giao. Child không spawn child, không dùng parallel/council/loop và không tự mở task khác. Không mặc định tạo child theo độ nặng của lệnh hoặc khi onboarding.
 - Tối đa **2 lần thử tạo child cho mỗi task**, tính cả lần tạo lỗi hoặc còn pending; retry không làm mới giới hạn. Child dùng tối đa **GPT-6 Luna Max** theo khả năng phiên; không nâng model hoặc mở thêm child chỉ vì task khó/thất bại.
-- Lifecycle child: `route → terminal → Coordinator ingest/persist → archive`. Không archive khi child chưa terminal; ingest output/evidence, cập nhật tài liệu canonical nếu có rule mới, rồi mới đóng task. Coordinator chỉ gửi follow-up khi Owner cho phép.
-- Kết thúc task bằng đúng một outcome: `PASS`, `PROVEN_BLOCKED`, `PREMISE_INVALID` hoặc `PM_DECISION_REQUIRED`. Blocked cần nêu blocker, bằng chứng và phương án an toàn đã thử; không nới scope để tránh outcome.
+- Lifecycle child: `route → terminal → Coordinator ingest/persist → archive`. Không archive khi child chưa terminal; ingest output/evidence, cập nhật tài liệu canonical nếu có rule mới, rồi mới đóng task. Khi Owner đã cho phép route child, Coordinator được gửi clarification/remediation trong cùng task, scope và giới hạn đã giao; thay mục tiêu, mở scope hoặc thêm quyền cần Owner quyết định.
+- Theo việc tới acceptance đã giao: được tự đọc evidence, chẩn đoán, sửa lỗi do thay đổi của task hoặc lỗi ở prerequisite/gate bắt buộc trong owner đã bounded, rồi kiểm lại gate liên quan. Không xin lại quyền cho các bước này; thiếu môi trường không tự cấp quyền tải/cài hay chấp thuận license. Lỗi vượt owner/scope phải báo bằng chứng và đề xuất mở scope; tiếp tục phần độc lập còn làm được.
+- Lỗi kỹ thuật đang có hướng xử lý trong scope là tiến độ, chưa phải terminal blocker. Kết thúc task bằng đúng một outcome: `PASS` khi acceptance đạt; `PROVEN_BLOCKED` khi thiếu quyền/prerequisite ngoài khả năng xử lý an toàn; `PREMISE_INVALID` khi evidence bác premise; `PM_DECISION_REQUIRED` khi cần quyết định sản phẩm. Blocked nêu điều kiện thiếu cụ thể, bằng chứng và phương án an toàn đã thử; không nới scope hay đổi verdict để tránh outcome.
 
 ## Bootstrap và bằng chứng
 
-Trước lập trình/tooling, đọc đủ theo thứ tự: `AGENTS.md` → `ARCHITECTURE.md` → `CONTRACTS.md` → `TEST_MATRIX.md` → `AI_STATE.md`, rồi source/test có mục tiêu. Xác định owner, caller/dependency, contract, test và scope. Dùng `rg`/`git grep`; không cần generated graph. Khi context/repository thay đổi, đọc lại context spine.
+Khi vào repository lần đầu hoặc đổi repository, đọc `AGENTS.md` và `AI_STATE.md` để biết luật, trạng thái và con trỏ evidence; tra context spine theo nhu cầu dưới đây. Khi tiếp tục cùng task, chỉ đọc lại phần thay đổi hoặc phần cần cho bước tiếp theo, không đọc toàn bộ stack trước mỗi lệnh/edit.
 
-Chọn validation theo ladder focused → affected regression → integration/E2E → full/Release khi scope yêu cầu. Không lặp lại gate đã PASS nếu source không đổi, trừ acceptance bắt buộc. Báo command, exit code, fixture/artifact và mọi SKIP, warning hoặc blocker. Build, mock, file output hay log tự ghi PASS không tự chứng minh test, cài đặt hoặc release PASS. Khi có lỗi, đọc output thật, sửa đúng nguyên nhân và chạy lại gate liên quan; một giả thuyết remediation tối đa hai vòng nếu không có evidence mới.
+- `ARCHITECTURE.md`: tìm owner, caller/dependency hoặc khi sửa seam/luồng chưa quen.
+- `CONTRACTS.md`: invariant của vùng sẽ sửa; luôn đọc mục dữ liệu/artifact/Release liên quan trước thao tác tương ứng.
+- `TEST_MATRIX.md`: chọn gate theo vùng thay đổi và acceptance; trước sửa source/test phải xác định gate liên quan.
+- Source/test/log có mục tiêu là evidence chính. Với sửa câu chữ/docs đơn giản, đọc tài liệu sở hữu và references bị ảnh hưởng là đủ. Khi đổi scope hoặc có mâu thuẫn evidence, tra lại các mục liên quan. Dùng `rg`/`git grep`; không cần generated graph.
+
+Chọn validation theo ladder focused → affected regression → integration/E2E → full/Release khi scope yêu cầu. Không lặp lại gate đã PASS nếu source và prerequisite liên quan không đổi, trừ acceptance bắt buộc. Docs-only dùng kiểm diff, references và gate docs có liên quan; không build/full regression chỉ vì sửa quy tắc. Báo command, exit code, fixture/artifact và mọi SKIP, warning hoặc blocker. Build, mock, file output hay log tự ghi PASS không tự chứng minh test, cài đặt hoặc release PASS. Evidence luôn giữ SHA thực đã chạy; sửa docs không tự nâng evidence cũ thành exact-HEAD Release PASS. Khi có lỗi, đọc output thật, sửa đúng nguyên nhân và chạy lại gate liên quan. Một giả thuyết remediation tối đa hai vòng nếu không có evidence mới; sau đó đổi sang thu evidence/kiểm premise, không lặp mù hoặc dừng chỉ vì hết hai vòng.
+
+Bàn giao ngắn: đã đổi gì, đã kiểm gì trên SHA nào, acceptance còn thiếu và bước tiếp theo. Đánh giá hiệu quả theo task hoàn thành đúng acceptance, thời gian và usage/cost khi có số liệu; số test/token/child không tự là chất lượng. Chỉ đổi model/effort hoặc cơ chế điều phối khi Owner cho phép và có workload/evidence phù hợp; không suy khả năng từ tên model.
 
 ## Invariants sản phẩm
 
@@ -27,7 +35,7 @@ Chọn validation theo ladder focused → affected regression → integration/E2
 
 ## Git, dữ liệu và artifacts
 
-Trước khi sửa, xác nhận đang ở `main`, checkout sạch và không có writer khác. Nếu không đạt, dừng và báo; không stash/reset/checkout để né trạng thái. Chỉ stage và commit source/test/docs đúng task scope sau validation khi task không chỉ định khác; xem lại status, staged/unstaged diff, `git diff --check` và log trước commit. Không push, merge, force-push, sửa config Git, bỏ hook hoặc rewrite history nếu Owner không yêu cầu rõ.
+Trước lần sửa đầu tiên của task, xác nhận đang ở `main`, checkout sạch và không có writer khác. Nếu không đạt, dừng mutation và báo; không stash/reset/checkout để né trạng thái. Trong task, giữ thay đổi của chính task và kiểm status/diff trước commit; thay đổi lạ hoặc HEAD đổi phải đối chiếu trước khi ghi tiếp. Task docs riêng vẫn phải giữ một source writer; agent đang chạy test/app trên snapshot không tự chứng minh là source writer. Chỉ stage và commit source/test/docs đúng task scope sau validation khi task không chỉ định khác; xem lại status, staged/unstaged diff, `git diff --check` và log trước commit. Không push, merge, force-push, sửa config Git, bỏ hook hoặc rewrite history nếu Owner không yêu cầu rõ.
 
 Khi sửa WPF hoặc runtime app, để lại executable thử được trong `DEV_RUN` và chạy `--smoke-worker`; docs/test-only không cần build executable. Khi Owner nhờ soạn prompt/task, tự chọn skill khả dụng phù hợp, đọc `SKILL.md` và nêu cách áp dụng; không yêu cầu Owner phải chọn skill.
 
