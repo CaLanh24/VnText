@@ -73,3 +73,18 @@
   đổi; probe này không thay thế acceptance candidate mới. Một focused run ở
   snapshot lồng sâu thất bại WinError 206; snapshot ngắn chạy đạt, không sửa
   test long-path hay validator để bỏ qua lỗi.
+
+- Wrapper full tại `d163a83`: child 655 test, 0 fail/error, 6 skip, exit 0;
+  wrapper CANCELLED/exit 1, cleanup PASS. Instrument giữ handler gốc chứng minh
+  cache single-writer probe `os.kill(pid, 0)` phát native CTRL_C_EVENT đến wrapper
+  sau khoảng 65 ms; SIGINT được xử lý trong `proc.wait()` khi child hoàn tất.
+  Không phải bằng chứng full PASS. Cache Windows PID probe được sửa dùng process
+  handle, không phát signal, giữ lock khi query không chắc chắn. Precommit focused
+  cache 7/7 và affected traceability/runner/CT2 47/47, không skip, child/wrapper 0,
+  cleanup PASS/UNKNOWN 0. Cần full và Release gates trên SHA sạch sau sửa.
+- Baseline cài thật `r12i` từ Setup public v0.1: 7.134 file khớp hash/size;
+  hai file bổ sung là update-source config và data/install-manifest.json. Chưa
+  mở app. Owner cho phép build test-only 0.1.3 trong snapshot riêng có commit,
+  SHA/version/hash thật để acceptance full-app từ baseline Setup 0.1.2; main
+  và candidate sản phẩm vẫn 0.1.2, không push/upload/phát hành. Setup upgrade
+  thực tế và stable GitHub vẫn NOT VERIFIED.

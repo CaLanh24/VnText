@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -107,6 +110,25 @@ class TranslationCacheTests(unittest.TestCase):
                 TranslationCache(self.root)
         finally:
             first.close()
+
+    @unittest.skipUnless(os.name == "nt", "Windows process-handle contract")
+    def test_windows_pid_probe_does_not_signal_live_or_exited_process(self):
+        from vntext.translation_cache import _pid_alive
+
+        child = subprocess.Popen(
+            [sys.executable, "-c", "import sys; sys.stdin.read()"],
+            stdin=subprocess.PIPE,
+        )
+        try:
+            with patch("vntext.translation_cache.os.kill", side_effect=AssertionError("PID probe sent a signal")):
+                self.assertTrue(_pid_alive(os.getpid()))
+                self.assertTrue(_pid_alive(child.pid))
+                child.communicate(timeout=10)
+                self.assertEqual(0, child.returncode)
+                self.assertFalse(_pid_alive(child.pid))
+        finally:
+            if child.poll() is None:
+                child.communicate(timeout=10)
 
     def test_ct2_adapter_exposes_only_model_surface_and_provenance(self):
         delegate = MagicMock()
