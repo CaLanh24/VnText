@@ -1,40 +1,36 @@
 # Trạng thái hiện tại — VNText Studio
 
-## Cleanup toàn DEV — implementation đạt, disposition còn blocked (2026-10-04)
+## Cleanup toàn DEV — disposition hoàn tất (2026-10-04)
 
-- Owner đã duyệt disposition trong Brain turn `01a1057b-96e0-7eb3-9fc4-3cec1bbd1a0b`,
-  và xác nhận remaining root tại `01a105ad-e143-7851-a149-8754044831a5`.
-  Tất cả tài nguyên giữ trong DEV. Bộ bảo toàn 564 file đã hash-verify;
-  candidate tại `DEV_RUN/candidate-0.1.2/`, evidence/source test-only `f314a52`
-  tại `DEV_RUN/evidence/cleanup-20261004/`. SDK 10.0.401 và pip cache dùng chung.
-- Hai normal-close attempt thất bại; Owner cho terminate đúng hai process thử,
-  exit 137, không tính GUI shutdown PASS. `ia` move tới baseline fullapp-013;
-  all-file hashes khớp sau move; r12i và v01_audit/installed không đổi hash.
-- 14/15 root disposal hoàn tất. Remaining root rc-14840e5-source chỉ còn wheel
-  11.090 byte: Remove-Item thường và extended-length đều Access denied; ACL
-  query cũng bị từ chối. Owner turn01a105b5 duyệt ACL exact file/cha; cấp
-  quyền cha thành công, cấp quyền file vẫn Access denied, deletion vẫn thất
-  bại. Chưa take ownership/admin escalation; quyền bước này đang pending.
-- Complete main-root inventory sau tests: non-exempt 761.716.347 byte,
-  combined exempt 3.854.821.885 byte, đạt hai cap dung lượng. Đây là số tại
-  lúc đo, không phải disposition toàn task PASS. Owner turn01a105b5 đã duyệt
-  giữ signal-probe/report135byte và test-temp rỗng tại chỗ: đăng ký RETAINED
-  với provenance quyết định giữ hiện tại, lịch sử UNVERIFIED; hash report
-  85559f3a...4876 không đổi. Canonical _work dry-run PASS, UNKNOWN0,
-  unexpected missing0, LOCKED0; wheel ngoài _work vẫn blocked riêng.
-  Root chính không có active epoch; epoch snapshot giữ nguyên trong evidence,
-  không import/recreate và không suy Release acceptance từ dry-run này.
-  Mười missing claim đã khép bằng deletion provenance có sẵn trong raw report
-  rc-53cb9f8-full-unit-20261003, không dựng lại hoặc đổi outcome lịch sử.
-- Focused/affected quota, cleanup, Release runner, work-path/write-policy:
-  94 test, 0fail/error, 1skip, exit0 trên working source parent09804fd.
-  Sáu wrapper integration đã chạy đạt. Skip external Unity fixture unset.
-  Source gate counts containing main checkout from nested snapshots, enforces
-  1GiB non-exempt +5GiB combined exemptions, blocks child/payload preflight.
-  Generic cleanup path/ownership guards giữ nguyên. Raw logs/receipts:
-  `.scratch/cleanup-review/`; preservation manifest nằm trong evidence root.
-- Không build/full regression/Release/push/upload. Runtime candidate evidence
-  vẫn gắn SHA060180f; public stable GitHub update NOT VERIFIED.
+- Owner duyệt disposition tại Brain turn01a1057b, exact remaining root tại
+  turn01a105ad, retention/ACL tại turn01a105b5 và exact-file admin takeover
+  tại turn01a105b9. Tất cả tài nguyên ở trong DEV; 15/15 root đã disposal.
+- Bộ giữ 564 file tại DEV_RUN/evidence/cleanup-20261004 hash-verify, 0mismatch;
+  candidate 0.1.2 tại DEV_RUN/candidate-0.1.2; source test-only f314a52 vẫn
+  đọc được từ source-test013.git. SDK10.0.401/pip cache dùng chung, không thêm
+  snapshot/venv/model. Ba baseline approved giữ nguyên data/model.
+- Hai normal-close thử không thành công; terminate app/worker theo quyền Owner
+  exit137, không tính GUI shutdown PASS. Baseline ia chuyển sang fullapp-013;
+  hashes all-file khớp sau move. r12i và v01_audit/installed giữ nguyên.
+- Wheel11.090byte bị Access denied với path thường/dài; ACL cha thành công
+  nhưng ACL file thất bại. Admin takeown/icacls exact-file theo quyền riêng
+  exit0, wheel đã xóa; chỉ xóa directory rỗng còn lại, không ACL đệ quy.
+- signal-probe/report135byte và test-temp rỗng đã RETAINED theo quyết định giữ
+  hiện tại của Owner; hash report không đổi, lịch sử vẫn UNVERIFIED. Mười
+  missing claim khép bằng provenance có sẵn trong raw report rc-53cb9f8,
+  không đổi verdict report lịch sử. Main root không có active epoch; snapshot
+  epochs giữ trong evidence, không import/recreate hoặc suy Release PASS.
+- Complete whole-root inventory sau disposition: non-exempt762.619.937byte,
+  combined exempt3.854.821.885byte, dưới cap1+5GiB. Canonical _work dry-run PASS,
+  UNKNOWN0/unexpected missing0/LOCKED0/errors0. Exact receipt/log/inventory:
+  .scratch/cleanup-review/acceptance-complete.json và disposition-terminal.json.
+- Quota implementation commit a773def: counts containing main checkout from
+  nested snapshot, enforces both caps and blocks child/payload preflight;
+  generic path/ownership validators unchanged. Focused/affected94tests,
+  0fail/error,1skip,exit0; six wrapper integration passed. Skip external Unity
+  fixture unset. Tooling unchanged after validation; later commits docs-only.
+- Task này không build/full regression/Release/push/upload; candidate/runtime
+  acceptance evidence vẫn SHA060180f. Public stable GitHub update NOT VERIFIED.
 
 - Repository chính thức: [CaLanh24/VnText](https://github.com/CaLanh24/VnText), nhánh `main`. Clone mới chỉ cần source public và dependency theo `docs/DEVELOPMENT.md`; không tìm candidate, checkout hoặc lịch sử private.
 - Owner yêu cầu một bản công khai `0.1`, README tiếng Việt dành cho người dùng và giữ mã test cần thiết, không đưa dữ liệu chạy test vào Git.
