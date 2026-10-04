@@ -24,3 +24,5 @@ Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nh�
 Phiên bản source hiện tại: `0.1.2` (phiên bản file Windows `0.1.2.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
 
 Hướng dẫn thiết lập môi trường phát triển và các giới hạn khi chạy test nằm trong [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Quyền sử dụng và ghi nhận dependency được nêu trong [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); mã nguồn được cấp phép theo [LICENSE](LICENSE).
+
+Preflight môi trường: chạy `python -B release/dev_bootstrap.py` bằng Python 3.11+ đã có. Script báo prerequisite còn thiếu, không tự tải/cài; xem hướng dẫn phát triển để build và smoke bằng dependency đã được xác minh.

@@ -1,5 +1,20 @@
 # Trạng thái hiện tại — VNText Studio
 
+## Public DEV bootstrap (2026-10-04)
+
+- Owner yêu cầu triển khai kế hoạch sau cleanup tại Brain turn01a105cc;
+  task bounded ở `release/dev_bootstrap.py`, tests và hướng dẫn DEV.
+- Preflight mặc định chỉ đọc; build/smoke offline dùng dependency chung,
+  marker output riêng và quota toàn root, dự phòng128MiB. Không cài/tải,
+  copy venv/SDK/model hoặc đổi product/updater. Release preconditions tách riêng.
+- Focused/affected31tests,0fail/error/skip,exit0. DEV build/smoke trên source
+  tooling đang sửa: exit0,0build warnings, đủ5bước, complete extract/translate/
+  patch ok=true,cleanup_error=null. Raw commands/stdout/stderr/exit ở
+  `.scratch/bootstrap-dev`; lỗi NuGet profile và Unicode redirect trước đó
+  giữ riêng, không đổi verdict. Commit/SHA cuối và checkout sạch kiểm sau commit.
+- Đây không phải bằng chứng cài dependency trên máy mới hoặc Release candidate
+  exact-HEAD. Candidate/runtime evidence vẫn SHA060180f; public GitHub NOT VERIFIED.
+
 ## Cleanup toàn DEV — disposition hoàn tất (2026-10-04)
 
 - Owner duyệt disposition tại Brain turn01a1057b, exact remaining root tại

@@ -6,6 +6,41 @@ virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản c
 
 ## Kiểm prerequisite trước khi tải
 
+Luồng bootstrap công khai: chọn Python có sẵn để chạy script stdlib bên dưới.
+Mặc định chỉ đọc, không cài/download/tạo environment. JSON stdout giữ từng
+command, cwd, stdout/stderr và exit code; exit 2 là danh sách prerequisite/quota
+chưa đủ, exit 1 là lỗi thực. Không suy Release PASS từ preflight DEV.
+
+```powershell
+# Dùng đường dẫn Python 3.11+ đã kiểm; không cần .venv để chạy preflight.
+python -B release/dev_bootstrap.py
+# Khi dependency đã đủ: build offline bằng SDK/pack/NuGet cache hiện có.
+.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action build
+# Model phải có sẵn và được Owner cho phép sử dụng.
+.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --model DEV_RUN/cache/models/opus-mt-en-vi-int8
+$LASTEXITCODE
+```
+
+Script kiểm requirements bằng metadata và `pip check`, SDK8/WPF runtime/ref pack,
+SDK10 local (thông tin optional), model file/hash và inventory toàn root theo
+CONTRACTS §10a. NuGet readiness chỉ xác nhận sau build. Hash/version quan sát
+không thay download receipt, model revision/license hoặc Release prerequisites.
+Không đủ cache thì build báo lỗi; cài/restore từ nguồn chính thức là bước riêng
+cần quyền tải/cài, không tự dùng mạng. Các lệnh thủ công phía dưới mô tả bước đó.
+
+Output duy nhất của apply là `DEV_RUN/bootstrap-build`, có ownership marker;
+không ghi đè directory có sẵn thiếu marker. Build dự phòng 128 MiB ngoài phần
+miễn trừ, chặn trước nếu inventory thiếu hoặc vượt tổng 1+5 GiB. Tái chạy dùng
+cùng output/cache, không nhân bản venv/SDK/model. Môi trường APPDATA/LOCALAPPDATA
+và NuGet riêng chỉ có hiệu lực trong child build; không sửa profile user.
+Giữ command và JSON/exit code ngoài payload. Build/smoke không phải cleanup PASS.
+
+Nếu thử source checkout cô lập trong cùng DEV đã được đăng ký owner/lifecycle,
+truyền `--python <DEV-main>/.venv/Scripts/python.exe --model <DEV-main>/DEV_RUN/cache/models/opus-mt-en-vi-int8 --shared-root <DEV-main>`.
+Script không copy dependency; shared-root phải nằm trong containing checkout.
+Đây là nghiệm thu source sạch với environment dùng chung, không chứng minh cài
+dependency trên máy mới. Không tạo snapshot/venv mới nếu chưa duyệt scope/budget.
+
 Python 3.11+ cho DEV; publisher hiện yêu cầu Python **3.12.x** khi đóng runtime.
 Kiểm `.venv` nếu có, `py -0p`, `Get-Command python,py,dotnet,git,pwsh`, và các
 runtime/cache đã có trên máy. Ghi đường dẫn thực, `python --version`,
@@ -125,7 +160,8 @@ Không dọn `test-temp`, `DEV_RUN/v01_audit` hoặc đường dẫn chưa đủ
 Harness fixture version độc lập với version sản phẩm; readiness phải đạt trước
 bắt đầu timeout. Xem `tests/README.md`, `TEST_MATRIX.md`, `release/README.md` để
 chọn gate. Publisher `publish.ps1` là local build, không upload/phát hành. Chỉ
-build sau source commit sạch, epoch hợp lệ và cleanup complete <=1 GiB. Baseline
+build sau source commit sạch, epoch hợp lệ và inventory toàn root complete:
+không miễn trừ <=1 GiB, tổng miễn trừ <=5 GiB theo exact roots trong CONTRACTS. Baseline
 WPF/full-app phải có version và payload thực, không tạo metadata giả hoặc nới
 validator để qua gate. Version package phải mới hơn baseline; version Owner chọn
 cho candidate phải khớp source/EXE/manifests. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app từ baseline mới.
