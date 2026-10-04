@@ -67,12 +67,16 @@ CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 5 * 1024 ** 3
 PROJECT_SIZE_EXEMPTIONS = {
     ".venv": "project Python virtual environment",
     "DEV_RUN/dotnet-sdk-10": "publisher .NET SDK",
     "DEV_RUN/python": "private DEV Python runtime",
     "DEV_RUN/.venv": "DEV worker virtual environment",
     "DEV_RUN/cache": "DEV runtime cache",
+    "tests/golden/_work/r12i": "Owner-approved pristine public v0.1 installed baseline",
+    "DEV_RUN/v01_audit/installed": "Owner-approved protected installed baseline with data/models",
+    "DEV_RUN/baselines/fullapp-013": "Owner-approved real installed full-app acceptance witness",
 }
 
 # Keep relative to WORK_ROOT
@@ -1675,11 +1679,27 @@ def backfill_missing_deletion_provenance(*, dry_run: bool = True) -> dict:
     }
 
 
+def _project_inventory_root() -> Path:
+    """Nested canonical snapshots share their containing checkout's quota.
+
+    This does not redirect ownership or deletion: WORK_ROOT remains local to
+    the run. No environment variable can exempt a nested clone from its parent.
+    """
+    local = ROOT.resolve()
+    inventory_root = local
+    for parent in local.parents:
+        relative = local.relative_to(parent).parts
+        nested = relative[:1] == (".scratch",) or relative[:3] == ("tests", "golden", "_work")
+        if nested and (parent / "tests/tools/cleanup_work_artifacts.py").is_file() and (parent / "tests/lib/work_paths.py").is_file():
+            inventory_root = parent
+    return inventory_root
+
+
 def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
                            max_items: int = DEFAULT_INVENTORY_MAX_ITEMS) -> dict:
     """Measure regular files only; links, special nodes and scan errors fail closed."""
 
-    root = ROOT.resolve()
+    root = _project_inventory_root()
     budget = InventoryBudget(timeout_seconds=timeout_seconds, max_items=max_items)
     exclusions = {
         _path_key(root / relative.replace("/", os.sep)): (relative, reason)
@@ -1740,7 +1760,9 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
         "root": str(root),
         "non_exempt_bytes": project_bytes if complete else None,
         "limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
-        "within_limit": complete and project_bytes <= PROJECT_SIZE_LIMIT_BYTES,
+        "exempt_bytes": sum(exempt_bytes.values()) if complete else None,
+        "exempt_limit_bytes": PROJECT_EXEMPT_SIZE_LIMIT_BYTES,
+        "within_limit": complete and project_bytes <= PROJECT_SIZE_LIMIT_BYTES and sum(exempt_bytes.values()) <= PROJECT_EXEMPT_SIZE_LIMIT_BYTES,
         "complete": complete,
         "exemptions": exemptions,
         "inventory": budget.report(),
@@ -3038,7 +3060,7 @@ def _finalize_scope_impl(
         or not before_project_size.get("complete")
         or not after_project_size.get("complete")
         or after_project_size.get("non_exempt_bytes") is None
-        or after_project_size["non_exempt_bytes"] > PROJECT_SIZE_LIMIT_BYTES
+        or not after_project_size.get("within_limit")
         or any(item.get("skipped") for item in deleted)
     )
     cleanup_ok = not cleanup_failed and all(item.get("deleted") for item in deleted if not item.get("skipped"))

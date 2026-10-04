@@ -248,6 +248,22 @@ unavailable historical reports.
 - Owner decision (2026-10-04): keep project-managed DEV environments, artifacts, baselines and evidence inside the DEV checkout; do not create an external archive or move them outside to satisfy the size gate. A cleanup `PASS` requires a complete inventory of the entire checkout, at most **1 GiB of non-exempt files**, and at most **5 GiB of exempt files combined** (5 GiB is not a per-directory allowance). Report both totals and each exact exemption root/reason. Existing environment exemptions are `.venv`, `DEV_RUN/dotnet-sdk-10`, `DEV_RUN/python`, `DEV_RUN/.venv` and `DEV_RUN/cache`. Additional necessary DEV resources require an explicit Owner-approved exact root and purpose before implementation; protection/retention alone does not grant exemption. Consolidate reusable environments; duplicate snapshots, payload copies and obsolete fixtures are not environment exemptions. No blanket exemption for `DEV_RUN`, `_work` or `.scratch`, and no relocation into cache to change accounting. This decision changes the quota contract; current tooling must be aligned and validated before claiming it enforces the new combined cap.
 - Cleanup is test/tooling infrastructure and must not change translation semantics, worker NDJSON, WPF product behavior or engine/game behavior.
 
+**Owner-approved retained baseline exemptions (2026-10-04):** exact roots
+`tests/golden/_work/r12i` (pristine public v0.1 installation),
+`DEV_RUN/v01_audit/installed` (protected installed baseline with its data/models),
+and `DEV_RUN/baselines/fullapp-013` (real installed full-app acceptance witness)
+share the same combined 5 GiB cap with the existing environment exemptions.
+Their siblings, duplicate payloads, candidate packages and evidence are not
+exempt. Candidate `DEV_RUN/candidate-0.1.2` and evidence
+`DEV_RUN/evidence/cleanup-20261004` count toward the non-exempt 1 GiB cap.
+The Owner approved the reviewed terminal snapshot/synthetic-copy disposition,
+internal resource moves and lifecycle updates after preservation hash checks;
+this one-time approval does not widen generic cleanup's `_work` path validator.
+Nested snapshots under `.scratch` or `tests/golden/_work` inventory the containing
+main checkout for quota; deletion and artifact ownership stay in the local run
+scope. The canonical wrapper blocks child/payload creation when quota inventory
+is incomplete or either cap is exceeded; it may write a bounded failure receipt.
+
 **Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; cleanup report under `_work` after an explicit cleanup run.
 
 ## 10b. Prospective artifact-registry epoch

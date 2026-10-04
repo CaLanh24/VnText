@@ -1,5 +1,34 @@
 # Trạng thái hiện tại — VNText Studio
 
+## Cleanup toàn DEV — implementation đạt, disposition còn blocked (2026-10-04)
+
+- Owner đã duyệt disposition trong Brain turn `01a1057b-96e0-7eb3-9fc4-3cec1bbd1a0b`,
+  và xác nhận remaining root tại `01a105ad-e143-7851-a149-8754044831a5`.
+  Tất cả tài nguyên giữ trong DEV. Bộ bảo toàn 564 file đã hash-verify;
+  candidate tại `DEV_RUN/candidate-0.1.2/`, evidence/source test-only `f314a52`
+  tại `DEV_RUN/evidence/cleanup-20261004/`. SDK 10.0.401 và pip cache dùng chung.
+- Hai normal-close attempt thất bại; Owner cho terminate đúng hai process thử,
+  exit 137, không tính GUI shutdown PASS. `ia` move tới baseline fullapp-013;
+  all-file hashes khớp sau move; r12i và v01_audit/installed không đổi hash.
+- 14/15 root disposal hoàn tất. Remaining root rc-14840e5-source chỉ còn wheel
+  11.090 byte: Remove-Item thường và extended-length đều Access denied; ACL
+  query cũng bị từ chối. Không sửa ACL/bypass; giữ raw errors/receipts.
+- Complete main-root inventory sau tests: non-exempt 761.249.773 byte,
+  combined exempt 3.854.821.885 byte, đạt hai cap dung lượng. Đây là số tại
+  lúc đo, không phải cleanup PASS. Whole cleanup dry-run REVIEW_REQUIRED:
+  ba UNKNOWN (signal-probe, report135byte, test-temp); giữ nguyên nội dung.
+  Mười missing claim đã khép bằng deletion provenance có sẵn trong raw report
+  rc-53cb9f8-full-unit-20261003, không dựng lại hoặc đổi outcome lịch sử.
+- Focused/affected quota, cleanup, Release runner, work-path/write-policy:
+  94 test, 0fail/error, 1skip, exit0 trên working source parent09804fd.
+  Sáu wrapper integration đã chạy đạt. Skip external Unity fixture unset.
+  Source gate counts containing main checkout from nested snapshots, enforces
+  1GiB non-exempt +5GiB combined exemptions, blocks child/payload preflight.
+  Generic cleanup path/ownership guards giữ nguyên. Raw logs/receipts:
+  `.scratch/cleanup-review/`; preservation manifest nằm trong evidence root.
+- Không build/full regression/Release/push/upload. Runtime candidate evidence
+  vẫn gắn SHA060180f; public stable GitHub update NOT VERIFIED.
+
 - Repository chính thức: [CaLanh24/VnText](https://github.com/CaLanh24/VnText), nhánh `main`. Clone mới chỉ cần source public và dependency theo `docs/DEVELOPMENT.md`; không tìm candidate, checkout hoặc lịch sử private.
 - Owner yêu cầu một bản công khai `0.1`, README tiếng Việt dành cho người dùng và giữ mã test cần thiết, không đưa dữ liệu chạy test vào Git.
 - [Release v0.1](https://github.com/CaLanh24/VnText/releases/tag/v0.1) đã công bố. Source build/tag: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.

@@ -33,6 +33,7 @@ from cleanup_work_artifacts import (  # noqa: E402
     finalize_scope,
     snapshot_tree,
 )
+import cleanup_work_artifacts  # quota resolution stays with the inventory owner
 from work_paths import (  # noqa: E402
     E2E_GAME_COPY,
     WORK_ROOT,
@@ -251,6 +252,7 @@ def _markdown_run_report(result: dict) -> str:
     lines.extend(["", "## Cleanup", "", f"- Deleted roots: {len(deleted)}"])
     for item in deleted[:20]:
         lines.append(f"  - `{item.get('path')}`: {item.get('bytes', 0)} bytes")
+    lines.append(f"- Project inventory root: `{after.get('root', before.get('root'))}`; exempt bytes: `{after.get('exempt_bytes')}` / `{after.get('exempt_limit_bytes')}`")
     lines.append(f"- Cleanup status: `{cleanup.get('cleanup_status', cleanup.get('status'))}`; blocked roots: {len(blocked)}; locked roots: {len(locked)}; errors: {len(cleanup_errors)}")
     for item in (blocked + locked + cleanup_errors)[:30]:
         detail = item.get("error") or item.get("details") or item.get("reason") or "unspecified cleanup blocker"
@@ -443,6 +445,30 @@ def run(
     stderr_log: Path | None = None,
     retained_roots: list[Path] | None = None,
 ) -> int:
+    preflight = cleanup_work_artifacts._project_size_snapshot(
+        timeout_seconds=cleanup_timeout if cleanup_timeout > 0 else cleanup_work_artifacts.DEFAULT_INVENTORY_TIMEOUT_SECONDS,
+    )
+    if not preflight.get("within_limit"):
+        result = {
+            "schema_version": 3, "source_sha": _source_sha(),
+            "status": "REVIEW_REQUIRED", "exit_code": 1,
+            "outcome": "PROVEN_BLOCKED", "child_exit_code": None,
+            "child_process_state": "NOT_STARTED", "child_pid": None,
+            "child_error": "Project quota preflight failed; no child or retained payload was created",
+            "command": command, "cleanup": {
+                "ok": False, "status": "REVIEW_REQUIRED", "deleted": [],
+                "project_size": {"before": preflight, "after": None},
+                "errors": [{"reason": "project_quota_preflight_failed"}],
+            },
+        }
+        # A bounded failure receipt is permitted even when payload creation is blocked.
+        if report_path:
+            resolved = report_path.expanduser().resolve()
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(json.dumps(result, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+            _register_runner_report(resolved, scope_id=new_scope_id("quota-blocked"), run_id=new_scope_id("run"))
+        print(json.dumps(result, ensure_ascii=True), flush=True)
+        return 1
     scope_id = new_scope_id("canonical-run")
     run_id = new_scope_id("run")
     scope_root = WORK_ROOT.resolve()

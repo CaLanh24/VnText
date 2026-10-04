@@ -37,6 +37,7 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 import cleanup_work_artifacts as cleanup  # noqa: E402
 import work_paths as paths  # noqa: E402
 import run_with_cleanup as runner  # noqa: E402
+PROJECT_INVENTORY_ROOT = cleanup._project_inventory_root
 
 RUNNER = ROOT / "tests" / "tools" / "run_with_cleanup.py"
 
@@ -83,6 +84,9 @@ class CleanupLifecycleTests(unittest.TestCase):
                 for module, values in ((paths, wp_values), (cleanup, cleanup_values)):
                     for key, value in values.items():
                         stack.enter_context(patch.object(module, key, value))
+                # A unit fixture owns its synthetic checkout, even when TEMP
+                # is redirected inside the real DEV checkout by the wrapper.
+                stack.enter_context(patch.object(cleanup, "_project_inventory_root", return_value=root))
                 yield root, work, game_copy, manifest
 
     def _register(self, artifact: Path, *, lifecycle: str = "DISPOSABLE") -> None:
@@ -359,6 +363,69 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertFalse(link.exists())
             self.assertTrue(target.is_file())
             self.assertEqual("link_or_reparse_point", deleted[0]["reason"])
+
+    def test_combined_exempt_cap_and_exact_baseline_roots(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            for relative, payload in [(".venv", b"123"), ("DEV_RUN/cache", b"456"),
+                                      ("DEV_RUN/baselines/fullapp-013", b"7"),
+                                      ("DEV_RUN/baselines/unapproved", b"89")]:
+                folder = root / relative
+                folder.mkdir(parents=True, exist_ok=True)
+                (folder / "payload").write_bytes(payload)
+            with patch.object(cleanup, "PROJECT_EXEMPT_SIZE_LIMIT_BYTES", 6):
+                result = cleanup._project_size_snapshot()
+            self.assertTrue(result["complete"], result)
+            self.assertEqual(7, result["exempt_bytes"])
+            self.assertEqual(2, result["non_exempt_bytes"])
+            self.assertFalse(result["within_limit"], result)
+
+    def test_snapshot_inventory_counts_main_root_and_nested_duplicate_environment(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            for relative in ["tests/tools/cleanup_work_artifacts.py", "tests/lib/work_paths.py"]:
+                marker = root / relative
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.write_bytes(b"")
+            snapshot = root / ".scratch/snapshot"
+            (snapshot / ".venv").mkdir(parents=True)
+            (snapshot / ".venv/payload").write_bytes(b"123")
+            (root / "outside-snapshot").write_bytes(b"4567")
+            actual_is_file = Path.is_file
+            def fixture_marker(path):
+                if path.name in {"cleanup_work_artifacts.py", "work_paths.py"}:
+                    return path in {root / "tests/tools/cleanup_work_artifacts.py", root / "tests/lib/work_paths.py"}
+                return actual_is_file(path)
+            with patch.object(cleanup, "ROOT", snapshot), patch.object(cleanup, "PROJECT_SIZE_LIMIT_BYTES", 6), \
+                 patch.object(cleanup, "_project_inventory_root", PROJECT_INVENTORY_ROOT), \
+                 patch.object(Path, "is_file", fixture_marker):
+                result = cleanup._project_size_snapshot()
+            self.assertEqual(str(root.resolve()), result["root"])
+            self.assertEqual(7, result["non_exempt_bytes"])
+            self.assertEqual(0, result["exempt_bytes"])
+            self.assertFalse(result["within_limit"])
+
+    def test_runner_quota_preflight_blocks_child_and_new_retained_output(self):
+        with self.isolated_workspace() as (root, work, _game, _manifest):
+            snapshot = root / ".scratch/snapshot"
+            snapshot.mkdir(parents=True)
+            blocked = {"root": str(root), "complete": True, "within_limit": False,
+                       "non_exempt_bytes": cleanup.PROJECT_SIZE_LIMIT_BYTES + 1,
+                       "exempt_bytes": 0, "errors": []}
+            report = work / "blocked.json"
+            output = work / "must-not-be-created"
+            with patch.object(runner, "ROOT", snapshot), patch.object(runner, "WORK_ROOT", work), \
+                 patch.object(cleanup, "_project_size_snapshot", return_value=blocked), \
+                 patch.object(runner, "_source_sha", return_value="fixture-source"), \
+                 patch.object(runner.subprocess, "Popen") as launch:
+                code = runner.run([sys.executable, "-c", "pass"], timeout=10,
+                                          report_path=report, retained_roots=[output])
+            self.assertEqual(1, code)
+            launch.assert_not_called()
+            self.assertFalse(output.exists())
+            result = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual("PROVEN_BLOCKED", result["outcome"])
+            self.assertEqual("NOT_STARTED", result["child_process_state"])
+            self.assertIsNone(result["child_exit_code"])
+            self.assertEqual(str(root), result["cleanup"]["project_size"]["before"]["root"])
 
     def test_project_size_incomplete_or_over_limit_never_yields_cleanup_pass(self):
         for operation in ("scope", "whole", "post_test"):
