@@ -15,13 +15,13 @@ Khả năng trích xuất và patch phụ thuộc định dạng cụ thể củ
 
 ## Cập nhật và gỡ cài đặt
 
-`v0.1` là bản công khai đầu tiên. Source `0.1.2` đang chuẩn bị updater toàn app để thay WPF, worker, dependency và runtime an toàn; candidate và cập nhật qua stable GitHub trên bản cài thực chưa được nghiệm thu (**NOT VERIFIED**). Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; người còn ở v0.1 sẽ dùng Setup 0.1.2 khi bản đó được công bố. Full-app update bắt đầu từ baseline mới, không hứa cài Setup một lần cho người đang dùng v0.1. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
+`v0.1` là bản công khai đầu tiên. [Setup 0.1.2 bản thử](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2) đã có để cài/nâng cấp; source `0.1.3` đang chuẩn bị gói update từ baseline đó. Cập nhật qua stable GitHub trên bản cài thực chưa được nghiệm thu (**NOT VERIFIED**). Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; người còn ở v0.1 dùng Setup 0.1.2. Full-app update bắt đầu từ baseline mới, không hứa cài Setup một lần cho người đang dùng v0.1. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
 
 Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nhận gỡ sẽ xóa toàn bộ nội dung trong thư mục cài, **bao gồm `data/` và dữ liệu do ứng dụng tạo**; thư mục cài còn lại nhưng rỗng. Sao lưu dữ liệu cần giữ trước khi gỡ.
 
 ## Mã nguồn và phát triển
 
-Phiên bản source hiện tại: `0.1.2` (phiên bản file Windows `0.1.2.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
+Phiên bản source hiện tại: `0.1.3` (phiên bản file Windows `0.1.3.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
 
 Hướng dẫn thiết lập môi trường phát triển và các giới hạn khi chạy test nằm trong [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Quyền sử dụng và ghi nhận dependency được nêu trong [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); mã nguồn được cấp phép theo [LICENSE](LICENSE).
 

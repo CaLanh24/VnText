@@ -1,5 +1,27 @@
 # Trạng thái hiện tại — VNText Studio
 
+## Stable update 0.1.3 đang chuẩn bị (2026-10-04)
+
+- Owner chọn0.1.3 tại Brain turn01a106e6, mục tiêu full-app update thực từ
+  Setup0.1.2 qua nút GitHub. Publish sau gates và Brain review; không dùng lại
+  package/source test-only f314a52. Version owner đồng bộ, fixture version riêng.
+- Owner báo mục1/2 Setup/uninstall đã thử: Owner-reported; raw process exit vẫn
+  UNKNOWN nếu chưa có receipt, không gọi RELEASE_VERIFIED từ lời báo.
+- Baseline package có thể đối chiếu7133manifest records của Setup0.1.2 public,
+  source060180f/hashb374c2e2. Các baseline đã giữ hiện tại là0.1.0/0.1.1/
+  test-only0.1.3, không giả thành0.1.2. Bản cài Owner tại folder `Release 0.1`
+  đã kiểm read-only: version0.1.2/source060180f, đủ7133file/hash/size khớp
+  Setup public,0missing/extra/mismatch/errors,GitHubCaLanh24/VnText configured.
+- Whole-root non-exempt khoảng770MB, free khoảng303MB; payload đầy đủ516MB.
+  Chưa tạo staging/baseline copy lớn trước khi đủ budget/ownership. Các request
+  exact disposition candidate012 Setup/delta và baseline stable-012 exemption
+  đang pending; không xử lý data/r12i/v01_audit/fullapp-013 chưa được phép.
+- Giữ installer/framework/native runtime/model; dependency dùng chung,
+  không tạo environment/SDK/model cache copy. Public GitHub update NOT VERIFIED.
+- Focused version4/4 và DEV build/worker smoke exit0 trên version changes
+  trước commit;0build warnings,semantic5steps/cleanup_error=null. Evidence tại
+  `.scratch/stable013`; không gọi đây là final candidate/Release gate.
+
 ## Setup 0.1.2 public prerelease (2026-10-04)
 
 - Owner yêu cầu tải thử Setup mới tại Brain turn01a106d0. Đã publish
