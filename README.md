@@ -7,11 +7,11 @@ VNText Studio giúp bạn trích xuất, dịch và chèn lại văn bản game 
 ## Điểm nổi bật
 
 - Tự động trích xuất văn bản từ bản sao game.
-- Dịch ngay trong ứng dụng bằng CT2/OPUS-MT.
+- Dịch trực tiếp ngay trong ứng dụng.
 - Nhập và xuất CSV để biên tập bằng công cụ quen thuộc.
 - Giữ key, placeholder và cấu trúc dữ liệu trong suốt quy trình.
-- Preflight, backup và verification trước và sau khi Patch.
-- Hỗ trợ luồng Unity hiện có và cập nhật phiên bản ngay trong ứng dụng.
+- Tự kiểm tra dữ liệu, tạo bản sao lưu và xác minh kết quả khi áp dụng bản dịch.
+- Hỗ trợ nhiều game Unity có cấu trúc phù hợp và cập nhật phiên bản ngay trong ứng dụng.
 
 ## Cách dùng
 
