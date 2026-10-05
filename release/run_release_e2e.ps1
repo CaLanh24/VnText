@@ -49,7 +49,7 @@ $CandidateExe = Join-Path $CandidateRoot "VNText Studio.exe"
 $ReleaseExe = Join-Path $ReleaseRoot "VNText Studio.exe"
 $ReleaseJson = Join-Path $ReleaseRoot "RELEASE.json"
 $CleanupScript = Join-Path $DevRoot "tests\tools\cleanup_work_artifacts.py"
-$Python = Join-Path $DevRoot ".venv\Scripts\python.exe"
+$Python = Join-Path $DevRoot ".dev-env\.venv\Scripts\python.exe"
 if (-not (Test-Path -LiteralPath $Python -PathType Leaf)) {
     $Python = (Get-Command python.exe -ErrorAction Stop).Source
 }

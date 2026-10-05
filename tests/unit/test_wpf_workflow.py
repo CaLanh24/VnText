@@ -32,7 +32,7 @@ from cleanup_work_artifacts import cleanup_after_test
 from work_paths import ambient_scope, new_scope_id, register_artifacts
 
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-DOTNET = DEV_RUN_ROOT / "dotnet-sdk-10" / "dotnet.exe"
+DOTNET = ROOT / ".dev-env" / "dotnet-sdk-10" / "dotnet.exe"
 WORKFLOW_PROJECT = ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests"
 DOTNET_LAYOUT_VERSION = "8.0.30"
 APPHOST_PACK_VERSION = "10.0.12"
@@ -50,7 +50,7 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     localappdata = runtime / "localappdata"
     dotnet_home = runtime / "dotnet"
     temp = runtime / "temp"
-    nuget_packages = DEV_RUN_ROOT / "cache" / "nuget"
+    nuget_packages = ROOT / ".dev-env" / "cache" / "nuget"
     nuget_http_cache = runtime / "nuget-http-cache"
     cache = runtime / "cache"
     nuget_packages.mkdir(parents=True, exist_ok=True)
@@ -128,7 +128,7 @@ def _build_versioned_exe_fixture(
             str(artifacts_root),
             "-p:RestoreConfigFile=" + str(nuget_config),
             "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
-            "-p:RestorePackagesPath=" + str(DEV_RUN_ROOT / "cache" / "nuget"),
+            "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
             "-p:NuGetAudit=false",
         ],
         cwd=str(ROOT),
@@ -301,7 +301,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("ReleaseManagedPaths_StayUnderInstallRoot", (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8"))
 
     def test_wpf_workflow_harness_passes(self):
-        owned_root = ROOT / "tests" / "golden" / "_work" / f"wpf_workflow_{uuid4().hex}"
+        if not DOTNET.is_file():
+            self.skipTest(f".NET SDK 10 is not installed at {DOTNET}")
+        owned_root = ROOT / "TEST_RUN" / f"wpf_workflow_{uuid4().hex}"
         ambient = ambient_scope()
         scope_id = ambient["scope_id"]
         run_id = ambient["run_id"]
@@ -383,7 +385,7 @@ class WpfWorkflowTests(unittest.TestCase):
                     str(artifacts_root),
                     "-p:RestoreConfigFile=" + str(nuget_config),
                     "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
-                    "-p:RestorePackagesPath=" + str(DEV_RUN_ROOT / "cache" / "nuget"),
+                    "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
                     "-p:NuGetAudit=false",
                 ],
                 cwd=str(ROOT),

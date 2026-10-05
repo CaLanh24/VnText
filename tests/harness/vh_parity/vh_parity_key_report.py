@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Key-level parity report: translation.csv vs golden_mapping.csv.
 
-Read-only on source package. Writes artifacts under tests/golden/_work/vh_parity/.
+Read-only on source package. Writes artifacts under TEST_RUN/vh_parity/.
 """
 from __future__ import annotations
 
@@ -237,7 +237,7 @@ def main() -> int:
         "--out-dir",
         type=Path,
         default=OUT,
-        help="Evidence directory for JSON/CSV output (default: tests/golden/_work/vh_parity)",
+        help="Evidence directory for JSON/CSV output (default: TEST_RUN/vh_parity)",
     )
     ap.add_argument("--compare-release", action="store_true", help="Also audit Release Output read-only")
     args = ap.parse_args()

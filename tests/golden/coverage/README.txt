@@ -5,7 +5,7 @@ This directory contains only small synthetic risk/capability metadata. It
 does not freeze an extracted corpus or identify a particular game.
 
 Optional Unity E2E uses one caller-supplied external fixture, copied to the
-registered tests/golden/_work scope. The source stays read-only and no game
+registered TEST_RUN scope. The source stays read-only and no game
 copy is committed. Missing fixture or runtime permission is SKIP or
 NOT_TESTABLE, not a successful coverage claim.
 

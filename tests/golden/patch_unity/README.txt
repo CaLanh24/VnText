@@ -7,7 +7,7 @@ patch baseline. External verification is opt-in and must receive an explicit
 fixture root such as VNTEXT_GAME_FOLDER.
 
 The test helpers copy only caller-selected resources into a registered
-tests/golden/_work scope and never write to the source root. They preserve
+TEST_RUN scope and never write to the source root. They preserve
 UnityFS metadata, object locators, backups, and read-back reports when an
 external fixture is supplied.
 

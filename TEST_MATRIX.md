@@ -45,14 +45,14 @@ below are historical receipts only and must not be used for a new checkout.
 Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 `OWNER_TEST_PENDING=1`.
 
-- Full Python regression: `.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -v`.
-- Một test/file: `.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p "test_freeze_hashes.py" -v`.
-- Artifact cleanup dry-run: `.\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run` (read-only; report only in stdout).
-- Artifact cleanup apply: `.\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py` (writes cleanup report/registry reconciliation under `_work`).
-- A standalone canonical test command should use `.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- <command> <args...>`; Release isolated regression finalizes registered artifacts in `finally`.
+- Full Python regression: `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -v`.
+- Một test/file: `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p "test_freeze_hashes.py" -v`.
+- Artifact cleanup dry-run: `.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run` (read-only; report only in stdout).
+- Artifact cleanup apply: `.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py` (writes cleanup report/registry reconciliation under `TEST_RUN`).
+- A standalone canonical test command should use `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- <command> <args...>`; Release isolated regression finalizes registered artifacts in `finally`.
 - WPF build/harness: test `tests/unit/test_wpf_workflow.py`, test này build `wpf_app/VNText.Studio.Workflow.Tests` Release rồi chạy `dotnet exec` harness.
 - Full-app focused gate: `dotnet build .\wpf_app\VNText.Studio.Workflow.Tests\VNText.Studio.Workflow.Tests.csproj -c Debug --no-restore`; set the three `VNTEXT_WPF_*` variables to a copied installed baseline, a versioned candidate executable, and a disposable test root, then run `dotnet run --no-build --project .\wpf_app\VNText.Studio.Workflow.Tests\VNText.Studio.Workflow.Tests.csproj -c Debug -- --full-app-update-only`. This is a synthetic installed-tree fixture and does not establish public Release acceptance.
-- Full-app publisher focused gate: `\.venv\Scripts\python.exe tests\unit\test_full_app_update_publisher.py -q`.
+- Full-app publisher focused gate: `.\.dev-env\.venv\Scripts\python.exe tests\unit\test_full_app_update_publisher.py -q`.
 - Release publish: `pwsh -NoProfile -ExecutionPolicy Bypass -File .\release\publish.ps1 -SkipWpfUpdatePackage`; request a WPF delta only with explicit `-WpfUpdateVersion <newer-version>`; options also include `-SkipTests` and DEV-only `-BuildLegacy`. `-SkipBuild` is rejected for standard Setup publishing.
 - Release checks: `VNText Studio.exe --release-verify`, `VNText Studio.exe --smoke-worker`; release script cũng chạy smoke từ cwd Release và `$env:TEMP`.
 - Naninovel probe/play: invoke each through `tests/tools/run_with_cleanup.py`.

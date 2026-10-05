@@ -5,7 +5,7 @@
 Legacy E2E: Việt hóa 16 DefaultUI chrome bằng patch UI-only + full package smoke.
 
 Giữ lại để điều tra fixture ngoài khi được chỉ định; không phải public-core
-workflow. Artifact tạm dưới tests/golden/_work/vh_parity/_tmp_defaultui.
+workflow. Artifact tạm dưới TEST_RUN/vh_parity/_tmp_defaultui.
 """
 
 from __future__ import annotations

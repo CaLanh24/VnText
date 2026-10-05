@@ -39,7 +39,7 @@ MODEL_DIR = DEV_RUN_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"
 
 def _venv_python() -> Path:
     override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
-    return Path(override) if override else ROOT / ".venv" / "Scripts" / "python.exe"
+    return Path(override) if override else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
 
 
 def _start_worker(extra_env: dict | None = None) -> subprocess.Popen:

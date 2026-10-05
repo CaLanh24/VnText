@@ -2,7 +2,7 @@
 
 """Phase 1: EN↔VH Naninovel Script inventory + dialogue/choice bench (50 then 500).
 
-Does not patch game or run full play. Artifacts under tests/golden/_work/nano_safe/.
+Does not patch game or run full play. Artifacts under TEST_RUN/nano_safe/.
 """
 
 from __future__ import annotations

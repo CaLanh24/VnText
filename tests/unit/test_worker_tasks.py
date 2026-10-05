@@ -35,7 +35,7 @@ from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
-WORK_ROOT = ROOT / "tests" / "golden" / "_work"
+WORK_ROOT = ROOT / "TEST_RUN"
 
 from vntext_worker.protocol import PROTOCOL_VERSION, parse_command_line
 from vntext.entry import Entry
@@ -47,7 +47,7 @@ from vntext_worker.task_runners import run_analyze_worker, run_extract_worker
 
 def _venv_python() -> Path:
     override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
-    return Path(override) if override else ROOT / ".venv" / "Scripts" / "python.exe"
+    return Path(override) if override else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
 
 
 def _start_worker() -> subprocess.Popen:

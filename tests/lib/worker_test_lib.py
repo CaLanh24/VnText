@@ -36,7 +36,7 @@ def venv_python() -> Path:
     override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
     if override:
         return Path(override)
-    return ROOT / ".venv" / "Scripts" / "python.exe"
+    return ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
 
 
 def worker_cwd() -> Path:

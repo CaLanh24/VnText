@@ -2,27 +2,28 @@
 
 ```
 tests/
-  golden/          # Dữ liệu golden + _work tạm; game copy/output nặng dọn sau mọi outcome
+  golden/          # Dữ liệu golden nguồn; không chứa runtime test
+  TEST_RUN/        # Runtime test tạm, tự dọn absent/empty sau terminal outcome
   lib/             # Thư viện dùng chung (work_paths, fixture Unity, E2E lib)
   unit/            # unittest: test_*.py (publish gate chạy ở đây)
   harness/         # Harness E2E/điều tra; game-specific probes được track nhưng cần fixture bên ngoài
-  tools/           # Dọn _work, capture golden (maintenance)
+  tools/           # Dọn TEST_RUN, capture golden (maintenance)
 ```
 
 ## Chạy nhanh
 
 ```powershell
 # Publish/unit gate (từng file hoặc cả unit/) — có lifecycle cleanup
-.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p "test_freeze_hashes.py" -v
+.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p "test_freeze_hashes.py" -v
 
-# Dọn artifact _work
-.\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py
+# Dọn artifact TEST_RUN
+.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py
 
 # Lập kế hoạch dọn, tuyệt đối read-only
-.\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run
+.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run
 
-# Mirror Release Output (read-only nguồn) → work_package trong _work
-.\.venv\Scripts\python.exe tests/tools/mirror_release_package.py
+# Mirror Release Output (read-only nguồn) → work_package trong RELEASE_RUN
+.\.dev-env\.venv\Scripts\python.exe tests/tools/mirror_release_package.py
 
 # Tracked vh_parity/Naninovel probe scripts are optional/manual and need
 # explicitly supplied external game/reference fixtures; they are not unit gates.

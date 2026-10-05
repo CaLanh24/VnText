@@ -14,7 +14,7 @@ os.environ["TEMP"] = os.environ["TMP"] = str(work_temp_dir("gui"))
 import tempfile
 tempfile.tempdir = os.environ["TEMP"]
 # Read-only backend dependencies, AFTER the isolated runtime's complete Qt.
-sys.path.append(str(ROOT / ".venv/Lib/site-packages"))
+sys.path.append(str(ROOT / ".dev-env/.venv/Lib/site-packages"))
 from PySide6.QtWidgets import QApplication
 import PySide6
 import tkinter

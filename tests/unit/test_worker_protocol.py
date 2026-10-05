@@ -147,7 +147,7 @@ class WorkerIntegrationTests(unittest.TestCase):
         self.assertIn("chỉ có CT2/OPUS-MT", emit_error.call_args.args[1])
 
     def test_worker_exits_cleanly_on_stdin_eof(self):
-        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".venv" / "Scripts" / "python.exe"
+        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
         if not py.is_file():
             self.skipTest("venv python missing")
         env = os.environ.copy()
@@ -179,7 +179,7 @@ class WorkerIntegrationTests(unittest.TestCase):
                 proc.stderr.close()
 
     def test_sample_worker_progress_cancel(self):
-        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".venv" / "Scripts" / "python.exe"
+        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
         if not py.is_file():
             self.skipTest("venv python missing")
         proc = subprocess.Popen(
