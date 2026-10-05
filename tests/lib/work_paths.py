@@ -366,7 +366,7 @@ def register_artifacts(registrations: list[dict]) -> list[dict]:
         ).expanduser().resolve()
         if (
             explicit_scope_root
-            and requested_scope_root != WORK_ROOT.resolve()
+            and requested_scope_root != (ROOT / "TEST_RUN").resolve()
             and requested_scope_root != resolved
             and requested_scope_root not in resolved.parents
         ):
