@@ -355,7 +355,23 @@ def register_artifacts(registrations: list[dict]) -> list[dict]:
         values = dict(registration)
         artifact_id = str(values.get("artifact_id") or "").strip()
         resolved = Path(values.get("path") or "").expanduser().resolve()
-        assert_artifact_under_work(resolved, f"artifact {artifact_id}")
+        explicit_scope_root = values.get("scope_root")
+        if not explicit_scope_root:
+            assert_artifact_under_work(resolved, f"artifact {artifact_id}")
+        else:
+            assert_write_destination(resolved, f"artifact {artifact_id}")
+        requested_scope_root = Path(
+            explicit_scope_root or ambient["scope_root"]
+        ).expanduser().resolve()
+        if (
+            explicit_scope_root
+            and requested_scope_root != WORK_ROOT.resolve()
+            and requested_scope_root != resolved
+            and requested_scope_root not in resolved.parents
+        ):
+            raise RuntimeError(
+                f"artifact {artifact_id} must live under registered scope {requested_scope_root}: {resolved}"
+            )
         if not artifact_id:
             raise ValueError("artifact_id is required")
         created_by = str(values.get("created_by") or "").strip()
