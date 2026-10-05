@@ -166,7 +166,8 @@ def ensure_work_root() -> Path:
 
 def path_under_work(path: Path) -> bool:
     resolved = path.resolve()
-    work = WORK_ROOT.resolve()
+    configured = str(os.environ.get("VNTEXT_ARTIFACT_SCOPE_ROOT") or "").strip()
+    work = Path(configured).expanduser().resolve() if configured else WORK_ROOT.resolve()
     return resolved == work or work in resolved.parents
 
 
