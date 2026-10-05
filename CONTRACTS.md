@@ -208,12 +208,12 @@ Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. �
   bridge cũ hơn. Publisher được phép build Setup/candidate không kèm gói WPF
   version cao hơn; package được yêu cầu vẫn phải qua đầy đủ integrity/baseline.
   Mọi acceptance transaction bằng helper mới trên payload v0.1 phải nêu rõ đây
-  không phải nút update của binary v0.1. Stable GitHub acceptance vẫn NOT VERIFIED.
-- Quyết định Owner (2026-10-04, Brain turn01a106e6): chọn **0.1.3** cho update stable thực từ Setup0.1.2; được sửa version/source/test/publisher cần thiết, commit/push/build/package và publish sau mandatory gates cùng Brain review. Không promote test-only0.1.3 f314a52, không đổi installer/uninstaller/framework/native runtime trong task này. Báo cáo Owner đã thử Setup/uninstall được ghi Owner-reported, không thay command/exit evidence hoặc RELEASE_VERIFIED. Stable GitHub button acceptance giữ NOT VERIFIED tới khi có phép thử thực.
+  không phải nút update của binary v0.1. Stable GitHub acceptance trên bản cài 0.1.2 đã PASS trong bounded scope; toàn product vẫn chưa RELEASE_VERIFIED.
+- Quyết định Owner (2026-10-04, Brain turn01a106e6): chọn **0.1.3** cho update stable thực từ Setup0.1.2; được sửa version/source/test/publisher cần thiết, commit/push/build/package và publish sau mandatory gates cùng Brain review. Không promote test-only0.1.3 f314a52, không đổi installer/uninstaller/framework/native runtime trong task này. Offer/apply/restart stable GitHub trên bản cài Owner đã PASS trong bounded scope; báo cáo này không nâng thành RELEASE_VERIFIED.
 - WPF compatibility package giữ allowlist ba file `VNText Studio.exe`, `app/RELEASE.json`, `app/VERSION.txt`; asset SHA-256, manifest, semantic version, executable metadata, baseline và từng file hash phải khớp. WPF package cũ vẫn hoạt động cho release tương ứng; thiếu package áp dụng được dẫn tới official Releases/Setup route, không auto-run Setup.
 - Full-app package được discovery theo stable GitHub release và asset chính xác `full-app-update-{version}-{sha256[:16]}.zip`; một release chỉ được có đúng một update asset WPF hoặc full-app phù hợp version. Repository/tag/HTTPS host, GitHub API size, tải thực tế, digest, manifest và package size đều phải được kiểm. Manifest gắn source commit SHA-1 và source tree fingerprint SHA-256 (`SHA256("git-tree-sha1:" + Git tree object ID)`), khớp metadata trong `app/RELEASE.json`; đây là provenance metadata, không phải chữ ký mật mã. Delta chỉ được áp dụng khi inventory/hash của toàn bộ `VNText Studio.exe` + `app/**` đúng baseline đã package, manifest add/replace/delete nhất quán và ZIP chứa đúng entry. Từ chối reparse/symlink, path traversal, trùng tên case-insensitive, file ngoài inventory, protected app data, package tamper, sai version/provenance hoặc baseline mismatch.
 - Full-app staging, backup, journal, log và worker/updater helper ở install root, ngoài `data/`; package nén tối đa 512 MiB và expanded inventory tối đa 3 GiB/20.000 file. Chỉ thay executable và `app/**`; `app/worker/models/**` phải giữ nguyên hash/tập file theo baseline. App và worker dừng bình thường trước khi apply. Sau apply kiểm inventory, `RELEASE.json`, `VERSION.txt`, executable version/hash, app health và worker readiness; restart thành công mới commit journal. Health/restart failure hoặc gián đoạn phải rollback/khôi phục từ backup đã hash-verify. `data/`, game, model/cache người dùng và output không là update targets; file lạ dưới `app/` làm baseline mismatch.
-- Full-app updater ghi danh sách file sở hữu tại `.update/owned-files.json`; Setup được build từ source hiện tại merge sidecar vào `data/install-manifest.json` để repair/upgrade kế tiếp nhận biết file được thêm. Setup v0.1 đã phát hành là binary cũ, không được sửa bởi source update và chưa được chứng minh có thể đọc sidecar; thay đổi `Setup.exe`, `Uninstall.exe` hoặc quyền hệ thống vẫn cần Setup mới. Bằng chứng local bridge trên bản cài không thay thế acceptance với stable GitHub release công khai. Cập nhật toàn app trên bản cài v0.1/GitHub vẫn **NOT VERIFIED** cho tới khi acceptance đó được chạy.
+- Full-app updater ghi danh sách file sở hữu tại `.update/owned-files.json`; Setup được build từ source hiện tại merge sidecar vào `data/install-manifest.json` để repair/upgrade kế tiếp nhận biết file được thêm. Setup v0.1 đã phát hành là binary cũ, không được sửa bởi source update và thay đổi `Setup.exe`, `Uninstall.exe` hoặc quyền hệ thống vẫn cần Setup mới. Stable GitHub offer/apply/restart từ baseline 0.1.2 đã PASS trong bounded installed-app acceptance; các gate ngoài phạm vi đó vẫn không được suy ra PASS.
 - Release không phụ thuộc Python hệ thống; `app/worker/.venv/pyvenv.cfg` trỏ bundled `app/worker/python`. Verify/smoke chạy trên staging trước khi đóng gói Setup. Publisher chỉ thay ReleaseRoot sau khi payload archive/hash và copied Setup hash hợp lệ.
 - Release app thực thi CPython bundled trực tiếp với `PYTHONHOME` bên trong
   `app/worker/python`, `PYTHONPATH` chỉ tới dependency `.venv/Lib/site-packages`,
@@ -237,9 +237,11 @@ unavailable historical reports.
 **Invariant:**
 
 - Every artifact under `TEST_RUN` is classified as `PROTECTED`, `RETAINED`, `DISPOSABLE`, `UNKNOWN`, `MISSING` or `STALE`, and registered with a non-empty owner and purpose. `artifacts_manifest.json` is the only registry; `cleanup_manifest.json` is a run report.
+- **Feature lifecycle:** one task may use one `.dev-env`, one current `DEV_RUN` build and one disposable `TEST_RUN`. Focused tests stream a bounded summary (maximum 10 MiB) before terminal cleanup. After `PASS`, `FAIL`, `TIMEOUT`, `START_ERROR` or `CANCELLED`, `TEST_RUN` must be absent/empty unless the task explicitly sets `OWNER_TEST_PENDING=1`; game copies, manifest, history, reports, logs and caches are disposable. A new task cannot start while a prior transient root is non-terminal or unknown.
+- **Release lifecycle:** `RELEASE_RUN` is created only for an explicit Release task and may retain one baseline/candidate/evidence scope until acceptance. After publication and acceptance, retain only the compact canonical receipt; dispose payload copies and staging. Release evidence does not authorize a second environment or a persistent `TEST_RUN`.
 - `TEST_RUN/game-copy` is protected from generic cleanup but is a temporary test copy, never a retained fixture/baseline. For every game-test outcome, first save needed reports/logs outside the copy and ensure the test process has exited. The canonical copy uses `dispose_e2e_game_copy`; a scoped copy must be registered at its exact root as `kind=test_game_copy`, `lifecycle=DISPOSABLE` and passed to `cleanup_after_test(..., disposable_paths=[copy])` with the actual test outcome. Both routes record terminal `MISSING`. Canonical non-game fixtures, user/game paths, models, baselines and retained evidence remain protected. Cleanup targets must stay under `TEST_RUN`; outside/protected paths are rejected and no process is killed to make deletion possible.
 - An ACTIVE legacy entry whose path is absent becomes `MISSING`/`STALE`; an existing root without a registry entry becomes `UNKNOWN` unless an explicit protected/retained path rule covers it. Neither case is silently dropped or deleted.
-- `--dry-run` performs no `_work`, registry or evidence write; only an explicitly requested `--output` outside `_work` may be written. Generic cleanup deletes only registered `DISPOSABLE` artifacts (plus the explicit audited migration allowlist). After `PASS`, `FAIL`, `TIMEOUT`, `START_ERROR` or `CANCELLED`, the runner preserves the exact outcome/exit/command/test summary/error and bounded stdout/stderr excerpts in compact Markdown, then attempts disposal after the process exits. Raw logs and heavy disposable payload are not retained for debugging. If the child remains alive, do not finalize or claim cleanup success; report its PID and `REVIEW_REQUIRED`. Test verdict and cleanup status remain separate.
+- `--dry-run` performs no `TEST_RUN`, registry or evidence write; only an explicitly requested `--output` outside `TEST_RUN` may be written. Generic cleanup deletes only registered `DISPOSABLE` artifacts (plus the explicit audited migration allowlist). After `PASS`, `FAIL`, `TIMEOUT`, `START_ERROR` or `CANCELLED`, the runner streams the exact outcome/exit/command/test summary/error and bounded stdout/stderr excerpts, then disposes terminal `TEST_RUN` content. Raw logs and heavy disposable payload are not retained for debugging. If the child remains alive, do not finalize or claim cleanup success; report its PID and `REVIEW_REQUIRED`. Test verdict and cleanup status remain separate.
 - Both dry-run and apply must block a deletion root when any live non-`DISPOSABLE` registry entry claims that root or a descendant; malformed claims fail closed. Dry-run reports the blocker, never a planned deletion; apply rechecks the same ownership guard immediately before removal. `PROTECTED`, `RETAINED`, `UNKNOWN`, `STALE`, external/user paths and descendants claimed by those entries remain untouched.
 - Registry reads used for updates reject linked/nonregular files, unreadable or malformed JSON, non-object roots and invalid `artifacts`/`archive` container shapes. Reconciliation never rewrites malformed registry metadata; cleanup remains `REVIEW_REQUIRED` until it is resolved.
 - Every canonical run carries `scope_id`, `run_id`, `scope_root` and provenance, captures before/after inventory, and finalizes lifecycle in `finally`. New or modified paths outside the current scope registration are UNKNOWN/review-required. Cleanup status and before/after/deleted/retained/protected/unknown/locked data are evidence; cleanup failure cannot be hidden behind a child test PASS.
@@ -249,32 +251,15 @@ unavailable historical reports.
 - Owner decision (2026-10-04): keep project-managed DEV environments, artifacts, baselines and evidence inside the DEV checkout; do not create an external archive or move them outside to satisfy the size gate. A cleanup `PASS` requires a complete inventory of the entire checkout, at most **1 GiB of non-exempt files**, and `.dev-env` at most **3 GiB**. Report both totals and each exact exemption root/reason. The only shared environment root is `.dev-env`; `DEV_RUN` is one current build, `TEST_RUN` is disposable test runtime, and `RELEASE_RUN` exists only for an explicit Release task. Consolidate reusable environments; duplicate snapshots, payload copies and obsolete fixtures are not exemptions. No blanket exemption for `DEV_RUN`, `TEST_RUN` or `.scratch`.
 - Cleanup is test/tooling infrastructure and must not change translation semantics, worker NDJSON, WPF product behavior or engine/game behavior.
 
-**Owner-approved retained baseline exemptions (2026-10-04):** exact roots
-`TEST_RUN/r12i` (pristine public v0.1 installation),
-`DEV_RUN/v01_audit/installed` (protected installed baseline with its data/models),
-and `DEV_RUN/baselines/fullapp-013` (real installed full-app acceptance witness)
-share the same combined 5 GiB cap with the existing environment exemptions.
-Owner approval (2026-10-04, Brain turn `01a10703`): one additional exact root
-`DEV_RUN/baselines/stable-012` may hold a copy of the verified public Setup
-0.1.2 installation for stable 0.1.3 update/rollback acceptance, within the same
-combined 5 GiB cap. Keep the Owner installation read-only during preparation;
-do not copy its user data. After retaining manifests, hashes and publication
-receipts and checking the public Setup digest, dispose only
-`DEV_RUN/candidate-0.1.2/Release/Setup.exe` and
-`DEV_RUN/candidate-0.1.2/Release/Updates/full-app-update-0.1.2-757e78cc88aed6a4.zip`.
-This approval does not authorize disposal of other retained baselines or files.
-Their siblings, duplicate payloads, candidate packages and evidence are not
-exempt. Candidate `DEV_RUN/candidate-0.1.2` and evidence
-`DEV_RUN/evidence/cleanup-20261004` count toward the non-exempt 1 GiB cap.
-The Owner approved the reviewed terminal snapshot/synthetic-copy disposition,
-internal resource moves and lifecycle updates after preservation hash checks;
-this one-time approval does not widen generic cleanup's `_work` path validator.
-Nested snapshots under `.scratch` or `TEST_RUN` inventory the containing
-main checkout for quota; deletion and artifact ownership stay in the local run
-scope. The canonical wrapper blocks child/payload creation when quota inventory
-is incomplete or either cap is exceeded; it may write a bounded failure receipt.
+Historical baselines and incident snapshots are not current exemptions or clone
+prerequisites. A Release task may register one owned baseline/candidate scope in
+`RELEASE_RUN` until acceptance; after acceptance only the compact receipt remains.
+Nested snapshots under `.scratch` or `TEST_RUN` inventory the containing main
+checkout for quota; deletion and artifact ownership stay in the local run scope.
+The canonical wrapper blocks child/payload creation when quota inventory is
+incomplete or either cap is exceeded; it may write a bounded failure receipt.
 
-**Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; cleanup report under `_work` after an explicit cleanup run.
+**Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; terminal summary is streamed and `TEST_RUN` is absent/empty after feature runs.
 
 ## 10b. Prospective artifact-registry epoch
 

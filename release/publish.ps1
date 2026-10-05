@@ -95,7 +95,7 @@ $DevRunRoot = [System.IO.Path]::GetFullPath($DevRunRoot)
 $ArtifactWorkRoot = if ([string]::IsNullOrWhiteSpace($ArtifactWorkRoot)) { Join-Path $DevRoot "RELEASE_RUN" } else { $ArtifactWorkRoot }
 $ArtifactWorkRoot = [System.IO.Path]::GetFullPath($ArtifactWorkRoot)
 $ArtifactHelpersRoot = if ([string]::IsNullOrWhiteSpace($ArtifactHelpersRoot)) { Join-Path $DevRoot "tests\lib" } else { [System.IO.Path]::GetFullPath($ArtifactHelpersRoot) }
-$WorkerVenvRoot = if ([string]::IsNullOrWhiteSpace($WorkerVenvRoot)) { Join-Path $DevRoot ".venv" } else { [System.IO.Path]::GetFullPath($WorkerVenvRoot) }
+$WorkerVenvRoot = if ([string]::IsNullOrWhiteSpace($WorkerVenvRoot)) { Join-Path $DevRoot ".dev-env\.venv" } else { [System.IO.Path]::GetFullPath($WorkerVenvRoot) }
 if (-not (Test-Path -LiteralPath (Join-Path $WorkerVenvRoot "Scripts\python.exe"))) {
     throw "WorkerVenvRoot must contain Scripts\python.exe: $WorkerVenvRoot"
 }
@@ -194,7 +194,7 @@ $systemTempCwd = $safeTempRoot
 $Python = $null
 $pythonCandidates = @()
 if (-not [string]::IsNullOrWhiteSpace($PythonPath)) { $pythonCandidates += [System.IO.Path]::GetFullPath($PythonPath) }
-$pythonCandidates += (Join-Path $DevRoot ".venv\Scripts\python.exe")
+$pythonCandidates += (Join-Path $DevRoot ".dev-env\.venv\Scripts\python.exe")
 foreach ($candidate in $pythonCandidates) {
     if (-not (Test-Path -LiteralPath $candidate)) { continue }
     $probeExit = 1
@@ -210,7 +210,7 @@ foreach ($candidate in $pythonCandidates) {
     }
 }
 if (-not $Python) {
-    Write-Error "No usable portable Python runtime. Checked DEV .venv and RELEASE worker/.venv."
+    Write-Error "No usable portable Python runtime. Checked .dev-env/.venv and RELEASE worker/.venv."
 }
 Write-Host "Python runtime: $Python" -ForegroundColor DarkGray
 
@@ -1071,7 +1071,7 @@ $null = robocopy $venvSrc $venvDest /E /NFL /NDL /NJH /NJS /nc /ns /np /R:2 /W:2
 if ($LASTEXITCODE -ge 8) { throw "robocopy .venv failed" }
 if (-not (Test-Path (Join-Path $venvDest "Scripts\python.exe"))) { throw "Release .venv python.exe missing" }
 
-# DEV .venv may be created with --system-site-packages.  Robocopy only sees
+# DEV .dev-env/.venv may be created with --system-site-packages.  Robocopy only sees
 # the venv-local directory, so copy missing packages from the configured base
 # site-packages before pruning; otherwise the portable Release silently loses
 # UnityPy/CT2 imports while still passing the DEV interpreter probe.

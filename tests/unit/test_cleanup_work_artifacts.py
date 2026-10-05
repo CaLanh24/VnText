@@ -1,4 +1,4 @@
-"""Focused lifecycle tests for the canonical tests/golden/_work cleanup."""
+"""Focused lifecycle tests for the canonical TEST_RUN cleanup."""
 
 from __future__ import annotations
 
@@ -49,9 +49,9 @@ class CleanupLifecycleTests(unittest.TestCase):
             root = Path(name)
             tests_root = root / "tests"
             golden = tests_root / "golden"
-            work = golden / "_work"
+            work = root / "TEST_RUN"
             work.mkdir(parents=True)
-            game_copy = work / "game_copy"
+            game_copy = work / "game-copy"
             game_copy.mkdir()
             manifest = work / "artifacts_manifest.json"
 
@@ -76,7 +76,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                     "EVIDENCE": work / "evidence",
                     "CLEANUP_MANIFEST": work / "cleanup_manifest.json",
                     "SIZE_REPORT": work / "size_report.json",
-                    "KEEP_PATHS": {"artifacts_manifest.json", "game_copy"},
+                    "KEEP_PATHS": {"artifacts_manifest.json", "game-copy"},
                     "DELETE_DIR_NAMES": set(),
                     "EXTRA_DELETE_PATHS": set(),
                     "EXTRA_DELETE_GLOBS": set(),
@@ -541,6 +541,15 @@ class CleanupLifecycleTests(unittest.TestCase):
             artifact = work / "evidence" / "runtime_data"
             artifact.mkdir(parents=True)
             (artifact / "player.log").write_text("runtime", encoding="utf-8")
+            paths.register_artifact(
+                artifact_id="test:evidence-root",
+                path=work / "evidence",
+                kind="test_evidence",
+                created_by="test_cleanup_work_artifacts",
+                owner="test_cleanup_work_artifacts",
+                purpose="retained evidence parent",
+                lifecycle="RETAINED",
+            )
             self._register(artifact)
             paths.register_artifact(
                 artifact_id="test:duplicate-runtime-data",
@@ -551,7 +560,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                 purpose="duplicate runtime cleanup registration",
                 lifecycle="DISPOSABLE",
             )
-            with patch.object(cleanup, "KEEP_PATHS", {"artifacts_manifest.json", "game_copy", "evidence"}):
+            with patch.object(cleanup, "KEEP_PATHS", {"artifacts_manifest.json", "game-copy", "evidence"}):
                 report = cleanup.cleanup_work(
                     dry_run=False,
                     registered_only=True,
@@ -698,7 +707,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             if manifest.exists():
                 entries = json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]
                 registered_paths = {item["path"]: item["lifecycle"] for item in entries}
-                self.assertEqual("RETAINED", registered_paths[payload["markdown_report"]])
+                self.assertEqual("DISPOSABLE", registered_paths[payload["markdown_report"]])
                 self.assertEqual("DISPOSABLE", registered_paths[payload["primary_output"]["stdout"]["path"]])
                 self.assertEqual("DISPOSABLE", registered_paths[payload["primary_output"]["stderr"]["path"]])
 
@@ -1876,7 +1885,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("PASS", payload["cleanup"]["cleanup_status"])
             self.assertIn("stdout-primary-evidence", payload["stdout_excerpt"])
             self.assertIn("stderr-primary-evidence", payload["stderr_excerpt"])
-            markdown = Path(payload["markdown_report"]).read_text(encoding="utf-8")
+            markdown = payload["markdown_excerpt"]
             self.assertIn("stdout-primary-evidence", markdown)
             self.assertIn("stderr-primary-evidence", markdown)
             self.assertIn("Test summary", markdown)
@@ -1934,6 +1943,8 @@ class CleanupLifecycleTests(unittest.TestCase):
         }
         for outcome, (child_exit, expected_summary) in cases.items():
             with self.subTest(outcome=outcome), self.isolated_workspace() as (_root, work, _game, _manifest):
+                shutil.rmtree(_game, ignore_errors=False)
+                _manifest.unlink(missing_ok=True)
                 with patch.object(runner, "WORK_ROOT", work), patch.object(runner, "_source_sha", return_value="focused-test-sha"):
                     if outcome == "START_ERROR":
                         process_patch = patch.object(runner.subprocess, "Popen", side_effect=OSError("fixture start error"))
@@ -1957,7 +1968,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                     self.assertEqual(expected_summary, payload["test_summary"]["status"])
                     self.assertEqual("PASS", payload["cleanup"]["cleanup_status"])
                     self.assertEqual(0 if outcome == "PASS" else 1, return_code)
-                    markdown = Path(payload["markdown_report"]).read_text(encoding="utf-8")
+                    markdown = payload["markdown_excerpt"]
                     for evidence in ("Command:", "Child exit code:", "Test summary", outcome):
                         self.assertIn(evidence, markdown)
                     self.assertIn("fixture start error", markdown) if outcome == "START_ERROR" else None
@@ -1968,6 +1979,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                         self.assertIn("stderr-evidence", markdown)
                     self.assertFalse(Path(payload["primary_output"]["stdout"]["path"]).exists())
                     self.assertFalse(Path(payload["primary_output"]["stderr"]["path"]).exists())
+                    self.assertFalse(work.exists(), f"terminal TEST_RUN was not disposed for {outcome}")
 
     def test_runner_does_not_claim_cleanup_pass_while_child_remains_alive(self):
         class StillRunning:
@@ -2137,13 +2149,14 @@ class CleanupLifecycleTests(unittest.TestCase):
                     text=True,
                     timeout=60,
                 )
-                payload = json.loads(report_path.read_text(encoding="utf-8"))
+                payload = json.loads(result.stdout)
                 self.assertEqual(outcome, payload["outcome"], result.stdout + result.stderr)
                 self.assertEqual(wrapper_exit, result.returncode)
                 self.assertEqual("EXITED", payload["child_process_state"])
                 self.assertIsNotNone(payload["child_exit_code"])
                 self.assertEqual("FIXTURE_READY", ready.read_text(encoding="utf-8"))
                 ready.unlink()
+                self.assertFalse(report_path.exists())
                 self.assertFalse(game_copy.exists())
                 self.assertIn("game_copy_disposal", payload["cleanup"], f"{outcome}: {payload}")
                 self.assertEqual(
@@ -2176,8 +2189,11 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(1, result.returncode)
             self.assertEqual("TIMEOUT", payload["outcome"])
             self.assertEqual("TIMEOUT", payload["cleanup"]["outcome"])
-            self.assertTrue(report_path.is_file())
-            self.assertTrue((work / "artifacts_manifest.json").is_file())
+            if payload["child_process_state"] == "RUNNING":
+                self.assertTrue(report_path.is_file())
+            else:
+                self.assertFalse(report_path.exists())
+                self.assertFalse(work.exists())
             stdout_path = Path(payload["primary_output"]["stdout"]["path"])
             stderr_path = Path(payload["primary_output"]["stderr"]["path"])
             if payload["child_process_state"] == "EXITED":
@@ -2212,8 +2228,8 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(1, result.returncode)
             self.assertEqual("START_ERROR", payload["outcome"])
             self.assertEqual("START_ERROR", payload["cleanup"]["outcome"])
-            self.assertTrue(report_path.is_file())
-            self.assertTrue((work / "artifacts_manifest.json").is_file())
+            self.assertFalse(report_path.exists())
+            self.assertFalse(work.exists())
 
     def test_redirected_runtime_roots_register_shared_path_once(self):
         with self.isolated_workspace() as (root, work, _game, manifest):
@@ -2235,7 +2251,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                     include_release_verify=True,
                 )
             entries = json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]
-            self.assertEqual(3, len(entries))
+            self.assertEqual(4, len(entries))
             self.assertEqual(1, sum(item["path"] == str(shared.resolve()) for item in entries))
             self.assertTrue(all(item["lifecycle"] == "DISPOSABLE" for item in entries))
             self.assertTrue(shared.is_dir() and appdata.is_dir())

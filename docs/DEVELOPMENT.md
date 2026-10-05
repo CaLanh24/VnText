@@ -12,12 +12,12 @@ command, cwd, stdout/stderr và exit code; exit 2 là danh sách prerequisite/qu
 chưa đủ, exit 1 là lỗi thực. Không suy Release PASS từ preflight DEV.
 
 ```powershell
-# Dùng đường dẫn Python 3.11+ đã kiểm; không cần .venv để chạy preflight.
+# Dùng đường dẫn Python 3.11+ đã kiểm; không cần environment để chạy preflight.
 python -B release/dev_bootstrap.py
 # Khi dependency đã đủ: build offline bằng SDK/pack/NuGet cache hiện có.
-.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action build
+.\.dev-env\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action build
 # Model phải có sẵn và được Owner cho phép sử dụng.
-.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --model .dev-env/cache/models/opus-mt-en-vi-int8
+.\.dev-env\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --model .dev-env/cache/models/opus-mt-en-vi-int8
 $LASTEXITCODE
 ```
 
@@ -36,13 +36,13 @@ và NuGet riêng chỉ có hiệu lực trong child build; không sửa profile 
 Giữ command và JSON/exit code ngoài payload. Build/smoke không phải cleanup PASS.
 
 Nếu thử source checkout cô lập trong cùng DEV đã được đăng ký owner/lifecycle,
-truyền `--python <DEV-main>/.venv/Scripts/python.exe --model <DEV-main>/.dev-env/cache/models/opus-mt-en-vi-int8 --shared-root <DEV-main>`.
+truyền `--python <DEV-main>/.dev-env/.venv/Scripts/python.exe --model <DEV-main>/.dev-env/cache/models/opus-mt-en-vi-int8 --shared-root <DEV-main>`.
 Script không copy dependency; shared-root phải nằm trong containing checkout.
 Đây là nghiệm thu source sạch với environment dùng chung, không chứng minh cài
 dependency trên máy mới. Không tạo snapshot/venv mới nếu chưa duyệt scope/budget.
 
 Python 3.11+ cho DEV; publisher hiện yêu cầu Python **3.12.x** khi đóng runtime.
-Kiểm `.venv` nếu có, `py -0p`, `Get-Command python,py,dotnet,git,pwsh`, và các
+Kiểm `.dev-env/.venv` nếu có, `py -0p`, `Get-Command python,py,dotnet,git,pwsh`, và các
 runtime/cache đã có trên máy. Ghi đường dẫn thực, `python --version`,
 `dotnet --list-sdks`, `dotnet --list-runtimes`, `pip check` và version package.
 Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/version/hash
@@ -51,7 +51,7 @@ Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/v
 - Build DEV: Git, Python 3.11+, `requirements.txt`, SDK .NET 8 với WindowsDesktop
   targeting pack. NuGet restore cần nguồn chính thức hoặc cache package đủ.
 - Smoke: các điều kiện DEV, model CT2/OPUS-MT đủ tokenizer/config/model, worker
-  Python đúng `.venv`, và output/work root ghi được. Thiếu model không phải PASS.
+  Python đúng `.dev-env/.venv`, và output/work root ghi được. Thiếu model không phải PASS.
 - Harness/Release: thêm SDK .NET 10 tại `.dev-env/dotnet-sdk-10`; harness hiện pin
   runtime/ref pack 8.0.30 và apphost pack 10.0.12. Publisher còn cần matching
   .NET 8 core/WPF runtime + ref packs + hostfxr dưới Program Files, .NET Framework
@@ -86,11 +86,11 @@ Chọn executable đã kiểm phiên bản (không giả định `py` có trên 
 ```powershell
 New-Item -ItemType Directory -Force .dev-env/cache | Out-Null
 # Nếu launcher có Python 3.12; có thể thay bằng đường dẫn Python 3.12 đã xác minh.
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe --version
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -X utf8 -m pip inspect > .dev-env/cache/pip-inspect.json
+py -3.12 -m venv .dev-env/.venv
+.\.dev-env\.venv\Scripts\python.exe --version
+.\.dev-env\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.dev-env\.venv\Scripts\python.exe -m pip check
+.\.dev-env\.venv\Scripts\python.exe -X utf8 -m pip inspect > .dev-env/cache/pip-inspect.json
 ```
 
 Release cần thêm `pip install -r release/requirements-build.txt`. Không cần PyTorch/Argos/VinAI;
@@ -103,7 +103,7 @@ Model sản phẩm khai báo tại `vntext/mt_ct2_constants.py`: repo
 
 ```powershell
 $env:VNTEXT_CT2_MODEL = "$PWD/.dev-env/cache/models/opus-mt-en-vi-int8"
-.\.venv\Scripts\python.exe -B -c "from vntext.mt_ct2_model import ensure_model; print(ensure_model())"
+.\.dev-env\.venv\Scripts\python.exe -B -c "from vntext.mt_ct2_model import ensure_model; print(ensure_model())"
 $env:VNTEXT_CT2_NO_DOWNLOAD = '1'
 Get-ChildItem $env:VNTEXT_CT2_MODEL -Recurse -File | Get-FileHash -Algorithm SHA256
 ```
@@ -124,7 +124,7 @@ $env:DOTNET_CLI_HOME = "$PWD/.dev-env/cache/dotnet-home"
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
 dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN --configfile .dev-env/cache/NuGet.Config
 $env:VNTEXT_WORKER_CWD = "$PWD"
-$env:VNTEXT_WORKER_PYTHON = "$PWD/.venv/Scripts/python.exe"
+$env:VNTEXT_WORKER_PYTHON = "$PWD/.dev-env/.venv/Scripts/python.exe"
 $env:VNTEXT_DATA_ROOT = "$PWD/.dev-env/cache/dev-data"
 .\DEV_RUN\VNText.Studio.App.exe
 ```
@@ -153,8 +153,8 @@ scope/lifecycle theo `CONTRACTS.md` §10a/b; private history vắng không là P
 Không dọn `test-temp`, `DEV_RUN/v01_audit` hoặc đường dẫn chưa đủ ownership.
 
 ```powershell
-.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p test_entrypoint_docs_version.py -v
-.\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.venv\Scripts\python.exe -B tests/unit/test_wpf_workflow.py
+.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p test_entrypoint_docs_version.py -v
+.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B tests/unit/test_wpf_workflow.py
 ```
 
 Harness fixture version độc lập với version sản phẩm; readiness phải đạt trước

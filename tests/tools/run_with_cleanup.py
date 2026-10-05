@@ -31,6 +31,7 @@ sys.path[:0] = [str(HERE.parent), str(ROOT / "tests" / "lib")]
 from cleanup_work_artifacts import (  # noqa: E402
     InventoryBudget,
     finalize_scope,
+    purge_terminal_test_run,
     snapshot_tree,
 )
 import cleanup_work_artifacts  # quota resolution stays with the inventory owner
@@ -362,8 +363,8 @@ def _register_runner_report(report_path: Path, *, scope_id: str, run_id: str) ->
             kind="runner_report",
             created_by="run_with_cleanup.py",
             owner="run_with_cleanup.py",
-            purpose="retained canonical runner outcome and lifecycle evidence",
-            lifecycle="RETAINED",
+            purpose="disposable canonical runner outcome and lifecycle evidence",
+            lifecycle="DISPOSABLE",
             scope_id=scope_id,
             run_id=run_id,
         )
@@ -408,6 +409,7 @@ def _register_runner_owned_roots(
         release_verify = WORK_ROOT / f"release_verify_{scope_id}"
         env["VNTEXT_RELEASE_VERIFY_RUN_ROOT"] = str(release_verify.resolve())
         roots.setdefault("release_verify", release_verify.resolve())
+    roots.setdefault("evidence", WORK_ROOT / "evidence")
     records = []
     registered_ids = set()
     for name, path in roots.items():
@@ -473,6 +475,12 @@ def run(
     run_id = new_scope_id("run")
     scope_root = WORK_ROOT.resolve()
     WORK_ROOT.mkdir(parents=True, exist_ok=True)
+    before = snapshot_tree(
+        scope_root,
+        budget=InventoryBudget(timeout_seconds=cleanup_timeout),
+        include_hashes=True,
+        skip_retained=True,
+    )
     markdown_report = WORK_ROOT / f"{scope_id}.md"
     stdout_log = stdout_log or WORK_ROOT / f"{scope_id}.stdout.log"
     stderr_log = stderr_log or WORK_ROOT / f"{scope_id}.stderr.log"
@@ -502,12 +510,6 @@ def run(
     markdown_report.write_text(
         f"# Canonical test run\n\n- Outcome: `RUNNING`\n- Command: `{subprocess.list2cmdline(command)}`\n",
         encoding="utf-8",
-    )
-    before = snapshot_tree(
-        scope_root,
-        budget=InventoryBudget(timeout_seconds=cleanup_timeout),
-        include_hashes=True,
-        skip_retained=True,
     )
     for retained_root in retained_roots or []:
         _register_retained_path(
@@ -711,6 +713,17 @@ def run(
             resolved_report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             if WORK_ROOT.resolve() in resolved_report.parents:
                 _register_runner_report(resolved_report, scope_id=scope_id, run_id=run_id)
+        result["markdown_excerpt"] = markdown_report.read_text(encoding="utf-8", errors="replace")[:MAX_SUMMARY_BYTES]
+        terminal_root = purge_terminal_test_run(
+            before=before,
+            owner_test_pending=bool(os.environ.get("VNTEXT_OWNER_TEST_PENDING")) or bool(retained_roots),
+        )
+        result["cleanup"]["terminal_root"] = terminal_root
+        if not terminal_root.get("ok"):
+            result["status"] = "REVIEW_REQUIRED"
+            result["exit_code"] = 1
+        if resolved_report and (retained_roots or bool(os.environ.get("VNTEXT_OWNER_TEST_PENDING"))):
+            resolved_report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # stdout may use the active Windows console code page; escaped JSON
         # remains valid machine output without raising on replacement chars.
         print(json.dumps(result, ensure_ascii=True, indent=2), flush=True)

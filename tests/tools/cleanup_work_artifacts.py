@@ -458,9 +458,44 @@ def is_keep(path: Path, *, allow_registered_disposable: bool = False) -> bool:
     # always keep mt_pipeline_copy backups folder (csv.bak)
     if rel.startswith("mt_pipeline_copy/"):
         return True
-    if path == E2E_GAME_COPY or E2E_GAME_COPY.resolve() in path.resolve().parents or path.resolve() == E2E_GAME_COPY.resolve():
+    if (not allow_registered_disposable) and (path == E2E_GAME_COPY or E2E_GAME_COPY.resolve() in path.resolve().parents or path.resolve() == E2E_GAME_COPY.resolve()):
         return True
     return False
+
+
+def purge_terminal_test_run(*, before: dict | None, owner_test_pending: bool = False) -> dict:
+    """Dispose a fresh terminal TEST_RUN, including registry/report files.
+
+    A pre-existing tree is never mass-deleted.  Feature runs therefore either
+    start from an empty TEST_RUN and end absent, or retain the tree explicitly
+    for OWNER_TEST_PENDING review.
+    """
+
+    if owner_test_pending:
+        return {"ok": True, "status": "OWNER_TEST_PENDING", "deleted": []}
+    prior = (before or {}).get("items") or {}
+    if prior:
+        return {"ok": False, "status": "REVIEW_REQUIRED", "reason": "preexisting_test_run_content", "deleted": []}
+    if not WORK_ROOT.exists():
+        return {"ok": True, "status": "ABSENT", "deleted": []}
+    deleted: list[dict] = []
+    budget = InventoryBudget()
+    for child in list(WORK_ROOT.iterdir()):
+        safe_rmtree(
+            child,
+            deleted,
+            reason="terminal TEST_RUN disposal",
+            budget=budget,
+            allow_registered_disposable=True,
+            registered_entries=[],
+        )
+    if WORK_ROOT.exists():
+        try:
+            WORK_ROOT.rmdir()
+        except OSError as exc:
+            deleted.append({"path": str(WORK_ROOT), "skipped": True, "reason": f"rmdir:{exc}"})
+    ok = not any(item.get("skipped") for item in deleted) and not WORK_ROOT.exists()
+    return {"ok": ok, "status": "PASS" if ok else "REVIEW_REQUIRED", "deleted": deleted}
 
 
 def safe_rmtree(

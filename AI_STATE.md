@@ -1,11 +1,12 @@
 # Trạng thái hiện tại — VNText Studio
 
-## Stable update 0.1.3 đã public; chờ acceptance nút GitHub (2026-10-05)
+## Stable update 0.1.3 đã public; installed-app GitHub acceptance PASS trong bounded scope (2026-10-05)
 
 - Owner trực tiếp xác nhận trong chat DEV: "Cho phép push và publish stable
   0.1.3", sau các gate và Brain review. Main/tag `v0.1.3` đã push exit0;
   [Release v0.1.3](https://github.com/CaLanh24/VnText/releases/tag/v0.1.3)
-  public stable/latest, không draft/prerelease. Source artifact/tag giữ đúng
+  public stable/latest, không draft/prerelease. Offer/apply/restart trên bản cài
+  0.1.2 của Owner đã PASS; toàn product vẫn chưa `RELEASE_VERIFIED`. Source artifact/tag giữ đúng
   `cdf3ee0e11afa9fc85caab18959a59a9bdc6aed3`; docs sau publication không
   relabel candidate/evidence theo HEAD mới.
 - Full-app ZIP `full-app-update-0.1.3-0e29640bce9604ca.zip`, 1.978.560byte,
