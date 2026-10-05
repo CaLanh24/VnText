@@ -1964,7 +1964,7 @@ internal static class Program
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
             var firstCandidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
 
-            vm.RecheckUpdateCommand.Execute(null);
+            vm.RecheckGitHubUpdateForTest();
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
 
             var currentCandidates = Directory.GetFiles(packageDirectory, "github-update-*.zip");

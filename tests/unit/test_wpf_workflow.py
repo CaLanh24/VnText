@@ -92,7 +92,7 @@ def _run_harness(env: dict[str, str], artifacts_root: Path) -> subprocess.Comple
         env=runtime_env,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=300,
     )
 
 

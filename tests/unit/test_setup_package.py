@@ -26,7 +26,7 @@ TESTS, ROOT, _LIB = _bootstrap_tests()
 sys.path.insert(0, str(ROOT / "release"))
 import package_installer
 import publish_owner_wpf_update
-from work_paths import new_scope_id, register_artifact, artifact_scope
+from work_paths import WORK_ROOT, new_scope_id, register_artifact, artifact_scope
 sys.path.insert(0, str(TESTS / "tools"))
 from cleanup_work_artifacts import cleanup_after_test
 
@@ -38,7 +38,7 @@ class SetupPackageTests(unittest.TestCase):
                  "wpf_app/VNText.Studio.App/Assets/vntext_studio.ico",
                  "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_128.png",
                  "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png")
-        generated = TESTS / "golden" / "_work" / f"wpf-brand-{uuid4().hex}"
+        generated = WORK_ROOT / f"wpf-brand-{uuid4().hex}"
         with artifact_scope(generated, artifact_id=generated.name, kind="test_fixture",
                             owner="test_setup_package.py", purpose="WPF brand integrity test"):
             for name in names:
@@ -70,7 +70,7 @@ class SetupPackageTests(unittest.TestCase):
         self.assertEqual("0.1.3.0", valid.stdout.strip())
 
     def test_update_feed_switch_preserves_backup_and_fails_without_pending(self):
-        work = TESTS / "golden" / "_work" / f"feed-switch-{uuid4().hex}"
+        work = WORK_ROOT / f"feed-switch-{uuid4().hex}"
         with artifact_scope(work, artifact_id=work.name, kind="test_fixture",
                             owner="test_setup_package.py", purpose="Actual atomic feed switch and no-feed mode"):
             work.mkdir()
@@ -222,7 +222,7 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             binary.unlink()
 
     def test_hash_inventory_and_traversal_rejection(self):
-        work = TESTS / "golden" / "_work" / f"setup-package-{uuid4().hex}"
+        work = WORK_ROOT / f"setup-package-{uuid4().hex}"
         scope = os.environ.get("VNTEXT_ARTIFACT_SCOPE_ID") or new_scope_id("setup-package")
         run_id = os.environ.get("VNTEXT_ARTIFACT_RUN_ID") or scope
         register_artifact(artifact_id=f"setup-package:{work.name}", path=work, kind="test_workspace", created_by="test_setup_package.py", owner="test_setup_package.py", purpose="Setup package hash and traversal test", lifecycle="DISPOSABLE", scope_id=scope, run_id=run_id)

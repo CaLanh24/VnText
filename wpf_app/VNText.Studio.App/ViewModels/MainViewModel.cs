@@ -827,6 +827,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             RecheckUpdateSources();
     }
 
+    internal void RecheckGitHubUpdateForTest() => RecheckUpdateSources();
+
     private void RaiseGitHubUpdateCard()
     {
         Raise(nameof(GitHubUpdateStatus));

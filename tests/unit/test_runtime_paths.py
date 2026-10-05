@@ -44,12 +44,12 @@ class RuntimePathsTests(unittest.TestCase):
         from unittest.mock import patch
 
         from uuid import uuid4
-        from work_paths import new_scope_id, register_artifact
+        from work_paths import WORK_ROOT, new_scope_id, register_artifact
 
         sys.path.insert(0, str(TESTS / "tools"))
         from cleanup_work_artifacts import cleanup_after_test
 
-        root = TESTS / "golden" / "_work" / f"runtime-path-boundary-{uuid4().hex}"
+        root = WORK_ROOT / f"runtime-path-boundary-{uuid4().hex}"
         scope = new_scope_id("runtime-path-boundary")
         register_artifact(artifact_id=f"runtime-path:{root.name}", path=root, kind="test_workspace", created_by="test_runtime_paths.py", owner="test_runtime_paths.py", purpose="Release data path boundary test", lifecycle="DISPOSABLE", scope_id=scope, run_id=scope)
         data = root / "data"

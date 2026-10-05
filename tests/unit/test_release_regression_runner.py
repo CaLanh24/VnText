@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "release" / "run_regression.ps1"
-WORK = ROOT / "tests" / "golden" / "_work"
+WORK = ROOT / "TEST_RUN"
 
 sys.path.insert(0, str(ROOT / "tests" / "lib"))
 sys.path.insert(0, str(ROOT / "tests" / "tools"))
@@ -75,7 +75,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "        self.assertTrue(True)\n",
             encoding="utf-8",
         )
-        scope_root = harness / "tests" / "golden" / "_work"
+        scope_root = harness / "TEST_RUN"
         log_root = scope_root / "release_runner_contract"
         log_root.mkdir(parents=True)
         outcome = "FAIL"
@@ -229,7 +229,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 "        self.assertTrue(True)\n",
                 encoding="utf-8",
             )
-            scope_root = harness / "tests" / "golden" / "_work"
+            scope_root = harness / "TEST_RUN"
             log_root = scope_root / "release_gate"
             log_root.mkdir(parents=True)
             pattern_file = log_root / "patterns.txt"
@@ -322,7 +322,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             runner_path = harness / "release" / "run_regression.ps1"
             runner_path.parent.mkdir(parents=True)
             shutil.copy2(RUNNER, runner_path)
-            scope_root = harness / "tests" / "golden" / "_work"
+            scope_root = harness / "TEST_RUN"
             log_root = scope_root / "release_gate"
             log_root.mkdir(parents=True)
             pattern_file = log_root / "patterns.txt"
