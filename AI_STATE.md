@@ -39,12 +39,19 @@
   portable Python home đã sửa đúng owner cdf, focused/affected23/23; không nới
   package/path/model validator. Historical WPF0x80070497 root cause UNKNOWN,
   không tái hiện ở focused/full cuối; không sửa updater theo suy đoán.
-- **Public stable GitHub button update NOT VERIFIED**: API/download/local-copy
-  acceptance không thay nút Check/Apply trên bản cài Owner. Đang chờ ảnh/trạng
-  thái offer từ bản0.1.2 trước Apply. Setup/uninstall UI là Owner-reported,
+- **Public stable GitHub button acceptance đã quan sát trên bản cài thật** theo
+  mục bên dưới; vẫn không gọi `RELEASE_VERIFIED` cho tới khi các giới hạn còn
+  lại được khép. Setup/uninstall UI là Owner-reported,
   raw native process exit UNKNOWN; native/framework/dependency/model version
   migration không kiểm trong gói này vì bytes kế thừa nguyên từ Setup0.1.2.
   Không gọi RELEASE_VERIFIED. Người mới/v0.1 dùng Setup0.1.2; không có Setup013.
+
+## Stable GitHub acceptance trên bản cài Owner (2026-10-05)
+
+- Brain đã thao tác trực tiếp cửa sổ `C:\Users\Hiu\Downloads\Compressed\Release 0.1\VNText Studio.exe` theo ủy quyền Owner: UI ban đầu 0.1.2 hiện `Stable full-app update available: v0.1.3`; xác nhận Apply; app tự đóng và mở lại. UI sau restart hiển thị 0.1.3, `VNText Studio is up to date with stable GitHub releases.`, và log UI ghi Python worker sẵn sàng. Đây là UI evidence trực tiếp của offer/apply/restart, không chạy lại regression.
+- Coordinator chỉ đọc sau thao tác: `.update/work/github-update-0.1.3-babdcc63d88a414c915a61530a0f1f6b.zip` 1.978.560 byte, SHA256 `0e29640bce9604ca0ea6177dcd897285d393546cc7c2ed4dc7bce12e0476d106`, khớp asset stable v0.1.3 và manifest. Inventory app sau update **7.132/7.132**; `app/RELEASE.json` version0.1.3/source cdf3ee0/tree fingerprint đúng; replace đúng5 file. `app/worker/models/**` giữ23 records; `data/` chỉ được kiểm sự hiện diện/đường dẫn, không đọc nội dung user data. Uninstall hash được giữ lại; backup/staging transaction đã terminal (0 file).
+- Raw `.update/update.log` ghi `installed VNText Studio.exe`, bốn file metadata/worker, `full-app health check passed`, `full-app update completed`. Evidence gọn: `DEV_RUN/candidate-0.1.3/publication/owner-installed-acceptance.json`; UI observation và hash/inventory verification được tách rõ trong file này.
+- Phạm vi kết luận: stable GitHub discovery, offer, apply, restart, installed version, package/source/hash, app inventory và worker-ready UI đã có bằng chứng trên bản cài thật. Vẫn **không gọi RELEASE_VERIFIED**: Setup/uninstall native exit và acceptance sản phẩm rộng hơn chưa có raw gate; nội dung user data không được đọc; native/runtime migration không đổi trong package; không thực hiện nút Apply lần nữa.
 
 ## Setup 0.1.2 public prerelease (2026-10-04)
 
