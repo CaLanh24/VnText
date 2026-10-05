@@ -57,9 +57,9 @@
 ## Setup 0.1.2 public prerelease (2026-10-04)
 
 - Owner yêu cầu tải thử Setup mới tại Brain turn01a106d0. Đã publish
-  [v0.1.2 prerelease](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2),
+  former v0.1.2 prerelease (now consolidated into the public 0.1 release),
   không stable/latest; tag đúng candidate source060180f8ba6c4c970dab7f3261d65b5c5d654f95.
-- [Setup.exe](https://github.com/CaLanh24/VnText/releases/download/v0.1.2/Setup.exe)
+- [public Setup](https://github.com/CaLanh24/VnText/releases/latest/download/VNTextStudio-0.1-Setup.exe)
   221.787.648byte, SHA256b374c2e24293d5a8bf9aa5e4b08863f97cde6ab61a6238eaf1fe659a529826e5.
   Upload/create và API read-back exit0;6assets size/digest khớp local: Setup,
   SHA256SUMS, RELEASE.json, payload-manifest, candidate-manifest và notices.
@@ -160,7 +160,7 @@
 
 - Repository chính thức: [CaLanh24/VnText](https://github.com/CaLanh24/VnText), nhánh `main`. Clone mới chỉ cần source public và dependency theo `docs/DEVELOPMENT.md`; không tìm candidate, checkout hoặc lịch sử private.
 - Owner yêu cầu một bản công khai `0.1`, README tiếng Việt dành cho người dùng và giữ mã test cần thiết, không đưa dữ liệu chạy test vào Git.
-- [Release v0.1](https://github.com/CaLanh24/VnText/releases/tag/v0.1) đã công bố. Source build/tag: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.
+- Release public 0.1 hiện được duy trì tại [stable release page](https://github.com/CaLanh24/VnText/releases/tag/v0.1.3). Source build/tag lịch sử của Setup đầu tiên: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.
 - Setup mới: 221.765.120 byte; SHA-256 `4ec759a72114a87570fd1e6bbf9b4b239f32f02a5dd02b365b4f5294bb998e2e`. Digest asset GitHub khớp file build. Release chỉ chứa `Setup.exe` và `SHA256SUMS.txt`; hai Release/tag `v1.45.0`, `v1.45.1` đã xóa theo yêu cầu Owner.
 - Publisher, build, release verify và smoke hai cwd đạt. Đối chiếu trực tiếp toàn bộ 7.134 file payload với manifest không có hash/size sai, file thiếu hoặc thừa; Intel/NVIDIA DLL và notice khớp provenance. Không có FMOD native binary hoặc Argos; helper Python `fmod_toolkit`/`pyfmodex` vẫn có trong payload, không đồng nghĩa có quyền phân phối FMOD native binary.
 - Unittest trên source build: 651 test, 0 fail, 0 error, 7 skip, 0 warning. Sau build, kiểm tra installer 2/2 và GUI shutdown/worker reap 1/1 đạt; WPF harness 7/7 và DEV smoke đạt. Các skip cần game ngoài không chứng minh hỗ trợ mọi game hoặc chất lượng dịch.

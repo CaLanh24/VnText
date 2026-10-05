@@ -1,28 +1,28 @@
 # VNText Studio
 
-VNText Studio hỗ trợ trích xuất văn bản để dịch game, nhập lại bản dịch và áp dụng vào **bản sao an toàn** của game. Dự án đang tập trung vào một số định dạng Unity; không phải mọi game Unity hay mọi phiên bản asset đều được hỗ trợ.
+## Việt hóa game theo một quy trình trực quan trên Windows
 
-## Tải và sử dụng
+VNText Studio giúp bạn trích xuất, dịch và chèn lại văn bản game trong một quy trình rõ ràng.
 
-Tải `Setup.exe` từ [GitHub Releases](https://github.com/Calanh24/VnText/releases). Nếu trang chưa liệt kê bản phù hợp, chưa có Setup công khai để tải. Không tải Setup từ nguồn không chính thức.
+## Điểm nổi bật
 
-1. Cài ứng dụng, rồi mở thư mục của một bản sao game — không thử patch bản game duy nhất hoặc bản đang chơi.
-2. Chọn **Extract** để tạo dữ liệu trích xuất và CSV.
-3. Dịch trong ứng dụng hoặc chỉnh sửa/nhập CSV đã dịch. Giữ nguyên key, cột và cấu trúc CSV.
-4. Chọn **Patch** để kiểm tra và áp dụng bản dịch. Giữ bản sao lưu riêng; không bỏ qua cảnh báo hoặc xác minh.
+- Tự động trích xuất văn bản từ bản sao game.
+- Dịch ngay trong ứng dụng bằng CT2/OPUS-MT.
+- Nhập và xuất CSV để biên tập bằng công cụ quen thuộc.
+- Giữ key, placeholder và cấu trúc dữ liệu trong suốt quy trình.
+- Preflight, backup và verification trước và sau khi Patch.
+- Hỗ trợ luồng Unity hiện có và cập nhật phiên bản ngay trong ứng dụng.
 
-Khả năng trích xuất và patch phụ thuộc định dạng cụ thể của game. Kết quả Extract không bảo đảm game đó có thể patch an toàn; hãy dùng bản sao và kiểm tra game sau khi patch. Không đưa game, save, CSV riêng hoặc model tải về vào repository.
+## Cách dùng
 
-## Cập nhật và gỡ cài đặt
+1. Tải [`VNTextStudio-0.1-Setup.exe`](https://github.com/CaLanh24/VnText/releases/latest/download/VNTextStudio-0.1-Setup.exe) từ [GitHub Releases](https://github.com/CaLanh24/VnText/releases).
+2. Cài ứng dụng trên Windows.
+3. Chọn bản sao game bạn muốn xử lý.
+4. Chọn **Extract**, dịch hoặc nhập CSV, rồi chọn **Patch**.
+5. Mở bản sao game để kiểm tra kết quả.
 
-`v0.1` là bản công khai đầu tiên. [Setup 0.1.2 bản thử](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2) đã có để cài/nâng cấp; source `0.1.3` đã phát hành stable gói update từ baseline đó. Cập nhật qua stable GitHub trên bản cài Owner đã được nghiệm thu; giới hạn installer/uninstaller và runtime native vẫn giữ nguyên. Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; người còn ở v0.1 dùng Setup 0.1.2. Full-app update bắt đầu từ baseline mới, không hứa cài Setup một lần cho người đang dùng v0.1. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
+## Lưu ý
 
-Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nhận gỡ sẽ xóa toàn bộ nội dung trong thư mục cài, **bao gồm `data/` và dữ liệu do ứng dụng tạo**; thư mục cài còn lại nhưng rỗng. Sao lưu dữ liệu cần giữ trước khi gỡ.
+Khả năng tương thích tùy cấu trúc từng game; nên thao tác trên bản sao và giữ backup.
 
-## Mã nguồn và phát triển
-
-Phiên bản source hiện tại: `0.1.3` (phiên bản file Windows `0.1.3.0`). Tag và phiên bản release thực tế được công bố trên trang Releases; phiên bản source không đồng nghĩa bản phát hành đã tồn tại.
-
-Hướng dẫn thiết lập môi trường phát triển và các giới hạn khi chạy test nằm trong [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Quyền sử dụng và ghi nhận dependency được nêu trong [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md); mã nguồn được cấp phép theo [LICENSE](LICENSE).
-
-Preflight môi trường: chạy `python -B release/dev_bootstrap.py` bằng Python 3.11+ đã có. Script báo prerequisite còn thiếu, không tự tải/cài; xem hướng dẫn phát triển để build và smoke bằng dependency đã được xác minh.
+[Giấy phép](LICENSE)
