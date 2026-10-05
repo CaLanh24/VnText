@@ -104,6 +104,7 @@ internal static class Program
         Run("WpfUpdate_GitHubClassifiesOfflineTimeoutRateLimitAndUnconfigured", WpfUpdate_GitHubClassifiesOfflineTimeoutRateLimitAndUnconfigured, failures);
         Run("WpfUpdate_GitHubAppliesAndRollsBackWithDataPreserved", WpfUpdate_GitHubAppliesAndRollsBackWithDataPreserved, failures);
         Run("WpfUpdate_GitHubStartupAndManualChecksAreAsync", WpfUpdate_GitHubStartupAndManualChecksAreAsync, failures);
+        Run("WpfUpdate_GitHubButtonStateMapping", WpfUpdate_GitHubButtonStateMapping, failures);
         Run("WpfUpdate_GitHubCandidateIsReplacedOnRecheck", WpfUpdate_GitHubCandidateIsReplacedOnRecheck, failures);
         Run("WpfUpdate_GitHubCandidateIsDeletedOnClose", WpfUpdate_GitHubCandidateIsDeletedOnClose, failures);
         Run("WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose", WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose, failures);
@@ -1876,13 +1877,21 @@ internal static class Program
             });
             using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
                 githubHttpHandler: handler, updateInstallRoot: fixture.Root);
-            AssertTrue(vm.GitHubUpdateStatus.Contains("checking", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(vm.RecheckUpdateCommand.CanExecute(null));
+            AssertEqual("Kiểm tra cập nhật", vm.GitHubUpdateButtonText);
+            AssertTrue(vm.GitHubUpdateButtonEnabled);
+            vm.RecheckUpdateCommand.Execute(null);
+            AssertTrue(vm.GitHubUpdateStatus.Contains("Đang kiểm tra", StringComparison.Ordinal));
+            AssertEqual("Đang kiểm tra…", vm.GitHubUpdateButtonText);
+            AssertFalse(vm.GitHubUpdateButtonEnabled);
             AssertFalse(vm.RecheckUpdateCommand.CanExecute(null));
             AssertEqual(1, requests);
 
             pending.SetResult(JsonResponse("[]"));
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.Current, vm.GitHubUpdateState);
+            AssertEqual("Đã cập nhật", vm.GitHubUpdateButtonText);
+            AssertFalse(vm.GitHubUpdateButtonEnabled);
             AssertTrue(vm.RecheckUpdateCommand.CanExecute(null));
             vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
@@ -1890,6 +1899,55 @@ internal static class Program
             AssertEqual(GitHubUpdateState.Current, vm.GitHubUpdateState);
         }
         finally { DeleteUpdateFixture(fixture); }
+    }
+
+    private static void WpfUpdate_GitHubButtonStateMapping()
+    {
+        var idleFixture = CreateUpdateFixture("1.0.1");
+        try
+        {
+            var idle = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                updateInstallRoot: idleFixture.Root);
+            try
+            {
+                AssertEqual("Kiểm tra cập nhật", idle.GitHubUpdateButtonText);
+                AssertTrue(idle.GitHubUpdateButtonEnabled);
+            }
+            finally { idle.Dispose(); }
+
+            ConfigureGitHubSource(idleFixture, "test-owner", "test-repo");
+            var error = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: new TestHttpMessageHandler((_, _) => throw new HttpRequestException("offline")),
+                updateInstallRoot: idleFixture.Root);
+            try
+            {
+                error.RecheckUpdateCommand.Execute(null);
+                error.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                AssertEqual(GitHubUpdateState.Offline, error.GitHubUpdateState);
+                AssertEqual("Kiểm tra lại", error.GitHubUpdateButtonText);
+                AssertTrue(error.GitHubUpdateButtonEnabled);
+            }
+            finally { error.Dispose(); }
+
+            var availableFixture = CreateUpdateFixture("1.0.1");
+            ConfigureGitHubSource(availableFixture, "test-owner", "test-repo");
+            var available = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: CreateGitHubPackageHandler(availableFixture), updateInstallRoot: availableFixture.Root);
+            try
+            {
+                available.RecheckUpdateCommand.Execute(null);
+                available.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                AssertEqual(GitHubUpdateState.UpdateAvailable, available.GitHubUpdateState);
+                AssertEqual("Cài cập nhật", available.GitHubUpdateButtonText);
+                AssertTrue(available.GitHubUpdateButtonEnabled);
+            }
+            finally
+            {
+                available.Dispose();
+                DeleteUpdateFixture(availableFixture);
+            }
+        }
+        finally { DeleteUpdateFixture(idleFixture); }
     }
 
     private static void WpfUpdate_GitHubCandidateIsReplacedOnRecheck()
@@ -1901,6 +1959,7 @@ internal static class Program
             githubHttpHandler: handler, updateInstallRoot: fixture.Root);
         try
         {
+            vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
             var firstCandidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
@@ -1928,6 +1987,7 @@ internal static class Program
             githubHttpHandler: CreateGitHubPackageHandler(fixture), updateInstallRoot: fixture.Root);
         try
         {
+            vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
             var candidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();

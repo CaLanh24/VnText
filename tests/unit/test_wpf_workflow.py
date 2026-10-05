@@ -32,10 +32,10 @@ from cleanup_work_artifacts import cleanup_after_test
 from work_paths import ambient_scope, new_scope_id, register_artifacts
 
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-DOTNET = ROOT / ".dev-env" / "dotnet-sdk-10" / "dotnet.exe"
+DOTNET = Path(os.environ.get("VNTEXT_DOTNET", str(ROOT / ".dev-env" / "dotnet-sdk-10" / "dotnet.exe")))
 WORKFLOW_PROJECT = ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests"
 DOTNET_LAYOUT_VERSION = "8.0.30"
-APPHOST_PACK_VERSION = "10.0.12"
+APPHOST_PACK_VERSION = os.environ.get("VNTEXT_APPHOST_PACK_VERSION", "10.0.12")
 
 
 def _harness_env(work_root: Path) -> dict[str, str]:
@@ -249,31 +249,20 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
         updater = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "WpfUpdateService.cs").read_text(encoding="utf-8")
-        check_button_start = xaml.rfind("<Button", 0, xaml.index('Content="Recheck update sources"'))
-        check_button = xaml[check_button_start:xaml.index("/>", check_button_start)]
-        apply_button_start = xaml.rfind("<Button", 0, xaml.index('Content="Apply local preview"'))
-        apply_button = xaml[apply_button_start:xaml.index("/>", apply_button_start)]
-        confirmation = 'MessageBox.Show("Đóng VNText Studio và áp dụng bản cập nhật?"'
-        self.assertIn('Content="Recheck update sources"', check_button)
-        self.assertIn('AutomationProperties.Name="Recheck update sources"', check_button)
-        self.assertIn('Style="{StaticResource OutlineButton}"', check_button)
+        self.assertIn('Text="Phiên bản hiện tại"', xaml)
+        self.assertIn('Text="Phiên bản mới"', xaml)
         self.assertIn('Command="{Binding RecheckUpdateCommand}"', xaml)
-        self.assertIn('Content="Apply local preview"', apply_button)
-        self.assertIn('AutomationProperties.Name="Apply local preview"', apply_button)
-        self.assertIn('Style="{StaticResource PrimaryButton}"', apply_button)
-        self.assertIn('Command="{Binding ApplyUpdateCommand}"', apply_button)
-        self.assertIn('Text="Stable public releases (GitHub)"', xaml)
         self.assertIn('Text="{Binding GitHubUpdateStatus}"', xaml)
-        self.assertIn('Command="{Binding ApplyGitHubUpdateCommand}"', xaml)
-        self.assertIn('Command="{Binding OpenGitHubSetupCommand}"', xaml)
-        self.assertIn('Visibility="{Binding UpdateCheckEnabled, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn('Visibility="{Binding UpdateEnabled, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn('TextWrapping="Wrap"', xaml[xaml.index('Text="{Binding UpdateStatus}"'):xaml.index('/>', xaml.index('Text="{Binding UpdateStatus}"'))])
-        self.assertIn('<ColumnDefinition Width="*" />', xaml[xaml.index('Grid.Row="3"'):xaml.index('<!-- Main content -->')])
-        self.assertIn(confirmation, view_model)
+        self.assertIn('Content="{Binding GitHubUpdateButtonText}"', xaml)
+        self.assertIn('IsEnabled="{Binding GitHubUpdateButtonEnabled}"', xaml)
+        self.assertNotIn('Local Updates preview', xaml)
+        self.assertNotIn('Apply local preview', xaml)
+        self.assertNotIn('Stable public releases (GitHub)', xaml)
+        self.assertIn('<StackPanel Grid.Row="3"', xaml)
         self.assertNotIn("áp dụng bản cập nhật thử nghiệm", view_model)
-        self.assertIn("public bool UpdateCheckEnabled => true", view_model)
-        self.assertIn("StartGitHubUpdateCheck();", view_model)
+        self.assertIn("public bool GitHubUpdateChecking", view_model)
+        self.assertIn("public string GitHubUpdateButtonText", view_model)
+        self.assertIn("HandleUpdateAction", view_model)
         self.assertIn("WpfUpdateService.CheckGitHubUpdateAsync", view_model)
         self.assertIn("WpfUpdateService.TryGetAvailableUpdateVersion", view_model)
         self.assertIn("ReadAndValidatePackage(root, source)", updater)
@@ -374,6 +363,7 @@ class WpfWorkflowTests(unittest.TestCase):
                 "</ItemGroup></Project>\n",
                 encoding="utf-8",
             )
+            harness_env["NUGET_CONFIG_FILE"] = str(nuget_config)
             build = subprocess.run(
                 [
                     str(DOTNET),
@@ -387,6 +377,10 @@ class WpfWorkflowTests(unittest.TestCase):
                     "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
                     "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
                     "-p:NuGetAudit=false",
+                    "-p:RestoreIgnoreFailedSources=true",
+                    f"-p:TargetingPackVersion={DOTNET_LAYOUT_VERSION}",
+                    f"-p:LatestRuntimeFrameworkVersion={DOTNET_LAYOUT_VERSION}",
+                    f"-p:AppHostPackVersion={DOTNET_LAYOUT_VERSION}",
                 ],
                 cwd=str(ROOT),
                 env=harness_env,

@@ -148,39 +148,19 @@
                     </Button>
                 </StackPanel>
 
-                <Grid Grid.Row="3" Margin="3,24,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Border Width="34" Height="34" CornerRadius="17" Background="{StaticResource BrandDarkBrush}">
-                        <TextBlock Text="L" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" />
-                    </Border>
-                    <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Local workspace" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                        <TextBlock Text="{Binding Version}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
-                        <TextBlock Text="Local Updates preview" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
-                        <TextBlock Text="{Binding UpdateStatus}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
-                        <Button Content="Apply local preview" AutomationProperties.Name="Apply local preview"
-                                Style="{StaticResource PrimaryButton}" Command="{Binding ApplyUpdateCommand}"
-                                Visibility="{Binding UpdateEnabled, Converter={StaticResource BoolToVis}}"
-                                Margin="0,4,0,0" HorizontalAlignment="Left" />
-                        <TextBlock Text="Stable public releases (GitHub)" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
-                        <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" TextWrapping="Wrap" />
-                        <Button Content="Recheck update sources" AutomationProperties.Name="Recheck update sources"
-                                Style="{StaticResource OutlineButton}" Command="{Binding RecheckUpdateCommand}"
-                                Visibility="{Binding UpdateCheckEnabled, Converter={StaticResource BoolToVis}}"
-                                Margin="0,4,0,0" HorizontalAlignment="Left" />
-                        <Button Content="Apply stable WPF update" AutomationProperties.Name="Apply stable WPF update"
-                                Style="{StaticResource PrimaryButton}" Command="{Binding ApplyGitHubUpdateCommand}"
-                                Visibility="{Binding GitHubApplyEnabled, Converter={StaticResource BoolToVis}}"
-                                Margin="0,4,0,0" HorizontalAlignment="Left" />
-                        <Button Content="Open Setup / Releases" AutomationProperties.Name="Open Setup or Releases"
-                                Style="{StaticResource OutlineButton}" Command="{Binding OpenGitHubSetupCommand}"
-                                Visibility="{Binding GitHubSetupRequired, Converter={StaticResource BoolToVis}}"
-                                Margin="0,4,0,0" HorizontalAlignment="Left" />
-                    </StackPanel>
-                </Grid>
+                <StackPanel Grid.Row="3" Margin="3,24,0,0">
+                    <TextBlock Text="Phiên bản hiện tại" FontSize="11" Foreground="{StaticResource MutedBrush}" />
+                    <TextBlock Text="{Binding CurrentVersionDisplay}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,2,0,0" />
+                    <TextBlock Text="Phiên bản mới" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
+                               Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding GitHubUpdateVersion}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,2,0,0"
+                               Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    <Button Content="{Binding GitHubUpdateButtonText}" AutomationProperties.Name="{Binding GitHubUpdateButtonText}"
+                            Style="{StaticResource PrimaryButton}" Command="{Binding RecheckUpdateCommand}"
+                            IsEnabled="{Binding GitHubUpdateButtonEnabled}"
+                            Margin="0,8,0,0" HorizontalAlignment="Left" />
+                </StackPanel>
             </Grid>
         </Border>
 

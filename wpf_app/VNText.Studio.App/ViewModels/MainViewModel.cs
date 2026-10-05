@@ -73,7 +73,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _activeTaskId = "";
     private bool _updateAvailable;
     private string _updateStatus = "";
-    private string _githubUpdateStatus = "Not checked";
+    private string _githubUpdateStatus = "Kiểm tra phiên bản mới khi bạn sẵn sàng.";
     private GitHubUpdateState _githubUpdateState = GitHubUpdateState.Unconfigured;
     private GitHubUpdateCheckResult _githubUpdateResult = new(GitHubUpdateState.Unconfigured);
     private GitHubUpdatePackageLease? _githubUpdatePackageLease;
@@ -110,8 +110,6 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         _extractLevel = ExtractLevels.Normalize(_settings.ExtractLevel);
         LogLines = new ObservableCollection<string>();
         LoadVersion();
-        RefreshWpfUpdateAvailability();
-
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => !Busy);
@@ -128,7 +126,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         ChooseRenpySdkCommand = new RelayCommand(_ => ChooseRenpySdk());
         DownloadRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("download"), _ => !Busy);
         ContinueWithoutRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("none"), _ => !Busy);
-        RecheckUpdateCommand = new RelayCommand(_ => RecheckUpdateSources(), _ => !Busy && UpdateCheckEnabled && !_githubUpdateChecking);
+        RecheckUpdateCommand = new RelayCommand(_ => HandleUpdateAction(), _ => !Busy && !_githubUpdateChecking);
         ApplyUpdateCommand = new RelayCommand(_ => ApplyWpfUpdate(), _ => !Busy && _updateAvailable);
         ApplyGitHubUpdateCommand = new RelayCommand(_ => ApplyGitHubUpdate(), _ => !Busy && GitHubApplyEnabled && !_githubUpdateChecking);
         OpenGitHubSetupCommand = new RelayCommand(_ => OpenGitHubSetup(), _ => GitHubSetupRequired && !_githubUpdateChecking);
@@ -148,7 +146,6 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
         _worker.EventReceived += OnWorkerEvent;
         RefreshWorkflow();
-        StartGitHubUpdateCheck();
         if (startWorker)
             _ = InitializeWorkerAsync();
     }
@@ -415,8 +412,14 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string Version
     {
         get => _version;
-        set => Set(ref _version, value);
+        set
+        {
+            if (Set(ref _version, value))
+                Raise(nameof(CurrentVersionDisplay));
+        }
     }
+
+    public string CurrentVersionDisplay => Version.TrimStart('v');
 
     public bool SeparateReview
     {
@@ -461,6 +464,19 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public bool UpdateCheckEnabled => true;
     public string UpdateStatus => _updateStatus;
     public string GitHubUpdateStatus => _githubUpdateStatus;
+    public bool GitHubUpdateChecking => _githubUpdateChecking;
+    public string GitHubUpdateVersion => string.IsNullOrWhiteSpace(_githubUpdateResult.Version) ? "" : $"v{_githubUpdateResult.Version}";
+    public bool GitHubUpdateVersionVisible => _githubUpdateState == GitHubUpdateState.UpdateAvailable;
+    public string GitHubUpdateButtonText => _githubUpdateChecking
+        ? "Đang kiểm tra…"
+        : _githubUpdateState == GitHubUpdateState.UpdateAvailable ? "Cài cập nhật"
+        : _githubUpdateState == GitHubUpdateState.Current ? "Đã cập nhật"
+        : _githubUpdateState is GitHubUpdateState.Offline or GitHubUpdateState.Timeout or
+            GitHubUpdateState.RateLimited or GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage
+            ? "Kiểm tra lại"
+        : "Kiểm tra cập nhật";
+    public bool GitHubUpdateButtonEnabled => !_githubUpdateChecking && !Busy &&
+        _githubUpdateState != GitHubUpdateState.Current;
     public GitHubUpdateState GitHubUpdateState => _githubUpdateState;
     public bool GitHubApplyEnabled => _githubUpdateState == GitHubUpdateState.UpdateAvailable &&
         _githubUpdatePackageLease is not null;
@@ -591,6 +607,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                     _runningTask = null;
                     RefreshWorkflow();
                 }
+                RaiseGitHubUpdateCard();
             }
         }
     }
@@ -703,7 +720,6 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Busy || _githubUpdateChecking)
             return;
-        RefreshWpfUpdateAvailability();
         StartGitHubUpdateCheck();
     }
 
@@ -716,8 +732,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         var cancellation = new CancellationTokenSource();
         _githubUpdateCancellation = cancellation;
         _githubUpdateChecking = true;
-        _githubUpdateStatus = "Checking GitHub stable releases…";
-        Raise(nameof(GitHubUpdateStatus));
+        _githubUpdateStatus = "Đang kiểm tra cập nhật…";
+        RaiseGitHubUpdateCard();
         RaiseGitHubUpdateCommands();
         RecheckUpdateCommand?.RaiseCanExecuteChanged();
 
@@ -743,7 +759,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         try
         {
-            var result = await checkTask.ConfigureAwait(true);
+            var result = await checkTask.ConfigureAwait(false);
             if (cancellation.IsCancellationRequested || !ReferenceEquals(_githubUpdateCancellation, cancellation))
             {
                 if (installRoot is not null)
@@ -756,10 +772,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             _githubUpdateResult = result;
             if (Set(ref _githubUpdateState, result.State))
                 Raise(nameof(GitHubUpdateState));
-            _githubUpdateStatus = string.IsNullOrWhiteSpace(result.Message)
-                ? GitHubStatusMessage(result.State, result.Version)
-                : result.Message;
-            Raise(nameof(GitHubUpdateStatus));
+            _githubUpdateStatus = GitHubStatusMessage(result.State, result.Version);
+            RaiseGitHubUpdateCard();
         }
         catch (TaskCanceledException)
         {
@@ -769,7 +783,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             Set(ref _githubUpdateState, GitHubUpdateState.Timeout);
             _githubUpdateStatus = GitHubStatusMessage(GitHubUpdateState.Timeout, "");
             Raise(nameof(GitHubUpdateState));
-            Raise(nameof(GitHubUpdateStatus));
+            RaiseGitHubUpdateCard();
         }
         catch (Exception ex)
         {
@@ -777,9 +791,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 return;
             _githubUpdateResult = new(GitHubUpdateState.InvalidMetadata, Message: ex.Message);
             Set(ref _githubUpdateState, GitHubUpdateState.InvalidMetadata);
-            _githubUpdateStatus = GitHubStatusMessage(GitHubUpdateState.InvalidMetadata, "") + " " + ex.Message;
+            _githubUpdateStatus = GitHubStatusMessage(GitHubUpdateState.InvalidMetadata, "");
             Raise(nameof(GitHubUpdateState));
-            Raise(nameof(GitHubUpdateStatus));
+            RaiseGitHubUpdateCard();
         }
         finally
         {
@@ -789,24 +803,40 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 _githubUpdateChecking = false;
                 cancellation.Dispose();
                 RaiseGitHubUpdateCommands();
-                RecheckUpdateCommand?.RaiseCanExecuteChanged();
+                RaiseGitHubUpdateCard();
             }
         }
     }
 
     private static string GitHubStatusMessage(GitHubUpdateState state, string version) => state switch
     {
-        GitHubUpdateState.Unconfigured => "GitHub stable updates are not configured.",
-        GitHubUpdateState.Current => "VNText Studio is up to date with stable GitHub releases.",
-        GitHubUpdateState.UpdateAvailable => $"Stable WPF update available: v{version}.",
-        GitHubUpdateState.SetupRequired => "A newer stable release requires Setup; open the official Releases page.",
-        GitHubUpdateState.InvalidMetadata => "GitHub release metadata is invalid.",
-        GitHubUpdateState.InvalidPackage => "GitHub WPF update package is invalid.",
-        GitHubUpdateState.Offline => "GitHub releases are unavailable (offline or server error).",
-        GitHubUpdateState.Timeout => "GitHub update check timed out.",
-        GitHubUpdateState.RateLimited => "GitHub rate limit reached; try again later.",
-        _ => "GitHub update status is unavailable.",
+        GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
+        GitHubUpdateState.Current => "Bạn đang dùng phiên bản mới nhất.",
+        GitHubUpdateState.UpdateAvailable => "Có bản cập nhật mới.",
+        GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",
+        GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage => "Không thể kiểm tra bản cập nhật.",
+        GitHubUpdateState.Offline or GitHubUpdateState.Timeout or GitHubUpdateState.RateLimited => "Chưa thể kiểm tra. Hãy thử lại sau.",
+        _ => "Chưa thể kiểm tra cập nhật.",
     };
+
+    private void HandleUpdateAction()
+    {
+        if (GitHubApplyEnabled)
+            ApplyGitHubUpdate();
+        else
+            RecheckUpdateSources();
+    }
+
+    private void RaiseGitHubUpdateCard()
+    {
+        Raise(nameof(GitHubUpdateStatus));
+        Raise(nameof(GitHubUpdateChecking));
+        Raise(nameof(GitHubUpdateVersion));
+        Raise(nameof(GitHubUpdateVersionVisible));
+        Raise(nameof(GitHubUpdateButtonText));
+        Raise(nameof(GitHubUpdateButtonEnabled));
+        RecheckUpdateCommand?.RaiseCanExecuteChanged();
+    }
 
     private void RaiseGitHubUpdateCommands()
     {

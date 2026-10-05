@@ -1,5 +1,23 @@
 # Trạng thái hiện tại — VNText Studio
 
+## DEV source 0.1.4 — update card simplification (2026-10-06)
+
+- Working source changes simplify the WPF GitHub update card to one explicit
+  stateful action: idle/checking/current/update/error. Local preview controls and
+  technical update text are no longer rendered. This is source work only; no
+  Setup, GitHub upload, publish, or installed-app acceptance was run for 0.1.4.
+- `.dev-env` uses Python 3.12.14, the pinned requirements, official .NET SDK
+  10.0.401, and OPUS-MT CT2 revision from `vntext/mt_ct2_constants.py`; model
+  cache is outside Git. Focused UI assertions passed; the affected harness was
+  built with the available .NET 8 targeting packs and the isolated fixture UI
+  checks passed. The full harness remains unclaimed because its offline runner
+  timed out and is not promoted to PASS.
+- DEV executable was published to `DEV_RUN/VNText.Studio.App.exe`. With
+  `VNTEXT_WORKER_PYTHON` and the pinned model path configured, `--smoke-worker`
+  exited 0 and reported `smoke-translate` `complete` with `ok=true`, plus
+  successful extract/patch steps. `TEST_RUN` was terminal and removed; public
+  GitHub update acceptance remains the prior bounded 0.1.3 evidence.
+
 ## Stable update 0.1.3 đã public; installed-app GitHub acceptance PASS trong bounded scope (2026-10-05)
 
 - Owner trực tiếp xác nhận trong chat DEV: "Cho phép push và publish stable
