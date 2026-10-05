@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Copy Release Output package into tests/golden/_work (read-only source)."""
+"""Copy Release Output package into RELEASE_RUN (read-only source)."""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
 from work_paths import assert_artifact_under_work, new_scope_id, register_artifact
 
-WORK_DEFAULT = Path(__file__).resolve().parents[1] / "golden" / "_work" / "vh_parity" / "work_package"
+WORK_DEFAULT = Path(__file__).resolve().parents[2] / "RELEASE_RUN" / "vh_parity" / "work_package"
 
 COPY_NAMES = (
     "translation.csv",

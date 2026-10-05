@@ -39,7 +39,7 @@ $baseNumeric = "{0}, {1}, {2}, 0" -f $baseParts[0], $baseParts[1], $baseParts[2]
 $nextParts = ($nextVersion -replace '-.*$', '').Split('.')
 $nextNumeric = "{0}, {1}, {2}, 0" -f $nextParts[0], $nextParts[1], $nextParts[2]
 
-$WorkRoot = Join-Path $DevRoot "tests\golden\_work"
+$WorkRoot = Join-Path $DevRoot "RELEASE_RUN"
 $Work = Join-Path $WorkRoot "release_verify"
 $ReportDir = Join-Path $Work "reports"
 $CandidateScopeRoot = Join-Path $WorkRoot "release_e2e"

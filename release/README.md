@@ -31,8 +31,7 @@ phải nguồn cập nhật GitHub và không hỗ trợ thông báo stable rele
 khác. WPF source đã có stable-release discovery trên GitHub và đường cập nhật
 WPF-only; unit/mock tests không thay thế acceptance trên app đã cài. Chưa có
 bằng chứng app cài thực tế kiểm tra và cập nhật từ một GitHub Release stable
-công khai, nên trạng thái acceptance này vẫn là `NOT VERIFIED` và không được
-quảng bá như tính năng đã nghiệm thu. Setup chỉ gọi đúng repository khi được
+công khai; acceptance trên bản cài Owner đã xác nhận offer/apply/restart. Setup chỉ gọi đúng repository khi được
 publisher cấu hình tường minh bằng cả `-GitHubOwner` và `-GitHubRepository`.
 
 `Uninstall.exe` hỏi xác nhận một lần, nêu rõ mọi nội dung sẽ bị xóa gồm
@@ -50,13 +49,13 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\release\publish.ps1 `
 
 Tùy chọn: `-SkipTests`, `-BuildLegacy`, `-FullAppUpdateBaselineRoot`. `-SkipBuild` không được hỗ trợ cho
 publish Setup chuẩn vì mỗi lượt phải dựng WPF Update mới.
-Publisher dùng SDK .NET 10 ở `DEV_RUN\dotnet-sdk-10`, target runtime .NET 8
+Publisher dùng SDK .NET 10 ở `.dev-env\dotnet-sdk-10`, target runtime .NET 8
 và đóng runtime riêng trong `app/dotnet/` để EXE chạy không cần cài .NET ngoài.
 
 Chỉ model CT2/OPUS-MT được đóng gói; VinAI và PyTorch không nằm trong sản phẩm.
 
 Build, verify, smoke và package chạy trong registered
-`tests/golden/_work`. Publisher xác minh payload/hash trước khi thay Setup và
+`TEST_RUN`. Publisher xác minh payload/hash trước khi thay Setup và
 atomically công bố feed; ReleaseRoot chỉ còn `Setup.exe` và `Updates`. Báo
 version, source SHA, Setup/package SHA256, payload size và số package/byte được
 giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đạt mới gọi
@@ -64,7 +63,7 @@ giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đ�
 
 ## Chuẩn bị 0.1.2
 
-`v0.1` là bản public đầu tiên, `0.1.2` là source đang chuẩn bị. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app dùng từ baseline mới.
+`v0.1` là bản public đầu tiên, `0.1.3` đã phát hành stable. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app dùng từ baseline mới.
 Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
 `-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
 Không kết hợp switch này với `-WpfUpdateVersion`; gói được yêu cầu vẫn phải qua
@@ -80,4 +79,4 @@ Trước candidate: commit source/version sạch, epoch hợp lệ, scoped clean
 full regression + affected gates trên SHA cuối. Sau build: payload audit/hash,
 release verify, smoke hai cwd, installer/GUI và installed upgrade/rollback/recovery.
 Giữ raw command/output/exit code/skip/warning và lifecycle trước disposal. Không
-suy candidate đạt từ focused gate; public stable GitHub vẫn **NOT VERIFIED**.
+suy candidate đạt từ focused gate; các giới hạn installer/uninstaller và runtime native vẫn giữ nguyên.

@@ -134,7 +134,7 @@ def _candidate_model_dir():
     configured = os.environ.get("VNTEXT_CT2_MODEL", "").strip()
     if configured:
         return Path(configured)
-    return Path(__file__).resolve().parents[2] / "tests" / "golden" / "_work" / "models" / "opus-mt-en-vi-int8"
+    return Path(__file__).resolve().parents[2] / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8"
 
 
 def _translate_lexical_candidates(rows, candidate_dir):

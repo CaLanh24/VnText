@@ -406,7 +406,7 @@ $runDirectory = Join-Path $LogRoot (Get-Date -Format "yyyyMMdd_HHmmss_fff")
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $summaryPath = Join-Path $runDirectory "REGRESSION_COMPLETE.json"
 $cleanupScript = Join-Path $WorkingDirectory "tests\tools\cleanup_work_artifacts.py"
-$scopeRoot = Join-Path $WorkingDirectory "tests\golden\_work"
+$scopeRoot = Join-Path $WorkingDirectory "TEST_RUN"
 $scopeId = "release-regression-$([guid]::NewGuid().ToString('N'))"
 $runId = "release-run-$([guid]::NewGuid().ToString('N'))"
 $beforeSnapshot = Join-Path $runDirectory "SCOPE_BEFORE.json"

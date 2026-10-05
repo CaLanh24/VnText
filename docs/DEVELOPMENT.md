@@ -2,8 +2,7 @@
 
 Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
 virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
-đầu tiên; source `0.1.3` đang chuẩn bị update từ Setup 0.1.2 bản thử,
-chưa phải candidate/stable updater đã nghiệm thu.
+đầu tiên; source `0.1.3` đã phát hành stable update từ Setup 0.1.2 bản thử.
 
 ## Kiểm prerequisite trước khi tải
 
@@ -18,7 +17,7 @@ python -B release/dev_bootstrap.py
 # Khi dependency đã đủ: build offline bằng SDK/pack/NuGet cache hiện có.
 .\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action build
 # Model phải có sẵn và được Owner cho phép sử dụng.
-.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --model DEV_RUN/cache/models/opus-mt-en-vi-int8
+.\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --model .dev-env/cache/models/opus-mt-en-vi-int8
 $LASTEXITCODE
 ```
 
@@ -31,13 +30,13 @@ cần quyền tải/cài, không tự dùng mạng. Các lệnh thủ công phí
 
 Output duy nhất của apply là `DEV_RUN/bootstrap-build`, có ownership marker;
 không ghi đè directory có sẵn thiếu marker. Build dự phòng 128 MiB ngoài phần
-miễn trừ, chặn trước nếu inventory thiếu hoặc vượt tổng 1+5 GiB. Tái chạy dùng
+miễn trừ, chặn trước nếu inventory thiếu hoặc vượt tổng 1+3 GiB cho `.dev-env`. Tái chạy dùng
 cùng output/cache, không nhân bản venv/SDK/model. Môi trường APPDATA/LOCALAPPDATA
 và NuGet riêng chỉ có hiệu lực trong child build; không sửa profile user.
 Giữ command và JSON/exit code ngoài payload. Build/smoke không phải cleanup PASS.
 
 Nếu thử source checkout cô lập trong cùng DEV đã được đăng ký owner/lifecycle,
-truyền `--python <DEV-main>/.venv/Scripts/python.exe --model <DEV-main>/DEV_RUN/cache/models/opus-mt-en-vi-int8 --shared-root <DEV-main>`.
+truyền `--python <DEV-main>/.venv/Scripts/python.exe --model <DEV-main>/.dev-env/cache/models/opus-mt-en-vi-int8 --shared-root <DEV-main>`.
 Script không copy dependency; shared-root phải nằm trong containing checkout.
 Đây là nghiệm thu source sạch với environment dùng chung, không chứng minh cài
 dependency trên máy mới. Không tạo snapshot/venv mới nếu chưa duyệt scope/budget.
@@ -53,7 +52,7 @@ Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/v
   targeting pack. NuGet restore cần nguồn chính thức hoặc cache package đủ.
 - Smoke: các điều kiện DEV, model CT2/OPUS-MT đủ tokenizer/config/model, worker
   Python đúng `.venv`, và output/work root ghi được. Thiếu model không phải PASS.
-- Harness/Release: thêm SDK .NET 10 tại `DEV_RUN/dotnet-sdk-10`; harness hiện pin
+- Harness/Release: thêm SDK .NET 10 tại `.dev-env/dotnet-sdk-10`; harness hiện pin
   runtime/ref pack 8.0.30 và apphost pack 10.0.12. Publisher còn cần matching
   .NET 8 core/WPF runtime + ref packs + hostfxr dưới Program Files, .NET Framework
   `csc.exe`, Python 3.12.x portable, Pillow (`release/requirements-build.txt`), pinned model,
@@ -69,11 +68,11 @@ hoặc tải model khi chưa được phép. Nguồn: [Python](https://www.pytho
 SDK 10.0.401 có thể cài local bằng script chính thức sau khi được phép:
 
 ```powershell
-New-Item -ItemType Directory -Force DEV_RUN/cache | Out-Null
-Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile DEV_RUN/cache/dotnet-install.ps1
-Get-FileHash DEV_RUN/cache/dotnet-install.ps1 -Algorithm SHA256
-powershell -NoProfile -ExecutionPolicy Bypass -File DEV_RUN/cache/dotnet-install.ps1 -Version 10.0.401 -Architecture x64 -InstallDir DEV_RUN/dotnet-sdk-10 -NoPath -Verbose
-.\DEV_RUN\dotnet-sdk-10\dotnet.exe --list-sdks
+New-Item -ItemType Directory -Force .dev-env/cache | Out-Null
+Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile .dev-env/cache/dotnet-install.ps1
+Get-FileHash .dev-env/cache/dotnet-install.ps1 -Algorithm SHA256
+powershell -NoProfile -ExecutionPolicy Bypass -File .dev-env/cache/dotnet-install.ps1 -Version 10.0.401 -Architecture x64 -InstallDir .dev-env/dotnet-sdk-10 -NoPath -Verbose
+.\.dev-env\dotnet-sdk-10\dotnet.exe --list-sdks
 ```
 
 Giữ URL SDK thực trong raw output và đối chiếu SHA512 với release metadata của
@@ -85,13 +84,13 @@ cấp matching runtime8 dưới Program Files mà publisher hiện kiểm.
 Chọn executable đã kiểm phiên bản (không giả định `py` có trên mọi máy):
 
 ```powershell
-New-Item -ItemType Directory -Force DEV_RUN/cache | Out-Null
+New-Item -ItemType Directory -Force .dev-env/cache | Out-Null
 # Nếu launcher có Python 3.12; có thể thay bằng đường dẫn Python 3.12 đã xác minh.
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe --version
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m pip check
-.\.venv\Scripts\python.exe -X utf8 -m pip inspect > DEV_RUN/cache/pip-inspect.json
+.\.venv\Scripts\python.exe -X utf8 -m pip inspect > .dev-env/cache/pip-inspect.json
 ```
 
 Release cần thêm `pip install -r release/requirements-build.txt`. Không cần PyTorch/Argos/VinAI;
@@ -103,7 +102,7 @@ Model sản phẩm khai báo tại `vntext/mt_ct2_constants.py`: repo
 `c22547827b876e8ee939d6a9363965e5c9f769e1`. Sau quyền tải model, dùng đúng pin:
 
 ```powershell
-$env:VNTEXT_CT2_MODEL = "$PWD/DEV_RUN/cache/models/opus-mt-en-vi-int8"
+$env:VNTEXT_CT2_MODEL = "$PWD/.dev-env/cache/models/opus-mt-en-vi-int8"
 .\.venv\Scripts\python.exe -B -c "from vntext.mt_ct2_model import ensure_model; print(ensure_model())"
 $env:VNTEXT_CT2_NO_DOWNLOAD = '1'
 Get-ChildItem $env:VNTEXT_CT2_MODEL -Recurse -File | Get-FileHash -Algorithm SHA256
@@ -119,14 +118,14 @@ và license/provenance; model ngoài clone không phải source được commit.
 Có thể dùng config NuGet riêng để tránh phụ thuộc profile cũ:
 
 ```powershell
-'<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>' | Set-Content DEV_RUN/cache/NuGet.Config
-$env:NUGET_PACKAGES = "$PWD/DEV_RUN/cache/nuget"
-$env:DOTNET_CLI_HOME = "$PWD/DEV_RUN/cache/dotnet-home"
+'<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>' | Set-Content .dev-env/cache/NuGet.Config
+$env:NUGET_PACKAGES = "$PWD/.dev-env/cache/nuget"
+$env:DOTNET_CLI_HOME = "$PWD/.dev-env/cache/dotnet-home"
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
-dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN --configfile DEV_RUN/cache/NuGet.Config
+dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN --configfile .dev-env/cache/NuGet.Config
 $env:VNTEXT_WORKER_CWD = "$PWD"
 $env:VNTEXT_WORKER_PYTHON = "$PWD/.venv/Scripts/python.exe"
-$env:VNTEXT_DATA_ROOT = "$PWD/DEV_RUN/cache/dev-data"
+$env:VNTEXT_DATA_ROOT = "$PWD/.dev-env/cache/dev-data"
 .\DEV_RUN\VNText.Studio.App.exe
 ```
 
@@ -136,9 +135,9 @@ mong đợi; extract/translate/patch cần `ok=true` và assertion output thực
 Với WPF GUI executable, dùng tiến trình chờ và `--report` để giữ evidence:
 
 ```powershell
-$smoke = Start-Process -FilePath "$PWD/DEV_RUN/VNText.Studio.App.exe" -ArgumentList '--smoke-worker','--report',"`"$PWD/DEV_RUN/cache/smoke.json`"" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput DEV_RUN/cache/smoke.stdout.log -RedirectStandardError DEV_RUN/cache/smoke.stderr.log
+$smoke = Start-Process -FilePath "$PWD/DEV_RUN/VNText.Studio.App.exe" -ArgumentList '--smoke-worker','--report',"`"$PWD/.dev-env/cache/smoke.json`"" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput .dev-env/cache/smoke.stdout.log -RedirectStandardError .dev-env/cache/smoke.stderr.log
 $smoke.ExitCode
-Get-Content DEV_RUN/cache/smoke.json
+Get-Content .dev-env/cache/smoke.json
 ```
 
 Exit 24 là translate không thành công; đọc error/summary thực, không đổi thành
@@ -162,11 +161,11 @@ Harness fixture version độc lập với version sản phẩm; readiness phả
 bắt đầu timeout. Xem `tests/README.md`, `TEST_MATRIX.md`, `release/README.md` để
 chọn gate. Publisher `publish.ps1` là local build, không upload/phát hành. Chỉ
 build sau source commit sạch, epoch hợp lệ và inventory toàn root complete:
-không miễn trừ <=1 GiB, tổng miễn trừ <=5 GiB theo exact roots trong CONTRACTS. Baseline
+không miễn trừ <=1 GiB và `.dev-env` <=3 GiB theo exact roots trong CONTRACTS. Baseline
 WPF/full-app phải có version và payload thực, không tạo metadata giả hoặc nới
 validator để qua gate. Version package phải mới hơn baseline; version Owner chọn
 cho candidate phải khớp source/EXE/manifests. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app từ baseline mới.
 Dùng `publish.ps1 -SkipWpfUpdatePackage` để build Setup không kèm WPF delta
 version cao hơn chưa được chọn. Chỉ yêu cầu full-app delta khi baseline thực
 nhỏ hơn candidate và provenance/inventory khớp. SDK/dependency/worker/model đầy đủ
-không tự chứng minh Release PASS. Public stable GitHub update **NOT VERIFIED**.
+không tự chứng minh Release PASS. Public stable GitHub update đã được nghiệm thu trên bản cài Owner; các giới hạn còn lại giữ nguyên.

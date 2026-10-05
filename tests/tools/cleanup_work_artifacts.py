@@ -67,22 +67,14 @@ CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
-PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 5 * 1024 ** 3
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 3 * 1024 ** 3
 PROJECT_SIZE_EXEMPTIONS = {
-    ".venv": "project Python virtual environment",
-    "DEV_RUN/dotnet-sdk-10": "publisher .NET SDK",
-    "DEV_RUN/python": "private DEV Python runtime",
-    "DEV_RUN/.venv": "DEV worker virtual environment",
-    "DEV_RUN/cache": "DEV runtime cache",
-    "tests/golden/_work/r12i": "Owner-approved pristine public v0.1 installed baseline",
-    "DEV_RUN/v01_audit/installed": "Owner-approved protected installed baseline with data/models",
-    "DEV_RUN/baselines/fullapp-013": "Owner-approved real installed full-app acceptance witness",
-    "DEV_RUN/baselines/stable-012": "Owner-approved single public Setup 0.1.2 copy for stable 0.1.3 acceptance",
+    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (3 GiB cap)",
 }
 
 # Keep relative to WORK_ROOT
 KEEP_PATHS = {
-    "game_copy",
+    "game-copy",
     "mt_pipeline_copy",
     "artifacts_manifest.json",
     "evidence",
@@ -3791,7 +3783,7 @@ def cleanup_after_test(
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Safe cleanup of tests/golden/_work")
+    ap = argparse.ArgumentParser(description="Safe cleanup of TEST_RUN")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--report-only", action="store_true")
     ap.add_argument("--registered-only", action="store_true", help="Clean only registered DISPOSABLE artifacts")

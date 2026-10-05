@@ -92,7 +92,7 @@ $DevRoot = Split-Path -Parent $PSScriptRoot
 $DevRoot = [System.IO.Path]::GetFullPath($DevRoot)
 $DevRunRoot = if ([string]::IsNullOrWhiteSpace($DevRunRoot)) { Join-Path $DevRoot "DEV_RUN" } else { $DevRunRoot }
 $DevRunRoot = [System.IO.Path]::GetFullPath($DevRunRoot)
-$ArtifactWorkRoot = if ([string]::IsNullOrWhiteSpace($ArtifactWorkRoot)) { Join-Path $DevRoot "tests\golden\_work" } else { $ArtifactWorkRoot }
+$ArtifactWorkRoot = if ([string]::IsNullOrWhiteSpace($ArtifactWorkRoot)) { Join-Path $DevRoot "RELEASE_RUN" } else { $ArtifactWorkRoot }
 $ArtifactWorkRoot = [System.IO.Path]::GetFullPath($ArtifactWorkRoot)
 $ArtifactHelpersRoot = if ([string]::IsNullOrWhiteSpace($ArtifactHelpersRoot)) { Join-Path $DevRoot "tests\lib" } else { [System.IO.Path]::GetFullPath($ArtifactHelpersRoot) }
 $WorkerVenvRoot = if ([string]::IsNullOrWhiteSpace($WorkerVenvRoot)) { Join-Path $DevRoot ".venv" } else { [System.IO.Path]::GetFullPath($WorkerVenvRoot) }
@@ -103,16 +103,16 @@ $ModelRoot = if ([string]::IsNullOrWhiteSpace($ModelRoot)) { Join-Path $Artifact
 $canonicalRepoRoot = Split-Path -Parent $ArtifactHelpersRoot
 $canonicalRepoRoot = Split-Path -Parent $canonicalRepoRoot
 $expectedDevRunRoot = [System.IO.Path]::GetFullPath((Join-Path $canonicalRepoRoot "DEV_RUN"))
-$expectedWorkRoot = [System.IO.Path]::GetFullPath((Join-Path $canonicalRepoRoot "tests\golden\_work"))
+$expectedWorkRoot = [System.IO.Path]::GetFullPath((Join-Path $canonicalRepoRoot "RELEASE_RUN"))
 if (-not $DevRunRoot.Equals($expectedDevRunRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "DevRunRoot must be the canonical project's DEV_RUN: $expectedDevRunRoot"
 }
 if (-not $ArtifactWorkRoot.Equals($expectedWorkRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "ArtifactWorkRoot must be the canonical project's tests/golden/_work: $expectedWorkRoot"
+    throw "ArtifactWorkRoot must be the canonical project's RELEASE_RUN: $expectedWorkRoot"
 }
 $workPrefix = $ArtifactWorkRoot.TrimEnd('\') + '\'
 if ($RequireIsolatedArtifacts -and -not $DevRoot.StartsWith($workPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "Isolated publish source must be a registered working-tree snapshot under tests/golden/_work."
+    throw "Isolated publish source must be a registered working-tree snapshot under RELEASE_RUN."
 }
 if ([string]::IsNullOrWhiteSpace($ReleaseRoot)) {
     $ReleaseRoot = Join-Path (Split-Path -Parent $DevRoot) "VNText_Studio_Release"
@@ -144,7 +144,7 @@ $isRepoOrAncestor = $ReleaseRoot.Equals($DevRoot, [System.StringComparison]::Ord
 $isUnsafeRepoPath = $isRepoOrAncestor -or ($insideRepo -and -not $insideWork) -or
     $ReleaseRoot.Equals($WorkRoot, [System.StringComparison]::OrdinalIgnoreCase)
 if ($isUnsafeRepoPath) {
-    throw "ReleaseRoot must be outside the repository, except for a dedicated child of tests/golden/_work: $ReleaseRoot"
+    throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
 if ($RequireIsolatedArtifacts -and -not $ReleaseRoot.StartsWith($scopePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
     throw "Isolated publish requires ReleaseRoot below its registered run scope: $publishArtifactRoot"
@@ -669,7 +669,7 @@ if (-not $SkipTests) {
     if (-not (Test-Path -LiteralPath $regressionRunner -PathType Leaf)) {
         throw "Regression runner missing: $regressionRunner"
     }
-    $regressionLogRoot = Join-Path $DevRoot "tests\golden\_work\release_gate"
+    $regressionLogRoot = Join-Path $DevRoot "RELEASE_RUN\release_gate"
     New-Item -ItemType Directory -Path $regressionLogRoot -Force | Out-Null
 
     $traceabilityPatternFile = Join-Path $regressionLogRoot ("patterns_traceability_{0}.txt" -f $SourceSha)

@@ -104,6 +104,7 @@ class CleanupLifecycleTests(unittest.TestCase):
     def canonical_runner_harness(self):
         """Run the subprocess wrapper against a clean copied project surface."""
 
+        paths.WORK_ROOT.mkdir(parents=True, exist_ok=True)
         harness = Path(tempfile.mkdtemp(prefix="vntext-canonical-runner-", dir=paths.WORK_ROOT))
         for relative in (
             Path("tests/lib/bootstrap.py"),
@@ -114,7 +115,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             destination = harness / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, destination)
-        work = harness / "tests" / "golden" / "_work"
+        work = harness / "TEST_RUN"
         work.mkdir(parents=True)
         self.assertNotEqual(
             (work / "artifacts_manifest.json").resolve(),
@@ -366,18 +367,18 @@ class CleanupLifecycleTests(unittest.TestCase):
 
     def test_combined_exempt_cap_and_exact_baseline_roots(self):
         with self.isolated_workspace() as (root, _work, _game, _manifest):
-            for relative, payload in [(".venv", b"123"), ("DEV_RUN/cache", b"456"),
+            for relative, payload in [(".dev-env", b"123"), ("DEV_RUN/cache", b"456"),
                                       ("DEV_RUN/baselines/fullapp-013", b"7"),
                                       ("DEV_RUN/baselines/stable-012", b"a"),
                                       ("DEV_RUN/baselines/unapproved", b"89")]:
                 folder = root / relative
                 folder.mkdir(parents=True, exist_ok=True)
                 (folder / "payload").write_bytes(payload)
-            with patch.object(cleanup, "PROJECT_EXEMPT_SIZE_LIMIT_BYTES", 6):
+            with patch.object(cleanup, "PROJECT_EXEMPT_SIZE_LIMIT_BYTES", 6), patch.object(cleanup, "PROJECT_SIZE_LIMIT_BYTES", 6):
                 result = cleanup._project_size_snapshot()
             self.assertTrue(result["complete"], result)
-            self.assertEqual(8, result["exempt_bytes"])
-            self.assertEqual(2, result["non_exempt_bytes"])
+            self.assertEqual(3, result["exempt_bytes"])
+            self.assertEqual(7, result["non_exempt_bytes"])
             self.assertFalse(result["within_limit"], result)
 
     def test_snapshot_inventory_counts_main_root_and_nested_duplicate_environment(self):
@@ -2072,7 +2073,7 @@ class CleanupLifecycleTests(unittest.TestCase):
 
     def test_canonical_wrapper_disposes_game_copy_after_each_terminal_outcome(self):
         with self.canonical_runner_harness() as (harness, runner_path, work):
-            game_copy = work / "game_copy"
+            game_copy = work / "game-copy"
             ready = harness / "fixture.ready"
             ready_runner = harness / "ready_runner.py"
             ready_runner.write_text(

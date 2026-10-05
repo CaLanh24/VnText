@@ -27,10 +27,11 @@ from pathlib import Path
 
 from vntext_worker.protocol import PROTOCOL_VERSION
 
-WORK_ROOT = ROOT / "tests" / "golden" / "_work"
-GAME_COPY = WORK_ROOT / "game_copy"
+WORK_ROOT = ROOT / "TEST_RUN"
+GAME_COPY = WORK_ROOT / "game-copy"
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-MODEL_DIR = DEV_RUN_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"
+DEV_ENV_ROOT = Path(os.environ.get("VNTEXT_DEV_ENV_ROOT", str(ROOT / ".dev-env"))).expanduser()
+MODEL_DIR = DEV_ENV_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"
 def venv_python() -> Path:
     override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
     if override:

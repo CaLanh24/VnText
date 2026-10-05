@@ -69,8 +69,8 @@ class WorkPathContractTests(unittest.TestCase):
                     self.assertEqual(invalid_content, manifest.read_bytes())
 
     def test_canonical_e2e_copy_is_under_work(self):
-        self.assertEqual(E2E_GAME_COPY, WORK_ROOT / "game_copy")
-        self.assertEqual(WORK_ROOT, ROOT / "tests" / "golden" / "_work")
+        self.assertEqual(E2E_GAME_COPY, WORK_ROOT / "game-copy")
+        self.assertEqual(WORK_ROOT, ROOT / "TEST_RUN")
         assert_artifact_under_work(E2E_GAME_COPY, "e2e")
 
     def test_external_fixture_and_checkout_source_are_not_artifact_workspaces(self):

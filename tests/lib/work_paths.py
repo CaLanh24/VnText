@@ -1,6 +1,6 @@
 """Canonical locations and lifecycle registry for test artifacts.
 
-All workflow temp files go under tests/golden/_work/. An optional external
+All workflow temp files go under TEST_RUN/. An optional external
 Unity fixture is supplied explicitly through ``VNTEXT_GAME_FOLDER``; a fresh
 clone never infers a developer's game path.
 
@@ -29,9 +29,14 @@ LIB = Path(__file__).resolve().parent
 TESTS = LIB.parent
 ROOT = TESTS.parent
 GOLDEN = TESTS / 'golden'
-WORK_ROOT = GOLDEN / "_work"
+# TEST_RUN is the sole disposable runtime root for test-generated artifacts.
+# WORK_ROOT remains as an internal compatibility name while callers migrate.
+TEST_RUN = ROOT / "TEST_RUN"
+WORK_ROOT = TEST_RUN
+DEV_ENV_ROOT = ROOT / ".dev-env"
+RELEASE_ROOT = ROOT / "RELEASE_RUN"
 ARTIFACT_NAMESPACE = hashlib.sha256(str(WORK_ROOT.resolve()).encode("utf-8")).hexdigest()[:12]
-E2E_GAME_COPY = WORK_ROOT / "game_copy"
+E2E_GAME_COPY = WORK_ROOT / "game-copy"
 MANIFEST_PATH = WORK_ROOT / "artifacts_manifest.json"
 MANIFEST_SCHEMA_VERSION = 2
 RUN_OUTCOMES = frozenset(

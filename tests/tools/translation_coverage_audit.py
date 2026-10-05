@@ -3,7 +3,7 @@
 
 This tool is read-only with respect to the package and golden inputs.  It
 writes a complete per-row ledger plus aggregate JSON under the caller-provided
-tests/golden/_work directory.
+TEST_RUN directory.
 """
 
 from __future__ import annotations

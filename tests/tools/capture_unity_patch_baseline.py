@@ -216,7 +216,7 @@ def main(reuse_output: bool = False) -> Path:
                 f"with prefix {FILL_PREFIX!r}. Plain-text rows stay empty so this mốc is",
                 "independent from tests/golden/patch/ (plain_text only).",
                 "",
-                "Working copies live in tests/golden/_work/unity_patch/ (gitignored).",
+                "Working copies live in TEST_RUN/unity_patch/ (gitignored).",
                 "Recorded mốc files in this folder are the freeze point before moving patch.",
                 "",
                 "Current UnityPy reload notes (do not 'fix' during the refactor):",

@@ -234,7 +234,7 @@ def resolve_model_dir(explicit: str | Path | None = None) -> Path:
     env = os.environ.get("VNTEXT_CT2_MODEL", "").strip()
     if env:
         return Path(env)
-    work_model = _repo_root() / "tests" / "golden" / "_work" / "models" / MODEL_SUBDIR
+    work_model = _repo_root() / ".dev-env" / "cache" / "models" / MODEL_SUBDIR
     if (work_model / "model.bin").is_file():
         return work_model
     release_model = _repo_root() / "models" / MODEL_SUBDIR

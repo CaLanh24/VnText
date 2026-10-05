@@ -13,7 +13,11 @@ _codex_worktrees/
 *.py[cod]
 *.pyo
 .pytest_cache/
+# Legacy historical runtime root; new tooling must use TEST_RUN.
 tests/golden/_work/
+.dev-env/
+TEST_RUN/
+RELEASE_RUN/
 
 # .NET/WPF build output
 **/bin/

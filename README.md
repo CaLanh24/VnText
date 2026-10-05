@@ -15,7 +15,7 @@ Khả năng trích xuất và patch phụ thuộc định dạng cụ thể củ
 
 ## Cập nhật và gỡ cài đặt
 
-`v0.1` là bản công khai đầu tiên. [Setup 0.1.2 bản thử](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2) đã có để cài/nâng cấp; source `0.1.3` đang chuẩn bị gói update từ baseline đó. Cập nhật qua stable GitHub trên bản cài thực chưa được nghiệm thu (**NOT VERIFIED**). Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; người còn ở v0.1 dùng Setup 0.1.2. Full-app update bắt đầu từ baseline mới, không hứa cài Setup một lần cho người đang dùng v0.1. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
+`v0.1` là bản công khai đầu tiên. [Setup 0.1.2 bản thử](https://github.com/CaLanh24/VnText/releases/tag/v0.1.2) đã có để cài/nâng cấp; source `0.1.3` đã phát hành stable gói update từ baseline đó. Cập nhật qua stable GitHub trên bản cài Owner đã được nghiệm thu; giới hạn installer/uninstaller và runtime native vẫn giữ nguyên. Bản v0.1 đã phát hành chỉ nhận gói WPF giới hạn; người còn ở v0.1 dùng Setup 0.1.2. Full-app update bắt đầu từ baseline mới, không hứa cài Setup một lần cho người đang dùng v0.1. Trong lúc chờ, dùng Setup từ trang Releases. Thay installer/uninstaller hoặc quyền hệ thống vẫn cần Setup mới. Không coi thư mục `Updates` cục bộ cạnh Setup là dịch vụ cập nhật công khai.
 
 Gỡ ứng dụng bằng `Uninstall.exe` trong thư mục cài đặt. Xác nhận gỡ sẽ xóa toàn bộ nội dung trong thư mục cài, **bao gồm `data/` và dữ liệu do ứng dụng tạo**; thư mục cài còn lại nhưng rỗng. Sao lưu dữ liệu cần giữ trước khi gỡ.
 

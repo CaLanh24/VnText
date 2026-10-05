@@ -7,14 +7,14 @@ Release binary, or user output.
 
 Focused package tests create their own synthetic CSV/manifest/locator inputs.
 External Unity verification is opt-in through VNTEXT_GAME_FOLDER and writes
-only to a registered tests/golden/_work scope. Missing fixtures are SKIP or
+only to a registered TEST_RUN scope. Missing fixtures are SKIP or
 NOT_TESTABLE, never a fabricated PASS.
 
 Generic Unity patch-on-copy safety
 ---------------------------------------------------------------------
 tests/golden/patch_unity/ retains only the generic copy-and-read-back note.
 It contains no captured game bytes. Helpers copy explicit resources into
-tests/golden/_work and never write to the external source root.
+TEST_RUN and never write to the external source root.
 
 Canonical fixture status
 ------------------------

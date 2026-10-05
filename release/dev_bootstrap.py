@@ -12,6 +12,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+DEV_ENV_ROOT = ROOT / ".dev-env"
 BUILD_RESERVE = 128 * 1024 ** 2
 MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.json", "tokenizer_config.json")
 
@@ -58,8 +59,8 @@ def quota(reserve=0):
 
 
 def discover_python(explicit=None):
-    candidates = [explicit] if explicit else [ROOT / ".venv/Scripts/python.exe", ROOT / "DEV_RUN/.venv/Scripts/python.exe",
-                                            ROOT / "DEV_RUN/python/python.exe", shutil.which("python"), sys.executable]
+    candidates = [explicit] if explicit else [DEV_ENV_ROOT / ".venv/Scripts/python.exe",
+                                            DEV_ENV_ROOT / "python/python.exe", shutil.which("python"), sys.executable]
     if not explicit and shutil.which("py"):
         launcher = run([shutil.which("py"), "-0p"])
         candidates.extend(re.findall(r"(?m)^.*?([A-Za-z]:\\.*python\.exe)\s*$", launcher["stdout"]))
@@ -155,7 +156,7 @@ def preflight(python=None, dotnet=None, model=None, gate="dev", reserve=0):
     sdk = run([dotnet, "--list-sdks"])
     runtimes = run([dotnet, "--list-runtimes"])
     receipts.extend([sdk, runtimes])
-    local10 = ROOT / "DEV_RUN/dotnet-sdk-10/dotnet.exe"
+    local10 = DEV_ENV_ROOT / "dotnet-sdk-10/dotnet.exe"
     local_sdk = run([local10, "--list-sdks"]) if local10.is_file() else None
     if local_sdk:
         receipts.append(local_sdk)
@@ -214,7 +215,7 @@ def main(argv=None):
             marker = output / ".bootstrap-owner.json"
             if not marker.exists():
                 marker.write_text(json.dumps({"owner": "release/dev_bootstrap.py", "purpose": "DEV build and smoke", "root": str(ROOT)}), encoding="utf-8")
-            cache = shared / "DEV_RUN/cache"
+            cache = DEV_ENV_ROOT
             cache.mkdir(parents=True, exist_ok=True)
             nuget = output / "NuGet.Config"
             # Offline by default: installed packs/global cache, no network restore.

@@ -22,7 +22,7 @@ def _app_root() -> Path:
 def _artifacts_root() -> Path:
     root = _app_root()
     if (root / "tests" / "golden").is_dir():
-        return root / "tests" / "golden" / "_work"
+        return root / "RELEASE_RUN"
     from vntext.runtime_paths import app_data_root
 
     return resolve_artifacts_root(

@@ -29,7 +29,7 @@ from vntext_studio import CSV_FIELDS, apply_translation_package, extract_project
 
 _GAME_FOLDER_VALUE = os.environ.get("VNTEXT_GAME_FOLDER", "").strip()
 GAME_FOLDER = Path(_GAME_FOLDER_VALUE).expanduser().resolve() if _GAME_FOLDER_VALUE else None
-WORK = ROOT / "tests" / "golden" / "_work"
+WORK = ROOT / "TEST_RUN"
 CAPTURE_ROOT = WORK / "capture"
 PACKAGE = WORK / "Unity_Translation_Package"
 PATCH_OUT = WORK / "Patch_Viet_Hoa"

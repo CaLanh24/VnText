@@ -1,7 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$FullPythonRoot)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$qaRoot = Join-Path $repo 'tests/golden/_work/qa_gui_runtime'
+$qaRoot = Join-Path $repo 'TEST_RUN/qa_gui_runtime'
 $runtime = Join-Path $qaRoot 'python'
 foreach ($relative in @('python.exe', 'tcl/tcl8.6/init.tcl', 'tcl/tk8.6/tk.tcl', 'DLLs/_tkinter.pyd')) {
     if (!(Test-Path -LiteralPath (Join-Path $FullPythonRoot $relative))) { throw "Incomplete Python: $relative" }

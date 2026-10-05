@@ -240,7 +240,7 @@ internal static class Program
 
     private static void PartialTranslateComplete_UpdatesStatus()
     {
-        var package = Path.Combine(RepoRoot(), "tests", "golden", "_work", "external_unity_fixture", "package");
+        var package = Path.Combine(RepoRoot(), "TEST_RUN", "external_unity_fixture", "package");
         if (!File.Exists(Path.Combine(package, "translation.csv")))
             return;
 
@@ -273,7 +273,7 @@ internal static class Program
     {
         var configuredRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         var workRoot = string.IsNullOrWhiteSpace(configuredRoot)
-            ? Path.Combine(RepoRoot(), "tests", "golden", "_work")
+            ? Path.Combine(RepoRoot(), "TEST_RUN")
             : configuredRoot;
         var root = Path.Combine(workRoot, "wpf_renpy_detect_" + Guid.NewGuid().ToString("N"));
         var game = Path.Combine(root, "game");
@@ -381,7 +381,7 @@ internal static class Program
     {
         var configuredRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         var workRoot = string.IsNullOrWhiteSpace(configuredRoot)
-            ? Path.Combine(RepoRoot(), "tests", "golden", "_work")
+            ? Path.Combine(RepoRoot(), "TEST_RUN")
             : configuredRoot;
         var root = Path.Combine(workRoot, "wpf_renpy_visibility_" + Guid.NewGuid().ToString("N"));
         var game = Path.Combine(root, "Renpy", "game");
@@ -432,7 +432,7 @@ internal static class Program
         using var worker = new PythonWorkerHost();
         var workRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         if (string.IsNullOrWhiteSpace(workRoot))
-            workRoot = Path.Combine(RepoRoot(), "tests", "golden", "_work");
+            workRoot = Path.Combine(RepoRoot(), "TEST_RUN");
         var vm = new MainViewModel(picker, worker, startWorker: false)
         {
             InputPath = Path.Combine(workRoot, "renpy_missing_sdk_game"),
@@ -459,10 +459,10 @@ internal static class Program
 
     private static void PartialPackage_TranslateNotComplete()
     {
-        // Fixture độc lập dưới _work — không phụ thuộc package E2E đã complete.
+        // Fixture độc lập dưới TEST_RUN — không phụ thuộc package E2E đã complete.
         var configuredRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         var packageRoot = string.IsNullOrWhiteSpace(configuredRoot)
-            ? Path.Combine(RepoRoot(), "tests", "golden", "_work")
+            ? Path.Combine(RepoRoot(), "TEST_RUN")
             : configuredRoot;
         var package = Path.Combine(packageRoot, "partial_translate_pkg");
         Directory.CreateDirectory(Path.Combine(package, ".mt"));

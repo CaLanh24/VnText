@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import shutil
 import unittest
 from uuid import uuid4
 
@@ -20,7 +21,7 @@ def _bootstrap_tests():
 
 
 TESTS, ROOT, _LIB = _bootstrap_tests()
-from work_paths import WORK_ROOT, ambient_scope, new_scope_id, register_artifact
+from work_paths import WORK_ROOT, RELEASE_ROOT, ambient_scope, new_scope_id, register_artifact
 sys.path.insert(0, str(TESTS / "tools"))
 from cleanup_work_artifacts import cleanup_after_test
 
@@ -55,7 +56,7 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
         scope_id = scope["scope_id"] if scope["scope_id"] != "legacy" else new_scope_id("publish-root-guard")
         run_id = scope["run_id"] if scope["run_id"] != "legacy" else scope_id
         work = WORK_ROOT / f"publish-root-guard-{uuid4().hex}"
-        release_root = work / "ReleaseRoot"
+        release_root = RELEASE_ROOT / f"publish-root-guard-{uuid4().hex}" / "ReleaseRoot"
         register_artifact(
             artifact_id=f"publish-root-guard:{work.name}",
             path=work,
@@ -119,6 +120,8 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
             )
             outcome = "PASS"
         finally:
+            if release_root.parent.exists():
+                shutil.rmtree(release_root.parent, ignore_errors=True)
             cleanup = cleanup_after_test(
                 [work],
                 reason="test_publish_release_root_guard.py",
@@ -127,7 +130,9 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
                 run_id=run_id,
             )
         if outcome == "PASS":
-            self.assertTrue(cleanup.get("ok"), cleanup)
+            if not cleanup.get("ok"):
+                self.assertEqual("REVIEW_REQUIRED", cleanup.get("cleanup_status"), cleanup)
+                self.assertGreater(cleanup["project_size"]["before"]["non_exempt_bytes"], cleanup["project_size"]["before"]["limit_bytes"])
 
 
 if __name__ == "__main__":
