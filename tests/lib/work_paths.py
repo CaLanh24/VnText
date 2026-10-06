@@ -167,10 +167,11 @@ def ensure_work_root() -> Path:
 def path_under_work(path: Path) -> bool:
     resolved = path.resolve()
     configured = str(os.environ.get("VNTEXT_ARTIFACT_SCOPE_ROOT") or "").strip()
+    default_work = WORK_ROOT.resolve()
+    if resolved == default_work or default_work in resolved.parents:
+        return True
     configured_root = Path(configured).expanduser().resolve() if configured else None
-    canonical = (ROOT / "TEST_RUN").resolve()
-    work = configured_root if configured_root and configured_root != canonical else WORK_ROOT.resolve()
-    return resolved == work or work in resolved.parents
+    return bool(configured_root and (resolved == configured_root or configured_root in resolved.parents))
 
 
 def lifecycle_for_entry(entry: dict) -> str:
