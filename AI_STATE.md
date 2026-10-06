@@ -274,3 +274,20 @@
   SHA/version/hash thật để acceptance full-app từ baseline Setup 0.1.2; main
   và candidate sản phẩm vẫn 0.1.2, không push/upload/phát hành. Setup upgrade
   thực tế và stable GitHub vẫn NOT VERIFIED.
+## Clean 0.1.0 candidate — source e005ee2 (2026-10-06)
+
+- Clean source SHA `e005ee2da5f1b33bce3b0a2744bf45ecc4ac95f5` built Setup `0.1.0`.
+  Publisher exit `0`; payload audit verified 7,066 files / 514,926,295 bytes;
+  Setup size 221,393,408 bytes, SHA-256
+  `d9f0ad885aa68803a3053bc91d6b45f45d157334f0369d2b5f15f91c1e4afc36`.
+  Release verify, DEV/Release two-cwd smoke and final cleanup passed.
+- Full regression on the same SHA: 679 tests, 0 failures, 0 errors, 7 skips;
+  child/wrapper exit 0 and cleanup PASS. Skips remain the two installer tests
+  without a built test package, unavailable Tk runtime, and four opt-in Unity
+  fixtures. Raw evidence: `RELEASE_RUN/full-regression-0.1.0-e005ee2.log` and
+  `RELEASE_RUN/publisher-0.1.0-e005ee2-p678.log`.
+- No full-app package was generated: the prior 0.1.3/0.1.4 artifacts are not a
+  valid older baseline for the reset public `0.1.0` line. The next update
+  candidate must be `0.1.1`, built from this 0.1.0 baseline and then separately
+  tested for installed offer/apply/restart. GitHub replacement remains pending;
+  no Release was deleted or uploaded in this reset task.
