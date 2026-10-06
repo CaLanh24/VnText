@@ -6,6 +6,17 @@
 - Candidate `0.1.1` is staged locally only; no GitHub tag/release mutation was
   made for it in this turn.
 
+## Stable v0.1.1 publication receipt (2026-10-06)
+
+- GitHub Release `v0.1.1` is public stable/latest, with tag/source
+  `a5d526f65521e1e86238a1cdbc9593640632f9e0`. Six asset read-backs matched
+  the local candidate size and digest, including Setup
+  `b045cbd712901f7cf2b1b58325f95bbf372b58f634c596e5ff26825dc8cd19d2` and
+  full-app `e765df80a8ec50d558f78f077bc37a9db0cdde4ba2fc9e0939d0ae4f97c5fec6`.
+- This publication does not prove installed-app offer/apply/restart acceptance.
+  Users on public `v0.1` must run Setup `0.1.1` once; that transition remains
+  **NOT VERIFIED** on a real installed app.
+
 ## Version policy reset — public 0.1 line (2026-10-06)
 
 - Owner reset the product version policy: the current public line is `0.1`,
