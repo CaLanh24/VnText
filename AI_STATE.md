@@ -18,6 +18,17 @@
   `0` errors, and smoke events for extract/translate/patch were `ok=true`, but
   fail-closed cleanup stopped at non-exempt project bytes `1,374,670,845`, over
   the `1,073,741,824` byte limit. No 0.1.2 Setup or full-app package was made.
+- The WPF harness fixture `partial_translate_pkg` was proven test-owned but had
+  been created at a fixed path without disposal. It was changed to a unique
+  path with `finally` cleanup and focused WPF tests passed `7/7`; source commit
+  is now `73c99b34dbc4957a9ca237401f0b134d6a8b9d34`. The old fixture was
+  registered as disposable and removed. A cleanup audit still reports `44`
+  UNKNOWN entries because retained temporary roots belong to the prior
+  `canonical-run-fa28be017b764c7eb1dba90b9095e1ff` scope; current cleanup is
+  fail-closed and does not reclassify or delete them. Project non-exempt bytes
+  are now `1,063,459,045` (under the 1 GiB limit), but `TEST_RUN` is not
+  terminal until those retained/UNKNOWN records have an evidence-backed owner
+  disposition.
 
 ## Publication state correction — public v0.1 only (2026-10-06)
 
