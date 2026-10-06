@@ -441,7 +441,14 @@ def write_size_report(
 
 
 def _rel_under_work(path: Path) -> str:
-    return str(path.resolve().relative_to(WORK_ROOT.resolve())).replace("\\", "/")
+    resolved = path.resolve()
+    default_root = WORK_ROOT.resolve()
+    if resolved == default_root or default_root in resolved.parents:
+        root = default_root
+    else:
+        configured = str(os.environ.get("VNTEXT_ARTIFACT_SCOPE_ROOT") or "").strip()
+        root = Path(configured).expanduser().resolve() if configured else default_root
+    return str(resolved.relative_to(root)).replace("\\", "/")
 
 
 def is_keep(path: Path, *, allow_registered_disposable: bool = False) -> bool:
