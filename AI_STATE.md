@@ -264,3 +264,8 @@
   SHA/version/hash thật để acceptance full-app từ baseline Setup 0.1.2; main
   và candidate sản phẩm vẫn 0.1.2, không push/upload/phát hành. Setup upgrade
   thực tế và stable GitHub vẫn NOT VERIFIED.
+
+## Publication receipt — v0.1.4
+
+- Public stable Release `404241058` titled `VNText Studio 0.1` and tag `v0.1.4` were published from source SHA `a5677ba493755bf5d0b6953c4fd7d45eb2b3cfe0`. Five public assets were uploaded; API size/digest read-back matched retained candidate staging. This receipt is publication evidence only.
+- Installed-app offer/apply/restart acceptance from public `0.1.3` to `0.1.4` has not been run; stable GitHub update remains **NOT VERIFIED** for that acceptance layer.
