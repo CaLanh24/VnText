@@ -1,6 +1,6 @@
 # VNText Studio
 
-Bản public hiện tại: **0.1** (source `0.1.0`); bản cập nhật kế tiếp là **0.1.1**.
+Bản public hiện tại: **0.1**; source đang chuẩn bị bản cập nhật **0.1.1**.
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 
