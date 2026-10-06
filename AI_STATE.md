@@ -10,6 +10,14 @@
   expose the native window.
 - No Setup/full-app package, GitHub upload, tag, push or Release was performed
   for `0.1.2` in this step.
+- Exact source commit after this preparation is `00958c95a4803b59c127ad6223e71c08bca5c39f`.
+  Full Python regression on that SHA produced child `679/0/0`, `7` skips and
+  child exit `0`, but the canonical wrapper returned exit `1`/`REVIEW_REQUIRED`
+  because `TEST_RUN` contained pre-existing material. The release publisher was
+  then attempted with `-SkipTests`; its WPF build passed with `0` warnings and
+  `0` errors, and smoke events for extract/translate/patch were `ok=true`, but
+  fail-closed cleanup stopped at non-exempt project bytes `1,374,670,845`, over
+  the `1,073,741,824` byte limit. No 0.1.2 Setup or full-app package was made.
 
 ## Publication state correction — public v0.1 only (2026-10-06)
 
