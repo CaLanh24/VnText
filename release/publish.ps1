@@ -722,7 +722,7 @@ if (-not $SkipTests) {
 $wpfPublish = Join-Path $DevRunRoot "wpf_publish"
 $wpfBuiltExe = Join-Path $wpfPublish "VNText.Studio.App.exe"
 $wpfUpdatePublish = Join-Path $publishArtifactRoot "wpf_update_publish"
-$dotnetRuntimeRoot = Join-Path $DevRunRoot "_dotnet"
+$dotnetRuntimeRoot = Join-Path $publishArtifactRoot "_dotnet"
 $dotnetSdkRoot = Join-Path $DevRoot ".dev-env\dotnet-sdk-10"
 $dotnet = Join-Path $dotnetSdkRoot "dotnet.exe"
 $dotnetAppData = Join-Path $dotnetRuntimeRoot "appdata"
