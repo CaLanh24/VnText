@@ -1242,6 +1242,18 @@
 
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}" />
 
+    <Style x:Key="SidebarUpdateButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}">
+
+        <Setter Property="MinHeight" Value="32" />
+
+        <Setter Property="MinWidth" Value="0" />
+
+        <Setter Property="Padding" Value="11,6" />
+
+        <Setter Property="FontSize" Value="11" />
+
+    </Style>
+
     <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}" />
 
     <Style x:Key="OutlineButton" TargetType="Button" BasedOn="{StaticResource GuiOutlineButtonStyle}" />

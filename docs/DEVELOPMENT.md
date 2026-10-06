@@ -2,7 +2,7 @@
 
 Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
 virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
-đầu tiên; baseline public là `0.1.0`, source cập nhật kế tiếp là `0.1.1`.
+đầu tiên; baseline public là `0.1.1`, source cập nhật kế tiếp là `0.1.2`.
 
 ## Kiểm prerequisite trước khi tải
 

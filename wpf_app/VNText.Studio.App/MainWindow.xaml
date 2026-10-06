@@ -55,7 +55,8 @@
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,4,0,34">
                     <Border Width="35" Height="35" CornerRadius="11" Background="{StaticResource BrandDarkBrush}">
-                        <Path Data="{StaticResource BrandMarkGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="White" Width="19" Height="19" HorizontalAlignment="Center" />
+                        <Image Source="Assets/vntext_studio_logo_128.png" Width="23" Height="23" Stretch="Uniform"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="VNText Studio" FontSize="16" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
@@ -148,19 +149,23 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel Grid.Row="3" Margin="3,24,0,0">
-                    <TextBlock Text="Phiên bản hiện tại" FontSize="11" Foreground="{StaticResource MutedBrush}" />
-                    <TextBlock Text="{Binding CurrentVersionDisplay}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,2,0,0" />
-                    <TextBlock Text="Phiên bản mới" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
+                <Border Grid.Row="3" Margin="3,24,0,0" Padding="10,9" Background="{StaticResource SubtlePanelBrush}"
+                        BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12">
+                    <StackPanel>
+                    <TextBlock Text="CẬP NHẬT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
+                    <TextBlock Text="Phiên bản hiện tại" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
+                    <TextBlock Text="{Binding CurrentVersionDisplay}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,1,0,0" />
+                    <TextBlock Text="Phiên bản mới" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"
                                Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding GitHubUpdateVersion}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,2,0,0"
+                    <TextBlock Text="{Binding GitHubUpdateVersion}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,1,0,0"
                                Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
                     <Button Content="{Binding GitHubUpdateButtonText}" AutomationProperties.Name="{Binding GitHubUpdateButtonText}"
-                            Style="{StaticResource PrimaryButton}" Command="{Binding RecheckUpdateCommand}"
+                            Style="{StaticResource SidebarUpdateButton}" Command="{Binding RecheckUpdateCommand}"
                             IsEnabled="{Binding GitHubUpdateButtonEnabled}"
-                            Margin="0,8,0,0" HorizontalAlignment="Left" />
-                </StackPanel>
+                            Margin="0,7,0,0" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </Border>
 

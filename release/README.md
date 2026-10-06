@@ -61,9 +61,9 @@ version, source SHA, Setup/package SHA256, payload size và số package/byte đ
 giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đạt mới gọi
 `RELEASE_VERIFIED`.
 
-## Chuẩn bị 0.1 → 0.1.1
+## Chuẩn bị 0.1.1 → 0.1.2
 
-`v0.1` là bản public đầu tiên, public line hiện tại là `0.1`; bản update kế tiếp là `0.1.1`.
+`v0.1` là bản public đầu tiên; bản public hiện tại là `0.1.1` và bản update kế tiếp là `0.1.2`.
 Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
 `-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
 Không kết hợp switch này với `-WpfUpdateVersion`; gói được yêu cầu vẫn phải qua

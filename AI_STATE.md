@@ -1,3 +1,16 @@
+## Candidate 0.1.2 UI/version preparation (2026-10-06)
+
+- Based on clean `main@6d1b6dd`, source metadata is being prepared for `0.1.2`.
+  The WPF sidebar update card is compacted with the existing design tokens and
+  the existing feather PNG is reused beside the product name; update bindings,
+  states and commands are unchanged.
+- Focused WPF workflow tests, version/docs tests, WPF app and harness builds,
+  and DEV publish/smoke were run locally. The real UI screenshot acceptance is
+  still **NOT VERIFIED** because the available computer-use surface did not
+  expose the native window.
+- No Setup/full-app package, GitHub upload, tag, push or Release was performed
+  for `0.1.2` in this step.
+
 ## Publication state correction — public v0.1 only (2026-10-06)
 
 - GitHub read-back shows only stable `v0.1`; `v0.1.3` is not currently a
