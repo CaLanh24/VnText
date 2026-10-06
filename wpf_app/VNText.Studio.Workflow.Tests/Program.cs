@@ -465,31 +465,39 @@ internal static class Program
         var packageRoot = string.IsNullOrWhiteSpace(configuredRoot)
             ? Path.Combine(RepoRoot(), "TEST_RUN")
             : configuredRoot;
-        var package = Path.Combine(packageRoot, "partial_translate_pkg");
+        var package = Path.Combine(packageRoot, "partial_translate_pkg_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(package, ".mt"));
-        File.WriteAllText(Path.Combine(package, "manifest.json"), "{\"entries\":[]}\n", Encoding.UTF8);
-        File.WriteAllText(
-            Path.Combine(package, "translation.csv"),
-            "key,source_text,translation,context,file_path,object_info,import_method,safety,backend,byte_limit,patch_note\r\n"
-            + "k1,Hello,Xin chào,line:1,x.txt,,plain_text_line,safe,plain_text,,\r\n"
-            + "k2,World,,line:2,x.txt,,plain_text_line,safe,plain_text,,\r\n",
-            Encoding.UTF8);
-        File.WriteAllText(
-            Path.Combine(package, "review_only.csv"),
-            "key,source_text,translation,context,file_path,object_info,import_method,safety,backend,byte_limit,patch_note\r\n"
-            + "k_rev,{HARD}=blocked,,line:3,x.txt,,plain_text_line,review,plain_text,,\r\n",
-            Encoding.UTF8);
-        File.WriteAllText(
-            Path.Combine(package, ".mt", "translate_status.json"),
-            "{\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":1}\n",
-            Encoding.UTF8);
+        try
+        {
+            File.WriteAllText(Path.Combine(package, "manifest.json"), "{\"entries\":[]}\n", Encoding.UTF8);
+            File.WriteAllText(
+                Path.Combine(package, "translation.csv"),
+                "key,source_text,translation,context,file_path,object_info,import_method,safety,backend,byte_limit,patch_note\r\n"
+                + "k1,Hello,Xin chào,line:1,x.txt,,plain_text_line,safe,plain_text,,\r\n"
+                + "k2,World,,line:2,x.txt,,plain_text_line,safe,plain_text,,\r\n",
+                Encoding.UTF8);
+            File.WriteAllText(
+                Path.Combine(package, "review_only.csv"),
+                "key,source_text,translation,context,file_path,object_info,import_method,safety,backend,byte_limit,patch_note\r\n"
+                + "k_rev,{HARD}=blocked,,line:3,x.txt,,plain_text_line,review,plain_text,,\r\n",
+                Encoding.UTF8);
+            File.WriteAllText(
+                Path.Combine(package, ".mt", "translate_status.json"),
+                "{\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":1}\n",
+                Encoding.UTF8);
 
-        var snap = WorkflowStatus.Evaluate(Path.Combine(package, "game"), package);
-        AssertEqual("translate", snap.Current);
-        AssertEqual(WorkflowStepState.Current, snap.TranslateState);
-        AssertFalse(snap.TranslateState == WorkflowStepState.Done);
-        AssertTrue(snap.StepStatusLine.Contains("Dịch một phần"));
-        AssertTrue(snap.StepStatusLine.Contains("review"));
+            var snap = WorkflowStatus.Evaluate(Path.Combine(package, "game"), package);
+            AssertEqual("translate", snap.Current);
+            AssertEqual(WorkflowStepState.Current, snap.TranslateState);
+            AssertFalse(snap.TranslateState == WorkflowStepState.Done);
+            AssertTrue(snap.StepStatusLine.Contains("Dịch một phần"));
+            AssertTrue(snap.StepStatusLine.Contains("review"));
+        }
+        finally
+        {
+            if (Directory.Exists(package))
+                Directory.Delete(package, recursive: true);
+        }
     }
 
     private static void DiagnosticCompletion_IsVisibleAndActionable()
