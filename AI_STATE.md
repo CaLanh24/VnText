@@ -1,3 +1,11 @@
+## Publication state correction — public v0.1 only (2026-10-06)
+
+- GitHub read-back shows only stable `v0.1`; `v0.1.3` is not currently a
+  public release. The earlier local/publication receipt is historical and
+  must not be used as current stable evidence.
+- Candidate `0.1.1` is staged locally only; no GitHub tag/release mutation was
+  made for it in this turn.
+
 ## Version policy reset — public 0.1 line (2026-10-06)
 
 - Owner reset the product version policy: the current public line is `0.1`,
@@ -188,7 +196,7 @@
 
 - Repository chính thức: [CaLanh24/VnText](https://github.com/CaLanh24/VnText), nhánh `main`. Clone mới chỉ cần source public và dependency theo `docs/DEVELOPMENT.md`; không tìm candidate, checkout hoặc lịch sử private.
 - Owner yêu cầu một bản công khai `0.1`, README tiếng Việt dành cho người dùng và giữ mã test cần thiết, không đưa dữ liệu chạy test vào Git.
-- Release public 0.1 hiện được duy trì tại [stable release page](https://github.com/CaLanh24/VnText/releases/tag/v0.1.3). Source build/tag lịch sử của Setup đầu tiên: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.
+- Release public 0.1 hiện được duy trì tại [stable release page](https://github.com/CaLanh24/VnText/releases/tag/v0.1). Source build/tag lịch sử của Setup đầu tiên: `4d22170a081557e1bf0ad11190f005a01c3edb74`; version sản phẩm `0.1.0`, version file Windows `0.1.0.0`. Các commit tài liệu sau đó không thay source/runtime của Setup này.
 - Setup mới: 221.765.120 byte; SHA-256 `4ec759a72114a87570fd1e6bbf9b4b239f32f02a5dd02b365b4f5294bb998e2e`. Digest asset GitHub khớp file build. Release chỉ chứa `Setup.exe` và `SHA256SUMS.txt`; hai Release/tag `v1.45.0`, `v1.45.1` đã xóa theo yêu cầu Owner.
 - Publisher, build, release verify và smoke hai cwd đạt. Đối chiếu trực tiếp toàn bộ 7.134 file payload với manifest không có hash/size sai, file thiếu hoặc thừa; Intel/NVIDIA DLL và notice khớp provenance. Không có FMOD native binary hoặc Argos; helper Python `fmod_toolkit`/`pyfmodex` vẫn có trong payload, không đồng nghĩa có quyền phân phối FMOD native binary.
 - Unittest trên source build: 651 test, 0 fail, 0 error, 7 skip, 0 warning. Sau build, kiểm tra installer 2/2 và GUI shutdown/worker reap 1/1 đạt; WPF harness 7/7 và DEV smoke đạt. Các skip cần game ngoài không chứng minh hỗ trợ mọi game hoặc chất lượng dịch.
