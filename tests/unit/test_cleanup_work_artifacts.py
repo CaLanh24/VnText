@@ -44,8 +44,19 @@ RUNNER = ROOT / "tests" / "tools" / "run_with_cleanup.py"
 
 class CleanupLifecycleTests(unittest.TestCase):
     @contextlib.contextmanager
+    def isolated_owner_pending(self):
+        """Keep retained production evidence from changing synthetic lifecycle fixtures."""
+        marker = "VNTEXT_OWNER_TEST_PENDING"
+        previous = os.environ.pop(marker, None)
+        try:
+            yield
+        finally:
+            if previous is not None:
+                os.environ[marker] = previous
+
+    @contextlib.contextmanager
     def isolated_workspace(self):
-        with tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
+        with self.isolated_owner_pending(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
             root = Path(name)
             tests_root = root / "tests"
             golden = tests_root / "golden"
@@ -103,39 +114,39 @@ class CleanupLifecycleTests(unittest.TestCase):
     @contextlib.contextmanager
     def canonical_runner_harness(self):
         """Run the subprocess wrapper against a clean copied project surface."""
-
-        paths.WORK_ROOT.mkdir(parents=True, exist_ok=True)
-        harness = Path(tempfile.mkdtemp(prefix="vntext-canonical-runner-", dir=paths.WORK_ROOT))
-        for relative in (
-            Path("tests/lib/bootstrap.py"),
-            Path("tests/lib/work_paths.py"),
-            Path("tests/tools/cleanup_work_artifacts.py"),
-            Path("tests/tools/run_with_cleanup.py"),
-        ):
-            destination = harness / relative
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(ROOT / relative, destination)
-        work = harness / "TEST_RUN"
-        work.mkdir(parents=True)
-        self.assertNotEqual(
-            (work / "artifacts_manifest.json").resolve(),
-            paths.MANIFEST_PATH.resolve(),
-        )
-        self.assertNotEqual(
-            (harness / "tests" / "tools" / "run_with_cleanup.py").resolve(),
-            RUNNER.resolve(),
-        )
-        canonical_before = (
-            paths.MANIFEST_PATH.read_bytes() if paths.MANIFEST_PATH.exists() else None
-        )
-        try:
-            yield harness, harness / "tests" / "tools" / "run_with_cleanup.py", work
-        finally:
-            canonical_after = (
+        with self.isolated_owner_pending():
+            paths.WORK_ROOT.mkdir(parents=True, exist_ok=True)
+            harness = Path(tempfile.mkdtemp(prefix="vntext-canonical-runner-", dir=paths.WORK_ROOT))
+            for relative in (
+                Path("tests/lib/bootstrap.py"),
+                Path("tests/lib/work_paths.py"),
+                Path("tests/tools/cleanup_work_artifacts.py"),
+                Path("tests/tools/run_with_cleanup.py"),
+            ):
+                destination = harness / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / relative, destination)
+            work = harness / "TEST_RUN"
+            work.mkdir(parents=True)
+            self.assertNotEqual(
+                (work / "artifacts_manifest.json").resolve(),
+                paths.MANIFEST_PATH.resolve(),
+            )
+            self.assertNotEqual(
+                (harness / "tests" / "tools" / "run_with_cleanup.py").resolve(),
+                RUNNER.resolve(),
+            )
+            canonical_before = (
                 paths.MANIFEST_PATH.read_bytes() if paths.MANIFEST_PATH.exists() else None
             )
-            self.assertEqual(canonical_before, canonical_after)
-            shutil.rmtree(harness, ignore_errors=True)
+            try:
+                yield harness, harness / "tests" / "tools" / "run_with_cleanup.py", work
+            finally:
+                canonical_after = (
+                    paths.MANIFEST_PATH.read_bytes() if paths.MANIFEST_PATH.exists() else None
+                )
+                self.assertEqual(canonical_before, canonical_after)
+                shutil.rmtree(harness, ignore_errors=True)
 
     def test_protected_game_copy_is_not_deleted(self):
         with self.isolated_workspace() as (_root, _work, game, _manifest):
