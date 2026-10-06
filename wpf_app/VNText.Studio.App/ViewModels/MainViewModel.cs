@@ -772,7 +772,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             _githubUpdateResult = result;
             if (Set(ref _githubUpdateState, result.State))
                 Raise(nameof(GitHubUpdateState));
-            _githubUpdateStatus = GitHubStatusMessage(result.State, result.Version);
+            _githubUpdateStatus = GitHubStatusMessage(result.State, result.Version, result.Message);
             RaiseGitHubUpdateCard();
         }
         catch (TaskCanceledException)
@@ -808,16 +808,21 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    private static string GitHubStatusMessage(GitHubUpdateState state, string version) => state switch
+    private static string GitHubStatusMessage(GitHubUpdateState state, string version, string message = "")
     {
-        GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
-        GitHubUpdateState.Current => "Bạn đang dùng phiên bản mới nhất.",
-        GitHubUpdateState.UpdateAvailable => "Có bản cập nhật mới.",
-        GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",
-        GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage => "Không thể kiểm tra bản cập nhật.",
-        GitHubUpdateState.Offline or GitHubUpdateState.Timeout or GitHubUpdateState.RateLimited => "Chưa thể kiểm tra. Hãy thử lại sau.",
-        _ => "Chưa thể kiểm tra cập nhật.",
-    };
+        if (state is GitHubUpdateState.Offline or GitHubUpdateState.Timeout or GitHubUpdateState.RateLimited)
+            return string.IsNullOrWhiteSpace(message) ? "Chưa thể kiểm tra. Hãy thử lại sau." : message;
+        if (state is GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage)
+            return string.IsNullOrWhiteSpace(message) ? "Không thể kiểm tra bản cập nhật." : $"Không thể kiểm tra bản cập nhật: {message}";
+        return state switch
+        {
+            GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
+            GitHubUpdateState.Current => "Bạn đang dùng phiên bản mới nhất.",
+            GitHubUpdateState.UpdateAvailable => "Có bản cập nhật mới.",
+            GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",
+            _ => "Chưa thể kiểm tra cập nhật.",
+        };
+    }
 
     private void HandleUpdateAction()
     {

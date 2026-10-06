@@ -1924,6 +1924,7 @@ internal static class Program
                 error.RecheckUpdateCommand.Execute(null);
                 error.GitHubUpdateCheckTask.GetAwaiter().GetResult();
                 AssertEqual(GitHubUpdateState.Offline, error.GitHubUpdateState);
+                AssertTrue(error.GitHubUpdateStatus.Contains("offline", StringComparison.OrdinalIgnoreCase));
                 AssertEqual("Kiểm tra lại", error.GitHubUpdateButtonText);
                 AssertTrue(error.GitHubUpdateButtonEnabled);
             }
