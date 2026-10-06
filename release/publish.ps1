@@ -1419,6 +1419,10 @@ try {
     }
     $updateFeedCommitted = $false
     $fullAppFeedCommitted = $false
+    if (Test-Path -LiteralPath $dotnet -PathType Leaf) {
+        & $dotnet build-server shutdown --nologo | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Could not shut down the isolated .NET build server before cleanup" }
+    }
     $cleanupScript = "import sys; sys.path.insert(0,sys.argv[2]); sys.path.insert(0,sys.argv[1]); from pathlib import Path; from cleanup_work_artifacts import cleanup_after_test; report=cleanup_after_test([Path(sys.argv[4]),Path(sys.argv[5]),Path(sys.argv[6]),Path(sys.argv[7]),Path(sys.argv[8]),Path(sys.argv[9])],reason='release/publish.ps1',outcome='PASS',scope_id=sys.argv[3],run_id=sys.argv[3]); print(report); raise SystemExit(0 if report.get('ok') else 1)"
     & $Python -B -c $cleanupScript (Join-Path $ArtifactHelpersRoot "..\tools") $ArtifactHelpersRoot $publishScope $staging $payloadZip $setupExe $wpfUpdatePublish $updatesStaging $dotnetRuntimeRoot
     if ($LASTEXITCODE -ne 0) { throw "Portable Setup staging cleanup did not complete; old Release contents preserved" }
