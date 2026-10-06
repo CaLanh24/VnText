@@ -291,3 +291,12 @@
   candidate must be `0.1.1`, built from this 0.1.0 baseline and then separately
   tested for installed offer/apply/restart. GitHub replacement remains pending;
   no Release was deleted or uploaded in this reset task.
+## Publication receipt — public v0.1 (2026-10-06)
+
+- Public Release `404384203`, tag `v0.1`, title `VNText Studio 0.1`, was
+  published from exact source SHA `e005ee2da5f1b33bce3b0a2744bf45ecc4ac95f5`.
+  Setup SHA-256 is `d9f0ad885aa68803a3053bc91d6b45f45d157334f0369d2b5f15f91c1e4afc36`;
+  API read-back matched the staged Setup and three supporting assets.
+- The superseded `v0.1.4` Release/tag was deleted with HTTP 204. This is a
+  publication receipt; future `0.1.0` → `0.1.1` installed-app acceptance remains
+  **NOT VERIFIED** and no `0.1.1` asset exists yet.
