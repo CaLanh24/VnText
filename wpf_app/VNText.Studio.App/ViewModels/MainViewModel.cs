@@ -759,7 +759,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         try
         {
-            var result = await checkTask.ConfigureAwait(false);
+            var result = await checkTask;
             if (cancellation.IsCancellationRequested || !ReferenceEquals(_githubUpdateCancellation, cancellation))
             {
                 if (installRoot is not null)

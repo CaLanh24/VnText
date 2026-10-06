@@ -1890,6 +1890,7 @@ internal static class Program
             pending.SetResult(JsonResponse("[]"));
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.Current, vm.GitHubUpdateState);
+            AssertEqual("Bạn đang dùng phiên bản mới nhất.", vm.GitHubUpdateStatus);
             AssertEqual("Đã cập nhật", vm.GitHubUpdateButtonText);
             AssertFalse(vm.GitHubUpdateButtonEnabled);
             AssertTrue(vm.RecheckUpdateCommand.CanExecute(null));
