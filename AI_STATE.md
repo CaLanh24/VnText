@@ -1,11 +1,21 @@
+## Version policy reset — public 0.1 line (2026-10-06)
+
+- Owner reset the product version policy: the current public line is `0.1`,
+  represented by source `0.1.0`; the next update is `0.1.1`.
+- The prior locally published `v0.1.4` receipt is superseded and is not the
+  product version policy. Its public Release replacement remains pending until
+  the clean `0.1.0` candidate passes the required gates.
+- No Release deletion, replacement upload, or new publication is authorized by
+  this entry. Installed-app acceptance for the future `0.1.0` → `0.1.1` update
+  remains **NOT VERIFIED**.
 # Trạng thái hiện tại — VNText Studio
 
-## DEV source 0.1.4 — update card simplification (2026-10-06)
+## DEV source 0.1.0 — update card simplification (2026-10-06)
 
 - Working source changes simplify the WPF GitHub update card to one explicit
   stateful action: idle/checking/current/update/error. Local preview controls and
   technical update text are no longer rendered. This is source work only; no
-  Setup, GitHub upload, publish, or installed-app acceptance was run for 0.1.4.
+  Setup, GitHub upload, publish, or installed-app acceptance was run for source 0.1.0.
 - `.dev-env` uses Python 3.12.14, the pinned requirements, official .NET SDK
   10.0.401, and OPUS-MT CT2 revision from `vntext/mt_ct2_constants.py`; model
   cache is outside Git. Focused UI assertions passed; the affected harness was
@@ -264,8 +274,3 @@
   SHA/version/hash thật để acceptance full-app từ baseline Setup 0.1.2; main
   và candidate sản phẩm vẫn 0.1.2, không push/upload/phát hành. Setup upgrade
   thực tế và stable GitHub vẫn NOT VERIFIED.
-
-## Publication receipt — v0.1.4
-
-- Public stable Release `404241058` titled `VNText Studio 0.1` and tag `v0.1.4` were published from source SHA `a5677ba493755bf5d0b6953c4fd7d45eb2b3cfe0`. Five public assets were uploaded; API size/digest read-back matched retained candidate staging. This receipt is publication evidence only.
-- Installed-app offer/apply/restart acceptance from public `0.1.3` to `0.1.4` has not been run; stable GitHub update remains **NOT VERIFIED** for that acceptance layer.
