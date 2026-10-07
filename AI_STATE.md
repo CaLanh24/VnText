@@ -364,3 +364,10 @@
 - Public assets are Setup, full-app ZIP, update manifest, `SHA256SUMS.txt` and
   `THIRD_PARTY_NOTICES.md`. Installed-app offer/apply/restart acceptance and
   the broader product gate remain **NOT VERIFIED**.
+
+## Stable v0.1.3 publication receipt (2026-10-07)
+
+- Source `main` and annotated tag `v0.1.3` target `dd94c6cb3e61f406faa92f0512cf0b38d5397dea`; GitHub `main` read-back matches. Release `VNText Studio 0.1.3` is public, stable, non-draft and non-prerelease: https://github.com/CaLanh24/VnText/releases/tag/v0.1.3.
+- Publisher on that SHA exited 0 with release verify, DEV/Release smoke, payload audit and cleanup PASS. Full regression: 679 tests, 0 failures, 0 errors, 7 skips; child/wrapper exit 0. Skips are the two unbuilt patch-installer tests, unavailable Tk runtime, and four opt-in Unity fixtures.
+- Published Setup `VNTextStudio-0.1.3-Setup.exe`: 221,393,408 bytes, SHA-256 `69bf7a357d513d7878f186be48e9c5f7f2dcbe8fe89b44b7823b5c7f9fe6cef8`. Full-app package: 2,379,463 bytes, SHA-256 `58ac5b4bf3961b925e84845633db7e631d2cd5f5b3fe404e5c37f4c8f79b39c7`; payload 7,066 files / 514,926,299 bytes. GitHub asset digests matched Setup, full-app ZIP, manifest and notices; GitHub `SHA256SUMS.txt` digest is `522546ece9429214f61921278b0fd31220ea88ba102c9b44bf35ee7c5cadecdf`.
+- Installed-app offer/apply/restart acceptance from a real stable GitHub asset remains **NOT VERIFIED**; the broader product gate remains **NOT VERIFIED**. Users still need Setup 0.1.2 when starting from public v0.1; full-app update is for the 0.1.2 baseline.
