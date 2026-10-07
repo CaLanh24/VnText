@@ -351,3 +351,16 @@
 - The superseded `v0.1.4` Release/tag was deleted with HTTP 204. This is a
   publication receipt; future `0.1.0` → `0.1.1` installed-app acceptance remains
   **NOT VERIFIED** and no `0.1.1` asset exists yet.
+## Stable v0.1.2 publication receipt (2026-10-07)
+
+- Source `main` was pushed at `b894886da7f54cf94c6dfba8d067de864114349d` and
+  annotated tag `v0.1.2` targets that commit. GitHub Release
+  `VNText Studio 0.1.2` is public, stable, non-draft and non-prerelease.
+- Read-back matched the local candidate: Setup
+  `f89a3a5cc5e8f72d048c80b4a458233afcec90ab61e474110532b5f93cb3d84`, full-app
+  package `3bb2b6bad42648d4993ae8707bce8742f394e653b4776dbe2f10e8fcc60c1d85`
+  (2,379,509 bytes), and manifest source SHA `b894886...`. The full-app payload
+  verified 7,066 files; publisher and cleanup passed.
+- Public assets are Setup, full-app ZIP, update manifest, `SHA256SUMS.txt` and
+  `THIRD_PARTY_NOTICES.md`. Installed-app offer/apply/restart acceptance and
+  the broader product gate remain **NOT VERIFIED**.
