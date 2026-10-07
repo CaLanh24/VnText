@@ -2,7 +2,7 @@
 
 Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
 virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
-đầu tiên; baseline public là `0.1.2`, source cập nhật kế tiếp là `0.1.3`.
+đầu tiên; baseline public là `0.1.3`, source cập nhật kế tiếp là `0.1.4`.
 
 ## Kiểm prerequisite trước khi tải
 
@@ -164,7 +164,7 @@ build sau source commit sạch, epoch hợp lệ và inventory toàn root comple
 không miễn trừ <=1 GiB và `.dev-env` <=3 GiB theo exact roots trong CONTRACTS. Baseline
 WPF/full-app phải có version và payload thực, không tạo metadata giả hoặc nới
 validator để qua gate. Version package phải mới hơn baseline; version Owner chọn
-cho candidate phải khớp source/EXE/manifests. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app 0.1.3 từ baseline 0.1.2.
+cho candidate phải khớp source/EXE/manifests. Owner chọn Setup 0.1.2 cho người còn ở v0.1; full-app 0.1.4 từ baseline 0.1.3.
 Dùng `publish.ps1 -SkipWpfUpdatePackage` để build Setup không kèm WPF delta
 version cao hơn chưa được chọn. Chỉ yêu cầu full-app delta khi baseline thực
 nhỏ hơn candidate và provenance/inventory khớp. SDK/dependency/worker/model đầy đủ

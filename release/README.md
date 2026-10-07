@@ -63,7 +63,7 @@ giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đ�
 
 ## Chuẩn bị 0.1.1 → 0.1.3
 
-`v0.1` là bản public đầu tiên; bản public hiện tại là `0.1.2` và bản update kế tiếp là `0.1.3`.
+`v0.1` là bản public đầu tiên; bản public hiện tại là `0.1.3` và bản update kế tiếp là `0.1.4`.
 Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
 `-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
 Không kết hợp switch này với `-WpfUpdateVersion`; gói được yêu cầu vẫn phải qua
