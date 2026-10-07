@@ -54,10 +54,9 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,4,0,34">
-                    <Border Width="35" Height="35" CornerRadius="11" Background="{StaticResource BrandDarkBrush}">
-                        <Image Source="Assets/vntext_studio_logo_128.png" Width="23" Height="23" Stretch="Uniform"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+                    <Path Data="{StaticResource BrandMarkGeometry}" Style="{StaticResource VectorIconStyle}"
+                          Width="29" Height="29" Stroke="{StaticResource BrandDarkBrush}" StrokeThickness="1.8"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" />
                     <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
                         <TextBlock Text="VNText Studio" FontSize="16" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
                         <TextBlock Text="LOCAL WORKSPACE" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SoftTextBrush}" Margin="0,3,0,0" />
@@ -149,9 +148,7 @@
                     </Button>
                 </StackPanel>
 
-                <Border Grid.Row="3" Margin="3,24,0,0" Padding="10,9" Background="{StaticResource SubtlePanelBrush}"
-                        BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12">
-                    <StackPanel>
+                <StackPanel Grid.Row="3" Margin="3,24,0,0">
                     <TextBlock Text="CẬP NHẬT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
                     <TextBlock Text="Phiên bản hiện tại" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
                     <TextBlock Text="{Binding CurrentVersionDisplay}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,1,0,0" />
@@ -163,9 +160,8 @@
                     <Button Content="{Binding GitHubUpdateButtonText}" AutomationProperties.Name="{Binding GitHubUpdateButtonText}"
                             Style="{StaticResource SidebarUpdateButton}" Command="{Binding RecheckUpdateCommand}"
                             IsEnabled="{Binding GitHubUpdateButtonEnabled}"
-                            Margin="0,7,0,0" HorizontalAlignment="Left" />
-                    </StackPanel>
-                </Border>
+                            Margin="0,9,0,0" HorizontalAlignment="Left" />
+                </StackPanel>
             </Grid>
         </Border>
 
