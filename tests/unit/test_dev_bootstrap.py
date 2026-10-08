@@ -14,6 +14,34 @@ def receipt(stdout="", exit_code=0):
 
 
 class DevBootstrapTests(unittest.TestCase):
+    def test_launcher_carries_runtime_worker_model_and_local_data(self):
+        environment = {key: "C:/owner's/" + key for key in (
+            "DOTNET_ROOT", "DOTNET_ROOT_X64", "VNTEXT_WORKER_CWD", "VNTEXT_WORKER_PYTHON",
+            "VNTEXT_CT2_MODEL", "VNTEXT_CT2_NO_DOWNLOAD", "VNTEXT_DATA_ROOT", "VNTEXT_LOCALAPPDATA")}
+        with patch.object(Path, "write_text") as write:
+            dev.write_launcher(Path("owned-output"), environment)
+        script = write.call_args_list[0].args[0]
+        for key in environment:
+            self.assertIn(f"$env:{key} = 'C:/owner''s/{key}'", script)
+        self.assertIn('@args', script)
+        self.assertIn('Start-DEV.ps1', write.call_args_list[1].args[0])
+
+    def test_build_identity_includes_untracked_status_and_assembly(self):
+        result = {"source_sha": "source", "receipts": [], "python": {"path": "python"},
+                  "model": {"path": "model"}}
+        with patch.object(dev, "run", side_effect=[receipt(""), receipt("?? new-test.py\n")]), \
+             patch.object(Path, "read_bytes", side_effect=[b"host", b"assembly"]):
+            identity = dev.build_identity(Path("DEV_RUN/bootstrap-build"), result, "runtime8")
+        self.assertTrue(identity["dirty"])
+        self.assertNotEqual(identity["sha256"], identity["assembly_sha256"])
+        self.assertEqual(len(result["receipts"]), 2)
+
+    def test_build_identity_git_failure_blocks(self):
+        result = {"receipts": []}
+        with patch.object(dev, "run", side_effect=[receipt("", 1), receipt("")]):
+            with self.assertRaisesRegex(ValueError, "Git build provenance"):
+                dev.build_identity(Path("output"), result, "runtime8")
+
     def test_python_rejects_old_runtime_and_continues_discovery(self):
         results = [receipt(json.dumps({"path": "old", "version": [3, 10, 9]})),
                    receipt(json.dumps({"path": "new", "version": [3, 12, 14]}))]

@@ -2,7 +2,7 @@
 
 Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
 virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
-đầu tiên; baseline public là `0.1.3`, source cập nhật kế tiếp là `0.1.4`.
+đầu tiên; bản public hiện tại là `0.1.4`.
 
 ## Kiểm prerequisite trước khi tải
 
@@ -115,18 +115,16 @@ và license/provenance; model ngoài clone không phải source được commit.
 ## Build DEV và smoke
 
 `DEV_RUN` ignored là output DEV. Không ghi đè bản cài/user data bên trong root này.
-Có thể dùng config NuGet riêng để tránh phụ thuộc profile cũ:
+Build hiện hành dùng owner bootstrap gọi `dotnet build` và cache offline đã preflight:
 
 ```powershell
-'<configuration><packageSources><clear/><add key="nuget.org" value="https://api.nuget.org/v3/index.json"/></packageSources></configuration>' | Set-Content .dev-env/cache/NuGet.Config
-$env:NUGET_PACKAGES = "$PWD/.dev-env/cache/nuget"
-$env:DOTNET_CLI_HOME = "$PWD/.dev-env/cache/dotnet-home"
-$env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
-dotnet build wpf_app/VNText.Studio.App/VNText.Studio.App.csproj -c Debug -o DEV_RUN --configfile .dev-env/cache/NuGet.Config
+$env:DOTNET_ROOT_X64 = 'C:\Program Files\dotnet'
+$env:DOTNET_ROOT = $env:DOTNET_ROOT_X64
+.\.dev-env\.venv\Scripts\python.exe -B release/dev_bootstrap.py --action smoke --dotnet "$env:DOTNET_ROOT/dotnet.exe" --model .dev-env/cache/models/opus-mt-en-vi-int8
 $env:VNTEXT_WORKER_CWD = "$PWD"
 $env:VNTEXT_WORKER_PYTHON = "$PWD/.dev-env/.venv/Scripts/python.exe"
-$env:VNTEXT_DATA_ROOT = "$PWD/.dev-env/cache/dev-data"
-.\DEV_RUN\VNText.Studio.App.exe
+$env:VNTEXT_DATA_ROOT = "$PWD/DEV_RUN/bootstrap-build/data"
+.\DEV_RUN\bootstrap-build\VNText.Studio.App.exe
 ```
 
 Smoke báo JSON gồm `exit_code`, `failed_step`, error/summary của worker `complete`.
@@ -135,7 +133,7 @@ mong đợi; extract/translate/patch cần `ok=true` và assertion output thực
 Với WPF GUI executable, dùng tiến trình chờ và `--report` để giữ evidence:
 
 ```powershell
-$smoke = Start-Process -FilePath "$PWD/DEV_RUN/VNText.Studio.App.exe" -ArgumentList '--smoke-worker','--report',"`"$PWD/.dev-env/cache/smoke.json`"" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput .dev-env/cache/smoke.stdout.log -RedirectStandardError .dev-env/cache/smoke.stderr.log
+$smoke = Start-Process -FilePath "$PWD/DEV_RUN/bootstrap-build/VNText.Studio.App.exe" -ArgumentList '--smoke-worker','--report',"`"$PWD/.dev-env/cache/smoke.json`"" -Wait -PassThru -WindowStyle Hidden -RedirectStandardOutput .dev-env/cache/smoke.stdout.log -RedirectStandardError .dev-env/cache/smoke.stderr.log
 $smoke.ExitCode
 Get-Content .dev-env/cache/smoke.json
 ```
@@ -169,3 +167,12 @@ Dùng `publish.ps1 -SkipWpfUpdatePackage` để build Setup không kèm WPF delt
 version cao hơn chưa được chọn. Chỉ yêu cầu full-app delta khi baseline thực
 nhỏ hơn candidate và provenance/inventory khớp. SDK/dependency/worker/model đầy đủ
 không tự chứng minh Release PASS. Public stable GitHub update đã được nghiệm thu trên bản cài Owner; các giới hạn còn lại giữ nguyên.
+
+
+## DEV hiện hành và provenance
+
+Output hiện hành do `release/dev_bootstrap.py` sở hữu là `DEV_RUN/bootstrap-build/VNText.Studio.App.exe`. Chạy build/smoke bằng lệnh bootstrap bên trên với `--dotnet` trỏ SDK/runtime8 đã preflight. Ví dụ máy có runtime tại `C:\Program Files\dotnet`: đặt `DOTNET_ROOT_X64` và `DOTNET_ROOT` về thư mục đó; không coi SDK10 chỉ có runtime10 là runtime8. Bootstrap phải ghi SHA source, dirty/diff identity, build config, executable SHA256, worker/model path và runtime path.
+
+Build cũ top-level hoặc `wpf_publish` không đại diện source hiện hành chỉ vì cùng FileVersion. Giữ data/cache/env Owner; chỉ disposal output obsolete sau inventory và bằng chứng owner/permission. Evidence chuẩn bị disposition registry/epoch cũ vẫn ở checkout; không tự xóa epoch protected để làm cleanup xanh. Thứ tự game và evidence lifecycle nằm duy nhất tại `CONTRACTS.md` §10c.
+
+Entrypoint DEV từ môi trường mới: double-click "DEV_RUN/bootstrap-build/Start-DEV.cmd". Launcher do bootstrap tạo giữ runtime8, Python, model và VNTEXT_LOCALAPPDATA trong output checkout; không thay đổi entrypoint Release.

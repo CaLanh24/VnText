@@ -94,7 +94,7 @@ translation.csv + manifest.json + .mt + Patch_Viet_Hoa/
 
 Điểm vào Python:
 
-- `app.py::main`: compatibility entry cho runtime Python và các chế độ CLI của Release. UI shipped/default là WPF qua executable đã build tại `DEV_RUN\VNText.Studio.App.exe`; `app.py` mặc định legacy Tk. `VNTEXT_UI=qml` chỉ là nhánh QML tùy chọn, hiện UNKNOWN vì `qml_ui.bridge` không có trong source.
+- `app.py::main`: compatibility entry cho runtime Python và các chế độ CLI của Release. UI shipped/default là WPF qua executable đã build tại `DEV_RUN\bootstrap-build\VNText.Studio.App.exe`; `app.py` mặc định legacy Tk. `VNTEXT_UI=qml` chỉ là nhánh QML tùy chọn, hiện UNKNOWN vì `qml_ui.bridge` không có trong source.
 - `vntext_studio.py`: trình khởi chạy Tk và compatibility facade; re-export backend cũ cùng `VNTextApp`/`RawCandidateReviewer`.
 - `vntext_worker/worker_main.py::main`: worker dài hạn, phát `ready`, nhận `run`/`cancel`, điều phối extract/translate/patch.
 - WPF `wpf_app/VNText.Studio.App/App.xaml.cs::OnStartup`: app chính; `MainViewModel` khởi động `PythonWorkerHost`.

@@ -263,6 +263,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="12"', xaml[xaml.index('<StackPanel Grid.Row="3"'):xaml.index('<!-- Main content -->')])
         self.assertIn('Style="{StaticResource SidebarUpdateButton}"', xaml)
         self.assertIn('Source="Assets/vntext_studio_logo_128.png"', xaml)
+        self.assertIn('Text="Dự án game"', xaml)
+        self.assertNotIn('Text="Unity project"', xaml)
         self.assertNotIn('BrandMarkGeometry', xaml)
         self.assertNotIn('BrandDarkBrush}" StrokeThickness', xaml[xaml.index('<StackPanel Grid.Row="0"'):xaml.index('<StackPanel Grid.Row="1"')])
         self.assertNotIn('Background="{StaticResource BrandDarkBrush}"', xaml[xaml.index('<StackPanel Grid.Row="0"'):xaml.index('<StackPanel Grid.Row="1"')])

@@ -23,6 +23,9 @@ import os
 import subprocess
 import time
 import unittest
+import queue
+import threading
+from collections import deque
 from pathlib import Path
 
 from vntext_worker.protocol import PROTOCOL_VERSION
@@ -74,41 +77,100 @@ def start_worker(extra_env: dict | None = None) -> subprocess.Popen:
     )
 
 
-def read_ready(proc: subprocess.Popen, timeout: float = 60) -> list[dict]:
-    """Read ready line; return any extra log lines emitted before ready."""
+class WorkerReadError(AssertionError):
+    """A failed wait retains a bounded tail, including semantic errors."""
+
+    def __init__(self, reason, events):
+        self.events = list(events)[-64:]
+        super().__init__(reason + "; events=" + json.dumps(self.events, ensure_ascii=True))
+
+
+def _read_until(proc, matches, timeout, label):
     assert proc.stdout is not None
-    extras: list[dict] = []
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        line = proc.stdout.readline()
-        if not line:
-            break
-        msg = json.loads(line)
-        if msg.get("type") == "ready":
-            return extras
-        extras.append(msg)
-    raise AssertionError("worker did not emit ready")
+    if not hasattr(proc, "_worker_lines"):
+        lines = queue.Queue(maxsize=128)
+        proc._worker_lines = lines
+        proc._worker_reader_stop = threading.Event()
+
+        def enqueue(value):
+            while not proc._worker_reader_stop.is_set():
+                try:
+                    lines.put(value, timeout=0.05)
+                    return
+                except queue.Full:
+                    continue
+
+        def pump():
+            try:
+                while not proc._worker_reader_stop.is_set():
+                    line = proc.stdout.readline(8193)
+                    if not line:
+                        break
+                    if len(line) > 8192:
+                        enqueue(ValueError("worker event exceeds 8192 characters"))
+                        break
+                    enqueue(line)
+            except (OSError, ValueError) as error:
+                enqueue(error)
+            finally:
+                enqueue(None)
+
+        proc._worker_reader = threading.Thread(target=pump, daemon=True)
+        proc._worker_reader.start()
+    events = deque(maxlen=64)
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            line = proc._worker_lines.get(timeout=max(0, deadline - time.monotonic()))
+        except queue.Empty:
+            raise WorkerReadError("timeout waiting " + label, events)
+        if line is None or isinstance(line, Exception):
+            raise WorkerReadError(f"worker stream ended waiting {label}: {line}", events)
+        try:
+            msg = json.loads(line)
+        except ValueError as error:
+            raise WorkerReadError(f"invalid worker JSON: {error}", events) from error
+        events.append(msg)
+        # Stream each step before another command or cleanup can lose its evidence.
+        encoded = json.dumps(msg, ensure_ascii=True)
+        used = getattr(proc, "_worker_evidence_bytes", 0)
+        if used + len(encoded.encode("utf-8")) <= 65536:
+            print("WORKER_EVENT " + encoded, flush=True)
+            proc._worker_evidence_bytes = used + len(encoded.encode("utf-8"))
+        if matches(msg):
+            print("WORKER_RESULT " + json.dumps({"wait": label, "complete": msg}, ensure_ascii=True), flush=True)
+            return list(events)
+        if time.monotonic() >= deadline:
+            raise WorkerReadError("timeout waiting " + label, events)
 
 
-def run_task(proc: subprocess.Popen, task_id: str, task: str, params: dict, timeout: float = 180) -> list[dict]:
+def read_ready(proc: subprocess.Popen, timeout: float = 60) -> list[dict]:
+    events = _read_until(proc, lambda msg: msg.get("type") == "ready", timeout, "ready")
+    return events[:-1]
+
+
+def run_task(proc: subprocess.Popen, task_id: str, task: str, params: dict, timeout: float = 180,
+             *, prerequisites: tuple[dict, ...] = ()) -> list[dict]:
     """Send run command; return all events until matching complete."""
     assert proc.stdin is not None and proc.stdout is not None
+    if prerequisites and any(item.get("type") != "complete" or item.get("ok") is not True
+                             or (task == "patch" and item.get("complete") is not True)
+                             for item in prerequisites):
+        raise WorkerReadError("semantic prerequisite failed before " + task, prerequisites)
+    print("WORKER_RUN " + json.dumps({"id": task_id, "task": task, "params": params,
+                                     "pid": proc.pid, "timeout": timeout}, ensure_ascii=True), flush=True)
     proc.stdin.write(
         json.dumps({"v": PROTOCOL_VERSION, "type": "run", "id": task_id, "task": task, "params": params})
         + "\n"
     )
     proc.stdin.flush()
-    events: list[dict] = []
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        line = proc.stdout.readline()
-        if not line:
-            break
-        msg = json.loads(line)
-        events.append(msg)
-        if msg.get("type") == "complete" and msg.get("id") == task_id:
-            return events
-    raise AssertionError(f"timeout waiting complete for {task_id}")
+    return wait_task(proc, task_id, timeout)
+
+
+def wait_task(proc, task_id, timeout=180):
+    """Wait after an explicitly sent command/cancel using the same reader."""
+    return _read_until(proc, lambda msg: msg.get("type") == "complete" and msg.get("id") == task_id,
+                       timeout, "complete for " + task_id)
 
 
 def complete_for(events: list[dict], task_id: str) -> dict:
@@ -119,6 +181,8 @@ def complete_for(events: list[dict], task_id: str) -> dict:
 
 
 def stop_worker(proc: subprocess.Popen) -> None:
+    if hasattr(proc, "_worker_reader_stop"):
+        proc._worker_reader_stop.set()
     try:
         proc.terminate()
         proc.wait(timeout=2)
@@ -126,6 +190,8 @@ def stop_worker(proc: subprocess.Popen) -> None:
         proc.kill()
         proc.wait(timeout=2)
     finally:
+        if hasattr(proc, "_worker_reader"):
+            proc._worker_reader.join(timeout=2)
         for stream in (proc.stdin, proc.stdout, proc.stderr):
             if stream is not None:
                 stream.close()

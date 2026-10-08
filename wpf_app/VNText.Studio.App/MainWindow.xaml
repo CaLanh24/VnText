@@ -130,7 +130,7 @@
                             <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding InputPath, Converter={StaticResource PathName}}" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" MaxWidth="160" />
-                                <TextBlock Text="Unity project" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                <TextBlock Text="Dự án game" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                             </StackPanel>
                         </StackPanel>
                     </Border>

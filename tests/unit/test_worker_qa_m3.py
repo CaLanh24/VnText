@@ -38,6 +38,7 @@ from worker_test_lib import (
     game_copy_asset,
     read_ready,
     run_task,
+    wait_task,
     start_worker,
     stop_worker,
     venv_python,
@@ -156,6 +157,7 @@ class WorkerQaM3Tests(unittest.TestCase):
                     "patch",
                     {"src": str(src), "out": str(out)},
                     timeout=120,
+                    prerequisites=(translate,),
                 ),
                 "qa-patch",
             )
@@ -206,6 +208,7 @@ class WorkerQaM3Tests(unittest.TestCase):
                         "patch",
                         {"src": str(src), "out": str(out)},
                         timeout=120,
+                        prerequisites=(translate,),
                     ),
                     f"qa-pa-{idx}",
                 )
@@ -274,16 +277,7 @@ class WorkerQaM3Tests(unittest.TestCase):
             time.sleep(0.4)
             proc.stdin.write(json.dumps({"v": PROTOCOL_VERSION, "type": "cancel", "id": "qa-cancel"}) + "\n")
             proc.stdin.flush()
-            deadline = time.time() + 25
-            done = None
-            while time.time() < deadline:
-                line = proc.stdout.readline()
-                if not line:
-                    break
-                msg = json.loads(line)
-                if msg.get("type") == "complete" and msg.get("id") == "qa-cancel":
-                    done = msg
-                    break
+            done = complete_for(wait_task(proc, "qa-cancel", timeout=25), "qa-cancel")
             self.assertIsNotNone(done)
             self.assertFalse(done.get("ok", True))
             self.assertIn("cancel", (done.get("error") or "").lower())

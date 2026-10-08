@@ -321,3 +321,18 @@ Owner explicitly defers real-game E2E and defects found there to a later version
 - Chưa có active Ren’Py full-game E2E trong runtime test matrix; native unit/read-back/delivery coverage không thay thế exact external game và Release evidence.
 - `app.py` giữ QML branch chỉ cho explicit legacy selection và gọi `qml_ui.bridge`, nhưng source public hiện không có `qml_ui.bridge` hoặc `qml_ui/icons/logo.png`; QML-ready path là UNKNOWN cho tới khi bridge tồn tại và `--release-verify-qml` PASS. Shipped/default UI là WPF.
 - Worker tests còn `ResourceWarning` liên quan pipe/process theo AI_STATE; không tự sửa trong context task.
+
+
+## 10c. DEV validation và chiến dịch game
+
+Owner: `release/dev_bootstrap.py`, `tests/lib/worker_test_lib.py`; validation gates ở `TEST_MATRIX.md`, cách khởi chạy DEV ở `docs/DEVELOPMENT.md`.
+
+Trước run, ghi scope/source SHA, thứ tự gate, số lượt và copy budget, executable path/hash/source/build config, runtime/worker/model thực, ownership/process/disposal và nơi giữ evidence nhỏ. Preflight phải read-only và đủ quota/prerequisite trước tạo payload. Version trùng không chứng minh binary cùng source.
+
+Game campaign chỉ bắt đầu khi gate không-game đã PASS hoặc có explicit deferral/blocker không làm campaign invalid, và preflight fixture/read-only đủ; gate FAIL chưa giải quyết không đáp ứng điều kiện. Dùng trực tiếp copy Owner cấp. Helper cần duplicate phải được xử lý hoặc báo copy budget/prerequisite trước khi bắt đầu; không âm thầm copy. Ghi `RUN_STARTED` trước bước đầu; PASS/FAIL/TIMEOUT/CANCELLED/START_ERROR đều tiêu thụ lượt đã bắt đầu. Lượt đã terminal chỉ rerun khi Owner cho quyền riêng.
+
+Persist command/cwd/native exit, readiness, bounded complete/error và timeout reason từng bước ngay khi xảy ra. Worker helper stream tối đa64KiB event mỗi process, giữ64 event cuối (tối đa8192 ký tự/event) trong exception; caller lưu streamed output và exception trong evidence nhỏ trước cleanup. Native exit chỉ có sau process terminal; timeout/kill không đổi thành exit0.
+
+Positive pipeline chỉ translate sau extract complete thành công và chỉ patch/apply sau các semantic prerequisite, QA/preflight theo contract thành công. Negative test được gửi dữ liệu lỗi có chủ đích và assert product từ chối. Read-back phải reopen và đối chiếu giá trị/locator/identity; tồn tại file không đủ.
+
+Khi terminal, giữ evidence cần thiết ngoài payload trong checkout, kiểm process đã thoát rồi disposal đúng owner. Report test verdict và cleanup riêng. Registry/epoch/report cũ phải có disposition với path/hash/ownership và evidence trước khi xử lý; thiếu quyền không cho phép whole-root delete.

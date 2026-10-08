@@ -188,6 +188,39 @@ def preflight(python=None, dotnet=None, model=None, gate="dev", reserve=0):
             "nuget": {"source": "https://api.nuget.org/v3/index.json", "readiness": "UNKNOWN until restore/build succeeds"}}
 
 
+def write_launcher(output, environment):
+    # DEV-only entrypoint carries the same preflighted paths into a fresh shell.
+    keys = ("DOTNET_ROOT_X64", "DOTNET_ROOT", "VNTEXT_WORKER_CWD",
+            "VNTEXT_WORKER_PYTHON", "VNTEXT_CT2_NO_DOWNLOAD", "VNTEXT_CT2_MODEL",
+            "VNTEXT_DATA_ROOT", "VNTEXT_LOCALAPPDATA")
+    lines = ["$ErrorActionPreference = 'Stop'"]
+    for key in keys:
+        if key in environment:
+            value = environment[key].replace("'", "''")
+            lines.append(f"$env:{key} = '{value}'")
+    lines.extend(["& \"$PSScriptRoot/VNText.Studio.App.exe\" @args", "exit $LASTEXITCODE"])
+    (output / "Start-DEV.ps1").write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
+    (output / "Start-DEV.cmd").write_text(
+        '@echo off\n powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-DEV.ps1" %*\nexit /b %errorlevel%\n', encoding="ascii")
+
+
+def build_identity(output, result, runtime_root):
+    diff = run(["git", "diff", "HEAD", "--binary"])
+    status = run(["git", "status", "--porcelain", "--untracked-files=all"])
+    result["receipts"].extend([diff, status])
+    if diff["exit_code"] != 0 or status["exit_code"] != 0:
+        raise ValueError("Git build provenance failed; see receipts")
+    return {
+        "source_sha": result["source_sha"], "configuration": "Debug",
+        "source_diff_sha256": hashlib.sha256(diff["stdout"].encode("utf-8")).hexdigest(),
+        "dirty": bool(status["stdout"]), "git_status": status["stdout"], "runtime_root": runtime_root,
+        "executable": str(output / "VNText.Studio.App.exe"),
+        "sha256": hashlib.sha256((output / "VNText.Studio.App.exe").read_bytes()).hexdigest(),
+        "assembly_sha256": hashlib.sha256((output / "VNText.Studio.App.dll").read_bytes()).hexdigest(),
+        "worker_python": result["python"]["path"], "model": result["model"]["path"],
+    }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--action", choices=("check", "build", "smoke"), default="check")
@@ -227,17 +260,25 @@ def main(argv=None):
             elif nuget.read_text(encoding="utf-8") != config:
                 raise ValueError("owned NuGet.Config changed; refuse overwrite")
             env = os.environ.copy()
+            runtime_root = str(Path(shutil.which(result["dotnet"]) or result["dotnet"]).resolve().parent)
+            env.update(DOTNET_ROOT_X64=runtime_root, DOTNET_ROOT=runtime_root)
             env.update(NUGET_PACKAGES=str(cache / "nuget"), DOTNET_CLI_HOME=str(cache / "dotnet-home"),
                        APPDATA=str(cache / "appdata"), LOCALAPPDATA=str(cache / "localappdata"),
                        DOTNET_GENERATE_ASPNET_CERTIFICATE="false", VNTEXT_WORKER_CWD=str(ROOT),
                        VNTEXT_WORKER_PYTHON=result["python"]["path"], VNTEXT_CT2_NO_DOWNLOAD="1",
-                       VNTEXT_DATA_ROOT=str(output / "data"))
+                       VNTEXT_DATA_ROOT=str(output / "data"),
+                       VNTEXT_LOCALAPPDATA=str(output / "localappdata"))
             if result["model"]["path"]:
                 env["VNTEXT_CT2_MODEL"] = result["model"]["path"]
             build = run([result["dotnet"], "build", ROOT / "wpf_app/VNText.Studio.App/VNText.Studio.App.csproj",
                          "-c", "Debug", "-o", output, f"-p:RestoreConfigFile={nuget}"], env=env)
             result["receipts"].append(build)
             code = build["exit_code"] if build["exit_code"] is not None else 1
+            if not code:
+                write_launcher(output, env)
+                result["build_identity"] = build_identity(output, result, runtime_root)
+                (output / "build-identity.json").write_text(
+                    json.dumps(result["build_identity"], indent=2), encoding="utf-8")
             if not code and args.action == "smoke":
                 report_path = output / "smoke.json"
                 if report_path.exists():

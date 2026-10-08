@@ -26,6 +26,8 @@ Chọn validation theo ladder focused → affected regression → integration/E2
 
 Bàn giao ngắn: đã đổi gì, đã kiểm gì trên SHA nào, acceptance còn thiếu và bước tiếp theo. Đánh giá hiệu quả theo task hoàn thành đúng acceptance, thời gian và usage/cost khi có số liệu; số test/token/child không tự là chất lượng. Chỉ đổi model/effort hoặc cơ chế điều phối khi Owner cho phép và có workload/evidence phù hợp; không suy khả năng từ tên model.
 
+Trước DEV validation hoặc game E2E, chốt scope, gate order, run/copy budget, executable provenance, prerequisite và cleanup theo `CONTRACTS.md` §10c; dùng `TEST_MATRIX.md` để chọn gate. Persist evidence từng bước trước bước phụ thuộc; outcome test và cleanup riêng.
+
 ## Invariants sản phẩm
 
 - Workflow: extract → translate/import CSV → patch. Giữ key, schema/thứ tự CSV, manifest, locator, placeholder, tag, biến, newline, escape và engine boundary.

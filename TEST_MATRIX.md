@@ -38,6 +38,12 @@ Dùng matrix này để chọn regression theo vùng thay đổi. `full unit` kh
 | Prospective portable RC acceptance | after a clean commit, if incident evidence is absent require explicit Owner reset authorization; validate any current registry and capture its exact apply-time rollback snapshot; then establish/verify a **new** current registry baseline; exact-commit regression/cleanup, WPF/installer, new RC publish/layout/verify/two-cwd smoke, real RC GUI shutdown and payload hashes | compare new baseline hashes before/after; inspect raw totals/skips/warnings and scope reports | no current epoch means gate BLOCKED, not PASS from old reports; mandatory gates and cleanup pass on one final SHA; lost history stays UNVERIFIABLE; game E2E/visual/semantic quality NOT VERIFIED under Owner deferral |
 | Compatibility facades | `tests/unit/test_refactor_contract_baseline.py`, `test_characterization_key.py`, `test_characterization_package_split.py` | import references trong `tests/harness/*`, `tests/tools/*`; full unit | import path cũ và public helper còn hoạt động; facade chỉ giữ compatibility, không làm mất caller |
 
+## DEV/worker validation remediation
+
+- `test_worker_test_lib.py`: silent ready/task timeout có deadline thực, event còn trong exception, failed complete chặn positive patch trước send, flood không leak reader sau terminal.
+- Affected: `test_worker_qa_m3.py` synthetic subset, worker protocol/tasks và DEV bootstrap/version/WPF gates; external opt-in tests giữ SKIP khi chưa được phép game.
+- Game campaign order/run-copy budget và evidence invariants: `CONTRACTS.md` §10c. DEV identity/build/runtime: `docs/DEVELOPMENT.md`.
+
 ## Lệnh baseline
 
 Canonical clean-clone commands use `.dev-env/.venv`; any older `.venv` examples
