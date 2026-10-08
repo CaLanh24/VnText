@@ -201,7 +201,7 @@ def write_launcher(output, environment):
     lines.extend(["& \"$PSScriptRoot/VNText.Studio.App.exe\" @args", "exit $LASTEXITCODE"])
     (output / "Start-DEV.ps1").write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
     (output / "Start-DEV.cmd").write_text(
-        '@echo off\n powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-DEV.ps1" %*\nexit /b %errorlevel%\n', encoding="ascii")
+        '@echo off\n "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start-DEV.ps1" %*\nexit /b %errorlevel%\n', encoding="ascii")
 
 
 def build_identity(output, result, runtime_root):
