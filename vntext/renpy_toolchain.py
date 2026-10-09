@@ -130,11 +130,22 @@ def validate_sdk(path: str | Path) -> RenPySdk:
     return RenPySdk(root, python, renpy_py, SUPPORTED_VERSION)
 
 
-def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancelled=None) -> dict:
-    """Preserve full SDK isolation; size/cancel/link checks precede the copy."""
+def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancelled=None, translation_only=False) -> dict:
+    """Isolated native workspace; optional translation slice excludes runtime/media."""
     source = Path(source).resolve(); target = Path(target).resolve()
     if target.is_relative_to(source):
         raise RenPyToolchainError("Thư mục xuất phải nằm ngoài game để tạo workspace Ren'Py an toàn.")
+    media = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".avif", ".svg", ".mp3", ".ogg", ".wav", ".flac", ".opus", ".m4a", ".mp4", ".webm", ".avi", ".ogv", ".mov"}
+    def selected(p):
+        if not translation_only: return True
+        relative = p.relative_to(source)
+        if not relative.parts or relative.parts[0] != "game": return False
+        if any(part in {"cache", "saves", "__pycache__"} for part in relative.parts): return False
+        if p.suffix.lower() in {".rpa", ".rpyc", ".rpymc"}:
+            if p.suffix.lower() == ".rpa": raise RenPyToolchainError("Archive Ren'Py cần unpack source an toàn trước; workspace này chỉ nhận loose-source.")
+            counterpart = p.with_suffix(".rpy" if p.suffix.lower()==".rpyc" else ".rpym")
+            return not counterpart.is_file()
+        return p.suffix.lower() not in media
     total = 0; files = 0
     deadline = time.monotonic() + 30
     for p in source.rglob("*"):
@@ -145,7 +156,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
         info = p.lstat()
         if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
             raise RenPyToolchainError("Workspace Ren'Py không hỗ trợ link/reparse point; chưa tạo bản sao.")
-        if p.is_file():
+        if p.is_file() and selected(p):
             total += info.st_size; files += 1
     if shutil.disk_usage(target.parent).free < total + 16 * 1024 * 1024:
         raise RenPyToolchainError(f"Không đủ dung lượng workspace Ren'Py ({total} bytes); chọn nơi xuất còn trống hoặc lấy text một phần không SDK.")
@@ -153,7 +164,8 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
     if (repo / ".git").exists() and target.is_relative_to(repo):
         # DEV reuses the canonical read-only inventory; installed apps have no test dependency.
         from tests.tools.cleanup_work_artifacts import _project_size_snapshot
-        quota = _project_size_snapshot()
+        approved = repo / "TEST_RUN/renpy-complete/game-copy"
+        quota = _project_size_snapshot(approved_game_copy=source) if source == approved else _project_size_snapshot()
         if not quota["complete"] or not quota["within_limit"] or quota["non_exempt_bytes"] + total + 16 * 1024 * 1024 > quota["limit_bytes"]:
             raise RenPyToolchainError("DEV workspace vượt copy budget/quota hoặc inventory chưa đầy đủ; chưa tạo bản sao. Giữ input và xử lý artifact owned trước.")
     copied = 0
@@ -168,7 +180,9 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
         if copied > total:
             raise RenPyToolchainError("Workspace source grew after preflight; stopped copy")
         return shutil.copy2(src, dst)
-    shutil.copytree(source, target, copy_function=copy_file)
+    def ignored(directory, names):
+        return [name for name in names if not selected(Path(directory) / name)]
+    shutil.copytree(source, target, copy_function=copy_file, ignore=ignored if translation_only else None)
     return {"files": files, "bytes": total}
 
 
@@ -177,10 +191,13 @@ def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, 
     target = Path(workspace).resolve()
     if not (target / "game").is_dir():
         raise RenPyToolchainError("template workspace must be a Ren'Py game copy with game/")
-    command = [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo"]
+    command = [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo", "--savedir", str(target / ".native-saves")]
+    env = os.environ.copy()
+    temp = target / ".native-temp"; temp.mkdir(exist_ok=True)
+    env.update(PYTHONDONTWRITEBYTECODE="1", TEMP=str(temp), TMP=str(temp), TMPDIR=str(temp))
     proc = subprocess.Popen(
         command,
-        cwd=sdk.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        cwd=sdk.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
     )
     deadline = time.monotonic() + timeout
     try:

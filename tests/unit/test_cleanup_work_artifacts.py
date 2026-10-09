@@ -167,6 +167,21 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertFalse(report["ok"])
             self.assertTrue(outside.is_dir())
 
+    def test_project_size_game_copy_exemption_requires_exact_disposable_owner(self):
+        with self.isolated_workspace() as (root, work, _game, _manifest):
+            game_copy=work/"renpy-complete"/"game-copy";game_copy.mkdir(parents=True)
+            (game_copy/"payload.bin").write_bytes(b"owned fixture")
+            paths.register_artifact(artifact_id="test:renpy-game-copy",path=game_copy,kind="test_game_copy",
+                created_by="renpy-complete",owner="renpy-complete",purpose="Owner-approved temporary fixture",
+                lifecycle="DISPOSABLE")
+            with patch.object(cleanup,"_project_inventory_root",return_value=root):
+                report=cleanup._project_size_snapshot(approved_game_copy=game_copy)
+                self.assertTrue(report["complete"])
+                self.assertEqual(report["approved_game_copy_bytes"],len(b"owned fixture"))
+                self.assertTrue(report["within_limit"])
+                with self.assertRaisesRegex(ValueError,"only permits TEST_RUN/renpy-complete/game-copy"):
+                    cleanup._project_size_snapshot(approved_game_copy=work/"game-copy")
+
     def test_dry_run_is_read_only_and_plans_registered_disposable(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             artifact = work / "run-output"

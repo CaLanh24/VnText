@@ -1156,7 +1156,7 @@ def run_extract_task(
                 Path(out).mkdir(parents=True, exist_ok=True)
                 with tempfile.TemporaryDirectory(prefix="vntext-renpy-", dir=out) as temp:
                     workspace = Path(temp) / "gamecopy"
-                    inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled)
+                    inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled, translation_only=True)
                     log(f"Ren'Py SDK workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
                     generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
                     main, review, stats = extract_native_template_entries(

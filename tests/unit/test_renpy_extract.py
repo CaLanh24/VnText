@@ -44,6 +44,42 @@ class RenPyExtractTests(unittest.TestCase):
                     copy_template_workspace(source,target)
             self.assertFalse(target.exists())
 
+    def test_translation_workspace_keeps_scripts_and_skips_runtime_media_and_cache(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/"source"; game=root/"game"
+            (game/"cache").mkdir(parents=True); (game/"tl"/"english").mkdir(parents=True)
+            (game/"script.rpy").write_text('label start:\n    "Hello"\n')
+            (game/"script.rpyc").write_bytes(b"compiled")
+            (game/"cache"/"old.rpyc").write_bytes(b"cache")
+            (game/"background.png").write_bytes(b"media")
+            (game/"tl"/"english"/"strings.rpy").write_text('translate english strings:\n')
+            (root/"renpy.exe").write_bytes(b"runtime")
+            target=Path(temp)/"workspace"
+            inventory=copy_template_workspace(root,target,translation_only=True)
+            self.assertEqual((target/"game/script.rpy").read_text(),(game/"script.rpy").read_text())
+            self.assertTrue((target/"game/tl/english/strings.rpy").is_file())
+            self.assertFalse((target/"game/script.rpyc").exists())
+            self.assertFalse((target/"game/cache").exists())
+            self.assertFalse((target/"game/background.png").exists())
+            self.assertFalse((target/"renpy.exe").exists())
+            self.assertEqual(inventory["files"],2)
+
+    def test_translation_workspace_fails_closed_for_archives_and_keeps_orphan_compiled_runtime(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/"source"; game=root/"game"; game.mkdir(parents=True)
+            (game/"archive.rpa").write_bytes(b"synthetic")
+            target=Path(temp)/"workspace"
+            with self.assertRaisesRegex(RenPyToolchainError,"Archive Ren'Py"):
+                copy_template_workspace(root,target,translation_only=True)
+            self.assertFalse(target.exists())
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)/"source"; game=root/"game"; game.mkdir(parents=True)
+            (game/"orphan.rpyc").write_bytes(b"opaque compiled runtime")
+            target=Path(temp)/"workspace"
+            inventory=copy_template_workspace(root,target,translation_only=True)
+            self.assertEqual((target/"game/orphan.rpyc").read_bytes(),b"opaque compiled runtime")
+            self.assertEqual(inventory["files"],1)
+
     def test_dev_workspace_quota_is_checked_before_copy(self):
         with tempfile.TemporaryDirectory() as temp:
             source=Path(temp); (source/"script.rpy").write_text("synthetic")

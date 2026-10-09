@@ -11,5 +11,7 @@ public interface IPathPickerService
 
     string? PickRenpySdkFolder();
 
+    string? PickImageFile(bool review = false);
+
     bool OpenPath(string path);
 }

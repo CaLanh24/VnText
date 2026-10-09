@@ -59,6 +59,8 @@ internal static class Program
         Run("BlockedCompletion_IsNotAccepted", BlockedCompletion_IsNotAccepted, failures);
         Run("NavigateTab_ChangesSelectedTab", NavigateTab_ChangesSelectedTab, failures);
         Run("ExtractComplete_NavigatesToTranslate", ExtractComplete_NavigatesToTranslate, failures);
+        Run("ImageText_ReviewAndApprovalStayIndependent", ImageText_ReviewAndApprovalStayIndependent, failures);
+        Run("ImageText_EditInvalidatesApproval", ImageText_EditInvalidatesApproval, failures);
         Run("ExtractPartialAndEmpty_DoNotAdvance", ExtractPartialAndEmpty_DoNotAdvance, failures);
         Run("ExternalCsv_ValidatesReadyForPatch", ExternalCsv_ValidatesReadyForPatch, failures);
         Run("CsvValidator_RejectsEmptyTranslation", CsvValidator_RejectsEmptyTranslation, failures);
@@ -113,7 +115,7 @@ internal static class Program
 
         if (failures.Count == 0)
         {
-            Console.WriteLine("WPF workflow tests: PASS (70)");
+            Console.WriteLine($"WPF workflow tests: PASS ({_executed})");
             return 0;
         }
 
@@ -123,8 +125,10 @@ internal static class Program
         return 1;
     }
 
+    private static int _executed;
     private static void Run(string name, Action test, List<string> failures)
     {
+        _executed++;
         try
         {
             test();
@@ -426,6 +430,55 @@ internal static class Program
         AssertEqual("Cần duyệt thủ công 2 dòng trước khi Patch", vm.ProgressSubtitle);
         AssertTrue(vm.StepStatusLine.Contains("Cần duyệt thủ công 2 dòng trước khi Patch"));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —"));
+    }
+
+    private static void ImageText_EditInvalidatesApproval()
+    {
+        var region = new ImageTextRegion { SourceText = "Hello", Translation = "Xin chào", Approved = true, FlatBackgroundApproved = true };
+        region.Translation = "Chào";
+        AssertTrue(!region.Approved);
+        region.Approved = true; region.X = 20;
+        AssertTrue(!region.Approved && !region.FlatBackgroundApproved);
+        region.Approved = true; region.FlatBackgroundApproved = true; region.Background = "#000000";
+        AssertTrue(!region.Approved && !region.FlatBackgroundApproved);
+    }
+
+    private static void ImageText_ReviewAndApprovalStayIndependent()
+    {
+        var root = Path.Combine(TestTempRoot(), "image_review_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+        var review = Path.Combine(root, "image_text.json");
+        var source = Path.Combine(root, "source-preview.png");
+        var pixels = Enumerable.Repeat((byte)255, 300 * 120 * 4).ToArray();
+        var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(300,120,96,96,System.Windows.Media.PixelFormats.Bgra32,null,pixels,300*4);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var stream = File.Create(source)) encoder.Save(stream);
+        var sourceHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(source))).ToLowerInvariant();
+        File.WriteAllText(review, JsonSerializer.Serialize(new ImageTextDocument { SourcePath = source, SourceSha256 = sourceHash, Width = 300, Height = 120, Status = "REVIEW_REQUIRED",
+            Regions = new List<ImageTextRegion> { new() { Id = "fixed-region", Box = new[] {10,10,200,40}, SourceText = "Hello" } } }, MainViewModel.ImageJson));
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+        vm.OutputPath = root;
+        AssertTrue(vm.TryLoadImageReview(review));
+        AssertTrue(vm.ImageRegions.Count == 1 && vm.ImageRegions[0].Id == "fixed-region");
+        vm.RenderImageCommand.Execute(null);
+        AssertTrue(!vm.Busy && vm.ImageStatus.Contains("Duyệt"));
+        AssertTrue(!vm.HasExtract && vm.SelectedTab == WorkflowTabs.Extract);
+        vm.ImageRegions[0].Translation = "Xin chào";
+        vm.SaveImageReviewCommand.Execute(null);
+        var saved = Directory.GetFiles(root, "image_text.json", SearchOption.AllDirectories).Single(p => p != review);
+        using var json = JsonDocument.Parse(File.ReadAllText(saved));
+        AssertTrue(json.RootElement.GetProperty("source_sha256").GetString() == sourceHash);
+        AssertTrue(json.RootElement.GetProperty("regions")[0].GetProperty("translation").GetString() == "Xin chào");
+        AssertTrue(vm.TryLoadImageReview(saved));
+        AssertTrue(vm.ImagePreview is not null && vm.ImageRegions[0].Translation == "Xin chào");
+        AssertFalse(vm.ImageRegions[0].Approved);
+        File.WriteAllText(review,"{bad");
+        AssertTrue(!vm.TryLoadImageReview(review));
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     private static void ExtractPartialAndEmpty_DoNotAdvance()
@@ -2852,6 +2905,8 @@ internal static class Program
         public string? PickOutputFolder() => OutputFolder;
         public string? PickTranslationCsvFile() => TranslationCsv;
         public string? PickRenpySdkFolder() => RenpySdkFolder;
+        public string? ImageFile { get; set; }
+        public string? PickImageFile(bool review = false) => ImageFile;
         public bool OpenPath(string path) => true;
     }
 }

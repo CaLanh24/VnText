@@ -261,6 +261,12 @@ this repository does not relicense them.
 | `release/requirements-build.txt` | PyInstaller 6.22.0 (inherited base Python) | `License` metadata says GPLv2-or-later with a special exception for building and distributing non-free programs; GPLv2 classifier; `COPYING.txt`. |
 | `release/requirements-build.txt` | Pillow 12.3.0 (inherited base Python) | `license_expression=MIT-CMU`; `LICENSE` file. |
 
+`requirements.txt` also uses Pillow at runtime for bounded image decode, dimensions,
+pixel sampling and PNG rendering. The app uses the Windows-provided
+`Windows.Media.Ocr` API and does not redistribute a font; it references an
+installed system font. Confirm the exact Pillow version/license in the resolved
+build environment and retain its notice when packaging.
+
 For the 41 resolved default transitives, license metadata fields and local
 license-file leads were checked as above; these are not a legal determination
 or a bundled-payload inventory. Argos and MiniSBD are no longer declared

@@ -38,6 +38,9 @@ def _dispatch(task_id: str, task: str, params: dict[str, Any], cancel_event: thr
             )
         elif task == "extract":
             run_extract_worker(task_id, params, is_cancelled)
+        elif task in {"image_inventory", "image_extract", "image_render"}:
+            from vntext_worker.image_tasks import run_image_worker
+            run_image_worker(task_id, task, params, is_cancelled)
         elif task == "analyze":
             run_analyze_worker(task_id, params, is_cancelled)
         elif task == "translate":

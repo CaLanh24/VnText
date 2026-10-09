@@ -140,6 +140,11 @@ public sealed partial class MainViewModel
                     _pendingExternalTranslationImportTargetPath = "";
                 Busy = false;
                 _runningTask = null;
+                if (completedTask is "image_inventory" or "image_extract" or "image_render")
+                {
+                    CompleteImageTask(completedTask, evt);
+                    break;
+                }
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
                 var renpySdkIncomplete = completedTask == "extract" && evt.RenpySdkMissing;

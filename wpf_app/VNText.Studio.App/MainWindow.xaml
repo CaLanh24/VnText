@@ -224,6 +224,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0">
@@ -447,6 +448,61 @@
                                         </StackPanel>
                                     </Button>
                                 </Grid>
+                                <Expander Grid.Row="8" Header="Text trong ảnh — OCR và bản dịch duyệt" Margin="0,16,0,0">
+                                    <StackPanel Margin="0,10,0,0">
+                                        <TextBlock Text="PNG/JPEG/WebP tĩnh. OCR tiếng Anh cần review; ảnh động/archive và nền phức tạp chưa hỗ trợ. Output riêng, không tự patch game." TextWrapping="Wrap" />
+                                        <WrapPanel Margin="0,8,0,8">
+                                            <Button Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Chọn ảnh" Command="{Binding ChooseOcrImageCommand}" Margin="0,0,6,6" />
+                                            <Button Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Mở review đã lưu" Command="{Binding OpenImageReviewCommand}" Margin="0,0,6,6" />
+                                        </WrapPanel>
+                                        <ComboBox ItemsSource="{Binding ImageCandidates}" SelectedItem="{Binding ImagePath, Mode=TwoWay}" />
+                                        <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Margin="0,4,0,8" />
+                                        <Viewbox Height="160" Stretch="Uniform" HorizontalAlignment="Left">
+                                            <Grid Width="{Binding ImagePreview.Width}" Height="{Binding ImagePreview.Height}">
+                                                <Image Source="{Binding ImagePreview}" />
+                                                <ItemsControl ItemsSource="{Binding ImageRegions}">
+                                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter">
+                                                        <Setter Property="Canvas.Left" Value="{Binding X}" /><Setter Property="Canvas.Top" Value="{Binding Y}" />
+                                                    </Style></ItemsControl.ItemContainerStyle>
+                                                    <ItemsControl.ItemTemplate><DataTemplate><Rectangle Width="{Binding Width}" Height="{Binding Height}" Stroke="Red" StrokeThickness="2" /></DataTemplate></ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </Grid>
+                                        </Viewbox>
+                                        <TextBlock Text="Sửa text OCR, bản dịch và crop x/y/rộng/cao (pixel gốc). Thêm xuống dòng nếu cần; chọn màu nền/chữ RGB và font size. Sửa nội dung sẽ hủy duyệt." TextWrapping="Wrap" Margin="0,8,0,8" />
+                                        <DataGrid ItemsSource="{Binding ImageRegions}" AutoGenerateColumns="False" CanUserAddRows="False" Height="190">
+                                            <DataGrid.Style><Style TargetType="DataGrid"><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger></Style.Triggers></Style></DataGrid.Style>
+                                            <DataGrid.Columns>
+                                                <DataGridTextColumn Header="Text OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="140" />
+                                                <DataGridTemplateColumn Header="Bản dịch" Width="160">
+                                                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Translation}" TextWrapping="Wrap" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                                                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" /></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                                                </DataGridTemplateColumn>
+                                                <DataGridTextColumn Header="X" Binding="{Binding X}" Width="45" />
+                                                <DataGridTextColumn Header="Y" Binding="{Binding Y}" Width="45" />
+                                                <DataGridTextColumn Header="Rộng" Binding="{Binding Width}" Width="50" />
+                                                <DataGridTextColumn Header="Cao" Binding="{Binding Height}" Width="50" />
+                                                <DataGridTextColumn Header="Font" Binding="{Binding FontSize}" Width="45" />
+                                                <DataGridTextColumn Header="Nền RGB" Binding="{Binding Background}" Width="85" />
+                                                <DataGridTextColumn Header="Chữ RGB" Binding="{Binding Foreground}" Width="85" />
+                                                <DataGridCheckBoxColumn Header="Nền phẳng đã kiểm" Binding="{Binding FlatBackgroundApproved}" Width="100" />
+                                                <DataGridCheckBoxColumn Header="Duyệt text/crop" Binding="{Binding Approved}" Width="90" />
+                                                <DataGridTemplateColumn Header="Xóa" Width="45"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                                    <Button Content="Xóa" Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                                </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                                            </DataGrid.Columns>
+                                        </DataGrid>
+                                        <WrapPanel Margin="0,8,0,8">
+                                            <Button Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" />
+                                        </WrapPanel>
+                                        <TextBlock Text="{Binding ImageStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />
+                                    </StackPanel>
+                                </Expander>
                             </Grid>
                         </Border>
 

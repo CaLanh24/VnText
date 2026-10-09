@@ -134,6 +134,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         ToggleProgressCommand = new RelayCommand(_ => ProgressExpanded = !ProgressExpanded);
         ToggleLogCommand = new RelayCommand(_ => LogExpanded = !LogExpanded);
         ToggleAdvancedToolsCommand = new RelayCommand(_ => AdvancedToolsExpanded = !AdvancedToolsExpanded);
+        InitImageTextCommands();
         InitCsvEditorCommands();
         InitGlossaryCommands();
 

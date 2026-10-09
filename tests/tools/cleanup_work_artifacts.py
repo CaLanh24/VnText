@@ -1731,16 +1731,35 @@ def _project_inventory_root() -> Path:
 
 
 def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
-                           max_items: int = DEFAULT_INVENTORY_MAX_ITEMS) -> dict:
+                           max_items: int = DEFAULT_INVENTORY_MAX_ITEMS,
+                           approved_game_copy: Path | None = None) -> dict:
     """Measure regular files only; links, special nodes and scan errors fail closed."""
 
     root = _project_inventory_root()
     budget = InventoryBudget(timeout_seconds=timeout_seconds, max_items=max_items)
+    copy_relative = "TEST_RUN/renpy-complete/game-copy"
+    copy_limit = 1288490188  # Owner approval 2026-10-10; exact temporary root only.
+    copy_exemption = None
+    if approved_game_copy is not None:
+        expected = root / copy_relative
+        if _path_key(approved_game_copy) != _path_key(expected):
+            raise ValueError("temporary copy exemption only permits TEST_RUN/renpy-complete/game-copy")
+        manifest, _raw, registry_errors = _strict_registry_snapshot()
+        owned = any(_path_key(entry.get("path", "")) == _path_key(expected)
+                    and entry.get("kind") == "test_game_copy"
+                    and entry.get("owner") == "renpy-complete"
+                    and entry.get("lifecycle") == "DISPOSABLE"
+                    for entry in manifest.get("artifacts", []) if isinstance(entry, dict))
+        if registry_errors or not owned:
+            raise ValueError("temporary copy exemption requires exact registered disposable renpy-complete owner")
+        copy_exemption = copy_relative
     exclusions = {
         _path_key(root / relative.replace("/", os.sep)): (relative, reason)
         for relative, reason in PROJECT_SIZE_EXEMPTIONS.items()
     }
+    if copy_exemption: exclusions[_path_key(root / copy_relative)] = (copy_relative, "Owner-approved one temporary RenPy copy; 1.2 GiB cap")
     exempt_bytes = {relative: 0 for relative in PROJECT_SIZE_EXEMPTIONS}
+    if copy_exemption: exempt_bytes[copy_relative] = 0
     project_bytes = 0
     stack = [(root, None)]
     errors: list[dict] = []
@@ -1791,13 +1810,20 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
         exempt_root = root / relative.replace("/", os.sep)
         if exempt_bytes[relative] or os.path.lexists(exempt_root):
             exemptions.append({"path": relative, "bytes": exempt_bytes[relative], "reason": reason})
+    copy_bytes = exempt_bytes.get(copy_relative, 0)
+    if copy_exemption:
+        exemptions.append({"path": copy_relative, "bytes": copy_bytes, "limit_bytes": copy_limit,
+                           "reason": "Owner approval 2026-10-10, one registered disposable copy only"})
+    shared_bytes = sum(exempt_bytes[relative] for relative in PROJECT_SIZE_EXEMPTIONS)
     return {
         "root": str(root),
+        "approved_game_copy_bytes": copy_bytes,
+        "approved_game_copy_limit_bytes": copy_limit if copy_exemption else 0,
         "non_exempt_bytes": project_bytes if complete else None,
         "limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
-        "exempt_bytes": sum(exempt_bytes.values()) if complete else None,
+        "exempt_bytes": shared_bytes if complete else None,
         "exempt_limit_bytes": PROJECT_EXEMPT_SIZE_LIMIT_BYTES,
-        "within_limit": complete and project_bytes <= PROJECT_SIZE_LIMIT_BYTES and sum(exempt_bytes.values()) <= PROJECT_EXEMPT_SIZE_LIMIT_BYTES,
+        "within_limit": complete and project_bytes <= PROJECT_SIZE_LIMIT_BYTES and shared_bytes <= PROJECT_EXEMPT_SIZE_LIMIT_BYTES and (not copy_exemption or copy_bytes <= copy_limit),
         "complete": complete,
         "exemptions": exemptions,
         "inventory": budget.report(),
