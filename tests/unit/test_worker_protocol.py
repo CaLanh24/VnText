@@ -92,6 +92,19 @@ class WorkerProtocolTests(unittest.TestCase):
         self.assertEqual("package/Patch_Viet_Hoa/COPY_TO_GAME_ROOT", data["patch_payload_path"])
         self.assertEqual("Copy overlay into the Ren'Py game root.", data["patch_install_instructions"])
 
+    def test_extract_status_reaches_real_protocol_emitter(self):
+        import io
+        from contextlib import redirect_stdout
+
+        output = io.StringIO()
+        with redirect_stdout(output):
+            _progress, _log, complete = _make_callbacks("extract-task", lambda: False)
+            complete({"ok": False, "complete": False, "extract_status": "PARTIAL"})
+        event = json.loads(output.getvalue())
+        self.assertEqual("PARTIAL", event["extract_status"])
+        self.assertFalse(event["complete"])
+        self.assertFalse(event["ok"])
+
     def test_task_runner_forwards_patch_delivery_fields(self):
         with patch("vntext_worker.task_runners.emit_complete") as emit_complete:
             _progress, _log, complete = _make_callbacks("patch-task", lambda: False)

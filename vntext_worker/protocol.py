@@ -63,6 +63,7 @@ def emit_complete(
     copied_vi: int | None = None,
     human_review_required_count: int | None = None,
     renpy_sdk_missing: bool | None = None,
+    extract_status: str | None = None,
     pipeline_liveness: bool | None = None,
     diagnostic_path: str | None = None,
     diagnostic_stage: str | None = None,
@@ -96,6 +97,8 @@ def emit_complete(
         msg["human_review_required_count"] = int(human_review_required_count)
     if renpy_sdk_missing is not None:
         msg["renpy_sdk_missing"] = bool(renpy_sdk_missing)
+    if extract_status is not None:
+        msg["extract_status"] = extract_status
     if pipeline_liveness is not None:
         msg["pipeline_liveness"] = bool(pipeline_liveness)
     diagnostic_fields = {
