@@ -3336,6 +3336,8 @@ def cleanup_work(
 
     outcome = _normalize_outcome(outcome)
     if scope_id:
+        if dry_run:
+            raise ValueError("scoped cleanup dry-run is unsupported; no cleanup performed")
         return finalize_scope(
             scope_id=str(scope_id),
             run_id=str(run_id or scope_id),
@@ -3912,6 +3914,9 @@ def main() -> int:
     ap.add_argument("--lifecycle", choices=("PROTECTED", "RETAINED", "DISPOSABLE", "UNKNOWN"), default="RETAINED")
     ap.add_argument("--output", type=Path, default=None, help="Optional report path; dry-run output must be outside _work")
     args = ap.parse_args()
+    if args.dry_run and args.scope_id:
+        print("--dry-run with --scope-id is unsupported; no cleanup performed", file=sys.stderr)
+        return 2
     if args.prospective_epoch_plan or args.apply_prospective_epoch or args.verify_prospective_epoch:
         if args.verify_prospective_epoch:
             result = verify_prospective_epoch()

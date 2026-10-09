@@ -701,6 +701,30 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertEqual(before_manifest, paths.MANIFEST_PATH.read_bytes() if paths.MANIFEST_PATH.exists() else None)
         self.assertEqual(before_work, paths.WORK_ROOT.exists())
 
+    def test_scoped_dry_run_is_rejected_without_deleting_or_writing(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            artifact = work / "scoped-dry-run-output"
+            artifact.mkdir()
+            (artifact / "payload.txt").write_text("owned fixture", encoding="utf-8")
+            self._register(artifact)
+            before_manifest = manifest.read_bytes()
+            before_payload = (artifact / "payload.txt").read_bytes()
+            stderr = io.StringIO()
+            with patch.object(
+                sys,
+                "argv",
+                ["cleanup_work_artifacts.py", "--dry-run", "--scope-id", "scope-test", "--scope-root", str(work)],
+            ), contextlib.redirect_stderr(stderr):
+                exit_code = cleanup.main()
+
+            self.assertEqual(2, exit_code)
+            self.assertIn("no cleanup performed", stderr.getvalue())
+            self.assertTrue(artifact.is_dir())
+            self.assertEqual(before_payload, (artifact / "payload.txt").read_bytes())
+            self.assertEqual(before_manifest, manifest.read_bytes())
+            with self.assertRaisesRegex(ValueError, "no cleanup performed"):
+                cleanup.cleanup_work(dry_run=True, scope_id="scope-test", scope_root=work)
+
     def test_cli_cleanup_exception_emits_terminal_fail_closed_report(self):
         with self.isolated_workspace() as (root, _work, _game, _manifest):
             report_path = root / "cleanup-exception-report.json"
