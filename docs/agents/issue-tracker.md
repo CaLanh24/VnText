@@ -11,3 +11,7 @@ này; `.scratch/` được Git ignore. Không tự xuất bản ra GitHub hoặc
 
 Việc thực thi vẫn do Active Coordinator điều phối theo `AGENTS.md`; ticket
 không tự cấp quyền tạo Worker, chạy test hoặc sửa source.
+
+## Thứ tự phát triển Owner đã chọn (2026-10-09)
+
+Lấy text → Sửa CSV → Patch → Dịch local cuối. Đây là thứ tự implementation/acceptance, không đổi workflow extract → translate/import CSV → patch hoặc cấp quyền chạy game. Mục hiện hành: `.scratch/extract-readiness/spec.md`, `plan.md`, `tasks.md` (Spec Kit-style docs; chưa chạy Spec Kit). Real-game campaign chỉ xét sau cả bốn mục, theo quyền riêng và CONTRACTS§10c. Detailed extraction invariants ở CONTRACTS§8, validation ở TEST_MATRIX; AI_STATE trỏ receipt hiện hành.

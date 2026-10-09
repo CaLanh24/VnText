@@ -626,17 +626,18 @@ class TraceStoreTests(unittest.TestCase):
             "semantic_verify": True,
         }
         completed: list[dict] = []
-        with patch("vntext.app_tasks._run_unity_preflight"), patch(
+        with tempfile.TemporaryDirectory() as temp, patch("vntext.app_tasks._run_unity_preflight", return_value={}), patch(
             "vntext.app_tasks.extract_project",
             return_value=(
                 [entry],
                 [],
                 {"errors": ["dialogue.txt: plain_text TIMEOUT"]},
             ),
-        ), patch("vntext.app_tasks.write_package") as write_mock:
+        ), patch("vntext.app_tasks.write_package", wraps=write_package) as write_mock:
+            src = Path(temp) / "input"; (src / "Demo_Data").mkdir(parents=True)
             run_extract_task(
-                "game",
-                "package",
+                str(src),
+                str(Path(temp) / "package"),
                 "deep",
                 "balanced",
                 True,
@@ -660,13 +661,15 @@ class TraceStoreTests(unittest.TestCase):
             "semantic_verify": True,
         }
         completed: list[dict] = []
-        with patch("vntext.app_tasks._run_unity_preflight"), patch(
+        review = _entry("review-only"); review.review_only = True
+        with tempfile.TemporaryDirectory() as temp, patch("vntext.app_tasks._run_unity_preflight", return_value={}), patch(
             "vntext.app_tasks.extract_project",
-            return_value=([entry], [entry], {"errors": []}),
-        ), patch("vntext.app_tasks.write_package") as write_mock:
+            return_value=([entry], [review], {"errors": []}),
+        ), patch("vntext.app_tasks.write_package", wraps=write_package) as write_mock:
+            src = Path(temp) / "input"; (src / "Demo_Data").mkdir(parents=True)
             run_extract_task(
-                "game",
-                "package",
+                str(src),
+                str(Path(temp) / "package"),
                 "deep",
                 "balanced",
                 True,

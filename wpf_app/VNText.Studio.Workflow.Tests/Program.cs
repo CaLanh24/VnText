@@ -59,6 +59,7 @@ internal static class Program
         Run("BlockedCompletion_IsNotAccepted", BlockedCompletion_IsNotAccepted, failures);
         Run("NavigateTab_ChangesSelectedTab", NavigateTab_ChangesSelectedTab, failures);
         Run("ExtractComplete_NavigatesToTranslate", ExtractComplete_NavigatesToTranslate, failures);
+        Run("ExtractPartialAndEmpty_DoNotAdvance", ExtractPartialAndEmpty_DoNotAdvance, failures);
         Run("ExternalCsv_ValidatesReadyForPatch", ExternalCsv_ValidatesReadyForPatch, failures);
         Run("CsvValidator_RejectsEmptyTranslation", CsvValidator_RejectsEmptyTranslation, failures);
         Run("TranslateComplete_NavigatesToPatch", TranslateComplete_NavigatesToPatch, failures);
@@ -425,6 +426,39 @@ internal static class Program
         AssertEqual("Cần duyệt thủ công 2 dòng trước khi Patch", vm.ProgressSubtitle);
         AssertTrue(vm.StepStatusLine.Contains("Cần duyệt thủ công 2 dòng trước khi Patch"));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —"));
+    }
+
+    private static void ExtractPartialAndEmpty_DoNotAdvance()
+    {
+        foreach (var state in new[] { "PARTIAL", "EMPTY" })
+        {
+            var root = Path.Combine(TestTempRoot(), "extract_status_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation\nk,Hello,\n");
+                File.WriteAllText(Path.Combine(root, "manifest.json"), "{}");
+                File.WriteAllText(Path.Combine(root, "extract_status.json"),
+                    JsonSerializer.Serialize(new { complete = false, status = state, main = 1, review = 1, errors = 0 }));
+                var snapshot = WorkflowStatus.Evaluate("synthetic-game", root);
+                AssertEqual("extract", snapshot.Current);
+                AssertFalse(snapshot.HasExtract);
+                AssertFalse(snapshot.ReadyForPatch);
+                using var worker = new PythonWorkerHost();
+                var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false)
+                    { InputPath = "synthetic-game", OutputPath = root };
+                vm.TestSimulateTaskComplete("extract", new WorkerEvent
+                    { Type = "complete", Ok = false, Complete = false, ExtractStatus = state, ReviewOnly = 1 });
+                AssertEqual(state == "EMPTY" ? "Không có text" : "Lấy text một phần", vm.StatusText);
+                AssertEqual(WorkflowTabs.Extract, vm.SelectedTab);
+                AssertFalse(vm.ProgressSubtitle.Contains("Hoàn tất"));
+                AssertEqual("extract", vm.CurrentWorkflowStep);
+                vm.RunExtractCommand.Execute(null);
+                AssertEqual("Chọn thư mục xuất mới", vm.StatusText);
+                AssertFalse(vm.Busy);
+            }
+            finally { Directory.Delete(root, true); }
+        }
     }
 
     private static void RenpySdkMissing_ReportsPartialExtraction()

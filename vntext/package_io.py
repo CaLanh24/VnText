@@ -282,6 +282,8 @@ def _write_package_legacy(
         manifest_entries = all_entries + list(raw_unpatchable_entries)
 
     stats = dict(stats)
+    stats["main_entries"] = len(main_entries)
+    stats["review_entries"] = len(review_entries)
     stats["technical_skipped_entries"] = len(technical_skipped)
     stats["translation_csv_entries"] = len(main_entries) if separate_review else len(main_entries) + len(review_entries)
     stats["auto_raw_promoted"] = len(auto_promoted_entries)
@@ -335,6 +337,7 @@ def _write_package_legacy(
         report.extend(stats["errors"])
     (out / "extract_report.txt").write_text("\n".join(report), "utf-8")
     cleanup_package_zip_files(out)
+    return stats
 
 
 def _prepare_trace_plan(
@@ -430,6 +433,8 @@ def _prepare_trace_plan(
         manifest_entries = all_entries + list(raw_unpatchable_entries)
 
     stats = dict(stats)
+    stats["main_entries"] = len(main_entries)
+    stats["review_entries"] = len(review_entries)
     stats["technical_skipped_entries"] = len(technical_skipped)
     stats["translation_csv_entries"] = len(main_entries) if separate_review else len(main_entries) + len(review_entries)
     stats["auto_raw_promoted"] = len(auto_promoted_entries)

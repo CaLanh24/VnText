@@ -143,12 +143,18 @@ public sealed partial class MainViewModel
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
                 var renpySdkIncomplete = completedTask == "extract" && evt.RenpySdkMissing;
+                var extractionIncomplete = completedTask == "extract"
+                    && (evt.ExtractStatus is "PARTIAL" or "EMPTY" || (evt.Ok && evt.Complete == false));
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                 var needsHumanReview = evt.HumanReviewRequiredCount > 0;
                 var isExternalTranslationImport = completedTask == "external_translation_import";
                 var externalRemaining = Math.Max(evt.Pending, evt.ReviewOnly);
                 var manualReviewText = renpySdkIncomplete
                     ? $"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; {evt.ReviewOnly} lời thoại cần xem lại."
+                    : extractionIncomplete
+                    ? evt.ExtractStatus == "EMPTY"
+                        ? "Không có text sử dụng được — xem report, kiểm input hoặc mức quét."
+                        : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở CSV/report và xử lý lỗi trước khi dịch."
                     : isExternalTranslationImport
                     ? $"Đã nhập {evt.Applied} dòng an toàn; còn {externalRemaining} dòng cần sửa trong CSV"
                     : needsHumanReview
@@ -156,11 +162,11 @@ public sealed partial class MainViewModel
                     : $"Dịch một phần — còn pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}";
                 var fullyComplete = isAnalyze
                     ? evt.Ok && !cancelled
-                    : (evt.Complete ?? evt.Ok)
+                    : evt.Ok && (evt.Complete ?? evt.Ok)
                     && evt.Pending == 0
                     && evt.ReviewOnly == 0
                     && evt.Blocked == 0;
-                var partialOk = !isAnalyze && !fullyComplete && !cancelled && (evt.Ok || needsHumanReview || renpySdkIncomplete);
+                var partialOk = !isAnalyze && !fullyComplete && !cancelled && (evt.Ok || needsHumanReview || renpySdkIncomplete || extractionIncomplete);
                 if (fullyComplete)
                     ProgressPercent = 100;
                 ProgressSubtitle = cancelled ? "Đã hủy"
@@ -170,7 +176,7 @@ public sealed partial class MainViewModel
                 StatusText = cancelled ? "Đã hủy"
                     : isAnalyze ? (fullyComplete ? "Đã phân tích" : "Phân tích lỗi")
                     : fullyComplete ? "Hoàn tất"
-                    : partialOk ? (renpySdkIncomplete ? "Lấy text chưa đầy đủ" : isExternalTranslationImport ? "Cần sửa CSV" : "Dịch một phần")
+                    : partialOk ? (renpySdkIncomplete ? "Lấy text chưa đầy đủ" : extractionIncomplete ? (evt.ExtractStatus == "EMPTY" ? "Không có text" : "Lấy text một phần") : isExternalTranslationImport ? "Cần sửa CSV" : "Dịch một phần")
                     : "Lỗi";
                 StepStatusLine = cancelled
                     ? "Đã hủy tác vụ"
@@ -181,7 +187,7 @@ public sealed partial class MainViewModel
                     : fullyComplete
                         ? "Hoàn tất bước — cập nhật quy trình"
                         : partialOk
-                            ? renpySdkIncomplete
+                            ? renpySdkIncomplete || extractionIncomplete
                                 ? manualReviewText
                                 : needsHumanReview
                                 ? manualReviewText
@@ -191,7 +197,7 @@ public sealed partial class MainViewModel
                             : $"Lỗi — {evt.Error ?? "worker báo lỗi"}";
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
-                    AppendLog(needsHumanReview || renpySdkIncomplete ? evt.Error : $"Lỗi: {evt.Error}");
+                    AppendLog(needsHumanReview || renpySdkIncomplete || extractionIncomplete ? evt.Error : $"Lỗi: {evt.Error}");
 
                 if (cancelled)
                 {
@@ -246,7 +252,7 @@ public sealed partial class MainViewModel
                 else if (!cancelled && evt.Ok && completedTask is not null)
                 {
                     _lastCompletedTask = completedTask;
-                    if (completedTask == "extract")
+                    if (completedTask == "extract" && fullyComplete)
                     {
                         TranslationCsvPath = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
                         SelectedTab = WorkflowTabs.Translate;
@@ -319,9 +325,10 @@ public sealed partial class MainViewModel
                     ProgressSubtitle = manualReviewText;
                     StatusText = renpySdkIncomplete
                         ? "Lấy text chưa đầy đủ"
+                        : extractionIncomplete ? (evt.ExtractStatus == "EMPTY" ? "Không có text" : "Lấy text một phần")
                         : isExternalTranslationImport ? "Cần sửa CSV" : "Dịch một phần";
                     StepStatusLine =
-                        (renpySdkIncomplete
+                        (renpySdkIncomplete || extractionIncomplete
                             ? manualReviewText
                             : needsHumanReview
                             ? manualReviewText

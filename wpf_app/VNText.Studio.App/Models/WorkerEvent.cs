@@ -15,6 +15,7 @@ public sealed class WorkerEvent
     public bool Ok { get; set; }
     public bool? Complete { get; set; }
     public bool RenpySdkMissing { get; set; }
+    public string ExtractStatus { get; set; } = "";
     public int Pending { get; set; }
     public int ReviewOnly { get; set; }
     public int Blocked { get; set; }
@@ -62,6 +63,7 @@ public sealed class WorkerEvent
             if (root.TryGetProperty("applied", out var appliedEl)) evt.Applied = appliedEl.GetInt32();
             if (root.TryGetProperty("human_review_required_count", out var hrEl)) evt.HumanReviewRequiredCount = hrEl.GetInt32();
             if (root.TryGetProperty("summary", out var sumEl)) evt.Summary = sumEl.GetString() ?? "";
+            if (root.TryGetProperty("extract_status", out var extractEl)) evt.ExtractStatus = extractEl.GetString() ?? "";
             if (root.TryGetProperty("error", out var errEl)) evt.Error = errEl.GetString() ?? "";
             if (root.TryGetProperty("diagnostic_path", out var diagPathEl)) evt.DiagnosticPath = diagPathEl.GetString();
             if (root.TryGetProperty("diagnostic_stage", out var diagStageEl)) evt.DiagnosticStage = diagStageEl.GetString();

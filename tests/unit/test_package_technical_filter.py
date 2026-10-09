@@ -17,7 +17,7 @@ from bootstrap import bootstrap
 TESTS, ROOT, LIB = bootstrap(__file__)
 
 from vntext.entry import Entry
-from vntext.package_io import write_package
+from vntext.package_io import write_package, _prepare_trace_plan
 from vntext.patchability import STRUCTURED_XML_PATCH_PROOF
 
 
@@ -38,7 +38,10 @@ class TechnicalPackageFilterTests(unittest.TestCase):
             safety="safe",
         ).finalize()
         out = Path(tempfile.mkdtemp(prefix="vntext_technical_filter_"))
+        stale_zip = out / "Unity_Translation_Package.zip"
+        stale_zip.write_bytes(b"owned synthetic legacy zip")
         write_package(str(out), [visible, technical], [], {"mode": "deep"}, False)
+        self.assertFalse(stale_zip.exists())
 
         with (out / "translation.csv").open(encoding="utf-8-sig", newline="") as fh:
             rows = list(csv.DictReader(fh))
@@ -50,6 +53,8 @@ class TechnicalPackageFilterTests(unittest.TestCase):
         self.assertIn("skip_technical", skipped[0]["patch_note"])
 
         manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
+        plan = _prepare_trace_plan(str(out), [visible, technical], [], {"mode": "deep"}, False, False)
+        self.assertEqual(plan["stats"], manifest["stats"])
         self.assertEqual(manifest["stats"]["technical_skipped_entries"], 1)
         self.assertEqual(manifest["technical_skipped"][0]["source_text"], technical.source_text)
         self.assertEqual(manifest["technical_skipped"][0]["reason"], "path/id/hash token — không phải thoại")

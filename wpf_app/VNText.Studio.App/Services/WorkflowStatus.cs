@@ -36,7 +36,7 @@ public static class WorkflowStatus
         var manifestPath = Path.Combine(package, "manifest.json");
         var patchDir = Path.Combine(package, "Patch_Viet_Hoa");
 
-        var hasExtract = File.Exists(csvPath) && File.Exists(manifestPath);
+        var hasExtract = File.Exists(csvPath) && File.Exists(manifestPath) && ExtractionComplete(package);
         var translateProgress = hasExtract
             ? EvaluateTranslateProgress(package)
             : new TranslateProgress(false, false, 0, 0, 0, false);
@@ -100,6 +100,23 @@ public static class WorkflowStatus
             hasTranslate,
             translateComplete,
             readyForPatch);
+    }
+
+    private static bool ExtractionComplete(string packageDir)
+    {
+        var path = Path.Combine(packageDir, "extract_status.json");
+        if (!File.Exists(path)) return true; // Legacy packages retain their existing workflow.
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            var status = doc.RootElement;
+            return status.GetProperty("complete").GetBoolean()
+                && status.GetProperty("status").GetString() == "COMPLETE"
+                && status.GetProperty("main").GetInt32() > 0
+                && status.GetProperty("review").GetInt32() == 0
+                && status.GetProperty("errors").GetInt32() == 0;
+        }
+        catch { return false; }
     }
 
     public static TranslateProgress EvaluateTranslateProgress(string packageDir)

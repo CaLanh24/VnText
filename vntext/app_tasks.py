@@ -1086,6 +1086,14 @@ def run_extract_task(
     from vntext.unity_analyzer import UnityAnalysisCancelled
 
     try:
+        from vntext.renpy_adapter import detect_engine
+        engine = detect_engine(src)
+        if not Path(src).exists():
+            raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
+        if engine.engine in {"RENPY_COMPILED_ONLY", "MIXED"}:
+            raise ValueError("Game Ren'Py chỉ có compiled script hoặc trộn engine chưa được hỗ trợ. Hãy chọn bản loose-source hoặc tách đúng engine; không chạy route Unity.")
+        if any((Path(out) / name).exists() for name in ("translation.csv", "manifest.json")):
+            raise ValueError("Thư mục xuất đã có gói dịch; giữ nguyên dữ liệu. Hãy sao lưu hoặc chọn thư mục xuất mới.")
         preflight = _run_unity_preflight(
             src,
             out,
@@ -1094,15 +1102,29 @@ def run_extract_task(
             is_cancelled=is_cancelled,
         )
         log(f"Đang extract text, mức lọc raw: {level}...")
-        from vntext.renpy_adapter import detect_engine
-        engine = detect_engine(src)
+        if engine.engine == "UNKNOWN":
+            from vntext.unity_analyzer import detect_resource_kind
+            resources = preflight.get("resources", [])
+            base = Path(preflight.get("scan_root") or src)
+            if base.is_file():
+                base = base.parent
+            supported = any(
+                (kind := detect_resource_kind(base / item["path"]))["is_text_file"]
+                or kind["is_unity_extractable"]
+                or kind["signature"] in {"json", "csv", "xml", "sqlite", "yaml"}
+                for item in resources
+            )
+            if not supported:
+                raise ValueError("Chưa nhận diện input được hỗ trợ; hãy chọn game Unity, Ren'Py loose-source hoặc asset text có định dạng hỗ trợ.")
         renpy_sdk_missing = False
         if engine.engine == "RENPY_LOOSE_SOURCE":
             from vntext.renpy_extract import extract_loose_source, extract_native_template_entries
-            from vntext.renpy_toolchain import RenPyToolchainError, generate_empty_vietnamese_template, managed_sdk, validate_sdk
+            from vntext.renpy_toolchain import RenPyToolchainError, copy_template_workspace, generate_empty_vietnamese_template, managed_sdk, validate_sdk
             sdk = None
             selected = str(renpy_sdk_path or os.environ.get("VNTEXT_RENPY_SDK") or "").strip()
             action = str(renpy_sdk_action or "auto").strip().lower()
+            if action not in {"auto", "existing", "download", "none"}:
+                raise RenPyToolchainError("Lựa chọn công cụ Ren'Py không hợp lệ; chọn SDK có sẵn, tải công cụ hoặc tiếp tục một phần.")
             try:
                 if action == "download":
                     from vntext.renpy_toolchain import download_and_install_managed_sdk
@@ -1124,7 +1146,7 @@ def run_extract_task(
                     sdk = validate_sdk(selected) if selected else managed_sdk()
             except RenPyToolchainError as exc:
                 if action in {"download", "existing"}:
-                    raise
+                    raise RenPyToolchainError(f"Công cụ Ren'Py chưa hợp lệ; cần SDK 8.5.3. Chọn lại thư mục công cụ và output mới. Chi tiết: {exc}") from exc
                 log(f"Ren'Py SDK managed không hợp lệ; tiếp tục không native patch: {exc}")
             if sdk is None:
                 renpy_sdk_missing = True
@@ -1134,8 +1156,9 @@ def run_extract_task(
                 Path(out).mkdir(parents=True, exist_ok=True)
                 with tempfile.TemporaryDirectory(prefix="vntext-renpy-", dir=out) as temp:
                     workspace = Path(temp) / "gamecopy"
-                    shutil.copytree(src, workspace)
-                    generate_empty_vietnamese_template(sdk, workspace)
+                    inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled)
+                    log(f"Ren'Py SDK workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
+                    generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
                     main, review, stats = extract_native_template_entries(
                         src,
                         workspace / "game" / "tl" / "vietnamese",
@@ -1169,7 +1192,9 @@ def run_extract_task(
         # New app extraction must never promote an unproven row into the main
         # translation flow.  Legacy direct write_package callers retain their
         # compatibility default; the GUI worker uses the strict boundary.
-        write_package(
+        if is_cancelled and is_cancelled():
+            raise UnityAnalysisCancelled("cancelled")
+        package_stats = write_package(
             out,
             main,
             review,
@@ -1178,11 +1203,13 @@ def run_extract_task(
             enforce_symmetry=True,
             enable_trace=True,
         )
+        main_count = package_stats["main_entries"]
+        review_count = sum(package_stats[key] for key in ("review_only_entries", "raw_candidate_entries", "raw_unpatchable_entries"))
         extract_errors = [str(item) for item in (stats.get("errors") or []) if str(item)]
         if separate_review:
-            summary = f"Xong: {len(main)} dòng translation.csv, {len(review)} review_only. Xuất tại: {out}"
+            summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv, {review_count} review/extract-only. Xuất tại: {out}"
         else:
-            summary = f"Xong: {len(main) + len(review)} dòng translation.csv. Xuất tại: {out}"
+            summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv. Xuất tại: {out}"
         if extract_errors:
             summary = (
                 f"Extract chưa hoàn tất: đã tạo partial package tại {out}; "
@@ -1191,11 +1218,10 @@ def run_extract_task(
         elif renpy_sdk_missing:
             summary = (
                 f"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; "
-                f"{len(review)} lời thoại cần xem lại. Kết quả tại: {out}"
+                f"{review_count} lời thoại cần xem lại. Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
             )
-        log(summary)
-        log("Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa.")
-        completion_blockers = bool(extract_errors or review or renpy_sdk_missing)
+        empty = not (main_count or review_count)
+        completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty)
         completion_error = ""
         if extract_errors:
             completion_error = (
@@ -1205,33 +1231,46 @@ def run_extract_task(
         elif renpy_sdk_missing:
             completion_error = (
                 "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. "
-                f"{len(review)} lời thoại cần xem lại; tải công cụ rồi lấy text lại để nhận dạng đầy đủ."
+                f"{review_count} lời thoại cần xem lại; chọn công cụ SDK và thư mục xuất mới rồi lấy text lại để nhận dạng đầy đủ."
             )
-        elif review:
+        elif review_count:
             completion_error = (
                 "Extract chưa hoàn tất vì còn "
-                f"{len(review)} dòng REVIEW/UNSUPPORTED cần xử lý trước khi dịch."
+                f"{review_count} dòng REVIEW/UNSUPPORTED cần xử lý trước khi dịch."
             )
+        elif empty:
+            completion_error = "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét."
+            summary = completion_error
+        extract_status = "FAILED" if empty and extract_errors else "EMPTY" if empty else "PARTIAL" if completion_blockers else "COMPLETE"
+        log(summary)
+        log("Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa.")
         payload = {
             "ok": not completion_blockers,
             "summary": summary,
             "error": completion_error,
             "complete": not completion_blockers,
             "pending": 0,
-            "review_only": len(review),
+            "review_only": review_count,
             "blocked": 0,
+            "extract_status": extract_status,
         }
-        if extract_errors or review:
+        (Path(out) / "extract_status.json").write_text(json.dumps({
+            "complete": not completion_blockers, "status": extract_status,
+            "main": main_count, "review": review_count,
+            "skipped": package_stats["technical_skipped_entries"] + package_stats["auto_raw_rejected"],
+            "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
+        }, ensure_ascii=False, indent=2), encoding="utf-8")
+        if extract_errors or review_count:
             payload.update(
                 _diagnostic_completion_fields(
                     Path(out),
                     fallback_stage="EXTRACT",
                     fallback_root_cause="DISCOVERY_GAP" if extract_errors else None,
-                    fallback_affected_count=len(extract_errors) or len(review) or int(renpy_sdk_missing),
+                    fallback_affected_count=len(extract_errors) or review_count or int(renpy_sdk_missing),
                     fallback_action=(
                         "Review discovery/extract errors before translating the package."
                         if extract_errors
-                        else "Tải công cụ Ren'Py rồi lấy text lại để nhận dạng lời thoại đầy đủ."
+                        else "Chọn công cụ Ren'Py và thư mục xuất mới rồi lấy text lại để nhận dạng lời thoại đầy đủ."
                         if renpy_sdk_missing
                         else "Review REVIEW rows before treating Extract as ready for translation."
                     ),

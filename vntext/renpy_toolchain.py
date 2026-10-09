@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 import urllib.request
 import zipfile
+import time
+import stat
 
 
 SUPPORTED_VERSION = "8.5.3"
@@ -31,9 +33,12 @@ class RenPySdk:
 
 
 def managed_sdk_root() -> Path:
-    """Return the dedicated optional-tool cache, never a game or repo path."""
+    """Return the optional-tool cache; DEV shares .dev-env/tools, never game input."""
     data_root = os.environ.get("VNTEXT_DATA_ROOT")
     if data_root:
+        repo = Path(__file__).resolve().parent.parent
+        if Path(data_root).expanduser().resolve().is_relative_to(repo / "DEV_RUN"):
+            return repo / ".dev-env" / "tools" / f"renpy-{SUPPORTED_VERSION}"
         return Path(data_root).expanduser().resolve() / "tools" / f"renpy-{SUPPORTED_VERSION}"
     configured = os.environ.get("VNTEXT_RENPY_TOOL_ROOT")
     if configured:
@@ -64,9 +69,13 @@ def install_managed_sdk(archive: str | Path) -> RenPySdk:
     if not archive_path.is_file() or _sha256(archive_path) != SDK_SHA256:
         raise RenPyToolchainError("Ren'Py SDK archive hash mismatch")
     destination = managed_sdk_root(); parent = destination.parent
-    repo = Path.cwd().resolve()
-    if destination == repo or repo in destination.parents:
+    repo = Path(__file__).resolve().parent.parent
+    dev_cache = Path(__file__).resolve().parent.parent / ".dev-env" / "tools" / f"renpy-{SUPPORTED_VERSION}"
+    if (repo / ".git").exists() and (destination == repo or repo in destination.parents) and destination != dev_cache:
         raise RenPyToolchainError("managed Ren'Py SDK cache must not be inside the repository")
+    for item in (destination, *destination.parents):
+        if item.exists() and (item.is_symlink() or getattr(item.stat(), "st_file_attributes", 0) & 0x400):
+            raise RenPyToolchainError("managed Ren'Py SDK cache must not follow links")
     parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=parent, prefix="renpy-install-") as temp:
         staging = Path(temp) / "payload"
@@ -121,16 +130,78 @@ def validate_sdk(path: str | Path) -> RenPySdk:
     return RenPySdk(root, python, renpy_py, SUPPORTED_VERSION)
 
 
-def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancelled=None) -> dict:
+    """Preserve full SDK isolation; size/cancel/link checks precede the copy."""
+    source = Path(source).resolve(); target = Path(target).resolve()
+    if target.is_relative_to(source):
+        raise RenPyToolchainError("Thư mục xuất phải nằm ngoài game để tạo workspace Ren'Py an toàn.")
+    total = 0; files = 0
+    deadline = time.monotonic() + 30
+    for p in source.rglob("*"):
+        if is_cancelled and is_cancelled():
+            raise RenPyToolchainError("cancelled")
+        if time.monotonic() >= deadline:
+            raise RenPyToolchainError("Kiểm kê workspace Ren'Py quá thời gian; chưa tạo bản sao.")
+        info = p.lstat()
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+            raise RenPyToolchainError("Workspace Ren'Py không hỗ trợ link/reparse point; chưa tạo bản sao.")
+        if p.is_file():
+            total += info.st_size; files += 1
+    if shutil.disk_usage(target.parent).free < total + 16 * 1024 * 1024:
+        raise RenPyToolchainError(f"Không đủ dung lượng workspace Ren'Py ({total} bytes); chọn nơi xuất còn trống hoặc lấy text một phần không SDK.")
+    repo = Path(__file__).resolve().parent.parent
+    if (repo / ".git").exists() and target.is_relative_to(repo):
+        # DEV reuses the canonical read-only inventory; installed apps have no test dependency.
+        from tests.tools.cleanup_work_artifacts import _project_size_snapshot
+        quota = _project_size_snapshot()
+        if not quota["complete"] or not quota["within_limit"] or quota["non_exempt_bytes"] + total + 16 * 1024 * 1024 > quota["limit_bytes"]:
+            raise RenPyToolchainError("DEV workspace vượt copy budget/quota hoặc inventory chưa đầy đủ; chưa tạo bản sao. Giữ input và xử lý artifact owned trước.")
+    copied = 0
+    def copy_file(src, dst):
+        nonlocal copied
+        if is_cancelled and is_cancelled():
+            raise RenPyToolchainError("cancelled")
+        p = Path(src); info = p.lstat()
+        if stat.S_ISLNK(info.st_mode) or getattr(info, "st_file_attributes", 0) & 0x400:
+            raise RenPyToolchainError("Workspace source changed to a link")
+        copied += info.st_size
+        if copied > total:
+            raise RenPyToolchainError("Workspace source grew after preflight; stopped copy")
+        return shutil.copy2(src, dst)
+    shutil.copytree(source, target, copy_function=copy_file)
+    return {"files": files, "bytes": total}
+
+
+def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, timeout: int = 120, is_cancelled=None) -> subprocess.CompletedProcess[str]:
     """Ask Ren'Py itself to create native IDs in an already-approved copy."""
     target = Path(workspace).resolve()
     if not (target / "game").is_dir():
         raise RenPyToolchainError("template workspace must be a Ren'Py game copy with game/")
-    result = subprocess.run(
-        [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo"],
+    command = [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo"]
+    proc = subprocess.Popen(
+        command,
         cwd=sdk.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        timeout=timeout, check=False,
     )
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            if is_cancelled and is_cancelled():
+                raise RenPyToolchainError("cancelled")
+            if time.monotonic() >= deadline:
+                raise RenPyToolchainError("Ren'Py template generation timed out; workspace chưa hoàn tất.")
+            try:
+                stdout, stderr = proc.communicate(timeout=min(0.1, max(0.001, deadline - time.monotonic())))
+                break
+            except subprocess.TimeoutExpired:
+                continue
+    finally:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill(); proc.communicate()
+    result = subprocess.CompletedProcess(command, proc.returncode, stdout, stderr)
     if result.returncode:
         raise RenPyToolchainError(f"Ren'Py template generation failed: {(result.stderr or result.stdout)[:500]}")
     return result

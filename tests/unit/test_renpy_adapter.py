@@ -26,6 +26,9 @@ class RenPyEngineDetectionTests(unittest.TestCase):
             (root / "game" / "script.rpyc").write_bytes(b"x")
             result = detect_engine(root)
             self.assertEqual((result.engine, result.status), ("RENPY_COMPILED_ONLY", "EXTRACT_ONLY"))
+            from vntext.extract_pipeline import extract_project
+            with self.assertRaisesRegex(ValueError,"Ren'Py"):
+                extract_project(str(root))
 
     def test_mixed_evidence_requires_review(self):
         with self._folder() as temp:
@@ -35,6 +38,9 @@ class RenPyEngineDetectionTests(unittest.TestCase):
             (root / "Example_Data").mkdir()
             result = detect_engine(root)
             self.assertEqual((result.engine, result.status), ("MIXED", "REVIEW_REQUIRED"))
+            from vntext.extract_pipeline import extract_project
+            with self.assertRaisesRegex(ValueError,"Ren'Py"):
+                extract_project(str(root))
 
     def test_unknown_is_not_guessed(self):
         with self._folder() as temp:

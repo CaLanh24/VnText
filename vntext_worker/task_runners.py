@@ -73,6 +73,7 @@ def _make_callbacks(
             "diagnostic_root_cause",
             "diagnostic_action",
             "diagnostic_status",
+            "extract_status",
             "patch_engine",
             "patch_delivery",
             "patch_payload_path",

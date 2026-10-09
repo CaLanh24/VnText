@@ -31,6 +31,8 @@ def extract_project(
 ):
     from vntext.renpy_adapter import detect_engine
     detected = detect_engine(input_path)
+    if detected.engine in {"RENPY_COMPILED_ONLY", "MIXED"}:
+        raise ValueError("Ren'Py compiled-only hoặc mixed engine chưa có route extract được hỗ trợ; không fallback sang Unity.")
     if detected.engine == "RENPY_LOOSE_SOURCE":
         from vntext.renpy_extract import extract_loose_source
         main, review, stats = extract_loose_source(input_path)

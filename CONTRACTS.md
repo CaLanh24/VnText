@@ -177,6 +177,10 @@ Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. �
 
 **Ren’Py invariant:** `RENPY_LOOSE_SOURCE` có native dialogue/string patch route, read-back identity và output overlay tại `COPY_TO_GAME_ROOT`; WPF/worker phải truyền engine/delivery/payload/instruction theo complete event. `RENPY_COMPILED_ONLY`, method không hỗ trợ và manifest mixed engine fail closed, không fallback sang Unity delivery. Full game E2E/Release evidence vẫn là gate riêng.
 
+Extract orchestration chặn compiled-only/mixed/missing input; UNKNOWN chỉ dùng generic asset route khi bounded signature/format hiện có nhận diện được text/structured/Unity container. Không cần model dịch để lấy text. Gói xuất có `translation.csv` hoặc `manifest.json` được giữ nguyên; lấy lại text (kể cả thêm SDK sau partial) phải chọn output mới. `extract_status.json` ghi COMPLETE/PARTIAL/EMPTY/FAILED và count sau package filtering, không thay proof/locator. Partial/empty không tự advance; sửa CSV không tự chữa lỗi discovery hoặc tạo native identity thiếu. Muốn xử lý thiếu SDK/discovery cần lấy lại text ở output mới; explicit CSV/import/patch vẫn dùng validator hiện có. Package legacy không có sidecar giữ compatibility behavior.
+
+Ren'Py SDK pinned8.5.3 và archive hash/path traversal checks giữ nguyên. DEV managed SDK ở `.dev-env/tools/renpy-8.5.3`, cache khác trong source repo bị từ chối; installed data route giữ nguyên. Native template chạy trên whole-copy scratch tự tạo dưới output, không input. Kiểm link/cancel/size/free disk trước copy; trong DEV checkout thêm complete whole-root quota và copy bytes +16MiB reserve trước copy. SDK child phải terminal trước scratch disposal khi success/error/timeout/cancel. Chưa chứng minh workspace nhỏ hơn tương đương SDK init/project semantics nên giữ isolation whole-copy; synthetic checks không chứng minh native SDK/full-game runtime.
+
 **Tests/evidence:** `tests/unit/test_renpy_patch.py`, `tests/unit/test_patch_delivery.py`, `tests/unit/test_worker_protocol.py`, `tests/unit/test_wpf_workflow.py`, WPF harness; external full-game/Release evidence chỉ được claim khi fixture và exact Release gate được cung cấp.
 
 ## 9. Compatibility facade
