@@ -6,6 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from tests.lib.work_paths import work_temp_dir
 
 from vntext.renpy_extract import extract_loose_source
 from vntext.renpy_toolchain import (SDK_SHA256, RenPyToolchainError, RenPySdk,
@@ -14,6 +15,16 @@ from vntext.renpy_toolchain import (SDK_SHA256, RenPyToolchainError, RenPySdk,
 
 
 class RenPyExtractTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        cls._managed_temp_root = work_temp_dir("renpy-extract")
+        tempfile.tempdir = str(cls._managed_temp_root)
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
     def test_dev_optional_sdk_cache_uses_shared_environment_only(self):
         repo=Path(__file__).resolve().parents[2]
         with patch.dict(os.environ,{"VNTEXT_DATA_ROOT":str(repo/"DEV_RUN/bootstrap-build/data")}):

@@ -7,10 +7,21 @@ import tempfile
 import unittest
 from vntext.renpy_toolchain import validate_sdk, copy_template_workspace, generate_empty_vietnamese_template
 from vntext.renpy_extract import parse_renpy_translation_templates
+from tests.lib.work_paths import work_temp_dir
 
 SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK',str(Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3')))
 
 class NativeRenPySdkTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        cls._managed_temp_root = work_temp_dir("renpy-native-sdk")
+        tempfile.tempdir = str(cls._managed_temp_root)
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
     @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official pinned RenPy8.5.3 SDK absent; native acceptance not run')
     def test_native_generated_dialogue_menu_strings_and_input_unchanged(self):
         sdk=validate_sdk(SDK)

@@ -450,7 +450,7 @@ internal static class Program
         try
         {
         var review = Path.Combine(root, "image_text.json");
-        var source = Path.Combine(root, "source-preview.png");
+        var source = Path.Combine(root, "source.png");
         var pixels = Enumerable.Repeat((byte)255, 300 * 120 * 4).ToArray();
         var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(300,120,96,96,System.Windows.Media.PixelFormats.Bgra32,null,pixels,300*4);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
@@ -475,6 +475,20 @@ internal static class Program
         AssertTrue(vm.TryLoadImageReview(saved));
         AssertTrue(vm.ImagePreview is not null && vm.ImageRegions[0].Translation == "Xin chào");
         AssertFalse(vm.ImageRegions[0].Approved);
+        var preview = Path.Combine(Path.GetDirectoryName(saved)!, "source-preview.png");
+        File.WriteAllText(preview, "untrusted sidecar preview");
+        AssertTrue(vm.TryLoadImageReview(saved));
+        AssertTrue(vm.ImagePreview is not null && vm.ImagePath == source);
+        var tampered = JsonSerializer.Deserialize<ImageTextDocument>(File.ReadAllText(saved), MainViewModel.ImageJson)!;
+        tampered.SourceSha256 = new string('0', 64);
+        File.WriteAllText(saved, JsonSerializer.Serialize(tampered, MainViewModel.ImageJson));
+        AssertFalse(vm.TryLoadImageReview(saved));
+        AssertTrue(vm.ImagePreview is null && vm.ImageRegions.Count == 0 && vm.ImagePath == "");
+        AssertFalse(vm.RenderImageCommand.CanExecute(null));
+        AssertFalse(vm.SaveImageReviewCommand.CanExecute(null));
+        File.WriteAllText(saved, "{bad");
+        AssertFalse(vm.TryLoadImageReview(saved));
+        AssertTrue(vm.ImagePreview is null && vm.ImageRegions.Count == 0 && vm.ImagePath == "");
         File.WriteAllText(review,"{bad");
         AssertTrue(!vm.TryLoadImageReview(review));
         }

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -14,7 +15,7 @@ public sealed partial class MainViewModel
     private string _imagePath = "", _imageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.", _imageTaskRoot = "";
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _imageDocument = null; ImageRegions.Clear(); ImagePreview = null; } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
     public ImageSource? ImagePreview { get => _imagePreview; private set => Set(ref _imagePreview, value); }
     public ObservableCollection<string> ImageCandidates { get; } = new();
@@ -43,7 +44,7 @@ public sealed partial class MainViewModel
     {
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
         _imageTaskRoot = NewImageRoot();
-        if (task == "image_extract") { _imageDocument = null; ImageRegions.Clear(); ImagePreview = null; }
+        if (task == "image_extract") ClearImageReviewState();
         BeginTask(task, new { src = source, @out = _imageTaskRoot }, "Đang xử lý text trong ảnh…");
     }
     internal bool TryLoadImageReview(string path)
@@ -52,31 +53,49 @@ public sealed partial class MainViewModel
         {
             if (new FileInfo(path).Length > 2 * 1024 * 1024) throw new InvalidDataException("Review ảnh vượt 2 MiB.");
             var document = JsonSerializer.Deserialize<ImageTextDocument>(File.ReadAllText(path), ImageJson) ?? throw new InvalidDataException("Review rỗng.");
-            if (document.Schema != 1 || document.Width <= 0 || document.Height <= 0 || document.Regions.Count > 500
-                || document.Regions.Any(r => r.Box.Length != 4)) throw new InvalidDataException("Schema/region không hợp lệ.");
-            ImagePath = document.SourcePath;
-            _imageDocument = document; ImageRegions.Clear();
+            if (document.Schema != 1 || document.Width <= 0 || document.Height <= 0 || document.Regions is null || document.Regions.Count > 500
+                || document.Regions.Any(r => r.Box is null || r.Box.Length != 4 || r.Box[0] < 0 || r.Box[1] < 0 || r.Box[2] <= 0 || r.Box[3] <= 0
+                    || (long)r.Box[0] + r.Box[2] > document.Width || (long)r.Box[1] + r.Box[3] > document.Height))
+                throw new InvalidDataException("Schema/region không hợp lệ.");
+            var sourcePath = Path.GetFullPath(document.SourcePath);
+            if (!File.Exists(sourcePath) || new FileInfo(sourcePath).Length > 32 * 1024 * 1024)
+                throw new InvalidDataException("Ảnh nguồn không tồn tại hoặc vượt 32 MiB.");
+            var sourceBytes = File.ReadAllBytes(sourcePath);
+            if (sourceBytes.Length > 32 * 1024 * 1024 || !Convert.ToHexString(SHA256.HashData(sourceBytes)).Equals(document.SourceSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Ảnh nguồn đã đổi hoặc hash review không khớp.");
+            var sourcePreview = LoadImagePreview(sourceBytes);
+            if (sourcePreview.PixelWidth != document.Width || sourcePreview.PixelHeight != document.Height)
+                throw new InvalidDataException("Kích thước ảnh nguồn không khớp review.");
+            ClearImageReviewState();
+            ImagePath = sourcePath;
+            _imageDocument = document;
             foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; ImageRegions.Add(region); }
-            var preview = Path.Combine(Path.GetDirectoryName(path)!, "source-preview.png");
-            LoadImagePreview(File.Exists(preview) ? preview : document.SourcePath);
-            _imageSourcePreview = ImagePreview as BitmapSource;
+            _imageSourcePreview = sourcePreview;
+            ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
                 : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Duyệt từng bản dịch và nền phẳng trước render.";
             return true;
         }
-        catch (Exception e) { ImageStatus = "Không mở được review: " + e.Message; return false; }
+        catch (Exception e) { ClearImageReviewState(); ImageStatus = "Không mở được review: " + e.Message; return false; }
     }
-    private void LoadImagePreview(string path)
+    private void ClearImageReviewState()
     {
-        ImagePreview = null;
-        if (!File.Exists(path)) return;
+        _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; ImagePath = "";
+    }
+    private static BitmapSource LoadImagePreview(string path)
+    {
+        if (!File.Exists(path)) throw new FileNotFoundException("Không tìm thấy ảnh nguồn/preview.", path);
         if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException("Preview vượt 32 MiB.");
-        using var stream = File.OpenRead(path);
+        return LoadImagePreview(File.ReadAllBytes(path));
+    }
+    private static BitmapSource LoadImagePreview(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes, writable: false);
         var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-        if ((long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException("Preview quá 16 triệu pixel.");
+        if (decoder.Frames.Count == 0 || (long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException("Preview không hợp lệ hoặc quá 16 triệu pixel.");
         stream.Position = 0;
         var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); ImagePreview = bitmap;
+        bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); return bitmap;
     }
     private ImageTextDocument CurrentImageReview()
     {
@@ -122,7 +141,7 @@ public sealed partial class MainViewModel
                 ImageStatus = evt.Summary ?? "Chọn ảnh để OCR.";
             }
             else if (task == "image_extract") TryLoadImageReview(Path.Combine(_imageTaskRoot, "image_text.json"));
-            else { LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
+            else { ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
         }
         catch (Exception e) { ImageStatus = "Không đọc được kết quả ảnh: " + e.Message; }
         finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; }

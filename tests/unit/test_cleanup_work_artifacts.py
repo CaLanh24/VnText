@@ -15,6 +15,7 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from tests.lib.work_paths import work_temp_dir
 
 
 def _tests_lib_on_path() -> None:
@@ -43,6 +44,15 @@ RUNNER = ROOT / "tests" / "tools" / "run_with_cleanup.py"
 
 
 class CleanupLifecycleTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        tempfile.tempdir = str(work_temp_dir("cleanup-lifecycle-tests"))
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
     @contextlib.contextmanager
     def isolated_owner_pending(self):
         """Keep retained production evidence from changing synthetic lifecycle fixtures."""
@@ -55,8 +65,18 @@ class CleanupLifecycleTests(unittest.TestCase):
                 os.environ[marker] = previous
 
     @contextlib.contextmanager
+    def isolated_artifact_scope(self):
+        marker = "VNTEXT_ARTIFACT_SCOPE_ROOT"
+        previous = os.environ.pop(marker, None)
+        try:
+            yield
+        finally:
+            if previous is not None:
+                os.environ[marker] = previous
+
+    @contextlib.contextmanager
     def isolated_workspace(self):
-        with self.isolated_owner_pending(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
+        with self.isolated_owner_pending(), self.isolated_artifact_scope(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
             root = Path(name)
             tests_root = root / "tests"
             golden = tests_root / "golden"

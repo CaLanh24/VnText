@@ -9,10 +9,21 @@ from unittest.mock import patch
 from PIL import Image, ImageDraw, ImageFont
 from vntext.image_text import recognize_image, render_image, discover_images
 from vntext_worker.image_tasks import run_image_worker
+from tests.lib.work_paths import work_temp_dir
 
 FONT = Path(os.environ.get("SystemRoot", "C:/Windows")) / "Fonts/arial.ttf"
 
 class ImageTextTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        cls._managed_temp_root = work_temp_dir("image-text-tests")
+        tempfile.tempdir = str(cls._managed_temp_root)
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name); self.source = self.root / "source.png"
