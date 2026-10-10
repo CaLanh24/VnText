@@ -66,6 +66,28 @@ class ImageTextTests(unittest.TestCase):
         self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()
         with self.assertRaisesRegex(ValueError,'không đủ phẳng'):self.render()
         self.assertFalse((self.root/'out.png').exists())
+    def test_clone_background_uses_original_donor_and_preserves_outside(self):
+        image = Image.effect_noise((300,120),70).convert('RGBA')
+        image.save(self.source)
+        self.document['source_sha256'] = hashlib.sha256(self.source.read_bytes()).hexdigest()
+        self.document['regions'][0].update(box=[10,10,140,45], font_size=16,
+            flat_background_approved=False, clone_background_approved=True, donor_x=150, donor_y=65)
+        self.render()
+        with Image.open(self.root/'out.png') as result:
+            self.assertEqual(result.getpixel((149,54)), image.getpixel((289,109)))
+            for y in range(120):
+                for x in range(300):
+                    if not (10 <= x < 150 and 10 <= y < 55):
+                        self.assertEqual(result.getpixel((x,y)), image.getpixel((x,y)))
+        self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(),self.document['source_sha256'])
+
+    def test_clone_background_rejects_overlap_and_out_of_bounds(self):
+        for dx,dy in [(10,10),(280,100),(-1,0),(True,0)]:
+            with self.subTest(donor=(dx,dy)):
+                doc=copy.deepcopy(self.document)
+                doc['regions'][0].update(flat_background_approved=False,clone_background_approved=True,donor_x=dx,donor_y=dy)
+                with self.assertRaises(ValueError): self.render(doc)
+                self.assertFalse((self.root/'out.png').exists())
     def test_complex_background_can_be_explicitly_replaced(self):
         image=Image.effect_noise((300,120),70).convert('RGBA');image.putalpha(170);image.save(self.source)
         self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()

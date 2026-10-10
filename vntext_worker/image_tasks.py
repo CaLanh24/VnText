@@ -12,7 +12,20 @@ def run_image_worker(task_id, task, params, is_cancelled):
     if root.exists():
         raise ValueError("Thư mục review ảnh phải mới; giữ nguyên kết quả đã có.")
     if is_cancelled(): raise ValueError("cancelled")
-    if task == "image_inventory":
+    if task in {"image_delivery", "image_apply", "image_rollback"}:
+        from vntext.image_delivery import prepare_image_delivery, install_image_delivery, rollback_image_delivery
+        if task == "image_delivery":
+            result = prepare_image_delivery(params["document"], params["rendered"], params["game_root"], root)
+            summary = "Đã tạo gói ảnh locale Vietnamese. Cài vào bản sao game; cần chọn ngôn ngữ vietnamese trong game."
+        elif task == "image_apply":
+            result = install_image_delivery(params["package"], params["game_copy"], root)
+            summary = "Đã cài ảnh vào bản sao game và kiểm hash đọc lại. Chưa xác nhận game đang chọn Vietnamese."
+        else:
+            result = rollback_image_delivery(params["transaction"])
+            root.mkdir(parents=True)
+            summary = "Đã gỡ đúng ảnh của giao dịch; giữ nguyên ảnh nguồn."
+        (root / "delivery_result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
+    elif task == "image_inventory":
         inventory = discover_images(params["src"], is_cancelled=is_cancelled)
         root.mkdir(parents=True)
         (root / "image_index.json").write_text(json.dumps(inventory,ensure_ascii=False,indent=2),encoding="utf-8")

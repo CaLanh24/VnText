@@ -490,6 +490,9 @@
                                                 <DataGridCheckBoxColumn Header="Nền phẳng đã kiểm" Binding="{Binding FlatBackgroundApproved}" Width="100" />
                                                 <DataGridCheckBoxColumn Header="Thay nền region bằng màu đặc" Binding="{Binding ReplacementBackgroundApproved}" Width="130" />
                                                 <DataGridCheckBoxColumn Header="Thay chữ trong suốt" Binding="{Binding TransparentTextApproved}" Width="105" />
+                                                <DataGridTextColumn Header="X nền mẫu" Binding="{Binding DonorX}" Width="80" />
+                                                <DataGridTextColumn Header="Y nền mẫu" Binding="{Binding DonorY}" Width="80" />
+                                                <DataGridCheckBoxColumn Header="Clone nền mẫu đã kiểm" Binding="{Binding CloneBackgroundApproved}" Width="130" />
                                                 <DataGridCheckBoxColumn Header="Duyệt text/crop" Binding="{Binding Approved}" Width="90" />
                                                 <DataGridTemplateColumn Header="Xóa" Width="45"><DataGridTemplateColumn.CellTemplate><DataTemplate>
                                                     <Button Content="Xóa" Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
@@ -500,6 +503,9 @@
                                             <Button Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Margin="0,0,6,6" />
                                             <Button Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Margin="0,0,6,6" />
                                             <Button Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Cài gói vào bản sao game…" Command="{Binding InstallImageDeliveryCommand}" Margin="0,0,6,6" />
+                                            <Button Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Margin="0,0,6,6" />
                                             <Button Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" />
                                         </WrapPanel>
                                         <TextBlock Text="{Binding ImageStatus}" TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}" />

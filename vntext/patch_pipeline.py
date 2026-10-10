@@ -49,7 +49,7 @@ def detect_patch_engine(manifest: dict) -> str:
     if declared in _RENPY_UNPATCHABLE_ENGINES:
         label = "compiled-only" if declared == "RENPY_COMPILED_ONLY" else declared
         raise ValueError(f"unsupported Ren'Py patch engine: {label}; Unity delivery is not allowed")
-    if declared.startswith("RENPY") and declared != "RENPY_LOOSE_SOURCE":
+    if declared.startswith("RENPY") and declared not in {"RENPY_LOOSE_SOURCE", "RENPY_COMPILED_NATIVE"}:
         raise ValueError(f"unsupported Ren'Py patch engine: {declared}; Unity delivery is not allowed")
     if renpy_methods or renpy_backend or declared == "RENPY_LOOSE_SOURCE":
         if not renpy_methods:

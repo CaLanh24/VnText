@@ -75,3 +75,8 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 - Chưa có active Ren’Py full-game E2E; native unit/read-back/delivery tests không thay thế external game và exact Release evidence.
 - `--release-verify-qml` có entry point nhưng `qml_ui.bridge` chưa có trong source hiện tại; QML-ready behavior là UNKNOWN, không ghi là PASS từ smoke Qt/WPF.
 - Full unit có thể có skip do fixture/runtime optional; phải ghi lý do skip, không chuyển skip thành PASS.
+
+## Muc 1 continuation focused gates
+- `test_renpy_compiled.py`, generated `test_renpy_native_sdk.py`: inert reducers/cycles, malformed/trailing/version rejection; compiled native ID→package→overlay→SDK lookup readback. Unresolved AST nodes must keep worker PARTIAL. Affected: RenPy extraction, patch/delivery and worker protocol. Compiled dialogue coverage does not imply complete menu/Python-string/legacy-schema coverage.
+- `test_image_delivery.py`: loose/RPA baseline, tamper/path/source protection, no-overwrite, rollback after receipt failure/interruption, preserve user edits; SDK loader reads Vietnamese image then original after rollback. Lint initialization proves native loader bytes, not visual gameplay.
+- `test_image_text.py`, WPF workflow harness: clone donor bounds/non-overlap/original pixels and approval invalidation; actual WPF edit/render/package interaction plus output pixel comparison is a separate mandatory DEV acceptance.

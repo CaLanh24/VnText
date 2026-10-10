@@ -441,6 +441,10 @@ internal static class Program
         AssertTrue(!region.Approved && !region.FlatBackgroundApproved);
         region.Approved = true; region.FlatBackgroundApproved = true; region.TransparentTextApproved = true; region.Background = "#000000";
         AssertTrue(!region.Approved && !region.FlatBackgroundApproved && !region.TransparentTextApproved);
+        region.Approved = true; region.CloneBackgroundApproved = true; region.DonorX = 40;
+        AssertFalse(region.Approved || region.CloneBackgroundApproved);
+        region.Approved = true; region.CloneBackgroundApproved = true; region.DonorY = 60;
+        AssertFalse(region.Approved || region.CloneBackgroundApproved);
     }
 
     private static void ImageText_ReviewAndApprovalStayIndependent()

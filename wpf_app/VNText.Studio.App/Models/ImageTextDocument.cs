@@ -26,10 +26,14 @@ public sealed class ImageTextRegion : NotifyBase
     public int[] Box { get; set; } = new[] { 0, 0, 100, 40 };
     private string _sourceText = "", _translation = "", _background = "#FFFFFF", _foreground = "#000000";
     private bool _approved, _flatBackgroundApproved, _replacementBackgroundApproved, _transparentTextApproved;
-    private int _fontSize = 24;
+    private int _fontSize = 24, _donorX, _donorY;
+    private bool _cloneBackgroundApproved;
+    public int DonorX { get => _donorX; set { if (Set(ref _donorX, value)) { Approved = false; CloneBackgroundApproved = false; } } }
+    public int DonorY { get => _donorY; set { if (Set(ref _donorY, value)) { Approved = false; CloneBackgroundApproved = false; } } }
+    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set => Set(ref _cloneBackgroundApproved, value); }
     public string SourceText { get => _sourceText; set { if (Set(ref _sourceText, value)) Approved = false; } }
     public string Translation { get => _translation; set { if (Set(ref _translation, value)) Approved = false; } }
-    public string Background { get => _background; set { if (Set(ref _background, value)) { Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; } } }
+    public string Background { get => _background; set { if (Set(ref _background, value)) { Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; CloneBackgroundApproved = false; } } }
     public string Foreground { get => _foreground; set { if (Set(ref _foreground, value)) Approved = false; } }
     public int FontSize { get => _fontSize; set { if (Set(ref _fontSize, value)) Approved = false; } }
     public bool Approved { get => _approved; set => Set(ref _approved, value); }
@@ -40,7 +44,7 @@ public sealed class ImageTextRegion : NotifyBase
     {
         if (Box.Length != 4) Box = new[] { 0, 0, 100, 40 };
         if (Box[index] == value) return;
-        Box[index] = value; Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; Raise(property);
+        Box[index] = value; Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; CloneBackgroundApproved = false; Raise(property);
     }
     [JsonIgnore] public int X { get => Box.Length == 4 ? Box[0] : 0; set => ChangeBox(0, value, nameof(X)); }
     [JsonIgnore] public int Y { get => Box.Length == 4 ? Box[1] : 0; set => ChangeBox(1, value, nameof(Y)); }

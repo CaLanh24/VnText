@@ -241,3 +241,8 @@ Các edge này là technical debt/ranh giới tương thích đã quan sát từ
 - Worker payload/lifecycle: `vntext_worker/protocol.py` + `task_runners.py`, đối chiếu `WorkerEvent.cs`/`PythonWorkerHost.cs`.
 - WPF binding/command/state: `MainViewModel` partial đúng trách nhiệm + `WorkflowStatus`/`WorkerPaths`; không đổi tên public property/command nếu chưa có migration.
 - Release/portable: `release/publish.ps1`, `make_venv_portable.py`, `prune_worker_venv.py`, `release_verify.py`, `WorkerPaths.cs`.
+
+## Compiled and image continuation owners
+- `vntext/renpy_compiled.py`: bounded inert RPYC slot-2 inspection and native dialogue extraction. `app_tasks.py` reports unresolved AST coverage as PARTIAL; `patch_renpy.py` rechecks binary hash and native identity before the existing overlay writer. No arbitrary pickle execution; unchanged `patchability.py` validator.
+- `vntext/image_delivery.py`: additive static locale images, baseline/hash verification, no-overwrite publication, transaction recovery and preservation of user edits. Requires a separate game copy and same-volume hardlink support; unsupported filesystems fail without overwriting a destination. Native language selection remains explicit.
+- WPF ImageText model/viewmodel/XAML and worker image_tasks own manual donor coordinates, approval invalidation, package/install/recovery commands. UI acceptance is separate from harness tests.

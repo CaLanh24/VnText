@@ -103,6 +103,7 @@ def render_image(document, output, font_path):
     regions = document["regions"]
     if not regions or len(regions) > 500:
         raise ValueError("Không có region đã duyệt hoặc quá 500 region.")
+    original = image.copy()
     draw = ImageDraw.Draw(image); replacement_boxes = []
     used = []; deadline = time.monotonic() + 30
     for region in regions:
@@ -114,12 +115,13 @@ def render_image(document, output, font_path):
         replace_background = region.get("replacement_background_approved") is True
         transparent_text = region.get("transparent_text_approved") is True
         flat_background = region.get("flat_background_approved") is True
-        if sum((flat_background, replace_background, transparent_text)) != 1:
-            raise ValueError("Chọn đúng một cách render: nền phẳng, giữ nền trong suốt, hoặc thay region bằng màu đặc.")
+        clone_background = region.get("clone_background_approved") is True
+        if sum((flat_background, replace_background, transparent_text, clone_background)) != 1:
+            raise ValueError("Chọn đúng một cách render: nền phẳng, chữ trong suốt, màu đặc, hoặc clone nền mẫu.")
         region_alpha = image.getchannel("A").crop((x,y,x+w,y+h))
         if transparent_text and (region_alpha.getextrema()[0] == 255 or region_alpha.getextrema()[1] == 0):
             raise ValueError("Chế độ chữ trong suốt cần region có cả pixel trong suốt và glyph nhìn thấy.")
-        if region_alpha.getextrema()[0] < 255 and not replace_background and not transparent_text:
+        if region_alpha.getextrema()[0] < 255 and not replace_background and not transparent_text and not clone_background:
             raise ValueError("Vùng chữ có alpha trong suốt; chọn giữ nền trong suốt hoặc xác nhận thay nền region bằng màu đặc.")
         if region.get("approved") is not True:
             raise ValueError("Cần duyệt text/crop trước render.")
@@ -133,7 +135,7 @@ def render_image(document, output, font_path):
         if len(bg) != 3 or len(fg) != 3: raise ValueError("Màu nền/chữ phải là RGB.")
         colors = image.crop((x,y,x+w,y+h)).convert("RGB").getcolors(4096)
         flat = sum(count for count,pixel in (colors or []) if max(abs(a-b) for a,b in zip(pixel,bg)) <= 8)
-        if flat / (w*h) < .70 and not replace_background and not transparent_text:
+        if flat / (w*h) < .70 and not replace_background and not transparent_text and not clone_background:
             raise ValueError("Nền region không đủ phẳng theo màu đã chọn; hãy crop/chuẩn bị nền thủ công.")
         if transparent_text:
             scale = 3
@@ -151,7 +153,13 @@ def render_image(document, output, font_path):
             bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2)
             if bounds[2]-bounds[0] > w or bounds[3]-bounds[1] > h:
                 raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
-            draw.rectangle((x,y,x+w-1,y+h-1),fill=bg)
+            if clone_background:
+                dx, dy, _, _ = _box([region.get("donor_x"), region.get("donor_y"), w, h], image.size)
+                if x < dx+w and dx < x+w and y < dy+h and dy < y+h:
+                    raise ValueError("Vùng nền mẫu phải tách khỏi vùng chữ cần thay.")
+                image.paste(original.crop((dx,dy,dx+w,dy+h)), (x,y))
+            else:
+                draw.rectangle((x,y,x+w-1,y+h-1),fill=bg)
             draw.multiline_text((x-bounds[0],y-bounds[1]),text,font=font,fill=fg,spacing=2)
         if replace_background: replacement_boxes.append((x,y,x+w,y+h))
     if replacement_boxes:

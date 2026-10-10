@@ -5,6 +5,9 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import pickletools
+import struct
+import zlib
 import unittest
 from vntext.renpy_toolchain import validate_sdk, copy_template_workspace, generate_empty_vietnamese_template
 from vntext.renpy_extract import extract_native_template_entries, parse_renpy_translation_templates
@@ -97,6 +100,22 @@ class NativeRenPySdkTests(unittest.TestCase):
             rpyc=script.with_suffix('.rpyc')
             self.assertEqual(compiled.returncode,0,compiled.stdout+'\n'+compiled.stderr)
             self.assertTrue(rpyc.is_file())
+            compiled_bytes = rpyc.read_bytes()
+            from vntext.renpy_compiled import inspect_rpyc, ast_nodes
+            nodes = ast_nodes(inspect_rpyc(compiled_bytes))
+            print(json.dumps({'inert_ast':[(name,{key:value for key,value in fields.items() if isinstance(value,(str,int,bool,type(None)))}) for name,fields in nodes]},ensure_ascii=True))
+            dialogue = [fields for name,fields in nodes if name=='renpy.ast.TranslateSay' and fields.get('what')=='Compiled line']
+            self.assertEqual(len(dialogue),1)
+            native_id = dialogue[0]['identifier']
+            self.assertTrue(native_id)
+            self.assertEqual(compiled_bytes[:10], b'RENPY RPC2')
+            for index in range(10, 1024, 12):
+                slot, offset, length = struct.unpack_from('<III', compiled_bytes, index)
+                if slot == 0: break
+                operations = list(pickletools.genops(zlib.decompress(compiled_bytes[offset:offset+length])))
+                print(json.dumps({'compiled_slot':slot,'opcodes':sorted({op.name for op,arg,pos in operations}),
+                    'identity_fields':[(op.name,arg) for op,arg,pos in operations if isinstance(arg,str) and
+                        (arg in {'identifier','what','block','language','Compiled line'} or arg.startswith('renpy.'))]},ensure_ascii=True))
             script.unlink()
             run=generate_empty_vietnamese_template(sdk,root)
             units=parse_renpy_translation_templates(root/'game/tl/vietnamese',language='vietnamese')
@@ -105,3 +124,50 @@ class NativeRenPySdkTests(unittest.TestCase):
             print(json.dumps({'compile_command':compile_command,'compile_exit_code':compiled.returncode,'compiled_sha256':hashlib.sha256(rpyc.read_bytes()).hexdigest(),'translation_command':run.args,'translation_exit_code':run.returncode,'game_units':len(game_units),'compiled_dialogue_identity_readback':[(unit.source_text,unit.native_id) for unit in game_units if unit.unit_kind=='dialogue']},ensure_ascii=True))
             self.assertEqual(run.returncode,0)
             self.assertEqual(matching,[])
+            from vntext.renpy_compiled import extract_compiled_source
+            from vntext.package_io import write_package, read_csv_rows_file, write_csv_rows_file
+            from vntext.patch_pipeline import apply_translation_package
+            from vntext.patchability import validate_renpy_contract
+            main, review, stats = extract_compiled_source(root)
+            self.assertEqual(len(main),1)
+            self.assertEqual(validate_renpy_contract(main[0]),'')
+            self.assertTrue(any('Define' in error for error in stats['errors']))
+            from vntext.app_tasks import run_extract_task
+            compiled_input=root/'compiled-input'
+            (compiled_input/'game').mkdir(parents=True)
+            (compiled_input/'game/script.rpyc').write_bytes(compiled_bytes)
+            completed=[]
+            run_extract_task(str(compiled_input),str(root/'worker-package'),'safe','balanced',True,
+                progress=lambda _:None,log=lambda _:None,complete=completed.append)
+            self.assertFalse(completed[-1]['complete'])
+            self.assertEqual(completed[-1]['extract_status'],'PARTIAL')
+            self.assertIn('Define',completed[-1]['error'])
+            package=root/'package'; write_package(str(package),main,review,stats,True)
+            csv=package/'translation.csv'
+            fields,rows=read_csv_rows_file(csv)
+            self.assertEqual(len(rows),1)
+            rows[0]['translation']='Compiled translation'
+            write_csv_rows_file(csv,fields,rows)
+            output=root.parent/(root.name+'-patch')
+            try:
+                apply_translation_package(str(csv),str(package/'manifest.json'),str(root),str(output))
+                generated=output/'COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy'
+                self.assertTrue(generated.is_file())
+                generated_text=generated.read_text(encoding='utf-8')
+            finally:
+                import shutil
+                if output.exists(): shutil.rmtree(output)
+            overlay = root/'game/tl/vietnamese/compiled_probe.rpy'
+            overlay.write_text(generated_text,encoding='utf-8')
+            (game/'readback.rpy').write_text('init 999 python:\n'
+                '    import json, os\n'
+                '    renpy.game.preferences.language = "vietnamese"\n'
+                f'    node, translated = renpy.game.script.translator.lookup_translate({native_id!r})\n'
+                '    with open(os.path.join(config.basedir,"compiled-readback.json"),"w") as receipt:\n'
+                '        json.dump({"what":node.what,"translated":translated},receipt)\n',encoding='utf-8')
+            command=[str(sdk.python),str(sdk.renpy_py),str(root),'lint']
+            readback=subprocess.run(command,cwd=sdk.root,text=True,capture_output=True,timeout=120)
+            print(json.dumps({'compiled_readback_command':command,'exit_code':readback.returncode,'stdout':readback.stdout,'stderr':readback.stderr},ensure_ascii=True))
+            self.assertEqual(readback.returncode,0,readback.stdout+'\n'+readback.stderr)
+            self.assertEqual(json.loads((root/'compiled-readback.json').read_text()),{'what':'Compiled translation','translated':True})
+            self.assertEqual(rpyc.read_bytes(),compiled_bytes)

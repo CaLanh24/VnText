@@ -603,13 +603,13 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                     archived = archive.read_member(member_name)
                     if archived["member_sha256"] != container.get("member_sha256"):
                         raise RenPyPatchError("Ren'Py RPA member precondition drift")
-                    source_cache[source_key] = archived["content"].decode("utf-8")
+                    source_cache[source_key] = archived["content"] if entry.get("backend") == "renpy_compiled_static" else archived["content"].decode("utf-8")
                     source_snapshots[source_path] = archive.container_sha256
                     archive_identities[source_path] = archive.container_sha256
                 else:
                     if not source_path.is_file():
                         raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
-                    source_cache[source_key] = source_path.read_text(encoding="utf-8")
+                    source_cache[source_key] = source_path.read_bytes() if entry.get("backend") == "renpy_compiled_static" else source_path.read_text(encoding="utf-8")
                     source_snapshots[source_path] = _sha256(source_path)
             except (OSError, UnicodeError, RenPyArchiveError) as exc:
                 raise RenPyPatchError(
@@ -619,7 +619,13 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         source_sha256 = (container.get("member_sha256") if container else source_snapshots[source_path])
         if source_sha256 != entry["native_contract"]["precondition"]["source_sha256"]:
             raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
-        if not _source_present(script, source_text):
+        if entry.get("backend") == "renpy_compiled_static":
+            from vntext.renpy_compiled import compiled_dialogues
+            native_rows, _unresolved = compiled_dialogues(script)
+            if not any(item['native_id'] == locator.get('native_id') and item['text'] == source_text
+                       and item['speaker'] == str(entry.get('object_info') or '') for item in native_rows):
+                raise RenPyPatchError('Compiled native identity/source/speaker precondition drift')
+        elif not _source_present(script, source_text):
             raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
         method = str(entry.get("import_method"))
         if method == "renpy_dialogue":

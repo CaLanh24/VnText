@@ -1092,7 +1092,7 @@ def run_extract_task(
             raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
         if engine.engine == "RENPY_ARCHIVE_UNSUPPORTED":
             raise ValueError(f"Archive Ren'Py lỗi/không hỗ trợ; không fallback sang Unity. Chi tiết: {engine.reason}")
-        if engine.engine in {"RENPY_COMPILED_ONLY", "MIXED"}:
+        if engine.engine == "MIXED":
             raise ValueError("Game Ren'Py chỉ có compiled script hoặc trộn engine chưa được hỗ trợ. Hãy chọn bản loose-source hoặc tách đúng engine; không chạy route Unity.")
         if any((Path(out) / name).exists() for name in ("translation.csv", "manifest.json")):
             raise ValueError("Thư mục xuất đã có gói dịch; giữ nguyên dữ liệu. Hãy sao lưu hoặc chọn thư mục xuất mới.")
@@ -1119,7 +1119,10 @@ def run_extract_task(
             if not supported:
                 raise ValueError("Chưa nhận diện input được hỗ trợ; hãy chọn game Unity, Ren'Py loose-source hoặc asset text có định dạng hỗ trợ.")
         renpy_sdk_missing = False
-        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
+        if engine.engine == "RENPY_COMPILED_ONLY":
+            from vntext.renpy_compiled import extract_compiled_source
+            main, review, stats = extract_compiled_source(src, is_cancelled=is_cancelled)
+        elif engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
             from vntext.renpy_extract import extract_loose_source, extract_native_template_entries
             from vntext.renpy_toolchain import RenPyToolchainError, copy_template_workspace, generate_empty_vietnamese_template, managed_sdk, validate_sdk
             sdk = None

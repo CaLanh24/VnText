@@ -13,9 +13,11 @@ public sealed partial class MainViewModel
     internal static readonly JsonSerializerOptions ImageJson = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, WriteIndented = true };
     private ImageTextDocument? _imageDocument;
     private string _imagePath = "", _imageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.", _imageTaskRoot = "";
+    private string _renderedImage = "", _imagePackage = "", _renderGameRoot = "";
+    private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
     public ImageSource? ImagePreview { get => _imagePreview; private set => Set(ref _imagePreview, value); }
     public ObservableCollection<string> ImageCandidates { get; } = new();
@@ -28,9 +30,30 @@ public sealed partial class MainViewModel
     public RelayCommand RenderImageCommand { get; private set; } = null!;
     public RelayCommand AddImageRegionCommand { get; private set; } = null!;
     public RelayCommand RemoveImageRegionCommand { get; private set; } = null!;
+    public RelayCommand CreateImageDeliveryCommand { get; private set; } = null!;
+    public RelayCommand InstallImageDeliveryCommand { get; private set; } = null!;
+    public RelayCommand RecoverImageDeliveryCommand { get; private set; } = null!;
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void InitImageTextCommands()
     {
+        CreateImageDeliveryCommand = new RelayCommand(_ =>
+        {
+            _imageTaskRoot = NewImageRoot();
+            BeginTask("image_delivery", new { document = _renderedDocument, rendered = _renderedImage,
+                game_root = _renderGameRoot, @out = _imageTaskRoot }, "Đang tạo gói ảnh locale…");
+        }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot));
+        InstallImageDeliveryCommand = new RelayCommand(_ =>
+        {
+            var copy = _pathPicker.PickInputPath(); if (copy is null) return;
+            _imageTaskRoot = NewImageRoot();
+            BeginTask("image_apply", new { package = _imagePackage, game_copy = copy, @out = _imageTaskRoot }, "Đang cài vào bản sao game…");
+        }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath) && Directory.Exists(_imagePackage));
+        RecoverImageDeliveryCommand = new RelayCommand(_ =>
+        {
+            var transaction = _pathPicker.PickOutputFolder(); if (transaction is null) return;
+            _imageTaskRoot = NewImageRoot();
+            BeginTask("image_rollback", new { transaction, @out = _imageTaskRoot }, "Đang phục hồi giao dịch ảnh…");
+        }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath));
         ChooseOcrImageCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(); if (p is not null) ImagePath = p; }, _ => !Busy);
         DiscoverImagesCommand = new RelayCommand(_ => StartImageTask("image_inventory", InputPath), _ => !Busy && Directory.Exists(InputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
@@ -69,7 +92,7 @@ public sealed partial class MainViewModel
             ClearImageReviewState();
             ImagePath = sourcePath;
             _imageDocument = document;
-            foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; region.ReplacementBackgroundApproved = false; region.TransparentTextApproved = false; ImageRegions.Add(region); }
+            foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; region.ReplacementBackgroundApproved = false; region.TransparentTextApproved = false; region.CloneBackgroundApproved = false; ImageRegions.Add(region); }
             _imageSourcePreview = sourcePreview;
             ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
@@ -80,7 +103,7 @@ public sealed partial class MainViewModel
     }
     private void ClearImageReviewState()
     {
-        _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; ImagePath = "";
+        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; ImagePath = "";
     }
     private static BitmapSource LoadImagePreview(string path)
     {
@@ -122,10 +145,11 @@ public sealed partial class MainViewModel
     private void RenderReviewedImage()
     {
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
-        if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
-        { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, hoặc thay region bằng màu đặc."; return; }
+        if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved, r.CloneBackgroundApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
+        { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."; return; }
         _imageTaskRoot = NewImageRoot();
         var document = JsonSerializer.SerializeToElement(CurrentImageReview(), ImageJson);
+        _renderedImage = ""; _imagePackage = ""; _renderedDocument = document; _renderGameRoot = InputPath;
         BeginTask("image_render", new { document, @out = _imageTaskRoot,
             font_path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf") }, "Đang dựng ảnh từ bản dịch duyệt…");
     }
@@ -141,7 +165,12 @@ public sealed partial class MainViewModel
                 ImageStatus = evt.Summary ?? "Chọn ảnh để OCR.";
             }
             else if (task == "image_extract") TryLoadImageReview(Path.Combine(_imageTaskRoot, "image_text.json"));
-            else { ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
+            else if (task is "image_delivery" or "image_apply" or "image_rollback")
+            {
+                if (task == "image_delivery") _imagePackage = _imageTaskRoot;
+                ImageStatus = (evt.Summary ?? "Đã xử lý gói ảnh") + " " + _imageTaskRoot;
+            }
+            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
         }
         catch (Exception e) { ImageStatus = "Không đọc được kết quả ảnh: " + e.Message; }
         finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; }
