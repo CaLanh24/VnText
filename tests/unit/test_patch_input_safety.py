@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tests.lib.work_paths import work_temp_dir
@@ -76,6 +77,21 @@ class PatchInputSafetyTests(unittest.TestCase):
             with self.subTest(raw=raw):
                 self.csv.write_text(raw, encoding="utf-8")
                 with self.assertRaises(ValueError): read_translation_rows(str(self.csv))
+
+    def test_worker_explicit_package_output_uses_separate_patch_directory(self):
+        from vntext_worker.task_runners import run_patch_worker
+        original_csv = self.csv.read_bytes()
+        original_manifest = self.manifest.read_bytes()
+        completed = []
+        with patch("vntext_worker.task_runners._make_callbacks", return_value=(lambda _: None, lambda _: None, completed.append)):
+            run_patch_worker("patch-input-fixture", {"src": str(self.game), "out": str(self.package),
+                             "csv_path": str(self.csv), "manifest_path": str(self.manifest)}, lambda: False)
+        self.assertEqual(len(completed), 1)
+        self.assertTrue(completed[0]["ok"], completed[0])
+        output = self.package / "Patch_Viet_Hoa"
+        self.assertEqual((output / "COPY_TO_GAME_ROOT/dialogue.txt").read_text(encoding="utf-8"), "Xin chào\n")
+        self.assertEqual(self.csv.read_bytes(), original_csv)
+        self.assertEqual(self.manifest.read_bytes(), original_manifest)
 
 
 if __name__ == "__main__": unittest.main()

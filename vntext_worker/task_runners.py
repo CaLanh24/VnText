@@ -327,6 +327,8 @@ def run_patch_worker(
         manifest_path = Path(str(manifest_raw))
         package_dir = csv_path.parent
         patch_out = out or str(package_dir / "Patch_Viet_Hoa")
+        if Path(patch_out).resolve() == package_dir.resolve():
+            patch_out = str(package_dir / "Patch_Viet_Hoa")
     else:
         resolved = resolve_package_with_manifest(out)
         if resolved is None:

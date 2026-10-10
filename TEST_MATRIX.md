@@ -90,6 +90,7 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 
 ## Patch input and bounded native acceptance
 - `test_patch_input_safety`: traversal/absolute source rejection, output/game separation, exact preservation of existing output, duplicate/ambiguous CSV rejection, CSV/manifest source identity and partial-sidecar rejection before output mutation.
+- Explicit worker CSV/manifest plus package-as-output uses separate Patch_Viet_Hoa, completes readback and preserves exact CSV/manifest bytes; actual DEV smoke exercises this caller route after a clean-source build.
 - `test_unity_serialized_patch`: generated v17 SerializedFile, real installed UnityPy extract/write/reopen, exact path ID and translated semantic lines, untouched remaining content, source/backup hashes and released Windows file handle. Direct slot padding is permitted; growth policy is unchanged. This is parser/writer proof, not Unity Editor/gameplay.
 - Existing Ren'Py transaction tests cover rollback/interruption/retry and native contract drift; generated official SDK lookup proves compiled dialogue overlay activation. Other AST coverage, arbitrary games and GUI layout remain separate.
 - Actual PatchInstaller build plus generated install/uninstall must reopen the translated serialized asset and restore exact original hash. Discovery-only executable/data markers are not gameplay or Release provenance. Missing installer skips remain explicit until this independent native gate runs.
