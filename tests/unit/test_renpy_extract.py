@@ -75,14 +75,19 @@ class RenPyExtractTests(unittest.TestCase):
             self.assertFalse((target/"renpy.exe").exists())
             self.assertEqual(inventory["files"],2)
 
-    def test_translation_workspace_fails_closed_for_archives_and_keeps_orphan_compiled_runtime(self):
+    def test_translation_workspace_reads_safe_archive_scripts_and_keeps_orphan_compiled_runtime(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/"source"; game=root/"game"; game.mkdir(parents=True)
-            (game/"archive.rpa").write_bytes(b"synthetic")
             target=Path(temp)/"workspace"
-            with self.assertRaisesRegex(RenPyToolchainError,"Archive Ren'Py"):
-                copy_template_workspace(root,target,translation_only=True)
-            self.assertFalse(target.exists())
+            from tests.unit.test_renpy_archive import write_rpa
+            archive_path=game/"archive.rpa"
+            write_rpa(archive_path,{"game/archived.rpy":b'label start:\n    e "Archive line"\n',
+                                   "game/gui/title.png":b"image fixture"})
+            inventory=copy_template_workspace(root,target,translation_only=True)
+            self.assertEqual((target/"game/archived.rpy").read_bytes(),b'label start:\n    e "Archive line"\n')
+            self.assertNotIn("game/gui/title.png",inventory["archive_sources"])
+            self.assertEqual(inventory["files"],1)
+            self.assertEqual(inventory["archive_sources"]["game/archived.rpy"]["archive_path"],"game/archive.rpa")
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)/"source"; game=root/"game"; game.mkdir(parents=True)
             (game/"orphan.rpyc").write_bytes(b"opaque compiled runtime")

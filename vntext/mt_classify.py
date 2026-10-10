@@ -31,9 +31,10 @@ DOMAIN_LIKE = re.compile(r"^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z]{2,12})+$")
 # the battle-tested legacy rules below.  The policy fingerprint is explicit so
 # trace/cache consumers can invalidate decisions without hashing source files
 # or changing the CSV contract.
-CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-2"
+CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-3"
 _CLASSIFIER_POLICY_RULES = (
     "hard-technical-veto",
+    "validated-renpy-native-identity-before-generic-token-heuristics",
     "metadata-engine-family",
     "authoritative-route-adapter",
     "review-only-and-raw-route-boundary",
@@ -554,6 +555,20 @@ def is_technical_token(src: str) -> bool:
     return False
 
 
+def _validated_renpy_native_unit(row: Mapping[str, Any]) -> str:
+    contract = row.get("native_contract")
+    if not isinstance(contract, dict) or contract.get("engine") != "renpy":
+        return ""
+    if row.get("import_method") not in {"renpy_dialogue", "renpy_string"}:
+        return ""
+    from vntext.patchability import validate_renpy_contract
+
+    locator = row.get("locator")
+    if not isinstance(locator, dict) or validate_renpy_contract(dict(row)):
+        return ""
+    return str(locator.get("unit_type") or "")
+
+
 def classify_row(row: dict) -> tuple[str, str]:
     """Return (action, reason).
 
@@ -569,13 +584,14 @@ def classify_row(row: dict) -> tuple[str, str]:
     src = str(row.get("source_text") or "")
     if not src.strip():
         return "skip_technical", "empty source"
+    native_renpy_unit = _validated_renpy_native_unit(row)
     # Structured extractors intentionally inspect field values, so a runtime
     # config XML can contain sentence-shaped comments that pass text quality.
     # Apply the same path boundary at the package/MT boundary as plain-text
     # extraction.  This also quarantines rows from packages made by an older
     # classifier when they are rerun.
     file_path = str(row.get("file_path") or "").strip()
-    if file_path and is_technical_path(Path(file_path)):
+    if file_path and is_technical_path(Path(file_path)) and not native_renpy_unit:
         return "skip_technical", "technical runtime/config path — không phải thoại"
     # Notes/debug placeholders accidentally imported from Naninovel are not
     # player-visible copy and must live in technical_skipped.csv.
@@ -590,7 +606,7 @@ def classify_row(row: dict) -> tuple[str, str]:
         return "done", "has translation"
 
     ctx = str(row.get("context") or "")
-    if mt_check.is_script_identifier(src, ctx):
+    if mt_check.is_script_identifier(src, ctx) and not native_renpy_unit:
         return "skip_technical", "naninovel label/actor id"
 
     if is_naninovel_token_pool(
@@ -610,7 +626,17 @@ def classify_row(row: dict) -> tuple[str, str]:
             or ":choice" in ctx_l
         ):
             return "copy_literal", "choice domain label — giữ nguyên"
-        return "skip_technical", "path/id/hash token — không phải thoại"
+        if not native_renpy_unit:
+            return "skip_technical", "path/id/hash token — không phải thoại"
+        if native_renpy_unit == "dialogue" and re.fullmatch(r"\s*\{nw\}\s*", src, flags=re.IGNORECASE):
+            return "skip_technical", "Ren'Py control-only {nw} token"
+
+    if native_renpy_unit:
+        native_body = mt_check.strip_technical(src)
+        if not mt_check.WORD.findall(native_body) and not any(ord(c) > 127 for c in native_body):
+            if re.search(r"\[[A-Za-z][A-Za-z0-9_.:-]*\]", src):
+                return "copy_literal", "Ren'Py placeholder-only dialogue — giữ nguyên"
+            return "skip_technical", "punctuation/number only"
 
     if (
         len(src.strip().split()) == 1

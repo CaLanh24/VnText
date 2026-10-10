@@ -60,11 +60,16 @@ Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/v
 
 Ren'Py native extract cần SDK8.5.3 được pin/hash ở runtime, nằm trong
 `.dev-env/tools/renpy-8.5.3`; thiếu SDK thì chỉ có kết quả một phần. SDK parse
-loose source trong workspace tạm; archive `.rpa` và compiled-only/mixed-engine
-không được tự coi là extract hoàn chỉnh. Image text là tiện ích review riêng:
-Windows `Windows.Media.Ocr` en-US và Pillow; chỉ ảnh tĩnh PNG/JPEG/WebP, không
-đọc archive/animation. OCR không có confidence score nên cần người duyệt; render
-chỉ thay vùng nền phẳng đã duyệt và xuất PNG riêng, không chứng minh patch game.
+loose source trong workspace tạm và tạo template từ script source trong RPA2/3
+đã qua kiểm tra index/member. Compiled-only/mixed-engine vẫn fail-closed: fixture
+.rpyc tạo bằng SDK trả exit 0 cho lệnh translate nhưng không sinh dialogue unit
+hay native identity đọc lại. Image text là tiện ích review riêng: Windows
+`Windows.Media.Ocr` en-US và Pillow; inventory ảnh tĩnh PNG/JPEG/WebP từ loose
+tree và RPA2/3, không đọc animation. OCR không có confidence score nên cần người
+duyệt; render xuất PNG riêng, mặc định dùng Windows Arial (có fixture tiếng Việt),
+hỗ trợ nền phẳng, thay toàn region bằng nền đã duyệt, hoặc xóa region về alpha 0
+rồi vẽ glyph antialias. Vùng ngoài region và ảnh nguồn
+được giữ nguyên; đây không phải bằng chứng native patch game.
 
 Nếu thiếu, báo **một danh sách gộp**, đường dẫn/version đã kiểm, gate bị chặn,
 nguồn tải và quyền cần thiết. Không cài admin, thay ACL/profile, chấp thuận license

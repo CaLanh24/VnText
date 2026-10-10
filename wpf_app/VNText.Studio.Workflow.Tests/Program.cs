@@ -434,13 +434,13 @@ internal static class Program
 
     private static void ImageText_EditInvalidatesApproval()
     {
-        var region = new ImageTextRegion { SourceText = "Hello", Translation = "Xin chào", Approved = true, FlatBackgroundApproved = true };
+        var region = new ImageTextRegion { SourceText = "Hello", Translation = "Xin chào", Approved = true, FlatBackgroundApproved = true, TransparentTextApproved = true };
         region.Translation = "Chào";
         AssertTrue(!region.Approved);
         region.Approved = true; region.X = 20;
         AssertTrue(!region.Approved && !region.FlatBackgroundApproved);
-        region.Approved = true; region.FlatBackgroundApproved = true; region.Background = "#000000";
-        AssertTrue(!region.Approved && !region.FlatBackgroundApproved);
+        region.Approved = true; region.FlatBackgroundApproved = true; region.TransparentTextApproved = true; region.Background = "#000000";
+        AssertTrue(!region.Approved && !region.FlatBackgroundApproved && !region.TransparentTextApproved);
     }
 
     private static void ImageText_ReviewAndApprovalStayIndependent()

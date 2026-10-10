@@ -1090,6 +1090,8 @@ def run_extract_task(
         engine = detect_engine(src)
         if not Path(src).exists():
             raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
+        if engine.engine == "RENPY_ARCHIVE_UNSUPPORTED":
+            raise ValueError(f"Archive Ren'Py lỗi/không hỗ trợ; không fallback sang Unity. Chi tiết: {engine.reason}")
         if engine.engine in {"RENPY_COMPILED_ONLY", "MIXED"}:
             raise ValueError("Game Ren'Py chỉ có compiled script hoặc trộn engine chưa được hỗ trợ. Hãy chọn bản loose-source hoặc tách đúng engine; không chạy route Unity.")
         if any((Path(out) / name).exists() for name in ("translation.csv", "manifest.json")):
@@ -1117,7 +1119,7 @@ def run_extract_task(
             if not supported:
                 raise ValueError("Chưa nhận diện input được hỗ trợ; hãy chọn game Unity, Ren'Py loose-source hoặc asset text có định dạng hỗ trợ.")
         renpy_sdk_missing = False
-        if engine.engine == "RENPY_LOOSE_SOURCE":
+        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
             from vntext.renpy_extract import extract_loose_source, extract_native_template_entries
             from vntext.renpy_toolchain import RenPyToolchainError, copy_template_workspace, generate_empty_vietnamese_template, managed_sdk, validate_sdk
             sdk = None
@@ -1149,6 +1151,8 @@ def run_extract_task(
                     raise RenPyToolchainError(f"Công cụ Ren'Py chưa hợp lệ; cần SDK 8.5.3. Chọn lại thư mục công cụ và output mới. Chi tiết: {exc}") from exc
                 log(f"Ren'Py SDK managed không hợp lệ; tiếp tục không native patch: {exc}")
             if sdk is None:
+                if engine.engine == "RENPY_ARCHIVE_SOURCE":
+                    raise RenPyToolchainError("Source Ren'Py trong RPA cần SDK 8.5.3 để tạo native identity; không thể trả kết quả loose-parser một phần.")
                 renpy_sdk_missing = True
                 log("Thiếu công cụ Ren'Py: đã lấy text một phần; lời thoại cần mã định danh được giữ để xem lại. Kết quả chưa đầy đủ.")
                 main, review, stats = extract_loose_source(src)
@@ -1163,6 +1167,7 @@ def run_extract_task(
                         src,
                         workspace / "game" / "tl" / "vietnamese",
                         language="vietnamese",
+                        archive_sources=inventory.get("archive_sources"),
                     )
                 log(f"Ren'Py SDK {sdk.version} đã tạo native template identity trên workspace tạm.")
         else:
@@ -1205,11 +1210,25 @@ def run_extract_task(
         )
         main_count = package_stats["main_entries"]
         review_count = sum(package_stats[key] for key in ("review_only_entries", "raw_candidate_entries", "raw_unpatchable_entries"))
+        excluded_engine_common = int(package_stats.get("renpy_engine_common_excluded_review_entries", 0))
+        technical_skipped = int(package_stats["technical_skipped_entries"] + package_stats["auto_raw_rejected"])
         extract_errors = [str(item) for item in (stats.get("errors") or []) if str(item)]
+        native_units = int(stats.get("native_units") or 0)
+        native_accounted = main_count + review_count + technical_skipped + excluded_engine_common
+        native_accounting_complete = not native_units or native_units == native_accounted
+        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"} and not renpy_sdk_missing and not native_accounting_complete:
+            extract_errors.append(
+                f"Ren'Py native accounting mismatch: native={native_units}, package={native_accounted} "
+                "(main+review+technical-skipped+engine-common-excluded)."
+            )
         if separate_review:
             summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv, {review_count} review/extract-only. Xuất tại: {out}"
         else:
             summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv. Xuất tại: {out}"
+        if excluded_engine_common:
+            summary += f"; đã loại {excluded_engine_common} chuỗi Ren'Py common khỏi phạm vi text của game"
+        if technical_skipped:
+            summary += f"; {technical_skipped} dòng kỹ thuật được ghi riêng"
         if extract_errors:
             summary = (
                 f"Extract chưa hoàn tất: đã tạo partial package tại {out}; "
@@ -1253,11 +1272,20 @@ def run_extract_task(
             "review_only": review_count,
             "blocked": 0,
             "extract_status": extract_status,
+            "excluded_engine_common": excluded_engine_common,
+            "technical_skipped": technical_skipped,
+            "native_units": native_units,
+            "native_accounted": native_accounted,
+            "native_accounting_complete": native_accounting_complete,
         }
         (Path(out) / "extract_status.json").write_text(json.dumps({
             "complete": not completion_blockers, "status": extract_status,
             "main": main_count, "review": review_count,
-            "skipped": package_stats["technical_skipped_entries"] + package_stats["auto_raw_rejected"],
+            "skipped": technical_skipped,
+            "excluded_engine_common": excluded_engine_common,
+            "native_units": native_units,
+            "native_accounted": native_accounted,
+            "native_accounting_complete": native_accounting_complete,
             "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         if extract_errors or review_count:

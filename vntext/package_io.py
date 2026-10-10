@@ -200,6 +200,7 @@ def _write_package_legacy(
                 "review_only": entry.review_only and entry.import_method != "sqlite_text_candidate",
                 "locator": entry.locator,
                 "patch_proof": entry.patch_proof,
+                "native_contract": entry.native_contract,
             }
         )
         action, reason, _decision = classify_row_authoritative(classifier_row)
@@ -282,6 +283,21 @@ def _write_package_legacy(
         manifest_entries = all_entries + list(raw_unpatchable_entries)
 
     stats = dict(stats)
+    engine_common_exclusions = stats.pop("renpy_engine_common_exclusion_entries", [])
+    if engine_common_exclusions:
+        common_report = {
+            "schema_version": 1,
+            "scope": "Ren'Py engine common strings excluded from game-owned translation",
+            "count": len(engine_common_exclusions),
+            "reason": "source provenance owner is renpy_common; these rows are not game-owned patch targets",
+            "entries": engine_common_exclusions,
+        }
+        (out / "renpy_engine_common_exclusions.json").write_text(
+            json.dumps(common_report, ensure_ascii=False, indent=2),
+            "utf-8",
+        )
+    if engine_common_exclusions:
+        stats["renpy_engine_common_excluded_review_entries"] = len(engine_common_exclusions)
     stats["main_entries"] = len(main_entries)
     stats["review_entries"] = len(review_entries)
     stats["technical_skipped_entries"] = len(technical_skipped)
@@ -381,6 +397,7 @@ def _prepare_trace_plan(
                 "review_only": entry.review_only and entry.import_method != "sqlite_text_candidate",
                 "locator": entry.locator,
                 "patch_proof": entry.patch_proof,
+                "native_contract": entry.native_contract,
             }
         )
         action, reason, _decision = classify_row_authoritative(classifier_row)
@@ -598,6 +615,7 @@ def _trace_extract_plan(trace, plan: dict) -> None:
                 "review_only": entry.review_only,
                 "locator": entry.locator,
                 "patch_proof": entry.patch_proof,
+                "native_contract": entry.native_contract,
             }
         )
         decision = classify_row_v2(classifier_row)

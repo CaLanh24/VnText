@@ -12,6 +12,7 @@ import urllib.request
 import zipfile
 import time
 import stat
+from vntext.renpy_archive import RenPyArchive, RenPyArchiveError
 
 
 SUPPORTED_VERSION = "8.5.3"
@@ -142,7 +143,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
         if not relative.parts or relative.parts[0] != "game": return False
         if any(part in {"cache", "saves", "__pycache__"} for part in relative.parts): return False
         if p.suffix.lower() in {".rpa", ".rpyc", ".rpymc"}:
-            if p.suffix.lower() == ".rpa": raise RenPyToolchainError("Archive Ren'Py cần unpack source an toàn trước; workspace này chỉ nhận loose-source.")
+            if p.suffix.lower() == ".rpa": return False
             counterpart = p.with_suffix(".rpy" if p.suffix.lower()==".rpyc" else ".rpym")
             return not counterpart.is_file()
         return p.suffix.lower() not in media
@@ -158,6 +159,36 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
             raise RenPyToolchainError("Workspace Ren'Py không hỗ trợ link/reparse point; chưa tạo bản sao.")
         if p.is_file() and selected(p):
             total += info.st_size; files += 1
+    archive_sources = []
+    archive_member_names: set[str] = set()
+    if translation_only:
+        for archive_path in sorted((source / "game").rglob("*.rpa")) if (source / "game").is_dir() else []:
+            archive_relative = archive_path.relative_to(source).as_posix()
+            if any(part.casefold() in {"cache", "saves", "__pycache__", "tl"} for part in Path(archive_relative).parts):
+                continue
+            try:
+                archive = RenPyArchive(archive_path)
+                for member in archive.members:
+                    member_path = Path(member)
+                    if member_path.parts[0].casefold() != "game" or member_path.suffix.casefold() not in {".rpy", ".rpym"}:
+                        continue
+                    if any(part.casefold() in {"cache", "saves", "__pycache__", "tl"} for part in member_path.parts):
+                        continue
+                    loose = source / Path(*member_path.parts)
+                    if loose.is_file():
+                        continue
+                    if member in archive_member_names:
+                        raise RenPyToolchainError(f"RPA scripts collide at {member}; refusing ambiguous source ownership")
+                    archived = archive.read_member(member)
+                    archive_member_names.add(member)
+                    total += len(archived["content"]); files += 1
+                    archive_sources.append({"archive_path": archive_relative, "archive_sha256": archived["container_sha256"],
+                                            "member_name": member, "member_sha256": archived["member_sha256"],
+                                            "size": len(archived["content"])})
+            except RenPyArchiveError as exc:
+                raise RenPyToolchainError(f"Ren'Py archive is unsupported or unsafe ({archive_relative}): {exc}") from exc
+        if total > 128 * 1024 * 1024:
+            raise RenPyToolchainError("Archived Ren'Py source exceeds 128 MiB workspace limit")
     if shutil.disk_usage(target.parent).free < total + 16 * 1024 * 1024:
         raise RenPyToolchainError(f"Không đủ dung lượng workspace Ren'Py ({total} bytes); chọn nơi xuất còn trống hoặc lấy text một phần không SDK.")
     repo = Path(__file__).resolve().parent.parent
@@ -183,7 +214,25 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
     def ignored(directory, names):
         return [name for name in names if not selected(Path(directory) / name)]
     shutil.copytree(source, target, copy_function=copy_file, ignore=ignored if translation_only else None)
-    return {"files": files, "bytes": total}
+    resolved_archive_sources = {}
+    for record in archive_sources:
+        if is_cancelled and is_cancelled(): raise RenPyToolchainError("cancelled")
+        archive = RenPyArchive(source / record["archive_path"])
+        if archive.container_sha256 != record["archive_sha256"]:
+            raise RenPyToolchainError(f"RPA container changed during workspace copy: {record['archive_path']}")
+        member = archive.read_member(record["member_name"])
+        if member["member_sha256"] != record["member_sha256"]:
+            raise RenPyToolchainError(f"RPA script changed during workspace copy: {record['member_name']}")
+        destination = target / Path(*Path(record["member_name"]).parts)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with destination.open("xb") as stream: stream.write(member["content"])
+        except FileExistsError as exc:
+            raise RenPyToolchainError(f"RPA script collides with copied source: {record['member_name']}") from exc
+        copied += len(member["content"])
+        if copied > total: raise RenPyToolchainError("RPA source grew after preflight; stopped copy")
+        resolved_archive_sources[record["member_name"]] = {**record}
+    return {"files": files, "bytes": total, "archive_sources": resolved_archive_sources}
 
 
 def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, timeout: int = 120, is_cancelled=None) -> subprocess.CompletedProcess[str]:
@@ -192,8 +241,8 @@ def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, 
     if not (target / "game").is_dir():
         raise RenPyToolchainError("template workspace must be a Ren'Py game copy with game/")
     command = [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo", "--savedir", str(target / ".native-saves")]
-    env = os.environ.copy()
     temp = target / ".native-temp"; temp.mkdir(exist_ok=True)
+    env = os.environ.copy()
     env.update(PYTHONDONTWRITEBYTECODE="1", TEMP=str(temp), TMP=str(temp), TMPDIR=str(temp))
     proc = subprocess.Popen(
         command,

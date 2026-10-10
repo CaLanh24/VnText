@@ -13,6 +13,9 @@ from vntext.package_io import CSV_FIELDS, read_csv_rows_file, write_csv_rows_fil
 from vntext.entry import Entry
 from vntext.patch_pipeline import apply_translation_package
 from vntext.patchability import make_renpy_contract, validate_renpy_contract
+from tests.lib.work_paths import work_temp_dir
+
+WORK = work_temp_dir("renpy-patch-tests")
 
 
 def _native_contract(entry: dict, source_sha256: str) -> dict:
@@ -38,6 +41,16 @@ def _native_quote(value: str) -> str:
 
 
 class RenPyPatchTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        cls._managed_temp_root = WORK
+        tempfile.tempdir = str(cls._managed_temp_root)
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
     @staticmethod
     def _renpy_pair(out: Path) -> tuple[Path, Path]:
         payload = out / "COPY_TO_GAME_ROOT"
@@ -139,6 +152,36 @@ class RenPyPatchTests(unittest.TestCase):
             overlay = (base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
             self.assertIn("translate vietnamese start_a:", overlay)
             self.assertIn("translate vietnamese start_b:", overlay)
+
+    def test_archive_member_source_precondition_is_verified_before_overlay(self):
+        from tests.unit.test_renpy_archive import write_rpa
+        from vntext.renpy_archive import RenPyArchive
+        with tempfile.TemporaryDirectory() as temp:
+            base=Path(temp); game,csv,manifest=self._package(base)
+            source=game/'game/script.rpy'; content=source.read_bytes(); source.unlink()
+            archive_path=game/'game/scripts.rpa'; write_rpa(archive_path,{'game/script.rpy':content})
+            archived=RenPyArchive(archive_path).read_member('game/script.rpy')
+            document=json.loads(manifest.read_text(encoding='utf-8'))
+            for entry in document['entries']:
+                entry['native_contract']=_native_contract(entry,archived['member_sha256'])
+                entry['native_contract']['provenance']['source_container']={
+                    'kind':'rpa','path':'game/scripts.rpa','container_sha256':archived['container_sha256'],
+                    'member_name':'game/script.rpy','member_sha256':archived['member_sha256']}
+            manifest.write_text(json.dumps(document),encoding='utf-8')
+            fields,rows=read_csv_rows_file(csv)
+            by_key={entry['key']:entry for entry in document['entries']}
+            for row in rows: row['native_contract']=by_key[row['key']]['native_contract']
+            write_csv_rows_file(csv,fields,rows)
+            original_hash=document['entries'][0]['native_contract']['provenance']['source_container']['container_sha256']
+            document['entries'][0]['native_contract']['provenance']['source_container']['container_sha256']='0'*64
+            manifest.write_text(json.dumps(document),encoding='utf-8')
+            with self.assertRaisesRegex(RenPyPatchError,'container precondition drift'):
+                apply_renpy_translation_package(str(csv),str(manifest),str(game),str(base/'blocked'))
+            document['entries'][0]['native_contract']['provenance']['source_container']['container_sha256']=original_hash
+            manifest.write_text(json.dumps(document),encoding='utf-8')
+            apply_renpy_translation_package(str(csv),str(manifest),str(game),str(base/'out'))
+            overlay=(base/'out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy').read_text(encoding='utf-8')
+            self.assertIn('translate vietnamese start_a:',overlay)
 
     def test_writes_overlay_without_touching_source(self):
         with tempfile.TemporaryDirectory() as temp:

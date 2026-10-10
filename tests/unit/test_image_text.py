@@ -66,12 +66,55 @@ class ImageTextTests(unittest.TestCase):
         self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()
         with self.assertRaisesRegex(ValueError,'không đủ phẳng'):self.render()
         self.assertFalse((self.root/'out.png').exists())
+    def test_complex_background_can_be_explicitly_replaced(self):
+        image=Image.effect_noise((300,120),70).convert('RGBA');image.putalpha(170);image.save(self.source)
+        self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()
+        self.document['regions'][0]['replacement_background_approved']=True
+        self.document['regions'][0]['flat_background_approved']=False
+        self.render()
+        with Image.open(self.root/'out.png') as output:
+            self.assertEqual(output.getpixel((0,0))[3],170)
+            self.assertEqual(output.getpixel((20,20))[3],255)
+            self.assertEqual(output.getpixel((289,79))[:3],(255,255,255))
+        self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(),self.document['source_sha256'])
     def test_transparent_glyph_is_rejected_without_clipping_new_text(self):
         image=Image.new('RGBA',(300,120),(0,0,0,0))
         ImageDraw.Draw(image).text((10,10),'OLD',font=ImageFont.truetype(str(FONT),30),fill=(0,0,0,255));image.save(self.source)
         digest=hashlib.sha256(self.source.read_bytes()).hexdigest();self.document['source_sha256']=digest
         with self.assertRaisesRegex(ValueError,'alpha trong suốt'):self.render()
         self.assertFalse((self.root/'out.png').exists());self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(),digest)
+    def test_transparent_glyph_replacement_keeps_alpha_and_pixels_outside_region(self):
+        image=Image.new('RGBA',(300,120),(0,0,0,0))
+        ImageDraw.Draw(image).text((16,18),'OLD',font=ImageFont.truetype(str(FONT),42),fill=(20,30,40,255))
+        image.save(self.source)
+        original=Image.open(self.source).convert('RGBA')
+        self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()
+        self.document['regions'][0].update(box=[10,10,280,70],translation='Xin chào',approved=True,
+                                           flat_background_approved=False,transparent_text_approved=True,font_size=34)
+        self.render()
+        with Image.open(self.root/'out.png') as rendered:
+            rendered=rendered.convert('RGBA')
+            self.assertEqual(rendered.size,original.size)
+            for y in range(original.height):
+                for x in range(original.width):
+                    if not (10 <= x < 290 and 10 <= y < 80):
+                        self.assertEqual(rendered.getpixel((x,y)),original.getpixel((x,y)))
+            before=original.getchannel('A').crop((10,10,290,80)).tobytes()
+            after=rendered.getchannel('A').crop((10,10,290,80))
+            self.assertNotEqual(after.tobytes(),before)
+            self.assertGreater(after.getextrema()[1],0)
+            alpha_histogram=after.histogram()
+            self.assertTrue(any(alpha_histogram[1:255]))
+        self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(),self.document['source_sha256'])
+    def test_transparent_region_replacement_preserves_alpha_outside(self):
+        image=Image.new('RGBA',(300,120),(0,0,0,0));ImageDraw.Draw(image).rectangle((10,10,289,79),fill=(255,255,255,100));image.save(self.source)
+        self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest()
+        self.document['regions'][0]['replacement_background_approved']=True
+        self.document['regions'][0]['flat_background_approved']=False
+        self.render()
+        with Image.open(self.root/'out.png') as output:
+            self.assertEqual(output.getpixel((0,0))[3],0)
+            self.assertEqual(output.getpixel((20,20))[3],255)
     def test_alpha_outside_opaque_region_is_preserved(self):
         image=Image.new('RGBA',(300,120),(255,255,255,0));ImageDraw.Draw(image).rectangle((10,10,289,79),fill='white');image.save(self.source)
         self.document['source_sha256']=hashlib.sha256(self.source.read_bytes()).hexdigest();self.render()
@@ -91,6 +134,27 @@ class ImageTextTests(unittest.TestCase):
         (self.root/'other.txt').write_text('not image');result=discover_images(self.root)
         self.assertEqual(result['image_paths'],[str(self.source)]);self.assertTrue(result['complete'])
         with self.assertRaisesRegex(ValueError,'cancelled'):discover_images(self.root,is_cancelled=lambda:True)
+    def test_rpa_images_keep_container_member_identity_and_reject_container_drift(self):
+        from io import BytesIO
+        from tests.unit.test_renpy_archive import write_rpa
+        archive_path=self.root/'images.rpa'; encoded=BytesIO();Image.new('RGBA',(40,20),(255,255,255,255)).save(encoded,format='PNG')
+        content=encoded.getvalue();write_rpa(archive_path,{'game/gui/title.png':content})
+        inventory=discover_images(self.root)
+        reference=next(item for item in inventory['image_paths'] if item.startswith('rpa-member://'))
+        def fake_ocr(source,**kwargs):
+            _path,image,digest=__import__('vntext.image_text',fromlist=['_image'])._image(source)
+            return {'schema':1,'source_path':str(source),'source_sha256':digest,'width':image.width,'height':image.height,
+                    'backend':'fixture','confidence':None,'status':'NO_TEXT','regions':[]}
+        out=self.root/'archive-review'
+        with patch('vntext_worker.image_tasks.recognize_image',side_effect=fake_ocr), patch('vntext_worker.image_tasks.emit_complete') as complete:
+            run_image_worker('archive','image_extract',{'src':reference,'out':str(out)},lambda:False)
+        self.assertTrue(complete.call_args.kwargs['ok'])
+        review=json.loads((out/'image_text.json').read_text(encoding='utf-8'))
+        self.assertEqual(review['source_member_name'],'game/gui/title.png')
+        self.assertEqual(review['source_member_sha256'],hashlib.sha256(content).hexdigest())
+        changed=bytearray(archive_path.read_bytes());changed[34]^=1;archive_path.write_bytes(changed)
+        with self.assertRaisesRegex(ValueError,'đã đổi'):
+            run_image_worker('archive','image_render',{'document':review,'out':str(self.root/'changed-render'),'font_path':str(FONT)},lambda:False)
     def test_worker_render_retains_review_and_completion(self):
         with patch('vntext_worker.image_tasks.emit_complete') as complete:
             run_image_worker('image','image_render',{'document':self.document,'out':str(self.root/'render'),'font_path':str(FONT)},lambda:False)

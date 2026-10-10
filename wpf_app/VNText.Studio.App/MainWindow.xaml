@@ -450,7 +450,7 @@
                                 </Grid>
                                 <Expander Grid.Row="8" Header="Text trong ảnh — OCR và bản dịch duyệt" Margin="0,16,0,0">
                                     <StackPanel Margin="0,10,0,0">
-                                        <TextBlock Text="PNG/JPEG/WebP tĩnh. OCR tiếng Anh cần review; ảnh động/archive và nền phức tạp chưa hỗ trợ. Output riêng, không tự patch game." TextWrapping="Wrap" />
+                                        <TextBlock Text="PNG/JPEG/WebP tĩnh. OCR tiếng Anh cần review. Chữ trên nền trong suốt có thể được thay bằng chữ mới; pixel ngoài region giữ nguyên. Nền phức tạp cần xác nhận thay toàn region bằng màu đặc. Output riêng, không tự patch game." TextWrapping="Wrap" />
                                         <WrapPanel Margin="0,8,0,8">
                                             <Button Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Margin="0,0,6,6" />
                                             <Button Content="Chọn ảnh" Command="{Binding ChooseOcrImageCommand}" Margin="0,0,6,6" />
@@ -471,7 +471,7 @@
                                                 </ItemsControl>
                                             </Grid>
                                         </Viewbox>
-                                        <TextBlock Text="Sửa text OCR, bản dịch và crop x/y/rộng/cao (pixel gốc). Thêm xuống dòng nếu cần; chọn màu nền/chữ RGB và font size. Sửa nội dung sẽ hủy duyệt." TextWrapping="Wrap" Margin="0,8,0,8" />
+                                        <TextBlock Text="Sửa text OCR, bản dịch và crop x/y/rộng/cao (pixel gốc). Với chữ trong suốt, region đã chọn sẽ được làm trong suốt rồi vẽ chữ mới; xác nhận chỉ khi vùng đó không chứa artwork cần giữ. Artwork phức tạp cần xác nhận thay toàn region bằng màu đặc. Chọn đúng một chế độ; pixel ngoài region giữ nguyên." TextWrapping="Wrap" Margin="0,8,0,8" />
                                         <DataGrid ItemsSource="{Binding ImageRegions}" AutoGenerateColumns="False" CanUserAddRows="False" Height="190">
                                             <DataGrid.Style><Style TargetType="DataGrid"><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger></Style.Triggers></Style></DataGrid.Style>
                                             <DataGrid.Columns>
@@ -488,6 +488,8 @@
                                                 <DataGridTextColumn Header="Nền RGB" Binding="{Binding Background}" Width="85" />
                                                 <DataGridTextColumn Header="Chữ RGB" Binding="{Binding Foreground}" Width="85" />
                                                 <DataGridCheckBoxColumn Header="Nền phẳng đã kiểm" Binding="{Binding FlatBackgroundApproved}" Width="100" />
+                                                <DataGridCheckBoxColumn Header="Thay nền region bằng màu đặc" Binding="{Binding ReplacementBackgroundApproved}" Width="130" />
+                                                <DataGridCheckBoxColumn Header="Thay chữ trong suốt" Binding="{Binding TransparentTextApproved}" Width="105" />
                                                 <DataGridCheckBoxColumn Header="Duyệt text/crop" Binding="{Binding Approved}" Width="90" />
                                                 <DataGridTemplateColumn Header="Xóa" Width="45"><DataGridTemplateColumn.CellTemplate><DataTemplate>
                                                     <Button Content="Xóa" Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />

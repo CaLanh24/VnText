@@ -5,7 +5,7 @@ import ast
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import shutil
 import tempfile
@@ -13,6 +13,7 @@ import tempfile
 from vntext.patch_gate import load_review_only_keys, patch_skip_reason
 from vntext.package_io import read_translation_rows
 from vntext.patchability import validate_renpy_contract
+from vntext.renpy_archive import RenPyArchive, RenPyArchiveError
 
 
 class RenPyPatchError(ValueError):
@@ -554,7 +555,9 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     requested_strings: dict[tuple[str, str], str] = {}
     native_ids: set[str] = set()
     source_snapshots: dict[Path, str] = {}
-    source_cache: dict[Path, str] = {}
+    source_cache: dict[tuple[Path, str], str] = {}
+    archive_cache: dict[Path, RenPyArchive] = {}
+    archive_identities: dict[Path, str] = {}
     for entry in entries:
         key = str(entry.get("key") or "")
         row = rows.get(key)
@@ -568,23 +571,52 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         if contract_reason:
             raise RenPyPatchError(f"Ren'Py native contract blocked: {contract_reason}")
         source_path = (root / str(entry.get("file_path") or "")).resolve()
-        try:
-            source_path.relative_to(root)
-        except ValueError as exc:
-            raise RenPyPatchError("Ren'Py locator escapes game root") from exc
+        provenance = entry.get("native_contract", {}).get("provenance", {})
+        container = provenance.get("source_container") if isinstance(provenance, dict) else None
+        member_name = ""
+        source_key: tuple[Path, str]
+        if isinstance(container, dict) and container.get("kind") == "rpa":
+            archive_relative = str(container.get("path") or "")
+            member_name = str(container.get("member_name") or "")
+            archive_posix = PurePosixPath(archive_relative)
+            if archive_posix.is_absolute() or not archive_relative or any(part in {"", ".", ".."} for part in archive_relative.split("/")):
+                raise RenPyPatchError("Ren'Py RPA container path is unsafe")
+            if member_name != str(entry.get("file_path") or "").replace("\\", "/"):
+                raise RenPyPatchError("Ren'Py RPA member identity mismatch")
+            source_path = (root / Path(*archive_posix.parts)).resolve()
+            try: source_path.relative_to(root)
+            except ValueError as exc: raise RenPyPatchError("Ren'Py RPA container escapes game root") from exc
+            source_key = (source_path, member_name)
+        else:
+            try: source_path.relative_to(root)
+            except ValueError as exc: raise RenPyPatchError("Ren'Py locator escapes game root") from exc
+            source_key = (source_path, "")
         source_text = str(entry.get("source_text") or "")
-        if not source_path.is_file():
-            raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
-        if source_path not in source_cache:
+        if source_key not in source_cache:
             try:
-                source_cache[source_path] = source_path.read_text(encoding="utf-8")
-                source_snapshots[source_path] = _sha256(source_path)
-            except (OSError, UnicodeError) as exc:
+                if container:
+                    if source_path not in archive_cache:
+                        archive_cache[source_path] = RenPyArchive(source_path)
+                    archive = archive_cache[source_path]
+                    if archive.container_sha256 != container.get("container_sha256"):
+                        raise RenPyPatchError("Ren'Py RPA container precondition drift")
+                    archived = archive.read_member(member_name)
+                    if archived["member_sha256"] != container.get("member_sha256"):
+                        raise RenPyPatchError("Ren'Py RPA member precondition drift")
+                    source_cache[source_key] = archived["content"].decode("utf-8")
+                    source_snapshots[source_path] = archive.container_sha256
+                    archive_identities[source_path] = archive.container_sha256
+                else:
+                    if not source_path.is_file():
+                        raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
+                    source_cache[source_key] = source_path.read_text(encoding="utf-8")
+                    source_snapshots[source_path] = _sha256(source_path)
+            except (OSError, UnicodeError, RenPyArchiveError) as exc:
                 raise RenPyPatchError(
                     f"Ren'Py source precondition drift: {entry.get('file_path')}"
                 ) from exc
-        script = source_cache[source_path]
-        source_sha256 = source_snapshots[source_path]
+        script = source_cache[source_key]
+        source_sha256 = (container.get("member_sha256") if container else source_snapshots[source_path])
         if source_sha256 != entry["native_contract"]["precondition"]["source_sha256"]:
             raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
         if not _source_present(script, source_text):
@@ -608,6 +640,9 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             if prior is not None and prior != translation:
                 raise RenPyPatchError(f"conflicting Ren'Py string translations for {source!r}")
             requested_strings[string_identity] = translation
+    for archive_path, expected_hash in archive_identities.items():
+        if RenPyArchive(archive_path).container_sha256 != expected_hash:
+            raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")
     existing_strings, existing_snapshots = _inventory_target_language_mappings(root, "vietnamese")
     _verify_existing_snapshots(existing_snapshots)
     strings: dict[tuple[str, str], str] = {}

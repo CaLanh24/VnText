@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from vntext.renpy_archive import RenPyArchive, RenPyArchiveError
 
 
 UNITY_MARKERS = ("*_Data",)
@@ -31,6 +32,8 @@ def detect_engine(path: str | Path) -> EngineDetection:
     game = root / "game"
     loose = []
     compiled = []
+    archived_loose = []
+    archive_errors = []
     if game.is_dir():
         for candidate in game.rglob("*"):
             if not candidate.is_file():
@@ -40,9 +43,23 @@ def detect_engine(path: str | Path) -> EngineDetection:
                 loose.append(candidate)
             elif suffix in {".rpyc", ".rpymc"}:
                 compiled.append(candidate)
+            elif suffix == ".rpa":
+                try:
+                    archive = RenPyArchive(candidate)
+                    archived_loose.extend((candidate, member) for member in archive.members
+                                          if Path(member).suffix.casefold() in {".rpy", ".rpym"})
+                    compiled.extend(candidate for member in archive.members
+                                    if Path(member).suffix.casefold() in {".rpyc", ".rpymc"})
+                except (OSError, RenPyArchiveError) as exc:
+                    archive_errors.append(f"{candidate.name}: {exc}")
     unity = any(root.glob("*_Data")) or any(root.glob("*.unity"))
-    if unity and (loose or compiled):
+    renpy_evidence = bool(loose or compiled or archived_loose or archive_errors)
+    if unity and renpy_evidence:
         return EngineDetection("MIXED", "REVIEW_REQUIRED", "both Unity and Ren'Py evidence found")
+    if archive_errors:
+        return EngineDetection("RENPY_ARCHIVE_UNSUPPORTED", "REVIEW_REQUIRED", "; ".join(archive_errors[:3]))
+    if archived_loose:
+        return EngineDetection("RENPY_ARCHIVE_SOURCE", "SUPPORTED", f"{len(archived_loose)} source script(s) in supported RPA archives")
     if loose:
         return EngineDetection("RENPY_LOOSE_SOURCE", "SUPPORTED", f"{len(loose)} loose Ren'Py script(s)")
     if compiled:

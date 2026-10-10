@@ -33,7 +33,7 @@ public sealed partial class MainViewModel
     {
         ChooseOcrImageCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(); if (p is not null) ImagePath = p; }, _ => !Busy);
         DiscoverImagesCommand = new RelayCommand(_ => StartImageTask("image_inventory", InputPath), _ => !Busy && Directory.Exists(InputPath));
-        RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && File.Exists(ImagePath));
+        RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
         OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p); }, _ => !Busy);
         SaveImageReviewCommand = new RelayCommand(_ => SaveImageReview(), _ => !Busy && _imageDocument is not null);
         RenderImageCommand = new RelayCommand(_ => RenderReviewedImage(), _ => !Busy && _imageDocument is not null);
@@ -69,11 +69,11 @@ public sealed partial class MainViewModel
             ClearImageReviewState();
             ImagePath = sourcePath;
             _imageDocument = document;
-            foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; ImageRegions.Add(region); }
+            foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; region.ReplacementBackgroundApproved = false; region.TransparentTextApproved = false; ImageRegions.Add(region); }
             _imageSourcePreview = sourcePreview;
             ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
-                : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Duyệt từng bản dịch và nền phẳng trước render.";
+                : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.";
             return true;
         }
         catch (Exception e) { ClearImageReviewState(); ImageStatus = "Không mở được review: " + e.Message; return false; }
@@ -122,8 +122,8 @@ public sealed partial class MainViewModel
     private void RenderReviewedImage()
     {
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
-        if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || !r.FlatBackgroundApproved || string.IsNullOrWhiteSpace(r.Translation)))
-        { ImageStatus = "Duyệt text/crop và nền phẳng của mọi region trước render."; return; }
+        if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
+        { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, hoặc thay region bằng màu đặc."; return; }
         _imageTaskRoot = NewImageRoot();
         var document = JsonSerializer.SerializeToElement(CurrentImageReview(), ImageJson);
         BeginTask("image_render", new { document, @out = _imageTaskRoot,

@@ -1,19 +1,48 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from tests.lib.work_paths import work_temp_dir
 
 from vntext.app_tasks import run_extract_task
 from vntext_worker.task_runners import run_extract_worker
 
+WORK = work_temp_dir("renpy-extract-task")
+
 
 class RenPyExtractTaskTests(unittest.TestCase):
+    def test_rpa_source_uses_native_sdk_route_and_records_archive_identity(self):
+        from tests.unit.test_renpy_archive import write_rpa
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root=Path(temp)/"game";(root/"game").mkdir(parents=True)
+            write_rpa(root/"game/scripts.rpa",{"game/script.rpy":b'label start:\n    e "Archive line"\n'})
+            sdk=SimpleNamespace(version="8.5.3")
+            def generate(_sdk,workspace,**_kwargs):
+                templates=Path(workspace)/"game/tl/vietnamese";templates.mkdir(parents=True)
+                (templates/"script.rpy").write_text(
+                    '# game/script.rpy:2\ntranslate vietnamese archive_line:\n\n'
+                    '    # e "Archive line"\n    e ""\n',encoding="utf-8")
+                return SimpleNamespace(returncode=0,stdout="",stderr="")
+            completed=[]
+            with patch("vntext.app_tasks._run_unity_preflight",return_value={}), \
+                 patch("vntext.renpy_toolchain.managed_sdk",return_value=sdk), \
+                 patch("vntext.renpy_toolchain.generate_empty_vietnamese_template",side_effect=generate):
+                run_extract_task(str(root),str(Path(temp)/"out"),"safe","balanced",True,
+                                 progress=lambda _:None,log=lambda _:None,complete=completed.append)
+            self.assertTrue(completed)
+            self.assertTrue(completed[0].get("ok"),completed[0])
+            document=json.loads((Path(temp)/"out/manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(document["entries"]),1)
+            provenance=document["entries"][0]["native_contract"]["provenance"]["source_container"]
+            self.assertEqual(provenance["member_name"],"game/script.rpy")
+
     def test_unsupported_engine_never_falls_into_generic_extractor(self):
         for kind in ("compiled", "mixed", "unknown", "missing"):
-            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temp:
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory(dir=WORK) as temp:
                 root = Path(temp) / "input"
                 if kind != "missing":
                     root.mkdir()
@@ -32,7 +61,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 self.assertTrue(completed[-1]["error"])
 
     def test_generic_text_keeps_explicit_supported_route_and_empty_is_not_complete(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root = Path(temp) / "input"; root.mkdir()
             text = root / "story.txt"; text.write_text("", encoding="utf-8")
             completed = []
@@ -43,7 +72,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
             self.assertTrue((Path(temp) / "out" / "manifest.json").is_file())
 
     def test_extract_does_not_overwrite_existing_package(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root=Path(temp)/"input"; root.mkdir(); (root/"story.txt").write_text("Hello there.")
             out=Path(temp)/"out"; out.mkdir(); csv=out/"translation.csv"; csv.write_bytes(b"owner data")
             completed=[]
@@ -54,7 +83,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
 
     def test_sdk_failure_and_cancel_dispose_scratch_and_preserve_input(self):
         for cancelled in (False, True):
-            with self.subTest(cancelled=cancelled), tempfile.TemporaryDirectory() as temp:
+            with self.subTest(cancelled=cancelled), tempfile.TemporaryDirectory(dir=WORK) as temp:
                 root=Path(temp)/"input"; (root/"game").mkdir(parents=True)
                 script=root/"game/script.rpy"; original=b'label start:\n    "Hello"\n'; script.write_bytes(original)
                 out=Path(temp)/"out"; completed=[]; workspaces=[]
@@ -76,7 +105,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
 
     def test_explicit_invalid_sdk_is_actionable_and_does_not_fallback(self):
         from vntext.renpy_toolchain import RenPyToolchainError
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root=Path(temp)/"input"; (root/"game").mkdir(parents=True)
             (root/"game/script.rpy").write_text('label start:\n    "Hello"\n')
             completed=[]
@@ -93,7 +122,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
         import json
         from vntext.package_io import read_csv_rows_file
         for separate in (True,False):
-            with self.subTest(separate=separate), tempfile.TemporaryDirectory() as temp:
+            with self.subTest(separate=separate), tempfile.TemporaryDirectory(dir=WORK) as temp:
                 root=Path(temp)/"input"; root.mkdir()
                 (root/"story.txt").write_text("Hello, how are you?\nAssets/Textures/Player.prefab\n",encoding="utf-8")
                 before=(root/"story.txt").read_bytes();out=Path(temp)/"out";completed=[]
@@ -110,7 +139,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 self.assertEqual((root/"story.txt").read_bytes(),before)
 
     def test_sdk_route_uses_native_units_without_source_parser_promotion(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root = Path(temp) / "gamecopy"; (root / "game").mkdir(parents=True)
             (root / "game" / "script.rpy").write_text(
                 'label start:\n    $ code_literal = "Only code"\n    "Native only"\n',
@@ -157,8 +186,62 @@ class RenPyExtractTaskTests(unittest.TestCase):
             self.assertIn('"native_id": "native_only"', manifest)
             self.assertNotIn("Only code", manifest)
 
+    def test_engine_common_exclusions_do_not_block_game_owned_completion(self):
+        import json
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp) / "gamecopy"
+            (root / "game").mkdir(parents=True)
+            (root / "game" / "script.rpy").write_text('label start:\n    "Game line"\n', encoding="utf-8")
+            common = root / "renpy" / "common" / "common.rpy"
+            common.parent.mkdir(parents=True)
+            common.write_text('    $ value = _("Common menu")\n', encoding="utf-8")
+            out = Path(temp) / "out"
+            completed = []
+
+            def generate(_sdk, workspace, **_kwargs):
+                template = workspace / "game" / "tl" / "vietnamese"
+                template.mkdir(parents=True)
+                (template / "script.rpy").write_text(
+                    "# game/script.rpy:2\n"
+                    "translate vietnamese game_line:\n\n"
+                    '    # "Game line"\n'
+                    '    ""\n\n'
+                    "translate vietnamese strings:\n\n"
+                    "    # renpy/common/common.rpy:1\n"
+                    '    old "Common menu"\n'
+                    '    new ""\n\n'
+                    "    # renpy/common/00translation.rpy:1\n"
+                    '    old "SDK-only common"\n'
+                    '    new ""\n',
+                    encoding="utf-8",
+                )
+
+            with (
+                patch("vntext.app_tasks._run_unity_preflight"),
+                patch("vntext.renpy_toolchain.validate_sdk", return_value=SimpleNamespace(version="8.5.3")),
+                patch("vntext.renpy_toolchain.generate_empty_vietnamese_template", side_effect=generate),
+            ):
+                run_extract_task(
+                    str(root), str(out), "safe", "balanced", True,
+                    renpy_sdk_path="C:/sdk", renpy_sdk_action="existing",
+                    progress=lambda _: None, log=lambda _: None, complete=completed.append,
+                )
+
+            status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
+            exclusions = json.loads((out / "renpy_engine_common_exclusions.json").read_text(encoding="utf-8"))
+            self.assertTrue(completed[-1]["complete"])
+            self.assertTrue(completed[-1]["native_accounting_complete"])
+            self.assertEqual(completed[-1]["native_units"], 3)
+            self.assertEqual(completed[-1]["native_accounted"], 3)
+            self.assertEqual(status["status"], "COMPLETE")
+            self.assertEqual(status["main"], 1)
+            self.assertEqual(status["review"], 0)
+            self.assertEqual(status["excluded_engine_common"], 2)
+            self.assertEqual(exclusions["count"], 2)
+            self.assertIn("loại 2 chuỗi Ren'Py common", completed[-1]["summary"])
+
     def test_no_sdk_extracts_without_guessing_native_ids(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root = Path(temp) / "game"; (root / "game").mkdir(parents=True)
             (root / "game" / "script.rpy").write_text('label start:\n    "Hello"\n', encoding="utf-8")
             out = Path(temp) / "out"; completed = []

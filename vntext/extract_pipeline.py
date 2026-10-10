@@ -31,8 +31,12 @@ def extract_project(
 ):
     from vntext.renpy_adapter import detect_engine
     detected = detect_engine(input_path)
+    if detected.engine == "RENPY_ARCHIVE_UNSUPPORTED":
+        raise ValueError(f"Ren'Py RPA lỗi hoặc chưa hỗ trợ; không fallback sang Unity. Chi tiết: {detected.reason}")
     if detected.engine in {"RENPY_COMPILED_ONLY", "MIXED"}:
         raise ValueError("Ren'Py compiled-only hoặc mixed engine chưa có route extract được hỗ trợ; không fallback sang Unity.")
+    if detected.engine == "RENPY_ARCHIVE_SOURCE":
+        raise ValueError("Ren'Py source trong RPA cần SDK 8.5.3; không fallback sang Unity hoặc trả kết quả loose-parser thiếu identity.")
     if detected.engine == "RENPY_LOOSE_SOURCE":
         from vntext.renpy_extract import extract_loose_source
         main, review, stats = extract_loose_source(input_path)

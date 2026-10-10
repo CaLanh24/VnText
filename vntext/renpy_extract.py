@@ -591,6 +591,7 @@ def _native_entry(
     previous_context: list[str],
     next_context: list[str],
     source_available: bool,
+    archive_source: dict | None = None,
 ) -> Entry:
     allow_missing = unit.unit_kind == RENPY_STRING_UNIT and str(unit.source_file).replace("\\", "/").casefold().startswith("renpy/common/")
     file_path, source_path = _native_source_path(
@@ -598,10 +599,11 @@ def _native_entry(
         unit.source_file,
         unit.template_file,
         unit.template_line,
-        allow_missing=allow_missing,
+        allow_missing=allow_missing or bool(archive_source),
     )
-    source_available = bool(source_available and source_path.is_file())
-    source_sha256 = source_hashes.get(source_path) if source_available else ""
+    source_available = bool(source_available and (source_path.is_file() or archive_source))
+    source_sha256 = (str(archive_source.get("member_sha256") or "") if archive_source else
+                     source_hashes.get(source_path) if source_available else "")
     if source_available and source_sha256 is None:
         try:
             source_sha256 = _sha256(source_path)
@@ -699,6 +701,14 @@ def _native_entry(
             provenance["ledger"] = "technical_skipped"
         elif provenance.get("owner") != RENPY_GAME_OWNED:
             entry.review_only = True
+    if archive_source:
+        contract["provenance"]["source_container"] = {
+            "kind": "rpa",
+            "path": str(archive_source["archive_path"]),
+            "container_sha256": str(archive_source["archive_sha256"]),
+            "member_name": str(archive_source["member_name"]),
+            "member_sha256": str(archive_source["member_sha256"]),
+        }
     reason = validate_renpy_contract(entry) if contract["provenance"].get("owner") == RENPY_GAME_OWNED else ""
     if reason:
         raise RenPyTemplateParseError(
@@ -712,6 +722,7 @@ def extract_native_template_entries(
     template_root: str | Path,
     *,
     language: str = "vietnamese",
+    archive_sources: dict[str, dict] | None = None,
 ) -> tuple[list[Entry], list[Entry], dict]:
     """Build canonical Entries from authoritative generated Ren'Py units."""
 
@@ -722,19 +733,43 @@ def extract_native_template_entries(
     template_sha256 = _template_identity(template_root)
     source_hashes: dict[Path, str] = {}
     source_lines: dict[Path, list[str] | None] = {}
+    archive_cache: dict[str, dict] = {}
+    archive_sources = dict(archive_sources or {})
+    unit_archive_sources: list[dict | None] = []
     enrichments: list[_SourceEnrichment] = []
     source_availability: list[bool] = []
     for unit in units:
         normalized_source = str(unit.source_file).replace("\\", "/")
         allow_missing = unit.unit_kind == RENPY_STRING_UNIT and normalized_source.casefold().startswith("renpy/common/")
+        archive_source = archive_sources.get(normalized_source)
         _file_path, source_path = _native_source_path(
             game_root,
             unit.source_file,
             unit.template_file,
             unit.template_line,
-            allow_missing=allow_missing,
+            allow_missing=allow_missing or bool(archive_source),
         )
-        available = source_path.is_file()
+        if archive_source and source_path.is_file():
+            archive_source = None
+        if archive_source:
+            from vntext.renpy_archive import RenPyArchive
+            try:
+                if str(archive_source.get("member_name") or "") != normalized_source:
+                    raise RenPyTemplateParseError(f"RPA member identity mismatch: {normalized_source}")
+                if normalized_source not in archive_cache:
+                    container_path = (game_root / str(archive_source.get("archive_path") or "")).resolve()
+                    container_path.relative_to(game_root)
+                    archive_cache[normalized_source] = RenPyArchive(container_path).read_member(normalized_source)
+                archived = archive_cache[normalized_source]
+                if archived["container_sha256"] != archive_source.get("archive_sha256") or archived["member_sha256"] != archive_source.get("member_sha256"):
+                    raise RenPyTemplateParseError(f"RPA source precondition drift: {normalized_source}")
+                source_lines[source_path] = archived["content"].decode("utf-8").splitlines()
+                source_hashes[source_path] = archived["member_sha256"]
+            except (OSError, UnicodeError, ValueError) as exc:
+                if isinstance(exc, RenPyTemplateParseError): raise
+                raise RenPyTemplateParseError(f"cannot resolve RPA source {normalized_source}: {exc}") from exc
+        available = source_path.is_file() or bool(archive_source)
+        unit_archive_sources.append(archive_source)
         source_availability.append(available)
         enrichments.append(
             _resolve_source_enrichment(source_path, unit, source_lines)
@@ -776,6 +811,7 @@ def extract_native_template_entries(
                 previous_context=previous_context,
                 next_context=next_context,
                 source_available=source_availability[index],
+                archive_source=unit_archive_sources[index],
             )
         )
     dialogue_count = sum(unit.unit_kind == RENPY_DIALOGUE_UNIT for unit in units)
@@ -824,7 +860,23 @@ def extract_native_template_entries(
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
     }
-    return [entry for entry in entries if not entry.review_only], [entry for entry in entries if entry.review_only], stats
+    engine_common_exclusions = [
+        entry
+        for entry in entries
+        if entry.review_only
+        and entry.native_contract.get("provenance", {}).get("owner") == "renpy_common"
+    ]
+    stats["renpy_engine_common_exclusion_entries"] = [
+        {**entry.to_manifest(), "exclusion_reason": "source provenance owner is renpy_common; not game-owned"}
+        for entry in engine_common_exclusions
+    ]
+    stats["renpy_engine_common_excluded_review_entries"] = len(engine_common_exclusions)
+    excluded_ids = {id(entry) for entry in engine_common_exclusions}
+    return (
+        [entry for entry in entries if not entry.review_only],
+        [entry for entry in entries if entry.review_only and id(entry) not in excluded_ids],
+        stats,
+    )
 
 
 extract_native_templates = extract_native_template_entries

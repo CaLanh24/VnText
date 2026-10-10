@@ -490,6 +490,7 @@ def is_technical_skip_entry(entry: Any) -> bool:
             "review_only": False,
             "locator": _locator(entry),
             "patch_proof": _get(entry, "patch_proof", {}),
+            "native_contract": _get(entry, "native_contract", {}),
         }
     )
     action, _reason, _decision = classify_row_authoritative(row)

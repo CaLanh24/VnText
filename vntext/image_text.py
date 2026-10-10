@@ -83,14 +83,16 @@ def recognize_image(source, *, is_cancelled=None):
         box = [x, y, right-x, bottom-y]; _box(box, image.size)
         identity = hashlib.sha256((digest + json.dumps(box) + line["text"]).encode()).hexdigest()[:24]
         regions.append({"id": identity, "box": box, "source_text": line["text"], "ocr_text": line["text"], "translation": "",
-                        "approved": False, "flat_background_approved": False, "background": "#FFFFFF", "foreground": "#000000", "font_size": 24})
+                        "approved": False, "flat_background_approved": False, "replacement_background_approved": False,
+                        "transparent_text_approved": False,
+                        "background": "#FFFFFF", "foreground": "#000000", "font_size": 24})
     return {"schema": 1, "source_path": str(source), "source_sha256": digest, "width": image.width,
             "height": image.height, "backend": "Windows.Media.Ocr/en-US", "confidence": None,
             "status": "REVIEW_REQUIRED" if regions else "NO_TEXT", "regions": regions}
 
 
 def render_image(document, output, font_path):
-    from PIL import ImageDraw, ImageFont, ImageColor
+    from PIL import Image, ImageDraw, ImageFont, ImageColor
     if document.get("schema") != 1: raise ValueError("Schema review ảnh không hợp lệ.")
     source, image, digest = _image(document["source_path"])
     output = _regular(output)
@@ -101,7 +103,7 @@ def render_image(document, output, font_path):
     regions = document["regions"]
     if not regions or len(regions) > 500:
         raise ValueError("Không có region đã duyệt hoặc quá 500 region.")
-    alpha = image.getchannel("A"); draw = ImageDraw.Draw(image)
+    draw = ImageDraw.Draw(image); replacement_boxes = []
     used = []; deadline = time.monotonic() + 30
     for region in regions:
         if time.monotonic() > deadline: raise ValueError("Render vượt 30 giây; giảm số region.")
@@ -109,11 +111,18 @@ def render_image(document, output, font_path):
         if any(x < a+c and a < x+w and y < b+d and b < y+h for a,b,c,d in used):
             raise ValueError("Region chồng nhau; gộp/sửa crop rồi duyệt lại.")
         used.append((x,y,w,h))
-        # shortcut: transparent glyph backgrounds need a compositing workflow; reject until that slice is verified.
-        if alpha.crop((x,y,x+w,y+h)).getextrema()[0] < 255:
-            raise ValueError("Vùng chữ có alpha trong suốt; chưa hỗ trợ render biến thể này. Chuẩn bị panel nền phẳng opaque trước.")
-        if region.get("approved") is not True or region.get("flat_background_approved") is not True:
-            raise ValueError("Cần duyệt text/region và xác nhận nền phẳng; không hỗ trợ inpainting nền phức tạp.")
+        replace_background = region.get("replacement_background_approved") is True
+        transparent_text = region.get("transparent_text_approved") is True
+        flat_background = region.get("flat_background_approved") is True
+        if sum((flat_background, replace_background, transparent_text)) != 1:
+            raise ValueError("Chọn đúng một cách render: nền phẳng, giữ nền trong suốt, hoặc thay region bằng màu đặc.")
+        region_alpha = image.getchannel("A").crop((x,y,x+w,y+h))
+        if transparent_text and (region_alpha.getextrema()[0] == 255 or region_alpha.getextrema()[1] == 0):
+            raise ValueError("Chế độ chữ trong suốt cần region có cả pixel trong suốt và glyph nhìn thấy.")
+        if region_alpha.getextrema()[0] < 255 and not replace_background and not transparent_text:
+            raise ValueError("Vùng chữ có alpha trong suốt; chọn giữ nền trong suốt hoặc xác nhận thay nền region bằng màu đặc.")
+        if region.get("approved") is not True:
+            raise ValueError("Cần duyệt text/crop trước render.")
         text = region.get("translation", "")
         if not isinstance(text, str) or not text.strip() or len(text) > 2000:
             raise ValueError("Bản dịch region cần text đã duyệt, tối đa 2000 ký tự.")
@@ -124,15 +133,33 @@ def render_image(document, output, font_path):
         if len(bg) != 3 or len(fg) != 3: raise ValueError("Màu nền/chữ phải là RGB.")
         colors = image.crop((x,y,x+w,y+h)).convert("RGB").getcolors(4096)
         flat = sum(count for count,pixel in (colors or []) if max(abs(a-b) for a,b in zip(pixel,bg)) <= 8)
-        if flat / (w*h) < .70:
+        if flat / (w*h) < .70 and not replace_background and not transparent_text:
             raise ValueError("Nền region không đủ phẳng theo màu đã chọn; hãy crop/chuẩn bị nền thủ công.")
-        font = ImageFont.truetype(str(_regular(font_path)), size)
-        bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2)
-        if bounds[2]-bounds[0] > w or bounds[3]-bounds[1] > h:
-            raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
-        draw.rectangle((x,y,x+w-1,y+h-1),fill=bg)
-        draw.multiline_text((x-bounds[0],y-bounds[1]),text,font=font,fill=fg,spacing=2)
-    image.putalpha(alpha)
+        if transparent_text:
+            scale = 3
+            font = ImageFont.truetype(str(_regular(font_path)), size * scale)
+            bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2*scale)
+            if bounds[2]-bounds[0] > w*scale or bounds[3]-bounds[1] > h*scale:
+                raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
+            overlay = Image.new("RGBA", (w*scale,h*scale), (0,0,0,0))
+            ImageDraw.Draw(overlay).multiline_text((-bounds[0],-bounds[1]),text,font=font,fill=(*fg,255),spacing=2*scale)
+            overlay = overlay.resize((w,h),Image.Resampling.LANCZOS)
+            draw.rectangle((x,y,x+w-1,y+h-1),fill=(0,0,0,0))
+            image.alpha_composite(overlay, (x,y))
+        else:
+            font = ImageFont.truetype(str(_regular(font_path)), size)
+            bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2)
+            if bounds[2]-bounds[0] > w or bounds[3]-bounds[1] > h:
+                raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
+            draw.rectangle((x,y,x+w-1,y+h-1),fill=bg)
+            draw.multiline_text((x-bounds[0],y-bounds[1]),text,font=font,fill=fg,spacing=2)
+        if replace_background: replacement_boxes.append((x,y,x+w,y+h))
+    if replacement_boxes:
+        alpha = image.getchannel("A")
+        alpha_draw = ImageDraw.Draw(alpha)
+        for x, y, right, bottom in replacement_boxes:
+            alpha_draw.rectangle((x, y, right-1, bottom-1), fill=255)
+        image.putalpha(alpha)
     output.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents a render from replacing another user's output.
     created = None
@@ -151,7 +178,7 @@ def render_image(document, output, font_path):
 def discover_images(root, *, is_cancelled=None):
     root = _regular(root)
     if not root.is_dir(): raise ValueError("Chọn thư mục game/ảnh để tìm ảnh.")
-    paths = []; seen = 0; deadline = time.monotonic() + 30
+    paths = []; errors = []; seen = 0; deadline = time.monotonic() + 30
     for base, dirs, names in os.walk(root, followlinks=False):
         for name in dirs + names:
             seen += 1
@@ -160,5 +187,13 @@ def discover_images(root, *, is_cancelled=None):
             item = _regular(Path(base) / name)
             if item.is_file() and item.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}:
                 paths.append(str(item))
-    return {"source_root": str(root), "image_paths": sorted(paths), "complete": True,
-            "note": "Ảnh ứng viên, chưa chứng minh có chữ; chọn từng ảnh để OCR/review. Không đọc archive/animation."}
+            elif item.is_file() and item.suffix.lower() == ".rpa":
+                from vntext.renpy_archive import RenPyArchive, member_reference
+                try:
+                    archive = RenPyArchive(item)
+                    paths.extend(member_reference(item, member) for member in archive.members
+                                 if Path(member).suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"})
+                except Exception as exc:
+                    errors.append({"archive": str(item), "error": str(exc)[:500]})
+    return {"source_root": str(root), "image_paths": sorted(paths), "complete": not errors, "errors": errors,
+            "note": "Ảnh ứng viên, chưa chứng minh có chữ; chọn từng ảnh để OCR/review. Archive dùng reader an toàn RPA 2.0/3.0."}
