@@ -97,9 +97,10 @@ class NativeRenPySdkTests(unittest.TestCase):
             script.write_text('define e = Character("Eileen")\nlabel start:\n    e "Compiled line"\n    return\n',encoding='utf-8')
             compile_command=[str(sdk.python),str(sdk.renpy_py),str(root),'compile']
             compiled=subprocess.run(compile_command,cwd=sdk.root,text=True,capture_output=True,timeout=120)
+            print(json.dumps({'compile_command':compile_command,'exit_code':compiled.returncode,'stdout':compiled.stdout,'stderr':compiled.stderr,'generated_files':[str(p.relative_to(root)) for p in root.rglob('*') if p.is_file()]},ensure_ascii=True))
             rpyc=script.with_suffix('.rpyc')
             self.assertEqual(compiled.returncode,0,compiled.stdout+'\n'+compiled.stderr)
-            self.assertTrue(rpyc.is_file())
+            self.assertTrue(rpyc.is_file(), compiled.stdout+'\n'+compiled.stderr)
             compiled_bytes = rpyc.read_bytes()
             from vntext.renpy_compiled import inspect_rpyc, ast_nodes
             nodes = ast_nodes(inspect_rpyc(compiled_bytes))

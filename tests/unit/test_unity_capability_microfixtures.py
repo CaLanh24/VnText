@@ -1120,7 +1120,6 @@ class UnityCapabilityMicrofixtureTests(unittest.TestCase):
                     row.pop("patch_proof", None)
                     row.pop("symmetry_proof", None)
                 manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-                (patch_out / "COPY_TO_GAME_ROOT").mkdir(parents=True)
                 with patch("vntext.patch_output.save_unity_env", side_effect=_save_fake_environment):
                     report = apply_translation_package(
                         str(package / "translation.csv"),

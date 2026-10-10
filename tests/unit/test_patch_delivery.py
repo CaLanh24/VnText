@@ -101,7 +101,7 @@ class PatchDeliveryTests(unittest.TestCase):
             self.assertTrue((installed / "game/zzz_vntext_vietnamese.rpy").is_file())
             self.assertEqual((game / "game/script.rpy").read_text(encoding="utf-8"), 'label start:\n    "Hello [name]"\n')
 
-    def test_unity_task_keeps_installer_delivery(self):
+    def test_unity_task_keeps_installer_delivery(self, installer_available=True):
         with tempfile.TemporaryDirectory(prefix="vntext-patch-delivery-unity-") as temp:
             base = Path(temp)
             game = base / "game"
@@ -112,7 +112,7 @@ class PatchDeliveryTests(unittest.TestCase):
             manifest_path = package / "manifest.json"
             csv_path.write_text("key,source_text,translation\nk,Hello,Xin chao\n", encoding="utf-8")
             manifest_path.write_text(
-                json.dumps({"entries": [{"key": "k", "import_method": "plain_text_line"}]}),
+                json.dumps({"entries": [{"key": "k", "source_text": "Hello", "import_method": "plain_text_line"}]}),
                 encoding="utf-8",
             )
             installer = base / "VNTextPatchInstaller.exe"
@@ -131,7 +131,7 @@ class PatchDeliveryTests(unittest.TestCase):
 
             completed: list[dict] = []
             with patch("vntext.app_tasks.apply_translation_package", fake_apply), patch(
-                "vntext.app_tasks._find_patch_installer", return_value=installer
+                "vntext.app_tasks._find_patch_installer", return_value=installer if installer_available else None
             ):
                 run_patch_task(
                     csv_path,
@@ -147,8 +147,16 @@ class PatchDeliveryTests(unittest.TestCase):
 
             self.assertTrue(completed[0]["ok"], completed[0])
             self.assertEqual(completed[0]["patch_engine"], "unity")
-            self.assertTrue((patch_out / "VNTextPatchInstaller.exe").read_bytes() == installer.read_bytes())
+            if installer_available:
+                self.assertEqual((patch_out / "VNTextPatchInstaller.exe").read_bytes(), installer.read_bytes())
+            else:
+                self.assertFalse((patch_out / "VNTextPatchInstaller.exe").exists())
+                self.assertIn("Chưa sẵn sàng", completed[0]["patch_install_instructions"])
+                self.assertNotIn("Mở VNTextPatchInstaller.exe", completed[0]["summary"])
             self.assertEqual(completed[0]["patch_delivery"], "unity_installer")
+
+    def test_missing_unity_installer_is_not_reported_ready_to_install(self):
+        self.test_unity_task_keeps_installer_delivery(installer_available=False)
 
     def test_invalid_renpy_route_never_falls_back_to_unity(self):
         with tempfile.TemporaryDirectory(prefix="vntext-patch-delivery-invalid-") as temp:

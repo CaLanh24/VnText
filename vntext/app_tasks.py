@@ -2243,11 +2243,15 @@ def run_patch_task(
         if not manifest_for_delivery:
             manifest_for_delivery = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
         patch_engine = detect_patch_engine(manifest_for_delivery)
+        from vntext.patch_gate import validate_patch_package_identity
+        from vntext.patch_safety import validate_patch_output
+        validate_patch_package_identity(csv_path, manifest_for_delivery)
         patch_out = (
             Path(patch_out_override)
             if patch_out_override is not None
             else Path(out) / "Patch_Viet_Hoa" / f"VNTextPatch_v{VERSION}"
         )
+        validate_patch_output(src, patch_out, transactional_existing=patch_engine == "renpy")
         patch_out.mkdir(parents=True, exist_ok=True)
         if patch_engine == "renpy":
             stale_unity_artifacts = [
@@ -2295,6 +2299,12 @@ def run_patch_task(
                 "Mở VNTextPatchInstaller.exe để cài/gỡ."
             )
             summary = f"Xong: patch nằm tại {patch_out}. Mở VNTextPatchInstaller.exe để cài/gỡ."
+            if not (patch_out / "VNTextPatchInstaller.exe").is_file():
+                patch_install_instructions = (
+                    f"Payload đã qua read-back tại {patch_out}, nhưng thiếu installer. "
+                    "Chưa sẵn sàng cài/gỡ; cần VNTextPatchInstaller.exe phù hợp trước khi phân phối."
+                )
+                summary = patch_install_instructions
         else:
             payload = _validate_renpy_overlay_output(patch_out)
             patch_delivery = "renpy_native_overlay"

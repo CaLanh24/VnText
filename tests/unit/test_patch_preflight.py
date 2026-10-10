@@ -58,7 +58,7 @@ class PatchPreflightTests(unittest.TestCase):
                 encoding="utf-8",
             )
             manifest_path.write_text(
-                json.dumps({"entries": [_entry("money", "But money is money!")]}),
+                json.dumps({"entries": [_entry("money", "But money is money!", file_path="game/data.unity3d")]}),
                 encoding="utf-8",
             )
             self.assertEqual(audit_patch_package(csv_path, manifest_path)["blocked"], 1)

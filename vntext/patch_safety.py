@@ -1,6 +1,7 @@
 """Safety patch responsibilities."""
 
 from __future__ import annotations
+from pathlib import PurePosixPath, PureWindowsPath
 
 from vntext.patch_constants import (
     Path,
@@ -221,10 +222,14 @@ def resolve_game_source_file(game_base: Path, rel: str) -> tuple[Path, str]:
     folder that contains the executable. Accept every Unity data directory so
     this fallback does not depend on one game's name.
     """
-    rel_norm = str(rel or "").replace("\\", "/").lstrip("/")
-    if not rel_norm:
-        return game_base / rel, rel
+    rel_norm = str(rel or "").replace("\\", "/")
+    if (not rel_norm or PureWindowsPath(rel_norm).drive or PurePosixPath(rel_norm).is_absolute()
+            or any(part in {"", ".", ".."} for part in rel_norm.split("/")) or ":" in rel_norm or "\x00" in rel_norm):
+        raise ValueError("Patch source path must remain relative to the game root")
+    game_base = game_base.resolve()
     direct = game_base / Path(rel_norm)
+    if not direct.resolve().is_relative_to(game_base):
+        raise ValueError("Patch source path escapes game root")
     if direct.exists():
         return direct, str(Path(rel_norm))
     relative_path = Path(rel_norm)
@@ -238,6 +243,8 @@ def resolve_game_source_file(game_base: Path, rel: str) -> tuple[Path, str]:
     matches = []
     for data_dir in data_dirs:
         nested = data_dir / relative_path
+        if not nested.resolve().is_relative_to(game_base):
+            raise ValueError("Patch data path escapes game root")
         if nested.is_file():
             matches.append((nested, str(Path(data_dir.name) / relative_path)))
     if len(matches) == 1:
@@ -247,5 +254,15 @@ def resolve_game_source_file(game_base: Path, rel: str) -> tuple[Path, str]:
         # than one Unity game root.  Never patch an arbitrary *_Data tree.
         return direct, str(Path(rel_norm))
     return direct, str(Path(rel_norm))
+
+
+def validate_patch_output(game_root: str | Path, output_dir: str | Path, *, transactional_existing: bool = False) -> None:
+    game = Path(game_root).resolve()
+    if game.is_file(): game = game.parent
+    output = Path(output_dir).resolve()
+    if output == game or output.is_relative_to(game) or game.is_relative_to(output):
+        raise ValueError("Patch output must be separate from the game tree")
+    if output.exists() and (not output.is_dir() or (not transactional_existing and any(output.iterdir()))):
+        raise ValueError("Patch output is not empty; choose a new output directory")
 
 __all__ = ['backup_original_file', 'make_raw_slot_op', 'report_backend_coverage', 'inc_backend', 'iter_patch_locators', 'make_entry_with_locator', 'apply_raw_fixed_ops', '_encoded_variants', 'verify_patched_translations', 'resolve_game_source_file']

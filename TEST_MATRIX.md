@@ -87,3 +87,9 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 - Focused csv_editor_api + WPF harness: immutable baseline mutation/order/header/width/quoted-record rejection, UTF8/BOM/multiline and extra field roundtrip, error rollback preserves exact CSV/review bytes, Cancel reload preserves dirty edits.
 - Affected external_translation_import, human_review_workflow, characterization_package_split: existing draft warnings/review gate and safe no-drop import remain intact.
 - Actual WPF generated fixture: open/filter/edit/save/reload and visible invalid input; preserve manifest, keys, sources, all non-translation fields/order and backup bytes. Import functional route receipt is separate from import-button interaction. No game/Patch/Release acceptance implied.
+
+## Patch input and bounded native acceptance
+- `test_patch_input_safety`: traversal/absolute source rejection, output/game separation, exact preservation of existing output, duplicate/ambiguous CSV rejection, CSV/manifest source identity and partial-sidecar rejection before output mutation.
+- `test_unity_serialized_patch`: generated v17 SerializedFile, real installed UnityPy extract/write/reopen, exact path ID and translated semantic lines, untouched remaining content, source/backup hashes and released Windows file handle. Direct slot padding is permitted; growth policy is unchanged. This is parser/writer proof, not Unity Editor/gameplay.
+- Existing Ren'Py transaction tests cover rollback/interruption/retry and native contract drift; generated official SDK lookup proves compiled dialogue overlay activation. Other AST coverage, arbitrary games and GUI layout remain separate.
+- Actual PatchInstaller build plus generated install/uninstall must reopen the translated serialized asset and restore exact original hash. Discovery-only executable/data markers are not gameplay or Release provenance. Missing installer skips remain explicit until this independent native gate runs.

@@ -512,6 +512,31 @@ def load_review_only_issue_reasons(package_dir: Path) -> dict[str, str]:
     return reasons
 
 
+def validate_patch_package_identity(csv_path: str | Path, manifest: dict) -> None:
+    translations = read_translation_rows(str(csv_path))
+    entries = manifest.get("entries")
+    if not isinstance(entries, list):
+        raise ValueError("Patch manifest entries must be a list")
+    keyed = {}
+    for entry in entries:
+        key = entry.get("key") if isinstance(entry, dict) else None
+        if not isinstance(key, str) or not key or key in keyed:
+            raise ValueError("Patch manifest has missing or duplicate entry keys")
+        keyed[key] = entry
+    for key, row in translations.items():
+        entry = keyed.get(key)
+        if entry is None or row["source_text"] != entry.get("source_text"):
+            raise ValueError(f"CSV/manifest source identity mismatch: {key}")
+        for field in ("file_path", "import_method", "backend"):
+            if field in row and field in entry and row[field] != str(entry[field] or ""):
+                raise ValueError(f"CSV/manifest {field} identity mismatch: {key}")
+    sidecar = Path(csv_path).parent / "extract_status.json"
+    if sidecar.is_file():
+        status = json.loads(sidecar.read_text(encoding="utf-8-sig"))
+        if status.get("status") != "COMPLETE" or status.get("complete") is not True:
+            raise ValueError("Extraction is incomplete; final Patch is blocked")
+
+
 def audit_patch_package(
     csv_path: str | Path,
     manifest_path: str | Path,
@@ -558,6 +583,7 @@ def audit_patch_package(
             "csv_path": str(csv_path),
             "manifest_path": str(manifest_path),
         }
+    validate_patch_package_identity(csv_path, manifest)
     blocked: Counter[str] = Counter()
     samples: dict[str, list[dict[str, str]]] = {}
     eligible = 0

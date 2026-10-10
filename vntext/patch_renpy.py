@@ -533,6 +533,10 @@ def _build_verification_records(
 def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None) -> list[str]:
     rows = read_translation_rows(csv_path)
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
+    from vntext.patch_gate import validate_patch_package_identity
+    from vntext.patch_safety import validate_patch_output
+    validate_patch_package_identity(csv_path, manifest)
+    validate_patch_output(game_root, output_dir, transactional_existing=True)
     entries = [item for item in manifest.get("entries", []) if str(item.get("import_method") or "") in {"renpy_dialogue", "renpy_string"}]
     if not entries:
         raise RenPyPatchError("package has no Ren'Py patchable entries")

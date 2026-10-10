@@ -66,9 +66,23 @@ def detect_patch_engine(manifest: dict) -> str:
 def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None):
     import json as _json
     _manifest_probe = _json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
-    if detect_patch_engine(_manifest_probe) == "renpy":
+    from vntext.patch_gate import validate_patch_package_identity
+    from vntext.patch_safety import validate_patch_output
+    engine = detect_patch_engine(_manifest_probe)
+    validate_patch_package_identity(csv_path, _manifest_probe)
+    validate_patch_output(game_root, output_dir, transactional_existing=engine == "renpy")
+    if engine == "renpy":
         from vntext.patch_renpy import apply_renpy_translation_package
         return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+    try:
+        return _apply_unity_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+    finally:
+        # UnityPy object cycles retain Windows file handles after the writer returns.
+        import gc
+        gc.collect()
+
+
+def _apply_unity_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None):
     from vntext.patch_naninovel import patch_naninovel_scripts_in_env
     from vntext.patch_output import save_unity_env, write_patch_manifest
     from vntext.patch_plain import _fit_textasset_script_to_slot, _replace_textasset_script_bytes

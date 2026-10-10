@@ -805,9 +805,20 @@ def write_package(
 def read_translation_rows(csv_path: str):
     rows = {}
     with Path(csv_path).open("r", encoding="utf-8-sig", newline="") as fh:
-        for row in csv.DictReader(fh):
-            key = row.get("key", "").strip()
-            text = row.get("translation", "").strip()
-            if key and text:
+        reader = csv.DictReader(fh, strict=True)
+        fields = reader.fieldnames or []
+        if (not {"key", "source_text", "translation"}.issubset(fields)
+                or any(not field or field != field.strip() for field in fields)
+                or len({field.casefold() for field in fields}) != len(fields)):
+            raise ValueError("Invalid translation CSV header")
+        seen = set()
+        for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError("Translation CSV record width differs from header")
+            key = row["key"]
+            if not key.strip() or key != key.strip() or key in seen:
+                raise ValueError("Empty, ambiguous or duplicate translation CSV key")
+            seen.add(key)
+            if row["translation"].strip():
                 rows[key] = row
     return rows
