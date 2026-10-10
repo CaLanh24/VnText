@@ -181,6 +181,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 RefreshRenpySdkOptionsVisibility(value);
                 OpenInputCommand?.RaiseCanExecuteChanged();
                 AnalyzeCommand?.RaiseCanExecuteChanged();
+                RefreshImageCommands();
             }
         }
     }
@@ -196,6 +197,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 RefreshWorkflow();
                 OpenOutputCommand?.RaiseCanExecuteChanged();
                 AnalyzeCommand?.RaiseCanExecuteChanged();
+                RefreshImageCommands();
             }
         }
     }
@@ -603,6 +605,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 ApplyUpdateCommand.RaiseCanExecuteChanged();
                 ApplyGitHubUpdateCommand.RaiseCanExecuteChanged();
                 OpenGitHubSetupCommand.RaiseCanExecuteChanged();
+                RefreshImageCommands();
                 if (!value)
                 {
                     _runningTask = null;

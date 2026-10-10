@@ -464,8 +464,13 @@ internal static class Program
         File.WriteAllText(review, JsonSerializer.Serialize(new ImageTextDocument { SourcePath = source, SourceSha256 = sourceHash, Width = 300, Height = 120, Status = "REVIEW_REQUIRED",
             Regions = new List<ImageTextRegion> { new() { Id = "fixed-region", Box = new[] {10,10,200,40}, SourceText = "Hello" } } }, MainViewModel.ImageJson));
         using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+        var renderEnabled = false;
+        var saveEnabled = false;
+        vm.RenderImageCommand.CanExecuteChanged += (_, _) => renderEnabled = vm.RenderImageCommand.CanExecute(null);
+        vm.SaveImageReviewCommand.CanExecuteChanged += (_, _) => saveEnabled = vm.SaveImageReviewCommand.CanExecute(null);
         vm.OutputPath = root;
         AssertTrue(vm.TryLoadImageReview(review));
+        AssertTrue(renderEnabled && saveEnabled);
         AssertTrue(vm.ImageRegions.Count == 1 && vm.ImageRegions[0].Id == "fixed-region");
         vm.RenderImageCommand.Execute(null);
         AssertTrue(!vm.Busy && vm.ImageStatus.Contains("Duyệt"));
@@ -490,6 +495,7 @@ internal static class Program
         AssertTrue(vm.ImagePreview is null && vm.ImageRegions.Count == 0 && vm.ImagePath == "");
         AssertFalse(vm.RenderImageCommand.CanExecute(null));
         AssertFalse(vm.SaveImageReviewCommand.CanExecute(null));
+        AssertFalse(renderEnabled || saveEnabled);
         File.WriteAllText(saved, "{bad");
         AssertFalse(vm.TryLoadImageReview(saved));
         AssertTrue(vm.ImagePreview is null && vm.ImageRegions.Count == 0 && vm.ImagePath == "");

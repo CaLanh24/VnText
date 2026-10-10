@@ -17,7 +17,7 @@ public sealed partial class MainViewModel
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; RefreshImageCommands(); } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
     public ImageSource? ImagePreview { get => _imagePreview; private set => Set(ref _imagePreview, value); }
     public ObservableCollection<string> ImageCandidates { get; } = new();
@@ -34,6 +34,13 @@ public sealed partial class MainViewModel
     public RelayCommand InstallImageDeliveryCommand { get; private set; } = null!;
     public RelayCommand RecoverImageDeliveryCommand { get; private set; } = null!;
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
+    private void RefreshImageCommands()
+    {
+        foreach (var command in new[] { ChooseOcrImageCommand, DiscoverImagesCommand, RunImageOcrCommand,
+            OpenImageReviewCommand, SaveImageReviewCommand, RenderImageCommand, AddImageRegionCommand,
+            RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand })
+            command?.RaiseCanExecuteChanged();
+    }
     private void InitImageTextCommands()
     {
         CreateImageDeliveryCommand = new RelayCommand(_ =>
@@ -97,6 +104,7 @@ public sealed partial class MainViewModel
             ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
                 : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.";
+            RefreshImageCommands();
             return true;
         }
         catch (Exception e) { ClearImageReviewState(); ImageStatus = "Không mở được review: " + e.Message; return false; }
@@ -104,6 +112,7 @@ public sealed partial class MainViewModel
     private void ClearImageReviewState()
     {
         _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; ImagePath = "";
+        RefreshImageCommands();
     }
     private static BitmapSource LoadImagePreview(string path)
     {
@@ -173,6 +182,6 @@ public sealed partial class MainViewModel
             else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
         }
         catch (Exception e) { ImageStatus = "Không đọc được kết quả ảnh: " + e.Message; }
-        finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; }
+        finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; RefreshImageCommands(); }
     }
 }
