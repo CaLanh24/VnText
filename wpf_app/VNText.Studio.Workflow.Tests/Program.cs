@@ -1075,6 +1075,16 @@ internal static class Program
             AssertEqual("Xin chào", reloaded.Rows[0]["translation"]);
             var bytes = File.ReadAllBytes(csv);
             AssertTrue(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
+            foreach (var invalid in new[] {
+                "key,source_text,translation,translation\nk1,Hello,X,Y\n",
+                "key,source_text,translation\nk1,Hello,X,discarded\n",
+                "key,source_text,translation\nk1,\"unfinished,X\n" })
+            {
+                var invalidPath = Path.Combine(root, "invalid.csv");
+                File.WriteAllText(invalidPath, invalid);
+                AssertFalse(TranslationCsvEditorService.Load(invalidPath).Ok);
+                AssertEqual(invalid, File.ReadAllText(invalidPath));
+            }
         }
         finally
         {
@@ -1129,6 +1139,14 @@ internal static class Program
             AssertEqual(0, vm.CsvEditorVisibleCount);
             vm.CsvEditorSearch = "";
             AssertEqual(3, vm.CsvEditorVisibleCount);
+            var original = File.ReadAllBytes(csv);
+            vm.CsvEditorRows[0].Translation = "Chưa lưu";
+            vm.OnCsvEditorTranslationChanged();
+            vm.CsvEditorMessageBox = (_, _, _, _) => MessageBoxResult.Cancel;
+            vm.ReloadCsvEditorCommand.Execute(null);
+            AssertEqual("Chưa lưu", vm.CsvEditorRows[0].Translation);
+            AssertTrue(vm.CsvEditorDirty);
+            AssertTrue(original.SequenceEqual(File.ReadAllBytes(csv)));
         }
         finally
         {

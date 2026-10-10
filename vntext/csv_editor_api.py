@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 import json
+import csv
 import os
 import re
 import sys
 from pathlib import Path
 from typing import Any
 
-from vntext.package_io import backup_translation_csv, read_csv_rows_file, write_csv_rows_file
+from vntext.package_io import CSV_FIELDS, backup_translation_csv, read_csv_rows_file, write_csv_rows_file
 from vntext.patch_gate import (
     REASON_LABELS_VI,
     load_review_only_issue_reasons,
@@ -43,11 +44,32 @@ BATCH_STRUCTURAL_BUCKETS = frozenset(
 )
 
 
+def _read_editor_csv(csv_path: Path) -> tuple[list[str], list[dict]]:
+    try:
+        with csv_path.open(encoding="utf-8-sig", newline="") as handle:
+            records = csv.reader(handle, strict=True)
+            fields = next(records, [])
+            if (not {"key", "source_text", "translation"}.issubset(fields)
+                    or any(not field or field != field.strip() for field in fields)
+                    or len({field.casefold() for field in fields}) != len(fields)):
+                raise ValueError("Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ")
+            for number, record in enumerate(records, 2):
+                if record and len(record) != len(fields):
+                    raise ValueError(f"Dòng CSV {number} có số cột không khớp header")
+    except csv.Error as exc:
+        raise ValueError(f"CSV không hợp lệ: {exc}") from exc
+    fields, rows = read_csv_rows_file(csv_path)
+    keys = [row["key"] for row in rows]
+    if any(not key.strip() for key in keys) or len(set(keys)) != len(keys):
+        raise ValueError("CSV có key trống hoặc trùng")
+    return fields, rows
+
+
 def load_document(csv_path: str | Path) -> dict[str, Any]:
     csv_path = Path(csv_path).resolve()
     if not csv_path.is_file():
         raise FileNotFoundError(str(csv_path))
-    fields, rows = read_csv_rows_file(csv_path)
+    fields, rows = _read_editor_csv(csv_path)
     package_dir = csv_path.parent
     review_keys = sorted(load_review_only_keys(package_dir))
     return {
@@ -74,10 +96,33 @@ def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> 
         return {"ok": False, "error": "Có dòng thiếu key"}
     if len(set(keys)) != len(keys):
         return {"ok": False, "error": "Trùng key trong CSV"}
+    try:
+        baseline_fields, baseline_rows = _read_editor_csv(csv_path)
+    except (ValueError, OSError) as exc:
+        return {"ok": False, "error": str(exc)}
+    normalized_fields = fields + [field for field in CSV_FIELDS if field not in fields]
+    if normalized_fields != baseline_fields or len(rows) != len(baseline_rows):
+        return {"ok": False, "error": "Không được đổi cột hoặc số dòng của CSV gốc"}
+    for original, updated in zip(baseline_rows, rows):
+        if any(updated.get(field, "") != original.get(field, "")
+               for field in baseline_fields if field != "translation"):
+            return {"ok": False, "error": "Không được đổi key, thứ tự, source hoặc metadata của CSV gốc"}
     backup_path = backup_translation_csv(csv_path)
-    _atomic_write_csv(csv_path, fields, rows)
-    _fields, saved_rows = read_csv_rows_file(csv_path)
-    review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
+    review_path = csv_path.parent / "review_only.csv"
+    review_before = review_path.read_bytes() if review_path.is_file() else None
+    try:
+        _atomic_write_csv(csv_path, fields, rows)
+        _fields, saved_rows = _read_editor_csv(csv_path)
+        review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
+    except Exception as exc:
+        try:
+            _atomic_write_bytes(csv_path, backup_path.read_bytes())
+            if review_before is not None:
+                _atomic_write_bytes(review_path, review_before)
+        except OSError as rollback_error:
+            return {"ok": False, "error": f"{exc}; rollback thất bại: {rollback_error}",
+                    "backup_path": str(backup_path), "rolled_back": False}
+        return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
     return {
         "ok": True,
         "csv_path": str(csv_path),
@@ -110,6 +155,15 @@ def _atomic_write_csv(csv_path: Path, fields: list[str], rows: list[dict]) -> No
             tmp.unlink()
         except FileNotFoundError:
             pass
+
+
+def _atomic_write_bytes(path: Path, contents: bytes) -> None:
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.restore.tmp")
+    try:
+        tmp.write_bytes(contents)
+        os.replace(tmp, path)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 def _replace_case_insensitive(text: str, needle: str, replacement: str) -> tuple[str, int]:

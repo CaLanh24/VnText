@@ -99,20 +99,23 @@ public static class TranslationCsvEditorService
 
         var review = LoadReviewKeys(Path.GetDirectoryName(path) ?? "");
         var rows = new List<Dictionary<string, string>>(capacity: 8192);
-        using var reader = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        using var reader = new StreamReader(path, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
         using var records = CsvFieldReader.ReadRecords(reader).GetEnumerator();
         if (!records.MoveNext())
             return new CsvEditorDocument(false, path, [], [], review, "CSV trống");
 
-        var fields = records.Current
-            .Select(f => f.Trim())
-            .Where(f => f.Length > 0)
-            .ToList();
-        if (fields.Count == 0)
-            return new CsvEditorDocument(false, path, [], [], review, "Thiếu header CSV");
+        var fields = records.Current.ToList();
+        if (fields.Any(f => string.IsNullOrWhiteSpace(f) || f != f.Trim())
+            || fields.Distinct(StringComparer.OrdinalIgnoreCase).Count() != fields.Count
+            || new[] { "key", "source_text", "translation" }.Any(f => !fields.Contains(f)))
+            throw new InvalidDataException("Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ");
 
         while (records.MoveNext())
             AppendCsvDataRow(rows, fields, records.Current);
+
+        if (rows.Any(row => string.IsNullOrWhiteSpace(row["key"]))
+            || rows.Select(row => row["key"]).Distinct(StringComparer.Ordinal).Count() != rows.Count)
+            throw new InvalidDataException("CSV có key trống hoặc trùng");
 
         return new CsvEditorDocument(true, path, fields, rows, review);
     }
@@ -122,8 +125,10 @@ public static class TranslationCsvEditorService
         IReadOnlyList<string> fields,
         IReadOnlyList<string> parts)
     {
-        if (parts.Count == 0 || parts.All(string.IsNullOrWhiteSpace))
+        if (parts.Count == 0)
             return;
+        if (parts.Count != fields.Count)
+            throw new InvalidDataException("Dòng CSV có số cột không khớp header");
         var row = new Dictionary<string, string>(fields.Count, StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < fields.Count; i++)
             row[fields[i]] = i < parts.Count ? parts[i] : "";

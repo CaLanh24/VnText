@@ -314,6 +314,13 @@ public sealed partial class MainViewModel
         }
         if (!reload && path == CsvEditorPath && _csvEditorRows.Count > 0 && !CsvEditorLoading)
             return;
+        if (CsvEditorDirty)
+        {
+            var choice = CsvEditorMessageBox("CSV có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?",
+                "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+            if (choice == MessageBoxResult.Cancel || (choice == MessageBoxResult.Yes && !SaveCsvEditor()))
+                return;
+        }
 
         var gen = Interlocked.Increment(ref _csvLoadGeneration);
         _csvLoadCts?.Cancel();

@@ -39,11 +39,12 @@ from vntext.csv_editor_api import (
     validate_document,
 )
 from vntext.package_io import backup_translation_csv
+from tests.lib.work_paths import work_temp_dir
 
 
 class CsvEditorApiTests(unittest.TestCase):
     def _make_package(self, translation: str = "Xin chào") -> Path:
-        tmp = Path(tempfile.mkdtemp(prefix="vntext_csv_editor_"))
+        tmp = Path(tempfile.mkdtemp(prefix="vntext_csv_editor_", dir=work_temp_dir("csv-editor-api")))
         csv_path = tmp / "translation.csv"
         csv_path.write_text(
             "key,source_text,translation,context,file_path\n"
@@ -104,6 +105,53 @@ class CsvEditorApiTests(unittest.TestCase):
         rows.append(dict(rows[0]))
         result = save_document(csv_path, doc["fields"], rows)
         self.assertFalse(result["ok"])
+
+    def test_save_preserves_baseline_identity_and_order(self):
+        import copy
+        root = self._make_package()
+        path = root / "translation.csv"
+        original = path.read_bytes()
+        document = load_document(path)
+        for mutation in ("source_text", "key", "context", "order", "missing_row", "fields"):
+            with self.subTest(mutation=mutation):
+                rows = copy.deepcopy(document["rows"])
+                fields = document["fields"][:]
+                if mutation == "order": rows.reverse()
+                elif mutation == "missing_row": rows.pop()
+                elif mutation == "fields": fields.reverse()
+                else: rows[0][mutation] = "changed"
+                result = save_document(path, fields, rows)
+                self.assertFalse(result["ok"], result)
+                self.assertEqual(path.read_bytes(), original)
+
+    def test_load_rejects_ambiguous_or_truncated_csv(self):
+        root = self._make_package()
+        path = root / "invalid.csv"
+        for content in ('key,source_text,translation,translation\nk1,Hello,X,Y\n',
+                        'key,source_text,translation\nk1,Hello,X,discarded\n',
+                        'key,source_text,translation\nk1,"unfinished,X\n'):
+            with self.subTest(content=content):
+                path.write_text(content, encoding="utf-8")
+                before = path.read_bytes()
+                with self.assertRaises(ValueError): load_document(path)
+                self.assertEqual(path.read_bytes(), before)
+
+    def test_save_reconciliation_error_restores_exact_csv_and_review(self):
+        root = self._make_package()
+        path = root / "translation.csv"
+        review = root / "review_only.csv"
+        original, original_review = path.read_bytes(), review.read_bytes()
+        document = load_document(path)
+        document["rows"][0]["translation"] = "Chào bạn"
+        def fail(*args):
+            review.write_bytes(b"partial sidecar")
+            raise OSError("injected reconciliation failure")
+        with patch("vntext.csv_editor_api._reconcile_saved_review_rows", side_effect=fail):
+            result = save_document(path, document["fields"], document["rows"])
+        self.assertFalse(result["ok"])
+        self.assertTrue(result["rolled_back"])
+        self.assertEqual(path.read_bytes(), original)
+        self.assertEqual(review.read_bytes(), original_review)
 
     def test_backup_creates_file(self):
         root = self._make_package()

@@ -18,6 +18,9 @@ Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. �
 
 **Tests/evidence:** `tests/unit/test_characterization_key.py`, `test_characterization_package_split.py`, `test_csv_editor_api.py`, `test_golden_artifacts.py`, `test_refactor_contract_baseline.py`, `tests/golden/refactor_contract_baseline.json`.
 
+### CSV editor write boundary
+Editor load rejects ambiguous headers, mismatched record widths, malformed quoted records and empty/duplicate keys. Save compares the current on-disk baseline: field order, row count/order and every field except translation are immutable. Required legacy columns may be appended under the existing CSV contract. Backup precedes atomic CSV replacement; a synchronous readback/review-ledger failure restores exact CSV and existing review bytes, and reports rollback failure explicitly. This is not a multi-file crash transaction. Manual draft translations may still be saved with visible structural warnings; invalid drafts do not resolve review or pass Patch gates. Reload/open with unsaved edits offers Save/Discard/Cancel; Cancel preserves in-memory edits and disk bytes.
+
 ## 1a. Traceability, provenance và identity
 
 **Owner:** `vntext/traceability.py::TraceStore`, `vntext/package_io.py`, `vntext/app_tasks.py`, `vntext/patch_readback.py`.
