@@ -82,3 +82,8 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 - `test_image_text.py`, WPF workflow harness: clone donor bounds/non-overlap/original pixels and approval invalidation; actual WPF edit/render/package interaction plus output pixel comparison is a separate mandatory DEV acceptance.
 
 - UIA generated acceptance: template translation must target the editing TextBox and persist through UI-saved review; edits invalidate approval before reapproval. Render/package/install hashes and outside pixels must agree. Native game change_language plus loader receipt proves fixture activation only; GUI layout/real-game coverage remains separate.
+
+## CSV editor bounded acceptance
+- Focused csv_editor_api + WPF harness: immutable baseline mutation/order/header/width/quoted-record rejection, UTF8/BOM/multiline and extra field roundtrip, error rollback preserves exact CSV/review bytes, Cancel reload preserves dirty edits.
+- Affected external_translation_import, human_review_workflow, characterization_package_split: existing draft warnings/review gate and safe no-drop import remain intact.
+- Actual WPF generated fixture: open/filter/edit/save/reload and visible invalid input; preserve manifest, keys, sources, all non-translation fields/order and backup bytes. Import functional route receipt is separate from import-button interaction. No game/Patch/Release acceptance implied.
