@@ -16,6 +16,26 @@ from tests.lib.work_paths import work_temp_dir
 SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK',str(Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3')))
 
 class NativeRenPySdkTests(unittest.TestCase):
+    @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official pinned RenPy8.5.3 SDK absent; native acceptance not run')
+    def test_native_extract_worker_does_not_inherit_protocol_stdin(self):
+        from tests.lib.worker_test_lib import start_worker, read_ready, run_task, complete_for
+        with tempfile.TemporaryDirectory(dir=self._managed_temp_root) as temp:
+            root=Path(temp);source=root/'source';(source/'game').mkdir(parents=True)
+            (source/'game/script.rpy').write_text('define e = Character("Eileen")\nlabel start:\n    e "Hello there, my friend."\n    return\n',encoding='utf-8')
+            proc=start_worker()
+            try:
+                read_ready(proc)
+                events=run_task(proc,'native-extract','extract',{'src':str(source),'out':str(root/'package'),'mode':'safe','level':'balanced','separate_review':True,'renpy_sdk_path':str(SDK),'renpy_sdk_action':'existing'},timeout=70)
+                complete=complete_for(events,'native-extract')
+                self.assertIs(complete['ok'],True,complete)
+                self.assertIs(complete['complete'],True,complete)
+                self.assertTrue((root/'package'/'manifest.json').is_file())
+            finally:
+                proc.stdin.close()
+                self.assertEqual(proc.wait(timeout=10),0)
+                proc._worker_reader.join(timeout=2)
+                proc.stdout.close()
+
     @classmethod
     def setUpClass(cls):
         cls._prior_tempdir = tempfile.tempdir

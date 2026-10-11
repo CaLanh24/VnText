@@ -123,7 +123,7 @@ def validate_sdk(path: str | Path) -> RenPySdk:
     python = candidates[0]
     probe = subprocess.run(
         [str(python), str(renpy_py), "--version"], cwd=root, text=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False,
+        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30, check=False,
     )
     text = (probe.stdout + "\n" + probe.stderr).strip()
     if probe.returncode or SUPPORTED_VERSION not in text:
@@ -246,7 +246,7 @@ def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, 
     env.update(PYTHONDONTWRITEBYTECODE="1", TEMP=str(temp), TMP=str(temp), TMPDIR=str(temp))
     proc = subprocess.Popen(
         command,
-        cwd=sdk.root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+        cwd=sdk.root, text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
     )
     deadline = time.monotonic() + timeout
     try:
