@@ -24,7 +24,7 @@ internal static class Program
             var code = 1;
             var thread = new Thread(() =>
             {
-                try { code = RunNativeUpdateUi(); }
+                try { code = RunNativeUpdateUi(layoutOnly: args.Contains("--layout-only", StringComparer.Ordinal)); }
                 catch (Exception ex) { Console.Error.WriteLine(ex); }
             });
             thread.SetApartmentState(ApartmentState.STA);
@@ -3023,7 +3023,7 @@ internal static class Program
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    private static int RunNativeUpdateUi()
+    private static int RunNativeUpdateUi(bool layoutOnly)
     {
         var fixture = CreateFullAppUpdateFixture();
         try
@@ -3051,9 +3051,10 @@ internal static class Program
                 candidate_version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!),
                 package_sha256 = digest, scope = "generated local UI fixture; mocked HTTP; no public release or native apply acceptance" }));
             app.Run(window);
-            AssertEqual(GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
+            AssertEqual(layoutOnly ? GitHubUpdateState.OfferAvailable : GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
             AssertEqual(0, Directory.GetFiles(Path.Combine(fixture.Root, ".update", "work"), "github-update-*.zip").Length);
-            Console.WriteLine("Native popup ready/defer/reopen and lease disposal: PASS; apply/restart not exercised.");
+            Console.WriteLine(layoutOnly ? "Native layout fixture closed at offer; no download/apply/restart acceptance."
+                : "Native popup ready/defer/reopen and lease disposal: PASS; apply/restart not exercised.");
             return 0;
         }
         finally { DeleteFullAppUpdateFixture(fixture); }

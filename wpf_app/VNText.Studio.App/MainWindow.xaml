@@ -1162,13 +1162,20 @@
 
                         <Border Grid.Row="1" Style="{StaticResource CardShadowBorder}" Padding="22,20">
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <ScrollViewer x:Name="CsvControlsScrollViewer" Grid.Row="0" MaxHeight="180"
+                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                              Style="{StaticResource ContentPanelScrollViewer}">
+                                <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
                                         <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
 
@@ -1252,7 +1259,10 @@
                                                Text="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap" />
                                 </StackPanel>
 
-                                <DataGrid Grid.Row="5" x:Name="CsvEditorGrid" Margin="0,14,0,0"
+                                </Grid>
+                                </ScrollViewer>
+
+                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="0,14,0,0"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
                                           AutoGenerateColumns="False"
@@ -1318,7 +1328,7 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <Grid Grid.Row="6" Margin="0,18,0,0">
+                                <Grid Grid.Row="2" Margin="0,18,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />

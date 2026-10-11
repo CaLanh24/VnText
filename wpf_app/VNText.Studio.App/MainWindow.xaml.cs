@@ -26,9 +26,9 @@ public partial class MainWindow : Window
                 if (updateWindow is not null) { updateWindow.Activate(); return; }
                 updateWindow = new UpdateWindow(this, vm);
                 updateWindow.Closed += (_, _) => updateWindow = null;
-                updateWindow.Show();
+                updateWindow.ShowDialog();
             };
-            vm.UpdateSuccessRequested += version => new UpdateWindow(this, vm, version).Show();
+            vm.UpdateSuccessRequested += version => new UpdateWindow(this, vm, version).ShowDialog();
             Loaded += async (_, _) => await vm.CheckUpdatesOnStartupAsync();
             void ApplyScale()
             {
