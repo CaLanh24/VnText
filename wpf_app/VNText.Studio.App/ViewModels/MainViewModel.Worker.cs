@@ -302,6 +302,16 @@ public sealed partial class MainViewModel
                     _csvEditorRetranslatePending = false;
                 }
 
+                if (completedTask == "translate")
+                {
+                    CsvValidationMessage = $"Đã dịch {evt.Translated}; pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}";
+                    PatchPreflightOk = false;
+                    PatchEligibleCount = 0;
+                    PatchBlockedCount = 0;
+                    PatchPreflightMessage = fullyComplete
+                        ? "CSV đã đổi sau dịch — kiểm tra lại trước khi Patch."
+                        : "Dịch chưa hoàn tất — chưa thể tạo Patch.";
+                }
                 RefreshWorkflow();
                 // Worker event counts may be ahead of on-disk translate_status; re-apply UI after refresh.
                 if (cancelled)

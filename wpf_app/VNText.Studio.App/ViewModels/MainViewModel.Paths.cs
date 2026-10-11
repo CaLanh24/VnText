@@ -122,7 +122,7 @@ public sealed partial class MainViewModel
         var result = CsvPackageValidator.Validate(path);
         CsvValidationOk = result.Ok;
         CsvValidationMessage = result.Message;
-        ReadyForPatch = result.Ok || WorkflowStatus.Evaluate(InputPath, OutputPath).ReadyForPatch;
+        ReadyForPatch = result.Ok && WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(path)!).IsComplete;
         if (result.Ok)
         {
             // Heavy Python gate only when user explicitly validates or starts patch (silent=false).
@@ -153,7 +153,10 @@ public sealed partial class MainViewModel
             ? Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv")
             : TranslationCsvPath;
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
-        var result = PatchPreflightService.Run(csv, manifest);
+        var progress = WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(csv)!);
+        var result = !progress.IsComplete
+            ? PatchPreflightResult.Fail(csv, $"Dịch chưa hoàn tất — pending {progress.Pending}, review {progress.ReviewOnly}, blocked {progress.Blocked}. Chưa thể tạo Patch.")
+            : PatchPreflightService.Run(csv, manifest);
         PatchPreflightOk = result.Ok;
         PatchEligibleCount = result.Eligible;
         PatchBlockedCount = result.Blocked;

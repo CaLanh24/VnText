@@ -43,7 +43,7 @@ public static class WorkflowStatus
         var hasTranslate = translateProgress.HasTranslations;
         var translateComplete = translateProgress.IsComplete;
         var hasPatch = Directory.Exists(patchDir) && Directory.EnumerateFileSystemEntries(patchDir).Any();
-        var readyForPatch = hasExtract && hasTranslate;
+        var readyForPatch = hasExtract && translateComplete;
 
         var extractState = hasExtract ? WorkflowStepState.Done : WorkflowStepState.Pending;
         var translateState = translateComplete

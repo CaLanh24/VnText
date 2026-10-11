@@ -116,7 +116,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => !Busy);
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy);
-        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy);
+        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && ReadyForPatch);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         ChooseInputCommand = new RelayCommand(_ => ChooseInput());
         ChooseOutputCommand = new RelayCommand(_ => ChooseOutput());
@@ -385,7 +385,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public bool ReadyForPatch
     {
         get => _readyForPatch;
-        private set => Set(ref _readyForPatch, value);
+        private set
+        {
+            if (Set(ref _readyForPatch, value)) RunPatchCommand?.RaiseCanExecuteChanged();
+        }
     }
 
     public bool HasExtract

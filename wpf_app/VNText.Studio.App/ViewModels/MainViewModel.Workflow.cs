@@ -18,7 +18,8 @@ public sealed partial class MainViewModel
     private void RefreshWorkflow()
     {
         var input = InputPath;
-        var output = OutputPath;
+        var output = _csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath)
+            ? Path.GetDirectoryName(TranslationCsvPath)! : OutputPath;
         var epoch = Interlocked.Increment(ref _refreshEpoch);
         var dispatcher = Application.Current?.Dispatcher;
 
@@ -57,7 +58,7 @@ public sealed partial class MainViewModel
         CurrentWorkflowStep = snap.Current;
         StepStatusLine = snap.StepStatusLine;
         HasExtract = snap.HasExtract;
-        ReadyForPatch = snap.ReadyForPatch || _csvValidationOk;
+        ReadyForPatch = snap.ReadyForPatch;
         _hasTranslations = snap.HasTranslations;
 
         if (string.IsNullOrEmpty(TranslationCsvPath) && snap.HasExtract)

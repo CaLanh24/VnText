@@ -603,6 +603,18 @@ internal static class Program
             AssertFalse(snap.TranslateState == WorkflowStepState.Done);
             AssertTrue(snap.StepStatusLine.Contains("Dịch một phần"));
             AssertTrue(snap.StepStatusLine.Contains("review"));
+            AssertFalse(snap.ReadyForPatch);
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = Path.Combine(package, "unused-output") };
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            vm.TestSimulateTaskComplete("translate", new WorkerEvent { Type = "complete", Ok = true, Complete = false, Translated = 1, Pending = 1, ReviewOnly = 1, Blocked = 1 });
+            AssertFalse(vm.ReadyForPatch);
+            AssertFalse(vm.RunPatchCommand.CanExecute(null));
+            AssertFalse(vm.PatchPreflightOk);
+            AssertEqual(0, vm.PatchEligibleCount);
+            AssertTrue(vm.CsvValidationMessage.Contains("Đã dịch 1"));
+            AssertTrue(vm.PatchPreflightMessage.Contains("chưa thể tạo Patch"));
         }
         finally
         {
