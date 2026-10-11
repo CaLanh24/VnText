@@ -355,6 +355,8 @@ Persist command/cwd/native exit, readiness, bounded complete/error và timeout r
 
 Positive pipeline chỉ translate sau extract complete thành công và chỉ patch/apply sau các semantic prerequisite, QA/preflight theo contract thành công. Negative test được gửi dữ liệu lỗi có chủ đích và assert product từ chối. Read-back phải reopen và đối chiếu giá trị/locator/identity; tồn tại file không đủ.
 
+Owner continuation (2026-10-11, Brain turn01a1294a): bounded acceptance on the two named Divinity-Update2-pc and TomieWGMv1.3801 sources, one registered copy/run at a time, limited translation sample, no broad game campaign. Existing Divinity1.2GiB exemption retains its exact root/cap; Unity gets no implicit quota increase. A declared sample package retains original extracted entry keys/source/locators and records its full-package provenance/selection; sample completion/readback never proves full-game translation/Patch or gameplay. Preserve the untouched full extraction and report its actual pending state separately.
+
 Khi terminal, giữ evidence cần thiết ngoài payload trong checkout, kiểm process đã thoát rồi disposal đúng owner. Report test verdict và cleanup riêng. Registry/epoch/report cũ phải có disposition với path/hash/ownership và evidence trước khi xử lý; thiếu quyền không cho phép whole-root delete.
 
 ### Muc 1 continuation — compiled inspection, image editing and delivery
