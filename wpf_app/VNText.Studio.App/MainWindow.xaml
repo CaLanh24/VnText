@@ -435,7 +435,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="{Binding ProgressSubtitle}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource GreenDarkBrush}" />
-                                        <TextBlock Text="Bạn có thể thay đổi tuỳ chọn trước khi chạy." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource InkBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Command="{Binding RunExtractCommand}">
                                         <StackPanel Orientation="Horizontal">

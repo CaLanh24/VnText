@@ -30,18 +30,17 @@ internal static class AnalyzeUiProbe
             var shot = Path.Combine(outDir, $"analyze_{state}_{(int)width}x{(int)height}.png");
             await window.Dispatcher.InvokeAsync(() =>
             {
-                vm.InputPath = state == "empty" ? "" : @"C:\fixture\Example.exe";
+                vm.InputPath = state is "empty" or "error" ? "" : @"C:\fixture\Example.exe";
                 vm.Busy = state == "busy";
                 vm.ProgressPercent = state == "busy" ? 45 : 0;
                 vm.ProgressSubtitle = state switch
                 {
                     "busy" => "Đang lấy văn bản…",
-                    "error" => "Trích xuất thất bại — xem nhật ký",
                     _ => "Chưa bắt đầu",
                 };
                 vm.LogLines.Clear();
                 if (state == "error")
-                    vm.LogLines.Add("Fixture UI có kiểm soát: không đọc được nguồn; chưa tạo gói dịch.");
+                    vm.RunExtractCommand.Execute(null);
                 window.Width = width;
                 window.Height = height;
                 if (window.FindName("PageScrollViewer") is System.Windows.Controls.ScrollViewer page)
@@ -66,8 +65,9 @@ internal static class AnalyzeUiProbe
                     analyze_panel_width = panel?.ActualWidth ?? 0,
                     analyze_button_visible = button?.IsVisible == true,
                     analyze_button_width = button?.ActualWidth ?? 0,
-                    analyze_command_state_correct = vm.AnalyzeCommand.CanExecute(null) == (state is "ready" or "error"),
+                    analyze_command_state_correct = vm.AnalyzeCommand.CanExecute(null) == (state == "ready"),
                     extract_command_state_correct = vm.RunExtractCommand.CanExecute(null) == !vm.Busy,
+                    error_guard_message_correct = state != "error" || vm.StatusText == "Chưa chọn game",
                     scrollable_height = window.FindName("PageScrollViewer") is System.Windows.Controls.ScrollViewer sv
                         ? sv.ScrollableHeight
                         : 0,
@@ -85,7 +85,8 @@ internal static class AnalyzeUiProbe
                 && (bool)type.GetProperty("analyze_button_visible")!.GetValue(item)!
                 && (double)type.GetProperty("analyze_button_width")!.GetValue(item)! > 0
                 && (bool)type.GetProperty("analyze_command_state_correct")!.GetValue(item)!
-                && (bool)type.GetProperty("extract_command_state_correct")!.GetValue(item)!;
+                && (bool)type.GetProperty("extract_command_state_correct")!.GetValue(item)!
+                && (bool)type.GetProperty("error_guard_message_correct")!.GetValue(item)!;
         });
         await File.WriteAllTextAsync(
             Path.Combine(outDir, "result.json"),
