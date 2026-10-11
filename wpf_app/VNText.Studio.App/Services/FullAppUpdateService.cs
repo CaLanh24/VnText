@@ -30,6 +30,27 @@ internal static class FullAppUpdateService
     private const int MaxFileCount = 20_000;
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
+    internal static string? ReadVerifiedSuccess(string root, string version, string acknowledgedTransaction)
+    {
+        root = Path.GetFullPath(root);
+        var receiptPath = SafeTemporaryTarget(root, ".update/success.json");
+        var pendingPath = SafeTemporaryTarget(root, PendingName);
+        if (File.Exists(pendingPath) || !File.Exists(receiptPath)) return null;
+        var size = new FileInfo(receiptPath).Length;
+        if (size <= 0 || size > 4096) return null;
+        using var receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+        var data = receipt.RootElement;
+        EnsureUniqueProperties(data);
+        var transaction = GetString(data, "transaction_id");
+        if (!transaction.StartsWith("txn-", StringComparison.Ordinal) ||
+            !Guid.TryParseExact(transaction[4..], "N", out _) || transaction == acknowledgedTransaction ||
+            !data.GetProperty("health_passed").GetBoolean() || GetString(data, "version") != version)
+            return null;
+        var exe = SafeTarget(root, "VNText Studio.exe");
+        EnsureNoReparsePath(root, exe, "success receipt executable");
+        return FixedEquals(GetString(data, "exe_sha256"), HashFile(exe)) ? transaction : null;
+    }
+
     internal static bool HasLocalFeed(string root)
     {
         var source = ReadSource(root);
@@ -248,6 +269,11 @@ internal static class FullAppUpdateService
             WriteJsonAtomic(ownershipPath, manifest.Files.Keys.OrderBy(name => name, StringComparer.Ordinal).ToArray());
             journal.CommitReady = true;
             WriteJsonAtomic(pendingPath, journal);
+            WriteJsonAtomic(SafeTemporaryTarget(root, ".update/success.json"), new
+            {
+                transaction_id = transactionId, version = manifest.Version,
+                exe_sha256 = HashFile(Path.Combine(root, "VNText Studio.exe")), health_passed = true,
+            });
             Restart();
             appRestarted = restartApp;
             try { File.Delete(pendingPath); }

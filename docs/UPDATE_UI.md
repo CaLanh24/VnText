@@ -4,6 +4,8 @@ Owner đã chọn version candidate **0.1.5** ngày2026-10-11. Chỉ đồng b�
 
 ## Mục tiêu và nguồn thiết kế
 
+Implementation đang tiếp tục trên base `583de06` cùng source diff của task: discovery metadata tách khỏi tải, retry và ready lease, receipt `txn-<Guid>` kiểm path/hash/version/pending journal, settings lưu atomic và giữ file hỏng. Dịch/Patch một cột, logs thu gọn, settings ba tab và model status qua Python resolver hiện có. Focused `ui-popup-final-focused` 8/8; affected `ui-popup-final-affected` 38/38, child/wrapper0, không skip/warning, cleanup PASS/TEST_RUN absent. Raw command/output/exit/report ở DEV_RUN cùng tên; evidence thuộc base + diff thực chạy, không relabel exact-HEAD. Lượt `ui-popup-corrections-focused` FAIL/1 vì ba assertion/caller test vẫn giả định manual discovery tự tải; đã sửa fixture caller sang explicit download, giữ assertion candidate lease/disposal. Native UI/local transaction receipt acceptance của batch này còn pending; không phải checkpoint PASS hoặc candidate Release acceptance.
+
 Owner yêu cầu ngày 2026-10-11: app có bảng thông báo khi có cập nhật mới, tham khảo ảnh Cockpit Tools đã cung cấp. Ưu tiên hoàn thiện UI/updater trong bản đang chuẩn bị, rồi phát hành trước khi thực hiện `TRANSLATION_QUALITY_PLAN.md`.
 
 Ảnh tham khảo cho thấy các trạng thái: có bản mới với release notes, đang tải có tiến trình, sẵn sàng khởi động lại và cập nhật thành công. Đây là nguồn tham khảo UX, không phải bằng chứng updater VNText đã hoạt động. Không phụ thuộc đường dẫn ảnh/máy riêng để triển khai từ public clone.
@@ -13,6 +15,8 @@ Surface mode: Operate. Giữ WPF, font, màu, feather branding và component lan
 ## Tham khảo app trực tiếp và bổ sung của Owner
 
 Brain đã mở Cockpit Tools bằng Computer Use ngày 2026-10-11: quan sát sidebar và cả bốn tab Chung, Dịch vụ mạng, Quản lý dữ liệu, Giới thiệu. Bản đang chạy `1.3.66`; thao tác Kiểm tra cập nhật trả “Đã là bản mới nhất v1.3.66”. Không tải/cài update hoặc lưu thay đổi settings. Popup newer/download/restart không xuất hiện trong lượt này vì không có bản mới; các trạng thái đó vẫn dựa ảnh Owner, không ghi là đã kiểm trực tiếp.
+
+Bổ sung từ report Brain cùng ngày, ở lượt quan sát sau: manual check trong Giới thiệu của Cockpit `1.3.66` đã offer `1.3.67`. Popup thật có tiêu đề/X, version mới và hiện tại, notes cuộn riêng; sau scroll550, tiêu đề/version và footer Hủy/Bỏ qua phiên bản này/Cập nhật ngay vẫn cố định. Brain báo không bấm tải/cài/bỏ qua/đóng popup. Đây là evidence presentation được Brain báo cáo, không phải Coordinator trực tiếp quan sát hoặc bằng chứng download/restart/skip persistence. Giữ lượt current trước đó với provenance riêng. VNText dùng bố cục header/footer cố định và notes cuộn giới hạn, phong cách sáng/xanh/feather; không thêm updater vào sidebar.
 
 Sidebar Cockpit có nhóm điều hướng cuối gồm Nhật ký/Cài đặt, không có khối chi tiết updater. Tab Giới thiệu đặt tên/icon app, version, Kiểm tra cập nhật và Ghi chú phát hành cạnh nhau. Tab Chung có tỷ lệ UI, nhớ cửa sổ, giảm chuyển động, tùy chọn update nền và nhắc update. Tab Dữ liệu có quản lý sao lưu/import/export; tab mạng có API/proxy riêng của sản phẩm đó. Chỉ ghi thông tin UI liên quan, không lưu tài khoản/token/cấu hình riêng từ app tham khảo.
 
@@ -38,7 +42,7 @@ Task implementation được commit source/test/docs đúng scope sau validation
 
 **Yêu cầu đã chốt:** giữ điều hướng workflow và project, đưa Cài đặt thành mục gọn ở cuối sidebar; bỏ version/status/check/apply updater khỏi sidebar. Không tạo thêm trang Nhật ký hoặc panel trạng thái chỉ để giống Cockpit. Update mới được thao tác trên popup; kiểm tra thủ công ở Giới thiệu, không phụ thuộc sidebar.
 
-**Đề xuất scope cho bản này, chưa là implementation hoặc toàn bộ quyết định đã duyệt:** chia settings ba tab, mỗi dòng gồm tên ngắn, một câu giải thích và điều khiển thật; không có toggle trang trí hoặc nút không có tác dụng.
+**Scope Owner đã duyệt, chưa là implementation đã nghiệm thu:** chia settings ba tab, mỗi dòng gồm tên ngắn, một câu giải thích và điều khiển thật; không có toggle trang trí hoặc nút không có tác dụng.
 
 - **Chung:** tỷ lệ UI với các mức giới hạn phù hợp cửa sổ hỗ trợ; nhớ vị trí/kích thước cửa sổ, có clamp khi đổi màn hình/DPI; bật/tắt tự kiểm tra cập nhật khi khởi động và bật/tắt nhắc popup. Manual check luôn hoạt động, không bị skipped-version hoặc toggle auto vô hiệu hóa. Không mặc định tải hoặc apply nền.
 - **Dữ liệu:** hiển thị đường dẫn thực và nút mở thư mục dữ liệu/model bằng path resolver hiện có; báo model/worker có sẵn hay thiếu bằng trạng thái thực. Không tự đổi root, tải model, xóa model/CSV/game/backups hoặc mở một cleanup engine mới. Các lựa chọn extract/overwrite/human-review hiện có vẫn giữ ở bước workflow phù hợp, không nhân bản setting mâu thuẫn.
@@ -71,6 +75,10 @@ Tách discovery metadata/notes khỏi tải package nếu source hiện gộp c�
 Không tự chọn version phát hành hoặc tạo release chỉ từ tài liệu này. Quyền tải/cài mới, dữ liệu user và external publication vẫn theo Owner/AGENTS. Không cần game copy cho task này.
 
 ## Bằng chứng nghiệm thu
+
+Brain đã review trực tiếp ngày2026-10-11 và chốt **ĐẠT checkpoint Lấy text**, bounded scope tại product source `8ef640d`, receipt docs `583de06`. Không phải toàn UI/updater hay Release PASS. Native click/scroll/log có provenance riêng; busy dùng controlled seam; final guard binding qua actual command/render probe. Không lặp gate để relabel SHA. Coordinator tiếp tục các trang/settings/popup trước bước candidate0.1.5.
+
+Implementation continuation: premise là discovery hiện tải ZIP ngay, settings chỉ có bốn lựa chọn và nuốt lỗi đọc JSON. Scope: WPF views/tokens/lifecycle, MainViewModel settings/updater, AppSettingsStore, WpfUpdateService discovery/download và receipt owners/test tương ứng. Giữ parser/protocol/model/validator/trust/baseline/rollback. Gate order: focused settings/discovery/state → affected WPF/updater/transaction → clean DEV build/semantic smoke → một batch native UI/controlled states và local restart receipt fixture nhỏ → cleanup. Không gamecopy/new runtime/model/Setup/publication. Dừng phụ thuộc nếu thiếu quyền/prerequisite thật hoặc premise transaction không được chứng minh; lỗi trong owner được tự sửa. Review visual tối đa một batch + correction/confirmation, không polish loop.
 
 - Focused state tests: newer/current/ignored/manual reopen, busy/deferred/unsaved, repeated clicks, missing/long notes và lỗi discovery/download/validation; tiến trình và restart actions đúng state.
 - Affected updater regression: integrity/baseline rejection, bảo toàn data/model, rollback và recovery khi gián đoạn; giữ tests âm, không coi mock là public acceptance.

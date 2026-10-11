@@ -886,6 +886,23 @@ internal static class Program
             AssertEqual(ExtractLevels.Exhaustive, vm.ExtractLevel);
             var reloaded = AppSettingsStore.Load();
             AssertEqual(ExtractLevels.Exhaustive, reloaded.ExtractLevel);
+            vm.UiScale = 1.2;
+            vm.AutoCheckUpdates = false;
+            vm.NotifyUpdates = false;
+            vm.RememberWindow = false;
+            reloaded = AppSettingsStore.Load();
+            AssertEqual(1.2, reloaded.UiScale);
+            AssertFalse(reloaded.AutoCheckUpdates);
+            AssertFalse(reloaded.NotifyUpdates);
+            AssertFalse(reloaded.RememberWindow);
+            AssertEqual(ExtractLevels.Exhaustive, reloaded.ExtractLevel);
+            File.WriteAllText(path, "{broken");
+            _ = AppSettingsStore.Load(out var error);
+            AssertTrue(!string.IsNullOrWhiteSpace(error));
+            vm.UiScale = 1.1;
+            AssertEqual("{broken", File.ReadAllText(path));
+            AssertTrue(vm.SettingsStatus.Contains("Không lưu được", StringComparison.Ordinal));
+            File.Delete(path);
             vm.ExtractLevel = "invalid";
             AssertEqual(ExtractLevels.Balanced, vm.ExtractLevel);
             AssertEqual("extract", vm.HeroIcon);
@@ -1725,7 +1742,19 @@ internal static class Program
                 throw new HttpRequestException("Unexpected HTTP target: " + request.RequestUri);
             });
 
-            var result = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler).GetAwaiter().GetResult();
+            var offer = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler,
+                metadataOnly: true).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.OfferAvailable, offer.State);
+            AssertEqual(1, handler.Requests.Count);
+            AssertEqual("", offer.PackagePath);
+            AssertEqual(digest, offer.PackageSha256);
+            var changed = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler,
+                expectedOffer: offer with { PackageSha256 = new string('0', 64) }).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.InvalidMetadata, changed.State);
+            AssertEqual(2, handler.Requests.Count);
+            handler.Requests.Clear();
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler,
+                expectedOffer: offer).GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.UpdateAvailable, result.State);
             AssertEqual("1.0.1", result.Version);
             AssertEqual(digest, result.PackageSha256);
@@ -2088,6 +2117,9 @@ internal static class Program
             {
                 available.RecheckUpdateCommand.Execute(null);
                 available.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                AssertEqual(GitHubUpdateState.OfferAvailable, available.GitHubUpdateState);
+                AssertFalse(available.GitHubApplyEnabled);
+                available.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
                 AssertEqual(GitHubUpdateState.UpdateAvailable, available.GitHubUpdateState);
                 AssertEqual("Cài cập nhật", available.GitHubUpdateButtonText);
                 AssertTrue(available.GitHubUpdateButtonEnabled);
@@ -2112,8 +2144,16 @@ internal static class Program
         {
             vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
             var firstCandidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
+
+            var popupCount = 0;
+            vm.UpdatePopupRequested += () => popupCount++;
+            vm.DeferUpdate(false);
+            vm.RecheckUpdateCommand.Execute(null);
+            AssertEqual(1, popupCount);
+            AssertTrue(File.Exists(firstCandidate));
 
             vm.RecheckGitHubUpdateForTest();
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
@@ -2140,6 +2180,7 @@ internal static class Program
         {
             vm.RecheckUpdateCommand.Execute(null);
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
             var packageDirectory = Path.Combine(fixture.Root, ".update", "work");
             var candidate = Directory.GetFiles(packageDirectory, "github-update-*.zip").Single();
 
@@ -2463,6 +2504,17 @@ internal static class Program
             var owned = JsonSerializer.Deserialize<string[]>(File.ReadAllText(Path.Combine(fixture.Root, FullAppUpdateService.OwnershipName.Replace('/', Path.DirectorySeparatorChar))))!;
             AssertTrue(owned.Contains("app/worker/added.txt", StringComparer.Ordinal));
             AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+            var version = RequiredExecutableProductVersion("VNTEXT_WPF_CANDIDATE_EXE");
+            var transaction = FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, version, "");
+            AssertTrue(transaction is not null && transaction.StartsWith("txn-", StringComparison.Ordinal));
+            AssertEqual<string?>(null, FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, version, transaction!));
+            AssertEqual<string?>(null, FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, "0.0.0", ""));
+            var pending = Path.Combine(fixture.Root, ".update", "pending-full-app-update.json");
+            File.WriteAllText(pending, "{}");
+            AssertEqual<string?>(null, FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, version, ""));
+            File.Delete(pending);
+            File.AppendAllText(Path.Combine(fixture.Root, "VNText Studio.exe"), "tamper");
+            AssertEqual<string?>(null, FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, version, ""));
         }
         finally { DeleteFullAppUpdateFixture(fixture); }
     }
@@ -2488,6 +2540,7 @@ internal static class Program
             AssertFalse(File.Exists(Path.Combine(fixture.Root, "app", "worker", "added.txt")));
             AssertEqual(dataHash, HashFile(dataPath));
             AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+            AssertEqual<string?>(null, FullAppUpdateService.ReadVerifiedSuccess(fixture.Root, "1.0.0", ""));
         }
         finally { DeleteFullAppUpdateFixture(fixture); }
     }

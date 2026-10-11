@@ -103,7 +103,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         _worker = worker;
         _githubHttpHandler = githubHttpHandler;
         _updateInstallRoot = updateInstallRoot;
-        _settings = AppSettingsStore.Load();
+        _settings = AppSettingsStore.Load(out var settingsError);
+        _settingsStatus = settingsError;
         _separateReview = _settings.SeparateReview;
         _overwriteTranslation = _settings.OverwriteTranslation;
         _humanReviewRequired = _settings.HumanReviewRequired;
@@ -126,7 +127,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         ChooseRenpySdkCommand = new RelayCommand(_ => ChooseRenpySdk());
         DownloadRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("download"), _ => !Busy);
         ContinueWithoutRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("none"), _ => !Busy);
-        RecheckUpdateCommand = new RelayCommand(_ => HandleUpdateAction(), _ => !Busy && !_githubUpdateChecking);
+        RecheckUpdateCommand = new RelayCommand(_ => StartGitHubUpdateCheck(metadataOnly: true, manual: true), _ => !Busy && !CsvEditorDirty && !_githubUpdateChecking && !DownloadingUpdate);
         ApplyUpdateCommand = new RelayCommand(_ => ApplyWpfUpdate(), _ => !Busy && _updateAvailable);
         ApplyGitHubUpdateCommand = new RelayCommand(_ => ApplyGitHubUpdate(), _ => !Busy && GitHubApplyEnabled && !_githubUpdateChecking);
         OpenGitHubSetupCommand = new RelayCommand(_ => OpenGitHubSetup(), _ => GitHubSetupRequired && !_githubUpdateChecking);
@@ -435,7 +436,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _separateReview, value))
             {
                 _settings.SeparateReview = value;
-                AppSettingsStore.Save(_settings);
+                SaveSettings();
             }
         }
     }
@@ -448,7 +449,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _overwriteTranslation, value))
             {
                 _settings.OverwriteTranslation = value;
-                AppSettingsStore.Save(_settings);
+                SaveSettings();
             }
         }
     }
@@ -461,7 +462,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _humanReviewRequired, value))
             {
                 _settings.HumanReviewRequired = value;
-                AppSettingsStore.Save(_settings);
+                SaveSettings();
             }
         }
     }
@@ -582,7 +583,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _extractLevel, normalized))
             {
                 _settings.ExtractLevel = normalized;
-                AppSettingsStore.Save(_settings);
+                SaveSettings();
             }
         }
     }
@@ -611,6 +612,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 RefreshImageCommands();
                 if (!value)
                 {
+                    ResumeDeferredOffer();
                     _runningTask = null;
                     RefreshWorkflow();
                 }
@@ -730,10 +732,15 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         StartGitHubUpdateCheck();
     }
 
-    private void StartGitHubUpdateCheck()
+    private void StartGitHubUpdateCheck(bool metadataOnly = false, bool manual = false)
     {
-        if (_githubUpdateChecking)
+        if (_githubUpdateChecking || DownloadingUpdate)
             return;
+        if (metadataOnly && manual && GitHubApplyEnabled)
+        {
+            UpdatePopupRequested?.Invoke();
+            return;
+        }
         DisposeGitHubUpdatePackageLease();
         RaiseGitHubUpdateCommands();
         var cancellation = new CancellationTokenSource();
@@ -749,8 +756,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             installRoot = _updateInstallRoot ?? Path.GetDirectoryName(WorkerPaths.MainExePath())!;
             _githubUpdateCheckTask = CompleteGitHubUpdateCheckAsync(
-                WpfUpdateService.CheckGitHubUpdateAsync(installRoot, _githubHttpHandler, cancellation.Token),
+                WpfUpdateService.CheckGitHubUpdateAsync(installRoot, _githubHttpHandler, cancellation.Token, metadataOnly),
                 cancellation, installRoot);
+            if (metadataOnly)
+                _ = ShowOfferAfterCheckAsync(_githubUpdateCheckTask, manual);
         }
         catch (Exception ex)
         {
@@ -825,7 +834,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
             GitHubUpdateState.Current => "Bạn đang dùng phiên bản mới nhất.",
-            GitHubUpdateState.UpdateAvailable => "Có bản cập nhật mới.",
+            GitHubUpdateState.OfferAvailable => "Có bản cập nhật mới; chưa tải gói.",
+            GitHubUpdateState.UpdateAvailable => "Đã kiểm tra gói. Sẵn sàng cập nhật.",
             GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",
             _ => "Chưa thể kiểm tra cập nhật.",
         };
@@ -843,6 +853,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     private void RaiseGitHubUpdateCard()
     {
+        Raise(nameof(OfferedVersion));
+        Raise(nameof(UpdateNotes));
         Raise(nameof(GitHubUpdateStatus));
         Raise(nameof(GitHubUpdateChecking));
         Raise(nameof(GitHubUpdateVersion));
@@ -854,6 +866,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     private void RaiseGitHubUpdateCommands()
     {
+        RecheckUpdateCommand?.RaiseCanExecuteChanged();
         Raise(nameof(GitHubApplyEnabled));
         Raise(nameof(GitHubSetupRequired));
         ApplyGitHubUpdateCommand?.RaiseCanExecuteChanged();
@@ -865,7 +878,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     private void ApplyGitHubUpdate()
     {
-        if (Busy || !GitHubApplyEnabled || _githubUpdateChecking)
+        if (Busy || CsvEditorDirty || !GitHubApplyEnabled || _githubUpdateChecking)
             return;
         if (MessageBox.Show($"Close VNText Studio and apply stable WPF update v{_githubUpdateResult.Version}?",
                 "VNText Studio update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)

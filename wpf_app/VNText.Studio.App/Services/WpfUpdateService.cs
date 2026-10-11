@@ -27,6 +27,7 @@ public enum GitHubUpdateState
     Offline,
     Timeout,
     RateLimited,
+    OfferAvailable,
 }
 
 internal sealed record GitHubUpdateCheckResult(
@@ -36,7 +37,10 @@ internal sealed record GitHubUpdateCheckResult(
     string PackageSha256 = "",
     string ReleasesUrl = "",
     string Message = "",
-    bool FullAppPackage = false);
+    bool FullAppPackage = false,
+    string AssetUrl = "",
+    long AssetSize = 0,
+    string ReleaseNotes = "");
 
 internal sealed class GitHubUpdatePackageLease : IDisposable
 {
@@ -81,7 +85,9 @@ public static class WpfUpdateService
     };
 
     internal static async Task<GitHubUpdateCheckResult> CheckGitHubUpdateAsync(
-        string installRoot, HttpMessageHandler? httpHandler = null, CancellationToken cancellationToken = default)
+        string installRoot, HttpMessageHandler? httpHandler = null, CancellationToken cancellationToken = default,
+        bool metadataOnly = false, GitHubUpdateCheckResult? expectedOffer = null,
+        IProgress<(long Received, long Total)>? progress = null)
     {
         string? downloadedPackage = null;
         UpdateSource? source = null;
@@ -172,6 +178,19 @@ public static class WpfUpdateService
                     return new(GitHubUpdateState.InvalidPackage, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: "The GitHub WPF package has an invalid or oversized declared size.");
 
+                var offer = new GitHubUpdateCheckResult(GitHubUpdateState.OfferAvailable,
+                    Version: release.VersionText, PackageSha256: packageDigest, ReleasesUrl: releasesUrl,
+                    FullAppPackage: fullAppPackage, AssetUrl: asset.DownloadUrl, AssetSize: asset.Size,
+                    ReleaseNotes: release.Notes);
+                if (metadataOnly)
+                    return offer;
+                if (expectedOffer is not null &&
+                    (expectedOffer.State != GitHubUpdateState.OfferAvailable ||
+                     expectedOffer.Version != offer.Version || expectedOffer.PackageSha256 != offer.PackageSha256 ||
+                     expectedOffer.AssetUrl != offer.AssetUrl || expectedOffer.AssetSize != offer.AssetSize ||
+                     expectedOffer.FullAppPackage != offer.FullAppPackage))
+                    return new(GitHubUpdateState.InvalidMetadata, Message: "The release changed; check for updates again.");
+
                     downloadedPackage = Path.Combine(source.WorkRoot,
                     $"github-update-{release.VersionText}-{Guid.NewGuid():N}.zip");
                 try
@@ -189,7 +208,7 @@ public static class WpfUpdateService
                     }
 
                     var downloadedDigest = await DownloadAndHashAssetAsync(
-                        assetResponse.Content, downloadedPackage, asset.Size, cancellationToken).ConfigureAwait(false);
+                        assetResponse.Content, downloadedPackage, asset.Size, cancellationToken, progress).ConfigureAwait(false);
                     if (!FixedEquals(downloadedDigest, packageDigest))
                         throw new InvalidDataException("GitHub asset SHA-256 digest mismatch.");
 
@@ -199,7 +218,8 @@ public static class WpfUpdateService
                     else
                         _ = ReadAndValidateGitHubPackage(root, source, downloadedPackage, packageDigest, release.VersionText);
                     return new(GitHubUpdateState.UpdateAvailable, release.VersionText, downloadedPackage,
-                        packageDigest, releasesUrl, $"Stable {(fullAppPackage ? "full-app" : "WPF")} update available: v{release.VersionText}.", fullAppPackage);
+                        packageDigest, releasesUrl, $"Stable {(fullAppPackage ? "full-app" : "WPF")} update available: v{release.VersionText}.", fullAppPackage,
+                        asset.DownloadUrl, asset.Size, release.Notes);
                 }
                 catch (FullAppBaselineMismatchException ex)
                 {
@@ -626,7 +646,10 @@ public static class WpfUpdateService
                     ? urlElement.GetString() ?? "" : "";
                 assets.Add(new GitHubAssetInfo(name, digest, size, downloadUrl));
             }
-            releases.Add(new GitHubReleaseInfo(tag, versionText, version, assets));
+            var notes = element.TryGetProperty("body", out var body) && body.ValueKind == JsonValueKind.String
+                ? body.GetString() ?? "" : "";
+            notes = new string(notes.Take(16000).Where(c => !char.IsControl(c) || c is '\n' or '\r' or '\t').ToArray());
+            releases.Add(new GitHubReleaseInfo(tag, versionText, version, assets, notes));
         }
 
         if (releases.GroupBy(release => release.VersionText, StringComparer.Ordinal).Any(group => group.Count() > 1))
@@ -771,7 +794,7 @@ public static class WpfUpdateService
     }
 
     private static async Task<string> DownloadAndHashAssetAsync(HttpContent content, string path, long expectedSize,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, IProgress<(long Received, long Total)>? progress = null)
     {
         if (content.Headers.ContentLength.HasValue && content.Headers.ContentLength.Value != expectedSize)
             throw new InvalidDataException("GitHub WPF asset content length does not match release metadata.");
@@ -789,6 +812,7 @@ public static class WpfUpdateService
             if (total > MaxGitHubUpdatePackageBytes || total > expectedSize)
                 throw new InvalidDataException("GitHub WPF package exceeds its declared size limit.");
             hash.AppendData(buffer, 0, read);
+            progress?.Report((total, expectedSize));
             await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
         }
         await output.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -1258,7 +1282,7 @@ public static class WpfUpdateService
 
     private sealed record UpdateSelection(string PackagePath, UpdateManifest Manifest);
 
-    private sealed record GitHubReleaseInfo(string Tag, string VersionText, Version Version, List<GitHubAssetInfo> Assets);
+    private sealed record GitHubReleaseInfo(string Tag, string VersionText, Version Version, List<GitHubAssetInfo> Assets, string Notes);
 
     private sealed record GitHubAssetInfo(string Name, string Digest, long Size, string DownloadUrl);
 

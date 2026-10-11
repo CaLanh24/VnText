@@ -1,19 +1,50 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using VNText.Studio.App.ViewModels;
 
 namespace VNText.Studio.App;
 
 public partial class MainWindow : Window
 {
-    private bool? _compactLayout;
+    private bool _layoutInitialized;
 
     public MainWindow()
     {
         InitializeComponent();
         if (DataContext is MainViewModel vm)
+        {
             vm.CompletionRequested += OnCompletionRequested;
+            vm.RestoreWindow(this);
+            UpdateWindow? updateWindow = null;
+            vm.UpdatePopupRequested += () =>
+            {
+                if (updateWindow is not null) { updateWindow.Activate(); return; }
+                updateWindow = new UpdateWindow(this, vm);
+                updateWindow.Closed += (_, _) => updateWindow = null;
+                updateWindow.Show();
+            };
+            vm.UpdateSuccessRequested += version => new UpdateWindow(this, vm, version).Show();
+            Loaded += async (_, _) => await vm.CheckUpdatesOnStartupAsync();
+            void ApplyScale()
+            {
+                if (Content is FrameworkElement content)
+                    content.LayoutTransform = new ScaleTransform(vm.UiScale, vm.UiScale);
+            }
+            ApplyScale();
+            vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.UiScale)) ApplyScale(); };
+            Closing += (_, e) =>
+            {
+                if (vm.CsvEditorDirty || vm.Busy)
+                {
+                    MessageBox.Show(this, "Hãy hoàn tất hoặc hủy tác vụ và lưu CSV trước khi đóng ứng dụng.", "Công việc chưa hoàn tất");
+                    e.Cancel = true;
+                    return;
+                }
+                vm.SaveWindow(this);
+            };
+        }
 
         Closed += (_, _) =>
         {
@@ -53,23 +84,18 @@ public partial class MainWindow : Window
         if (ActualWidth <= 0)
             return;
 
-        var compact = ActualWidth < 1180;
-        if (_compactLayout == compact)
+        if (_layoutInitialized)
             return;
-
-        _compactLayout = compact;
-        // Extract keeps details below the task at every supported width.
-        SetResponsiveLayout(TranslatePage, TranslateConfigCard, TranslateLogCard, compact);
-        SetResponsiveLayout(PatchPage, PatchConfigCard, PatchCheckCard, compact);
+        _layoutInitialized = true;
+        SetResponsiveLayout(TranslatePage, TranslateConfigCard, TranslateLogCard);
+        SetResponsiveLayout(PatchPage, PatchConfigCard, PatchCheckCard);
     }
 
-    private static void SetResponsiveLayout(Grid page, FrameworkElement primary, FrameworkElement secondary, bool compact)
+    private static void SetResponsiveLayout(Grid page, FrameworkElement primary, FrameworkElement secondary)
     {
         page.ColumnDefinitions.Clear();
         page.RowDefinitions.Clear();
 
-        if (compact)
-        {
             page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             page.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             page.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -80,20 +106,6 @@ public partial class MainWindow : Window
             primary.Margin = new Thickness(0, 0, 0, 14);
             secondary.Margin = new Thickness(0);
             page.VerticalAlignment = VerticalAlignment.Top;
-        }
-        else
-        {
-            page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.06, GridUnitType.Star) });
-            page.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0.94, GridUnitType.Star) });
-            page.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-            Grid.SetColumn(primary, 0);
-            Grid.SetRow(primary, 0);
-            Grid.SetColumn(secondary, 1);
-            Grid.SetRow(secondary, 0);
-            primary.Margin = new Thickness(0, 0, 10, 0);
-            secondary.Margin = new Thickness(10, 0, 0, 0);
-            page.VerticalAlignment = VerticalAlignment.Stretch;
-        }
     }
 
     private void CsvEditorGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)

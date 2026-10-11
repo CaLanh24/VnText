@@ -94,7 +94,7 @@ public sealed partial class MainViewModel
     public bool CsvEditorDirty
     {
         get => _csvEditorDirty;
-        private set => Set(ref _csvEditorDirty, value);
+        private set { if (Set(ref _csvEditorDirty, value) && !value) ResumeDeferredOffer(); }
     }
 
     public string CsvEditorValidationMessage

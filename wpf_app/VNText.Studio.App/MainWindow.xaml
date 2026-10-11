@@ -148,20 +148,7 @@
                     </Button>
                 </StackPanel>
 
-                <StackPanel Grid.Row="3" Margin="3,24,0,0">
-                    <TextBlock Text="CẬP NHẬT" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
-                    <TextBlock Text="Phiên bản hiện tại" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" />
-                    <TextBlock Text="{Binding CurrentVersionDisplay}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,1,0,0" />
-                    <TextBlock Text="Phiên bản mới" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0"
-                               Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding GitHubUpdateVersion}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,1,0,0"
-                               Visibility="{Binding GitHubUpdateVersionVisible, Converter={StaticResource BoolToVis}}" />
-                    <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,0" TextWrapping="Wrap" />
-                    <Button Content="{Binding GitHubUpdateButtonText}" AutomationProperties.Name="{Binding GitHubUpdateButtonText}"
-                            Style="{StaticResource SidebarUpdateButton}" Command="{Binding RecheckUpdateCommand}"
-                            IsEnabled="{Binding GitHubUpdateButtonEnabled}"
-                            Margin="0,9,0,0" HorizontalAlignment="Left" />
-                </StackPanel>
+
             </Grid>
         </Border>
 
@@ -597,10 +584,10 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="Dịch local" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Chạy mô hình AI ngay trên máy của bạn." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Chạy mô hình AI ngay trên máy của bạn." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Background="{StaticResource GreenSoftBrush}" CornerRadius="8" Padding="9,5">
-                                        <TextBlock Text="LOCAL AI" FontSize="9" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" />
+                                        <TextBlock Text="LOCAL AI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" />
                                     </Border>
                                 </Grid>
 
@@ -613,8 +600,8 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <TextBlock Text="Nguồn dịch" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Grid.Row="1" Text="File CSV cần xử lý" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Text="Nguồn dịch" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                        <TextBlock Grid.Row="1" Text="File CSV cần xử lý" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Grid.Row="2" Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -622,7 +609,7 @@
                                             </Grid.ColumnDefinitions>
                                             <Border x:Name="TranslateCsvPathBorder" Style="{StaticResource PathDisplayBorderStyle}">
                                                 <TextBlock x:Name="TranslateCsvPathText"
-                                                           Text="{Binding TranslationCsvDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="12"
+                                                           Text="{Binding TranslationCsvDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                            Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button x:Name="ChooseTranslateCsvButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
@@ -630,7 +617,7 @@
                                                 <TextBlock Text="Chọn file CSV" />
                                             </Button>
                                         </Grid>
-                                        <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage}" Margin="0,8,0,0" FontSize="11"
+                                        <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage}" Margin="0,8,0,0" FontSize="{StaticResource UiBodySize}"
                                                    Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                                         <Grid Grid.Row="4" Margin="0,18,0,0">
                                             <Grid.ColumnDefinitions>
@@ -638,19 +625,19 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <TextBlock Text="Mô hình local" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Mô hình local" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
                                                 <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="11,9" Margin="0,8,6,0">
-                                                    <TextBlock Text="CTranslate2 + OPUS-MT (INT8)" FontSize="11" Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="CTranslate2 + OPUS-MT (INT8)" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" />
                                                 </Border>
-                                                <TextBlock Text="Dịch offline; kết quả vẫn qua bước kiểm tra trước khi tạo patch." FontSize="10" Foreground="{StaticResource MutedBrush}"
+                                                <TextBlock Text="Dịch offline; kết quả vẫn qua bước kiểm tra trước khi tạo patch." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}"
                                                            TextWrapping="Wrap" Margin="0,5,6,0" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
-                                                <TextBlock Text="Thiết bị" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Thiết bị" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
                                                 <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="11,9" Margin="6,8,0,0">
                                                     <StackPanel Orientation="Horizontal">
                                                         <Ellipse Width="8" Height="8" Fill="{StaticResource GreenBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                                        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource InkBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding StatusText}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource InkBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                                                     </StackPanel>
                                                 </Border>
                                             </StackPanel>
@@ -665,8 +652,8 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="Thuật ngữ ưu tiên" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                            <TextBlock Text="{Binding GlossaryStatus}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="Thuật ngữ ưu tiên" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                            <TextBlock Text="{Binding GlossaryStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                         <Button x:Name="GlossaryEditButton" Grid.Column="1" Content="Chỉnh sửa" Style="{StaticResource OutlineButton}"
                                                 Margin="10,0,0,0" Click="GlossaryEditButton_Click" />
@@ -679,14 +666,14 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <TextBlock Text="Quy tắc dịch" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                        <TextBlock Text="Quy tắc dịch" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
                                         <StackPanel Grid.Row="1" Margin="0,13,0,0">
                                             <CheckBox Content="Ghi đè bản dịch cũ" IsChecked="{Binding OverwriteTranslation, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" />
                                             <CheckBox Content="Bắt buộc duyệt thủ công kết quả MT"
                                                       IsChecked="{Binding HumanReviewRequired, Mode=TwoWay}"
                                                       Style="{StaticResource SwitchStyle}" Margin="0,10,0,0" />
                                             <TextBlock Text="Gợi ý của model chỉ vào review_only.csv; chưa thể Patch cho đến khi duyệt."
-                                                       TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                                                       TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -699,20 +686,20 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <TextBlock Text="Dịch bằng công cụ bên ngoài" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Grid.Row="1" Text="Xuất gói ZIP để dịch bên ngoài. Khi nhận lại CSV, chọn file đó ở tab Tạo patch." FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                        <TextBlock Text="Dịch bằng công cụ bên ngoài" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                        <TextBlock Grid.Row="1" Text="Xuất gói ZIP để dịch bên ngoài. Khi nhận lại CSV, chọn file đó ở tab Tạo patch." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
                                         <Grid Grid.Row="2" Margin="0,10,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding CloudRepairPackageDisplay}" VerticalAlignment="Center" FontSize="10" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding CloudRepairPackageDisplay}" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             <Button Grid.Column="1" Content="Xuất ZIP" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding ExportCloudRepairPackageCommand}" />
                                         </Grid>
                                         <Border Grid.Row="3" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,12,0,0">
                                             <StackPanel>
-                                                <TextBlock Text="Dùng lại bản dịch cũ" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="Chọn translation.csv cũ. Ứng dụng chỉ lấy dòng có cùng mã và câu gốc; dòng không khớp sẽ giữ lại để bạn sửa." FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                                                <TextBlock Text="Dùng lại bản dịch cũ" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Chọn translation.csv cũ. Ứng dụng chỉ lấy dòng có cùng mã và câu gốc; dòng không khớp sẽ giữ lại để bạn sửa." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
                                                 <Button Content="Nhập bản dịch cũ" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left" Margin="0,8,0,0" Command="{Binding ImportExistingTranslationCommand}" />
                                             </StackPanel>
                                         </Border>
@@ -725,8 +712,8 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ProgressSubtitle}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Có thể tiếp tục làm việc trong lúc dịch." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="{Binding ProgressSubtitle}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                        <TextBlock Text="Có thể tiếp tục làm việc trong lúc dịch." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="Bắt đầu dịch"
                                             Style="{StaticResource PrimaryButton}"
@@ -735,8 +722,9 @@
                             </Grid>
                         </Border>
 
-                        <Border x:Name="TranslateLogCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0"
-                                Height="{Binding ActualHeight, ElementName=TranslateConfigCard}">
+                        <Border x:Name="TranslateLogCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0">
+                            <Expander Header="Nhật ký và cảnh báo" FontSize="14">
+                                <Expander.Style><Style TargetType="Expander"><Setter Property="IsExpanded" Value="False" /><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsExpanded" Value="True" /></DataTrigger></Style.Triggers></Style></Expander.Style>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -750,10 +738,10 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="Nhật ký" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Theo dõi tiến độ và cảnh báo của phiên dịch." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Theo dõi tiến độ và cảnh báo của phiên dịch." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Border Grid.Column="1" Style="{StaticResource StatusPillStyle}">
-                                        <TextBlock Text="{Binding Busy, Converter={StaticResource LogState}}" FontSize="9" FontWeight="Bold"
+                                        <TextBlock Text="{Binding Busy, Converter={StaticResource LogState}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold"
                                                    Foreground="{StaticResource MutedBrush}" />
                                     </Border>
                                 </Grid>
@@ -768,7 +756,7 @@
                                             <TextBlock Text="Chưa có hoạt động" FontSize="16" FontWeight="Bold" Foreground="{StaticResource InkBrush}"
                                                        HorizontalAlignment="Center" Margin="0,15,0,0" />
                                             <TextBlock Text="Đang chờ bạn bắt đầu phiên dịch local."
-                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="12" LineHeight="19"
+                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" LineHeight="19"
                                                        Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,8,0,0" />
                                         </StackPanel>
                                         <ScrollViewer x:Name="TranslateLogScrollViewer"
@@ -778,7 +766,7 @@
                                             <ItemsControl ItemsSource="{Binding LogLines}" Margin="14,12">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding}" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                                                        <TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}"
                                                                    TextWrapping="Wrap" Margin="0,0,0,8" />
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
@@ -796,14 +784,15 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Tiến trình dịch" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, Converter={StaticResource Pct}}" FontSize="11" FontWeight="SemiBold"
+                                        <TextBlock Text="Tiến trình dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, Converter={StaticResource Pct}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold"
                                                    Foreground="{StaticResource MutedBrush}" />
                                     </Grid>
                                     <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"
                                                  Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
                                 </Grid>
                             </Grid>
+                            </Expander>
                         </Border>
                     </Grid>
 
@@ -834,22 +823,22 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="Tạo patch" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Đóng gói bản dịch để cài vào game." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Đóng gói bản dịch để cài vào game." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="BƯỚC CUỐI" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="BƯỚC CUỐI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" VerticalAlignment="Center" />
                                 </Grid>
 
                                 <Border Grid.Row="1" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="Nguồn đóng gói" FontSize="12" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Game / asset" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Text="Nguồn đóng gói" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                        <TextBlock Text="Game / asset" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border x:Name="PatchGamePathBorder" Style="{StaticResource PathDisplayBorderStyle}" AllowDrop="True" Drop="InputPathDrop">
-                                                <TextBlock x:Name="PatchGamePathText" Text="{Binding InputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="12"
+                                                <TextBlock x:Name="PatchGamePathText" Text="{Binding InputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                            Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button x:Name="ChoosePatchGameButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
@@ -860,14 +849,14 @@
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
-                                        <TextBlock Text="Thư mục xuất / gói dịch" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Text="Thư mục xuất / gói dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border x:Name="PatchOutputPathBorder" Style="{StaticResource PathDisplayBorderStyle}">
-                                                <TextBlock x:Name="PatchOutputPathText" Text="{Binding OutputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="12"
+                                                <TextBlock x:Name="PatchOutputPathText" Text="{Binding OutputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                            Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button x:Name="ChoosePatchOutputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
@@ -878,7 +867,7 @@
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
-                                        <TextBlock Text="File bản dịch" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,18,0,0" />
+                                        <TextBlock Text="File bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,18,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -886,7 +875,7 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border Style="{StaticResource PathDisplayBorderStyle}">
-                                                <TextBlock Text="{Binding TranslationCsvDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="12"
+                                                <TextBlock Text="{Binding TranslationCsvDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                            Foreground="{StaticResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding ChooseTranslationCsvCommand}">
@@ -896,8 +885,8 @@
                                                 <TextBlock Text="Kiểm tra" />
                                             </Button>
                                         </Grid>
-                                        <TextBlock Text="{Binding CsvValidationMessage}" Margin="0,10,0,0" FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
-                                        <TextBlock Text="Nếu vừa xuất ZIP để dịch bên ngoài, CSV trả về sẽ được kiểm tra với gói đó trước khi tạo patch." Margin="0,4,0,0" FontSize="10" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding CsvValidationMessage}" Margin="0,10,0,0" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="Nếu vừa xuất ZIP để dịch bên ngoài, CSV trả về sẽ được kiểm tra với gói đó trước khi tạo patch." Margin="0,4,0,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" />
                                         <Button Margin="0,10,0,0" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left"
                                                 Command="{Binding OpenCsvEditorFromPatchCommand}">
                                             <TextBlock Text="Mở trong Sửa CSV…" />
@@ -915,8 +904,8 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Tiến trình đóng gói" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, Converter={StaticResource Pct}}" FontSize="11" FontWeight="SemiBold"
+                                        <TextBlock Text="Tiến trình đóng gói" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource MutedBrush}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, Converter={StaticResource Pct}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold"
                                                    Foreground="{StaticResource MutedBrush}" />
                                     </Grid>
                                     <ProgressBar x:Name="PatchProgressBar" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"
@@ -929,8 +918,8 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding PatchPreflightMessage}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
-                                        <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0">
+                                        <TextBlock Text="{Binding PatchPreflightMessage}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+                                        <TextBlock FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0">
                                             <Run Text="Patch: " />
                                             <Run Text="{Binding PatchEligibleCount, Mode=OneWay}" />
                                             <Run Text=" hợp lệ · " />
@@ -943,8 +932,8 @@
 
                                 <Border Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,16,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding PatchDeliveryLabel}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding PatchInstallInstructions}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PatchDeliveryLabel}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PatchInstallInstructions}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -966,10 +955,10 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="Kiểm tra trước khi build" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                        <TextBlock Text="Mọi thứ cần sẵn sàng trước khi xuất package." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Mọi thứ cần sẵn sàng trước khi xuất package." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Border Grid.Column="1" Background="{StaticResource GreenSoftBrush}" CornerRadius="8" Padding="9,5">
-                                        <TextBlock FontSize="9" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}">
+                                        <TextBlock FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Text" Value="CHƯA SẴN SÀNG" />
@@ -994,8 +983,8 @@
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
                                             <StackPanel Margin="10,0,0,0">
-                                                <TextBlock Text="CSV / preflight" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="{Binding CsvValidationMessage}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="CSV / preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="{Binding CsvValidationMessage}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
@@ -1005,8 +994,8 @@
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
                                             <StackPanel Margin="10,0,0,0">
-                                                <TextBlock Text="Patch preflight" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="{Binding PatchPreflightMessage}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="Patch preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="{Binding PatchPreflightMessage}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
@@ -1016,14 +1005,16 @@
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
                                             <StackPanel Margin="10,0,0,0">
-                                                <TextBlock Text="Thư mục xuất" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="{Binding OutputDisplay}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Text="Thư mục xuất" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="{Binding OutputDisplay}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </StackPanel>
 
-                                <Border Grid.Row="2" Style="{StaticResource LogPanelBorderStyle}" Margin="0,16,0,0"
+                                <Expander Grid.Row="2" Header="Nhật ký và cảnh báo" FontSize="14" Margin="0,16,0,0">
+<Expander.Style><Style TargetType="Expander"><Setter Property="IsExpanded" Value="False" /><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsExpanded" Value="True" /></DataTrigger></Style.Triggers></Style></Expander.Style>
+<Border Style="{StaticResource LogPanelBorderStyle}" Margin="0,16,0,0"
                                         MinHeight="160" VerticalAlignment="Stretch">
                                     <Grid>
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="280"
@@ -1031,7 +1022,7 @@
                                             <TextBlock Text="Nhật ký patch" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}"
                                                        HorizontalAlignment="Center" />
                                             <TextBlock Text="Log phiên làm việc sẽ hiện ở đây khi có hoạt động."
-                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="11"
+                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}"
                                                        Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" />
                                         </StackPanel>
                                         <ScrollViewer x:Name="PatchLogScrollViewer"
@@ -1041,7 +1032,7 @@
                                             <ItemsControl ItemsSource="{Binding LogLines}" Margin="12,10">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <TextBlock Text="{Binding}" FontSize="11" Foreground="{StaticResource MutedBrush}"
+                                                        <TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}"
                                                                    TextWrapping="Wrap" Margin="0,0,0,6" />
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
@@ -1050,7 +1041,8 @@
                                     </Grid>
                                 </Border>
 
-                                <Border Grid.Row="3" Background="{StaticResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,16,0,0">
+                                </Expander>
+<Border Grid.Row="3" Background="{StaticResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,16,0,0">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -1058,16 +1050,16 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="HỢP LỆ" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
-                                            <TextBlock Text="{Binding PatchEligibleCount}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" />
+                                            <TextBlock Text="HỢP LỆ" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
+                                            <TextBlock Text="{Binding PatchEligibleCount}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Text="BỊ CHẶN" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
-                                            <TextBlock Text="{Binding PatchBlockedCount}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" />
+                                            <TextBlock Text="BỊ CHẶN" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
+                                            <TextBlock Text="{Binding PatchBlockedCount}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
-                                            <TextBlock Text="TRẠNG THÁI" FontSize="9" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
-                                            <TextBlock Text="{Binding StepStatusLine}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                            <TextBlock Text="TRẠNG THÁI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource SoftTextBrush}" />
+                                            <TextBlock Text="{Binding StepStatusLine}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -1075,79 +1067,52 @@
                         </Border>
                     </Grid>
 
-                    <!-- Settings page -->
-                    <Grid Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}">
-                        <ScrollViewer x:Name="SettingsScrollViewer"
-                                      Style="{StaticResource OverlayAutoHideScrollViewer}"
-                                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <Grid MinWidth="600" Margin="0,0,0,12">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <Border Style="{StaticResource CardShadowBorder}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GreenSoftBrush}">
-                                            <Path Data="{StaticResource SettingsIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
-                                        </Border>
-                                        <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="Cài đặt" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                            <TextBlock Text="Workspace local và trạng thái công cụ." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
+                    <ScrollViewer x:Name="SettingsScrollViewer" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}" Margin="0,0,0,12" />
+                            <TabControl FontSize="14">
+                                <TabItem Header="Chung">
+                                    <StackPanel Margin="20">
+                                        <TextBlock Text="Giao diện" FontSize="18" FontWeight="Bold" />
+                                        <TextBlock Text="Tỷ lệ nội dung (1 = 100%)" Margin="0,12,0,6" />
+                                        <ComboBox ItemsSource="{Binding UiScaleOptions}" SelectedItem="{Binding UiScale, Mode=TwoWay}" Width="160" HorizontalAlignment="Left" />
+                                        <CheckBox Content="Nhớ vị trí và kích thước cửa sổ" IsChecked="{Binding RememberWindow}" Margin="0,18,0,18" />
+                                        <TextBlock Text="Cập nhật" FontSize="18" FontWeight="Bold" />
+                                        <CheckBox Content="Kiểm tra cập nhật khi mở ứng dụng" IsChecked="{Binding AutoCheckUpdates}" Margin="0,12,0,12" />
+                                        <CheckBox Content="Thông báo khi có phiên bản mới" IsChecked="{Binding NotifyUpdates}" />
+                                        <TextBlock Text="Chỉ tải khi bạn chọn cập nhật. Kiểm tra thủ công luôn có tại Giới thiệu." TextWrapping="Wrap" Margin="0,12,0,0" />
+                                    </StackPanel>
+                                </TabItem>
+                                <TabItem Header="Dữ liệu">
+                                    <StackPanel Margin="20">
+                                        <TextBlock Text="Dữ liệu ứng dụng" FontSize="18" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" Margin="0,12,0,12" />
+                                        <Button Content="Mở thư mục dữ liệu" Command="{Binding OpenDataFolderCommand}" HorizontalAlignment="Left" Style="{StaticResource OutlineButton}" />
+                                        <TextBlock Text="{Binding WorkerStatus}" Margin="0,20,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding ModelStatus}" Margin="0,12,0,6" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding ModelFolder}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                        <Button Content="Mở thư mục model" Command="{Binding OpenModelFolderCommand}" HorizontalAlignment="Left" Style="{StaticResource OutlineButton}" />
+                                        <TextBlock Text="Các lựa chọn lấy text và dịch được lưu tại bước tương ứng." TextWrapping="Wrap" Margin="0,12,0,0" />
+                                    </StackPanel>
+                                </TabItem>
+                                <TabItem Header="Giới thiệu">
+                                    <StackPanel Margin="20">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Image Source="Assets/vntext_studio_logo_128.png" Width="32" Height="32" Margin="0,0,12,0" />
+                                            <TextBlock Text="VNText Studio" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <Border Grid.Column="2" Background="{StaticResource BlueSoftBrush}" CornerRadius="8" Padding="9,5">
-                                            <TextBlock Text="LOCAL" FontSize="9" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" />
-                                        </Border>
-                                    </Grid>
-                                </Border>
-
-                                <Grid Grid.Row="1" Margin="0,14,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Style="{StaticResource CardShadowBorder}" Margin="0,0,7,0" Padding="21,20">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Text="Tuỳ chọn theo từng bước" FontSize="14" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                            <TextBlock Grid.Row="1" Text="Cách tách dòng và lọc nội dung chỉnh ở Lấy text; cách ghi đè và duyệt bản dịch chỉnh ở Dịch local." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
-                                        </Grid>
-                                    </Border>
-                                    <Border Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="7,0,0,0" Padding="21,20">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <TextBlock Text="Runtime" FontSize="14" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                            <TextBlock Grid.Row="1" Text="Trạng thái worker local." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
-                                            <Border Grid.Row="2" Background="{StaticResource GreenSoftBrush}" CornerRadius="11" Padding="12,11" Margin="0,18,0,0">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Ellipse Width="9" Height="9" Fill="{StaticResource GreenBrush}" VerticalAlignment="Center" />
-                                                    <StackPanel Margin="9,0,0,0">
-                                                        <TextBlock Text="{Binding StatusText}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource GreenDarkBrush}" />
-                                                        <TextBlock Text="{Binding Version}" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
-                                                    </StackPanel>
-                                                </StackPanel>
-                                            </Border>
-                                        </Grid>
-                                    </Border>
-                                </Grid>
-
-                                <TextBlock Grid.Row="2" Text="Các tuỳ chọn trong quy trình được lưu tự động." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,14,0,0" />
-                            </Grid>
-                        </ScrollViewer>
-                    </Grid>
+                                        <TextBlock Text="{Binding CurrentVersionDisplay}" Margin="0,8,0,12" />
+                                        <TextBlock Text="{Binding GitHubUpdateStatus}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                        <WrapPanel>
+                                            <Button Content="Kiểm tra cập nhật" Command="{Binding RecheckUpdateCommand}" Style="{StaticResource OutlineButton}" />
+                                            <Button Content="Repository và phản hồi" Command="{Binding OpenRepositoryCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
+                                            <Button Content="Ghi chú phát hành" Command="{Binding OpenReleaseNotesCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </TabItem>
+                            </TabControl>
+                        </StackPanel>
+                    </ScrollViewer>
 
                 </Grid>
             </ScrollViewer>
@@ -1205,11 +1170,11 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0">
                                         <TextBlock Text="{Binding CsvEditorPathDisplay}" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="Chỉnh sửa bản dịch trước khi đóng gói." FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="Chỉnh sửa bản dịch trước khi đóng gói." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                     <Border Grid.Column="2" Background="{StaticResource GreenSoftBrush}" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding CsvEditorDirty, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="CHƯA LƯU" FontSize="9" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" />
+                                        <TextBlock Text="CHƯA LƯU" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" />
                                     </Border>
                                 </Grid>
 
@@ -1220,8 +1185,8 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="Nguồn CSV" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
-                                            <TextBlock Text="{Binding CsvEditorPathDisplay}" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="Nguồn CSV" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                            <TextBlock Text="{Binding CsvEditorPathDisplay}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                         <Button Grid.Column="1" Content="Chọn file" Style="{StaticResource OutlineButton}" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </Grid>
@@ -1249,15 +1214,15 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <StackPanel Margin="0,0,7,0">
-                                            <TextBlock Text="Tìm trong bản dịch" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                            <TextBlock Text="Tìm trong bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
                                             <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,5,0,0" ToolTip="Chỉ tìm trong cột Bản dịch" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1" Margin="7,0,7,0">
-                                            <TextBlock Text="Thay bằng" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                            <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
                                             <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,5,0,0" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Margin="7,0,7,0">
-                                            <TextBlock Text="Phạm vi" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                            <TextBlock Text="Phạm vi" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
                                             <ComboBox x:Name="CsvBulkScopeComboBox" ItemsSource="{Binding CsvBulkScopeOptions}" SelectedValue="{Binding CsvBulkScope, Mode=TwoWay}" SelectedValuePath="Value" DisplayMemberPath="Label" Width="132" Height="32" Margin="0,5,0,0" Style="{StaticResource SettingsCombo}" />
                                         </StackPanel>
                                         <Button x:Name="CsvBulkPreviewButton" Grid.Column="3" Content="Xem trước &amp; thay thế" Style="{StaticResource OutlineButton}" Margin="7,15,7,0" Command="{Binding BulkReplaceCsvCommand}" />
@@ -1266,9 +1231,9 @@
                                 </Border>
 
                                 <StackPanel Grid.Row="4" Margin="0,10,0,0">
-                                    <TextBlock FontSize="11" Foreground="{StaticResource SoftTextBrush}"
+                                    <TextBlock FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource SoftTextBrush}"
                                                Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" />
-                                    <TextBlock FontSize="11" Foreground="{StaticResource SoftTextBrush}" Margin="0,4,0,0"
+                                    <TextBlock FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource SoftTextBrush}" Margin="0,4,0,0"
                                                Text="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap" />
                                 </StackPanel>
 
@@ -1291,7 +1256,7 @@
                                           MinRowHeight="32"
                                           CanUserResizeColumns="True"
                                           CanUserResizeRows="False"
-                                          FontSize="12"
+                                          FontSize="{StaticResource UiBodySize}"
                                           SelectionChanged="CsvEditorGrid_SelectionChanged"
                                           CellEditEnding="CsvEditorGrid_CellEditEnding">
                                     <DataGrid.Resources>
