@@ -32,9 +32,6 @@
         <conv:TabEqualsToNavBackgroundConverter x:Key="NavBg" />
         <conv:TabEqualsToNavForegroundConverter x:Key="NavFg" />
     </Window.Resources>
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
 
     <Grid>
         <Grid.ColumnDefinitions>

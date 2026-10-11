@@ -10,8 +10,11 @@ public partial class MainWindow : Window
 {
     private bool _layoutInitialized;
 
-    public MainWindow()
+    public MainWindow() : this(null) { }
+
+    internal MainWindow(MainViewModel? viewModel)
     {
+        DataContext = viewModel ?? new MainViewModel();
         InitializeComponent();
         if (DataContext is MainViewModel vm)
         {

@@ -19,6 +19,18 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--native-update-ui", StringComparer.Ordinal))
+        {
+            var code = 1;
+            var thread = new Thread(() =>
+            {
+                try { code = RunNativeUpdateUi(); }
+                catch (Exception ex) { Console.Error.WriteLine(ex); }
+            });
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start(); thread.Join();
+            return code;
+        }
         var failures = new List<string>();
         if (args.Contains("--full-app-update-only", StringComparer.Ordinal))
         {
@@ -2658,7 +2670,7 @@ internal static class Program
     }
 
     private static TestHttpMessageHandler CreateFullAppGitHubHandler(FullAppUpdateFixture fixture,
-        string digest, long size, string downloadUrl, byte[] packageBytes)
+        string digest, long size, string downloadUrl, byte[] packageBytes, string notes = "")
     {
         var source = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(fixture.SourcePath))!;
         source["github_owner"] = "test-owner";
@@ -2672,6 +2684,9 @@ internal static class Program
                 GitHubAsset(assetName, "sha256:" + digest, size, downloadUrl)),
         });
         var apiUrl = new Uri("https://api.github.com/repos/test-owner/test-repo/releases?per_page=100");
+        var releaseNodes = System.Text.Json.Nodes.JsonNode.Parse(releases)!;
+        releaseNodes[0]!["body"] = notes;
+        releases = releaseNodes.ToJsonString();
         return new TestHttpMessageHandler((request, _) =>
         {
             if (request.RequestUri == apiUrl) return Task.FromResult(JsonResponse(releases));
@@ -3000,6 +3015,43 @@ internal static class Program
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class NativeUpdateUiApplication : VNText.Studio.App.App
+    {
+        protected override void OnStartup(StartupEventArgs e) { }
+    }
+
+    private static int RunNativeUpdateUi()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var package = File.ReadAllBytes(fixture.PackagePath);
+            var digest = HashBytes(package);
+            var notes = string.Join("\n", Enumerable.Range(1, 120).Select(i => $"{i}. Ghi chú fixture: kiểm cuộn nội dung; không phải Release công khai."));
+            var handler = CreateFullAppGitHubHandler(fixture, digest, package.LongLength, FullAppAssetUrl(fixture, digest), package, notes);
+            var app = new NativeUpdateUiApplication();
+            app.InitializeComponent();
+            var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(vm.GitHubUpdateState))
+                    Console.WriteLine(JsonSerializer.Serialize(new { state = vm.GitHubUpdateState.ToString(), requests = handler.Requests.Count }));
+            };
+            var window = new VNText.Studio.App.MainWindow(vm);
+            window.Loaded += (_, _) => Console.WriteLine(JsonSerializer.Serialize(new { pid = Environment.ProcessId, root = fixture.Root,
+                baseline_version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!),
+                candidate_version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!),
+                package_sha256 = digest, scope = "generated local UI fixture; mocked HTTP; no public release or native apply acceptance" }));
+            app.Run(window);
+            AssertEqual(GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
+            AssertEqual(0, Directory.GetFiles(Path.Combine(fixture.Root, ".update", "work"), "github-update-*.zip").Length);
+            Console.WriteLine("Native popup ready/defer/reopen and lease disposal: PASS; apply/restart not exercised.");
+            return 0;
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
     }
 
     private sealed class FakePathPicker : IPathPickerService
