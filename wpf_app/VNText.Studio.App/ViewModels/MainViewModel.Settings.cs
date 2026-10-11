@@ -41,7 +41,7 @@ public sealed partial class MainViewModel
               catch (Exception ex) { return "Worker chưa sẵn sàng: " + ex.Message; } }
     }
     public RelayCommand OpenDataFolderCommand => new(_ => OpenSettingsFolder(DataFolder));
-    public RelayCommand OpenModelFolderCommand => new(_ => OpenSettingsFolder(ModelFolder), _ => !string.IsNullOrWhiteSpace(ModelFolder));
+    public RelayCommand OpenModelFolderCommand => new(_ => OpenSettingsFolder(ModelFolder));
     public RelayCommand OpenRepositoryCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText"));
     public RelayCommand OpenReleaseNotesCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText/releases"));
     private void OpenSettingsLink(string url)
@@ -73,7 +73,8 @@ public sealed partial class MainViewModel
             if (process.ExitCode != 0) throw new InvalidOperationException($"Kiểm tra model exit {process.ExitCode}: {await error}");
             using var result = System.Text.Json.JsonDocument.Parse(await output);
             _modelFolder = result.RootElement.GetProperty("path").GetString() ?? "";
-            _modelStatus = result.RootElement.GetProperty("message").GetString() ?? "Không có trạng thái model.";
+            _modelStatus = result.RootElement.GetProperty("ready").GetBoolean()
+                ? "File model OPUS-MT INT8 có sẵn." : "Thiếu file model OPUS-MT INT8.";
         }
         catch (Exception ex) { _modelStatus = "Không kiểm tra được model: " + ex.Message; }
         if (_disposed != 0) return;

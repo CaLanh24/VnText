@@ -33,7 +33,11 @@ public partial class MainWindow : Window
                     content.LayoutTransform = new ScaleTransform(vm.UiScale, vm.UiScale);
             }
             ApplyScale();
-            vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.UiScale)) ApplyScale(); };
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(vm.UiScale)) ApplyScale();
+                if (e.PropertyName == nameof(vm.SelectedTab)) PageScrollViewer.ScrollToTop();
+            };
             Closing += (_, e) =>
             {
                 if (vm.CsvEditorDirty || vm.Busy)

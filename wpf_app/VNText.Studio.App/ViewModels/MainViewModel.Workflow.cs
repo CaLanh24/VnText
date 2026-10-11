@@ -117,7 +117,7 @@ public sealed partial class MainViewModel
             case WorkflowTabs.Settings:
                 HeroTitle = "Cài đặt";
                 HeroIcon = "gear";
-                HeroHint = "Thiết lập extract, dịch và workspace local.";
+                HeroHint = "Giao diện, dữ liệu và cập nhật ứng dụng.";
                 break;
             default:
                 HeroTitle = "Lấy text";
