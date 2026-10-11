@@ -1,4 +1,5 @@
 # Owner priority — UI/updater before Release (2026-10-11)
+Owner bổ sung: popup có bỏ qua/tải; bỏ khối updater ở cuối sidebar, manual check tại Cài đặt → Giới thiệu; xem Cockpit Tools trực tiếp để đề xuất settings thực tế. Brain đã xem bốn tab trên Cockpit1.3.66 và manual check current; chưa quan sát live newer/download/restart. `docs/UPDATE_UI.md` đã cập nhật yêu cầu sidebar và đề xuất settings Chung/Dữ liệu/Giới thiệu, phân biệt proposal với quyết định đã chốt. Chưa sửa source app hoặc giao implementation trong receipt này.
 Owner yêu cầu lưu kế hoạch cải thiện chất lượng dịch để thực hiện **sau** bản phát hành đang chuẩn bị. Plan: `docs/TRANSLATION_QUALITY_PLAN.md`; không mở model/training campaign trong đợt UI/Release này. Trước phát hành, hoàn thiện popup cập nhật theo ảnh Cockpit Tools; brief và acceptance: `docs/UPDATE_UI.md`. Đây là PLANNED, chưa có implementation/validation mới; version tiếp theo chưa chốt trong quyết định này. Bounded two-game evidence bên dưới đã terminal và giữ nguyên SHA/giới hạn; không nâng thành semantic-quality hay Release PASS.
 
 # Completed task — bounded two-game product acceptance (2026-10-11)
