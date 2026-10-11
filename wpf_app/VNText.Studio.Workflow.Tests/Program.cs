@@ -3017,11 +3017,6 @@ internal static class Program
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
-    private sealed class NativeUpdateUiApplication : VNText.Studio.App.App
-    {
-        protected override void OnStartup(StartupEventArgs e) { }
-    }
-
     private static int RunNativeUpdateUi()
     {
         var fixture = CreateFullAppUpdateFixture();
@@ -3031,8 +3026,10 @@ internal static class Program
             var digest = HashBytes(package);
             var notes = string.Join("\n", Enumerable.Range(1, 120).Select(i => $"{i}. Ghi chú fixture: kiểm cuộn nội dung; không phải Release công khai."));
             var handler = CreateFullAppGitHubHandler(fixture, digest, package.LongLength, FullAppAssetUrl(fixture, digest), package, notes);
-            var app = new NativeUpdateUiApplication();
-            app.InitializeComponent();
+            var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
+            foreach (var dictionary in new[] { "DesignTokens", "IconGeometries", "ControlStyles" })
+                app.Resources.MergedDictionaries.Add(new ResourceDictionary
+                { Source = new Uri($"pack://application:,,,/VNText.Studio.App;component/Themes/{dictionary}.xaml") });
             var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
                 githubHttpHandler: handler, updateInstallRoot: fixture.Root);
             vm.PropertyChanged += (_, e) =>

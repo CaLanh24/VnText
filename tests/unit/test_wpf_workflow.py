@@ -130,6 +130,7 @@ def _build_versioned_exe_fixture(
             "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
             "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
             "-p:NuGetAudit=false",
+            "-p:UseSharedCompilation=false",
         ],
         cwd=str(ROOT),
         env=_harness_env(project_root),
