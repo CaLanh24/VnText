@@ -58,7 +58,7 @@ public partial class MainWindow : Window
             return;
 
         _compactLayout = compact;
-        SetResponsiveLayout(ExtractPage, ExtractConfigCard, ExtractLogCard, compact);
+        // Extract keeps details below the task at every supported width.
         SetResponsiveLayout(TranslatePage, TranslateConfigCard, TranslateLogCard, compact);
         SetResponsiveLayout(PatchPage, PatchConfigCard, PatchCheckCard, compact);
     }

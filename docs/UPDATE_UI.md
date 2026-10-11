@@ -1,5 +1,7 @@
 # Thông báo cập nhật trong app — yêu cầu trước phát hành
 
+Owner đã chọn version candidate **0.1.5** ngày2026-10-11. Chỉ đồng bộ VERSION và các version owner khi bắt đầu candidate sau checkpoint UI/updater; source hiện0.1.4, không đổi version để relabel evidence cũ.
+
 ## Mục tiêu và nguồn thiết kế
 
 Owner yêu cầu ngày 2026-10-11: app có bảng thông báo khi có cập nhật mới, tham khảo ảnh Cockpit Tools đã cung cấp. Ưu tiên hoàn thiện UI/updater trong bản đang chuẩn bị, rồi phát hành trước khi thực hiện `TRANSLATION_QUALITY_PLAN.md`.

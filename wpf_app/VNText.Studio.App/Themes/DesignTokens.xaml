@@ -58,6 +58,10 @@
 
 
 
+    <sys:Double x:Key="UiBodySize">14</sys:Double>
+    <sys:Double x:Key="UiCaptionSize">13</sys:Double>
+    <sys:Double x:Key="UiSectionTitleSize">18</sys:Double>
+
     <!-- Surfaces & chrome -->
 
     <Color x:Key="FieldBackgroundColor">#FBFCFE</Color>
