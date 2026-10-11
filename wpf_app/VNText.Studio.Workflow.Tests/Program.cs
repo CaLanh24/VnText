@@ -2670,7 +2670,7 @@ internal static class Program
     }
 
     private static TestHttpMessageHandler CreateFullAppGitHubHandler(FullAppUpdateFixture fixture,
-        string digest, long size, string downloadUrl, byte[] packageBytes, string notes = "")
+        string digest, long size, string downloadUrl, byte[] packageBytes, string notes = "", bool slowDownload = false)
     {
         var source = JsonSerializer.Deserialize<Dictionary<string, object>>(File.ReadAllText(fixture.SourcePath))!;
         source["github_owner"] = "test-owner";
@@ -2690,7 +2690,13 @@ internal static class Program
         return new TestHttpMessageHandler((request, _) =>
         {
             if (request.RequestUri == apiUrl) return Task.FromResult(JsonResponse(releases));
-            if (request.RequestUri == new Uri(downloadUrl)) return Task.FromResult(BinaryResponse(packageBytes));
+            if (request.RequestUri == new Uri(downloadUrl))
+            {
+                if (!slowDownload) return Task.FromResult(BinaryResponse(packageBytes));
+                var content = new StreamContent(new NativeUiDownloadStream(packageBytes));
+                content.Headers.ContentLength = packageBytes.LongLength;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+            }
             throw new HttpRequestException("Unexpected HTTP target: " + request.RequestUri);
         });
     }
@@ -3025,7 +3031,7 @@ internal static class Program
             var package = File.ReadAllBytes(fixture.PackagePath);
             var digest = HashBytes(package);
             var notes = string.Join("\n", Enumerable.Range(1, 120).Select(i => $"{i}. Ghi chú fixture: kiểm cuộn nội dung; không phải Release công khai."));
-            var handler = CreateFullAppGitHubHandler(fixture, digest, package.LongLength, FullAppAssetUrl(fixture, digest), package, notes);
+            var handler = CreateFullAppGitHubHandler(fixture, digest, package.LongLength, FullAppAssetUrl(fixture, digest), package, notes, slowDownload: true);
             var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
             foreach (var dictionary in new[] { "DesignTokens", "IconGeometries", "ControlStyles" })
                 app.Resources.MergedDictionaries.Add(new ResourceDictionary
@@ -3036,6 +3042,8 @@ internal static class Program
             {
                 if (e.PropertyName == nameof(vm.GitHubUpdateState))
                     Console.WriteLine(JsonSerializer.Serialize(new { state = vm.GitHubUpdateState.ToString(), requests = handler.Requests.Count }));
+                if (e.PropertyName == nameof(vm.DownloadReceived))
+                    Console.WriteLine(JsonSerializer.Serialize(new { received = vm.DownloadReceived, total = vm.DownloadTotal }));
             };
             var window = new VNText.Studio.App.MainWindow(vm);
             window.Loaded += (_, _) => Console.WriteLine(JsonSerializer.Serialize(new { pid = Environment.ProcessId, root = fixture.Root,
@@ -3049,6 +3057,16 @@ internal static class Program
             return 0;
         }
         finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private sealed class NativeUiDownloadStream(byte[] bytes) : MemoryStream(bytes, writable: false)
+    {
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            // Leave enough time for actual popup progress/cancel interaction without changing package bytes.
+            await Task.Delay(150, cancellationToken);
+            return await base.ReadAsync(buffer[..Math.Min(buffer.Length, 256)], cancellationToken);
+        }
     }
 
     private sealed class FakePathPicker : IPathPickerService
