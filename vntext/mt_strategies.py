@@ -122,10 +122,19 @@ def candidate_quality_issues(
             issues.append("quality: content loss")
 
     if action in {"translate", "translate_synonym", "ui_label_fixed"}:
+        option_label = re.fullmatch(r"Option ([AB])", source_visible) if row.get("import_method") == "unity_ui_text" else None
+        preserved_label = None
+        if option_label:
+            label = option_label.group(1)
+            candidate_labels = re.findall(r"\b[AB]\b", candidate_visible)
+            if candidate_labels == [label] and re.search(rf"\b{label}[.!?]?\s*$", candidate_visible):
+                preserved_label = label
+            else:
+                issues.append("quality: option label changed or missing")
         # ponytail: bounded residue checks catch CT2 artifacts without owning a
         # second grammar checker; expand only when a reviewed fixture proves it.
         for token in mt_check.WORD.findall(candidate_visible):
-            if token.casefold() in {"a", "m", "s"}:
+            if token.casefold() in {"a", "m", "s"} and token != preserved_label:
                 issues.append(f"quality: residual short token: {token}")
         repeated_tokens = {
             match.group(1).casefold()

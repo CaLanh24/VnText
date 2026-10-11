@@ -27,6 +27,18 @@ from vntext.mt_strategies import candidate_quality_issues
 
 
 class MtQualityRoutingTests(unittest.TestCase):
+    def test_ui_option_letter_is_preserved_without_general_residue_exemption(self):
+        for letter in ("A", "B"):
+            row = {"source_text": f"Option {letter}", "import_method": "unity_ui_text"}
+            self.assertEqual(candidate_quality_issues(row, f"Lựa chọn {letter}", load_whitelist()), [])
+            for candidate in (f"Lựa chọn {'B' if letter == 'A' else 'A'}", "Lựa chọn", f"Lựa chọn {letter} {letter}"):
+                with self.subTest(source=row["source_text"], candidate=candidate):
+                    self.assertTrue(candidate_quality_issues(row, candidate, load_whitelist()))
+        for source, candidate in (("Take a break", "Nghỉ a"), ("Option A", "Lựa chọn A s"),
+                                  ("Option A", "Lựa chọn a"), ("Take {name}", "Đưa {name} s")):
+            self.assertTrue(candidate_quality_issues({"source_text": source, "import_method": "unity_ui_text"}, candidate, load_whitelist()))
+        self.assertTrue(candidate_quality_issues({"source_text": "Option A", "import_method": "plain_text_line"}, "Lựa chọn A", load_whitelist()))
+
     def test_repeated_model_output_is_rejected_for_player_text(self):
         row = {
             "source_text": "Please check the file.",
