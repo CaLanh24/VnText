@@ -222,19 +222,18 @@ public sealed partial class MainViewModel
     private async void RunTranslate()
     {
         SelectedTab = WorkflowTabs.Translate;
-        if (string.IsNullOrWhiteSpace(OutputPath))
+        var csv = ResolveActiveCsvPath();
+        if (string.IsNullOrWhiteSpace(csv))
         {
             AppendLog("Chọn thư mục gói dịch trước khi dịch.");
             StatusText = "Chưa chọn thư mục xuất";
             return;
         }
-        var input = InputPath;
-        var output = OutputPath;
         StatusText = "Đang kiểm tra gói dịch…";
-        WorkflowSnapshot snap;
+        CsvValidationResult validation;
         try
         {
-            snap = await Task.Run(() => WorkflowStatus.Evaluate(input, output));
+            validation = await Task.Run(() => CsvPackageValidator.Validate(csv));
         }
         catch (Exception ex)
         {
@@ -242,15 +241,13 @@ public sealed partial class MainViewModel
             StatusText = "Lỗi kiểm tra gói";
             return;
         }
-        if (!snap.HasExtract)
+        if (!validation.Ok)
         {
-            AppendLog("Chưa có translation.csv — hãy extract trước.");
-            StatusText = "Cần extract trước";
-            SelectedTab = WorkflowTabs.Extract;
+            AppendLog($"Không thể dịch CSV: {validation.Message}");
+            StatusText = "CSV chưa hợp lệ";
             return;
         }
         TranslateButtonGreen = false;
-        var csv = ResolveActiveCsvPath();
         BeginTask("translate", BuildTranslateParameters(csv), "Đang dịch offline…");
     }
 

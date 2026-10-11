@@ -146,6 +146,15 @@ def _build_versioned_exe_fixture(
 
 
 class WpfWorkflowTests(unittest.TestCase):
+    def test_translate_preflight_validates_the_selected_csv(self):
+        workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
+        run = workflow[workflow.index("private async void RunTranslate()"):workflow.index("private void ExportCloudRepairPackage()")]
+        self.assertIn("var csv = ResolveActiveCsvPath();", run)
+        self.assertIn("CsvPackageValidator.Validate(csv)", run)
+        self.assertIn("if (!validation.Ok)", run)
+        self.assertIn("BuildTranslateParameters(csv)", run)
+        self.assertNotIn("WorkflowStatus.Evaluate", run)
+
     def test_workflow_options_are_not_duplicated(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         glossary_probe = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "BulkGlossaryUiProbe.cs").read_text(encoding="utf-8")
