@@ -186,7 +186,7 @@
                     </TextBlock>
                     <TextBlock Text="{Binding HeroTitle}" FontSize="31" FontWeight="Bold" Foreground="{StaticResource InkBrush}" Margin="0,9,0,0" />
                     <TextBlock Text="{Binding HeroHint}" FontSize="14" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
-                               TextWrapping="Wrap" MaxWidth="720" />
+                               TextWrapping="Wrap" MaxWidth="720" HorizontalAlignment="Left" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
                     <Button Content="Hủy tác vụ" Style="{StaticResource OutlineButton}" Margin="0,0,10,0"
@@ -280,14 +280,9 @@
                                                 <TextBlock Text="{Binding AnalyzeStatusText}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" />
                                                 <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
-                                            <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="9,6" Margin="12,0,0,0" VerticalAlignment="Top">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Ellipse Width="7" Height="7" Fill="{StaticResource MutedBrush}" VerticalAlignment="Center" />
-                                                    <TextBlock Text="{Binding AnalyzeUnityStatus}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" Margin="6,0,0,0" />
-                                                </StackPanel>
-                                            </Border>
                                         </Grid>
-                                        <Grid Grid.Row="2" Margin="0,14,0,0">
+                                        <Expander Grid.Row="2" Header="Chi tiết phân tích" Margin="0,12,0,0">
+                                        <Grid Margin="0,10,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
@@ -302,25 +297,26 @@
                                             </StackPanel>
                                             <StackPanel Grid.Column="1">
                                                 <TextBlock Text="{Binding AnalyzeTextCandidateCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="Text candidate" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                                <TextBlock Text="Có thể là văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="2">
                                                 <TextBlock Text="{Binding AnalyzePatchableCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="Patchable obs." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                                <TextBlock Text="Có đường ghi lại; chưa kiểm patch" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="3">
                                                 <TextBlock Text="{Binding AnalyzeExtractOnlyCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
-                                                <TextBlock Text="Extract-only" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                                <TextBlock Text="Chỉ lấy văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="4">
                                                 <TextBlock Text="{Binding AnalyzeReviewRiskCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource WarningBrush}" />
-                                                <TextBlock Text="Review / unsup." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                                <TextBlock Text="Cần xem lại / chưa hỗ trợ" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="5">
                                                 <TextBlock Text="{Binding AnalyzeUnknownCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource MutedBrush}" />
-                                                <TextBlock Text="Unknown" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
+                                                <TextBlock Text="Chưa xác định" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                         </Grid>
+                                        </Expander>
                                         <TextBlock Grid.Row="3" Text="{Binding AnalyzeReportPath}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource SoftTextBrush}" Margin="0,12,0,0" TextTrimming="CharacterEllipsis" />
                                     </Grid>
                                 </Border>

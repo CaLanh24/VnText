@@ -23,9 +23,31 @@ internal static class AnalyzeUiProbe
             vm.NavigateTab(WorkflowTabs.Extract);
         });
 
+        // Controlled presentation states; these do not prove worker execution or error handling.
+        foreach (var state in new[] { "empty", "ready", "busy", "error" })
         foreach (var (width, height) in new[] { (1440d, 920d), (1040d, 720d) })
         {
-            var shot = Path.Combine(outDir, $"analyze_{(int)width}x{(int)height}.png");
+            var shot = Path.Combine(outDir, $"analyze_{state}_{(int)width}x{(int)height}.png");
+            await window.Dispatcher.InvokeAsync(() =>
+            {
+                vm.InputPath = state == "empty" ? "" : @"C:\fixture\Example.exe";
+                vm.Busy = state == "busy";
+                vm.ProgressPercent = state == "busy" ? 45 : 0;
+                vm.ProgressSubtitle = state switch
+                {
+                    "busy" => "Đang lấy văn bản…",
+                    "error" => "Trích xuất thất bại — xem nhật ký",
+                    _ => "Chưa bắt đầu",
+                };
+                vm.LogLines.Clear();
+                if (state == "error")
+                    vm.LogLines.Add("Fixture UI có kiểm soát: không đọc được nguồn; chưa tạo gói dịch.");
+                window.Width = width;
+                window.Height = height;
+                if (window.FindName("PageScrollViewer") is System.Windows.Controls.ScrollViewer page)
+                    page.ScrollToTop();
+            });
+            await Task.Delay(200);
             var metrics = await window.Dispatcher.InvokeAsync(() =>
             {
                 window.WindowState = WindowState.Normal;
@@ -37,13 +59,15 @@ internal static class AnalyzeUiProbe
                 CaptureWindow(window, shot);
                 return new
                 {
+                    state,
                     width,
                     height,
                     analyze_panel_visible = panel?.IsVisible == true,
                     analyze_panel_width = panel?.ActualWidth ?? 0,
                     analyze_button_visible = button?.IsVisible == true,
                     analyze_button_width = button?.ActualWidth ?? 0,
-                    analyze_command_enabled = vm.AnalyzeCommand.CanExecute(null),
+                    analyze_command_state_correct = vm.AnalyzeCommand.CanExecute(null) == (state is "ready" or "error"),
+                    extract_command_state_correct = vm.RunExtractCommand.CanExecute(null) == !vm.Busy,
                     scrollable_height = window.FindName("PageScrollViewer") is System.Windows.Controls.ScrollViewer sv
                         ? sv.ScrollableHeight
                         : 0,
@@ -53,18 +77,19 @@ internal static class AnalyzeUiProbe
             results.Add(metrics);
         }
 
-        var ok = results.Count == 2 && results.All(item =>
+        var ok = results.Count == 8 && results.All(item =>
         {
             var type = item.GetType();
             return (bool)type.GetProperty("analyze_panel_visible")!.GetValue(item)!
                 && (double)type.GetProperty("analyze_panel_width")!.GetValue(item)! > 0
                 && (bool)type.GetProperty("analyze_button_visible")!.GetValue(item)!
                 && (double)type.GetProperty("analyze_button_width")!.GetValue(item)! > 0
-                && (bool)type.GetProperty("analyze_command_enabled")!.GetValue(item)!;
+                && (bool)type.GetProperty("analyze_command_state_correct")!.GetValue(item)!
+                && (bool)type.GetProperty("extract_command_state_correct")!.GetValue(item)!;
         });
         await File.WriteAllTextAsync(
             Path.Combine(outDir, "result.json"),
-            JsonSerializer.Serialize(new { ok, results, note = "Analyze preflight surface rendered at 1440x920 and 1040x720." }, new JsonSerializerOptions { WriteIndented = true }));
+            JsonSerializer.Serialize(new { ok, results, note = "Controlled UI states rendered at 1440x920 and 1040x720; no worker/error-path acceptance implied." }, new JsonSerializerOptions { WriteIndented = true }));
         return ok ? 0 : 1;
     }
 

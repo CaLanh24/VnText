@@ -113,7 +113,7 @@ public sealed partial class MainViewModel
         var reportDirectory = WorkflowStatus.ResolvePackageDir(OutputPath);
         AnalyzeStatusText = "Đang phân tích game…";
         AnalyzeReportPath = Path.Combine(reportDirectory, "unity_analysis.json");
-        AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của inventory…";
+        AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của danh mục tài nguyên…";
         ResetAnalyzeMetrics();
         BeginTask("analyze", new
         {
@@ -137,7 +137,7 @@ public sealed partial class MainViewModel
                 : "Phân tích thất bại";
             AnalyzeReportPath = reportPath;
             AnalyzeScanErrorText = string.IsNullOrWhiteSpace(error)
-                ? "Không tìm thấy unity_analysis.json; chưa đủ bằng chứng inventory."
+                ? "Không tìm thấy báo cáo unity_analysis.json; chưa xác minh đủ tài nguyên."
                 : $"Không đọc được report: {error}";
             return;
         }
@@ -153,11 +153,11 @@ public sealed partial class MainViewModel
         AnalyzeScanErrorCount = snapshot.ScanErrorCount;
         AnalyzeReportPath = snapshot.ReportPath;
         AnalyzeStatusText = AnalyzeInventoryComplete
-            ? $"Đã phân tích • Unity {snapshot.UnityStatus} • inventory đầy đủ"
-            : $"Cần xem lại • Unity {snapshot.UnityStatus} • inventory chưa đầy đủ";
+            ? "Đã phân tích • danh mục tài nguyên đầy đủ"
+            : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
-            ? "Không có lỗi quét được ghi nhận. Đây là inventory read-only; Patch verification chưa chạy."
-            : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — không coi inventory là đầy đủ.";
+            ? "Không ghi nhận lỗi quét. Nguồn chỉ được đọc; chưa kiểm việc ghi bản dịch vào game."
+            : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
     }
 
     private string ResolveAnalyzeReportPath()

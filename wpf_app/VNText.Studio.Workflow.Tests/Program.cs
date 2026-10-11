@@ -992,8 +992,8 @@ internal static class Program
             AssertEqual(3, vm.AnalyzePatchableCount);
             AssertEqual(6, vm.AnalyzeReviewRiskCount);
             AssertEqual(2, vm.AnalyzeUnknownCount);
-            AssertTrue(vm.AnalyzeStatusText.Contains("inventory đầy đủ", StringComparison.Ordinal));
-            AssertTrue(vm.AnalyzeScanErrorText.Contains("Patch verification chưa chạy", StringComparison.Ordinal));
+            AssertTrue(vm.AnalyzeStatusText.Contains("danh mục tài nguyên đầy đủ", StringComparison.Ordinal));
+            AssertTrue(vm.AnalyzeScanErrorText.Contains("chưa kiểm việc ghi bản dịch vào game", StringComparison.Ordinal));
             AssertEqual(report, vm.AnalyzeReportPath);
         }
         finally
