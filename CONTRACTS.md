@@ -100,6 +100,7 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 
 - Trạng thái phải phân biệt `translated`, `pending`, `review_only`, `blocked`, `applied`, `copied_vi`, `complete`, `pipeline_liveness`.
 - `complete` chỉ đúng khi không còn pending, review-only hoặc blocked theo `_build_translate_result`/`snapshot_translate_status`; có progress nhưng còn review/pending/blocked là partial, không báo hoàn tất.
+- WPF Dịch local preflight dùng CSV đang chọn, không kiểm một thư mục xuất khác. Sau dịch, hiển thị counts mới và hủy preflight cũ; package chưa complete không sẵn sàng đóng gói final Patch. CSV/manifest và structural/Patch validator vẫn là trust boundary.
 - CT2 giữ model readiness, retry/quality routing, known-bad clearing, translation memory/context family và retranslate behavior; retry của dòng bị gate chặn phải dùng đầy đủ mask/restore/segment strategy dù full batch chọn fast retry.
 - Memory/glossary chỉ áp dụng khi đúng package/context; external reference data là read-only evidence, không phải translation memory và không dùng cache cũ để ghi đè bản dịch frozen ngoài policy.
 - Mỗi E2E run phải tạo package tạm từ input được khai báo, cô lập output dưới `_work`; `.mt`, review ledgers và patch output của run khác không được đi qua run sau. Bài partial chỉ chứng minh safety với `complete=false` và không chạy final Patch; bài final E2E chỉ gọi Patch sau `complete=true`.
