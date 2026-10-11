@@ -18,6 +18,22 @@ Owner yêu cầu thêm: popup có thao tác bỏ qua/tải, sidebar cuối gọn
 
 ## Sidebar và Cài đặt
 
+## Phạm vi UI được Owner duyệt triển khai — 2026-10-11
+
+Owner đã yêu cầu chạy task UI/updater, nghiệm thu rồi tạm đóng đợt phát triển để chuẩn bị phát hành. Hoãn translation-quality/training theo plan riêng. Phạm vi settings đề xuất bên dưới được đưa vào task này: Chung/Dữ liệu/Giới thiệu; không bổ sung các tính năng đã ghi deferred.
+
+Giữ phong cách nền sáng, xanh và feather branding; tham khảo thứ bậc và cách nhóm thông tin của Cockpit, không thay framework/theme. Bắt đầu bằng một màn hình Lấy text làm mẫu; Brain review trước khi áp dụng sang Dịch local, Sửa CSV, Tạo patch và Cài đặt. Không chạy game E2E cho thay đổi UI.
+
+- Chuẩn hóa typography trong design tokens/styles: nội dung khoảng14, mô tả12–13, tiêu đề nhóm16–18; hạn chế nhãn9–11 nhỏ/mờ. Đây là hướng tương đối, cần kiểm DPI/window và bảng dữ liệu thực, không bulk-replace FontSize mù.
+- Chuẩn hóa spacing, chiều cao input, icon, corner radii và thứ bậc nút chính/phụ; dùng component/style có sẵn, một hành động chính rõ cho mỗi bước. Không dùng màu nhấn tùy tiện hoặc hạ khả năng đọc của disabled/error state.
+- Giảm mô tả lặp, badge và chrome ít thông tin; phần giải thích dài và tùy chọn ít dùng có thể mở rộng trong Trợ giúp/Nâng cao. Không giấu cảnh báo dữ liệu, điều kiện Patch, partial/unsupported hoặc lựa chọn workflow hiện có.
+- Nhật ký không chiếm cột lớn khi chưa hoạt động; ưu tiên tiến độ, số xử lý, số cần sửa và bước tiếp theo. Chi tiết mở được, lỗi không bị mất và binding/state vẫn đúng. Giữ CSV virtualization, keyboard editing, dirty/save guards và trạng thái async.
+- Màn hình mẫu cần actual WPF screenshot/interaction trên DEV có provenance với empty/ready/busy/error và kích thước cửa sổ hỗ trợ. Sau review, tái sử dụng cùng ngôn ngữ thiết kế cho các trang, tránh thiết kế độc lập từng trang. Có thể checkpoint từng phần với tối đa một executable DEV, không tạo nhiều payload/game copy.
+
+Task implementation được commit source/test/docs đúng scope sau validation theo AGENTS. Version/publication là bước Release riêng, Owner chọn version trước khi build candidate; không suy artifact source cũ thành Release PASS của source mới.
+
+## Chi tiết Sidebar và Cài đặt
+
 **Yêu cầu đã chốt:** giữ điều hướng workflow và project, đưa Cài đặt thành mục gọn ở cuối sidebar; bỏ version/status/check/apply updater khỏi sidebar. Không tạo thêm trang Nhật ký hoặc panel trạng thái chỉ để giống Cockpit. Update mới được thao tác trên popup; kiểm tra thủ công ở Giới thiệu, không phụ thuộc sidebar.
 
 **Đề xuất scope cho bản này, chưa là implementation hoặc toàn bộ quyết định đã duyệt:** chia settings ba tab, mỗi dòng gồm tên ngắn, một câu giải thích và điều khiển thật; không có toggle trang trí hoặc nút không có tác dụng.
