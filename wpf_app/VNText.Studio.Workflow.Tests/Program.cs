@@ -3052,7 +3052,11 @@ internal static class Program
                 package_sha256 = digest, scope = "generated local UI fixture; mocked HTTP; no public release or native apply acceptance" }));
             app.Run(window);
             AssertEqual(layoutOnly ? GitHubUpdateState.OfferAvailable : GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
-            AssertEqual(0, Directory.GetFiles(Path.Combine(fixture.Root, ".update", "work"), "github-update-*.zip").Length);
+            var updateWork = Path.Combine(fixture.Root, ".update", "work");
+            var stagedPackages = Directory.Exists(updateWork)
+                ? Directory.GetFiles(updateWork, "github-update-*.zip")
+                : [];
+            AssertEqual(0, stagedPackages.Length);
             Console.WriteLine(layoutOnly ? "Native layout fixture closed at offer; no download/apply/restart acceptance."
                 : "Native popup ready/defer/reopen and lease disposal: PASS; apply/restart not exercised.");
             return 0;
