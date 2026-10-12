@@ -2,6 +2,10 @@
 
 Owner đã chọn version candidate **0.1.5** ngày2026-10-11. Chỉ đồng bộ VERSION và các version owner khi bắt đầu candidate sau checkpoint UI/updater; source hiện0.1.4, không đổi version để relabel evidence cũ.
 
+## Ủy quyền điều phối DEV không đồng bộ — 2026-10-12
+
+Owner ủy quyền Brain review, approve và điều phối Coordinator tiếp tục các bước DEV đã nằm trong scope UI/updater này khi Owner vắng mặt, gồm implementation/remediation bounded, validation và cleanup artifact có ownership đã chứng minh. Coordinator vẫn là source writer duy nhất; Brain không được coi quyền review là quyền sửa source hoặc mở scope mới. Riêng task này, Owner cho phép một lần refresh capability Computer Use chỉ cho cửa sổ VNText native và các kiểm tra UI bounded tiếp theo trên cửa sổ đó; quyền này không mở rộng sang app/cửa sổ khác hoặc thay đổi hệ điều hành. Brain access không tự cấp các quyền khác như license/admin, cài/tải dependency, game/model/Setup, push/upload/phát hành, thay đổi dịch vụ ngoài repo hoặc thay quyết định sản phẩm. Khi một prerequisite/quyền riêng chưa có, tiếp tục phần độc lập và giữ đúng trạng thái chưa xác minh.
+
 ## Mục tiêu và nguồn thiết kế
 
 Owner chốt bổ sung ngày2026-10-11: **giữ nền sáng/xanh VNText, bố cục popup giống Cockpit**. Popup là modal có nền app dim nhẹ, feather/header/X, version mới nổi bật, mục Có gì mới cuộn riêng, vùng status/progress thật và footer nhạt với một hành động chính xanh. Dùng tokens/styles hiện có, không đổi theme/framework hoặc thêm runtime/feature. Giữ keyboard/focus/Escape, owner, busy/dirty/cancel/skip và validator. Một batch capture các trạng thái và Settings, tối đa một correction/confirmation; controlled success rendering không thay acceptance receipt/apply/restart thật.
