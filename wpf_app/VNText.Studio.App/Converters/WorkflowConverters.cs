@@ -279,7 +279,7 @@ public sealed class TabEqualsToNavForegroundConverter : IValueConverter
     var selected = value as string ?? "";
     var tab = parameter as string ?? "";
     return string.Equals(selected, tab, StringComparison.OrdinalIgnoreCase)
-      ? Application.Current.Resources["GreenDarkBrush"]
+      ? Application.Current.Resources["BlueBrush"]
       : Application.Current.Resources["MutedBrush"];
   }
 

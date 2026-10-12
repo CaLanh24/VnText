@@ -6,17 +6,17 @@
 
     <!-- Core palette (VNTextReplica / GUI reference) -->
 
-    <Color x:Key="CanvasColor">#F6F7FB</Color>
+    <Color x:Key="CanvasColor">#F2F6FC</Color>
 
     <Color x:Key="SurfaceColor">#FFFFFF</Color>
 
-    <Color x:Key="InkColor">#20242D</Color>
+    <Color x:Key="InkColor">#202B3F</Color>
 
-    <Color x:Key="MutedColor">#7D8492</Color>
+    <Color x:Key="MutedColor">#718096</Color>
 
-    <Color x:Key="SoftTextColor">#A1A7B2</Color>
+    <Color x:Key="SoftTextColor">#99A6B8</Color>
 
-    <Color x:Key="LineColor">#E7E9EE</Color>
+    <Color x:Key="LineColor">#E4EAF2</Color>
 
 
 
@@ -28,15 +28,15 @@
 
     <Color x:Key="GreenHoverColor">#0BAF5C</Color>
 
-    <Color x:Key="NavActiveBackgroundColor">#EDF9F2</Color>
+    <Color x:Key="NavActiveBackgroundColor">#E8F0FF</Color>
 
 
 
-    <Color x:Key="BlueColor">#4D65E8</Color>
+    <Color x:Key="BlueColor">#2868E8</Color>
 
-    <Color x:Key="BlueSoftColor">#EEF1FF</Color>
+    <Color x:Key="BlueSoftColor">#E9F1FF</Color>
 
-    <Color x:Key="BlueHoverColor">#3F56D6</Color>
+    <Color x:Key="BlueHoverColor">#1F58CE</Color>
 
 
 
@@ -64,25 +64,25 @@
 
     <!-- Surfaces & chrome -->
 
-    <Color x:Key="FieldBackgroundColor">#FBFCFE</Color>
+    <Color x:Key="FieldBackgroundColor">#FBFCFF</Color>
 
-    <Color x:Key="SubtlePanelColor">#F9FAFC</Color>
+    <Color x:Key="SubtlePanelColor">#F7F9FD</Color>
 
-    <Color x:Key="LogPanelColor">#FAFBFD</Color>
+    <Color x:Key="LogPanelColor">#F8FAFD</Color>
 
     <Color x:Key="PillBackgroundColor">#F1F3F6</Color>
 
-    <Color x:Key="ProjectCardColor">#F6F7FA</Color>
+    <Color x:Key="ProjectCardColor">#F3F7FC</Color>
 
-    <Color x:Key="TableHeaderColor">#F3F5F8</Color>
+    <Color x:Key="TableHeaderColor">#F0F4FA</Color>
 
-    <Color x:Key="ProgressTrackColor">#E8ECF1</Color>
+    <Color x:Key="ProgressTrackColor">#E8EEF6</Color>
 
     <Color x:Key="BrandDarkColor">#253047</Color>
 
-    <Color x:Key="NavHoverColor">#F1F3F7</Color>
+    <Color x:Key="NavHoverColor">#F0F5FC</Color>
 
-    <Color x:Key="NavPressedColor">#E9ECF2</Color>
+    <Color x:Key="NavPressedColor">#E8EFF9</Color>
 
     <Color x:Key="DotRingColor">#C7C7CC</Color>
 
@@ -120,11 +120,11 @@
 
     <Color x:Key="BorderColor">#E7E9EE</Color>
 
-    <Color x:Key="CardBorderColor">#E7E9EE</Color>
+    <Color x:Key="CardBorderColor">#E4EAF2</Color>
 
-    <Color x:Key="AccentColor">#4D65E8</Color>
+    <Color x:Key="AccentColor">#2868E8</Color>
 
-    <Color x:Key="AccentSubtleColor">#EEF1FF</Color>
+    <Color x:Key="AccentSubtleColor">#E9F1FF</Color>
 
     <Color x:Key="SuccessColor">#12C96B</Color>
 
@@ -143,6 +143,11 @@
 
 
     <SolidColorBrush x:Key="CanvasBrush" Color="{StaticResource CanvasColor}" />
+
+    <LinearGradientBrush x:Key="WorkspaceCanvasBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F4F6FF" Offset="0" />
+        <GradientStop Color="#EDF7FA" Offset="1" />
+    </LinearGradientBrush>
 
     <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
 
@@ -264,10 +269,10 @@
 
 
 
-    <!-- Single green accent for ordinary UI icons; soft green tile behind icon boxes -->
-    <Color x:Key="IconColor">#12C96B</Color>
+    <!-- Cockpit-inspired blue action/icon accent; success and model state remain green -->
+    <Color x:Key="IconColor">#2868E8</Color>
     <SolidColorBrush x:Key="IconBrush" Color="{StaticResource IconColor}" />
-    <SolidColorBrush x:Key="IconSoftBrush" Color="{StaticResource GreenSoftColor}" />
+    <SolidColorBrush x:Key="IconSoftBrush" Color="{StaticResource BlueSoftColor}" />
 
 
 

@@ -66,7 +66,7 @@
 
                 <ControlTemplate TargetType="{x:Type Control}">
 
-                    <Border BorderBrush="{StaticResource GreenBrush}" BorderThickness="2" CornerRadius="10" />
+                    <Border BorderBrush="{StaticResource BlueBrush}" BorderThickness="2" CornerRadius="10" />
 
                 </ControlTemplate>
 
@@ -275,7 +275,7 @@
 
         <Setter Property="BorderThickness" Value="0" />
 
-        <Setter Property="MinHeight" Value="33" />
+        <Setter Property="MinHeight" Value="36" />
 
         <Setter Property="Padding" Value="10,6" />
 
@@ -299,7 +299,7 @@
 
                 <ControlTemplate TargetType="{x:Type Button}">
 
-                    <Border x:Name="NavSurface" Background="{TemplateBinding Background}" CornerRadius="10">
+                    <Border x:Name="NavSurface" Background="{TemplateBinding Background}" CornerRadius="12">
 
                         <ContentPresenter Margin="{TemplateBinding Padding}"
 
@@ -387,9 +387,9 @@
 
                         <Trigger Property="IsMouseOver" Value="True">
 
-                            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+                            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" />
 
-                            <Setter TargetName="ButtonSurface" Property="Background" Value="{StaticResource GreenSoftBrush}" />
+                            <Setter TargetName="ButtonSurface" Property="Background" Value="{StaticResource BlueSoftBrush}" />
 
                         </Trigger>
 
@@ -423,7 +423,7 @@
 
     <Style x:Key="GuiPrimaryButtonStyle" TargetType="{x:Type Button}">
 
-        <Setter Property="Background" Value="{StaticResource GreenBrush}" />
+        <Setter Property="Background" Value="{StaticResource BlueBrush}" />
 
         <Setter Property="Foreground" Value="White" />
 
@@ -461,13 +461,13 @@
 
                         <Trigger Property="IsMouseOver" Value="True">
 
-                            <Setter TargetName="PrimarySurface" Property="Background" Value="{StaticResource GreenHoverBrush}" />
+                            <Setter TargetName="PrimarySurface" Property="Background" Value="{StaticResource BlueHoverBrush}" />
 
                         </Trigger>
 
                         <Trigger Property="IsPressed" Value="True">
 
-                            <Setter TargetName="PrimarySurface" Property="Background" Value="{StaticResource GreenDarkBrush}" />
+                            <Setter TargetName="PrimarySurface" Property="Background" Value="{StaticResource BlueHoverBrush}" />
 
                         </Trigger>
 
@@ -570,7 +570,7 @@
 
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
 
-                            <Setter TargetName="FieldSurface" Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+                            <Setter TargetName="FieldSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" />
 
                             <Setter TargetName="FieldSurface" Property="Background" Value="{StaticResource SurfaceBrush}" />
 
@@ -640,13 +640,13 @@
 
             <Trigger Property="IsMouseOver" Value="True">
 
-                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" />
 
             </Trigger>
 
             <Trigger Property="IsChecked" Value="True">
 
-                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" />
 
                 <Setter TargetName="ComboToggleSurface" Property="Background" Value="{StaticResource SurfaceBrush}" />
 
@@ -694,7 +694,7 @@
 
                         <Trigger Property="IsHighlighted" Value="True">
 
-                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource GreenSoftBrush}" />
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{StaticResource BlueSoftBrush}" />
 
                         </Trigger>
 

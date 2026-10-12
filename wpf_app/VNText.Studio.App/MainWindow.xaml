@@ -8,7 +8,7 @@
         Width="1440" Height="920" MinWidth="1040" MinHeight="720"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/vntext_studio.ico"
-        Background="{StaticResource CanvasBrush}"
+        Background="{StaticResource WorkspaceCanvasBrush}"
         FontFamily="{StaticResource AppFont}"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
@@ -52,10 +52,10 @@
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="2,4,0,34">
                     <Image Source="Assets/vntext_studio_logo_128.png"
-                           Width="29" Height="29" Stretch="Uniform"
+                           Width="36" Height="36" Stretch="Uniform"
                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                     <StackPanel Margin="11,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="VNText Studio" FontSize="16" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                        <TextBlock Text="VNText Studio" FontSize="17" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
                         <TextBlock Text="LOCAL WORKSPACE" FontSize="9" FontWeight="SemiBold" Foreground="{StaticResource SoftTextBrush}" Margin="0,3,0,0" />
                     </StackPanel>
                 </StackPanel>
@@ -168,7 +168,7 @@
                         <Run Text="Workspace  /  " />
                         <Run Text="{Binding HeroTitle, Mode=OneWay}" />
                     </TextBlock>
-                    <TextBlock Text="{Binding HeroTitle}" FontSize="31" FontWeight="Bold" Foreground="{StaticResource InkBrush}" Margin="0,9,0,0" />
+                    <TextBlock Text="{Binding HeroTitle}" FontSize="31" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" Margin="0,9,0,0" />
                     <TextBlock Text="{Binding HeroHint}" FontSize="14" Foreground="{StaticResource MutedBrush}" Margin="0,8,0,0"
                                TextWrapping="Wrap" MaxWidth="720" HorizontalAlignment="Left" />
                 </StackPanel>
@@ -217,14 +217,14 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GreenSoftBrush}">
-                                        <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="17" Height="17" HorizontalAlignment="Center" />
+                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource BlueSoftBrush}">
+                                        <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="17" Height="17" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="Nguồn và gói dịch" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
                                         <TextBlock Text="Chỉ đọc nguồn. Gói dịch được lưu riêng." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="2" Text="Chọn nguồn và nơi lưu" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="Chọn nguồn và nơi lưu" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" VerticalAlignment="Center" />
                                 </Grid>
 
                                 <Border x:Name="AnalyzePanel" Grid.Row="3" Style="{StaticResource SubtlePanelBorder}" Margin="0,16,0,0">
@@ -241,8 +241,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource GreenSoftBrush}">
-                                                <Path Data="{StaticResource ActivityIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="16" Height="16" HorizontalAlignment="Center" />
+                                            <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource BlueSoftBrush}">
+                                                <Path Data="{StaticResource ActivityIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="16" Height="16" HorizontalAlignment="Center" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,12,0" VerticalAlignment="Center">
                                                 <TextBlock Text="Phân tích game" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
@@ -250,7 +250,7 @@
                                             </StackPanel>
                                             <Button x:Name="AnalyzeButton" Grid.Column="2" Style="{StaticResource OutlineButton}" Command="{Binding AnalyzeCommand}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Path Data="{StaticResource ScanIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                    <Path Data="{StaticResource ScanIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                     <TextBlock Text="Phân tích" />
                                                 </StackPanel>
                                             </Button>
@@ -319,13 +319,13 @@
                                         </Border>
                                         <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenInputCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Mở" />
                                             </StackPanel>
                                         </Button>
                                         <Button Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseInputCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource SourceIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                <Path Data="{StaticResource SourceIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Chọn..." />
                                             </StackPanel>
                                         </Button>
@@ -346,13 +346,13 @@
                                         </Border>
                                         <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenOutputCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Mở" />
                                             </StackPanel>
                                         </Button>
                                         <Button Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseOutputCommand}">
                                             <StackPanel Orientation="Horizontal">
-                                                <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Chọn..." />
                                             </StackPanel>
                                         </Button>
@@ -576,15 +576,15 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GreenSoftBrush}">
-                                        <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
+                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource BlueSoftBrush}">
+                                                <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="Dịch local" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
                                         <TextBlock Text="Chạy mô hình AI ngay trên máy của bạn." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
-                                    <Border Grid.Column="2" Background="{StaticResource GreenSoftBrush}" CornerRadius="8" Padding="9,5">
-                                        <TextBlock Text="LOCAL AI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource GreenDarkBrush}" />
+                                    <Border Grid.Column="2" Background="{StaticResource BlueSoftBrush}" CornerRadius="8" Padding="9,5">
+                                        <TextBlock Text="LOCAL AI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" />
                                     </Border>
                                 </Grid>
 
@@ -815,8 +815,8 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GreenSoftBrush}">
-                                        <Path Data="{StaticResource PatchIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
+                                            <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource BlueSoftBrush}">
+                                        <Path Data="{StaticResource PatchIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="Tạo patch" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
@@ -841,7 +841,7 @@
                                             <Button x:Name="ChoosePatchGameButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
                                                     Command="{Binding ChooseInputCommand}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Path Data="{StaticResource GamepadIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                    <Path Data="{StaticResource GamepadIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                     <TextBlock Text="Chọn..." />
                                                 </StackPanel>
                                             </Button>
@@ -859,7 +859,7 @@
                                             <Button x:Name="ChoosePatchOutputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
                                                     Command="{Binding ChooseOutputCommand}">
                                                 <StackPanel Orientation="Horizontal">
-                                                    <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="14" Height="14" Margin="0,0,7,0" />
+                                                    <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                     <TextBlock Text="Chọn..." />
                                                 </StackPanel>
                                             </Button>
@@ -1076,8 +1076,8 @@
                                                 <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
                                             </Border>
                                             <ControlTemplate.Triggers>
-                                                <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{StaticResource GreenSoftBrush}" /><Setter Property="Foreground" Value="{StaticResource GreenDarkBrush}" /></Trigger>
-                                                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="TabSurface" Property="BorderBrush" Value="{StaticResource GreenBrush}" /></Trigger>
+                                                <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{StaticResource BlueSoftBrush}" /><Setter Property="Foreground" Value="{StaticResource BlueBrush}" /></Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="TabSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" /></Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate></Setter.Value></Setter>
                                     </Style>
@@ -1185,8 +1185,8 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GreenSoftBrush}">
-                                        <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource GreenBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
+                                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource BlueSoftBrush}">
+                                        <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{StaticResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0">
                                         <TextBlock Text="{Binding CsvEditorPathDisplay}" FontSize="15" FontWeight="Bold" Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" />
@@ -1350,8 +1350,8 @@
                 Visibility="{Binding ToastVisible, Converter={StaticResource BoolToVis}}">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Background" Value="{StaticResource GreenSoftBrush}" />
-                    <Setter Property="BorderBrush" Value="{StaticResource GreenBrush}" />
+                    <Setter Property="Background" Value="{StaticResource BlueSoftBrush}" />
+                    <Setter Property="BorderBrush" Value="{StaticResource BlueBrush}" />
                     <Setter Property="BorderThickness" Value="1" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding ToastKind}" Value="error">
@@ -1446,7 +1446,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Term}" FontSize="12" Foreground="{StaticResource InkBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="→" FontSize="12" Foreground="{StaticResource MutedBrush}" Margin="10,0" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding Translation}" FontSize="12" Foreground="{StaticResource GreenDarkBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Translation}" FontSize="12" Foreground="{StaticResource BlueBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                     <Button Grid.Column="3" Content="Xóa" Padding="8,2" MinWidth="52" MinHeight="24" Height="24" FontSize="10" VerticalAlignment="Center" Style="{StaticResource OutlineButton}"
                                             ToolTip="Xóa thuật ngữ này" Command="{Binding DataContext.RemoveGlossaryEntryCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" CommandParameter="{Binding}" />
                                 </Grid>
