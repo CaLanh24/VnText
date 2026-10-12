@@ -1065,11 +1065,7 @@
                     </Grid>
 
                     <ScrollViewer x:Name="SettingsScrollViewer" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">
-                        <StackPanel MaxWidth="980" HorizontalAlignment="Center" Margin="0,0,0,20">
-                            <StackPanel Margin="0,0,0,14">
-                                <TextBlock Text="Cài đặt" FontSize="28" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" />
-                                <TextBlock Text="Tùy chỉnh giao diện, dữ liệu và thông tin ứng dụng." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
-                            </StackPanel>
+                        <StackPanel MaxWidth="980" HorizontalAlignment="Stretch" Margin="0,0,0,20">
                             <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" Foreground="{StaticResource InkBrush}" Margin="0,0,0,10">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
