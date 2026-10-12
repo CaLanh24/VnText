@@ -1065,62 +1065,181 @@
                     </Grid>
 
                     <ScrollViewer x:Name="SettingsScrollViewer" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" Foreground="{StaticResource InkBrush}" Margin="0,0,0,12" />
-                            <TabControl FontSize="14" Background="{StaticResource SurfaceBrush}" BorderThickness="0">
+                        <StackPanel MaxWidth="980" HorizontalAlignment="Center" Margin="0,0,0,20">
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="Cài đặt" FontSize="28" FontWeight="Bold" Foreground="{StaticResource BlueBrush}" />
+                                <TextBlock Text="Tùy chỉnh giao diện, dữ liệu và thông tin ứng dụng." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" Foreground="{StaticResource InkBrush}" Margin="0,0,0,10">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SettingsStatus}" Value=""><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TabControl FontSize="{StaticResource UiBodySize}" Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Stretch">
+                                <TabControl.Template>
+                                    <ControlTemplate TargetType="TabControl">
+                                        <Grid KeyboardNavigation.TabNavigation="Local">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="16" Padding="5" Margin="0,0,0,14" HorizontalAlignment="Left">
+                                                <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+                                            </Border>
+                                            <ContentPresenter Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" />
+                                        </Grid>
+                                    </ControlTemplate>
+                                </TabControl.Template>
                                 <TabControl.Resources>
                                     <Style TargetType="TabItem">
                                         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
-                                        <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
-                                            <Border x:Name="TabSurface" Padding="16,10" Margin="0,0,8,8" CornerRadius="8" BorderThickness="1" BorderBrush="Transparent" Background="{StaticResource SurfaceBrush}">
-                                                <ContentPresenter ContentSource="Header" RecognizesAccessKey="True" />
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsSelected" Value="True"><Setter TargetName="TabSurface" Property="Background" Value="{StaticResource BlueSoftBrush}" /><Setter Property="Foreground" Value="{StaticResource BlueBrush}" /></Trigger>
-                                                <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="TabSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" /></Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate></Setter.Value></Setter>
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                        <Setter Property="Padding" Value="16,10" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="TabItem">
+                                                    <Border x:Name="TabSurface" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="12" Padding="{TemplateBinding Padding}" Margin="1">
+                                                        <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="TabSurface" Property="Background" Value="{StaticResource SubtlePanelBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="TabSurface" Property="Background" Value="{StaticResource BlueSoftBrush}" />
+                                                            <Setter Property="Foreground" Value="{StaticResource BlueBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                                            <Setter TargetName="TabSurface" Property="BorderBrush" Value="{StaticResource BlueBrush}" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
                                     </Style>
                                 </TabControl.Resources>
                                 <TabItem Header="Chung">
-                                    <StackPanel Margin="20">
-                                        <TextBlock Text="Giao diện" FontSize="18" FontWeight="Bold" />
-                                        <TextBlock Text="Tỷ lệ nội dung" Margin="0,12,0,6" />
-                                        <ComboBox ItemsSource="{Binding UiScaleOptions}" SelectedItem="{Binding UiScale, Mode=TwoWay}" Width="160" HorizontalAlignment="Left" Style="{StaticResource SettingsCombo}">
-                                            <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding StringFormat={}{0:P0}}" /></DataTemplate></ComboBox.ItemTemplate>
-                                        </ComboBox>
-                                        <CheckBox Content="Nhớ vị trí và kích thước cửa sổ" IsChecked="{Binding RememberWindow}" Style="{StaticResource SwitchStyle}" Margin="0,18,0,18" />
-                                        <TextBlock Text="Cập nhật" FontSize="18" FontWeight="Bold" />
-                                        <CheckBox Content="Kiểm tra cập nhật khi mở ứng dụng" IsChecked="{Binding AutoCheckUpdates}" Style="{StaticResource SwitchStyle}" Margin="0,12,0,12" />
-                                        <CheckBox Content="Thông báo khi có phiên bản mới" IsChecked="{Binding NotifyUpdates}" Style="{StaticResource SwitchStyle}" />
-                                        <TextBlock Text="Chỉ tải khi bạn chọn cập nhật. Kiểm tra thủ công luôn có tại Giới thiệu." TextWrapping="Wrap" Margin="0,12,0,0" />
+                                    <StackPanel Margin="0,2,0,8">
+                                        <Border Style="{StaticResource CardShadowBorder}" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="Giao diện" FontSize="17" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Điều chỉnh cách ứng dụng hiển thị trên màn hình." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,10" />
+                                                <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                                            <TextBlock Text="Tỷ lệ giao diện" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                            <TextBlock Text="Chọn kích thước nội dung phù hợp với màn hình." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <ComboBox Grid.Column="1" ItemsSource="{Binding UiScaleOptions}" SelectedItem="{Binding UiScale, Mode=TwoWay}" Width="156" VerticalAlignment="Center" Style="{StaticResource SettingsCombo}">
+                                                            <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding StringFormat={}{0:P0}}" /></DataTemplate></ComboBox.ItemTemplate>
+                                                        </ComboBox>
+                                                    </Grid>
+                                                </Border>
+                                                <Grid Margin="0,14,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                                        <TextBlock Text="Nhớ vị trí và kích thước cửa sổ" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                        <TextBlock Text="Khôi phục vị trí và kích thước cửa sổ khi mở lại ứng dụng." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <CheckBox Grid.Column="1" Content="" IsChecked="{Binding RememberWindow, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Nhớ vị trí và kích thước cửa sổ" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Style="{StaticResource CardShadowBorder}">
+                                            <StackPanel>
+                                                <TextBlock Text="Cập nhật" FontSize="17" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Chọn cách ứng dụng kiểm tra và thông báo phiên bản mới." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,10" />
+                                                <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                                            <TextBlock Text="Kiểm tra cập nhật khi mở ứng dụng" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                            <TextBlock Text="Kiểm tra phiên bản mới khi ứng dụng khởi động." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <CheckBox Grid.Column="1" Content="" IsChecked="{Binding AutoCheckUpdates, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Kiểm tra cập nhật khi mở ứng dụng" />
+                                                    </Grid>
+                                                </Border>
+                                                <Grid Margin="0,14,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                                        <TextBlock Text="Thông báo khi có phiên bản mới" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                        <TextBlock Text="Hiển thị thông báo trong ứng dụng khi có bản cập nhật." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <CheckBox Grid.Column="1" Content="" IsChecked="{Binding NotifyUpdates, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" AutomationProperties.Name="Thông báo khi có phiên bản mới" />
+                                                </Grid>
+                                                <TextBlock Text="Chỉ tải khi bạn chọn cập nhật. Kiểm tra thủ công luôn có tại Giới thiệu." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </TabItem>
                                 <TabItem Header="Dữ liệu">
-                                    <StackPanel Margin="20">
-                                        <TextBlock Text="Dữ liệu ứng dụng" FontSize="18" FontWeight="Bold" />
-                                        <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" Margin="0,12,0,12" />
-                                        <Button Content="Mở thư mục dữ liệu" Command="{Binding OpenDataFolderCommand}" HorizontalAlignment="Left" Style="{StaticResource OutlineButton}" />
-                                        <TextBlock Text="{Binding WorkerStatus}" Margin="0,20,0,0" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding ModelStatus}" Margin="0,12,0,6" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding ModelFolder}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                                        <Button Content="Mở thư mục model" Command="{Binding OpenModelFolderCommand}" HorizontalAlignment="Left" Style="{StaticResource OutlineButton}" />
-                                        <TextBlock Text="Các lựa chọn lấy text và dịch được lưu tại bước tương ứng." TextWrapping="Wrap" Margin="0,12,0,0" />
+                                    <StackPanel Margin="0,2,0,8">
+                                        <Border Style="{StaticResource CardShadowBorder}" Margin="0,0,0,14">
+                                            <StackPanel>
+                                                <TextBlock Text="Thư mục dữ liệu" FontSize="17" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Vị trí lưu dữ liệu làm việc của ứng dụng." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,10" />
+                                                <Grid Margin="0,8,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
+                                                        <TextBlock Text="{Binding DataFolder}" TextWrapping="Wrap" Foreground="{StaticResource InkBrush}" ToolTip="{Binding DataFolder}" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Mở thư mục" Command="{Binding OpenDataFolderCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Style="{StaticResource CardShadowBorder}">
+                                            <StackPanel>
+                                                <TextBlock Text="Môi trường dịch local" FontSize="17" FontWeight="Bold" Foreground="{StaticResource InkBrush}" />
+                                                <TextBlock Text="Trạng thái worker và model được đọc từ môi trường hiện tại." FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,10" />
+                                                <Border BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,14">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                        <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
+                                                            <TextBlock Text="Python worker" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                            <TextBlock Text="Môi trường chạy các tác vụ xử lý." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                        <Border Grid.Column="1" Background="{StaticResource SubtlePanelBrush}" CornerRadius="10" Padding="10,6" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding WorkerStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource InkBrush}" TextWrapping="Wrap" MaxWidth="250" />
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <Grid Margin="0,14,0,0">
+                                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,18,0">
+                                                        <TextBlock Text="Model OPUS-MT INT8" FontWeight="SemiBold" Foreground="{StaticResource InkBrush}" />
+                                                        <TextBlock Text="{Binding ModelStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding ModelFolder}" FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource SoftTextBrush}" Margin="0,6,0,0" TextWrapping="Wrap" ToolTip="{Binding ModelFolder}" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Mở thư mục" Command="{Binding OpenModelFolderCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" />
+                                                </Grid>
+                                                <TextBlock Text="Các lựa chọn lấy text và dịch được lưu tại bước tương ứng." FontSize="{StaticResource UiCaptionSize}" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,14,0,0" />
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </TabItem>
                                 <TabItem Header="Giới thiệu">
-                                    <StackPanel Margin="20">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Image Source="Assets/vntext_studio_logo_128.png" Width="32" Height="32" Margin="0,0,12,0" />
-                                            <TextBlock Text="VNText Studio" FontSize="22" FontWeight="Bold" VerticalAlignment="Center" />
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding CurrentVersionDisplay}" Margin="0,8,0,12" />
-                                        <TextBlock Text="{Binding GitHubUpdateStatus}" TextWrapping="Wrap" Margin="0,0,0,12" />
-                                        <WrapPanel>
-                                            <Button Content="Kiểm tra cập nhật" Command="{Binding RecheckUpdateCommand}" Style="{StaticResource OutlineButton}" />
-                                            <Button Content="Repository và phản hồi" Command="{Binding OpenRepositoryCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
-                                            <Button Content="Ghi chú phát hành" Command="{Binding OpenReleaseNotesCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
-                                        </WrapPanel>
+                                    <StackPanel Margin="0,2,0,8">
+                                        <Border Style="{StaticResource CardShadowBorder}" HorizontalAlignment="Stretch">
+                                            <StackPanel HorizontalAlignment="Center" MaxWidth="720">
+                                                <Image Source="Assets/vntext_studio_logo_128.png" Width="58" Height="58" HorizontalAlignment="Center" />
+                                                <TextBlock Text="VNText Studio" FontSize="25" FontWeight="Bold" Foreground="{StaticResource InkBrush}" HorizontalAlignment="Center" Margin="0,10,0,0" />
+                                                <Border Background="{StaticResource BlueSoftBrush}" CornerRadius="12" Padding="12,6" Margin="0,10,0,0" HorizontalAlignment="Center">
+                                                    <TextBlock Text="{Binding CurrentVersionDisplay}" FontWeight="SemiBold" Foreground="{StaticResource BlueBrush}" />
+                                                </Border>
+                                                <TextBlock Text="{Binding GitHubUpdateStatus}" FontSize="{StaticResource UiBodySize}" Foreground="{StaticResource MutedBrush}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,14,0,0" />
+                                                <WrapPanel HorizontalAlignment="Center" Margin="0,18,0,0">
+                                                    <Button Content="Kiểm tra cập nhật" Command="{Binding RecheckUpdateCommand}" Style="{StaticResource PrimaryButton}" />
+                                                    <Button Content="Ghi chú phát hành" Command="{Binding OpenReleaseNotesCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
+                                                    <Button Content="Kho mã nguồn" Command="{Binding OpenRepositoryCommand}" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" />
+                                                </WrapPanel>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
                                 </TabItem>
                             </TabControl>
