@@ -79,11 +79,16 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
             unexpected_name = "owner-content.bin"
             (release_root / unexpected_name).write_bytes(b"must remain untouched\x04\x05")
             before = _tree_snapshot(release_root)
-            worker_venv_root = Path(sys.executable).resolve().parent.parent
+            # The configured DEV interpreter can resolve sys.executable to
+            # its external base Python.  Publisher input is the repo-local
+            # venv root, which owns the Scripts/python.exe it validates.
+            worker_venv_root = ROOT / ".dev-env" / ".venv"
             self.assertTrue((worker_venv_root / "Scripts" / "python.exe").is_file(), worker_venv_root)
 
+            powershell = shutil.which("pwsh") or shutil.which("powershell.exe")
+            self.assertIsNotNone(powershell, "PowerShell is required for the publisher guard test")
             command = [
-                "pwsh", "-NoLogo", "-NoProfile", "-NonInteractive",
+                powershell, "-NoLogo", "-NoProfile", "-NonInteractive",
                 "-ExecutionPolicy", "Bypass", "-File",
                 str(ROOT / "release" / "publish.ps1"),
                 "-ReleaseRoot", str(release_root),

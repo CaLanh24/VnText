@@ -68,6 +68,15 @@ SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
 PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 3 * 1024 ** 3
+RELEASE_TASK_BUDGET_ID = "release-0.1.5"
+RELEASE_TASK_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
+RELEASE_TASK_BUDGET_APPROVAL = (
+    "Owner 2026-10-14 confirmed the new clean-source 0.1.5 epoch and a temporary "
+    "3 GiB total non-exempt checkout cap for candidate/test 0.1.5 only; .dev-env "
+    "remains capped at 3 GiB; preflight every phase and stop before exceeding the "
+    "cap; terminal task cleanup must return non-exempt files to at most 1 GiB; "
+    "do not delete old payloads or user data."
+)
 PROJECT_SIZE_EXEMPTIONS = {
     ".dev-env": "shared DEV Python/SDK/NuGet/model cache (3 GiB cap)",
 }
@@ -1730,12 +1739,177 @@ def _project_inventory_root() -> Path:
     return inventory_root
 
 
+def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
+    """Return the narrowly authorized 0.1.5 cap only while its registered scope is active."""
+
+    requested = str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip()
+    if not requested:
+        return PROJECT_SIZE_LIMIT_BYTES, None, "default"
+    if requested != RELEASE_TASK_BUDGET_ID:
+        return PROJECT_SIZE_LIMIT_BYTES, "unsupported_release_task_id", "default"
+    manifest, _raw, errors = _strict_registry_snapshot()
+    if errors:
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
+    epoch = manifest.get("prospective_epoch")
+    if not isinstance(epoch, dict) or epoch.get("status") != "ACTIVE":
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_epoch_inactive", "default"
+    epoch_errors = _epoch_verify_files(epoch, manifest=manifest)
+    if epoch_errors:
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_epoch_invalid", "default"
+    budget = epoch.get("release_task_budget")
+    if not isinstance(budget, dict):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
+    expected_scope = (root / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    state = _git_repository_state()
+    if (
+        budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("scope_path") != str(expected_scope)
+        or budget.get("source_sha") != epoch.get("source_sha")
+        or state.get("head") != epoch.get("source_sha")
+        or state.get("dirty")
+        or (root / "VERSION.txt").read_text(encoding="utf-8").strip() != "0.1.5"
+    ):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_scope_or_source_mismatch", "default"
+    scope_records = []
+    for item in manifest.get("artifacts", []):
+        if not isinstance(item, dict):
+            return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
+        try:
+            item_path = _entry_path(item)
+        except (KeyError, TypeError, ValueError, OSError):
+            return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
+        if _path_key(item_path) == _path_key(expected_scope):
+            scope_records.append(item)
+    if not scope_records:
+        return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
+    if len(scope_records) != 1:
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_ambiguous", "default"
+    entry = scope_records[0]
+    lifecycle = str(entry.get("lifecycle") or "").upper()
+    if lifecycle == "MISSING" and not os.path.lexists(expected_scope):
+        return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
+    if (
+        lifecycle != "DISPOSABLE"
+        or str(entry.get("owner") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("kind") or "") != "release_task_scope"
+        or str(entry.get("scope_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("run_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("scope_root") or "") != str(expected_scope)
+    ):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
+    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, RELEASE_TASK_BUDGET_ID
+
+
+def register_release_task_scope() -> dict:
+    """Register the one Owner-approved candidate root without creating it."""
+
+    manifest, _raw, errors = _strict_registry_snapshot()
+    if errors:
+        return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+    epoch = manifest.get("prospective_epoch")
+    if not isinstance(epoch, dict) or _epoch_verify_files(epoch, manifest=manifest):
+        return {"ok": False, "reasons": ["release_task_epoch_invalid"]}
+    budget = epoch.get("release_task_budget")
+    scope = (ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    state = _git_repository_state()
+    if (
+        not isinstance(budget, dict)
+        or budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("scope_path") != str(scope)
+        or budget.get("source_sha") != state.get("head")
+        or epoch.get("source_sha") != state.get("head")
+        or state.get("dirty")
+        or (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() != "0.1.5"
+    ):
+        return {"ok": False, "reasons": ["release_task_budget_scope_or_source_mismatch"]}
+    matches = []
+    for entry in manifest.get("artifacts", []):
+        if not isinstance(entry, dict):
+            return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+        try:
+            if _path_key(_entry_path(entry)) == _path_key(scope):
+                matches.append(entry)
+        except (KeyError, TypeError, ValueError, OSError):
+            return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+    if matches:
+        limit, error, profile = _release_task_budget_profile_for_manifest(scope, manifest, state)
+        if error or profile != RELEASE_TASK_BUDGET_ID:
+            return {"ok": False, "reasons": [error or "release_task_scope_registration_conflict"]}
+        return {"ok": True, "registered": False, "path": str(scope), "lifecycle": "DISPOSABLE"}
+    register_artifact(
+        artifact_id=RELEASE_TASK_BUDGET_ID,
+        path=scope,
+        kind="release_task_scope",
+        created_by="cleanup_work_artifacts.py",
+        owner=RELEASE_TASK_BUDGET_ID,
+        purpose="Owner-authorized temporary 0.1.5 release acceptance scope",
+        lifecycle="DISPOSABLE",
+        scope_id=RELEASE_TASK_BUDGET_ID,
+        run_id=RELEASE_TASK_BUDGET_ID,
+        scope_root=scope,
+        provenance={"source_sha": epoch.get("source_sha"), "epoch_id": epoch.get("epoch_id")},
+    )
+    return {"ok": True, "registered": True, "path": str(scope), "lifecycle": "DISPOSABLE"}
+
+
+def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state: dict) -> tuple[int, str | None, str]:
+    """Internal profile resolver when a strict manifest and Git state are already read."""
+
+    expected_scope = (root / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    epoch = manifest.get("prospective_epoch")
+    budget = epoch.get("release_task_budget") if isinstance(epoch, dict) else None
+    if not isinstance(budget, dict):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
+    if (
+        budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("scope_path") != str(expected_scope)
+        or budget.get("source_sha") != epoch.get("source_sha")
+        or state.get("head") != epoch.get("source_sha")
+        or state.get("dirty")
+    ):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_scope_or_source_mismatch", "default"
+    scope_records = []
+    for item in manifest.get("artifacts", []):
+        if not isinstance(item, dict):
+            return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
+        try:
+            item_path = _entry_path(item)
+        except (KeyError, TypeError, ValueError, OSError):
+            return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
+        if _path_key(item_path) == _path_key(expected_scope):
+            scope_records.append(item)
+    if not scope_records:
+        return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
+    if len(scope_records) != 1:
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_ambiguous", "default"
+    entry = scope_records[0]
+    if str(entry.get("lifecycle") or "").upper() == "MISSING" and not os.path.lexists(expected_scope):
+        return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
+    if (
+        str(entry.get("lifecycle") or "").upper() != "DISPOSABLE"
+        or str(entry.get("owner") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("kind") or "") != "release_task_scope"
+        or str(entry.get("scope_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("run_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("scope_root") or "") != str(expected_scope)
+    ):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
+    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, RELEASE_TASK_BUDGET_ID
+
+
 def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
                            max_items: int = DEFAULT_INVENTORY_MAX_ITEMS,
                            approved_game_copy: Path | None = None) -> dict:
     """Measure regular files only; links, special nodes and scan errors fail closed."""
 
     root = _project_inventory_root()
+    project_limit, profile_error, profile = _release_task_budget_profile(root)
     budget = InventoryBudget(timeout_seconds=timeout_seconds, max_items=max_items)
     copy_relative = "TEST_RUN/renpy-complete/game-copy"
     copy_limit = 1288490188  # Owner approval 2026-10-10; exact temporary root only.
@@ -1804,6 +1978,8 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
                 "path": str(details.get("path") or directory),
                 "error": str(details.get("reason") or exc),
             })
+    if profile_error:
+        errors.append({"path": str(root / "TEST_RUN" / "artifacts_manifest.json"), "error": profile_error})
     complete = not errors and budget.failure is None
     exemptions = []
     for relative, reason in PROJECT_SIZE_EXEMPTIONS.items():
@@ -1820,10 +1996,11 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
         "approved_game_copy_bytes": copy_bytes,
         "approved_game_copy_limit_bytes": copy_limit if copy_exemption else 0,
         "non_exempt_bytes": project_bytes if complete else None,
-        "limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
+        "limit_bytes": project_limit,
+        "budget_profile": profile,
         "exempt_bytes": shared_bytes if complete else None,
         "exempt_limit_bytes": PROJECT_EXEMPT_SIZE_LIMIT_BYTES,
-        "within_limit": complete and project_bytes <= PROJECT_SIZE_LIMIT_BYTES and shared_bytes <= PROJECT_EXEMPT_SIZE_LIMIT_BYTES and (not copy_exemption or copy_bytes <= copy_limit),
+        "within_limit": complete and project_bytes <= project_limit and shared_bytes <= PROJECT_EXEMPT_SIZE_LIMIT_BYTES and (not copy_exemption or copy_bytes <= copy_limit),
         "complete": complete,
         "exemptions": exemptions,
         "inventory": budget.report(),
@@ -2186,6 +2363,7 @@ def _epoch_acceptance_conditions() -> list[str]:
 def _epoch_provenance(
     *, epoch_id: str, source_sha: str, effective_at: str,
     reset_provenance: dict | None = None,
+    release_task_id: str | None = None,
 ) -> dict:
     provenance = {
         "policy_version": PROSPECTIVE_EPOCH_POLICY_VERSION,
@@ -2212,6 +2390,18 @@ def _epoch_provenance(
     }
     if reset_provenance is not None:
         provenance["reset_provenance"] = dict(reset_provenance)
+    if release_task_id is not None:
+        if release_task_id != RELEASE_TASK_BUDGET_ID:
+            raise ValueError("unsupported temporary release task budget")
+        provenance["release_task_budget"] = {
+            "task_id": RELEASE_TASK_BUDGET_ID,
+            "limit_bytes": RELEASE_TASK_BUDGET_LIMIT_BYTES,
+            "scope_path": str((ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve()),
+            "source_sha": source_sha,
+            "owner_approval": RELEASE_TASK_BUDGET_APPROVAL,
+            "terminal_limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
+            "lifecycle": "active only while the exact registered candidate scope is DISPOSABLE",
+        }
     return provenance
 
 
@@ -2301,6 +2491,17 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
     for field in ("epoch_id", "effective_at", "source_sha", "scope_boundary", "original_incident_identity", "audit_identity", "acceptance_conditions"):
         if not epoch.get(field):
             failures.append(f"epoch_provenance_missing:{field}")
+    release_budget = epoch.get("release_task_budget")
+    if release_budget is not None and (
+        not isinstance(release_budget, dict)
+        or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or release_budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or release_budget.get("terminal_limit_bytes") != PROJECT_SIZE_LIMIT_BYTES
+        or release_budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or release_budget.get("source_sha") != epoch.get("source_sha")
+        or release_budget.get("scope_path") != str((ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve())
+    ):
+        failures.append("release_task_budget_invalid")
     rollback_value = epoch.get("rollback")
     rollback = rollback_value if isinstance(rollback_value, dict) else {}
     if not isinstance(rollback_value, dict):
@@ -2414,6 +2615,7 @@ def activate_prospective_epoch(
     epoch_id: str | None = None,
     source_sha: str | None = None,
     owner_reset_authorization: str | None = None,
+    release_task_id: str | None = None,
     timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
     max_items: int = DEFAULT_INVENTORY_MAX_ITEMS,
 ) -> dict:
@@ -2429,6 +2631,16 @@ def activate_prospective_epoch(
         reasons.append("source_sha_mismatch")
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
+    if release_task_id is not None:
+        if release_task_id != RELEASE_TASK_BUDGET_ID:
+            reasons.append("unsupported_release_task_budget")
+        else:
+            try:
+                release_version = (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
+            except OSError:
+                release_version = ""
+            if release_version != "0.1.5":
+                reasons.append("release_task_budget_version_mismatch")
     writer = _prospective_epoch_writer_status()
     if writer["active"]:
         reasons.append("registry_writer_active")
@@ -2571,6 +2783,7 @@ def activate_prospective_epoch(
         provenance = _epoch_provenance(
             epoch_id=epoch_id, source_sha=expected_sha, effective_at=effective_at,
             reset_provenance=reset_provenance,
+            release_task_id=release_task_id,
         )
         ledger = {
             "schema_version": 1,
@@ -3903,6 +4116,8 @@ def main() -> int:
     epoch.add_argument("--verify-prospective-epoch", action="store_true", help="Verify the active prospective epoch")
     ap.add_argument("--epoch-id", default=None)
     ap.add_argument("--source-sha", default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID,), default=None)
+    ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",
         default=None,
@@ -3914,6 +4129,12 @@ def main() -> int:
     ap.add_argument("--lifecycle", choices=("PROTECTED", "RETAINED", "DISPOSABLE", "UNKNOWN"), default="RETAINED")
     ap.add_argument("--output", type=Path, default=None, help="Optional report path; dry-run output must be outside _work")
     args = ap.parse_args()
+    if args.release_task_id:
+        os.environ["VNTEXT_RELEASE_TASK_ID"] = args.release_task_id
+    if args.register_release_task_scope:
+        result = register_release_task_scope()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("ok") else 1
     if args.dry_run and args.scope_id:
         print("--dry-run with --scope-id is unsupported; no cleanup performed", file=sys.stderr)
         return 2
@@ -3926,6 +4147,7 @@ def main() -> int:
                 epoch_id=args.epoch_id,
                 source_sha=args.source_sha,
                 owner_reset_authorization=args.owner_reset_authorization,
+                release_task_id=args.release_task_id,
                 timeout_seconds=args.inventory_timeout_seconds,
                 max_items=args.inventory_max_items,
             )

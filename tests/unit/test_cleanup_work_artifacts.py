@@ -15,7 +15,6 @@ import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
-from tests.lib.work_paths import work_temp_dir
 
 
 def _tests_lib_on_path() -> None:
@@ -47,11 +46,36 @@ class CleanupLifecycleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._prior_tempdir = tempfile.tempdir
-        tempfile.tempdir = str(work_temp_dir("cleanup-lifecycle-tests"))
+        ambient = paths.ambient_scope()
+        cls._fixture_tempdir = tempfile.TemporaryDirectory(
+            prefix="cleanup-lifecycle-", dir=str(paths.WORK_ROOT)
+        )
+        cls._fixture_temp_path = Path(cls._fixture_tempdir.name).resolve()
+        paths.register_artifact(
+            artifact_id=f"cleanup-lifecycle-temp:{ambient['scope_id']}",
+            path=cls._fixture_temp_path,
+            kind="test_temp",
+            created_by="test_cleanup_work_artifacts",
+            owner="test_cleanup_work_artifacts",
+            purpose="temporary fixtures for cleanup lifecycle unit tests",
+            lifecycle="DISPOSABLE",
+            scope_id=ambient["scope_id"],
+            run_id=ambient["run_id"],
+            scope_root=ambient["scope_root"],
+        )
+        tempfile.tempdir = str(cls._fixture_temp_path)
 
     @classmethod
     def tearDownClass(cls):
         tempfile.tempdir = cls._prior_tempdir
+        result = cleanup.cleanup_after_test(
+            [cls._fixture_temp_path],
+            reason="test_cleanup_work_artifacts fixture teardown",
+            outcome="PASS",
+        )
+        if not result.get("ok"):
+            raise RuntimeError(f"cleanup lifecycle test fixture teardown failed: {result}")
+        cls._fixture_tempdir.cleanup()
 
     @contextlib.contextmanager
     def isolated_owner_pending(self):
@@ -426,6 +450,104 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(3, result["exempt_bytes"])
             self.assertEqual(7, result["non_exempt_bytes"])
             self.assertFalse(result["within_limit"], result)
+
+    def _release_budget_fixture(self, root, *, lifecycle="DISPOSABLE", owner=None, scope_path=None):
+        (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
+        scope = root / "RELEASE_RUN" / "candidate-0.1.5"
+        scope.mkdir(parents=True, exist_ok=True)
+        sha = "a" * 40
+        manifest = {
+            "prospective_epoch": {
+                "status": "ACTIVE",
+                "epoch_id": "epoch-release-015",
+                "source_sha": sha,
+                "release_task_budget": {
+                    "task_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                    "limit_bytes": cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES,
+                    "scope_path": str(scope.resolve()),
+                    "source_sha": sha,
+                    "owner_approval": cleanup.RELEASE_TASK_BUDGET_APPROVAL,
+                    "terminal_limit_bytes": cleanup.PROJECT_SIZE_LIMIT_BYTES,
+                },
+            },
+            "artifacts": [{
+                "id": cleanup.RELEASE_TASK_BUDGET_ID,
+                "path": str(Path(scope_path or scope).resolve()),
+                "kind": "release_task_scope",
+                "owner": owner or cleanup.RELEASE_TASK_BUDGET_ID,
+                "lifecycle": lifecycle,
+                "scope_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                "run_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                "scope_root": str(scope.resolve()),
+            }],
+        }
+        return scope, manifest, {"head": sha, "dirty": False}
+
+    def test_release_task_cap_is_opt_in_and_requires_exact_active_scope(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            scope, manifest, git = self._release_budget_fixture(root)
+            with patch.dict(os.environ, {}, clear=True):
+                limit, error, profile = cleanup._release_task_budget_profile(root)
+            self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+            self.assertIsNone(error)
+            self.assertEqual("default", profile)
+
+            with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}), \
+                 patch.object(cleanup, "ROOT", root), \
+                 patch.object(cleanup, "_strict_registry_snapshot", return_value=(manifest, b"{}", [])), \
+                 patch.object(cleanup, "_epoch_verify_files", return_value=[]), \
+                 patch.object(cleanup, "_git_repository_state", return_value=git):
+                limit, error, profile = cleanup._release_task_budget_profile(root)
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
+            self.assertIsNone(error)
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
+
+            bad_manifest = json.loads(json.dumps(manifest))
+            bad_manifest["artifacts"][0]["owner"] = "other-task"
+            with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}), \
+                 patch.object(cleanup, "ROOT", root), \
+                 patch.object(cleanup, "_strict_registry_snapshot", return_value=(bad_manifest, b"{}", [])), \
+                 patch.object(cleanup, "_epoch_verify_files", return_value=[]), \
+                 patch.object(cleanup, "_git_repository_state", return_value=git):
+                limit, error, profile = cleanup._release_task_budget_profile(root)
+            self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+            self.assertEqual("release_task_scope_not_registered_exactly", error)
+            self.assertEqual("default", profile)
+
+    def test_release_task_budget_refuses_incomplete_registry_and_over_cap(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            payload = root / "oversize.bin"
+            payload.write_bytes(b"x" * 13)
+            with patch.object(cleanup, "ROOT", root), \
+                 patch.object(cleanup, "_project_inventory_root", return_value=root), \
+                 patch.object(cleanup, "_release_task_budget_profile", return_value=(12, None, cleanup.RELEASE_TASK_BUDGET_ID)):
+                result = cleanup._project_size_snapshot()
+            self.assertTrue(result["complete"], result)
+            self.assertEqual(12, result["limit_bytes"])
+            self.assertFalse(result["within_limit"], result)
+
+            with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}), \
+                 patch.object(cleanup, "ROOT", root), \
+                 patch.object(cleanup, "_project_inventory_root", return_value=root), \
+                 patch.object(cleanup, "_strict_registry_snapshot", return_value=({}, None, ["malformed registry"])):
+                result = cleanup._project_size_snapshot()
+            self.assertFalse(result["complete"], result)
+            self.assertFalse(result["within_limit"], result)
+            self.assertIn("release_task_registry_invalid", {item["error"] for item in result["errors"]})
+
+    def test_release_task_cap_expires_after_registered_scope_is_missing(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            scope, manifest, git = self._release_budget_fixture(root, lifecycle="MISSING")
+            scope.rmdir()
+            with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}), \
+                 patch.object(cleanup, "ROOT", root), \
+                 patch.object(cleanup, "_strict_registry_snapshot", return_value=(manifest, b"{}", [])), \
+                 patch.object(cleanup, "_epoch_verify_files", return_value=[]), \
+                 patch.object(cleanup, "_git_repository_state", return_value=git):
+                limit, error, profile = cleanup._release_task_budget_profile(root)
+            self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+            self.assertIsNone(error)
+            self.assertEqual("terminal-default", profile)
 
     def test_snapshot_inventory_counts_main_root_and_nested_duplicate_environment(self):
         with self.isolated_workspace() as (root, _work, _game, _manifest):
@@ -1254,6 +1376,39 @@ class CleanupLifecycleTests(unittest.TestCase):
                 second = cleanup.activate_prospective_epoch(dry_run=False, epoch_id="epoch-apply", source_sha="test-sha")
             self.assertTrue(second["ok"])
             self.assertTrue(second["idempotent"])
+
+    def test_release_task_budget_is_epoch_bound_registered_and_reverts_after_teardown(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
+            git_guard, incident_guard = self._epoch_guards()
+            with git_guard, incident_guard, patch.object(cleanup, "ROOT", root):
+                applied = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-release-budget",
+                    source_sha="test-sha",
+                    release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                )
+                self.assertTrue(applied["ok"], applied)
+                budget = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]["release_task_budget"]
+                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, budget["limit_bytes"])
+                registered = cleanup.register_release_task_scope()
+                self.assertTrue(registered["ok"], registered)
+                with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}):
+                    limit, error, profile = cleanup._release_task_budget_profile(root)
+                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
+                self.assertIsNone(error)
+                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
+                paths.set_artifact_status(
+                    cleanup.RELEASE_TASK_BUDGET_ID,
+                    "MISSING",
+                    lifecycle="MISSING",
+                    purpose="terminal release task teardown",
+                )
+                with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}):
+                    limit, error, profile = cleanup._release_task_budget_profile(root)
+                self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+                self.assertIsNone(error)
+                self.assertEqual("terminal-default", profile)
 
     def test_prospective_epoch_refuses_dirty_writer_incomplete_and_conflicting_state(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):

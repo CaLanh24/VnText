@@ -1064,11 +1064,8 @@ $modelManifest = [ordered]@{
 Write-Host "Copy portable Python venv (worker runtime)..." -ForegroundColor Yellow
 $venvSrc = $WorkerVenvRoot
 $venvDest = Join-Path $stagingWorker ".venv"
-$null = robocopy $venvSrc $venvDest /E /NFL /NDL /NJH /NJS /nc /ns /np /R:2 /W:2 `
-    /XD __pycache__ .pytest_cache .mypy_cache torchaudio torchvision stanza spacy `
-         PySide6 shiboken6 onnxruntime argostranslate pytest test tests `
-    /XF *.pyc *.pyo *.log
-if ($LASTEXITCODE -ge 8) { throw "robocopy .venv failed" }
+& $Python -B (Join-Path $DevRoot "release\prune_worker_venv.py") --copy-pruned-source $venvSrc $venvDest
+if ($LASTEXITCODE -ne 0) { throw "filtered worker .venv copy failed" }
 if (-not (Test-Path (Join-Path $venvDest "Scripts\python.exe"))) { throw "Release .venv python.exe missing" }
 
 # DEV .dev-env/.venv may be created with --system-site-packages.  Robocopy only sees

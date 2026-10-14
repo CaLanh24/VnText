@@ -265,6 +265,7 @@ unavailable historical reports.
 - Runner-owned records use a stable ID derived from normalized physical path and related tree registrations are batched, so repeated runs update the same current record instead of adding one copy per `scope_id`/`run_id`. Existing historical entries are preserved; this does not reconcile or reclassify prior UNKNOWN/MISSING records.
 - Deletion requires a complete inventory, a registered `DISPOSABLE` target, no active process using it, and no live non-disposable claim. Unknown or unproven paths stay untouched until ownership is resolved; they are reported with path/size and cannot be silently kept as an unlimited retention exception. Each cleanup reports before/after size and exact deletion/retention outcomes. Project-size inventory fails closed on links/reparse points, special files, stat/scandir errors or budget limits.
 - Owner decision (2026-10-04): keep project-managed DEV environments, artifacts, baselines and evidence inside the DEV checkout; do not create an external archive or move them outside to satisfy the size gate. A cleanup `PASS` requires a complete inventory of the entire checkout, at most **1 GiB of non-exempt files**, and `.dev-env` at most **3 GiB**. Report both totals and each exact exemption root/reason. The only shared environment root is `.dev-env`; `DEV_RUN` is one current build, `TEST_RUN` is disposable test runtime, and `RELEASE_RUN` exists only for an explicit Release task. Consolidate reusable environments; duplicate snapshots, payload copies and obsolete fixtures are not exemptions. No blanket exemption for `DEV_RUN`, `TEST_RUN` or `.scratch`.
+- Owner authorization (2026-10-14, Release 0.1.5): Owner confirmed “Ok” to one prospective epoch from the final clean 0.1.5 source and a temporary ceiling of **3 GiB total non-exempt files for the entire checkout**, inclusive of existing bytes, for candidate/test 0.1.5 only. `.dev-env` remains separately capped at 3 GiB. Inventory and project each phase before it starts; stop before the total cap can be exceeded. At terminal teardown, dispose only the exact registered 0.1.5 task scope and require the default **1 GiB** project limit again. Old payloads and user data are not deletion targets. This authorization does not exempt paths, change package/update validators, or increase limits for another task. The helper requires an active epoch carrying this exact approval, matching clean source SHA/version, the exact `RELEASE_RUN/candidate-0.1.5` `DISPOSABLE` registration, and explicit `VNTEXT_RELEASE_TASK_ID=release-0.1.5`; otherwise the 1 GiB limit applies. Once that registered scope is terminal `MISSING` and absent, the profile returns to 1 GiB.
 - Cleanup is test/tooling infrastructure and must not change translation semantics, worker NDJSON, WPF product behavior or engine/game behavior.
 
 Historical baselines and incident snapshots are not current exemptions or clone
@@ -273,13 +274,29 @@ prerequisites. A Release task may register one owned baseline/candidate scope in
 Nested snapshots under `.scratch` or `TEST_RUN` inventory the containing main
 checkout for quota; deletion and artifact ownership stay in the local run scope.
 The canonical wrapper blocks child/payload creation when quota inventory is
-incomplete or either cap is exceeded; it may write a bounded failure receipt.
+incomplete or the active task cap is exceeded; it may write a bounded failure receipt.
+For the authorized 0.1.5 task, register the exact candidate scope after applying
+the matching prospective epoch, then invoke the canonical wrapper with
+`--release-task-id release-0.1.5`. The exception raises only the total project
+non-exempt limit; every path remains counted and registry ownership rules remain
+unchanged. Finalize the exact candidate scope only after all children exit and
+evidence is compacted; final inventory must pass at 1 GiB.
 
 **Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; terminal summary is streamed and `TEST_RUN` is absent/empty after feature runs.
 
 ## 10b. Prospective artifact-registry epoch
 
 `tests/tools/cleanup_work_artifacts.py` owns the additive prospective epoch transition. `--prospective-epoch-plan` and `--verify-prospective-epoch` are read-only; `--apply-prospective-epoch` may write only a retained epoch scope and the canonical manifest metadata. Apply is fail-closed on a dirty tree, source SHA mismatch, active writer marker, incomplete/budget-limited inventory, invalid schema/provenance, missing or mismatched rollback snapshot, or conflicting active epoch. It never deletes artifacts.
+
+For the Owner-authorized 0.1.5 task only, `--apply-prospective-epoch --release-task-id release-0.1.5` records the fixed 3 GiB whole-checkout limit,
+exact source SHA/version, exact candidate scope and approval statement inside
+the epoch policy. `--register-release-task-scope` registers that scope as the
+single `DISPOSABLE` owner `release-0.1.5`; it creates no payload. Runtime use
+requires the explicit task ID, exact active registration and a clean matching
+source. Invalid/incomplete epoch or registry data fails closed. Missing or
+terminal scope falls back to the default 1 GiB limit. The `.dev-env` cap stays
+3 GiB, no path is excluded from project totals, and update package/expanded-file
+validators are unchanged. The budget is not copied into another epoch or task.
 
 Each active epoch retains an exact pre-transition manifest rollback snapshot, policy, rollback metadata and a current filesystem ledger under `TEST_RUN/artifact-registry-epochs/<epoch-id>/`. The ledger is prospective only: registered evidence keeps its lifecycle, current unproven paths remain `UNKNOWN`, and preserved historical data is distinct from the rollback snapshot and new ledger. Private historical registries or reports are not present in a public clone, are not clone prerequisites, and cannot establish current cleanup or Release acceptance. Assess a new checkout and each release from its own evidence; do not infer historical PASS.
 

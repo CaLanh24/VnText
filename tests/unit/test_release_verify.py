@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import tempfile
 import unittest
 from pathlib import Path
 import sys
 from unittest.mock import patch
+from uuid import uuid4
 
 
 def _tests_lib_on_path() -> None:
@@ -23,7 +23,23 @@ from bootstrap import bootstrap
 
 TESTS, ROOT, LIB = bootstrap(__file__)
 
+sys.path.insert(0, str(TESTS / "tools"))
+from work_paths import WORK_ROOT, artifact_scope
+
 from vntext.release_verify import resolve_artifacts_root, resolve_work_root, verify_workflow
+
+
+def _temporary_work_scope(name: str):
+    scope = f"release-verify-{name}-{uuid4().hex}"
+    path = WORK_ROOT / scope
+    path.mkdir(parents=True)
+    return artifact_scope(
+        path,
+        artifact_id=scope,
+        kind="test_workspace",
+        owner="test_release_verify.py",
+        purpose=f"isolated release verification fixture: {name}",
+    )
 
 
 class ReleaseVerifyTests(unittest.TestCase):
@@ -76,7 +92,7 @@ class ReleaseVerifyTests(unittest.TestCase):
             write_csv_rows_file(Path(csv_path), fields, rows)
             return {"ok": True, "qa": {"status": "PASS"}}
 
-        with tempfile.TemporaryDirectory() as temp:
+        with _temporary_work_scope("workflow") as temp:
             with (
                 patch("vntext.mt_ct2.run_ct2_translate", side_effect=translate_with_ct2) as ct2,
             ):
@@ -187,7 +203,7 @@ class ReleaseVerifyTests(unittest.TestCase):
         self.assertLess(publish.index("Clean-ReleaseArtifacts $staging"), publish.index("Final Release audit"))
 
     def test_artifacts_root_falls_back_when_appdata_path_is_not_a_directory(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with _temporary_work_scope("artifacts-root-fallback") as temp:
             root = Path(temp)
             primary = root / "blocked"
             fallback = root / "fallback"
@@ -199,7 +215,7 @@ class ReleaseVerifyTests(unittest.TestCase):
             self.assertTrue(artifacts_root.is_dir())
 
     def test_work_root_falls_back_when_primary_is_not_a_directory(self):
-        with tempfile.TemporaryDirectory() as temp:
+        with _temporary_work_scope("work-root-fallback") as temp:
             artifacts_root = Path(temp)
             (artifacts_root / "release_verify").write_text("blocked", encoding="utf-8")
 

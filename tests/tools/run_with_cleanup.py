@@ -740,6 +740,12 @@ def main() -> int:
         help="Maximum inventory time for before/final cleanup snapshots (fail-closed)",
     )
     parser.add_argument("--report", type=Path, default=None)
+    parser.add_argument(
+        "--release-task-id",
+        choices=("release-0.1.5",),
+        default=None,
+        help="Request the epoch-bound 0.1.5 temporary project cap; otherwise the default 1 GiB applies",
+    )
     parser.add_argument("--stdout-log", type=Path, default=None)
     parser.add_argument("--stderr-log", type=Path, default=None)
     parser.add_argument(
@@ -756,6 +762,8 @@ def main() -> int:
         command = command[1:]
     if not command:
         parser.error("a command is required after --")
+    if args.release_task_id:
+        os.environ["VNTEXT_RELEASE_TASK_ID"] = args.release_task_id
     return run(
         command,
         timeout=args.timeout_seconds,

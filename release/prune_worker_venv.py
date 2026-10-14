@@ -51,6 +51,68 @@ DROP_PACKAGES = {
 }
 
 DROP_SCRIPT_GLOBS = ("pip*", "pytest*", "pyinstaller*", "torch*", "activate*")
+DROP_COPY_DIRS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".git", "test", "tests"}
+
+
+def _copy_ignore(relative: Path, is_dir: bool) -> bool:
+    parts = relative.parts
+    name = relative.name
+    if any(part.lower() in DROP_COPY_DIRS for part in parts) or relative.suffix.lower() in {".pyc", ".pyo", ".log"}:
+        return True
+    if len(parts) >= 3 and parts[:2] == ("Lib", "site-packages"):
+        package = parts[2]
+        if package in DROP_PACKAGES:
+            return True
+        if package.endswith(".dist-info"):
+            stem = package.split("-")[0].lower()
+            if stem in {item.lower() for item in DROP_PACKAGES}:
+                return True
+        if parts[2:4] == ("fmod_toolkit", "libfmod"):
+            return True
+    if len(parts) >= 2 and parts[0] == "Scripts" and any(
+        name.lower().startswith(glob.rstrip("*").lower()) for glob in DROP_SCRIPT_GLOBS
+    ):
+        return True
+    return False
+
+
+def copy_pruned_source(source: Path, destination: Path) -> dict:
+    """Copy only worker-retained venv files so a raw venv is never staged first."""
+
+    source = source.resolve()
+    destination = destination.resolve()
+    if not source.is_dir():
+        raise FileNotFoundError(source)
+    if destination.exists() or destination.is_symlink():
+        raise FileExistsError(f"filtered venv destination already exists: {destination}")
+    if source == destination or source in destination.parents or destination in source.parents:
+        raise ValueError("filtered venv source and destination must not overlap")
+    copied_bytes = 0
+    copied_files = 0
+    try:
+        for item in source.rglob("*"):
+            relative = item.relative_to(source)
+            if _copy_ignore(relative, item.is_dir()):
+                continue
+            if item.is_symlink():
+                raise RuntimeError(f"worker venv source contains a link: {item}")
+            target = destination / relative
+            if item.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+            elif item.is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, target)
+                copied_bytes += item.stat().st_size
+                copied_files += 1
+            else:
+                raise RuntimeError(f"worker venv source contains a special file: {item}")
+        if not (destination / "Scripts" / "python.exe").is_file():
+            raise FileNotFoundError(f"filtered worker venv is missing Scripts/python.exe: {destination}")
+    except BaseException:
+        if destination.exists() and not destination.is_symlink():
+            shutil.rmtree(destination)
+        raise
+    return {"source": str(source), "destination": str(destination), "bytes": copied_bytes, "files": copied_files}
 
 
 def assert_no_fmod_binaries(root: Path) -> None:
@@ -131,6 +193,13 @@ def main(argv: list[str] | None = None) -> int:
     if not argv:
         print("usage: prune_worker_venv.py <path-to-.venv>", file=sys.stderr)
         return 2
+    if argv[0] == "--copy-pruned-source":
+        if len(argv) != 3:
+            print("usage: prune_worker_venv.py --copy-pruned-source <source-venv> <destination-venv>", file=sys.stderr)
+            return 2
+        report = copy_pruned_source(Path(argv[1]), Path(argv[2]))
+        print(f"filtered venv copy: {report['files']} files, {report['bytes']} bytes")
+        return 0
     root = Path(argv[0]).resolve()
     report = prune_venv(root)
     print(f"venv {report['before_mb']} MB -> {report['after_mb']} MB; removed {len(report['removed'])} packages")
