@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -62,6 +63,7 @@ def _start_worker() -> subprocess.Popen:
         stderr=subprocess.DEVNULL,
         text=True,
         encoding="utf-8",
+        env=os.environ.copy(),
     )
 
 

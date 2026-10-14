@@ -11,6 +11,7 @@ param(
     [string[]]$Patterns = @(),
     [string]$PatternFile = "",
     [string]$SourceSha = "",
+    [string]$ReleaseTaskId = "",
     [ValidateRange(1, 3600)]
     [int]$TimeoutSeconds = 900,
     [ValidateRange(1, 3600)]
@@ -86,17 +87,27 @@ function Invoke-IsolatedPattern(
     [int]$Timeout,
     [string]$ScopeId,
     [string]$RunId,
-    [string]$ScopeRoot
+    [string]$ScopeRoot,
+    [string]$TempRoot,
+    [string]$ReleaseTaskId
 ) {
     $started = [DateTime]::UtcNow
+    $childRunner = Join-Path $Cwd "release\run_regression_child.py"
+    if (-not (Test-Path -LiteralPath $childRunner -PathType Leaf)) {
+        throw "Regression child runner not found: $childRunner"
+    }
     $arguments = @(
         "-B",
-        "-m", "unittest",
-        "discover",
-        "-s", "tests/unit",
-        "-p", $Pattern,
-        "-v"
+        $childRunner,
+        "--python-path", $Python,
+        "--working-directory", $Cwd,
+        "--pattern", $Pattern,
+        "--scope-id", $ScopeId,
+        "--run-id", $RunId,
+        "--scope-root", $ScopeRoot,
+        "--temp-root", $TempRoot
     )
+    if ($ReleaseTaskId) { $arguments += @("--release-task-id", $ReleaseTaskId) }
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $Python
     $psi.WorkingDirectory = $Cwd
@@ -104,9 +115,6 @@ function Invoke-IsolatedPattern(
     $psi.CreateNoWindow = $true
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
-    $psi.Environment["VNTEXT_ARTIFACT_SCOPE_ID"] = $ScopeId
-    $psi.Environment["VNTEXT_ARTIFACT_RUN_ID"] = $RunId
-    $psi.Environment["VNTEXT_ARTIFACT_SCOPE_ROOT"] = $ScopeRoot
     if ($psi.PSObject.Properties.Name -contains "ArgumentList") {
         foreach ($argument in $arguments) {
             $null = $psi.ArgumentList.Add($argument)
@@ -192,6 +200,7 @@ function Invoke-RegisteredArtifactCleanup(
     [string]$RunId,
     [string]$ScopeRoot,
     [string]$BeforeSnapshot,
+    [string]$ReleaseTaskId,
     [int]$CleanupTimeoutSeconds = 120
 ) {
     $cleanupScript = Join-Path $Cwd "tests\tools\cleanup_work_artifacts.py"
@@ -271,6 +280,7 @@ function Invoke-RegisteredArtifactCleanup(
         "--output", $cleanupOutput,
         "--inventory-timeout-seconds", [string]$CleanupTimeoutSeconds
     )
+    if ($ReleaseTaskId) { $arguments += @("--release-task-id", $ReleaseTaskId) }
     $process = New-Object System.Diagnostics.Process
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $Python
@@ -366,10 +376,10 @@ function Invoke-RegisteredArtifactCleanup(
     if ($payloadValid -and $status -eq "PASS") {
         $terminal = [string]($payload.terminal_status)
         $ok = $exitCode -eq 0 -and [bool]$payload.ok -and [bool]$payload.inventory_complete -and
-            [string]$payload.status -eq "PASS" -and $terminal -eq "PASS"
+            [string]$payload.status -eq "PASS" -and $terminal -eq $Outcome
         if (-not $ok) {
-            $status = if ($terminal -in @("TIMEOUT", "START_ERROR", "FAIL")) { $terminal } else { "FAIL" }
-            $errorText = "Cleanup status: $($payload.status), terminal_status: $terminal"
+            $status = "FAIL"
+            $errorText = "Cleanup status: $($payload.status), cleanup terminal_status: $terminal, expected test outcome: $Outcome"
         }
     }
     if ($status -eq "PASS" -and $null -eq $payload) {
@@ -409,6 +419,7 @@ $cleanupScript = Join-Path $WorkingDirectory "tests\tools\cleanup_work_artifacts
 $scopeRoot = Join-Path $WorkingDirectory "TEST_RUN"
 $scopeId = "release-regression-$([guid]::NewGuid().ToString('N'))"
 $runId = "release-run-$([guid]::NewGuid().ToString('N'))"
+$tempRoot = Join-Path $scopeRoot ("release-regression-temp-{0}" -f $runId)
 $beforeSnapshot = Join-Path $runDirectory "SCOPE_BEFORE.json"
 $cleanupOutput = Join-Path $runDirectory "CLEANUP_COMPLETE.json"
 $results = [System.Collections.Generic.List[object]]::new()
@@ -426,6 +437,8 @@ $progressMessages = [System.Collections.Generic.List[string]]::new()
 [System.IO.File]::WriteAllText($cleanupOutput, "", (New-Object System.Text.UTF8Encoding $false))
 
 try {
+    New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
+    Register-ScopedArtifact $PythonPath $WorkingDirectory $tempRoot $scopeId $runId $scopeRoot "Release regression isolated Python temporary directory" "DISPOSABLE"
     $scopeRootResolved = (Resolve-Path -LiteralPath $scopeRoot).Path
     $logRootResolved = (Resolve-Path -LiteralPath $LogRoot).Path
     if ($logRootResolved -ne $scopeRootResolved -and $logRootResolved.StartsWith($scopeRootResolved + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
@@ -449,7 +462,7 @@ try {
         $safeName = ($pattern -replace "[^A-Za-z0-9_.-]", "_")
         $patternLog = Join-Path $runDirectory ("{0:D2}_{1}.log" -f ($index + 1), $safeName)
         $progressMessages.Add("  -> $pattern (isolated, timeout ${TimeoutSeconds}s)")
-        $result = Invoke-IsolatedPattern $pattern $patternLog $PythonPath $WorkingDirectory $TimeoutSeconds $scopeId $runId $scopeRoot
+        $result = Invoke-IsolatedPattern $pattern $patternLog $PythonPath $WorkingDirectory $TimeoutSeconds $scopeId $runId $scopeRoot $tempRoot $ReleaseTaskId
         Register-ScopedArtifact $PythonPath $WorkingDirectory $patternLog $scopeId $runId $scopeRoot "Release regression pattern log: $pattern"
         $results.Add($result)
         $progressMessages.Add(("     {0} exit={1} log={2}" -f $result.status, $result.exit_code, $patternLog))
@@ -487,7 +500,7 @@ try {
         $cleanupOutcome = "FAIL"
     }
     try {
-        $cleanupResult = Invoke-RegisteredArtifactCleanup $PythonPath $WorkingDirectory $runDirectory $cleanupOutcome $scopeId $runId $scopeRoot $beforeSnapshot $CleanupTimeoutSeconds
+        $cleanupResult = Invoke-RegisteredArtifactCleanup $PythonPath $WorkingDirectory $runDirectory $cleanupOutcome $scopeId $runId $scopeRoot $beforeSnapshot $ReleaseTaskId $CleanupTimeoutSeconds
     } catch {
         $cleanupResult = [ordered]@{
             status = "FAIL"
@@ -512,6 +525,8 @@ try {
         scope_id = $scopeId
         run_id = $runId
         scope_root = $scopeRoot
+        temp_root = $tempRoot
+        release_task_id = $ReleaseTaskId
         before_snapshot = $beforeSnapshot
         started_utc = $runStarted.ToString("o")
         finished_utc = [DateTime]::UtcNow.ToString("o")

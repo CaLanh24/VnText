@@ -47,7 +47,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             scope_root=ambient["scope_root"],
         )
 
-    def test_runner_executes_pattern_and_writes_complete_summary(self):
+    def test_runner_captures_child_output_and_preserves_exit_code(self):
         self.assertTrue(RUNNER.is_file(), RUNNER)
         powershell = shutil.which("powershell") or shutil.which("pwsh")
         self.assertIsNotNone(powershell, "PowerShell is required by the Release gate")
@@ -62,17 +62,56 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "tests/tools/cleanup_work_artifacts.py",
             "tests/lib/work_paths.py",
             "tests/lib/bootstrap.py",
+            "release/run_regression_child.py",
         ):
             target = harness / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / relative, target)
         unit_dir = harness / "tests" / "unit"
         unit_dir.mkdir(parents=True)
+        site_packages = harness / ".dev-env" / ".venv" / "Lib" / "site-packages"
+        site_packages.mkdir(parents=True)
+        (site_packages / "runner_probe.py").write_text(
+            "def marker():\n    return 'pythonpath-reached'\n",
+            encoding="utf-8",
+        )
         (unit_dir / "test_fast.py").write_text(
-            "import unittest\n\n"
+            "import json\n"
+            "import os\n"
+            "from pathlib import Path\n"
+            "import subprocess\n"
+            "import sys\n"
+            "import tempfile\n"
+            "import unittest\n"
+            "import runner_probe\n\n"
             "class FastTests(unittest.TestCase):\n"
             "    def test_runner_executes_pattern(self):\n"
-            "        self.assertTrue(True)\n",
+            "        print('SUCCESS_CHILD_STDOUT_MARKER', flush=True)\n"
+            "        print('SUCCESS_CHILD_STDERR_MARKER', file=sys.stderr, flush=True)\n"
+            "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_SCOPE_ID'].startswith('release-regression-'))\n"
+            "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_RUN_ID'].startswith('release-run-'))\n"
+            "        self.assertEqual('pythonpath-reached', runner_probe.marker())\n"
+            "        temp_root = Path(os.environ['TMPDIR']).resolve()\n"
+            "        self.assertEqual(temp_root, Path(tempfile.gettempdir()).resolve())\n"
+            "        self.assertEqual(Path(os.environ['VNTEXT_ARTIFACT_SCOPE_ROOT']).resolve(), temp_root.parent)\n"
+            "        child_code = \"import json,os,sys,tempfile,runner_probe; print(json.dumps({'scope':os.getenv('VNTEXT_ARTIFACT_SCOPE_ID'),'run':os.getenv('VNTEXT_ARTIFACT_RUN_ID'),'tmpdir':os.getenv('TMPDIR'),'tempdir':tempfile.gettempdir(),'probe':runner_probe.marker()}))\"\n"
+            "        child = subprocess.run([sys.executable, '-S', '-B', '-c', child_code], env=os.environ.copy(), capture_output=True, text=True)\n"
+            "        self.assertEqual(0, child.returncode, child.stderr)\n"
+            "        state = json.loads(child.stdout)\n"
+            "        self.assertEqual(os.environ['VNTEXT_ARTIFACT_SCOPE_ID'], state['scope'])\n"
+            "        self.assertEqual(os.environ['VNTEXT_ARTIFACT_RUN_ID'], state['run'])\n"
+            "        self.assertEqual(str(temp_root), state['tempdir'])\n"
+            "        self.assertEqual('pythonpath-reached', state['probe'])\n",
+            encoding="utf-8",
+        )
+        (unit_dir / "test_failure.py").write_text(
+            "import sys\n"
+            "import unittest\n\n"
+            "class FailureTests(unittest.TestCase):\n"
+            "    def test_intentional_failure(self):\n"
+            "        print('FAILURE_CHILD_STDOUT_MARKER', flush=True)\n"
+            "        print('FAILURE_CHILD_STDERR_MARKER', file=sys.stderr, flush=True)\n"
+            "        self.fail('intentional child failure for exit-code evidence')\n",
             encoding="utf-8",
         )
         scope_root = harness / "TEST_RUN"
@@ -81,7 +120,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
         outcome = "FAIL"
         try:
             pattern_file = log_root / "patterns.txt"
-            pattern_file.write_text("test_fast.py\n", encoding="utf-8")
+            pattern_file.write_text("test_fast.py\ntest_failure.py\n", encoding="utf-8")
             command = [
                 powershell,
                 "-NoProfile",
@@ -134,17 +173,27 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                             },
                             indent=2,
                         )
-            self.assertEqual(0, result.returncode, result.stdout + result.stderr + failure_evidence)
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr + failure_evidence)
 
             summaries = list(log_root.rglob("REGRESSION_COMPLETE.json"))
             self.assertEqual(1, len(summaries), result.stdout + result.stderr)
             summary = json.loads(summaries[0].read_text(encoding="utf-8"))
-            self.assertEqual("PASS", summary["status"])
-            self.assertEqual(0, summary["exit_code"])
-            self.assertEqual(1, len(summary["results"]))
+            self.assertEqual("FAIL", summary["status"])
+            self.assertEqual(1, summary["exit_code"])
+            self.assertEqual(2, len(summary["results"]))
             self.assertEqual("PASS", summary["results"][0]["status"])
             self.assertEqual(0, summary["results"][0]["exit_code"])
+            self.assertEqual("FAIL", summary["results"][1]["status"])
+            self.assertEqual(1, summary["results"][1]["exit_code"])
             self.assertTrue(Path(summary["results"][0]["log"]).is_file())
+            self.assertTrue(Path(summary["results"][1]["log"]).is_file())
+            success_log = Path(summary["results"][0]["log"]).read_text(encoding="utf-8")
+            failure_log = Path(summary["results"][1]["log"]).read_text(encoding="utf-8")
+            self.assertIn("SUCCESS_CHILD_STDOUT_MARKER", success_log)
+            self.assertIn("SUCCESS_CHILD_STDERR_MARKER", success_log)
+            self.assertIn("FAILURE_CHILD_STDOUT_MARKER", failure_log)
+            self.assertIn("FAILURE_CHILD_STDERR_MARKER", failure_log)
+            self.assertIn("intentional child failure for exit-code evidence", failure_log)
             self.assertTrue(summary["scope_id"].startswith("release-regression-"))
             self.assertTrue(summary["run_id"].startswith("release-run-"))
             self.assertEqual(str(scope_root.resolve()), summary["scope_root"])
@@ -155,8 +204,8 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             cleanup = json.loads(
                 Path(summary["cleanup"]["report"]).read_text(encoding="utf-8")
             )
-            self.assertEqual("PASS", cleanup["status"])
-            self.assertEqual("PASS", cleanup["terminal_status"])
+            self.assertEqual("PASS", cleanup["status"], json.dumps(cleanup, indent=2))
+            self.assertEqual("FAIL", cleanup["terminal_status"])
             self.assertTrue(cleanup["ok"])
             self.assertTrue(cleanup["inventory_complete"])
             self.assertEqual([], cleanup["unknown"])
@@ -181,6 +230,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             runner_path = harness / "release" / "run_regression.ps1"
             runner_path.parent.mkdir(parents=True)
             shutil.copy2(RUNNER, runner_path)
+            shutil.copy2(ROOT / "release" / "run_regression_child.py", runner_path.parent / "run_regression_child.py")
 
             cleanup_path = harness / "tests" / "tools" / "cleanup_work_artifacts.py"
             cleanup_path.parent.mkdir(parents=True)
@@ -188,6 +238,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 [
                     "from pathlib import Path",
                     "import json",
+                    "import os",
                     "import subprocess",
                     "import sys",
                     "import time",
@@ -215,6 +266,9 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                     "scope_root.mkdir(parents=True, exist_ok=True)",
                     "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(30)'], cwd=scope_root.anchor)",
                     "(scope_root / 'cleanup-child.pid').write_text(str(child.pid), encoding='utf-8')",
+                    "(scope_root / 'cleanup-ready.json').write_text(json.dumps({'ready': True, 'phase': 'sleeping', 'parent_pid': os.getpid(), 'child_pid': child.pid}), encoding='utf-8')",
+                    "print('CLEANUP_PARENT_STDOUT_MARKER', flush=True)",
+                    "print('CLEANUP_PARENT_STDERR_MARKER', file=sys.stderr, flush=True)",
                     "time.sleep(30)",
                 ]
             ) + "\n"
@@ -226,6 +280,8 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 "import unittest\n\n"
                 "class FastTests(unittest.TestCase):\n"
                 "    def test_fast(self):\n"
+                "        print('TIMEOUT_PATTERN_STDOUT_MARKER', flush=True)\n"
+                "        print('TIMEOUT_PATTERN_STDERR_MARKER', file=__import__('sys').stderr, flush=True)\n"
                 "        self.assertTrue(True)\n",
                 encoding="utf-8",
             )
@@ -253,7 +309,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 "-TimeoutSeconds",
                 "30",
                 "-CleanupTimeoutSeconds",
-                "1",
+                "5",
                 "-PatternFile",
                 str(pattern_file),
             ]
@@ -280,6 +336,21 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             self.assertFalse(cleanup["ok"])
             self.assertFalse(cleanup["inventory_complete"])
             self.assertEqual([], cleanup["deleted"])
+            ready_path = scope_root / "cleanup-ready.json"
+            self.assertTrue(ready_path.is_file(), result.stdout + result.stderr)
+            ready = json.loads(ready_path.read_text(encoding="utf-8"))
+            self.assertTrue(ready["ready"])
+            self.assertEqual("sleeping", ready["phase"])
+            self.assertGreater(ready["parent_pid"], 0)
+            self.assertGreater(ready["child_pid"], 0)
+            pattern_log = Path(summary["results"][0]["log"]).read_text(encoding="utf-8")
+            self.assertIn("TIMEOUT_PATTERN_STDOUT_MARKER", pattern_log)
+            self.assertIn("TIMEOUT_PATTERN_STDERR_MARKER", pattern_log)
+            cleanup_stream_log = summaries[0].parent / "CLEANUP_PROCESS.log"
+            self.assertTrue(cleanup_stream_log.is_file())
+            cleanup_stream = cleanup_stream_log.read_text(encoding="utf-8")
+            self.assertIn("CLEANUP_PARENT_STDOUT_MARKER", cleanup_stream)
+            self.assertIn("CLEANUP_PARENT_STDERR_MARKER", cleanup_stream)
 
             pid_file = scope_root / "cleanup-child.pid"
             self.assertTrue(pid_file.is_file())
@@ -293,6 +364,30 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 time.sleep(0.1)
             else:
                 self.fail(f"cleanup descendant process still exists: {child_pid}")
+            terminated_pids = []
+            for pid in (ready["parent_pid"], ready["child_pid"]):
+                try:
+                    os.kill(pid, 0)
+                except OSError:
+                    terminated_pids.append(pid)
+                    continue
+                self.fail(f"cleanup process still exists after timeout: {pid}")
+            print(
+                "TIMEOUT_FIXTURE_EVIDENCE "
+                + json.dumps(
+                    {
+                        "readiness": ready,
+                        "runner_summary": summary,
+                        "cleanup_terminal_status": cleanup["terminal_status"],
+                        "cleanup_process_transcript": cleanup_stream,
+                        "pattern_transcript": pattern_log,
+                        "terminated_pids": terminated_pids,
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
         finally:
             for _ in range(20):
                 try:
@@ -322,6 +417,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             runner_path = harness / "release" / "run_regression.ps1"
             runner_path.parent.mkdir(parents=True)
             shutil.copy2(RUNNER, runner_path)
+            shutil.copy2(ROOT / "release" / "run_regression_child.py", runner_path.parent / "run_regression_child.py")
             scope_root = harness / "TEST_RUN"
             log_root = scope_root / "release_gate"
             log_root.mkdir(parents=True)
