@@ -604,7 +604,10 @@ def _retained_epoch_metadata_terminal_state(before: dict | None) -> dict:
             or (
                 (relative == "tmp" or relative.startswith("tmp/"))
                 and owner == "work_temp_dir"
-                and purpose.startswith("retained container for temporary workspaces")
+                and (
+                    purpose.startswith("retained container for temporary workspaces")
+                    or (relative == "tmp" and purpose == "retained root for canonical temporary workspaces")
+                )
                 and kind == "directory"
             )
             or (
@@ -2706,7 +2709,13 @@ def _classify_prospective_inventory(inventory: dict, reconciled: dict) -> list[d
     return output
 
 
-def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[str]:
+def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None, _transition_seen: tuple[str, ...] = ()) -> list[str]:
+    # Bound traversal before reading another snapshot, including malformed cycles.
+    epoch_id = str(epoch.get("epoch_id") or "")
+    if epoch_id in _transition_seen:
+        return ["epoch_transition_cycle"]
+    if len(_transition_seen) > 8:
+        return ["epoch_transition_depth_exceeded"]
     failures = []
     manifest = manifest or json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     failures.extend(_epoch_manifest_shape(manifest))
@@ -2714,6 +2723,12 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
         failures.append("prospective_epoch_not_active")
     if epoch.get("schema_version") != PROSPECTIVE_EPOCH_SCHEMA_VERSION:
         failures.append("epoch_schema_incomplete")
+    policy_path = Path(str(epoch.get("policy_path") or ""))
+    try:
+        if not policy_path.is_file() or _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
+            failures.append("epoch_policy_hash_mismatch")
+    except OSError:
+        failures.append("epoch_policy_invalid")
     for field in ("epoch_id", "effective_at", "source_sha", "scope_boundary", "original_incident_identity", "audit_identity", "acceptance_conditions"):
         if not epoch.get(field):
             failures.append(f"epoch_provenance_missing:{field}")
@@ -2806,7 +2821,7 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
     elif "transition_provenance" not in epoch and _incident_identity().get("status") != "PASS":
         failures.append("incident_preservation_failed")
     if "transition_provenance" in epoch:
-        failures.extend(_epoch_transition_provenance_failures(epoch, manifest, rollback, rollback_path))
+        failures.extend(_epoch_transition_provenance_failures(epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,)))
     ledger_value = epoch.get("ledger")
     ledger = ledger_value if isinstance(ledger_value, dict) else {}
     if not isinstance(ledger_value, dict):
@@ -2820,7 +2835,7 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
 
 
 def _epoch_transition_provenance_failures(
-    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path
+    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path, transition_seen: tuple[str, ...]
 ) -> list[str]:
     failures = []
     transition = epoch.get("transition_provenance")
@@ -2854,7 +2869,6 @@ def _epoch_transition_provenance_failures(
         not isinstance(previous_epoch, dict)
         or previous_epoch.get("epoch_id") != previous_id
         or previous_epoch.get("source_sha") != previous_sha
-        or previous_epoch.get("transition_provenance") is not None
         or previous_epoch.get("original_incident_identity") != transition.get("incident_identity")
         or epoch.get("original_incident_identity") != transition.get("incident_identity")
         or _incident_identity() != transition.get("incident_identity")
@@ -2867,7 +2881,7 @@ def _epoch_transition_provenance_failures(
         or _git_version_at(target_sha) != "0.1.5"
     ):
         failures.append("epoch_transition_source_lineage_invalid")
-    old_failures = _epoch_verify_files(previous_epoch, manifest=previous_manifest)
+    old_failures = _epoch_verify_files(previous_epoch, manifest=previous_manifest, _transition_seen=transition_seen)
     if old_failures:
         failures.extend(f"epoch_transition_previous_invalid:{item}" for item in old_failures)
     try:
@@ -2884,14 +2898,15 @@ def _epoch_transition_provenance_failures(
     if not isinstance(previous_artifacts, list) or not isinstance(current_artifacts, list):
         failures.append("epoch_transition_prior_registry_records_invalid")
         return failures
-    previous_scope_prefix = f"artifact-registry-epoch:{previous_id}:"
+    previous_scope_prefix = "artifact-registry-epoch:"
     prior_epoch_records = [
         item for item in previous_artifacts
         if isinstance(item, dict) and str(item.get("id") or "").startswith(previous_scope_prefix)
     ]
+    prior_ids = {item.get("id") for item in prior_epoch_records}
     current_epoch_records = [
         item for item in current_artifacts
-        if isinstance(item, dict) and str(item.get("id") or "").startswith(previous_scope_prefix)
+        if isinstance(item, dict) and item.get("id") in prior_ids
     ]
     if not prior_epoch_records or current_epoch_records != prior_epoch_records:
         failures.append("epoch_transition_prior_epoch_records_changed")
@@ -2999,18 +3014,16 @@ def activate_prospective_epoch(
                 reasons.append("transition_manifest_hash_mismatch")
             if epoch_id and epoch_id == active_id:
                 reasons.append("transition_new_epoch_id_must_differ")
-            if active.get("transition_provenance") is not None:
-                reasons.append("transition_from_transition_epoch_not_supported")
             if owner_transition_authorization != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL:
                 reasons.append("transition_owner_authorization_invalid")
             if active.get("scope_boundary") != _epoch_scope_boundary():
                 reasons.append("transition_scope_boundary_invalid")
-            if _epoch_verify_files(active, manifest=manifest):
+            if _epoch_verify_files(active, manifest=manifest, _transition_seen=(str(epoch_id or ""),)):
                 reasons.append("transition_active_epoch_integrity_failed")
             release_budget = active.get("release_task_budget")
             if not isinstance(release_budget, dict) or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID:
                 reasons.append("transition_active_epoch_release_task_mismatch")
-            if not _valid_git_sha(active_sha) or not _git_is_ancestor(active_sha, expected_sha):
+            if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
                 reasons.append("transition_source_not_descendant")
             if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
                 reasons.append("transition_source_version_mismatch")

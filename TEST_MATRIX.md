@@ -1,5 +1,7 @@
 # VNText Studio — Test Matrix
 
+Release 0.1.5 epoch-chain remediation: focused cleanup tests cover eight-hop success/ninth refusal, cycle/depth bounds, ancestor policy corruption, immutable prior files/records, CAS and existing writer/inventory/rollback refusals. Affected gates are artifact-write policy, work paths, mirror package, regression runner, venv pruning and Setup package (including uninstall watchdog). Terminal metadata retention accepts the exact canonical `work_temp_dir` root purpose only while its registered `tmp` tree contains empty containers.
+
 Dùng matrix này để chọn regression theo vùng thay đổi. `full unit` không thay thế các gate game-copy/release khi thay đổi writer, worker hoặc packaging.
 
 | Thay đổi vùng nào | Test bắt buộc | Test bổ sung rủi ro cao | PASS condition |

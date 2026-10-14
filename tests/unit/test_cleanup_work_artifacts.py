@@ -1246,6 +1246,48 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertIsNone(budget_error)
             self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
 
+    def test_transition_chain_eight_hops_preserves_history_and_refuses_ninth(self):
+        with self.isolated_workspace() as (root, work, game, manifest):
+            self._active_release_epoch_for_transition(root, manifest)
+            preserved = {}
+            for hop in range(1, 10):
+                before = manifest.read_bytes()
+                old = json.loads(before)["prospective_epoch"]
+                for path in cleanup._prospective_epoch_root().rglob("*"):
+                    if path.is_file():
+                        preserved.setdefault(path, path.read_bytes())
+                target_sha = f"{hop + 10:040x}"
+                _, _, ancestry, version, incident = self._transition_guards()
+                with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry, version, incident:
+                    result = cleanup.activate_prospective_epoch(
+                        dry_run=False, epoch_id=f"epoch-chain-{hop}", source_sha=target_sha,
+                        release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                        transition_from_epoch_id=old["epoch_id"],
+                        expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                        owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL,
+                    )
+                    if hop <= 8:
+                        self.assertTrue(result["ok"], result)
+                        self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+                        if hop == 8:
+                            oldest = next(path for path in preserved if path.name == "epoch_policy.json")
+                            oldest.write_bytes(b"corrupt ancestor")
+                            self.assertFalse(cleanup.verify_prospective_epoch()["ok"])
+                            oldest.write_bytes(preserved[oldest])
+                    else:
+                        self.assertFalse(result["ok"], result)
+                        self.assertIn("transition_active_epoch_integrity_failed", result["reasons"])
+                        self.assertEqual(before, manifest.read_bytes())
+                        self.assertFalse((cleanup._prospective_epoch_root() / f"epoch-chain-{hop}").exists())
+                for path, content in preserved.items():
+                    self.assertEqual(content, path.read_bytes())
+
+    def test_transition_traversal_refuses_cycle_and_depth_before_snapshot_read(self):
+        self.assertEqual(["epoch_transition_cycle"], cleanup._epoch_verify_files(
+            {"epoch_id": "epoch-cycle"}, _transition_seen=("epoch-cycle",)))
+        self.assertEqual(["epoch_transition_depth_exceeded"], cleanup._epoch_verify_files(
+            {"epoch_id": "epoch-next"}, _transition_seen=tuple(f"epoch-{i}" for i in range(9))))
+
     def test_prospective_epoch_transition_refuses_stale_hash_corrupt_old_epoch_and_non_descendant(self):
         for failure_case in ("stale_hash", "corrupt_old_epoch", "non_descendant", "bad_owner", "wrong_previous_epoch"):
             with self.subTest(failure_case=failure_case), self.isolated_workspace() as (root, work, _game, manifest):
@@ -1344,6 +1386,13 @@ class CleanupLifecycleTests(unittest.TestCase):
                 )
             self.assertTrue(transitioned["ok"], transitioned)
             shutil.rmtree(game)
+            temp_root = work / "tmp"
+            temp_root.mkdir()
+            paths.register_artifact(
+                artifact_id="canonical-temp-root", path=temp_root, kind="test_temp_root",
+                created_by="work_temp_dir", owner="work_temp_dir",
+                purpose="retained root for canonical temporary workspaces", lifecycle="RETAINED",
+            )
             retained_report = work / "canonical-run-0123456789abcdef0123456789abcdef.md"
             retained_report.write_text("# Canonical test run\n\n- Outcome: `FAIL`\n", encoding="utf-8")
             paths.register_artifact(
