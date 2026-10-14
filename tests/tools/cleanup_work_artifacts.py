@@ -1897,7 +1897,11 @@ def _project_inventory_root() -> Path:
     inventory_root = local
     for parent in local.parents:
         relative = local.relative_to(parent).parts
-        nested = relative[:1] == (".scratch",) or relative[:3] == ("tests", "golden", "_work")
+        nested = (
+            relative[:1] == (".scratch",)
+            or relative[:3] == ("tests", "golden", "_work")
+            or relative[:3] == ("RELEASE_RUN", "candidate-0.1.5", "source")
+        )
         if nested and (parent / "tests/tools/cleanup_work_artifacts.py").is_file() and (parent / "tests/lib/work_paths.py").is_file():
             inventory_root = parent
     return inventory_root
@@ -1911,6 +1915,8 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
         return PROJECT_SIZE_LIMIT_BYTES, None, "default"
     if requested != RELEASE_TASK_BUDGET_ID:
         return PROJECT_SIZE_LIMIT_BYTES, "unsupported_release_task_id", "default"
+    if root.resolve() != ROOT.resolve():
+        return _nested_release_budget_profile(root)
     manifest, _raw, errors = _strict_registry_snapshot()
     if errors:
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
@@ -1966,6 +1972,53 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
     return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, RELEASE_TASK_BUDGET_ID
 
 
+def _nested_release_budget_profile(root: Path) -> tuple[int, str | None, str]:
+    """Read parent authority in an isolated process; never redirect local writes."""
+    if ROOT.resolve() != (root / "RELEASE_RUN/candidate-0.1.5/source").resolve():
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_snapshot_outside_exact_scope", "default"
+    code = """import sys,json
+from pathlib import Path
+parent=Path(sys.argv[1]); source=Path(sys.argv[2])
+sys.path[:0]=[str(parent/'tests/tools'),str(parent/'tests/lib')]
+import cleanup_work_artifacts as c
+print(json.dumps(c._parent_release_budget_readback(parent,source)))
+"""
+    try:
+        result = subprocess.run(
+            [sys.executable, "-S", "-B", "-c", code, str(root), str(ROOT)],
+            cwd=str(root), capture_output=True, text=True, timeout=30, check=True,
+        )
+        value = json.loads(result.stdout)
+        if not isinstance(value, list) or len(value) != 3:
+            raise ValueError("invalid parent budget response")
+        if value[0] not in (PROJECT_SIZE_LIMIT_BYTES, RELEASE_TASK_BUDGET_LIMIT_BYTES):
+            raise ValueError("invalid parent budget limit")
+        return tuple(value)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return PROJECT_SIZE_LIMIT_BYTES, "release_task_parent_budget_unverifiable", "default"
+
+
+def _parent_release_budget_readback(parent: Path, source: Path) -> tuple[int, str | None, str]:
+    """Executed by the parent's canonical helper; reads authority without mutation."""
+    refused = (PROJECT_SIZE_LIMIT_BYTES, "release_task_snapshot_source_or_registry_changed", "default")
+    if parent.resolve() != ROOT.resolve() or source.resolve() != (parent / "RELEASE_RUN/candidate-0.1.5/source").resolve():
+        return refused
+    try:
+        before = MANIFEST_PATH.read_bytes()
+        manifest = json.loads(before)
+        state = _git_repository_state()
+        local = subprocess.run(["git", "-C", str(source), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        dirty = subprocess.run(["git", "-C", str(source), "status", "--porcelain"], capture_output=True, text=True, check=True).stdout.strip()
+        result = _release_task_budget_profile(parent)
+        if (dirty or local != state.get("head") or state != _git_repository_state()
+                or before != MANIFEST_PATH.read_bytes() or _prospective_epoch_writer_status()["active"]
+                or _prospective_epoch_pending_reasons(manifest)):
+            return refused
+        return result
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return refused
+
+
 def register_release_task_scope() -> dict:
     """Register the one Owner-approved candidate root without creating it."""
 
@@ -2000,7 +2053,7 @@ def register_release_task_scope() -> dict:
         except (KeyError, TypeError, ValueError, OSError):
             return {"ok": False, "reasons": ["release_task_registry_invalid"]}
     if matches:
-        limit, error, profile = _release_task_budget_profile_for_manifest(scope, manifest, state)
+        limit, error, profile = _release_task_budget_profile_for_manifest(ROOT, manifest, state)
         if error or profile != RELEASE_TASK_BUDGET_ID:
             return {"ok": False, "reasons": [error or "release_task_scope_registration_conflict"]}
         return {"ok": True, "registered": False, "path": str(scope), "lifecycle": "DISPOSABLE"}

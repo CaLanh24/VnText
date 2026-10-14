@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+import os
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -19,7 +20,7 @@ class ModelDownloadTests(unittest.TestCase):
                 self.assertEqual(MODEL_REVISION, revision)
                 (Path(local_dir) / "model.bin").write_bytes(b"test model")
 
-            with patch("huggingface_hub.snapshot_download", side_effect=download_snapshot) as download:
+            with patch.dict(os.environ, {"VNTEXT_CT2_NO_DOWNLOAD": "0"}), patch("huggingface_hub.snapshot_download", side_effect=download_snapshot) as download:
                 self.assertEqual(target, ensure_model(target))
 
             download.assert_called_once_with(

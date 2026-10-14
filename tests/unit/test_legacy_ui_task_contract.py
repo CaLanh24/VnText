@@ -56,7 +56,7 @@ class PatchCompletionContractTests(unittest.TestCase):
                 writer = csv.DictWriter(stream, fieldnames=["key", "source_text", "translation"])
                 writer.writeheader()
                 writer.writerow({"key": "k", "source_text": "Hello", "translation": "Xin chào"})
-            manifest_path.write_text(json.dumps({"entries": []}), encoding="utf-8")
+            manifest_path.write_text(json.dumps({"entries": [{"key": "k", "source_text": "Hello"}]}), encoding="utf-8")
             game = root / "game"
             game.mkdir()
             patch_out = package / "patch-output"

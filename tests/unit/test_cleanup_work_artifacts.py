@@ -598,6 +598,53 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(0, result["exempt_bytes"])
             self.assertFalse(result["within_limit"])
 
+    def test_release_snapshot_inventory_counts_parent_and_rejects_arbitrary_budget_root(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            for relative in ("tests/tools/cleanup_work_artifacts.py", "tests/lib/work_paths.py"):
+                marker = root / relative
+                marker.parent.mkdir(parents=True, exist_ok=True)
+                marker.write_bytes(b"")
+            source = root / "RELEASE_RUN/candidate-0.1.5/source"
+            source.mkdir(parents=True)
+            (root / "outside-snapshot").write_bytes(b"count me")
+            with patch.object(cleanup, "ROOT", source), patch.object(cleanup, "_project_inventory_root", PROJECT_INVENTORY_ROOT):
+                self.assertEqual(root.resolve(), cleanup._project_inventory_root())
+                measured = cleanup._project_size_snapshot()
+                self.assertEqual(str(root.resolve()), measured["root"])
+                self.assertGreaterEqual(measured["non_exempt_bytes"], 8)
+                with patch.object(cleanup.subprocess, "run") as launch:
+                    result = cleanup._nested_release_budget_profile(root / "arbitrary")
+                    self.assertEqual("release_task_snapshot_outside_exact_scope", result[1])
+                    launch.assert_not_called()
+                with patch.object(cleanup.subprocess, "run", side_effect=OSError("unreadable parent")):
+                    self.assertEqual("release_task_parent_budget_unverifiable", cleanup._nested_release_budget_profile(root)[1])
+
+    def test_parent_budget_readback_refuses_dirty_wrong_source_writer_pending_and_stale_manifest(self):
+        for case in ("valid", "dirty", "wrong_source", "writer", "pending", "stale", "malformed"):
+            with self.subTest(case=case), self.isolated_workspace() as (root, _work, _game, manifest):
+                sha, _raw, _doc, _epoch, _scope, _files = self._active_release_epoch_for_transition(root, manifest)
+                source = root / "RELEASE_RUN/candidate-0.1.5/source"
+                source.mkdir(parents=True, exist_ok=True)
+                if case == "malformed":
+                    manifest.write_text("{broken", encoding="utf-8")
+                def budget(_parent):
+                    if case == "stale":
+                        manifest.write_bytes(manifest.read_bytes() + b"\n")
+                    return cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, None, cleanup.RELEASE_TASK_BUDGET_ID
+                commands = [subprocess.CompletedProcess([], 0, stdout="b" * 40 if case == "wrong_source" else sha),
+                            subprocess.CompletedProcess([], 0, stdout=" M VERSION.txt" if case == "dirty" else "")]
+                with patch.object(cleanup, "_git_repository_state", return_value={"head": sha, "dirty": False, "error": ""}), \
+                     patch.object(cleanup.subprocess, "run", side_effect=commands), \
+                     patch.object(cleanup, "_release_task_budget_profile", side_effect=budget), \
+                     patch.object(cleanup, "_prospective_epoch_writer_status", return_value={"active": case == "writer"}), \
+                     patch.object(cleanup, "_prospective_epoch_pending_reasons", return_value=["pending"] if case == "pending" else []):
+                    result = cleanup._parent_release_budget_readback(root, source)
+                if case == "valid":
+                    self.assertEqual((cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, None, cleanup.RELEASE_TASK_BUDGET_ID), result)
+                else:
+                    self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, result[0])
+                    self.assertIsNotNone(result[1])
+
     def test_runner_quota_preflight_blocks_child_and_new_retained_output(self):
         with self.isolated_workspace() as (root, work, _game, _manifest):
             snapshot = root / ".scratch/snapshot"
@@ -1146,6 +1193,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(created["ok"], created)
             registered = cleanup.register_release_task_scope()
             self.assertTrue(registered["ok"], registered)
+            self.assertTrue(cleanup.register_release_task_scope()["ok"])
         old_bytes = manifest.read_bytes()
         old_document = json.loads(old_bytes)
         old_epoch = old_document["prospective_epoch"]

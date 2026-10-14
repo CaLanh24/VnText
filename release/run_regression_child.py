@@ -38,7 +38,7 @@ def _environment(args: argparse.Namespace) -> dict[str, str]:
     python_path = Path(args.python_path).expanduser().resolve()
     work = Path(args.working_directory).expanduser().resolve()
     temp_root = Path(args.temp_root).expanduser().resolve()
-    python_path_entries = [str(path) for path in _site_package_roots(python_path, work)]
+    python_path_entries = [str(work), *[str(path) for path in _site_package_roots(python_path, work)]]
     existing_pythonpath = [item for item in env.get("PYTHONPATH", "").split(os.pathsep) if item]
     env["PYTHONPATH"] = os.pathsep.join(python_path_entries + existing_pythonpath)
     env["TMPDIR"] = str(temp_root)
@@ -114,9 +114,15 @@ def main() -> int:
 
     command = [
         str(python_path),
+        "-S",
         "-B",
-        "-m",
-        "unittest",
+        "-c",
+        # Explicit local namespace prevents a dependency's regular `tests`
+        # package from shadowing this repository's namespace-only test tree.
+        "import sys,types,runpy; from pathlib import Path; "
+        "p=types.ModuleType('tests'); p.__path__=[str(Path.cwd()/'tests')]; "
+        "sys.modules['tests']=p; sys.argv=['unittest',*sys.argv[1:]]; "
+        "runpy.run_module('unittest',run_name='__main__')",
         "discover",
         "-s",
         "tests/unit",

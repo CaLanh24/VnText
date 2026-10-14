@@ -274,6 +274,7 @@ prerequisites. A Release task may register one owned baseline/candidate scope in
 `RELEASE_RUN` until acceptance; after acceptance only the compact receipt remains.
 Nested snapshots under `.scratch` or `TEST_RUN` inventory the containing main
 checkout for quota; deletion and artifact ownership stay in the local run scope.
+The exact Release 0.1.5 source snapshot under `RELEASE_RUN/candidate-0.1.5/source` also inventories the entire containing checkout. Its opt-in budget is read from the parent's canonical helper in an isolated process: exact containment, matching clean snapshot/parent SHA, verified parent active epoch and exact task registration, and unchanged full parent manifest bytes are required. No local epoch, copied environment, arbitrary environment path or local-only inventory can grant the parent budget. Registry updates and deletion stay local to the test scope. Regression child imports bind `tests` to the current repository test tree before discovery so dependency packages cannot shadow it; shared model/environment paths remain explicit child inputs. Mocked download tests isolate their no-download flag inside the mocked call only.
 The canonical wrapper blocks child/payload creation when quota inventory is
 incomplete or the active task cap is exceeded; it may write a bounded failure receipt.
 For the authorized 0.1.5 task, register the exact candidate scope after applying

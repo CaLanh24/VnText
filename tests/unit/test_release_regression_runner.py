@@ -75,6 +75,9 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "def marker():\n    return 'pythonpath-reached'\n",
             encoding="utf-8",
         )
+        (site_packages / "tests").mkdir()
+        (site_packages / "tests/__init__.py").write_text("raise RuntimeError('dependency tests shadowed repository')\n", encoding="utf-8")
+        (harness / "tests/lib/runner_local.py").write_text("MARKER = 'local-test-namespace'\n", encoding="utf-8")
         (unit_dir / "test_fast.py").write_text(
             "import json\n"
             "import os\n"
@@ -84,6 +87,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "import tempfile\n"
             "import unittest\n"
             "import runner_probe\n\n"
+            "from tests.lib.runner_local import MARKER\n"
             "class FastTests(unittest.TestCase):\n"
             "    def test_runner_executes_pattern(self):\n"
             "        print('SUCCESS_CHILD_STDOUT_MARKER', flush=True)\n"
@@ -91,6 +95,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_SCOPE_ID'].startswith('release-regression-'))\n"
             "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_RUN_ID'].startswith('release-run-'))\n"
             "        self.assertEqual('pythonpath-reached', runner_probe.marker())\n"
+            "        self.assertEqual('local-test-namespace', MARKER)\n"
             "        self.assertNotIn('VNTEXT_RELEASE_TASK_ID', os.environ)\n"
             "        temp_root = Path(os.environ['TMPDIR']).resolve()\n"
             "        self.assertEqual(temp_root, Path(tempfile.gettempdir()).resolve())\n"

@@ -2,6 +2,8 @@
 
 Release 0.1.5 epoch-chain remediation: focused cleanup tests cover eight-hop success/ninth refusal, cycle/depth bounds, ancestor policy corruption, immutable prior files/records, CAS and existing writer/inventory/rollback refusals. Affected gates are artifact-write policy, work paths, mirror package, regression runner, venv pruning and Setup package (including uninstall watchdog). Terminal metadata retention accepts the exact canonical `work_temp_dir` root purpose only while its registered `tmp` tree contains empty containers.
 
+Release snapshot prerequisites additionally require parent-wide quota inventory, exact source containment and fail-closed parent budget verification, idempotent exact candidate registration, actual regression child execution against a deliberately conflicting dependency `tests` package, a valid-identity legacy timeout fixture, and mocked download isolation with an inherited no-download flag. Focused cleanup then affected runner/legacy/model-download/artifact/work-path/bootstrap/Setup tests run sequentially before the next clean source commit and epoch transition.
+
 Dùng matrix này để chọn regression theo vùng thay đổi. `full unit` không thay thế các gate game-copy/release khi thay đổi writer, worker hoặc packaging.
 
 | Thay đổi vùng nào | Test bắt buộc | Test bổ sung rủi ro cao | PASS condition |
