@@ -32,6 +32,38 @@ from cleanup_work_artifacts import cleanup_after_test
 
 
 class SetupPackageTests(unittest.TestCase):
+    def test_isolated_publisher_scope_can_be_nested_under_registered_candidate(self):
+        from work_paths import work_temp_dir
+
+        work = work_temp_dir("setup-version-guard")
+        parent = work / "candidate-0.1.5"
+        source = parent / "source"
+        source.mkdir(parents=True)
+        run_scope = "setup-publish-test"
+        run_root = parent / run_scope
+        release_root = run_root / "ReleaseRoot"
+        helper = ["Resolve-IsolatedPublishArtifactRoot"]
+
+        def invoke(dev=source, parent_arg=parent, release=release_root):
+            command = ("Resolve-IsolatedPublishArtifactRoot "
+                       f"'{dev}' '{source / 'RELEASE_RUN'}' '{parent_arg}' '{run_scope}' '{release}' $true")
+            return self._publisher_call(helper, command)
+
+        allowed = invoke()
+        self.assertEqual(0, allowed.returncode, allowed.stdout + allowed.stderr)
+        self.assertEqual(str(run_root), allowed.stdout.strip())
+        run_root.mkdir()
+        reused = invoke()
+        self.assertNotEqual(0, reused.returncode)
+        self.assertIn("Refusing to reuse", reused.stderr)
+        run_root.rmdir()
+        wrong_source = invoke(dev=work / "other-source")
+        self.assertNotEqual(0, wrong_source.returncode)
+        wrong_parent = invoke(parent_arg=work / "elsewhere")
+        self.assertNotEqual(0, wrong_parent.returncode)
+        outside_release = invoke(release=work / "ReleaseRoot")
+        self.assertNotEqual(0, outside_release.returncode)
+
     def test_wpf_brand_assets_require_all_product_files_and_exact_hashes(self):
         import shutil
         names = ("release/assets/vntext_studio.ico",

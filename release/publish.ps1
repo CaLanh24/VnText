@@ -15,6 +15,7 @@ param(
     [string]$GitHubOwner = "",
     [string]$GitHubRepository = "",
     [string]$ArtifactScopeId = "",
+    [string]$ArtifactScopeParentRoot = "",
     [switch]$SkipTests,
     [switch]$SkipWpfUpdatePackage,
     [switch]$SkipBuild,
@@ -57,6 +58,34 @@ function Assert-ReleaseRootLayout {
         $names = @($unexpectedItems | Sort-Object -Unique) -join ", "
         throw "Refusing to publish; unexpected or invalid top-level ReleaseRoot item(s): $names"
     }
+}
+function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot, [string]$ParentRoot, [string]$Scope, [string]$ReleaseRoot, [bool]$Required) {
+    if (-not $Required) {
+        if (-not [string]::IsNullOrWhiteSpace($ParentRoot)) { throw "ArtifactScopeParentRoot requires -RequireIsolatedArtifacts." }
+        return (Join-Path $WorkRoot $Scope)
+    }
+    if ([string]::IsNullOrWhiteSpace($ParentRoot)) {
+        if (-not $DevRoot.StartsWith($WorkRoot.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "Isolated publish source must be a registered working-tree snapshot under RELEASE_RUN."
+        }
+        $artifactRoot = Join-Path $WorkRoot $Scope
+    } else {
+        $parent = [System.IO.Path]::GetFullPath($ParentRoot).TrimEnd('\')
+        $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
+        $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
+        if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
+            (Split-Path -Leaf $parent) -ne 'candidate-0.1.5' -or
+            -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
+            -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Join-Path $DevRoot 'RELEASE_RUN')), [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "ArtifactScopeParentRoot must be the registered candidate-0.1.5 parent containing this exact source snapshot."
+        }
+        $artifactRoot = Join-Path $parent $Scope
+    }
+    if (-not $ReleaseRoot.StartsWith($artifactRoot.TrimEnd('\') + '\', [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Isolated publish requires ReleaseRoot below its fresh run scope: $artifactRoot"
+    }
+    if (Test-Path -LiteralPath $artifactRoot) { throw "Refusing to reuse an existing isolated publish scope: $artifactRoot" }
+    return $artifactRoot
 }
 if ($RequireIsolatedArtifacts -and -not $UsePreinstalledDependencies) {
     throw "Isolated publish must use only preinstalled dependencies (-UsePreinstalledDependencies)."
@@ -121,9 +150,6 @@ if (-not $ArtifactWorkRoot.Equals($expectedWorkRoot, [System.StringComparison]::
     throw "ArtifactWorkRoot must be the canonical project's RELEASE_RUN: $expectedWorkRoot"
 }
 $workPrefix = $ArtifactWorkRoot.TrimEnd('\') + '\'
-if ($RequireIsolatedArtifacts -and -not $DevRoot.StartsWith($workPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "Isolated publish source must be a registered working-tree snapshot under RELEASE_RUN."
-}
 if ([string]::IsNullOrWhiteSpace($ReleaseRoot)) {
     $ReleaseRoot = Join-Path (Split-Path -Parent $DevRoot) "VNText_Studio_Release"
 } else {
@@ -143,7 +169,7 @@ $ReleaseRoot = [System.IO.Path]::GetFullPath($ReleaseRoot)
 $WorkRoot = $ArtifactWorkRoot
 $publishScope = if ([string]::IsNullOrWhiteSpace($ArtifactScopeId)) { "setup-publish-" + [guid]::NewGuid().ToString("N") } else { $ArtifactScopeId.Trim() }
 if ($publishScope -notmatch '^[A-Za-z0-9_-]{1,80}$') { throw "ArtifactScopeId must be a simple unique identifier" }
-$publishArtifactRoot = Join-Path $WorkRoot $publishScope
+$publishArtifactRoot = Resolve-IsolatedPublishArtifactRoot $DevRoot $WorkRoot $ArtifactScopeParentRoot $publishScope $ReleaseRoot ([bool]$RequireIsolatedArtifacts)
 $devPrefix = $DevRoot.TrimEnd('\') + '\'
 $scopePrefix = $publishArtifactRoot.TrimEnd('\') + '\'
 $releasePrefix = $ReleaseRoot.TrimEnd('\') + '\'
@@ -156,17 +182,33 @@ $isUnsafeRepoPath = $isRepoOrAncestor -or ($insideRepo -and -not $insideWork) -o
 if ($isUnsafeRepoPath) {
     throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
-if ($RequireIsolatedArtifacts -and -not $ReleaseRoot.StartsWith($scopePrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "Isolated publish requires ReleaseRoot below its registered run scope: $publishArtifactRoot"
-}
-if ($RequireIsolatedArtifacts -and (Test-Path -LiteralPath $publishArtifactRoot)) {
-    throw "Refusing to reuse an existing isolated publish scope: $publishArtifactRoot"
-}
 Assert-ReleaseRootLayout -Path $ReleaseRoot
 Set-Location $DevRoot
 $SourceSha = if (-not [string]::IsNullOrWhiteSpace($SourceRevision)) { $SourceRevision.Trim() } else { (& git -C $DevRoot rev-parse HEAD).Trim() }
 if ($SourceSha -notmatch '^[0-9a-f]{40}$') {
     throw "Cannot resolve a valid source git SHA for Release provenance"
+}
+if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
+    if (-not $RequireIsolatedArtifacts -or [string]::IsNullOrWhiteSpace($PythonPath) -or
+        -not (Test-Path -LiteralPath $PythonPath -PathType Leaf)) {
+        throw "Nested candidate publishing requires -RequireIsolatedArtifacts and an explicit existing PythonPath."
+    }
+    $snapshotHead = (& git -C $DevRoot rev-parse HEAD).Trim()
+    $snapshotChanges = @(& git -C $DevRoot status --porcelain)
+    if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
+        (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim() -ne '0.1.5') {
+        throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
+    }
+    $env:VNTEXT_RELEASE_TASK_ID = 'release-0.1.5'
+    $parentBudgetProbe = "import json,sys; sys.path.insert(0,sys.argv[1]); from cleanup_work_artifacts import _project_size_snapshot; print(json.dumps(_project_size_snapshot(),sort_keys=True))"
+    $parentBudgetRaw = & $PythonPath -B -c $parentBudgetProbe $ArtifactHelpersRoot
+    if ($LASTEXITCODE -ne 0) { throw "Canonical parent budget readback failed: $($parentBudgetRaw -join ' ')" }
+    try { $parentBudget = ($parentBudgetRaw -join "`n") | ConvertFrom-Json -ErrorAction Stop }
+    catch { throw "Canonical parent budget readback was not valid JSON." }
+    if ($parentBudget.budget_profile -ne 'release-0.1.5' -or -not $parentBudget.complete -or
+        -not $parentBudget.within_limit -or @($parentBudget.errors).Count -ne 0) {
+        throw "Canonical parent budget admission failed closed: $($parentBudget | ConvertTo-Json -Depth 5 -Compress)"
+    }
 }
 # Keep build/verify helpers from recreating Python bytecode in either the
 # staging tree or the final portable runtime.

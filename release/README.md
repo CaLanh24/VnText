@@ -61,6 +61,13 @@ version, source SHA, Setup/package SHA256, payload size và số package/byte đ
 giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đạt mới gọi
 `RELEASE_VERIFIED`.
 
+Với source snapshot nằm trong một candidate đã đăng ký, `-ArtifactScopeParentRoot`
+chỉ nhận đúng thư mục cha `candidate-0.1.5`; publisher kiểm tra snapshot sạch,
+đúng SHA/version và profile ngân sách từ helper canonical của parent trước khi
+tạo dữ liệu. Scope publish mới và `ReleaseRoot` phải nằm bên trong candidate cha;
+scope đã tồn tại bị từ chối. Tùy chọn này chỉ dùng cùng
+`-RequireIsolatedArtifacts` và các dependency có sẵn được chỉ định tường minh.
+
 ## Dòng public 0.1.4
 
 `v0.1` là bản public đầu tiên; bản public hiện tại là `0.1.4`.
