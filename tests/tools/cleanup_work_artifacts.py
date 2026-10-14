@@ -1994,8 +1994,12 @@ print(json.dumps(c._parent_release_budget_readback(parent,source)))
         if value[0] not in (PROJECT_SIZE_LIMIT_BYTES, RELEASE_TASK_BUDGET_LIMIT_BYTES):
             raise ValueError("invalid parent budget limit")
         return tuple(value)
-    except (OSError, ValueError, subprocess.SubprocessError):
-        return PROJECT_SIZE_LIMIT_BYTES, "release_task_parent_budget_unverifiable", "default"
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        detail = f"{type(exc).__name__}: {exc}"
+        stderr = getattr(exc, "stderr", "")
+        if stderr:
+            detail += f"; stderr={str(stderr)[:400]}"
+        return PROJECT_SIZE_LIMIT_BYTES, f"release_task_parent_budget_unverifiable: {detail[:700]}", "default"
 
 
 def _parent_release_budget_readback(parent: Path, source: Path) -> tuple[int, str | None, str]:

@@ -617,7 +617,9 @@ class CleanupLifecycleTests(unittest.TestCase):
                     self.assertEqual("release_task_snapshot_outside_exact_scope", result[1])
                     launch.assert_not_called()
                 with patch.object(cleanup.subprocess, "run", side_effect=OSError("unreadable parent")):
-                    self.assertEqual("release_task_parent_budget_unverifiable", cleanup._nested_release_budget_profile(root)[1])
+                    self.assertTrue(cleanup._nested_release_budget_profile(root)[1].startswith(
+                        "release_task_parent_budget_unverifiable: OSError: unreadable parent"
+                    ))
 
     def test_parent_budget_readback_refuses_dirty_wrong_source_writer_pending_and_stale_manifest(self):
         for case in ("valid", "dirty", "wrong_source", "writer", "pending", "stale", "malformed"):
