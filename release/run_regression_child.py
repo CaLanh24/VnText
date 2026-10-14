@@ -47,6 +47,7 @@ def _environment(args: argparse.Namespace) -> dict[str, str]:
     env["VNTEXT_ARTIFACT_RUN_ID"] = args.run_id
     env["VNTEXT_ARTIFACT_SCOPE_ROOT"] = str(Path(args.scope_root).expanduser().resolve())
     env["VNTEXT_WORKER_PYTHON"] = str(python_path)
+    env.pop("VNTEXT_RELEASE_TASK_ID", None)
     if args.release_task_id:
         env["VNTEXT_RELEASE_TASK_ID"] = args.release_task_id
     return env

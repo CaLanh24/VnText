@@ -353,7 +353,7 @@ def _parse_unittest_summary(stdout_path: Path | None, stderr_path: Path | None) 
 
 
 
-def _register_runner_report(report_path: Path, *, scope_id: str, run_id: str) -> None:
+def _register_runner_report(report_path: Path, *, scope_id: str, run_id: str, lifecycle: str = "DISPOSABLE") -> None:
     resolved = report_path.expanduser().resolve()
     if resolved == WORK_ROOT.resolve() or WORK_ROOT.resolve() in resolved.parents:
         assert_artifact_under_work(resolved, "canonical runner report")
@@ -364,7 +364,7 @@ def _register_runner_report(report_path: Path, *, scope_id: str, run_id: str) ->
             created_by="run_with_cleanup.py",
             owner="run_with_cleanup.py",
             purpose="disposable canonical runner outcome and lifecycle evidence",
-            lifecycle="DISPOSABLE",
+            lifecycle=lifecycle,
             scope_id=scope_id,
             run_id=run_id,
         )
@@ -481,7 +481,7 @@ def run(
         include_hashes=True,
         skip_retained=True,
     )
-    markdown_report = WORK_ROOT / f"{scope_id}.md"
+    markdown_report = ROOT / "DEV_RUN" / "runner-reports" / f"{scope_id}.md"
     stdout_log = stdout_log or WORK_ROOT / f"{scope_id}.stdout.log"
     stderr_log = stderr_log or WORK_ROOT / f"{scope_id}.stderr.log"
     resolved_report = report_path.expanduser().resolve() if report_path else None
@@ -496,7 +496,6 @@ def run(
         path.expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
     for path in retained_roots or []:
         path.expanduser().resolve().mkdir(parents=True, exist_ok=True)
-    _register_runner_report(markdown_report, scope_id=scope_id, run_id=run_id)
     if resolved_report is not None:
         _register_runner_report(resolved_report, scope_id=scope_id, run_id=run_id)
     resolved_stdout = _register_disposable_path(
@@ -507,6 +506,7 @@ def run(
         stderr_log, kind="runner_stderr", purpose="disposable child stderr log",
         scope_id=scope_id, run_id=run_id,
     )
+    markdown_report.parent.mkdir(parents=True, exist_ok=True)
     markdown_report.write_text(
         f"# Canonical test run\n\n- Outcome: `RUNNING`\n- Command: `{subprocess.list2cmdline(command)}`\n",
         encoding="utf-8",
@@ -713,7 +713,6 @@ def run(
             resolved_report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             if WORK_ROOT.resolve() in resolved_report.parents:
                 _register_runner_report(resolved_report, scope_id=scope_id, run_id=run_id)
-        result["markdown_excerpt"] = markdown_report.read_text(encoding="utf-8", errors="replace")[:MAX_SUMMARY_BYTES]
         terminal_root = purge_terminal_test_run(
             before=before,
             owner_test_pending=bool(os.environ.get("VNTEXT_OWNER_TEST_PENDING")) or bool(retained_roots),
@@ -722,7 +721,10 @@ def run(
         if not terminal_root.get("ok"):
             result["status"] = "REVIEW_REQUIRED"
             result["exit_code"] = 1
-        if resolved_report and (retained_roots or bool(os.environ.get("VNTEXT_OWNER_TEST_PENDING"))):
+        markdown_report.write_text(_markdown_run_report(result), encoding="utf-8")
+        result["markdown_excerpt"] = markdown_report.read_text(encoding="utf-8", errors="replace")[:MAX_SUMMARY_BYTES]
+        report_is_retained = bool(retained_roots) or bool(os.environ.get("VNTEXT_OWNER_TEST_PENDING"))
+        if resolved_report and (WORK_ROOT.resolve() not in resolved_report.parents or report_is_retained):
             resolved_report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # stdout may use the active Windows console code page; escaped JSON
         # remains valid machine output without raising on replacement chars.

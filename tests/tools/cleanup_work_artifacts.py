@@ -32,6 +32,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -77,6 +78,7 @@ RELEASE_TASK_BUDGET_APPROVAL = (
     "cap; terminal task cleanup must return non-exempt files to at most 1 GiB; "
     "do not delete old payloads or user data."
 )
+RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
 PROJECT_SIZE_EXEMPTIONS = {
     ".dev-env": "shared DEV Python/SDK/NuGet/model cache (3 GiB cap)",
 }
@@ -491,7 +493,22 @@ def purge_terminal_test_run(*, before: dict | None, owner_test_pending: bool = F
         return {"ok": True, "status": "OWNER_TEST_PENDING", "deleted": []}
     prior = (before or {}).get("items") or {}
     if prior:
-        return {"ok": False, "status": "REVIEW_REQUIRED", "reason": "preexisting_test_run_content", "deleted": []}
+        retained = _retained_epoch_metadata_terminal_state(before)
+        if retained.get("ok"):
+            return {
+                "ok": True,
+                "status": "RETAINED_EPOCH_METADATA",
+                "deleted": [],
+                "retained_paths": retained.get("retained_paths", []),
+                "inventory_complete": True,
+            }
+        return {
+            "ok": False,
+            "status": "REVIEW_REQUIRED",
+            "reason": "preexisting_test_run_content",
+            "detail": retained.get("reason"),
+            "deleted": [],
+        }
     if not WORK_ROOT.exists():
         return {"ok": True, "status": "ABSENT", "deleted": []}
     deleted: list[dict] = []
@@ -512,6 +529,150 @@ def purge_terminal_test_run(*, before: dict | None, owner_test_pending: bool = F
             deleted.append({"path": str(WORK_ROOT), "skipped": True, "reason": f"rmdir:{exc}"})
     ok = not any(item.get("skipped") for item in deleted) and not WORK_ROOT.exists()
     return {"ok": ok, "status": "PASS" if ok else "REVIEW_REQUIRED", "deleted": deleted}
+
+
+def _retained_epoch_metadata_terminal_state(before: dict | None) -> dict:
+    """Allow an already-registered epoch ledger to survive a test wrapper."""
+
+    prior_items = (before or {}).get("items") or {}
+    if not (before or {}).get("complete", True) or not prior_items:
+        return {"ok": False, "reason": "prior_inventory_incomplete_or_empty"}
+    budget = InventoryBudget()
+    current = snapshot_tree(WORK_ROOT, budget=budget, include_hashes=True, skip_retained=False)
+    if not current.get("complete") or budget.failure:
+        return {"ok": False, "reason": "terminal_inventory_incomplete"}
+    prior_paths = set(prior_items)
+    current_paths = set(current.get("items", {}))
+    added_paths = current_paths - prior_paths
+    if added_paths or prior_paths - current_paths:
+        return {"ok": False, "reason": "terminal_paths_differ_from_prior_inventory"}
+    manifest, _raw, manifest_errors = _strict_registry_snapshot()
+    if manifest_errors or _epoch_manifest_shape(manifest):
+        return {"ok": False, "reason": "terminal_registry_invalid"}
+    reconciled = reconcile_registry(persist=False, budget=budget, inventory=current)
+    if (
+        not reconciled.get("inventory_complete")
+        or reconciled.get("errors")
+        or reconciled.get("metadata_issues")
+        or reconciled.get("unknown")
+        or reconciled.get("locked")
+        or reconciled.get("unexpected_missing")
+    ):
+        return {
+            "ok": False,
+            "reason": "terminal_registry_reconciliation_incomplete",
+            "inventory_complete": reconciled.get("inventory_complete"),
+            "errors": reconciled.get("errors", [])[:10],
+            "metadata_issues": reconciled.get("metadata_issues", [])[:10],
+            "unknown": reconciled.get("unknown", [])[:10],
+            "locked": reconciled.get("locked", [])[:10],
+            "unexpected_missing": reconciled.get("unexpected_missing", [])[:10],
+        }
+    epoch = manifest.get("prospective_epoch")
+    epoch_failures = _epoch_verify_files(epoch, manifest=manifest) if isinstance(epoch, dict) else ["active_epoch_missing"]
+    if epoch_failures:
+        return {"ok": False, "reason": "terminal_epoch_metadata_invalid", "details": epoch_failures}
+    if _prospective_epoch_pending_reasons(manifest):
+        return {"ok": False, "reason": "terminal_epoch_transaction_pending"}
+    classified = _classify_prospective_inventory(current, reconciled)
+    registry_by_path = {
+        os.path.normcase(os.path.abspath(str(item.get("path") or ""))): item
+        for item in reconciled.get("entries", [])
+        if isinstance(item, dict) and item.get("path")
+    }
+    retained_paths = []
+    for item in classified:
+        relative = str(item.get("relative_path") or "").replace("\\", "/")
+        if item.get("lifecycle") != "RETAINED":
+            return {"ok": False, "reason": "terminal_content_not_registered_retained"}
+        if relative not in prior_paths:
+            return {"ok": False, "reason": "terminal_content_not_in_prior_inventory"}
+        path = Path(str(item.get("path") or ""))
+        entry = registry_by_path.get(os.path.normcase(os.path.abspath(os.fspath(path)))) or {}
+        owner = str(entry.get("owner") or "")
+        purpose = str(entry.get("purpose") or "")
+        kind = str(item.get("kind") or "")
+        allowed = (
+            relative == "artifacts_manifest.json"
+            or (relative.startswith("artifact-registry-epochs/") and owner == "artifact_registry_epoch")
+            or (relative == "artifact-registry-epochs" and owner == "cleanup_work_artifacts.py")
+            or (
+                relative == "cleanup_post_test.jsonl"
+                and owner == "cleanup_work_artifacts.py"
+                and purpose == "append-only post-test cleanup history"
+            )
+            or (
+                (relative == "tmp" or relative.startswith("tmp/"))
+                and owner == "work_temp_dir"
+                and purpose.startswith("retained container for temporary workspaces")
+                and kind == "directory"
+            )
+            or (
+                relative.startswith("RELEASE_RUN/release_gate/")
+                and owner == "release/run_regression.ps1"
+                and (purpose == "Release regression evidence directory" or purpose.startswith("Release regression "))
+            )
+            or (
+                re.fullmatch(r"canonical-run-[0-9a-f]{32}\.md", relative) is not None
+                and owner == "run_with_cleanup.py"
+                and purpose == "disposable canonical runner outcome and lifecycle evidence"
+                and kind == "file"
+                and int(item.get("bytes") or 0) <= 256 * 1024
+            )
+        )
+        if not allowed:
+            return {"ok": False, "reason": "terminal_retained_path_outside_evidence_allowlist", "path": relative}
+        if relative == "tmp":
+            if kind != "directory" or any(
+                str(candidate.get("relative_path") or "").startswith("tmp/")
+                and str(candidate.get("kind") or "") != "directory"
+                for candidate in classified
+            ):
+                return {"ok": False, "reason": "terminal_temp_container_not_empty", "path": relative}
+        elif relative.startswith("tmp/"):
+            if kind != "directory" or any(
+                str(candidate.get("relative_path") or "").startswith(relative.rstrip("/") + "/")
+                for candidate in classified
+            ):
+                return {"ok": False, "reason": "terminal_temp_container_not_empty", "path": relative}
+        previous = prior_items.get(relative)
+        if (
+            previous
+            and kind == "file"
+            and relative not in {"cleanup_post_test.jsonl", "artifacts_manifest.json"}
+            and not relative.startswith("artifact-registry-epochs/")
+        ):
+            old_hash = str(previous.get("sha256") or "").lower()
+            new_hash = str(item.get("sha256") or "").lower()
+            if (
+                not new_hash
+                and re.fullmatch(r"canonical-run-[0-9a-f]{32}\.md", relative) is not None
+                and owner == "run_with_cleanup.py"
+                and purpose == "disposable canonical runner outcome and lifecycle evidence"
+                and kind == "file"
+                and int(item.get("bytes") or 0) <= 256 * 1024
+            ):
+                try:
+                    new_hash = _sha256_file(path).lower()
+                except OSError:
+                    new_hash = ""
+            if not old_hash or not new_hash or old_hash != new_hash:
+                return {
+                    "ok": False,
+                    "reason": "terminal_retained_evidence_hash_changed",
+                    "path": relative,
+                    "before_sha256": old_hash,
+                    "current_sha256": new_hash,
+                }
+        if relative == "cleanup_post_test.jsonl" and previous:
+            old_content = Path(str(previous.get("path") or "")).read_bytes()
+            new_content = path.read_bytes()
+            if not new_content.startswith(old_content):
+                return {"ok": False, "reason": "terminal_cleanup_history_not_append_only", "path": relative}
+        retained_paths.append(relative)
+    if not retained_paths:
+        return {"ok": False, "reason": "terminal_retained_epoch_metadata_not_found"}
+    return {"ok": True, "retained_paths": sorted(retained_paths)}
 
 
 def safe_rmtree(
@@ -2231,6 +2392,42 @@ def _git_repository_state() -> dict:
     return {"head": head, "dirty": bool(dirty), "error": ""}
 
 
+def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
+    if not ancestor or not descendant or ancestor == descendant:
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, descendant],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
+def _git_version_at(revision: str) -> str | None:
+    if not revision:
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "show", f"{revision}:VERSION.txt"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
 def _prospective_epoch_writer_status() -> dict:
     lock = WORK_ROOT / ".artifact-registry-epoch.writer.lock"
     marker = str(os.environ.get("VNTEXT_ARTIFACT_REGISTRY_WRITER") or "").strip()
@@ -2243,6 +2440,10 @@ def _prospective_epoch_writer_status() -> dict:
 
 def _valid_epoch_id(epoch_id: str) -> bool:
     return bool(epoch_id) and all(ch.isalnum() or ch in "-_" for ch in epoch_id) and len(epoch_id) <= 96
+
+
+def _valid_git_sha(value: str) -> bool:
+    return len(value) == 40 and all(character in "0123456789abcdefABCDEF" for character in value)
 
 
 def _incident_identity() -> dict:
@@ -2281,6 +2482,30 @@ def _epoch_scope_boundary() -> dict:
     }
 
 
+def _registered_epoch_scope(child: Path, manifest: dict) -> bool:
+    artifact_records = manifest.get("artifacts")
+    if not isinstance(artifact_records, list):
+        return False
+    for entry in artifact_records:
+        if not isinstance(entry, dict):
+            continue
+        if (
+            entry.get("id") != f"artifact-registry-epoch:{child.name}:scope"
+            or entry.get("kind") != "artifact_registry_epoch"
+            or entry.get("owner") != "artifact_registry_epoch"
+            or entry.get("lifecycle") != "RETAINED"
+            or entry.get("scope_id") != child.name
+            or entry.get("run_id") != child.name
+        ):
+            continue
+        try:
+            if _path_key(_entry_path(entry)) == _path_key(child):
+                return True
+        except (KeyError, TypeError, ValueError, OSError):
+            continue
+    return False
+
+
 def _prospective_epoch_pending_reasons(manifest: dict, *, allow_pending_scope: Path | None = None) -> list[str]:
     """Detect interrupted or unregistered epoch transactions without writing."""
 
@@ -2301,7 +2526,8 @@ def _prospective_epoch_pending_reasons(manifest: dict, *, allow_pending_scope: P
         if not child.is_dir() or child.is_symlink():
             reasons.append(f"unregistered_epoch_path:{child.name}")
             continue
-        if child.name != active_id:
+        registered_previous = _registered_epoch_scope(child, manifest)
+        if child.name != active_id and not registered_previous:
             reasons.append(f"unregistered_epoch_scope:{child.name}")
             continue
         if (child / ".pending.json").exists() and child.resolve() != allowed:
@@ -2531,6 +2757,8 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
                 failures.append("rollback_metadata_record_mismatch")
             if rollback_metadata.get("reset_provenance") != epoch.get("reset_provenance"):
                 failures.append("rollback_metadata_reset_record_mismatch")
+            if rollback_metadata.get("transition_provenance") != epoch.get("transition_provenance"):
+                failures.append("rollback_metadata_transition_record_mismatch")
         except (OSError, json.JSONDecodeError):
             failures.append("rollback_metadata_invalid")
     reset = epoch.get("reset_provenance")
@@ -2575,8 +2803,10 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
                 failures.append("epoch_policy_reset_record_mismatch")
         except (OSError, json.JSONDecodeError):
             failures.append("epoch_policy_invalid")
-    elif _incident_identity().get("status") != "PASS":
+    elif "transition_provenance" not in epoch and _incident_identity().get("status") != "PASS":
         failures.append("incident_preservation_failed")
+    if "transition_provenance" in epoch:
+        failures.extend(_epoch_transition_provenance_failures(epoch, manifest, rollback, rollback_path))
     ledger_value = epoch.get("ledger")
     ledger = ledger_value if isinstance(ledger_value, dict) else {}
     if not isinstance(ledger_value, dict):
@@ -2586,6 +2816,85 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None) -> list[st
         failures.append("prospective_ledger_missing")
     elif _sha256_file(ledger_path) != str(ledger.get("sha256") or "").upper():
         failures.append("prospective_ledger_hash_mismatch")
+    return failures
+
+
+def _epoch_transition_provenance_failures(
+    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path
+) -> list[str]:
+    failures = []
+    transition = epoch.get("transition_provenance")
+    if not isinstance(transition, dict):
+        return ["epoch_transition_provenance_invalid"]
+    previous_id = str(transition.get("previous_epoch_id") or "")
+    previous_sha = str(transition.get("previous_source_sha") or "")
+    target_sha = str(transition.get("target_source_sha") or "")
+    previous_manifest_sha = str(transition.get("previous_manifest_sha256") or "").upper()
+    if (
+        not _valid_epoch_id(previous_id)
+        or not _valid_git_sha(previous_sha)
+        or not _valid_git_sha(target_sha)
+        or target_sha != str(epoch.get("source_sha") or "")
+        or previous_sha == target_sha
+        or previous_manifest_sha != str(rollback.get("sha256") or "").upper()
+        or rollback.get("manifest_absent") is not False
+        or transition.get("owner_authorization") != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL
+        or transition.get("historical_hygiene") != "NOT_RECOVERABLE/UNVERIFIABLE"
+        or not isinstance(epoch.get("release_task_budget"), dict)
+        or epoch.get("release_task_budget", {}).get("task_id") != RELEASE_TASK_BUDGET_ID
+    ):
+        failures.append("epoch_transition_provenance_invalid")
+        return failures
+    try:
+        previous_manifest = json.loads(rollback_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return ["epoch_transition_previous_manifest_invalid"]
+    previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
+    if (
+        not isinstance(previous_epoch, dict)
+        or previous_epoch.get("epoch_id") != previous_id
+        or previous_epoch.get("source_sha") != previous_sha
+        or previous_epoch.get("transition_provenance") is not None
+        or previous_epoch.get("original_incident_identity") != transition.get("incident_identity")
+        or epoch.get("original_incident_identity") != transition.get("incident_identity")
+        or _incident_identity() != transition.get("incident_identity")
+    ):
+        failures.append("epoch_transition_previous_identity_mismatch")
+        return failures
+    if (
+        not _git_is_ancestor(previous_sha, target_sha)
+        or _git_version_at(previous_sha) != "0.1.5"
+        or _git_version_at(target_sha) != "0.1.5"
+    ):
+        failures.append("epoch_transition_source_lineage_invalid")
+    old_failures = _epoch_verify_files(previous_epoch, manifest=previous_manifest)
+    if old_failures:
+        failures.extend(f"epoch_transition_previous_invalid:{item}" for item in old_failures)
+    try:
+        policy_path = Path(str(epoch.get("policy_path") or ""))
+        policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+        if _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
+            failures.append("epoch_policy_hash_mismatch")
+        if policy_doc.get("transition_provenance") != transition:
+            failures.append("epoch_policy_transition_record_mismatch")
+    except (OSError, json.JSONDecodeError):
+        failures.append("epoch_policy_invalid")
+    previous_artifacts = previous_manifest.get("artifacts")
+    current_artifacts = manifest.get("artifacts")
+    if not isinstance(previous_artifacts, list) or not isinstance(current_artifacts, list):
+        failures.append("epoch_transition_prior_registry_records_invalid")
+        return failures
+    previous_scope_prefix = f"artifact-registry-epoch:{previous_id}:"
+    prior_epoch_records = [
+        item for item in previous_artifacts
+        if isinstance(item, dict) and str(item.get("id") or "").startswith(previous_scope_prefix)
+    ]
+    current_epoch_records = [
+        item for item in current_artifacts
+        if isinstance(item, dict) and str(item.get("id") or "").startswith(previous_scope_prefix)
+    ]
+    if not prior_epoch_records or current_epoch_records != prior_epoch_records:
+        failures.append("epoch_transition_prior_epoch_records_changed")
     return failures
 
 
@@ -2600,6 +2909,11 @@ def verify_prospective_epoch(*, _allow_pending_scope: Path | None = None) -> dic
         return {"status": "PROVEN_BLOCKED", "ok": False, "reasons": ["no_active_prospective_epoch"]}
     reasons = _epoch_verify_files(epoch, manifest=manifest)
     reasons.extend(_prospective_epoch_pending_reasons(manifest, allow_pending_scope=_allow_pending_scope))
+    state = _git_repository_state()
+    if state.get("head") != epoch.get("source_sha"):
+        reasons.append("active_epoch_source_sha_mismatch")
+    if state.get("dirty"):
+        reasons.append("working_tree_dirty")
     return {
         "status": "PASS" if not reasons else "PROVEN_BLOCKED",
         "ok": not reasons,
@@ -2616,6 +2930,9 @@ def activate_prospective_epoch(
     source_sha: str | None = None,
     owner_reset_authorization: str | None = None,
     release_task_id: str | None = None,
+    transition_from_epoch_id: str | None = None,
+    expected_manifest_sha256: str | None = None,
+    owner_transition_authorization: str | None = None,
     timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
     max_items: int = DEFAULT_INVENTORY_MAX_ITEMS,
 ) -> dict:
@@ -2625,6 +2942,25 @@ def activate_prospective_epoch(
     manifest_existed = os.path.lexists(MANIFEST_PATH)
     reasons = list(manifest_errors)
     reasons.extend(_epoch_manifest_shape(manifest))
+    transition_requested = any(
+        value is not None
+        for value in (
+            transition_from_epoch_id,
+            expected_manifest_sha256,
+            owner_transition_authorization,
+        )
+    )
+    if transition_requested and not all(
+        (
+            transition_from_epoch_id,
+            expected_manifest_sha256,
+            owner_transition_authorization,
+            release_task_id,
+        )
+    ):
+        reasons.append("epoch_transition_arguments_incomplete")
+    if transition_requested and release_task_id != RELEASE_TASK_BUDGET_ID:
+        reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
     if not expected_sha or state.get("head") != expected_sha:
@@ -2647,7 +2983,49 @@ def activate_prospective_epoch(
     reasons.extend(_prospective_epoch_pending_reasons(manifest))
     incident = _incident_identity()
     reset_provenance = None
-    if incident.get("status") == "MISSING":
+    transition_provenance = None
+    active = manifest.get("prospective_epoch")
+    if transition_requested:
+        if not isinstance(active, dict):
+            reasons.append("active_epoch_required_for_transition")
+        else:
+            active_id = str(active.get("epoch_id") or "")
+            active_sha = str(active.get("source_sha") or "")
+            expected_manifest_sha = str(expected_manifest_sha256 or "").strip().upper()
+            actual_manifest_sha = hashlib.sha256(raw_manifest or b"").hexdigest().upper()
+            if active_id != str(transition_from_epoch_id or ""):
+                reasons.append("transition_active_epoch_id_mismatch")
+            if not expected_manifest_sha or expected_manifest_sha != actual_manifest_sha:
+                reasons.append("transition_manifest_hash_mismatch")
+            if epoch_id and epoch_id == active_id:
+                reasons.append("transition_new_epoch_id_must_differ")
+            if active.get("transition_provenance") is not None:
+                reasons.append("transition_from_transition_epoch_not_supported")
+            if owner_transition_authorization != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL:
+                reasons.append("transition_owner_authorization_invalid")
+            if active.get("scope_boundary") != _epoch_scope_boundary():
+                reasons.append("transition_scope_boundary_invalid")
+            if _epoch_verify_files(active, manifest=manifest):
+                reasons.append("transition_active_epoch_integrity_failed")
+            release_budget = active.get("release_task_budget")
+            if not isinstance(release_budget, dict) or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID:
+                reasons.append("transition_active_epoch_release_task_mismatch")
+            if not _valid_git_sha(active_sha) or not _git_is_ancestor(active_sha, expected_sha):
+                reasons.append("transition_source_not_descendant")
+            if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
+                reasons.append("transition_source_version_mismatch")
+            if incident != active.get("original_incident_identity"):
+                reasons.append("transition_incident_identity_changed")
+            transition_provenance = {
+                "previous_epoch_id": active_id,
+                "previous_source_sha": active_sha,
+                "target_source_sha": expected_sha,
+                "previous_manifest_sha256": actual_manifest_sha,
+                "incident_identity": active.get("original_incident_identity"),
+                "owner_authorization": owner_transition_authorization,
+                "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+            }
+    elif incident.get("status") == "MISSING":
         authorization = str(owner_reset_authorization or "").strip()
         if not authorization:
             reasons.append("owner_reset_authorization_required")
@@ -2664,13 +3042,24 @@ def activate_prospective_epoch(
             }
     elif incident.get("status") != "PASS":
         reasons.append("incident_preservation_failed")
-    active = manifest.get("prospective_epoch")
     if isinstance(active, dict):
-        if epoch_id and str(active.get("epoch_id")) == str(epoch_id):
-            verification = verify_prospective_epoch()
-            verification["idempotent"] = True
-            return verification
-        reasons.append("conflicting_active_epoch")
+        if transition_requested:
+            pass
+        elif epoch_id and str(active.get("epoch_id")) == str(epoch_id):
+            if active.get("source_sha") != expected_sha:
+                reasons.append("active_epoch_source_sha_mismatch")
+                active = None
+            elif reasons or state.get("dirty"):
+                active = None
+            else:
+                verification = verify_prospective_epoch()
+                if verification.get("ok"):
+                    verification["idempotent"] = True
+                    return verification
+                reasons.extend(verification.get("reasons", []))
+                active = None
+        else:
+            reasons.append("conflicting_active_epoch")
     if epoch_id is None:
         epoch_id = f"epoch-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:12]}"
     if not _valid_epoch_id(epoch_id):
@@ -2700,6 +3089,7 @@ def activate_prospective_epoch(
         "scope_boundary": boundary,
         "incident": incident,
         "reset_provenance": reset_provenance,
+        "transition_provenance": transition_provenance,
         "inventory_complete": bool(inventory.get("complete") and reconciled.get("inventory_complete")),
         "inventory_count": len(items),
         "counts": counts,
@@ -2714,6 +3104,9 @@ def activate_prospective_epoch(
     scope = _prospective_epoch_root() / str(epoch_id)
     scope_created = False
     committed = False
+    manifest_mutated = False
+    pending_manifest_bytes: bytes | None = None
+    active_manifest_bytes: bytes | None = None
     transaction_result = None
     try:
         lock.parent.mkdir(parents=True, exist_ok=True)
@@ -2785,6 +3178,8 @@ def activate_prospective_epoch(
             reset_provenance=reset_provenance,
             release_task_id=release_task_id,
         )
+        if transition_provenance is not None:
+            provenance["transition_provenance"] = dict(transition_provenance)
         ledger = {
             "schema_version": 1,
             "epoch_id": epoch_id,
@@ -2806,7 +3201,15 @@ def activate_prospective_epoch(
         policy_path.write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         rollback_meta_path = scope / "rollback_metadata.json"
         rollback_meta_path.write_text(
-            json.dumps({"rollback": rollback, "reset_provenance": reset_provenance}, ensure_ascii=False, indent=2) + "\n",
+            json.dumps(
+                {
+                    "rollback": rollback,
+                    "reset_provenance": reset_provenance,
+                    "transition_provenance": transition_provenance,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ) + "\n",
             encoding="utf-8",
         )
         rollback_metadata_sha256 = _sha256_file(rollback_meta_path)
@@ -2859,18 +3262,21 @@ def activate_prospective_epoch(
         pending_epoch["status"] = "PENDING"
         pending_epoch["no_deletion"] = True
         next_manifest["prospective_epoch"] = pending_epoch
-        _atomic_write_bytes(
-            MANIFEST_PATH,
-            (json.dumps(next_manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
-        )
+        pending_manifest_bytes = (json.dumps(next_manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        _atomic_write_bytes(MANIFEST_PATH, pending_manifest_bytes)
+        manifest_mutated = True
         active_manifest = dict(next_manifest)
         active_manifest["prospective_epoch"] = dict(provenance)
         active_manifest["prospective_epoch"]["status"] = "ACTIVE"
         active_manifest["prospective_epoch"]["no_deletion"] = True
-        _atomic_write_bytes(
-            MANIFEST_PATH,
-            (json.dumps(active_manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
-        )
+        current_after_pending = _strict_registry_snapshot()
+        if current_after_pending[2] or current_after_pending[1] != pending_manifest_bytes:
+            plan["status"] = "PROVEN_BLOCKED"
+            plan["ok"] = False
+            plan["reasons"].append("registry_state_changed_during_transition")
+            return plan
+        active_manifest_bytes = (json.dumps(active_manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        _atomic_write_bytes(MANIFEST_PATH, active_manifest_bytes)
         verification = verify_prospective_epoch(_allow_pending_scope=scope)
         final = dict(plan)
         final.update(verification)
@@ -2889,14 +3295,27 @@ def activate_prospective_epoch(
         plan["reasons"].append(f"transaction_failed:{type(exc).__name__}")
     finally:
         if scope_created and not committed:
-            try:
-                _restore_manifest(raw_manifest)
-            except Exception as exc:
-                plan["reasons"].append(f"rollback_manifest_failed:{type(exc).__name__}")
-            try:
-                _remove_new_epoch_scope(scope)
-            except Exception as exc:
-                plan["reasons"].append(f"rollback_scope_failed:{type(exc).__name__}")
+            rollback_scope_allowed = True
+            if manifest_mutated:
+                _current_manifest, current_raw_manifest, current_manifest_errors = _strict_registry_snapshot()
+                owned_transaction_state = (
+                    not current_manifest_errors
+                    and current_raw_manifest in (pending_manifest_bytes, active_manifest_bytes)
+                )
+                if owned_transaction_state:
+                    try:
+                        _restore_manifest(raw_manifest)
+                    except Exception as exc:
+                        plan["reasons"].append(f"rollback_manifest_failed:{type(exc).__name__}")
+                        rollback_scope_allowed = False
+                else:
+                    plan["reasons"].append("rollback_manifest_compare_failed")
+                    rollback_scope_allowed = False
+            if rollback_scope_allowed:
+                try:
+                    _remove_new_epoch_scope(scope)
+                except Exception as exc:
+                    plan["reasons"].append(f"rollback_scope_failed:{type(exc).__name__}")
         try:
             lock.unlink()
         except FileNotFoundError:
@@ -4113,9 +4532,14 @@ def main() -> int:
     epoch = ap.add_mutually_exclusive_group()
     epoch.add_argument("--prospective-epoch-plan", action="store_true", help="Read-only prospective epoch plan")
     epoch.add_argument("--apply-prospective-epoch", action="store_true", help="Apply one no-delete prospective epoch")
+    epoch.add_argument("--prospective-epoch-transition-plan", action="store_true", help="Read-only plan for the Owner-authorized Release 0.1.5 epoch transition")
+    epoch.add_argument("--apply-prospective-epoch-transition", action="store_true", help="Apply the explicit no-delete Release 0.1.5 epoch transition")
     epoch.add_argument("--verify-prospective-epoch", action="store_true", help="Verify the active prospective epoch")
     ap.add_argument("--epoch-id", default=None)
     ap.add_argument("--source-sha", default=None)
+    ap.add_argument("--transition-from-epoch-id", default=None)
+    ap.add_argument("--expected-manifest-sha256", default=None)
+    ap.add_argument("--owner-transition-authorization", default=None)
     ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID,), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
@@ -4138,22 +4562,45 @@ def main() -> int:
     if args.dry_run and args.scope_id:
         print("--dry-run with --scope-id is unsupported; no cleanup performed", file=sys.stderr)
         return 2
-    if args.prospective_epoch_plan or args.apply_prospective_epoch or args.verify_prospective_epoch:
+    if (
+        args.prospective_epoch_plan
+        or args.apply_prospective_epoch
+        or args.prospective_epoch_transition_plan
+        or args.apply_prospective_epoch_transition
+        or args.verify_prospective_epoch
+    ):
         if args.verify_prospective_epoch:
             result = verify_prospective_epoch()
         else:
+            transition_mode = args.prospective_epoch_transition_plan or args.apply_prospective_epoch_transition
+            if transition_mode and not all(
+                (
+                    args.epoch_id,
+                    args.source_sha,
+                    args.transition_from_epoch_id,
+                    args.expected_manifest_sha256,
+                    args.owner_transition_authorization,
+                    args.release_task_id,
+                )
+            ):
+                print("epoch transition requires target epoch/source, expected active epoch/manifest hash, Owner authorization, and Release task ID", file=sys.stderr)
+                return 2
             result = activate_prospective_epoch(
-                dry_run=not args.apply_prospective_epoch,
+                dry_run=not (args.apply_prospective_epoch or args.apply_prospective_epoch_transition),
                 epoch_id=args.epoch_id,
                 source_sha=args.source_sha,
                 owner_reset_authorization=args.owner_reset_authorization,
                 release_task_id=args.release_task_id,
+                transition_from_epoch_id=args.transition_from_epoch_id if transition_mode else None,
+                expected_manifest_sha256=args.expected_manifest_sha256 if transition_mode else None,
+                owner_transition_authorization=args.owner_transition_authorization if transition_mode else None,
                 timeout_seconds=args.inventory_timeout_seconds,
                 max_items=args.inventory_max_items,
             )
         if args.output:
             target = args.output.expanduser().resolve()
-            if path_under_work(target) and not args.apply_prospective_epoch:
+            apply_epoch = args.apply_prospective_epoch or args.apply_prospective_epoch_transition
+            if path_under_work(target) and not apply_epoch:
                 print("--output for a read-only prospective epoch command must be outside _work", file=sys.stderr)
                 return 2
             target.parent.mkdir(parents=True, exist_ok=True)

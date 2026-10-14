@@ -20,6 +20,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# A Release task profile is opt-in for this runner invocation. Do not let a
+# parent shell's task ID silently select cleanup quotas for an ordinary run.
+if ($ReleaseTaskId) {
+    $env:VNTEXT_RELEASE_TASK_ID = $ReleaseTaskId
+} elseif (Test-Path Env:VNTEXT_RELEASE_TASK_ID) {
+    Remove-Item Env:VNTEXT_RELEASE_TASK_ID
+}
+
 function Write-JsonFile([string]$Path, [object]$Value) {
     $json = $Value | ConvertTo-Json -Depth 8
     [System.IO.File]::WriteAllText(

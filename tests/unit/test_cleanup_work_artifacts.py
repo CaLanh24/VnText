@@ -45,6 +45,7 @@ RUNNER = ROOT / "tests" / "tools" / "run_with_cleanup.py"
 class CleanupLifecycleTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls._prior_release_task_id = os.environ.pop("VNTEXT_RELEASE_TASK_ID", None)
         cls._prior_tempdir = tempfile.tempdir
         ambient = paths.ambient_scope()
         cls._fixture_tempdir = tempfile.TemporaryDirectory(
@@ -67,15 +68,19 @@ class CleanupLifecycleTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        tempfile.tempdir = cls._prior_tempdir
-        result = cleanup.cleanup_after_test(
-            [cls._fixture_temp_path],
-            reason="test_cleanup_work_artifacts fixture teardown",
-            outcome="PASS",
-        )
-        if not result.get("ok"):
-            raise RuntimeError(f"cleanup lifecycle test fixture teardown failed: {result}")
-        cls._fixture_tempdir.cleanup()
+        try:
+            tempfile.tempdir = cls._prior_tempdir
+            result = cleanup.cleanup_after_test(
+                [cls._fixture_temp_path],
+                reason="test_cleanup_work_artifacts fixture teardown",
+                outcome="PASS",
+            )
+            if not result.get("ok"):
+                raise RuntimeError(f"cleanup lifecycle test fixture teardown failed: {result}")
+            cls._fixture_tempdir.cleanup()
+        finally:
+            if cls._prior_release_task_id is not None:
+                os.environ["VNTEXT_RELEASE_TASK_ID"] = cls._prior_release_task_id
 
     @contextlib.contextmanager
     def isolated_owner_pending(self):
@@ -99,8 +104,18 @@ class CleanupLifecycleTests(unittest.TestCase):
                 os.environ[marker] = previous
 
     @contextlib.contextmanager
+    def isolated_release_task_id(self):
+        marker = "VNTEXT_RELEASE_TASK_ID"
+        previous = os.environ.pop(marker, None)
+        try:
+            yield
+        finally:
+            if previous is not None:
+                os.environ[marker] = previous
+
+    @contextlib.contextmanager
     def isolated_workspace(self):
-        with self.isolated_owner_pending(), self.isolated_artifact_scope(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
+        with self.isolated_owner_pending(), self.isolated_artifact_scope(), self.isolated_release_task_id(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
             root = Path(name)
             tests_root = root / "tests"
             golden = tests_root / "golden"
@@ -143,6 +158,16 @@ class CleanupLifecycleTests(unittest.TestCase):
                 # is redirected inside the real DEV checkout by the wrapper.
                 stack.enter_context(patch.object(cleanup, "_project_inventory_root", return_value=root))
                 yield root, work, game_copy, manifest
+
+    def test_isolated_workspace_drops_inherited_release_task_profile(self):
+        with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}):
+            with self.isolated_workspace() as (root, _work, _game, _manifest):
+                self.assertNotIn("VNTEXT_RELEASE_TASK_ID", os.environ)
+                limit, error, profile = cleanup._release_task_budget_profile(root)
+                self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+                self.assertIsNone(error)
+                self.assertEqual("default", profile)
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, os.environ["VNTEXT_RELEASE_TASK_ID"])
 
     def _register(self, artifact: Path, *, lifecycle: str = "DISPOSABLE") -> None:
         paths.register_artifact(
@@ -1087,6 +1112,290 @@ class CleanupLifecycleTests(unittest.TestCase):
             return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
         )
 
+    def _active_release_epoch_for_transition(self, root: Path, manifest: Path):
+        previous_sha = "a" * 40
+        (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
+        git_guard = patch.object(
+            cleanup,
+            "_git_repository_state",
+            return_value={"head": previous_sha, "dirty": False, "error": ""},
+        )
+        incident_guard = patch.object(
+            cleanup,
+            "_incident_identity",
+            return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
+        )
+        epoch_root = cleanup._prospective_epoch_root()
+        epoch_root.mkdir(parents=True, exist_ok=True)
+        paths.register_artifact(
+            artifact_id="epoch-container-for-transition-test",
+            path=epoch_root,
+            kind="artifact_registry_epoch_container",
+            created_by="cleanup_work_artifacts.py",
+            owner="cleanup_work_artifacts.py",
+            purpose="retained container for current prospective epoch metadata created by cleanup_work_artifacts.py",
+            lifecycle="RETAINED",
+        )
+        with git_guard, incident_guard:
+            created = cleanup.activate_prospective_epoch(
+                dry_run=False,
+                epoch_id="epoch-transition-before",
+                source_sha=previous_sha,
+                release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+            )
+            self.assertTrue(created["ok"], created)
+            registered = cleanup.register_release_task_scope()
+            self.assertTrue(registered["ok"], registered)
+        old_bytes = manifest.read_bytes()
+        old_document = json.loads(old_bytes)
+        old_epoch = old_document["prospective_epoch"]
+        old_scope = cleanup._prospective_epoch_root() / old_epoch["epoch_id"]
+        old_files = {
+            path.relative_to(old_scope).as_posix(): path.read_bytes()
+            for path in old_scope.rglob("*")
+            if path.is_file()
+        }
+        return previous_sha, old_bytes, old_document, old_epoch, old_scope, old_files
+
+    def _transition_epoch(
+        self,
+        *,
+        source_sha: str,
+        expected_hash: str,
+        dry_run: bool,
+        transition_from_epoch_id: str = "epoch-transition-before",
+        owner_authorization: str = cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL,
+        **kwargs,
+    ):
+        return cleanup.activate_prospective_epoch(
+            dry_run=dry_run,
+            epoch_id="epoch-transition-after",
+            source_sha=source_sha,
+            release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+            transition_from_epoch_id=transition_from_epoch_id,
+            expected_manifest_sha256=expected_hash,
+            owner_transition_authorization=owner_authorization,
+            **kwargs,
+        )
+
+    def _transition_guards(self, *, descendant: bool = True):
+        target_sha = "b" * 40
+        return (
+            target_sha,
+            patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": target_sha, "dirty": False, "error": ""},
+            ),
+            patch.object(
+                cleanup,
+                "_git_is_ancestor",
+                return_value=descendant,
+            ),
+            patch.object(cleanup, "_git_version_at", return_value="0.1.5"),
+            patch.object(
+                cleanup,
+                "_incident_identity",
+                return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
+            ),
+        )
+
+    def test_prospective_epoch_transition_is_additive_and_preserves_previous_epoch(self):
+        with self.isolated_workspace() as (root, work, game, manifest):
+            previous_sha, old_bytes, old_document, old_epoch, old_scope, old_files = self._active_release_epoch_for_transition(root, manifest)
+            target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards()
+            expected_hash = cleanup.hashlib.sha256(old_bytes).hexdigest().upper()
+            with git_guard, ancestry_guard, version_guard, incident_guard:
+                planned = self._transition_epoch(source_sha=target_sha, expected_hash=expected_hash, dry_run=True)
+                self.assertTrue(planned["ok"], planned)
+                self.assertEqual(old_bytes, manifest.read_bytes())
+                self.assertFalse((cleanup._prospective_epoch_root() / "epoch-transition-after").exists())
+                applied = self._transition_epoch(source_sha=target_sha, expected_hash=expected_hash, dry_run=False)
+                self.assertTrue(applied["ok"], applied)
+                verified = cleanup.verify_prospective_epoch()
+            self.assertTrue(verified["ok"], verified)
+            self.assertEqual("epoch-transition-after", verified["epoch_id"])
+            self.assertEqual([], applied["deletions"])
+            self.assertEqual(old_files, {
+                path.relative_to(old_scope).as_posix(): path.read_bytes()
+                for path in old_scope.rglob("*")
+                if path.is_file()
+            })
+            current = json.loads(manifest.read_bytes())
+            self.assertEqual(old_document["artifacts"], current["artifacts"][: len(old_document["artifacts"])])
+            self.assertEqual(old_document.get("archive", []), current.get("archive", []))
+            new_epoch = current["prospective_epoch"]
+            self.assertEqual(target_sha, new_epoch["source_sha"])
+            self.assertEqual(previous_sha, new_epoch["transition_provenance"]["previous_source_sha"])
+            self.assertEqual(expected_hash, new_epoch["transition_provenance"]["previous_manifest_sha256"])
+            self.assertEqual(old_bytes, Path(new_epoch["rollback"]["path"]).read_bytes())
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, new_epoch["release_task_budget"]["task_id"])
+            run_output = work / "terminal-run-output"
+            run_output.mkdir()
+            (run_output / "receipt.txt").write_text("terminal evidence", encoding="utf-8")
+            self._register(run_output)
+            disposed = cleanup.cleanup_after_test([run_output], reason="transition-lifecycle-test", outcome="PASS")
+            self.assertTrue(disposed["ok"], disposed)
+            with git_guard, ancestry_guard, version_guard, incident_guard, patch.dict(
+                os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}
+            ):
+                after_lifecycle = cleanup.verify_prospective_epoch()
+                limit, budget_error, profile = cleanup._release_task_budget_profile(root)
+            self.assertTrue(after_lifecycle["ok"], after_lifecycle)
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
+            self.assertIsNone(budget_error)
+            self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
+
+    def test_prospective_epoch_transition_refuses_stale_hash_corrupt_old_epoch_and_non_descendant(self):
+        for failure_case in ("stale_hash", "corrupt_old_epoch", "non_descendant", "bad_owner", "wrong_previous_epoch"):
+            with self.subTest(failure_case=failure_case), self.isolated_workspace() as (root, work, _game, manifest):
+                _previous_sha, old_bytes, _old_document, old_epoch, old_scope, _old_files = self._active_release_epoch_for_transition(root, manifest)
+                target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards(
+                    descendant=failure_case != "non_descendant"
+                )
+                expected_hash = cleanup.hashlib.sha256(old_bytes).hexdigest().upper()
+                if failure_case == "stale_hash":
+                    expected_hash = "0" * 64
+                elif failure_case == "corrupt_old_epoch":
+                    Path(old_epoch["ledger"]["path"]).write_text("tampered", encoding="utf-8")
+                before = manifest.read_bytes()
+                with git_guard, ancestry_guard, version_guard, incident_guard:
+                    result = self._transition_epoch(
+                        source_sha=target_sha,
+                        expected_hash=expected_hash,
+                        dry_run=False,
+                        owner_authorization="unapproved statement" if failure_case == "bad_owner" else cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL,
+                        transition_from_epoch_id="wrong-epoch" if failure_case == "wrong_previous_epoch" else "epoch-transition-before",
+                    )
+                self.assertFalse(result["ok"], result)
+                if failure_case == "stale_hash":
+                    self.assertIn("transition_manifest_hash_mismatch", result["reasons"])
+                elif failure_case == "corrupt_old_epoch":
+                    self.assertIn("transition_active_epoch_integrity_failed", result["reasons"])
+                elif failure_case == "non_descendant":
+                    self.assertIn("transition_source_not_descendant", result["reasons"])
+                elif failure_case == "bad_owner":
+                    self.assertIn("transition_owner_authorization_invalid", result["reasons"])
+                else:
+                    self.assertIn("transition_active_epoch_id_mismatch", result["reasons"])
+                self.assertEqual(before, manifest.read_bytes())
+                self.assertTrue(old_scope.is_dir())
+                self.assertFalse((cleanup._prospective_epoch_root() / "epoch-transition-after").exists())
+
+    def test_prospective_epoch_transition_refuses_competing_writer_and_incomplete_inventory(self):
+        for failure_case in ("writer", "incomplete_inventory"):
+            with self.subTest(failure_case=failure_case), self.isolated_workspace() as (root, work, _game, manifest):
+                _previous_sha, old_bytes, _old_document, _old_epoch, old_scope, _old_files = self._active_release_epoch_for_transition(root, manifest)
+                target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards()
+                expected_hash = cleanup.hashlib.sha256(old_bytes).hexdigest().upper()
+                lock = work / ".artifact-registry-epoch.writer.lock"
+                if failure_case == "writer":
+                    lock.write_text("active competing writer", encoding="utf-8")
+                before = manifest.read_bytes()
+                try:
+                    with git_guard, ancestry_guard, version_guard, incident_guard:
+                        kwargs = {"max_items": 1} if failure_case == "incomplete_inventory" else {}
+                        result = self._transition_epoch(
+                            source_sha=target_sha,
+                            expected_hash=expected_hash,
+                            dry_run=False,
+                            **kwargs,
+                        )
+                finally:
+                    if lock.exists():
+                        lock.unlink()
+                self.assertFalse(result["ok"], result)
+                expected_reason = "registry_writer_active" if failure_case == "writer" else "current_inventory_incomplete_or_budget_limited"
+                self.assertIn(expected_reason, result["reasons"])
+                self.assertEqual(before, manifest.read_bytes())
+                self.assertTrue(old_scope.is_dir())
+                self.assertFalse((cleanup._prospective_epoch_root() / "epoch-transition-after").exists())
+
+    def test_prospective_epoch_transition_rolls_back_new_scope_when_verification_fails(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            _previous_sha, old_bytes, _old_document, _old_epoch, old_scope, old_files = self._active_release_epoch_for_transition(root, manifest)
+            target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards()
+            expected_hash = cleanup.hashlib.sha256(old_bytes).hexdigest().upper()
+            failed_verification = {"status": "PROVEN_BLOCKED", "ok": False, "reasons": ["injected_transition_verification_failure"]}
+            with git_guard, ancestry_guard, version_guard, incident_guard, patch.object(
+                cleanup, "verify_prospective_epoch", return_value=failed_verification
+            ):
+                result = self._transition_epoch(source_sha=target_sha, expected_hash=expected_hash, dry_run=False)
+            self.assertFalse(result["ok"])
+            self.assertIn("injected_transition_verification_failure", result["reasons"])
+            self.assertEqual(old_bytes, manifest.read_bytes())
+            self.assertFalse((cleanup._prospective_epoch_root() / "epoch-transition-after").exists())
+            self.assertEqual(old_files, {
+                path.relative_to(old_scope).as_posix(): path.read_bytes()
+                for path in old_scope.rglob("*")
+                if path.is_file()
+            })
+
+    def test_terminal_root_preserves_only_verified_epoch_and_refuses_extra_retained_payload(self):
+        with self.isolated_workspace() as (root, work, game, manifest):
+            previous_sha, old_bytes, _old_document, _old_epoch, _old_scope, _old_files = self._active_release_epoch_for_transition(root, manifest)
+            target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards()
+            expected_hash = cleanup.hashlib.sha256(old_bytes).hexdigest().upper()
+            with git_guard, ancestry_guard, version_guard, incident_guard:
+                transitioned = self._transition_epoch(
+                    source_sha=target_sha,
+                    expected_hash=expected_hash,
+                    dry_run=False,
+                )
+            self.assertTrue(transitioned["ok"], transitioned)
+            shutil.rmtree(game)
+            retained_report = work / "canonical-run-0123456789abcdef0123456789abcdef.md"
+            retained_report.write_text("# Canonical test run\n\n- Outcome: `FAIL`\n", encoding="utf-8")
+            paths.register_artifact(
+                artifact_id="retained-canonical-report",
+                path=retained_report,
+                kind="runner_report",
+                created_by="run_with_cleanup.py",
+                owner="run_with_cleanup.py",
+                purpose="disposable canonical runner outcome and lifecycle evidence",
+                lifecycle="RETAINED",
+            )
+            before = cleanup.snapshot_tree(work, include_hashes=True, skip_retained=False)
+            state_guard = patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": target_sha, "dirty": False, "error": ""},
+            )
+            with state_guard, incident_guard, patch.object(cleanup, "_git_is_ancestor", return_value=True), patch.object(
+                cleanup, "_git_version_at", return_value="0.1.5"
+            ):
+                accepted = cleanup._retained_epoch_metadata_terminal_state(before)
+            self.assertTrue(accepted["ok"], accepted)
+            payload = work / "unrelated-retained-payload.bin"
+            payload.write_bytes(b"retained payload must not bypass cleanup")
+            paths.register_artifact(
+                artifact_id="unrelated-retained-payload",
+                path=payload,
+                kind="user_data",
+                created_by="test_cleanup_work_artifacts",
+                owner="test_cleanup_work_artifacts",
+                purpose="must remain outside epoch metadata exception",
+                lifecycle="RETAINED",
+            )
+            with state_guard, incident_guard:
+                refused = cleanup._retained_epoch_metadata_terminal_state(before)
+            self.assertFalse(refused["ok"], refused)
+            self.assertIn(refused["reason"], {"terminal_paths_differ_from_prior_inventory", "terminal_retained_path_outside_evidence_allowlist"})
+
+    def test_prospective_epoch_transition_cli_requires_all_explicit_inputs(self):
+        with self.isolated_workspace() as (_root, _work, _game, manifest):
+            before = manifest.read_bytes() if manifest.exists() else None
+            stderr = io.StringIO()
+            with patch.object(
+                cleanup.sys,
+                "argv",
+                ["cleanup_work_artifacts.py", "--apply-prospective-epoch-transition"],
+            ), contextlib.redirect_stderr(stderr):
+                exit_code = cleanup.main()
+            self.assertEqual(2, exit_code)
+            self.assertIn("epoch transition requires", stderr.getvalue())
+            self.assertEqual(before, manifest.read_bytes() if manifest.exists() else None)
+
     def test_prospective_epoch_plan_is_read_only(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             artifact = work / "known"
@@ -1168,7 +1477,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                 manifest,
                 (json.dumps(invalid_document, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
             )
-            with missing_incident:
+            with git_guard, missing_incident:
                 invalid = cleanup.verify_prospective_epoch()
             self.assertFalse(invalid["ok"])
             self.assertIn("owner_reset_record_invalid", invalid["reasons"])
@@ -1213,7 +1522,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("NOT_RECOVERABLE/UNVERIFIABLE", epoch["historical_registry_identity"]["status"])
 
             Path(rollback["path"]).write_bytes(before + b"tampered")
-            with missing_incident:
+            with git_guard, missing_incident:
                 invalid = cleanup.verify_prospective_epoch()
             self.assertFalse(invalid["ok"])
             self.assertIn("rollback_snapshot_hash_mismatch", invalid["reasons"])
@@ -1448,7 +1757,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(applied["ok"])
             rollback = Path(applied["rollback"]["path"])
             rollback.write_text("tampered", encoding="utf-8")
-            with incident_guard:
+            with git_guard, incident_guard:
                 verified = cleanup.verify_prospective_epoch()
             self.assertFalse(verified["ok"])
             self.assertIn("rollback_snapshot_hash_mismatch", verified["reasons"])
@@ -2376,13 +2685,17 @@ class CleanupLifecycleTests(unittest.TestCase):
                 )
                 payload = json.loads(result.stdout)
                 self.assertEqual(outcome, payload["outcome"], result.stdout + result.stderr)
-                self.assertEqual(wrapper_exit, result.returncode)
+                self.assertEqual(wrapper_exit, result.returncode, result.stdout + result.stderr)
                 self.assertEqual("EXITED", payload["child_process_state"])
                 self.assertIsNotNone(payload["child_exit_code"])
                 self.assertEqual("FIXTURE_READY", ready.read_text(encoding="utf-8"))
                 ready.unlink()
+                markdown_report = Path(payload["markdown_report"])
+                self.assertTrue(markdown_report.is_file())
+                self.assertNotIn(work.resolve(), markdown_report.resolve().parents)
                 self.assertFalse(report_path.exists())
                 self.assertFalse(game_copy.exists())
+                self.assertFalse(work.exists())
                 self.assertIn("game_copy_disposal", payload["cleanup"], f"{outcome}: {payload}")
                 self.assertEqual(
                     {"path": str(game_copy), "removed": True, "ok": True},

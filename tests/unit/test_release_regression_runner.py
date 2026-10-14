@@ -91,6 +91,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_SCOPE_ID'].startswith('release-regression-'))\n"
             "        self.assertTrue(os.environ['VNTEXT_ARTIFACT_RUN_ID'].startswith('release-run-'))\n"
             "        self.assertEqual('pythonpath-reached', runner_probe.marker())\n"
+            "        self.assertNotIn('VNTEXT_RELEASE_TASK_ID', os.environ)\n"
             "        temp_root = Path(os.environ['TMPDIR']).resolve()\n"
             "        self.assertEqual(temp_root, Path(tempfile.gettempdir()).resolve())\n"
             "        self.assertEqual(Path(os.environ['VNTEXT_ARTIFACT_SCOPE_ROOT']).resolve(), temp_root.parent)\n"
@@ -143,13 +144,15 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
                 "-PatternFile",
                 str(pattern_file),
             ]
+            nested_env = _nested_runner_env()
+            nested_env["VNTEXT_RELEASE_TASK_ID"] = "release-0.1.5"
             result = subprocess.run(
                 command,
                 cwd=harness,
                 capture_output=True,
                 text=True,
                 timeout=90,
-                env=_nested_runner_env(),
+                env=nested_env,
             )
             failure_evidence = ""
             if result.returncode != 0:
