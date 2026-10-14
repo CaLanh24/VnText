@@ -6,25 +6,20 @@
 
 
 
+    <!-- Shared outer card: one quiet outline, with no second elevation treatment. -->
     <Style x:Key="CardShadowBorder" TargetType="Border">
 
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
 
-        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
 
-        <Setter Property="Padding" Value="25,23" />
+        <Setter Property="BorderThickness" Value="1" />
+
+        <Setter Property="CornerRadius" Value="{StaticResource UiCardRadius}" />
+
+        <Setter Property="Padding" Value="{StaticResource UiCardPadding}" />
 
         <Setter Property="SnapsToDevicePixels" Value="True" />
-
-        <Setter Property="Effect">
-
-            <Setter.Value>
-
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.06" Color="{StaticResource ShadowColor}" />
-
-            </Setter.Value>
-
-        </Setter>
 
     </Style>
 
@@ -32,11 +27,11 @@
 
     <Style x:Key="SubtlePanelBorder" TargetType="Border">
 
-        <Setter Property="Background" Value="{StaticResource SubtlePanelBrush}" />
+        <Setter Property="Background" Value="Transparent" />
 
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="0" />
 
-        <Setter Property="Padding" Value="15,13" />
+        <Setter Property="Padding" Value="10,8" />
 
     </Style>
 
@@ -54,6 +49,82 @@
 
         <Setter Property="Padding" Value="13,12" />
 
+    </Style>
+
+    <Style x:Key="UiPageTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiPageTitleSize}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource BlueBrush}" />
+    </Style>
+
+    <Style x:Key="UiSectionTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiSectionTitleSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+    </Style>
+
+    <Style x:Key="UiRowTitleTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiRowTitleSize}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+    </Style>
+
+    <Style x:Key="UiBodyTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiBodySize}" />
+        <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+    </Style>
+
+    <Style x:Key="UiSecondaryTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiSecondarySize}" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+
+    <Style x:Key="UiCaptionTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiCaptionSize}" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+
+    <Style x:Key="UiSectionMarkerTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource UiSectionMarkerSize}" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
+    </Style>
+
+    <Style x:Key="SettingsSectionHeaderStyle" TargetType="{x:Type HeaderedContentControl}">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type HeaderedContentControl}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="{StaticResource UiSectionMarkerWidth}" Background="{StaticResource BlueBrush}"
+                                CornerRadius="2" Margin="0,1" />
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Style="{StaticResource UiSectionTitleTextStyle}" />
+                            <TextBlock Text="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}"
+                                       Style="{StaticResource UiSecondaryTextStyle}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                        </StackPanel>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="SettingsTabKeyboardFocusVisualStyle" TargetType="{x:Type Control}">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Control}">
+                    <Border Margin="1,2" Background="Transparent" BorderBrush="{StaticResource BlueBrush}"
+                            BorderThickness="1" CornerRadius="11" Opacity="0.55" SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
 
@@ -275,11 +346,11 @@
 
         <Setter Property="BorderThickness" Value="0" />
 
-        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="MinHeight" Value="{StaticResource UiNavRowHeight}" />
 
-        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="Padding" Value="8,4" />
 
-        <Setter Property="Margin" Value="0,1,0,1" />
+        <Setter Property="Margin" Value="0" />
 
         <Setter Property="FontSize" Value="12.5" />
 
@@ -299,7 +370,7 @@
 
                 <ControlTemplate TargetType="{x:Type Button}">
 
-                    <Border x:Name="NavSurface" Background="{TemplateBinding Background}" CornerRadius="12">
+                    <Border x:Name="NavSurface" Background="{TemplateBinding Background}" CornerRadius="{StaticResource UiControlRadius}">
 
                         <ContentPresenter Margin="{TemplateBinding Padding}"
 
@@ -351,13 +422,13 @@
 
         <Setter Property="BorderThickness" Value="1" />
 
-        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="MinHeight" Value="{StaticResource UiCompactControlHeight}" />
 
-        <Setter Property="MinWidth" Value="76" />
+        <Setter Property="MinWidth" Value="68" />
 
-        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="Padding" Value="10,6" />
 
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
 
         <Setter Property="FontWeight" Value="SemiBold" />
 
@@ -375,7 +446,7 @@
 
                             BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
 
-                            CornerRadius="9">
+                            CornerRadius="{StaticResource UiControlRadius}">
 
                         <ContentPresenter Margin="{TemplateBinding Padding}"
 
@@ -429,11 +500,11 @@
 
         <Setter Property="BorderThickness" Value="0" />
 
-        <Setter Property="MinHeight" Value="44" />
+        <Setter Property="MinHeight" Value="34" />
 
-        <Setter Property="MinWidth" Value="132" />
+        <Setter Property="MinWidth" Value="112" />
 
-        <Setter Property="Padding" Value="20,12" />
+        <Setter Property="Padding" Value="14,7" />
 
         <Setter Property="FontSize" Value="14" />
 
@@ -449,7 +520,7 @@
 
                 <ControlTemplate TargetType="{x:Type Button}">
 
-                    <Border x:Name="PrimarySurface" Background="{TemplateBinding Background}" CornerRadius="10">
+                    <Border x:Name="PrimarySurface" Background="{TemplateBinding Background}" CornerRadius="{StaticResource UiControlRadius}">
 
                         <ContentPresenter Margin="{TemplateBinding Padding}"
 
@@ -527,11 +598,11 @@
 
         <Setter Property="BorderThickness" Value="1" />
 
-        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="Padding" Value="10,6" />
 
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
 
-        <Setter Property="Height" Value="42" />
+        <Setter Property="Height" Value="{StaticResource UiControlHeight}" />
 
         <Setter Property="VerticalContentAlignment" Value="Center" />
 
@@ -672,7 +743,7 @@
 
         <Setter Property="Padding" Value="12,9" />
 
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
 
         <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
 
@@ -720,13 +791,13 @@
 
         <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
 
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
 
-        <Setter Property="Height" Value="42" />
+        <Setter Property="Height" Value="34" />
 
-        <Setter Property="MinWidth" Value="140" />
+        <Setter Property="MinWidth" Value="120" />
 
-        <Setter Property="Padding" Value="12,0,34,0" />
+        <Setter Property="Padding" Value="10,0,30,0" />
 
         <Setter Property="Background" Value="{StaticResource FieldBackgroundBrush}" />
 
@@ -828,9 +899,9 @@
 
         <Setter Property="BorderThickness" Value="1" />
 
-        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="CornerRadius" Value="8" />
 
-        <Setter Property="Height" Value="42" />
+        <Setter Property="Height" Value="36" />
 
     </Style>
 
@@ -844,9 +915,9 @@
 
         <Setter Property="BorderThickness" Value="1" />
 
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
 
-        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Padding" Value="12,10" />
 
     </Style>
 
@@ -1256,7 +1327,22 @@
 
     <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}" />
 
-    <Style x:Key="OutlineButton" TargetType="Button" BasedOn="{StaticResource GuiOutlineButtonStyle}" />
+    <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource GuiOutlineButtonStyle}" />
+
+    <Style x:Key="OutlineButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}" />
+
+    <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <Style x:Key="AboutActionSurfaceButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+        <Setter Property="Background" Value="{StaticResource SubtlePanelBrush}" />
+        <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="76" />
+        <Setter Property="Padding" Value="14,10" />
+    </Style>
 
 
 
@@ -1308,7 +1394,7 @@
 
         <Setter Property="Foreground" Value="{StaticResource MutedBrush}" />
 
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
 
         <Setter Property="VerticalContentAlignment" Value="Center" />
 

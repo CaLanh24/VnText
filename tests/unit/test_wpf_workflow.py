@@ -24,6 +24,7 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 
 import subprocess
 import os
+import xml.etree.ElementTree as ET
 import unittest
 from pathlib import Path
 from uuid import uuid4
@@ -206,7 +207,46 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("public bool HumanReviewRequired", view_model)
         self.assertIn("public bool HumanReviewRequired", settings)
         self.assertIn("Bắt buộc duyệt thủ công kết quả MT", xaml)
-        self.assertIn("Gợi ý của model chỉ vào review_only.csv; chưa thể Patch cho đến khi duyệt.", xaml)
+        self.assertIn('ToolTip="Khi bật, kết quả MT được ghi vào review_only.csv và phải duyệt trước khi tạo patch."', xaml)
+        self.assertNotIn('Text="Thiết bị"', xaml)
+        self.assertNotIn('DataTrigger Binding="{Binding StatusText}" Value="Sẵn sàng"', xaml)
+        self.assertIn('DataTrigger Binding="{Binding GlossaryStatus}" Value="Danh sách từ được lưu cùng gói dịch."', xaml)
+
+    def test_content_disclosures_bind_to_real_presentation_states(self):
+        view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
+        analyze = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Analyze.cs").read_text(encoding="utf-8")
+        xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
+        self.assertIn('IsExpanded="{Binding AnalyzeResultsExpanded, Mode=TwoWay}"', xaml)
+        self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('IsExpanded="{Binding PatchResultsExpanded, Mode=TwoWay}"', xaml)
+        self.assertIn('Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('Visibility="{Binding PatchPreflightEvaluated, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('Visibility="{Binding CloudRepairPackageReady, Converter={StaticResource BoolToVis}}"', xaml)
+        xaml_root = ET.parse(ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").getroot()
+        x_name = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
+        named = {element.attrib[x_name]: element for element in xaml_root.iter() if x_name in element.attrib}
+        parents = {child: parent for parent in xaml_root.iter() for child in parent}
+        delivery_panel = named["PatchDeliveryInstructionsPanel"]
+        extract_options = named["ExtractOptionsPanel"]
+        renpy_options = named["RenpySdkOptionsPanel"]
+        self.assertEqual(
+            "{Binding PatchDeliveryReady, Converter={StaticResource BoolToVis}}",
+            delivery_panel.attrib.get("Visibility"),
+        )
+        self.assertNotIn("PatchDeliveryReady", extract_options.attrib.get("Visibility", ""))
+        self.assertIn("Tách dòng cần duyệt", "".join(element.attrib.get("Content", "") for element in extract_options.iter()))
+        self.assertEqual(
+            "{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}",
+            renpy_options.attrib.get("Visibility"),
+        )
+        self.assertIs(parents.get(parents.get(renpy_options)), extract_options)
+        self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', xaml)
+        self.assertIn('ToolTip="Chỉ nhập dòng khớp mã và câu gốc; dòng khác được giữ để sửa."', xaml)
+        self.assertIn('ToolTip="CTranslate2 · dịch Anh sang Việt · chạy offline."', xaml)
+        self.assertNotIn("Chưa kiểm tra translation.csv", view_model)
+        self.assertNotIn("Chưa kiểm tra chất lượng patch", view_model)
+        self.assertNotIn("Chưa có lỗi quét được ghi nhận.", analyze)
+        self.assertNotIn("Báo cáo sẽ được ghi ngoài thư mục game.", analyze)
 
     def test_cloud_repair_controls_route_and_preserve_active_csv_on_failure(self):
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
@@ -245,7 +285,7 @@ class WpfWorkflowTests(unittest.TestCase):
         patch_page = xaml[xaml.index('<!-- Patch page -->'):]
         self.assertIn('Content="Xuất ZIP"', translate_page)
         self.assertNotIn("Nhập kết quả", translate_page)
-        self.assertIn('Text="Nếu vừa xuất ZIP để dịch bên ngoài, CSV trả về sẽ được kiểm tra với gói đó trước khi tạo patch."', patch_page)
+        self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', patch_page)
         self.assertIn('Command="{Binding ChooseTranslationCsvCommand}"', patch_page)
 
         cloud_title = xaml.index('Text="Dịch bằng công cụ bên ngoài"')
@@ -264,6 +304,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Command="{Binding RecheckUpdateCommand}"', xaml)
         self.assertIn('Text="{Binding GitHubUpdateStatus}"', xaml)
         self.assertIn('Content="Kiểm tra cập nhật"', xaml)
+        self.assertIn('DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng."', xaml)
+        self.assertIn('"Chưa cấu hình nguồn cập nhật."', view_model)
         self.assertNotIn('Local Updates preview', xaml)
         self.assertNotIn('Apply local preview', xaml)
         self.assertNotIn('Stable public releases (GitHub)', xaml)

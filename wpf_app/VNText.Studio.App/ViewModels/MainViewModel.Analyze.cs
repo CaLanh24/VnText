@@ -7,8 +7,10 @@ namespace VNText.Studio.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private string _analyzeStatusText = "Chưa phân tích game";
-    private string _analyzeReportPath = "Báo cáo sẽ được ghi ngoài thư mục game.";
-    private string _analyzeScanErrorText = "Chưa có lỗi quét được ghi nhận.";
+    private string _analyzeReportPath = "";
+    private string _analyzeScanErrorText = "";
+    private bool _analyzeHasReport;
+    private bool _analyzeResultsExpanded;
     private string _analyzeUnityStatus = "NOT_DETECTED";
     private bool _analyzeInventoryComplete;
     private int _analyzeResourceCount;
@@ -35,6 +37,18 @@ public sealed partial class MainViewModel
     {
         get => _analyzeScanErrorText;
         private set => Set(ref _analyzeScanErrorText, value);
+    }
+
+    public bool AnalyzeHasReport
+    {
+        get => _analyzeHasReport;
+        private set => Set(ref _analyzeHasReport, value);
+    }
+
+    public bool AnalyzeResultsExpanded
+    {
+        get => _analyzeResultsExpanded;
+        set => Set(ref _analyzeResultsExpanded, value);
     }
 
     public string AnalyzeUnityStatus
@@ -93,9 +107,13 @@ public sealed partial class MainViewModel
 
     private void RunAnalyze()
     {
+        AnalyzeResultsExpanded = false;
+        AnalyzeHasReport = false;
+        AnalyzeReportPath = "";
         if (string.IsNullOrWhiteSpace(InputPath))
         {
             AnalyzeStatusText = "Chưa chọn game / asset";
+            AnalyzeResultsExpanded = true;
             StatusText = "Chưa chọn game";
             AppendLog("Chọn game / asset trước khi phân tích.");
             SelectedTab = WorkflowTabs.Extract;
@@ -104,6 +122,7 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(OutputPath))
         {
             AnalyzeStatusText = "Chưa chọn thư mục xuất";
+            AnalyzeResultsExpanded = true;
             StatusText = "Chưa chọn thư mục xuất";
             AppendLog("Chọn thư mục xuất trước khi phân tích.");
             SelectedTab = WorkflowTabs.Extract;
@@ -112,7 +131,7 @@ public sealed partial class MainViewModel
 
         var reportDirectory = WorkflowStatus.ResolvePackageDir(OutputPath);
         AnalyzeStatusText = "Đang phân tích game…";
-        AnalyzeReportPath = Path.Combine(reportDirectory, "unity_analysis.json");
+        AnalyzeReportPath = "";
         AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của danh mục tài nguyên…";
         ResetAnalyzeMetrics();
         BeginTask("analyze", new
@@ -128,6 +147,8 @@ public sealed partial class MainViewModel
     {
         var reportPath = ResolveAnalyzeReportPath();
         var snapshot = UnityAnalysisReportReader.TryRead(reportPath, out var error);
+        AnalyzeResultsExpanded = true;
+        AnalyzeHasReport = File.Exists(reportPath);
         if (snapshot is null)
         {
             AnalyzeInventoryComplete = false;
@@ -135,7 +156,7 @@ public sealed partial class MainViewModel
             AnalyzeStatusText = evt.Ok
                 ? "Đã chạy nhưng không đọc được report"
                 : "Phân tích thất bại";
-            AnalyzeReportPath = reportPath;
+            AnalyzeReportPath = AnalyzeHasReport ? reportPath : "";
             AnalyzeScanErrorText = string.IsNullOrWhiteSpace(error)
                 ? "Không tìm thấy báo cáo unity_analysis.json; chưa xác minh đủ tài nguyên."
                 : $"Không đọc được report: {error}";
@@ -152,11 +173,12 @@ public sealed partial class MainViewModel
         AnalyzeUnknownCount = snapshot.UnknownCount;
         AnalyzeScanErrorCount = snapshot.ScanErrorCount;
         AnalyzeReportPath = snapshot.ReportPath;
+        AnalyzeHasReport = true;
         AnalyzeStatusText = AnalyzeInventoryComplete
             ? "Đã phân tích • danh mục tài nguyên đầy đủ"
             : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
-            ? "Không ghi nhận lỗi quét. Nguồn chỉ được đọc; chưa kiểm việc ghi bản dịch vào game."
+            ? "Không ghi nhận lỗi quét."
             : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
     }
 

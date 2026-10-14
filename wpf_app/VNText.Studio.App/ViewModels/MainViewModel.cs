@@ -26,7 +26,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _translateStepState = WorkflowStepState.Pending;
     private string _patchStepState = WorkflowStepState.Pending;
     private string _stepStatusLine = "Bước 1/3: Chọn game — chưa có đường dẫn game / asset";
-    private string _patchDeliveryLabel = "Hướng dẫn cài patch sẽ hiện sau khi đóng gói.";
+    private string _patchDeliveryLabel = "";
     private string _patchInstallInstructions = "";
     private string _diagnosticStatusLine = "";
     private string _diagnosticPath = "";
@@ -60,14 +60,19 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private bool _hasExtract;
     private bool _hasTranslations;
     private string _translationCsvPath = "";
-    private string _csvValidationMessage = "Chưa kiểm tra translation.csv";
+    private string _csvValidationMessage = "";
     private bool _csvValidationOk;
-    private string _patchPreflightMessage = "Chưa kiểm tra chất lượng patch";
+    private string _patchPreflightMessage = "";
     private bool _patchPreflightOk;
+    private bool _patchPreflightEvaluated;
+    private bool _patchResultsAvailable;
+    private bool _patchResultsExpanded;
+    private bool _patchDeliveryReady;
     private int _patchEligibleCount;
     private int _patchBlockedCount;
     private int _progressPercent;
     private string _cloudRepairPackagePath = "";
+    private bool _cloudRepairPackageReady;
     private string _pendingCloudRepairImportOutputPath = "";
     private string _pendingExternalTranslationImportTargetPath = "";
     private string _activeTaskId = "";
@@ -232,9 +237,43 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     public string CloudRepairPackageDisplay =>
-        string.IsNullOrWhiteSpace(CloudRepairPackagePath)
-            ? "Chưa tạo gói Cloud Repair"
-            : CloudRepairPackagePath;
+        CloudRepairPackageReady && File.Exists(CloudRepairPackagePath)
+            ? CloudRepairPackagePath
+            : "";
+
+    public bool CloudRepairPackageReady
+    {
+        get => _cloudRepairPackageReady;
+        private set
+        {
+            if (Set(ref _cloudRepairPackageReady, value))
+                Raise(nameof(CloudRepairPackageDisplay));
+        }
+    }
+
+    public bool PatchResultsAvailable
+    {
+        get => _patchResultsAvailable;
+        private set => Set(ref _patchResultsAvailable, value);
+    }
+
+    public bool PatchResultsExpanded
+    {
+        get => _patchResultsExpanded;
+        set => Set(ref _patchResultsExpanded, value);
+    }
+
+    public bool PatchPreflightEvaluated
+    {
+        get => _patchPreflightEvaluated;
+        private set => Set(ref _patchPreflightEvaluated, value);
+    }
+
+    public bool PatchDeliveryReady
+    {
+        get => _patchDeliveryReady;
+        private set => Set(ref _patchDeliveryReady, value);
+    }
 
     public string CsvValidationMessage
     {
@@ -954,6 +993,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+
+    internal void TestSetCloudRepairPackagePath(string path) => CloudRepairPackagePath = path;
 
     internal string TestResolveActiveCsvPath() => ResolveActiveCsvPath();
 

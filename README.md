@@ -1,6 +1,6 @@
 # VNText Studio
 
-Bản public hiện tại: **0.1.4**.
+Phiên bản source đang chuẩn bị: **0.1.5**. Bản public ổn định mới nhất vẫn là **0.1.4**.
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 

@@ -3,8 +3,17 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Name="Root" Cursor="Hand" Background="Transparent"
              MouseLeftButtonUp="OnClick">
-    <Border x:Name="Track" Width="52" Height="30" CornerRadius="15"
+    <Border x:Name="Track" Width="40" Height="22" CornerRadius="11"
             Background="{StaticResource SwitchOffBrush}" BorderBrush="#E5E5EA" BorderThickness="1">
-        <Ellipse x:Name="Knob" Width="20" Height="20" Fill="White" HorizontalAlignment="Left" Margin="4,0,0,0" VerticalAlignment="Center" />
+        <Ellipse x:Name="Knob" Width="14" Height="14" Fill="White" HorizontalAlignment="Left" Margin="4,0,0,0" VerticalAlignment="Center" />
     </Border>
+    <UserControl.Style>
+        <Style TargetType="UserControl">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.55" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Style>
 </UserControl>

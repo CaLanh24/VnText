@@ -95,14 +95,14 @@ public sealed partial class MainViewModel
                 HeroTitle = "Dịch tự động";
                 HeroIcon = "translate";
                 HeroHint = _hasTranslations
-                    ? "Đã có bản dịch trong translation.csv. Có thể dịch tiếp hoặc chuyển sang Tạo patch."
-                    : "Dịch offline CTranslate2 + OPUS-MT en→vi (INT8). Hoặc chọn file CSV đã dịch tay ở tab Tạo patch.";
+                    ? "Có thể dịch tiếp hoặc chuyển sang Tạo patch."
+                    : "Dịch bằng mô hình local hoặc chọn CSV đã dịch.";
                 break;
             case WorkflowTabs.Patch:
                 HeroTitle = "Tạo patch";
                 HeroIcon = "patch";
                 HeroHint = PatchPreflightOk
-                    ? $"Sẵn sàng patch {PatchEligibleCount} dòng (chặn {PatchBlockedCount}). Bấm «Tạo patch»."
+                    ? $"Sẵn sàng đóng gói {PatchEligibleCount} dòng; {PatchBlockedCount} dòng bị chặn."
                     : ReadyForPatch
                         ? "Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."
                         : "Cần translation.csv hợp lệ (có bản dịch) và manifest.json cùng thư mục.";
@@ -117,14 +117,14 @@ public sealed partial class MainViewModel
             case WorkflowTabs.Settings:
                 HeroTitle = "Cài đặt";
                 HeroIcon = "gear";
-                HeroHint = "Giao diện, dữ liệu và cập nhật ứng dụng.";
+                HeroHint = "Thiết lập giao diện, dữ liệu và cập nhật.";
                 break;
             default:
                 HeroTitle = "Lấy text";
                 HeroIcon = "extract";
                 HeroHint = string.IsNullOrWhiteSpace(InputPath)
-                    ? "Chọn game bên dưới, rồi bấm «Lấy text» để xuất CSV."
-                    : "Xuất translation.csv từ game đã chọn vào thư mục xuất.";
+                    ? "Chọn game, rồi bấm Lấy text."
+                    : "Lấy text từ game đã chọn vào thư mục xuất.";
                 break;
         }
     }
@@ -287,6 +287,7 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(outputZip))
             return;
 
+        CloudRepairPackageReady = false;
         CloudRepairPackagePath = outputZip;
         BeginTask(
             "cloud_export",
@@ -433,7 +434,8 @@ public sealed partial class MainViewModel
         ClearDiagnostic();
         if (task == "patch")
         {
-            PatchDeliveryLabel = "Đang xác định cách cài đặt theo engine…";
+            PatchDeliveryReady = false;
+            PatchDeliveryLabel = "";
             PatchInstallInstructions = "";
         }
         Busy = true;

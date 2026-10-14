@@ -20,6 +20,7 @@ public partial class MainWindow : Window
         {
             vm.CompletionRequested += OnCompletionRequested;
             vm.RestoreWindow(this);
+            WindowState = WindowState.Maximized;
             UpdateWindow? updateWindow = null;
             vm.UpdatePopupRequested += () =>
             {

@@ -12,9 +12,9 @@
 
     <Color x:Key="InkColor">#202B3F</Color>
 
-    <Color x:Key="MutedColor">#718096</Color>
+    <Color x:Key="MutedColor">#5F6F85</Color>
 
-    <Color x:Key="SoftTextColor">#99A6B8</Color>
+    <Color x:Key="SoftTextColor">#74849A</Color>
 
     <Color x:Key="LineColor">#E4EAF2</Color>
 
@@ -59,8 +59,23 @@
 
 
     <sys:Double x:Key="UiBodySize">14</sys:Double>
-    <sys:Double x:Key="UiCaptionSize">13</sys:Double>
-    <sys:Double x:Key="UiSectionTitleSize">18</sys:Double>
+    <sys:Double x:Key="UiCaptionSize">12</sys:Double>
+    <sys:Double x:Key="UiSectionTitleSize">16</sys:Double>
+    <sys:Double x:Key="UiPageTitleSize">26</sys:Double>
+    <sys:Double x:Key="UiRowTitleSize">14</sys:Double>
+    <sys:Double x:Key="UiSecondarySize">12</sys:Double>
+
+    <GridLength x:Key="UiSidebarWidth">232</GridLength>
+    <Thickness x:Key="UiSidebarInset">16</Thickness>
+    <sys:Double x:Key="UiNavRowHeight">34</sys:Double>
+    <CornerRadius x:Key="UiCardRadius">14</CornerRadius>
+    <Thickness x:Key="UiCardPadding">16,14</Thickness>
+    <sys:Double x:Key="UiControlHeight">34</sys:Double>
+    <sys:Double x:Key="UiCompactControlHeight">32</sys:Double>
+    <CornerRadius x:Key="UiControlRadius">8</CornerRadius>
+    <Thickness x:Key="UiSectionTopGap">0,16,0,0</Thickness>
+    <sys:Double x:Key="UiSectionMarkerSize">12</sys:Double>
+    <sys:Double x:Key="UiSectionMarkerWidth">3</sys:Double>
 
     <!-- Surfaces & chrome -->
 

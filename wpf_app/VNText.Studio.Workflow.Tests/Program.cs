@@ -102,6 +102,8 @@ internal static class Program
         Run("SmokeWorker_IgnoresLegacyWorkPath", SmokeWorker_IgnoresLegacyWorkPath, failures);
         Run("AnalyzeReportReader_ParsesCoverage", AnalyzeReportReader_ParsesCoverage, failures);
         Run("AnalyzeComplete_StaysOnExtractAndShowsEvidence", AnalyzeComplete_StaysOnExtractAndShowsEvidence, failures);
+        Run("ContentDisclosure_InitialIsQuietAndFailuresExpand", ContentDisclosure_InitialIsQuietAndFailuresExpand, failures);
+        Run("CloudRepairPackage_IsShownOnlyAfterSuccessfulExport", CloudRepairPackage_IsShownOnlyAfterSuccessfulExport, failures);
         Run("ReleaseManagedPaths_StayUnderInstallRoot", ReleaseManagedPaths_StayUnderInstallRoot, failures);
         Run("WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing", WpfUpdate_VersionOrderRejectsInvalidAndNonIncreasing, failures);
         Run("WpfUpdate_ReadsVersionBeyondMaxPath", WpfUpdate_ReadsVersionBeyondMaxPath, failures);
@@ -704,6 +706,7 @@ internal static class Program
     {
         using var worker = new PythonWorkerHost();
         var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        AssertFalse(vm.PatchDeliveryReady);
         vm.TestSimulateTaskComplete("patch", new WorkerEvent
         {
             Type = "complete",
@@ -716,6 +719,7 @@ internal static class Program
             PatchInstallInstructions = "Copy toàn bộ nội dung COPY_TO_GAME_ROOT vào game root Ren'Py.",
         });
 
+        AssertTrue(vm.PatchDeliveryReady);
         AssertTrue(vm.PatchDeliveryLabel.Contains("Ren'Py", StringComparison.Ordinal));
         AssertTrue(vm.PatchInstallInstructions.Contains("COPY_TO_GAME_ROOT", StringComparison.Ordinal));
         AssertTrue(!vm.PatchInstallInstructions.Contains("installer", StringComparison.OrdinalIgnoreCase));
@@ -1004,6 +1008,9 @@ internal static class Program
             };
 
             AssertTrue(vm.AnalyzeCommand.CanExecute(null));
+            AssertFalse(vm.AnalyzeResultsExpanded);
+            AssertFalse(vm.AnalyzeHasReport);
+            AssertEqual("", vm.AnalyzeScanErrorText);
             vm.TestSimulateTaskComplete("analyze", new WorkerEvent
             {
                 Type = "complete",
@@ -1022,8 +1029,129 @@ internal static class Program
             AssertEqual(6, vm.AnalyzeReviewRiskCount);
             AssertEqual(2, vm.AnalyzeUnknownCount);
             AssertTrue(vm.AnalyzeStatusText.Contains("danh mục tài nguyên đầy đủ", StringComparison.Ordinal));
-            AssertTrue(vm.AnalyzeScanErrorText.Contains("chưa kiểm việc ghi bản dịch vào game", StringComparison.Ordinal));
+            AssertEqual("Không ghi nhận lỗi quét.", vm.AnalyzeScanErrorText);
+            AssertTrue(vm.AnalyzeResultsExpanded);
+            AssertTrue(vm.AnalyzeHasReport);
             AssertEqual(report, vm.AnalyzeReportPath);
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void ContentDisclosure_InitialIsQuietAndFailuresExpand()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_disclosure_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false)
+            {
+                OutputPath = root,
+            };
+
+            AssertEqual("Chưa phân tích game", vm.AnalyzeStatusText);
+            AssertEqual("", vm.AnalyzeScanErrorText);
+            AssertEqual("", vm.AnalyzeReportPath);
+            AssertFalse(vm.AnalyzeResultsExpanded);
+            AssertFalse(vm.AnalyzeHasReport);
+            AssertEqual("", vm.CsvValidationMessage);
+            AssertEqual("", vm.PatchPreflightMessage);
+            AssertFalse(vm.PatchResultsAvailable);
+            AssertFalse(vm.PatchResultsExpanded);
+            AssertFalse(vm.PatchPreflightEvaluated);
+            AssertFalse(vm.PatchDeliveryReady);
+            AssertEqual("", vm.CloudRepairPackageDisplay);
+
+            vm.ValidateTranslationCsvCommand.Execute(null);
+            AssertTrue(vm.PatchResultsAvailable);
+            AssertTrue(vm.PatchResultsExpanded);
+            AssertFalse(vm.PatchPreflightEvaluated);
+            AssertFalse(vm.CsvValidationOk);
+            AssertTrue(!string.IsNullOrWhiteSpace(vm.CsvValidationMessage));
+            AssertTrue(vm.PatchPreflightMessage.Contains("CSV hợp lệ", StringComparison.Ordinal));
+
+            vm.TestSimulateTaskComplete("patch", new WorkerEvent
+            {
+                Type = "complete",
+                Id = "patch-worker-exit",
+                Ok = false,
+                Complete = false,
+                Error = "Worker process exited unexpectedly",
+            });
+            vm.TestHandleWorkerEvent(new WorkerEvent { Type = "error", Error = "Worker process exited" });
+            AssertTrue(vm.PatchResultsAvailable);
+            AssertTrue(vm.PatchResultsExpanded);
+            AssertTrue(vm.LogLines.Any(line => line.Contains("Worker process exited unexpectedly", StringComparison.Ordinal)));
+
+            vm.InputPath = @"C:\game";
+            vm.TestSimulateTaskComplete("analyze", new WorkerEvent
+            {
+                Type = "complete",
+                Ok = false,
+                Complete = false,
+                Error = "fixture scan failure",
+            });
+            AssertTrue(vm.AnalyzeResultsExpanded);
+            AssertFalse(vm.AnalyzeHasReport);
+            AssertEqual("", vm.AnalyzeReportPath);
+            AssertEqual("Phân tích thất bại", vm.AnalyzeStatusText);
+            AssertTrue(!string.IsNullOrWhiteSpace(vm.AnalyzeScanErrorText));
+
+            var report = Path.Combine(root, "unity_analysis.json");
+            File.WriteAllText(report, """
+                {
+                  "inventory_complete": false,
+                  "unity": {"status": "DETECTED"},
+                  "summary": {"resource_count": 1, "unknown_resources": 0, "scan_error_count": 1},
+                  "coverage": {"text_candidates": 0, "patchable_text": 0, "extract_only_text": 0, "review_required": 0, "unsupported": 0},
+                  "scan_errors": [{"path": "broken.asset", "error": "fixture scan warning"}]
+                }
+                """, Encoding.UTF8);
+            vm.TestSimulateTaskComplete("analyze", new WorkerEvent
+            {
+                Type = "complete",
+                Id = "analyze-with-scan-warning",
+                Ok = false,
+                Complete = false,
+                Error = "fixture scan warning",
+            });
+            AssertTrue(vm.AnalyzeResultsExpanded);
+            AssertTrue(vm.AnalyzeHasReport);
+            AssertEqual(report, vm.AnalyzeReportPath);
+            AssertTrue(vm.AnalyzeScanErrorText.Contains("1 lỗi quét", StringComparison.Ordinal));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void CloudRepairPackage_IsShownOnlyAfterSuccessfulExport()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_cloud_export_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var archive = Path.Combine(root, "fixture.zip");
+            using (ZipFile.Open(archive, ZipArchiveMode.Create)) { }
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+            vm.TestSetCloudRepairPackagePath(archive);
+
+            AssertFalse(vm.CloudRepairPackageReady);
+            AssertEqual("", vm.CloudRepairPackageDisplay);
+            vm.TestSimulateTaskComplete("cloud_export", new WorkerEvent
+            {
+                Type = "complete",
+                Ok = true,
+                Complete = true,
+                Summary = "fixture export complete",
+            });
+            AssertTrue(vm.CloudRepairPackageReady);
+            AssertEqual(archive, vm.CloudRepairPackageDisplay);
         }
         finally
         {

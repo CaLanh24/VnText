@@ -120,6 +120,8 @@ public sealed partial class MainViewModel
                     break;
 
                 var completedTask = _runningTask;
+                if (completedTask == "cloud_export")
+                    CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
                 if (completedTask == "cloud_import" && evt.Ok && evt.Complete != false
                     && !TryActivateCloudRepairImport(out var cloudImportError))
                 {
@@ -151,6 +153,11 @@ public sealed partial class MainViewModel
                 var extractionIncomplete = completedTask == "extract"
                     && (evt.ExtractStatus is "PARTIAL" or "EMPTY" || (evt.Ok && evt.Complete == false));
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
+                if (completedTask == "patch" && (cancelled || !evt.Ok || evt.Complete == false))
+                {
+                    PatchResultsAvailable = true;
+                    PatchResultsExpanded = true;
+                }
                 var needsHumanReview = evt.HumanReviewRequiredCount > 0;
                 var isExternalTranslationImport = completedTask == "external_translation_import";
                 var externalRemaining = Math.Max(evt.Pending, evt.ReviewOnly);
@@ -210,6 +217,10 @@ public sealed partial class MainViewModel
                     {
                         AnalyzeStatusText = "Đã hủy phân tích game";
                         AnalyzeScanErrorText = "Không có inventory hoàn tất để sử dụng.";
+                        var reportPath = ResolveAnalyzeReportPath();
+                        AnalyzeHasReport = File.Exists(reportPath);
+                        AnalyzeReportPath = AnalyzeHasReport ? reportPath : "";
+                        AnalyzeResultsExpanded = true;
                     }
                     RequestCompletion("VNText Studio — Đã hủy", "Đã hủy tác vụ.", "info");
                 }
@@ -304,6 +315,9 @@ public sealed partial class MainViewModel
 
                 if (completedTask == "translate")
                 {
+                    PatchResultsAvailable = true;
+                    PatchResultsExpanded = true;
+                    PatchPreflightEvaluated = false;
                     CsvValidationMessage = $"Đã dịch {evt.Translated}; pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}";
                     PatchPreflightOk = false;
                     PatchEligibleCount = 0;
@@ -408,6 +422,9 @@ public sealed partial class MainViewModel
         CsvValidationMessage = validation.Message;
         ReadyForPatch = true;
         PatchPreflightOk = false;
+        PatchPreflightEvaluated = false;
+        PatchResultsAvailable = true;
+        PatchResultsExpanded = true;
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
         PatchPreflightMessage = "Cloud Repair đã nhập; kiểm tra trước khi tạo patch.";
@@ -436,6 +453,9 @@ public sealed partial class MainViewModel
         CsvValidationMessage = validation.Message;
         ReadyForPatch = true;
         PatchPreflightOk = false;
+        PatchPreflightEvaluated = false;
+        PatchResultsAvailable = true;
+        PatchResultsExpanded = true;
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
         PatchPreflightMessage = "Đã nhập bản dịch cũ; kiểm tra trước khi tạo patch.";
@@ -471,12 +491,14 @@ public sealed partial class MainViewModel
         {
             PatchDeliveryLabel = "Ren'Py — native overlay (copy vào game root)";
             PatchInstallInstructions = evt.PatchInstallInstructions ?? "";
+            PatchDeliveryReady = true;
             StepStatusLine = "Ren'Py overlay đã sẵn sàng — copy COPY_TO_GAME_ROOT vào game root.";
         }
         else if (string.Equals(evt.PatchDelivery, "unity_installer", StringComparison.OrdinalIgnoreCase))
         {
             PatchDeliveryLabel = "Unity/Naninovel — VNTextPatchInstaller.exe";
             PatchInstallInstructions = evt.PatchInstallInstructions ?? "";
+            PatchDeliveryReady = true;
         }
         if (!string.IsNullOrWhiteSpace(evt.PatchPayloadPath))
             AppendLog($"Gói cài đặt: {evt.PatchPayloadPath}");

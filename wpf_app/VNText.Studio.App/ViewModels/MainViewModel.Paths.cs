@@ -120,6 +120,11 @@ public sealed partial class MainViewModel
             ? Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv")
             : TranslationCsvPath;
         var result = CsvPackageValidator.Validate(path);
+        if (!silent)
+        {
+            PatchResultsAvailable = true;
+            PatchResultsExpanded = true;
+        }
         CsvValidationOk = result.Ok;
         CsvValidationMessage = result.Message;
         ReadyForPatch = result.Ok && WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(path)!).IsComplete;
@@ -132,6 +137,7 @@ public sealed partial class MainViewModel
         else
         {
             PatchPreflightOk = false;
+            PatchPreflightEvaluated = false;
             PatchEligibleCount = 0;
             PatchBlockedCount = 0;
             PatchPreflightMessage = "Cần CSV hợp lệ trước khi kiểm tra chất lượng patch.";
@@ -158,6 +164,10 @@ public sealed partial class MainViewModel
             ? PatchPreflightResult.Fail(csv, $"Dịch chưa hoàn tất — pending {progress.Pending}, review {progress.ReviewOnly}, blocked {progress.Blocked}. Chưa thể tạo Patch.")
             : PatchPreflightService.Run(csv, manifest);
         PatchPreflightOk = result.Ok;
+        PatchPreflightEvaluated = true;
+        PatchResultsAvailable = true;
+        if (!silent)
+            PatchResultsExpanded = true;
         PatchEligibleCount = result.Eligible;
         PatchBlockedCount = result.Blocked;
         PatchPreflightMessage = result.DetailMessage;
