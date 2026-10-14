@@ -19,7 +19,8 @@ MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.js
 
 def run(command, *, cwd=ROOT, env=None):
     try:
-        child = subprocess.run([str(x) for x in command], cwd=cwd, env=env,
+        effective_env = os.environ.copy() if env is None else env
+        child = subprocess.run([str(x) for x in command], cwd=cwd, env=effective_env,
                                capture_output=True, text=True, encoding="utf-8", errors="replace")
         return {"command": [str(x) for x in command], "cwd": str(cwd),
                 "exit_code": child.returncode, "stdout": child.stdout, "stderr": child.stderr}

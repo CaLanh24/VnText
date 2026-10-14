@@ -3,6 +3,7 @@ import contextlib
 import io
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -134,6 +135,21 @@ class DevBootstrapTests(unittest.TestCase):
             result = dev.run(["absent"])
         self.assertIsNone(result["exit_code"])
         self.assertIn("missing executable", result["stderr"])
+
+    def test_run_default_environment_preserves_python_context(self):
+        with patch.dict(dev.os.environ, {"PYTHONPATH": "chosen-site-packages", "PYTHONNOUSERSITE": "1"}, clear=True), \
+             patch.object(dev.subprocess, "run", return_value=SimpleNamespace(returncode=0, stdout="", stderr="")) as child:
+            result = dev.run(["python", "-B", "-c", "pass"])
+        self.assertEqual(result["exit_code"], 0)
+        self.assertEqual(child.call_args.kwargs["env"]["PYTHONPATH"], "chosen-site-packages")
+        self.assertEqual(child.call_args.kwargs["env"]["PYTHONNOUSERSITE"], "1")
+
+    def test_run_preserves_explicit_child_environment(self):
+        supplied = {"PYTHONPATH": "caller-site-packages", "PYTHONNOUSERSITE": "0"}
+        with patch.object(dev.subprocess, "run", return_value=SimpleNamespace(returncode=0, stdout="", stderr="")) as child:
+            result = dev.run(["python", "-B", "-c", "pass"], env=supplied)
+        self.assertEqual(result["exit_code"], 0)
+        self.assertIs(child.call_args.kwargs["env"], supplied)
 
     def test_json_receipt_preserves_unicode_on_ascii_stdout(self):
         with patch.object(dev, "preflight", return_value={"missing": ["Thiếu công cụ"]}), \
