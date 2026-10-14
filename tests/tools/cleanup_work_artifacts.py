@@ -79,6 +79,11 @@ RELEASE_TASK_BUDGET_APPROVAL = (
     "do not delete old payloads or user data."
 )
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
+RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID = "call_4a31e293dabe487a98c54c4cdf706a07"
+RELEASE_TASK_EPOCH_REBASELINE_APPROVAL = (
+    "Owner 2026-10-15 approved one no-delete 0.1.5 evidence rebaseline while preserving the complete existing epoch history; "
+    "the ordinary eight-hop transition limit remains unchanged."
+)
 PROJECT_SIZE_EXEMPTIONS = {
     ".dev-env": "shared DEV Python/SDK/NuGet/model cache (3 GiB cap)",
 }
@@ -2796,12 +2801,18 @@ def _classify_prospective_inventory(inventory: dict, reconciled: dict) -> list[d
     return output
 
 
-def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None, _transition_seen: tuple[str, ...] = ()) -> list[str]:
+def _epoch_verify_files(
+    epoch: dict,
+    *,
+    manifest: dict | None = None,
+    _transition_seen: tuple[str, ...] = (),
+    _transition_depth: int = 0,
+) -> list[str]:
     # Bound traversal before reading another snapshot, including malformed cycles.
     epoch_id = str(epoch.get("epoch_id") or "")
     if epoch_id in _transition_seen:
         return ["epoch_transition_cycle"]
-    if len(_transition_seen) > 8:
+    if _transition_depth > 8:
         return ["epoch_transition_depth_exceeded"]
     failures = []
     manifest = manifest or json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
@@ -2861,6 +2872,8 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None, _transitio
                 failures.append("rollback_metadata_reset_record_mismatch")
             if rollback_metadata.get("transition_provenance") != epoch.get("transition_provenance"):
                 failures.append("rollback_metadata_transition_record_mismatch")
+            if rollback_metadata.get("rebaseline_provenance") != epoch.get("rebaseline_provenance"):
+                failures.append("rollback_metadata_rebaseline_record_mismatch")
         except (OSError, json.JSONDecodeError):
             failures.append("rollback_metadata_invalid")
     reset = epoch.get("reset_provenance")
@@ -2905,10 +2918,16 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None, _transitio
                 failures.append("epoch_policy_reset_record_mismatch")
         except (OSError, json.JSONDecodeError):
             failures.append("epoch_policy_invalid")
-    elif "transition_provenance" not in epoch and _incident_identity().get("status") != "PASS":
+    elif "transition_provenance" not in epoch and "rebaseline_provenance" not in epoch and _incident_identity().get("status") != "PASS":
         failures.append("incident_preservation_failed")
     if "transition_provenance" in epoch:
-        failures.extend(_epoch_transition_provenance_failures(epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,)))
+        failures.extend(_epoch_transition_provenance_failures(
+            epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,), _transition_depth + 1
+        ))
+    if "rebaseline_provenance" in epoch:
+        failures.extend(_epoch_rebaseline_provenance_failures(
+            epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,)
+        ))
     ledger_value = epoch.get("ledger")
     ledger = ledger_value if isinstance(ledger_value, dict) else {}
     if not isinstance(ledger_value, dict):
@@ -2922,7 +2941,7 @@ def _epoch_verify_files(epoch: dict, *, manifest: dict | None = None, _transitio
 
 
 def _epoch_transition_provenance_failures(
-    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path, transition_seen: tuple[str, ...]
+    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path, transition_seen: tuple[str, ...], transition_depth: int
 ) -> list[str]:
     failures = []
     transition = epoch.get("transition_provenance")
@@ -2968,7 +2987,10 @@ def _epoch_transition_provenance_failures(
         or _git_version_at(target_sha) != "0.1.5"
     ):
         failures.append("epoch_transition_source_lineage_invalid")
-    old_failures = _epoch_verify_files(previous_epoch, manifest=previous_manifest, _transition_seen=transition_seen)
+    old_failures = _epoch_verify_files(
+        previous_epoch, manifest=previous_manifest, _transition_seen=transition_seen,
+        _transition_depth=transition_depth,
+    )
     if old_failures:
         failures.extend(f"epoch_transition_previous_invalid:{item}" for item in old_failures)
     try:
@@ -2998,6 +3020,124 @@ def _epoch_transition_provenance_failures(
     if not prior_epoch_records or current_epoch_records != prior_epoch_records:
         failures.append("epoch_transition_prior_epoch_records_changed")
     return failures
+
+
+def _epoch_rebaseline_provenance_failures(
+    epoch: dict, manifest: dict, rollback: dict, rollback_path: Path, rebaseline_seen: tuple[str, ...]
+) -> list[str]:
+    failures = []
+    record = epoch.get("rebaseline_provenance")
+    if not isinstance(record, dict):
+        return ["epoch_rebaseline_provenance_invalid"]
+    previous_id = str(record.get("previous_epoch_id") or "")
+    previous_sha = str(record.get("previous_source_sha") or "")
+    target_sha = str(record.get("target_source_sha") or "")
+    rollback_sha = str(rollback.get("sha256") or "").upper()
+    if (
+        not _valid_epoch_id(previous_id)
+        or not _valid_git_sha(previous_sha)
+        or not _valid_git_sha(target_sha)
+        or target_sha != str(epoch.get("source_sha") or "")
+        or previous_sha == target_sha
+        or str(record.get("previous_manifest_sha256") or "").upper() != rollback_sha
+        or rollback.get("manifest_absent") is not False
+        or record.get("authorization_id") != RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID
+        or record.get("owner_authorization") != RELEASE_TASK_EPOCH_REBASELINE_APPROVAL
+        or record.get("historical_hygiene") != "NOT_RECOVERABLE/UNVERIFIABLE"
+        or not isinstance(epoch.get("release_task_budget"), dict)
+        or epoch.get("release_task_budget", {}).get("task_id") != RELEASE_TASK_BUDGET_ID
+    ):
+        failures.append("epoch_rebaseline_provenance_invalid")
+        return failures
+    try:
+        previous_manifest = json.loads(rollback_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return ["epoch_rebaseline_previous_manifest_invalid"]
+    previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
+    if (
+        not isinstance(previous_epoch, dict)
+        or previous_epoch.get("epoch_id") != previous_id
+        or previous_epoch.get("source_sha") != previous_sha
+        or previous_epoch.get("original_incident_identity") != epoch.get("original_incident_identity")
+        or record.get("incident_identity") != epoch.get("original_incident_identity")
+        or _incident_identity() != record.get("incident_identity")
+    ):
+        failures.append("epoch_rebaseline_previous_identity_mismatch")
+        return failures
+    if (
+        not _git_is_ancestor(previous_sha, target_sha)
+        or _git_version_at(previous_sha) != "0.1.5"
+        or _git_version_at(target_sha) != "0.1.5"
+    ):
+        failures.append("epoch_rebaseline_source_lineage_invalid")
+    if _epoch_rebaseline_authorization_consumed(previous_epoch, manifest=previous_manifest, seen=rebaseline_seen):
+        failures.append("epoch_rebaseline_approval_already_consumed")
+    # A rebaseline resets only the hop counter. The global identity set crosses
+    # the boundary so a corrupt old chain cannot point back into the new root.
+    old_failures = _epoch_verify_files(
+        previous_epoch,
+        manifest=previous_manifest,
+        _transition_seen=rebaseline_seen,
+        _transition_depth=0,
+    )
+    if old_failures:
+        failures.extend(f"epoch_rebaseline_previous_invalid:{item}" for item in old_failures)
+    try:
+        policy_path = Path(str(epoch.get("policy_path") or ""))
+        policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+        if _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
+            failures.append("epoch_policy_hash_mismatch")
+        if policy_doc.get("rebaseline_provenance") != record:
+            failures.append("epoch_policy_rebaseline_record_mismatch")
+    except (OSError, json.JSONDecodeError):
+        failures.append("epoch_policy_invalid")
+    previous_artifacts = previous_manifest.get("artifacts")
+    current_artifacts = manifest.get("artifacts")
+    if not isinstance(previous_artifacts, list) or not isinstance(current_artifacts, list):
+        failures.append("epoch_rebaseline_prior_registry_records_invalid")
+        return failures
+    epoch_prefix = "artifact-registry-epoch:"
+    prior_epoch_records = [
+        item for item in previous_artifacts
+        if isinstance(item, dict) and str(item.get("id") or "").startswith(epoch_prefix)
+    ]
+    prior_epoch_ids = {item.get("id") for item in prior_epoch_records}
+    current_epoch_records = [
+        item for item in current_artifacts
+        if isinstance(item, dict) and item.get("id") in prior_epoch_ids
+    ]
+    if not prior_epoch_records or current_epoch_records != prior_epoch_records:
+        failures.append("epoch_rebaseline_prior_epoch_records_changed")
+    return failures
+
+
+def _epoch_rebaseline_authorization_consumed(
+    epoch: dict, *, manifest: dict, seen: tuple[str, ...] = (), depth: int = 0
+) -> bool:
+    epoch_id = str(epoch.get("epoch_id") or "")
+    if not epoch_id or epoch_id in seen or depth > 8:
+        return True
+    if epoch.get("rebaseline_provenance") is not None:
+        return True
+    transition = epoch.get("transition_provenance")
+    if not isinstance(transition, dict):
+        return False
+    rollback = epoch.get("rollback")
+    if not isinstance(rollback, dict) or rollback.get("manifest_absent") is not False:
+        return True
+    try:
+        old_manifest = json.loads(Path(str(rollback.get("path") or "")).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return True
+    old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
+    if not isinstance(old_epoch, dict) or old_epoch.get("epoch_id") != transition.get("previous_epoch_id"):
+        return True
+    return _epoch_rebaseline_authorization_consumed(
+        old_epoch,
+        manifest=old_manifest,
+        seen=seen + (epoch_id,),
+        depth=depth + 1,
+    )
 
 
 def verify_prospective_epoch(*, _allow_pending_scope: Path | None = None) -> dict:
@@ -3035,6 +3175,9 @@ def activate_prospective_epoch(
     transition_from_epoch_id: str | None = None,
     expected_manifest_sha256: str | None = None,
     owner_transition_authorization: str | None = None,
+    rebaseline_from_epoch_id: str | None = None,
+    owner_rebaseline_authorization_id: str | None = None,
+    owner_rebaseline_authorization: str | None = None,
     timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
     max_items: int = DEFAULT_INVENTORY_MAX_ITEMS,
 ) -> dict:
@@ -3048,10 +3191,28 @@ def activate_prospective_epoch(
         value is not None
         for value in (
             transition_from_epoch_id,
-            expected_manifest_sha256,
             owner_transition_authorization,
         )
     )
+    rebaseline_requested = any(value is not None for value in (
+        rebaseline_from_epoch_id,
+        owner_rebaseline_authorization_id,
+        owner_rebaseline_authorization,
+    ))
+    if transition_requested and rebaseline_requested:
+        reasons.append("epoch_transition_modes_conflict")
+    if expected_manifest_sha256 is not None and not (transition_requested or rebaseline_requested):
+        reasons.append("epoch_authorized_mode_required_for_manifest_cas")
+    if rebaseline_requested and not all((
+        rebaseline_from_epoch_id,
+        expected_manifest_sha256,
+        owner_rebaseline_authorization_id,
+        owner_rebaseline_authorization,
+        release_task_id,
+    )):
+        reasons.append("epoch_rebaseline_arguments_incomplete")
+    if rebaseline_requested and release_task_id != RELEASE_TASK_BUDGET_ID:
+        reasons.append("epoch_rebaseline_release_task_required")
     if transition_requested and not all(
         (
             transition_from_epoch_id,
@@ -3086,8 +3247,9 @@ def activate_prospective_epoch(
     incident = _incident_identity()
     reset_provenance = None
     transition_provenance = None
+    rebaseline_provenance = None
     active = manifest.get("prospective_epoch")
-    if transition_requested:
+    if transition_requested or rebaseline_requested:
         if not isinstance(active, dict):
             reasons.append("active_epoch_required_for_transition")
         else:
@@ -3095,36 +3257,66 @@ def activate_prospective_epoch(
             active_sha = str(active.get("source_sha") or "")
             expected_manifest_sha = str(expected_manifest_sha256 or "").strip().upper()
             actual_manifest_sha = hashlib.sha256(raw_manifest or b"").hexdigest().upper()
-            if active_id != str(transition_from_epoch_id or ""):
-                reasons.append("transition_active_epoch_id_mismatch")
+            expected_active_id = rebaseline_from_epoch_id if rebaseline_requested else transition_from_epoch_id
+            if active_id != str(expected_active_id or ""):
+                reasons.append("epoch_rebaseline_active_id_mismatch" if rebaseline_requested else "transition_active_epoch_id_mismatch")
             if not expected_manifest_sha or expected_manifest_sha != actual_manifest_sha:
                 reasons.append("transition_manifest_hash_mismatch")
             if epoch_id and epoch_id == active_id:
                 reasons.append("transition_new_epoch_id_must_differ")
-            if owner_transition_authorization != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL:
+            if transition_requested and owner_transition_authorization != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL:
                 reasons.append("transition_owner_authorization_invalid")
+            if rebaseline_requested:
+                if owner_rebaseline_authorization_id != RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID:
+                    reasons.append("epoch_rebaseline_approval_id_invalid")
+                if owner_rebaseline_authorization != RELEASE_TASK_EPOCH_REBASELINE_APPROVAL:
+                    reasons.append("epoch_rebaseline_owner_authorization_invalid")
+                if _epoch_rebaseline_authorization_consumed(active, manifest=manifest):
+                    reasons.append("epoch_rebaseline_approval_already_consumed")
             if active.get("scope_boundary") != _epoch_scope_boundary():
                 reasons.append("transition_scope_boundary_invalid")
-            if _epoch_verify_files(active, manifest=manifest, _transition_seen=(str(epoch_id or ""),)):
+            if _epoch_verify_files(
+                active,
+                manifest=manifest,
+                _transition_seen=(str(epoch_id or ""),),
+                _transition_depth=0 if rebaseline_requested else 1,
+            ):
                 reasons.append("transition_active_epoch_integrity_failed")
             release_budget = active.get("release_task_budget")
             if not isinstance(release_budget, dict) or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID:
                 reasons.append("transition_active_epoch_release_task_mismatch")
-            if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
-                reasons.append("transition_source_not_descendant")
-            if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
-                reasons.append("transition_source_version_mismatch")
+            if not rebaseline_requested:
+                if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
+                    reasons.append("transition_source_not_descendant")
+                if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
+                    reasons.append("transition_source_version_mismatch")
             if incident != active.get("original_incident_identity"):
                 reasons.append("transition_incident_identity_changed")
-            transition_provenance = {
-                "previous_epoch_id": active_id,
-                "previous_source_sha": active_sha,
-                "target_source_sha": expected_sha,
-                "previous_manifest_sha256": actual_manifest_sha,
-                "incident_identity": active.get("original_incident_identity"),
-                "owner_authorization": owner_transition_authorization,
-                "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
-            }
+            if rebaseline_requested:
+                if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
+                    reasons.append("epoch_rebaseline_source_not_descendant")
+                if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
+                    reasons.append("epoch_rebaseline_source_version_mismatch")
+                rebaseline_provenance = {
+                    "previous_epoch_id": active_id,
+                    "previous_source_sha": active_sha,
+                    "target_source_sha": expected_sha,
+                    "previous_manifest_sha256": actual_manifest_sha,
+                    "incident_identity": active.get("original_incident_identity"),
+                    "authorization_id": owner_rebaseline_authorization_id,
+                    "owner_authorization": owner_rebaseline_authorization,
+                    "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+                }
+            else:
+                transition_provenance = {
+                    "previous_epoch_id": active_id,
+                    "previous_source_sha": active_sha,
+                    "target_source_sha": expected_sha,
+                    "previous_manifest_sha256": actual_manifest_sha,
+                    "incident_identity": active.get("original_incident_identity"),
+                    "owner_authorization": owner_transition_authorization,
+                    "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+                }
     elif incident.get("status") == "MISSING":
         authorization = str(owner_reset_authorization or "").strip()
         if not authorization:
@@ -3143,7 +3335,7 @@ def activate_prospective_epoch(
     elif incident.get("status") != "PASS":
         reasons.append("incident_preservation_failed")
     if isinstance(active, dict):
-        if transition_requested:
+        if transition_requested or rebaseline_requested:
             pass
         elif epoch_id and str(active.get("epoch_id")) == str(epoch_id):
             if active.get("source_sha") != expected_sha:
@@ -3190,6 +3382,7 @@ def activate_prospective_epoch(
         "incident": incident,
         "reset_provenance": reset_provenance,
         "transition_provenance": transition_provenance,
+        "rebaseline_provenance": rebaseline_provenance,
         "inventory_complete": bool(inventory.get("complete") and reconciled.get("inventory_complete")),
         "inventory_count": len(items),
         "counts": counts,
@@ -3280,6 +3473,8 @@ def activate_prospective_epoch(
         )
         if transition_provenance is not None:
             provenance["transition_provenance"] = dict(transition_provenance)
+        if rebaseline_provenance is not None:
+            provenance["rebaseline_provenance"] = dict(rebaseline_provenance)
         ledger = {
             "schema_version": 1,
             "epoch_id": epoch_id,
@@ -3306,6 +3501,7 @@ def activate_prospective_epoch(
                     "rollback": rollback,
                     "reset_provenance": reset_provenance,
                     "transition_provenance": transition_provenance,
+                    "rebaseline_provenance": rebaseline_provenance,
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -4634,12 +4830,17 @@ def main() -> int:
     epoch.add_argument("--apply-prospective-epoch", action="store_true", help="Apply one no-delete prospective epoch")
     epoch.add_argument("--prospective-epoch-transition-plan", action="store_true", help="Read-only plan for the Owner-authorized Release 0.1.5 epoch transition")
     epoch.add_argument("--apply-prospective-epoch-transition", action="store_true", help="Apply the explicit no-delete Release 0.1.5 epoch transition")
+    epoch.add_argument("--prospective-epoch-rebaseline-plan", action="store_true", help="Read-only plan for the one Owner-authorized no-delete Release 0.1.5 epoch rebaseline")
+    epoch.add_argument("--apply-prospective-epoch-rebaseline", action="store_true", help="Apply the one explicit no-delete Release 0.1.5 epoch rebaseline")
     epoch.add_argument("--verify-prospective-epoch", action="store_true", help="Verify the active prospective epoch")
     ap.add_argument("--epoch-id", default=None)
     ap.add_argument("--source-sha", default=None)
     ap.add_argument("--transition-from-epoch-id", default=None)
     ap.add_argument("--expected-manifest-sha256", default=None)
     ap.add_argument("--owner-transition-authorization", default=None)
+    ap.add_argument("--rebaseline-from-epoch-id", default=None)
+    ap.add_argument("--owner-rebaseline-authorization-id", default=None)
+    ap.add_argument("--owner-rebaseline-authorization", default=None)
     ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID,), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
@@ -4667,39 +4868,46 @@ def main() -> int:
         or args.apply_prospective_epoch
         or args.prospective_epoch_transition_plan
         or args.apply_prospective_epoch_transition
+        or args.prospective_epoch_rebaseline_plan
+        or args.apply_prospective_epoch_rebaseline
         or args.verify_prospective_epoch
     ):
         if args.verify_prospective_epoch:
             result = verify_prospective_epoch()
         else:
             transition_mode = args.prospective_epoch_transition_plan or args.apply_prospective_epoch_transition
-            if transition_mode and not all(
+            rebaseline_mode = args.prospective_epoch_rebaseline_plan or args.apply_prospective_epoch_rebaseline
+            if (transition_mode or rebaseline_mode) and not all(
                 (
                     args.epoch_id,
                     args.source_sha,
-                    args.transition_from_epoch_id,
                     args.expected_manifest_sha256,
-                    args.owner_transition_authorization,
                     args.release_task_id,
+                    (args.rebaseline_from_epoch_id if rebaseline_mode else args.transition_from_epoch_id),
+                    (args.owner_rebaseline_authorization_id if rebaseline_mode else args.owner_transition_authorization),
+                    (args.owner_rebaseline_authorization if rebaseline_mode else True),
                 )
             ):
-                print("epoch transition requires target epoch/source, expected active epoch/manifest hash, Owner authorization, and Release task ID", file=sys.stderr)
+                print("epoch transition requires target epoch/source, expected active epoch/manifest hash, Owner authorization, and Release task ID (rebaseline uses its explicit authorization fields)", file=sys.stderr)
                 return 2
             result = activate_prospective_epoch(
-                dry_run=not (args.apply_prospective_epoch or args.apply_prospective_epoch_transition),
+                dry_run=not (args.apply_prospective_epoch or args.apply_prospective_epoch_transition or args.apply_prospective_epoch_rebaseline),
                 epoch_id=args.epoch_id,
                 source_sha=args.source_sha,
                 owner_reset_authorization=args.owner_reset_authorization,
                 release_task_id=args.release_task_id,
                 transition_from_epoch_id=args.transition_from_epoch_id if transition_mode else None,
-                expected_manifest_sha256=args.expected_manifest_sha256 if transition_mode else None,
+                expected_manifest_sha256=args.expected_manifest_sha256 if (transition_mode or rebaseline_mode) else None,
                 owner_transition_authorization=args.owner_transition_authorization if transition_mode else None,
+                rebaseline_from_epoch_id=args.rebaseline_from_epoch_id if rebaseline_mode else None,
+                owner_rebaseline_authorization_id=args.owner_rebaseline_authorization_id if rebaseline_mode else None,
+                owner_rebaseline_authorization=args.owner_rebaseline_authorization if rebaseline_mode else None,
                 timeout_seconds=args.inventory_timeout_seconds,
                 max_items=args.inventory_max_items,
             )
         if args.output:
             target = args.output.expanduser().resolve()
-            apply_epoch = args.apply_prospective_epoch or args.apply_prospective_epoch_transition
+            apply_epoch = args.apply_prospective_epoch or args.apply_prospective_epoch_transition or args.apply_prospective_epoch_rebaseline
             if path_under_work(target) and not apply_epoch:
                 print("--output for a read-only prospective epoch command must be outside _work", file=sys.stderr)
                 return 2

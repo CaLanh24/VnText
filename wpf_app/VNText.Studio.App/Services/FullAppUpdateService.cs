@@ -126,7 +126,8 @@ internal static class FullAppUpdateService
     internal static int RunUpdater(string sourcePath, string root, int appPid, int? workerPid,
         bool fromGitHub, string packagePath = "", string packageSha256 = "", string version = "",
         bool bindToRunningInstall = true, bool waitForProcesses = true, bool restartApp = true,
-        Func<string, string, bool>? healthCheck = null, Action<string>? startAppOverride = null)
+        Func<string, string, bool>? healthCheck = null, Action<string>? startAppOverride = null,
+        Action<string, string, int>? replaceAttemptHook = null)
     {
         root = Path.GetFullPath(root);
         sourcePath = Path.GetFullPath(sourcePath);
@@ -176,6 +177,9 @@ internal static class FullAppUpdateService
             stagingRoot = Path.Combine(source.StagingRoot, transactionId);
             pendingPath = SafeTemporaryTarget(root, PendingName);
             RequireOutsideData(root, pendingPath);
+            var pendingPrevious = CaptureFileRecord(root, pendingPath, PendingName);
+            if (pendingPrevious is not null)
+                throw new InvalidDataException("Pending update journal was not cleared before a new transaction.");
             EnsureNoReparsePath(root, backupRoot, "full-app backup directory");
             EnsureNoReparsePath(root, stagingRoot, "full-app staging directory");
             Directory.CreateDirectory(backupRoot);
@@ -207,6 +211,8 @@ internal static class FullAppUpdateService
             }
             var ownershipPath = Path.Combine(root, OwnershipName.Replace('/', Path.DirectorySeparatorChar));
             EnsureNoReparsePath(root, ownershipPath, "full-app ownership manifest");
+            var successPath = SafeTemporaryTarget(root, ".update/success.json");
+            var successPrevious = CaptureFileRecord(root, successPath, ".update/success.json");
             var ownershipBackup = SafeTemporaryTarget(backupRoot, "ownership.previous.json");
             var ownershipExisted = File.Exists(ownershipPath);
             long ownershipPreviousSize = 0;
@@ -226,7 +232,8 @@ internal static class FullAppUpdateService
                 DeleteFiles = manifest.DeleteFiles, OwnershipExisted = ownershipExisted,
                 OwnershipPreviousSize = ownershipPreviousSize, OwnershipPreviousSha256 = ownershipPreviousSha256,
             };
-            WriteJsonAtomic(pendingPath, journal);
+            var pendingRecord = WriteJsonAtomic(root, source.LogPath, pendingPath, PendingName, journal,
+                pendingPrevious, replaceAttemptHook);
 
             foreach (var relative in manifest.AddFiles.Keys.Concat(manifest.ReplaceFiles.Keys).OrderBy(name => name, StringComparer.Ordinal))
             {
@@ -242,7 +249,8 @@ internal static class FullAppUpdateService
                 {
                     if (!FixedEquals(HashFile(target), manifest.BaseFiles[relative].Sha256))
                         throw new FullAppBaselineMismatchException("Installed file changed during update: " + relative);
-                    ReplaceExistingFile(staged, target);
+                    ReplaceExistingFile(staged, target, root, source.LogPath, relative,
+                        manifest.Files[relative], manifest.BaseFiles[relative], replaceAttemptHook);
                 }
                 Log(source.LogPath, "installed " + relative);
                 if (source.FaultInjectInterruptAfterFirstReplace && relative != "VNText Studio.exe")
@@ -266,14 +274,19 @@ internal static class FullAppUpdateService
             if (!health(Path.Combine(root, "VNText Studio.exe"), root))
                 throw new InvalidOperationException("Updated application and worker health check failed.");
             Log(source.LogPath, "full-app health check passed");
-            WriteJsonAtomic(ownershipPath, manifest.Files.Keys.OrderBy(name => name, StringComparer.Ordinal).ToArray());
+            var ownershipPrevious = ownershipExisted
+                ? new FileRecord { Size = ownershipPreviousSize, Sha256 = ownershipPreviousSha256 }
+                : null;
+            WriteJsonAtomic(root, source.LogPath, ownershipPath, OwnershipName,
+                manifest.Files.Keys.OrderBy(name => name, StringComparer.Ordinal).ToArray(), ownershipPrevious, replaceAttemptHook);
             journal.CommitReady = true;
-            WriteJsonAtomic(pendingPath, journal);
-            WriteJsonAtomic(SafeTemporaryTarget(root, ".update/success.json"), new
+            pendingRecord = WriteJsonAtomic(root, source.LogPath, pendingPath, PendingName, journal,
+                pendingRecord, replaceAttemptHook);
+            WriteJsonAtomic(root, source.LogPath, successPath, ".update/success.json", new
             {
                 transaction_id = transactionId, version = manifest.Version,
                 exe_sha256 = HashFile(Path.Combine(root, "VNText Studio.exe")), health_passed = true,
-            });
+            }, successPrevious, replaceAttemptHook);
             Restart();
             appRestarted = restartApp;
             try { File.Delete(pendingPath); }
@@ -402,10 +415,11 @@ internal static class FullAppUpdateService
     }
 
     internal static int RunForTest(string sourcePath, string root, bool restartApp = false,
-        Func<string, string, bool>? healthCheck = null, Action<string>? startApp = null) =>
+        Func<string, string, bool>? healthCheck = null, Action<string>? startApp = null,
+        Action<string, string, int>? replaceAttemptHook = null) =>
         RunUpdater(sourcePath, root, int.MaxValue, null, fromGitHub: false,
             bindToRunningInstall: false, waitForProcesses: false, restartApp: restartApp,
-            healthCheck: healthCheck, startAppOverride: startApp);
+            healthCheck: healthCheck, startAppOverride: startApp, replaceAttemptHook: replaceAttemptHook);
 
     internal static bool IsExpectedFullAppAssetPath(string actualPath, string owner, string repository,
         string tag, string assetName) => WpfUpdateService.IsExpectedGitHubAssetPath(actualPath, owner, repository, tag, assetName);
@@ -639,7 +653,8 @@ internal static class FullAppUpdateService
                     var restore = SafeTemporaryTarget(stagingRoot, "restore/" + relative);
                     Directory.CreateDirectory(Path.GetDirectoryName(restore)!);
                     File.Copy(backup, restore, overwrite: true);
-                    ReplaceExistingFile(restore, target);
+                    ReplaceExistingFile(restore, target, root, source.LogPath, relative,
+                        journal.BaseFiles[relative], journal.ReplaceFiles[relative]);
                 }
                 else File.Copy(backup, target, overwrite: false);
             }
@@ -661,12 +676,41 @@ internal static class FullAppUpdateService
                 if (!File.Exists(ownershipBackup) || new FileInfo(ownershipBackup).Length != journal.OwnershipPreviousSize ||
                     !IsSha256(journal.OwnershipPreviousSha256) || !FixedEquals(HashFile(ownershipBackup), journal.OwnershipPreviousSha256))
                     throw new InvalidDataException("Previous ownership manifest backup is missing or invalid.");
-                WriteBytesAtomic(ownership, File.ReadAllBytes(ownershipBackup));
+                var previousOwnership = new FileRecord
+                {
+                    Size = journal.OwnershipPreviousSize,
+                    Sha256 = journal.OwnershipPreviousSha256,
+                };
+                var previousBytes = File.ReadAllBytes(ownershipBackup);
+                var candidateOwnershipBytes = JsonSerializer.SerializeToUtf8Bytes(
+                    journal.Files.Keys.OrderBy(name => name, StringComparer.Ordinal).ToArray());
+                var candidateOwnership = CreateFileRecord(candidateOwnershipBytes);
+                if (File.Exists(ownership))
+                {
+                    if (FileMatches(ownership, previousOwnership))
+                    {
+                        // Already restored to the exact baseline ownership manifest.
+                    }
+                    else
+                    {
+                        if (!FileMatches(ownership, candidateOwnership))
+                            throw new InvalidDataException("Ownership manifest changed during interrupted update recovery.");
+                        WriteBytesAtomic(root, source.LogPath, ownership, OwnershipName, previousBytes, candidateOwnership);
+                    }
+                }
+                else WriteBytesAtomic(root, source.LogPath, ownership, OwnershipName, previousBytes, expectedPrevious: null);
             }
             else
             {
                 if (Directory.Exists(ownership)) throw new InvalidDataException("Ownership manifest path became a directory.");
-                if (File.Exists(ownership)) File.Delete(ownership);
+                var candidateOwnershipBytes = JsonSerializer.SerializeToUtf8Bytes(
+                    journal.Files.Keys.OrderBy(name => name, StringComparer.Ordinal).ToArray());
+                if (File.Exists(ownership))
+                {
+                    if (!FileMatches(ownership, CreateFileRecord(candidateOwnershipBytes)))
+                        throw new InvalidDataException("Ownership manifest changed during interrupted update recovery.");
+                    File.Delete(ownership);
+                }
             }
             RemoveEmptyAppDirectories(root);
             VerifyInventory(root, journal.BaseFiles);
@@ -939,35 +983,38 @@ internal static class FullAppUpdateService
         return SamePath(fullRoot, fullPath) || fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static void WriteJsonAtomic<T>(string path, T value)
+    private static FileRecord WriteJsonAtomic<T>(string root, string logPath, string path, string relativePath, T value,
+        FileRecord? expectedPrevious, Action<string, string, int>? beforeAttempt = null)
     {
+        return WriteBytesAtomic(root, logPath, path, relativePath, JsonSerializer.SerializeToUtf8Bytes(value),
+            expectedPrevious, beforeAttempt);
+    }
+
+    private static FileRecord WriteBytesAtomic(string root, string logPath, string path, string relativePath, byte[] bytes,
+        FileRecord? expectedPrevious, Action<string, string, int>? beforeAttempt = null)
+    {
+        EnsureNoReparsePath(root, path, "updater metadata target");
+        RequireOutsideData(root, path);
+        var planned = CreateFileRecord(bytes);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            var bytes = JsonSerializer.SerializeToUtf8Bytes(value);
-            WriteBytesAtomic(temporary, bytes, moveToPath: false);
-            if (File.Exists(path)) ReplaceExistingFile(temporary, path);
-            else File.Move(temporary, path);
-        }
-        finally { if (File.Exists(temporary)) File.Delete(temporary); }
-    }
-
-    private static void WriteBytesAtomic(string path, byte[] bytes, bool moveToPath = true)
-    {
-        var target = moveToPath ? path : path;
-        var temporary = moveToPath ? path + "." + Guid.NewGuid().ToString("N") + ".tmp" : path;
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-        {
-            stream.Write(bytes);
-            stream.Flush(true);
-        }
-        if (!moveToPath) return;
-        try
-        {
-            if (File.Exists(target)) ReplaceExistingFile(temporary, target);
-            else File.Move(temporary, target);
+            using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(bytes);
+                stream.Flush(true);
+            }
+            if (expectedPrevious is not null)
+                ReplaceExistingFile(temporary, path, root, logPath, relativePath, planned, expectedPrevious, beforeAttempt);
+            else
+            {
+                EnsureNoReparsePath(root, path, "updater metadata target");
+                if (File.Exists(path) || Directory.Exists(path))
+                    throw new IOException("Updater metadata target appeared after its absent pre-state was captured: " + relativePath);
+                File.Move(temporary, path);
+            }
+            return planned;
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
@@ -1042,23 +1089,70 @@ internal static class FullAppUpdateService
         return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
 
-    private static void ReplaceExistingFile(string source, string destination)
+    private static void ReplaceExistingFile(string source, string destination, string root, string logPath,
+        string relativePath, FileRecord expectedSource, FileRecord expectedDestination,
+        Action<string, string, int>? beforeAttempt = null)
     {
-        var delays = new[] { 50, 100, 200, 400, 800, 1_200, 1_600, 2_000 };
+        var lockDelays = new[] { 50, 100, 200, 400, 800, 1_200, 1_600, 2_000 };
+        var unableToRemoveDelays = new[] { 100, 250, 500 };
+        var lockRetries = 0;
+        var unableToRemoveRetries = 0;
         for (var attempt = 0; ; attempt++)
         {
+            // Revalidate exact caller-supplied state before the first call and every retry.
+            // Paths must remain within this install and contain no reparse point.
+            EnsureNoReparsePath(root, source, "replacement source");
+            EnsureNoReparsePath(root, destination, "replacement target");
+            RequireOutsideData(root, source);
+            RequireOutsideData(root, destination);
+            if (!FileMatches(source, expectedSource))
+                throw new InvalidDataException("Replacement staged file changed from its planned hash or size: " + relativePath);
+            if (!FileMatches(destination, expectedDestination))
+                throw new FullAppBaselineMismatchException("Replacement target changed from its expected pre-state: " + relativePath);
+
             try
             {
+                beforeAttempt?.Invoke(source, destination, attempt + 1);
                 File.Replace(source, destination, null, ignoreMetadataErrors: true);
                 return;
             }
-            catch (IOException ex) when (OperatingSystem.IsWindows() &&
-                ((ex.HResult & 0xFFFF) == 32 || (ex.HResult & 0xFFFF) == 33) && attempt < delays.Length)
+            catch (IOException ex) when (OperatingSystem.IsWindows())
             {
-                Thread.Sleep(delays[attempt]);
+                var error = ex.HResult & 0xFFFF;
+                int retryIndex;
+                int[] delays;
+                switch (error)
+                {
+                    case 32:
+                    case 33:
+                        retryIndex = lockRetries++;
+                        delays = lockDelays;
+                        break;
+                    case 1175:
+                        retryIndex = unableToRemoveRetries++;
+                        delays = unableToRemoveDelays;
+                        break;
+                    default:
+                        throw;
+                }
+                Log(logPath, $"replace failed path={relativePath} hresult=0x{ex.HResult:X8} attempt={attempt + 1}");
+                if (retryIndex >= delays.Length) throw;
+                Thread.Sleep(delays[retryIndex]);
             }
         }
     }
+
+    private static FileRecord? CaptureFileRecord(string root, string path, string relativePath)
+    {
+        EnsureNoReparsePath(root, path, "replacement target");
+        if (Directory.Exists(path)) throw new InvalidDataException("Replacement target became a directory: " + relativePath);
+        if (!File.Exists(path)) return null;
+        var info = new FileInfo(path);
+        return new FileRecord { Size = info.Length, Sha256 = HashFile(path) };
+    }
+
+    private static FileRecord CreateFileRecord(byte[] bytes) =>
+        new() { Size = bytes.LongLength, Sha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant() };
 
     private static bool IsSha256(string? value) => value is { Length: 64 } && value.All(char.IsAsciiHexDigit);
     private static bool IsSha1(string? value) => value is { Length: 40 } && value.All(char.IsAsciiHexDigit);

@@ -1174,7 +1174,14 @@ class CleanupLifecycleTests(unittest.TestCase):
             return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
         )
 
-    def _active_release_epoch_for_transition(self, root: Path, manifest: Path):
+    def _active_release_epoch_for_transition(
+        self,
+        root: Path,
+        manifest: Path,
+        *,
+        incident_identity: dict | None = None,
+        owner_reset_authorization: str | None = None,
+    ):
         previous_sha = "a" * 40
         (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
         git_guard = patch.object(
@@ -1185,7 +1192,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         incident_guard = patch.object(
             cleanup,
             "_incident_identity",
-            return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
+            return_value=incident_identity or {"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6},
         )
         epoch_root = cleanup._prospective_epoch_root()
         epoch_root.mkdir(parents=True, exist_ok=True)
@@ -1204,6 +1211,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                 epoch_id="epoch-transition-before",
                 source_sha=previous_sha,
                 release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                owner_reset_authorization=owner_reset_authorization,
             )
             self.assertTrue(created["ok"], created)
             registered = cleanup.register_release_task_scope()
@@ -1345,11 +1353,258 @@ class CleanupLifecycleTests(unittest.TestCase):
                 for path, content in preserved.items():
                     self.assertEqual(content, path.read_bytes())
 
+    def test_owner_rebaseline_preserves_and_verifies_eight_hop_history(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            missing_incident = {"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"}
+            self._active_release_epoch_for_transition(
+                _root,
+                manifest,
+                incident_identity=missing_incident,
+                owner_reset_authorization="Owner-approved fresh checkout boundary for test fixture",
+            )
+            for hop in range(1, 9):
+                before = manifest.read_bytes()
+                old = json.loads(before)["prospective_epoch"]
+                target_sha = f"{hop + 30:040x}"
+                _, _, ancestry, version, _incident = self._transition_guards()
+                with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry, version, patch.object(cleanup, "_incident_identity", return_value=missing_incident):
+                    result = cleanup.activate_prospective_epoch(
+                        dry_run=False,
+                        epoch_id=f"epoch-rebase-chain-{hop}",
+                        source_sha=target_sha,
+                        release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                        transition_from_epoch_id=old["epoch_id"],
+                        expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                        owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL,
+                    )
+                self.assertTrue(result["ok"], result)
+
+            old_bytes = manifest.read_bytes()
+            old_document = json.loads(old_bytes)
+            old_epoch = old_document["prospective_epoch"]
+            old_scopes = {
+                path: path.read_bytes()
+                for path in cleanup._prospective_epoch_root().rglob("*")
+                if path.is_file()
+            }
+            target_sha = f"{50:040x}"
+            _, _, ancestry, version, _incident = self._transition_guards()
+            authorization = cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL
+            common = {
+                "epoch_id": "epoch-rebaseline-approved-once",
+                "source_sha": target_sha,
+                "release_task_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                "rebaseline_from_epoch_id": old_epoch["epoch_id"],
+                "expected_manifest_sha256": cleanup.hashlib.sha256(old_bytes).hexdigest(),
+                "owner_rebaseline_authorization_id": cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                "owner_rebaseline_authorization": authorization,
+            }
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry, version, patch.object(cleanup, "_incident_identity", return_value=missing_incident):
+                plan = cleanup.activate_prospective_epoch(dry_run=True, **common)
+                self.assertTrue(plan["ok"], plan)
+                self.assertEqual(old_bytes, manifest.read_bytes())
+                applied = cleanup.activate_prospective_epoch(dry_run=False, **common)
+                self.assertTrue(applied["ok"], applied)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+                new_manifest = json.loads(manifest.read_bytes())
+                new_epoch = new_manifest["prospective_epoch"]
+                self.assertEqual(old_epoch["epoch_id"], new_epoch["rebaseline_provenance"]["previous_epoch_id"])
+                self.assertEqual(cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID, new_epoch["rebaseline_provenance"]["authorization_id"])
+                self.assertEqual(old_bytes, Path(new_epoch["rollback"]["path"]).read_bytes())
+                self.assertEqual(old_document["artifacts"], new_manifest["artifacts"][:len(old_document["artifacts"])])
+                self.assertEqual(old_document.get("archive", []), new_manifest.get("archive", []))
+                self.assertEqual([], applied["deletions"])
+                self.assertEqual(old_scopes, {
+                    path: path.read_bytes()
+                    for path in cleanup._prospective_epoch_root().rglob("*")
+                    if path.is_file() and path.parent.name != new_epoch["epoch_id"]
+                })
+
+                ordinary_run = work / "post-rebaseline-disposable"
+                ordinary_run.mkdir()
+                (ordinary_run / "receipt.json").write_text("{}", encoding="utf-8")
+                self._register(ordinary_run)
+                disposed = cleanup.cleanup_after_test([ordinary_run], reason="rebaseline-lifecycle", outcome="PASS")
+                self.assertTrue(disposed["ok"], disposed)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+                ancestor_policy = next(path for path in old_scopes if path.name == "epoch_policy.json")
+                ancestor_content = old_scopes[ancestor_policy]
+                ancestor_policy.write_bytes(b"tampered old policy")
+                failed_old_policy = cleanup.verify_prospective_epoch()
+                self.assertFalse(failed_old_policy["ok"])
+                self.assertTrue(any("epoch_policy_hash_mismatch" in reason for reason in failed_old_policy["reasons"]), failed_old_policy)
+                ancestor_policy.write_bytes(ancestor_content)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+                rollback_path = Path(old_epoch["rollback"]["path"])
+                rollback_content = old_scopes[rollback_path]
+                rollback_path.write_bytes(b"tampered old rollback")
+                failed_old_rollback = cleanup.verify_prospective_epoch()
+                self.assertFalse(failed_old_rollback["ok"])
+                self.assertTrue(any("rollback_snapshot_hash_mismatch" in reason for reason in failed_old_rollback["reasons"]))
+                rollback_path.write_bytes(rollback_content)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+                with patch.object(cleanup, "_incident_identity", return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6}):
+                    changed_incident = cleanup.verify_prospective_epoch()
+                self.assertFalse(changed_incident["ok"])
+                self.assertTrue(any("previous_identity_mismatch" in reason for reason in changed_incident["reasons"]))
+
+    def test_owner_rebaseline_refuses_stale_cas_bad_authority_and_second_use(self):
+        for failure_case in ("stale_hash", "wrong_epoch", "bad_approval_id", "bad_approval_text", "non_descendant"):
+            with self.subTest(failure_case=failure_case), self.isolated_workspace() as (root, _work, _game, manifest):
+                _previous_sha, old_bytes, _old_document, _old_epoch, old_scope, _old_files = self._active_release_epoch_for_transition(root, manifest)
+                target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards(descendant=failure_case != "non_descendant")
+                kwargs = {
+                    "dry_run": False,
+                    "epoch_id": "epoch-rebaseline-refusal",
+                    "source_sha": target_sha,
+                    "release_task_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                    "rebaseline_from_epoch_id": "wrong-epoch" if failure_case == "wrong_epoch" else "epoch-transition-before",
+                    "expected_manifest_sha256": "0" * 64 if failure_case == "stale_hash" else cleanup.hashlib.sha256(old_bytes).hexdigest(),
+                    "owner_rebaseline_authorization_id": "unapproved" if failure_case == "bad_approval_id" else cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                    "owner_rebaseline_authorization": "unapproved" if failure_case == "bad_approval_text" else cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                }
+                before = manifest.read_bytes()
+                with git_guard, ancestry_guard, version_guard, incident_guard:
+                    result = cleanup.activate_prospective_epoch(**kwargs)
+                self.assertFalse(result["ok"], result)
+                expected = {
+                    "stale_hash": "transition_manifest_hash_mismatch",
+                    "wrong_epoch": "epoch_rebaseline_active_id_mismatch",
+                    "bad_approval_id": "epoch_rebaseline_approval_id_invalid",
+                    "bad_approval_text": "epoch_rebaseline_owner_authorization_invalid",
+                    "non_descendant": "epoch_rebaseline_source_not_descendant",
+                }[failure_case]
+                self.assertIn(expected, result["reasons"])
+                self.assertEqual(before, manifest.read_bytes())
+                self.assertTrue(old_scope.is_dir())
+                self.assertFalse((cleanup._prospective_epoch_root() / "epoch-rebaseline-refusal").exists())
+
+    def test_owner_rebaseline_approval_cannot_be_reused_after_ordinary_transition(self):
+        with self.isolated_workspace() as (_root, _work, _game, manifest):
+            self._active_release_epoch_for_transition(_root, manifest)
+            before = manifest.read_bytes()
+            old = json.loads(before)["prospective_epoch"]
+            target_sha = f"{40:040x}"
+            _, _, ancestry, version, incident = self._transition_guards()
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry, version, incident:
+                first = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-rebaseline-once",
+                    source_sha=target_sha,
+                    release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                    rebaseline_from_epoch_id=old["epoch_id"],
+                    expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                    owner_rebaseline_authorization_id=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                    owner_rebaseline_authorization=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                )
+                self.assertTrue(first["ok"], first)
+
+            before_second = manifest.read_bytes()
+            old_second = json.loads(before_second)["prospective_epoch"]
+            second_sha = f"{41:040x}"
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": second_sha, "dirty": False, "error": ""}), ancestry, version, incident:
+                ordinary = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-after-rebaseline-transition",
+                    source_sha=second_sha,
+                    release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                    transition_from_epoch_id=old_second["epoch_id"],
+                    expected_manifest_sha256=cleanup.hashlib.sha256(before_second).hexdigest(),
+                    owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL,
+                )
+                self.assertTrue(ordinary["ok"], ordinary)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+                after_ordinary = manifest.read_bytes()
+                active = json.loads(after_ordinary)["prospective_epoch"]
+                refused = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-rebaseline-second-use",
+                    source_sha=f"{42:040x}",
+                    release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                    rebaseline_from_epoch_id=active["epoch_id"],
+                    expected_manifest_sha256=cleanup.hashlib.sha256(after_ordinary).hexdigest(),
+                    owner_rebaseline_authorization_id=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                    owner_rebaseline_authorization=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                )
+            self.assertFalse(refused["ok"], refused)
+            self.assertIn("epoch_rebaseline_approval_already_consumed", refused["reasons"])
+            self.assertEqual(after_ordinary, manifest.read_bytes())
+
+    def test_owner_rebaseline_refuses_writer_incomplete_inventory_and_rolls_back_verification_failure(self):
+        for failure_case in ("writer", "incomplete_inventory", "verify_failure", "manifest_conflict"):
+            with self.subTest(failure_case=failure_case), self.isolated_workspace() as (_root, work, _game, manifest):
+                _previous_sha, old_bytes, _old_document, _old_epoch, old_scope, old_files = self._active_release_epoch_for_transition(_root, manifest)
+                target_sha, git_guard, ancestry_guard, version_guard, incident_guard = self._transition_guards()
+                kwargs = {
+                    "epoch_id": "epoch-rebaseline-guarded",
+                    "source_sha": target_sha,
+                    "release_task_id": cleanup.RELEASE_TASK_BUDGET_ID,
+                    "rebaseline_from_epoch_id": "epoch-transition-before",
+                    "expected_manifest_sha256": cleanup.hashlib.sha256(old_bytes).hexdigest(),
+                    "owner_rebaseline_authorization_id": cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                    "owner_rebaseline_authorization": cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                    "dry_run": False,
+                }
+                lock = work / ".artifact-registry-epoch.writer.lock"
+                if failure_case == "writer":
+                    lock.write_text("active competing writer", encoding="utf-8")
+                before = manifest.read_bytes()
+                verify_failure = {"status": "PROVEN_BLOCKED", "ok": False, "reasons": ["injected_rebaseline_verification_failure"]}
+                try:
+                    with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry_guard, version_guard, incident_guard:
+                        context = patch.object(cleanup, "verify_prospective_epoch", return_value=verify_failure) if failure_case == "verify_failure" else patch.object(cleanup, "verify_prospective_epoch", wraps=cleanup.verify_prospective_epoch)
+                        atomic_context = contextlib.nullcontext()
+                        if failure_case == "manifest_conflict":
+                            atomic_write = cleanup._atomic_write_bytes
+
+                            def conflict_after_pending(path, payload):
+                                atomic_write(path, payload)
+                                if Path(path) == manifest and json.loads(payload).get("prospective_epoch", {}).get("status") == "PENDING":
+                                    competing = json.loads(manifest.read_bytes())
+                                    competing["concurrent_test_marker"] = True
+                                    manifest.write_text(json.dumps(competing, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+                            atomic_context = patch.object(cleanup, "_atomic_write_bytes", side_effect=conflict_after_pending)
+                        with context, atomic_context:
+                            result = cleanup.activate_prospective_epoch(max_items=1 if failure_case == "incomplete_inventory" else 100000, **kwargs)
+                finally:
+                    if lock.exists():
+                        lock.unlink()
+                self.assertFalse(result["ok"], result)
+                expected = {
+                    "writer": "registry_writer_active",
+                    "incomplete_inventory": "current_inventory_incomplete_or_budget_limited",
+                    "verify_failure": "injected_rebaseline_verification_failure",
+                    "manifest_conflict": "registry_state_changed_during_transition",
+                }[failure_case]
+                self.assertIn(expected, result["reasons"])
+                if failure_case == "manifest_conflict":
+                    concurrent = json.loads(manifest.read_bytes())
+                    self.assertTrue(concurrent.get("concurrent_test_marker"))
+                    self.assertEqual("PENDING", concurrent["prospective_epoch"]["status"])
+                    self.assertTrue((cleanup._prospective_epoch_root() / "epoch-rebaseline-guarded" / ".pending.json").is_file())
+                else:
+                    self.assertEqual(before, manifest.read_bytes())
+                self.assertTrue(old_scope.is_dir())
+                self.assertEqual(old_files, {
+                    path.relative_to(old_scope).as_posix(): path.read_bytes()
+                    for path in old_scope.rglob("*")
+                    if path.is_file()
+                })
+                if failure_case == "manifest_conflict":
+                    self.assertTrue((cleanup._prospective_epoch_root() / "epoch-rebaseline-guarded").is_dir())
+                else:
+                    self.assertFalse((cleanup._prospective_epoch_root() / "epoch-rebaseline-guarded").exists())
+
     def test_transition_traversal_refuses_cycle_and_depth_before_snapshot_read(self):
         self.assertEqual(["epoch_transition_cycle"], cleanup._epoch_verify_files(
             {"epoch_id": "epoch-cycle"}, _transition_seen=("epoch-cycle",)))
         self.assertEqual(["epoch_transition_depth_exceeded"], cleanup._epoch_verify_files(
-            {"epoch_id": "epoch-next"}, _transition_seen=tuple(f"epoch-{i}" for i in range(9))))
+            {"epoch_id": "epoch-next"}, _transition_depth=9))
 
     def test_prospective_epoch_transition_refuses_stale_hash_corrupt_old_epoch_and_non_descendant(self):
         for failure_case in ("stale_hash", "corrupt_old_epoch", "non_descendant", "bad_owner", "wrong_previous_epoch"):
@@ -1507,6 +1762,48 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(2, exit_code)
             self.assertIn("epoch transition requires", stderr.getvalue())
             self.assertEqual(before, manifest.read_bytes() if manifest.exists() else None)
+
+            stderr = io.StringIO()
+            with patch.object(
+                cleanup.sys,
+                "argv",
+                ["cleanup_work_artifacts.py", "--apply-prospective-epoch-rebaseline"],
+            ), contextlib.redirect_stderr(stderr):
+                exit_code = cleanup.main()
+            self.assertEqual(2, exit_code)
+            self.assertIn("epoch transition requires", stderr.getvalue())
+            self.assertEqual(before, manifest.read_bytes() if manifest.exists() else None)
+
+    def test_prospective_epoch_rebaseline_cli_forwards_cas_and_authority_for_plan_and_apply(self):
+        with self.isolated_workspace() as (_root, _work, _game, _manifest):
+            common = [
+                "--epoch-id", "epoch-cli-rebaseline",
+                "--source-sha", "a" * 40,
+                "--rebaseline-from-epoch-id", "epoch-cli-previous",
+                "--expected-manifest-sha256", "b" * 64,
+                "--owner-rebaseline-authorization-id", cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                "--owner-rebaseline-authorization", cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                "--release-task-id", cleanup.RELEASE_TASK_BUDGET_ID,
+            ]
+            for flag, expected_dry_run in (
+                ("--prospective-epoch-rebaseline-plan", True),
+                ("--apply-prospective-epoch-rebaseline", False),
+            ):
+                with self.subTest(flag=flag):
+                    stdout = io.StringIO()
+                    with patch.object(cleanup.sys, "argv", ["cleanup_work_artifacts.py", flag, *common]), \
+                        patch.dict(os.environ, {}, clear=False), \
+                        patch.object(cleanup, "activate_prospective_epoch", return_value={"ok": True, "status": "PASS"}) as activate, \
+                        contextlib.redirect_stdout(stdout):
+                        exit_code = cleanup.main()
+                    self.assertEqual(0, exit_code)
+                    self.assertIn('"status": "PASS"', stdout.getvalue())
+                    self.assertEqual(expected_dry_run, activate.call_args.kwargs["dry_run"])
+                    self.assertEqual("epoch-cli-rebaseline", activate.call_args.kwargs["epoch_id"])
+                    self.assertEqual("epoch-cli-previous", activate.call_args.kwargs["rebaseline_from_epoch_id"])
+                    self.assertEqual("b" * 64, activate.call_args.kwargs["expected_manifest_sha256"])
+                    self.assertEqual(cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID, activate.call_args.kwargs["owner_rebaseline_authorization_id"])
+                    self.assertEqual(cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL, activate.call_args.kwargs["owner_rebaseline_authorization"])
 
     def test_prospective_epoch_plan_is_read_only(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):

@@ -38,10 +38,13 @@ internal static class Program
             Run("FullAppUpdate_HealthFailureRollsBack", FullAppUpdate_HealthFailureRollsBack, failures);
             Run("FullAppUpdate_InterruptedTransactionRecovers", FullAppUpdate_InterruptedTransactionRecovers, failures);
             Run("FullAppUpdate_TamperAndBaselineMismatchFailClosed", FullAppUpdate_TamperAndBaselineMismatchFailClosed, failures);
+            Run("FullAppUpdate_Retries1175AgainstExactPreState", FullAppUpdate_Retries1175AgainstExactPreState, failures);
+            Run("FullAppUpdate_Persistent1175RollsBack", FullAppUpdate_Persistent1175RollsBack, failures);
+            Run("FullAppUpdate_1175RefusesChangedStagedAndTarget", FullAppUpdate_1175RefusesChangedStagedAndTarget, failures);
             Run("FullAppUpdate_GitHubAssetPathSizeAndHashAreBound", FullAppUpdate_GitHubAssetPathSizeAndHashAreBound, failures);
             if (failures.Count == 0)
             {
-                Console.WriteLine("Focused full-app updater tests: PASS (5)");
+                Console.WriteLine("Focused full-app updater tests: PASS (8)");
                 return 0;
             }
             Console.Error.WriteLine($"Focused full-app updater tests: FAIL ({failures.Count})");
@@ -125,6 +128,9 @@ internal static class Program
         Run("FullAppUpdate_HealthFailureRollsBack", FullAppUpdate_HealthFailureRollsBack, failures);
         Run("FullAppUpdate_InterruptedTransactionRecovers", FullAppUpdate_InterruptedTransactionRecovers, failures);
         Run("FullAppUpdate_TamperAndBaselineMismatchFailClosed", FullAppUpdate_TamperAndBaselineMismatchFailClosed, failures);
+        Run("FullAppUpdate_Retries1175AgainstExactPreState", FullAppUpdate_Retries1175AgainstExactPreState, failures);
+        Run("FullAppUpdate_Persistent1175RollsBack", FullAppUpdate_Persistent1175RollsBack, failures);
+        Run("FullAppUpdate_1175RefusesChangedStagedAndTarget", FullAppUpdate_1175RefusesChangedStagedAndTarget, failures);
         Run("WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset", WpfUpdate_GitHubSelectsNewestStableAndVerifiesAsset, failures);
         Run("WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation", WpfUpdate_AcceptsV01AndOnlyIdentityCaseVariation, failures);
         Run("WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback", WpfUpdate_GitHubNewestStableWithoutWpfDoesNotFallback, failures);
@@ -2747,6 +2753,113 @@ internal static class Program
             AssertTrue(File.Exists(Path.Combine(mismatch.Root, "app", "unowned.txt")));
         }
         finally { DeleteFullAppUpdateFixture(mismatch); }
+    }
+
+    private static void FullAppUpdate_Retries1175AgainstExactPreState()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var injected = new HashSet<string>(StringComparer.Ordinal);
+            var attempts = new Dictionary<string, int>(StringComparer.Ordinal);
+            void InjectOnce(string source, string destination, int attempt)
+            {
+                var relative = Path.GetRelativePath(fixture.Root, destination).Replace(Path.DirectorySeparatorChar, '/');
+                if (relative is not ("app/worker/replace.txt" or ".update/pending-full-app-update.json")) return;
+                attempts[relative] = attempt;
+                if (!injected.Add(relative)) return;
+                throw new IOException("injected 1175", unchecked((int)0x80070497));
+            }
+
+            var exit = FullAppUpdateService.RunForTest(fixture.SourcePath, fixture.Root,
+                healthCheck: (exe, root) => root == fixture.Root && HashFile(exe) == fixture.CandidateExeHash,
+                replaceAttemptHook: InjectOnce);
+
+            AssertEqual(0, exit);
+            AssertEqual(2, attempts["app/worker/replace.txt"]);
+            AssertEqual(2, attempts[".update/pending-full-app-update.json"]);
+            AssertEqual(fixture.CandidateExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertEqual("candidate content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
+            AssertTrue(ReadFullAppUpdateLog(fixture).Contains("replace failed path=app/worker/replace.txt hresult=0x80070497 attempt=1", StringComparison.Ordinal));
+            AssertTrue(ReadFullAppUpdateLog(fixture).Contains("replace failed path=.update/pending-full-app-update.json hresult=0x80070497 attempt=1", StringComparison.Ordinal));
+            AssertFalse(ReadFullAppUpdateLog(fixture).Contains(fixture.Root, StringComparison.OrdinalIgnoreCase));
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private static void FullAppUpdate_Persistent1175RollsBack()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var attempts = 0;
+            void InjectPersistent(string source, string destination, int attempt)
+            {
+                var relative = Path.GetRelativePath(fixture.Root, destination).Replace(Path.DirectorySeparatorChar, '/');
+                if (relative != "VNText Studio.exe") return;
+                attempts++;
+                throw new IOException("injected persistent 1175", unchecked((int)0x80070497));
+            }
+
+            var exit = FullAppUpdateService.RunForTest(fixture.SourcePath, fixture.Root,
+                healthCheck: (exe, _) => HashFile(exe) == fixture.BaselineExeHash,
+                replaceAttemptHook: InjectPersistent);
+
+            AssertEqual(5, exit);
+            AssertEqual(4, attempts);
+            AssertEqual(fixture.BaselineExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertEqual("baseline content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
+            AssertTrue(File.Exists(Path.Combine(fixture.Root, "app", "worker", "obsolete.txt")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, "app", "worker", "added.txt")));
+            AssertFalse(File.Exists(Path.Combine(fixture.Root, ".update", "pending-full-app-update.json")));
+            AssertEqual(4, ReadFullAppUpdateLog(fixture).Split("replace failed path=VNText Studio.exe", StringSplitOptions.None).Length - 1);
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
+    private static void FullAppUpdate_1175RefusesChangedStagedAndTarget()
+    {
+        var stagedMutation = CreateFullAppUpdateFixture();
+        try
+        {
+            var injected = false;
+            void MutateStaged(string source, string destination, int attempt)
+            {
+                if (Path.GetRelativePath(stagedMutation.Root, destination) != "VNText Studio.exe" || injected) return;
+                injected = true;
+                File.WriteAllText(source, "changed staged bytes");
+                throw new IOException("injected 1175 after staged mutation", unchecked((int)0x80070497));
+            }
+            var exit = FullAppUpdateService.RunForTest(stagedMutation.SourcePath, stagedMutation.Root,
+                healthCheck: (exe, _) => HashFile(exe) == stagedMutation.BaselineExeHash,
+                replaceAttemptHook: MutateStaged);
+            AssertEqual(5, exit);
+            AssertEqual(stagedMutation.BaselineExeHash, HashFile(Path.Combine(stagedMutation.Root, "VNText Studio.exe")));
+            AssertEqual("baseline content", File.ReadAllText(Path.Combine(stagedMutation.Root, "app", "worker", "replace.txt")));
+            AssertFalse(File.Exists(Path.Combine(stagedMutation.Root, ".update", "pending-full-app-update.json")));
+            AssertTrue(ReadFullAppUpdateLog(stagedMutation).Contains("staged file changed from its planned hash or size: VNText Studio.exe", StringComparison.Ordinal));
+        }
+        finally { DeleteFullAppUpdateFixture(stagedMutation); }
+
+        var targetMutation = CreateFullAppUpdateFixture();
+        try
+        {
+            var injected = false;
+            void MutateTarget(string source, string destination, int attempt)
+            {
+                if (Path.GetRelativePath(targetMutation.Root, destination) != "VNText Studio.exe" || injected) return;
+                injected = true;
+                File.WriteAllText(destination, "changed target bytes");
+                throw new IOException("injected 1175 after target mutation", unchecked((int)0x80070497));
+            }
+            var exit = FullAppUpdateService.RunForTest(targetMutation.SourcePath, targetMutation.Root,
+                replaceAttemptHook: MutateTarget);
+            AssertEqual(6, exit);
+            AssertEqual("changed target bytes", File.ReadAllText(Path.Combine(targetMutation.Root, "VNText Studio.exe")));
+            AssertTrue(File.Exists(Path.Combine(targetMutation.Root, ".update", "pending-full-app-update.json")));
+            AssertTrue(ReadFullAppUpdateLog(targetMutation).Contains("target changed from its expected pre-state: VNText Studio.exe", StringComparison.Ordinal));
+        }
+        finally { DeleteFullAppUpdateFixture(targetMutation); }
     }
 
     private static void FullAppUpdate_GitHubAssetPathSizeAndHashAreBound()
