@@ -2208,7 +2208,7 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
         exemptions.append({"path": copy_relative, "bytes": copy_bytes, "limit_bytes": copy_limit,
                            "reason": "Owner approval 2026-10-10, one registered disposable copy only"})
     shared_bytes = sum(exempt_bytes[relative] for relative in PROJECT_SIZE_EXEMPTIONS)
-    return {
+    result = {
         "root": str(root),
         "approved_game_copy_bytes": copy_bytes,
         "approved_game_copy_limit_bytes": copy_limit if copy_exemption else 0,
@@ -2223,6 +2223,35 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
         "inventory": budget.report(),
         "errors": errors[:REPORT_INLINE_RECORD_LIMIT],
     }
+    diagnostic_path = str(os.environ.get("VNTEXT_RELEASE_QUOTA_DIAGNOSTIC") or "").strip()
+    if diagnostic_path:
+        target = Path(diagnostic_path)
+        artifact_id = str(os.environ.get("VNTEXT_RELEASE_QUOTA_DIAGNOSTIC_ARTIFACT_ID") or "").strip()
+        scope = ambient_scope()
+        try:
+            resolved = assert_artifact_under_work(target, "release quota diagnostic")
+            info = target.lstat() if os.path.lexists(target) else None
+            attributes = int(getattr(info, "st_file_attributes", 0)) if info else 0
+            is_link = bool(info and (stat.S_ISLNK(info.st_mode) or attributes & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)))
+            manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+            registered = next((item for item in manifest.get("artifacts", []) if item.get("id") == artifact_id), None)
+            if (
+                artifact_id
+                and resolved == target.resolve()
+                and target.parent.is_dir()
+                and not is_link
+                and (info is None or stat.S_ISREG(info.st_mode))
+                and registered
+                and Path(registered.get("path", "")).resolve() == resolved
+                and registered.get("owner") == "test_renpy_native_sdk.py"
+                and registered.get("lifecycle") == "DISPOSABLE"
+                and registered.get("scope_id") == scope["scope_id"]
+                and registered.get("run_id") == scope["run_id"]
+            ):
+                target.write_text(json.dumps(result, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+        except (OSError, RuntimeError, ValueError, TypeError, json.JSONDecodeError):
+            pass
+    return result
 
 
 def _migration_source_sha() -> str:

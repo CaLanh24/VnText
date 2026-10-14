@@ -7,6 +7,8 @@ param(
     [string]$PythonPath = "",
     [string]$WorkerVenvRoot = "",
     [string]$ModelRoot = "",
+    [string]$DotnetSdkRoot = "",
+    [string]$NuGetPackagesRoot = "",
     [string]$SourceRevision = "",
     [string]$WpfUpdateVersion = "",
     [string]$FullAppUpdateBaselineRoot = "",
@@ -59,6 +61,12 @@ function Assert-ReleaseRootLayout {
 if ($RequireIsolatedArtifacts -and -not $UsePreinstalledDependencies) {
     throw "Isolated publish must use only preinstalled dependencies (-UsePreinstalledDependencies)."
 }
+if ($RequireIsolatedArtifacts -and ([string]::IsNullOrWhiteSpace($DotnetSdkRoot) -or -not (Test-Path -LiteralPath $DotnetSdkRoot -PathType Container))) {
+    throw "Isolated publish requires an existing explicit shared DotnetSdkRoot."
+}
+if ($RequireIsolatedArtifacts -and ([string]::IsNullOrWhiteSpace($NuGetPackagesRoot) -or -not (Test-Path -LiteralPath $NuGetPackagesRoot -PathType Container))) {
+    throw "Isolated publish requires an existing explicit shared NuGetPackagesRoot."
+}
 if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLegacy)) {
     throw "Isolated publish requires the focused preflight/build path: -SkipTests, WPF build enabled, and Python preview build disabled."
 }
@@ -100,6 +108,8 @@ if (-not (Test-Path -LiteralPath (Join-Path $WorkerVenvRoot "Scripts\python.exe"
     throw "WorkerVenvRoot must contain Scripts\python.exe: $WorkerVenvRoot"
 }
 $ModelRoot = if ([string]::IsNullOrWhiteSpace($ModelRoot)) { Join-Path $ArtifactWorkRoot "models\opus-mt-en-vi-int8" } else { [System.IO.Path]::GetFullPath($ModelRoot) }
+$DotnetSdkRoot = if ([string]::IsNullOrWhiteSpace($DotnetSdkRoot)) { Join-Path $DevRoot ".dev-env\dotnet-sdk-10" } else { [System.IO.Path]::GetFullPath($DotnetSdkRoot) }
+$NuGetPackagesRoot = if ([string]::IsNullOrWhiteSpace($NuGetPackagesRoot)) { "" } else { [System.IO.Path]::GetFullPath($NuGetPackagesRoot) }
 $canonicalRepoRoot = Split-Path -Parent $ArtifactHelpersRoot
 $canonicalRepoRoot = Split-Path -Parent $canonicalRepoRoot
 $expectedDevRunRoot = [System.IO.Path]::GetFullPath((Join-Path $canonicalRepoRoot "DEV_RUN"))
@@ -613,9 +623,7 @@ function Assert-ReleaseLayout([string]$Root, [string]$RuntimeVersion, [string]$H
 }
 
 if ($RequireIsolatedArtifacts) {
-    $modelTarget = Join-Path $devDataRoot "models\opus-mt-en-vi-int8"
     if (-not (Test-Path -LiteralPath (Join-Path $ModelRoot "model.bin"))) { throw "Offline preflight model missing: $ModelRoot" }
-    if (-not (Test-Path -LiteralPath (Join-Path $modelTarget "model.bin"))) { Copy-RuntimeTree $ModelRoot $modelTarget }
 }
 
 Write-Host "`n[0/5] DEV release_verify (pre-build gate)..." -ForegroundColor Yellow
@@ -624,13 +632,14 @@ $preflightReport = Join-Path $WorkRoot ($publishScope + "-release_verify.json")
 Register-WorkPath $publishScope $publishArtifactRoot "isolated Setup publish and preflight run scope" "DISPOSABLE" $publishArtifactRoot
 Register-WorkPath ($publishScope + "-verify") $preflightRunRoot "isolated release_verify run scope" "DISPOSABLE" $publishArtifactRoot
 Register-WorkPath ($publishScope + "-verify") $preflightReport "retained release_verify preflight evidence" "RETAINED" $WorkRoot
-$verifyEnvNames = @("VNTEXT_RELEASE_VERIFY_RUN_ROOT", "VNTEXT_ARTIFACT_SCOPE_ROOT", "VNTEXT_DEV_RUN_ROOT", "VNTEXT_WORK_ARTIFACTS_ROOT")
+$verifyEnvNames = @("VNTEXT_RELEASE_VERIFY_RUN_ROOT", "VNTEXT_ARTIFACT_SCOPE_ROOT", "VNTEXT_DEV_RUN_ROOT", "VNTEXT_WORK_ARTIFACTS_ROOT", "VNTEXT_CT2_MODEL")
 $verifyEnvPrevious = @{}
 foreach ($name in $verifyEnvNames) { $verifyEnvPrevious[$name] = [Environment]::GetEnvironmentVariable($name, "Process") }
 $env:VNTEXT_RELEASE_VERIFY_RUN_ROOT = $preflightRunRoot
 $env:VNTEXT_ARTIFACT_SCOPE_ROOT = $publishArtifactRoot
 $env:VNTEXT_DEV_RUN_ROOT = $DevRunRoot
 $env:VNTEXT_WORK_ARTIFACTS_ROOT = $preflightRunRoot
+$env:VNTEXT_CT2_MODEL = $ModelRoot
 $preflightCode = 1
 try {
     $savedUserProfile = $env:USERPROFILE
@@ -723,13 +732,13 @@ $wpfPublish = Join-Path $DevRunRoot "wpf_publish"
 $wpfBuiltExe = Join-Path $wpfPublish "VNText.Studio.App.exe"
 $wpfUpdatePublish = Join-Path $publishArtifactRoot "wpf_update_publish"
 $dotnetRuntimeRoot = Join-Path $publishArtifactRoot "_dotnet"
-$dotnetSdkRoot = Join-Path $DevRoot ".dev-env\dotnet-sdk-10"
+$dotnetSdkRoot = $DotnetSdkRoot
 $dotnet = Join-Path $dotnetSdkRoot "dotnet.exe"
 $dotnetAppData = Join-Path $dotnetRuntimeRoot "appdata"
 $dotnetLocalAppData = Join-Path $dotnetRuntimeRoot "localappdata"
 $dotnetCliHome = Join-Path $dotnetRuntimeRoot "cli_home"
 $nugetConfig = Join-Path $dotnetRuntimeRoot "NuGet.Config"
-$nugetPackages = Join-Path $dotnetRuntimeRoot "packages"
+$nugetPackages = if ($NuGetPackagesRoot) { $NuGetPackagesRoot } else { Join-Path $dotnetRuntimeRoot "packages" }
 $dotnetLayoutTargets = Join-Path $dotnetRuntimeRoot "layout-proof.targets"
 $globalDotnetRoot = @(
     (Join-Path $env:ProgramFiles "dotnet"),
@@ -755,6 +764,7 @@ if (-not (Test-Path -LiteralPath $dotnet) -or $sdkVersions.Count -eq 0 -or $appH
     throw "The approved local .NET 10 SDK is incomplete at $dotnetSdkRoot"
 }
 $appHostPackVersion = $appHostVersions[0].Name
+Write-Host "Using existing .NET SDK root $dotnetSdkRoot and NuGet packages at $nugetPackages" -ForegroundColor DarkGray
 
 if (-not $SkipBuild) {
     $buildTemp = Join-Path $dotnetRuntimeRoot "temp"
@@ -764,6 +774,18 @@ if (-not $SkipBuild) {
     $env:TMP = $buildTemp
     $env:TMPDIR = $buildTemp
     $env:PIP_CACHE_DIR = $pipCache
+    $env:APPDATA = $dotnetAppData
+    $env:LOCALAPPDATA = $dotnetLocalAppData
+    $env:DOTNET_CLI_HOME = $dotnetCliHome
+    $env:DOTNET_ROOT = $dotnetSdkRoot
+    $env:DOTNET_ROOT_X64 = $dotnetSdkRoot
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1"
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+    $env:NUGET_PACKAGES = $nugetPackages
+    $selectedSdk = (& $dotnet --version).Trim()
+    if ($LASTEXITCODE -ne 0 -or $selectedSdk -ne $sdkVersions[0].Name) {
+        throw "Selected .NET SDK did not match the existing SDK root version: $selectedSdk"
+    }
     Write-Host "`n[2/5] Install build deps..." -ForegroundColor Yellow
     $buildRequirementFiles = @(
         (Join-Path $DevRoot "requirements.txt"),
@@ -790,22 +812,25 @@ if (-not $SkipBuild) {
     foreach ($path in @($dotnetAppData, $dotnetLocalAppData, $dotnetCliHome)) {
         New-Item -ItemType Directory -Path $path -Force | Out-Null
     }
-    New-Item -ItemType Directory -Path $nugetPackages -Force | Out-Null
+    if (-not (Test-Path -LiteralPath $nugetPackages -PathType Container)) {
+        New-Item -ItemType Directory -Path $nugetPackages -Force | Out-Null
+    }
     foreach ($pack in @("Microsoft.NETCore.App.Ref", "Microsoft.WindowsDesktop.App.Ref", "Microsoft.AspNetCore.App.Ref")) {
         $source = Join-Path $globalDotnetRoot "packs\$pack\$frameworkRuntimeVersion"
         $target = Join-Path $dotnetSdkRoot "packs\$pack\$frameworkRuntimeVersion"
         if (-not (Test-Path -LiteralPath $target -PathType Container)) {
+            if ($RequireIsolatedArtifacts) { throw "Shared .NET SDK reference pack is missing: $target" }
             if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Offline targeting pack missing: $source" }
             New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
             Copy-Item -LiteralPath $source -Destination $target -Recurse -Force
         }
     }
-    $globalNugetPackages = Join-Path $env:USERPROFILE ".nuget\packages"
+    $globalNugetPackages = if ($NuGetPackagesRoot) { $NuGetPackagesRoot } else { Join-Path $env:USERPROFILE ".nuget\packages" }
     foreach ($package in @("microsoft.netcore.app.runtime.win-x64", "microsoft.windowsdesktop.app.runtime.win-x64", "microsoft.aspnetcore.app.runtime.win-x64")) {
         $source = Join-Path $globalNugetPackages "$package\$frameworkRuntimeVersion"
         $target = Join-Path $nugetPackages "$package\$frameworkRuntimeVersion"
-        if (-not (Test-Path -LiteralPath $target -PathType Container)) {
-            if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Offline NuGet runtime pack missing: $source" }
+        if (-not (Test-Path -LiteralPath $source -PathType Container)) { throw "Offline NuGet runtime pack missing: $source" }
+        if (-not $NuGetPackagesRoot -and -not (Test-Path -LiteralPath $target -PathType Container)) {
             New-Item -ItemType Directory -Path (Split-Path -Parent $target) -Force | Out-Null
             Copy-Item -LiteralPath $source -Destination $target -Recurse -Force
         }
@@ -821,11 +846,6 @@ if (-not $SkipBuild) {
     $env:APPDATA = $dotnetAppData
     $env:LOCALAPPDATA = $dotnetLocalAppData
     $env:DOTNET_CLI_HOME = $dotnetCliHome
-    $env:DOTNET_ROOT = $dotnetSdkRoot
-    $env:DOTNET_ROOT_X64 = $dotnetSdkRoot
-    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1"
-    $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
-    $env:NUGET_PACKAGES = $nugetPackages
     $targets = @"
 <Project>
   <ItemGroup>
@@ -1082,12 +1102,8 @@ $releaseSiteFull = [System.IO.Path]::GetFullPath($releaseSite)
 $systemSiteFull = [System.IO.Path]::GetFullPath($systemSite)
 if ($releaseSiteFull -ne $systemSiteFull) {
     Write-Host "Merge system site-packages: $systemSiteFull" -ForegroundColor DarkGray
-    Get-ChildItem -LiteralPath $systemSiteFull -Force | ForEach-Object {
-        $destination = Join-Path $releaseSite $_.Name
-        if (-not (Test-Path -LiteralPath $destination)) {
-            Copy-Item -LiteralPath $_.FullName -Destination $destination -Recurse -Force
-        }
-    }
+    & $Python -B (Join-Path $DevRoot "release\prune_worker_venv.py") --merge-pruned-site $systemSiteFull $releaseSiteFull
+    if ($LASTEXITCODE -ne 0) { throw "filtered system site-packages merge failed" }
 }
 Get-ChildItem -LiteralPath $releaseSite -Recurse -Directory -Filter "__pycache__" -Force |
     Sort-Object FullName -Descending |

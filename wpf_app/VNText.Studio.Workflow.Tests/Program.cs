@@ -48,6 +48,18 @@ internal static class Program
             foreach (var f in failures) Console.Error.WriteLine(" - " + f);
             return 1;
         }
+        if (args.Contains("--github-handoff-only", StringComparer.Ordinal))
+        {
+            Run("WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose", WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose, failures);
+            if (failures.Count == 0)
+            {
+                Console.WriteLine("Focused GitHub handoff test: PASS (1)");
+                return 0;
+            }
+            Console.Error.WriteLine("Focused GitHub handoff test: FAIL (1)");
+            foreach (var failure in failures) Console.Error.WriteLine(" - " + failure);
+            return 1;
+        }
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
         Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -2353,6 +2365,13 @@ internal static class Program
             AssertTrue(File.Exists(check.PackagePath));
             var result = WpfUpdateService.RunGitHubUpdaterForTest(fixture.SourcePath, fixture.Root,
                 check.PackagePath, check.PackageSha256, check.Version);
+            var updateLog = Path.Combine(fixture.Root, ".update", "update.log");
+            if (result != 0 && File.Exists(updateLog))
+            {
+                var diagnostic = File.ReadAllText(updateLog);
+                if (diagnostic.Length > 16000) diagnostic = diagnostic[^16000..];
+                Console.Error.WriteLine("WPF_HANDOFF_UPDATE_LOG_BEGIN\n" + diagnostic + "\nWPF_HANDOFF_UPDATE_LOG_END");
+            }
             AssertEqual(0, result);
             AssertFalse(File.Exists(check.PackagePath));
             AssertEqual(dataHash, HashFile(dataPath));

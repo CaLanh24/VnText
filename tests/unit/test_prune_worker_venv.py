@@ -115,6 +115,59 @@ class PruneWorkerVenvTests(unittest.TestCase):
         copied = destination / long_file.relative_to(source)
         self.assertEqual("runtime", copied.read_text(encoding="utf-8"))
 
+    def test_filtered_system_site_merge_matches_retained_contents_and_skips_existing_roots(self):
+        root = self.fixture("prune-system-site-merge")
+        source = root / "system-site"
+        destination = root / "release-site"
+        destination.mkdir()
+        (source / "UnityPy").mkdir(parents=True)
+        (source / "UnityPy/__init__.py").write_text("system", encoding="utf-8")
+        (source / "UnityPy-1.0.dist-info/METADATA").parent.mkdir()
+        (source / "UnityPy-1.0.dist-info/METADATA").write_text("system metadata", encoding="utf-8")
+        (source / "newpkg").mkdir()
+        (source / "newpkg/__init__.py").write_text("new", encoding="utf-8")
+        (source / "newpkg/__pycache__").mkdir()
+        (source / "newpkg/__pycache__/ignored.pyc").write_bytes(b"cache")
+        (source / "torch").mkdir()
+        (source / "torch/__init__.py").write_text("pruned", encoding="utf-8")
+        (destination / "UnityPy").mkdir()
+        (destination / "UnityPy/__init__.py").write_text("staged", encoding="utf-8")
+
+        report = prune_worker_venv.merge_pruned_site(source, destination)
+
+        self.assertEqual("staged", (destination / "UnityPy/__init__.py").read_text(encoding="utf-8"))
+        self.assertEqual("system metadata", (destination / "UnityPy-1.0.dist-info/METADATA").read_text(encoding="utf-8"))
+        self.assertEqual("new", (destination / "newpkg/__init__.py").read_text(encoding="utf-8"))
+        self.assertFalse((destination / "newpkg/__pycache__").exists())
+        self.assertFalse((destination / "torch").exists())
+        self.assertEqual({"newpkg", "UnityPy-1.0.dist-info"}, set(report["roots_added"]))
+        self.assertEqual("system", (source / "UnityPy/__init__.py").read_text(encoding="utf-8"))
+        self.assertEqual([], list(root.glob(".filtered-system-site-*")))
+
+    def test_filtered_system_site_merge_rolls_back_new_roots_on_error(self):
+        root = self.fixture("prune-system-site-error")
+        source = root / "system-site"
+        destination = root / "release-site"
+        destination.mkdir()
+        for name in ("first", "second"):
+            (source / name).mkdir(parents=True)
+            (source / name / "module.py").write_text(name, encoding="utf-8")
+        real_replace = prune_worker_venv.os.replace
+        calls = 0
+
+        def fail_second(source_path, destination_path):
+            nonlocal calls
+            calls += 1
+            if calls == 2:
+                raise OSError("merge fixture failure")
+            return real_replace(source_path, destination_path)
+
+        with patch.object(prune_worker_venv.os, "replace", side_effect=fail_second):
+            with self.assertRaisesRegex(OSError, "merge fixture failure"):
+                prune_worker_venv.merge_pruned_site(source, destination)
+        self.assertEqual([], list(destination.iterdir()))
+        self.assertEqual([], list(root.glob(".filtered-system-site-*")))
+
     def test_prunes_only_fmod_vendor_subtree_and_preserves_helper_license(self):
         root = self.fixture("prune-fmod-vendor") / ".venv"
         site = root / "Lib" / "site-packages"

@@ -1,9 +1,11 @@
 """Prune RELEASE worker .venv to packages used by the shipped CT2 worker."""
 from __future__ import annotations
 
+import os
 import shutil
 import sys
 import re
+import tempfile
 from pathlib import Path
 
 # Transformers stays because CT2 uses MarianTokenizer; PyTorch is not shipped.
@@ -54,20 +56,21 @@ DROP_SCRIPT_GLOBS = ("pip*", "pytest*", "pyinstaller*", "torch*", "activate*")
 DROP_COPY_DIRS = {"__pycache__", ".pytest_cache", ".mypy_cache", ".git", "test", "tests"}
 
 
-def _copy_ignore(relative: Path, is_dir: bool) -> bool:
+def _copy_ignore(relative: Path, is_dir: bool, *, site_packages_root: bool = False) -> bool:
     parts = relative.parts
     name = relative.name
     if any(part.lower() in DROP_COPY_DIRS for part in parts) or relative.suffix.lower() in {".pyc", ".pyo", ".log"}:
         return True
-    if len(parts) >= 3 and parts[:2] == ("Lib", "site-packages"):
-        package = parts[2]
+    package_offset = 0 if site_packages_root else 2 if parts[:2] == ("Lib", "site-packages") else None
+    if package_offset is not None and len(parts) > package_offset:
+        package = parts[package_offset]
         if package in DROP_PACKAGES:
             return True
         if package.endswith(".dist-info"):
             stem = package.split("-")[0].lower()
             if stem in {item.lower() for item in DROP_PACKAGES}:
                 return True
-        if parts[2:4] == ("fmod_toolkit", "libfmod"):
+        if parts[package_offset:package_offset + 2] == ("fmod_toolkit", "libfmod"):
             return True
     if len(parts) >= 2 and parts[0] == "Scripts" and any(
         name.lower().startswith(glob.rstrip("*").lower()) for glob in DROP_SCRIPT_GLOBS
@@ -76,9 +79,8 @@ def _copy_ignore(relative: Path, is_dir: bool) -> bool:
     return False
 
 
-def copy_pruned_source(source: Path, destination: Path) -> dict:
-    """Copy only worker-retained venv files so a raw venv is never staged first."""
-
+def _copy_pruned_tree(source: Path, destination: Path, *, require_worker_python: bool,
+                      site_packages_root: bool = False) -> dict:
     source = source.resolve()
     destination = destination.resolve()
     if not source.is_dir():
@@ -92,7 +94,7 @@ def copy_pruned_source(source: Path, destination: Path) -> dict:
     try:
         for item in source.rglob("*"):
             relative = item.relative_to(source)
-            if _copy_ignore(relative, item.is_dir()):
+            if _copy_ignore(relative, item.is_dir(), site_packages_root=site_packages_root):
                 continue
             if item.is_symlink():
                 raise RuntimeError(f"worker venv source contains a link: {item}")
@@ -106,13 +108,55 @@ def copy_pruned_source(source: Path, destination: Path) -> dict:
                 copied_files += 1
             else:
                 raise RuntimeError(f"worker venv source contains a special file: {item}")
-        if not (destination / "Scripts" / "python.exe").is_file():
+        if require_worker_python and not (destination / "Scripts" / "python.exe").is_file():
             raise FileNotFoundError(f"filtered worker venv is missing Scripts/python.exe: {destination}")
     except BaseException:
         if destination.exists() and not destination.is_symlink():
             shutil.rmtree(destination)
         raise
     return {"source": str(source), "destination": str(destination), "bytes": copied_bytes, "files": copied_files}
+
+
+def copy_pruned_source(source: Path, destination: Path) -> dict:
+    """Copy only worker-retained venv files so a raw venv is never staged first."""
+    if source.is_symlink():
+        raise RuntimeError(f"worker venv source contains a link: {source}")
+    return _copy_pruned_tree(source, destination, require_worker_python=True)
+
+
+def merge_pruned_site(source: Path, destination: Path) -> dict:
+    """Merge filtered system-site roots, preserving every existing staged root."""
+    if source.is_symlink() or destination.is_symlink():
+        raise RuntimeError("system site-packages source and destination must not be links")
+    source = source.resolve()
+    destination = destination.resolve()
+    if not source.is_dir() or not destination.is_dir():
+        raise FileNotFoundError("system site-packages source and destination must exist")
+    if source == destination or source in destination.parents or destination in source.parents:
+        raise ValueError("system site-packages source and destination must not overlap")
+    staging_root = Path(tempfile.mkdtemp(prefix=".filtered-system-site-", dir=destination.parent))
+    staged = staging_root / "site"
+    moved: list[Path] = []
+    try:
+        _copy_pruned_tree(source, staged, require_worker_python=False, site_packages_root=True)
+        for item in staged.iterdir():
+            target = destination / item.name
+            if target.exists() or target.is_symlink():
+                continue
+            os.replace(item, target)
+            moved.append(target)
+        return {"source": str(source), "destination": str(destination),
+                "roots_added": [item.name for item in moved]}
+    except BaseException:
+        for item in reversed(moved):
+            if item.is_dir() and not item.is_symlink():
+                shutil.rmtree(item)
+            else:
+                item.unlink(missing_ok=True)
+        raise
+    finally:
+        if staging_root.exists() and not staging_root.is_symlink():
+            shutil.rmtree(staging_root)
 
 
 def assert_no_fmod_binaries(root: Path) -> None:
@@ -199,6 +243,13 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         report = copy_pruned_source(Path(argv[1]), Path(argv[2]))
         print(f"filtered venv copy: {report['files']} files, {report['bytes']} bytes")
+        return 0
+    if argv[0] == "--merge-pruned-site":
+        if len(argv) != 3:
+            print("usage: prune_worker_venv.py --merge-pruned-site <system-site-packages> <release-site-packages>", file=sys.stderr)
+            return 2
+        report = merge_pruned_site(Path(argv[1]), Path(argv[2]))
+        print(f"filtered system site merge: {len(report['roots_added'])} roots added")
         return 0
     root = Path(argv[0]).resolve()
     report = prune_venv(root)

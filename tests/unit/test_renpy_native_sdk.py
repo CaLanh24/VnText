@@ -11,7 +11,7 @@ import zlib
 import unittest
 from vntext.renpy_toolchain import validate_sdk, copy_template_workspace, generate_empty_vietnamese_template
 from vntext.renpy_extract import extract_native_template_entries, parse_renpy_translation_templates
-from tests.lib.work_paths import work_temp_dir
+from tests.lib.work_paths import WORK_ROOT, ambient_scope, register_artifact, work_temp_dir
 
 SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK',str(Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3')))
 
@@ -22,12 +22,31 @@ class NativeRenPySdkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=self._managed_temp_root) as temp:
             root=Path(temp);source=root/'source';(source/'game').mkdir(parents=True)
             (source/'game/script.rpy').write_text('define e = Character("Eileen")\nlabel start:\n    e "Hello there, my friend."\n    return\n',encoding='utf-8')
-            proc=start_worker()
+            scope = ambient_scope()
+            quota_diagnostic = WORK_ROOT / f"native-quota-{scope['scope_id']}.json"
+            diagnostic_id = f"native-quota-diagnostic:{scope['scope_id']}"
+            register_artifact(
+                artifact_id=diagnostic_id,
+                path=quota_diagnostic,
+                kind="quota_diagnostic",
+                created_by="test_renpy_native_sdk.py",
+                owner="test_renpy_native_sdk.py",
+                purpose="bounded native worker copy-budget diagnostic",
+                lifecycle="DISPOSABLE",
+                scope_id=scope["scope_id"],
+                run_id=scope["run_id"],
+                scope_root=scope["scope_root"],
+            )
+            proc=start_worker({
+                'VNTEXT_RELEASE_QUOTA_DIAGNOSTIC': str(quota_diagnostic),
+                'VNTEXT_RELEASE_QUOTA_DIAGNOSTIC_ARTIFACT_ID': diagnostic_id,
+            })
             try:
                 read_ready(proc)
                 events=run_task(proc,'native-extract','extract',{'src':str(source),'out':str(root/'package'),'mode':'safe','level':'balanced','separate_review':True,'renpy_sdk_path':str(SDK),'renpy_sdk_action':'existing'},timeout=70)
                 complete=complete_for(events,'native-extract')
-                self.assertIs(complete['ok'],True,complete)
+                quota = json.loads(quota_diagnostic.read_text(encoding='utf-8')) if quota_diagnostic.is_file() else None
+                self.assertIs(complete['ok'],True,{'complete':complete,'quota':quota})
                 self.assertIs(complete['complete'],True,complete)
                 self.assertTrue((root/'package'/'manifest.json').is_file())
             finally:

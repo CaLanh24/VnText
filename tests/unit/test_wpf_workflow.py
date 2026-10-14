@@ -87,8 +87,9 @@ def _run_harness(env: dict[str, str], artifacts_root: Path) -> subprocess.Comple
         raise AssertionError(f"workflow harness apphost missing: {apphost}")
     runtime_env = env.copy()
     runtime_env["DOTNET_ROOT"] = str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "dotnet")
+    args = ["--github-handoff-only"] if env.get("VNTEXT_WPF_GITHUB_HANDOFF_ONLY") == "1" else []
     return subprocess.run(
-        [str(apphost)],
+        [str(apphost), *args],
         cwd=str(ROOT),
         env=runtime_env,
         capture_output=True,
