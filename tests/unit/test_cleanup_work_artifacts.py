@@ -616,6 +616,19 @@ class CleanupLifecycleTests(unittest.TestCase):
                     result = cleanup._nested_release_budget_profile(root / "arbitrary")
                     self.assertEqual("release_task_snapshot_outside_exact_scope", result[1])
                     launch.assert_not_called()
+                response = [
+                    cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES,
+                    None,
+                    cleanup.RELEASE_TASK_BUDGET_ID,
+                ]
+                with patch.object(
+                    cleanup.subprocess,
+                    "run",
+                    return_value=subprocess.CompletedProcess([], 0, stdout=json.dumps(response)),
+                ) as launch:
+                    result = cleanup._nested_release_budget_profile(root)
+                    self.assertEqual(tuple(response), result)
+                    self.assertIs(launch.call_args.kwargs["stdin"], subprocess.DEVNULL)
                 with patch.object(cleanup.subprocess, "run", side_effect=OSError("unreadable parent")):
                     self.assertTrue(cleanup._nested_release_budget_profile(root)[1].startswith(
                         "release_task_parent_budget_unverifiable: OSError: unreadable parent"

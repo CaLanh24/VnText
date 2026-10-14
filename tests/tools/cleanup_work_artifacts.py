@@ -1987,6 +1987,7 @@ print(json.dumps(c._parent_release_budget_readback(parent,source)))
         result = subprocess.run(
             [sys.executable, "-S", "-B", "-c", code, str(root), str(ROOT)],
             cwd=str(root), capture_output=True, text=True, timeout=30, check=True,
+            stdin=subprocess.DEVNULL,
         )
         value = json.loads(result.stdout)
         if not isinstance(value, list) or len(value) != 3:
