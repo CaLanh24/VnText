@@ -4,6 +4,8 @@ Release 0.1.5 epoch-chain remediation: focused cleanup tests cover eight-hop suc
 
 Release snapshot prerequisites additionally require parent-wide quota inventory, exact source containment and fail-closed parent budget verification, idempotent exact candidate registration, actual regression child execution against a deliberately conflicting dependency `tests` package, a valid-identity legacy timeout fixture, and mocked download isolation with an inherited no-download flag. Focused cleanup then affected runner/legacy/model-download/artifact/work-path/bootstrap/Setup tests run sequentially before the next clean source commit and epoch transition.
 
+Full-regression fixture remediation keeps synthetic game input separate from package/patch output; the CSV/JSON/XML round trips retain their original source hashes and read-back assertions. Mirror fixtures clear inherited scope markers instead of weakening write guards. Publisher guard tests accept explicit shared `VNTEXT_DEV_ENV_ROOT`; the regression child explicitly uses UTF-8 and the local `tests` package also resolves in new DEV worker interpreters. Exact Release snapshot quota-root detection must not absorb synthetic descendant workspaces. Route the existing pinned native SDK through `VNTEXT_RENPY_NATIVE_SDK` for native generated fixtures and image delivery, without copying/installing SDK or real games. Prebuild GUI/patch-installer skips remain explicit and their mandatory candidate gates run after build; external Unity opt-in skips remain deferred.
+
 Dùng matrix này để chọn regression theo vùng thay đổi. `full unit` không thay thế các gate game-copy/release khi thay đổi writer, worker hoặc packaging.
 
 | Thay đổi vùng nào | Test bắt buộc | Test bổ sung rủi ro cao | PASS condition |

@@ -35,7 +35,8 @@ class StructuredXmlRoundtripTests(unittest.TestCase):
     def test_extract_patch_reopen_and_preserve_original(self):
         with tempfile.TemporaryDirectory(prefix="vntext-structured-xml-") as name:
             root = Path(name)
-            source = root / "StreamingAssets" / "Localization" / "dialogue.xml"
+            game = root / "game"
+            source = game / "StreamingAssets" / "Localization" / "dialogue.xml"
             source.parent.mkdir(parents=True)
             rendered = (
                 '<?xml version="1.0" encoding="utf-8"?>\r\n'
@@ -47,7 +48,7 @@ class StructuredXmlRoundtripTests(unittest.TestCase):
             source.write_bytes(codecs.BOM_UTF8 + rendered.encode("utf-8"))
             original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
 
-            main, review, stats = extract_project(str(root), "deep", None, "balanced")
+            main, review, stats = extract_project(str(game), "deep", None, "balanced")
             xml_entries = [entry for entry in main if entry.import_method == "structured_xml_value"]
             self.assertEqual(
                 {entry.source_text for entry in xml_entries},
@@ -80,7 +81,7 @@ class StructuredXmlRoundtripTests(unittest.TestCase):
             apply_translation_package(
                 str(package / "translation.csv"),
                 str(package / "manifest.json"),
-                str(root),
+                str(game),
                 str(patch_out),
             )
 

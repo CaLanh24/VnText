@@ -1900,7 +1900,7 @@ def _project_inventory_root() -> Path:
         nested = (
             relative[:1] == (".scratch",)
             or relative[:3] == ("tests", "golden", "_work")
-            or relative[:3] == ("RELEASE_RUN", "candidate-0.1.5", "source")
+            or relative == ("RELEASE_RUN", "candidate-0.1.5", "source")
         )
         if nested and (parent / "tests/tools/cleanup_work_artifacts.py").is_file() and (parent / "tests/lib/work_paths.py").is_file():
             inventory_root = parent

@@ -36,7 +36,8 @@ class StructuredCsvRoundtripTests(unittest.TestCase):
     def test_extract_patch_reopen_and_preserve_original(self):
         with tempfile.TemporaryDirectory(prefix="vntext-structured-csv-") as name:
             root = Path(name)
-            source = root / "StreamingAssets" / "Localization" / "dialogue.csv"
+            game = root / "game"
+            source = game / "StreamingAssets" / "Localization" / "dialogue.csv"
             source.parent.mkdir(parents=True)
             rendered = io.StringIO(newline="")
             writer = csv.writer(rendered, lineterminator="\r\n")
@@ -50,7 +51,7 @@ class StructuredCsvRoundtripTests(unittest.TestCase):
             source.write_bytes(codecs.BOM_UTF8 + rendered.getvalue().encode("utf-8"))
             original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
 
-            main, review, stats = extract_project(str(root), "deep", None, "balanced")
+            main, review, stats = extract_project(str(game), "deep", None, "balanced")
             csv_entries = [entry for entry in main if entry.import_method == "structured_csv_cell"]
             self.assertEqual(
                 {entry.source_text for entry in csv_entries},
@@ -82,7 +83,7 @@ class StructuredCsvRoundtripTests(unittest.TestCase):
             apply_translation_package(
                 str(package / "translation.csv"),
                 str(package / "manifest.json"),
-                str(root),
+                str(game),
                 str(patch_out),
             )
 

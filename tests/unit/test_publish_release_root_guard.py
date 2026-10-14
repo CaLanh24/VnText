@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -82,7 +83,7 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
             # The configured DEV interpreter can resolve sys.executable to
             # its external base Python.  Publisher input is the repo-local
             # venv root, which owns the Scripts/python.exe it validates.
-            worker_venv_root = ROOT / ".dev-env" / ".venv"
+            worker_venv_root = Path(os.environ.get("VNTEXT_DEV_ENV_ROOT", str(ROOT / ".dev-env"))) / ".venv"
             self.assertTrue((worker_venv_root / "Scripts" / "python.exe").is_file(), worker_venv_root)
 
             powershell = shutil.which("pwsh") or shutil.which("powershell.exe")

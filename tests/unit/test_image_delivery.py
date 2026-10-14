@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import shutil
 import tempfile
 import subprocess
@@ -13,7 +14,7 @@ from tests.unit.test_renpy_archive import write_rpa
 from vntext import image_delivery as delivery
 from vntext.renpy_toolchain import validate_sdk
 
-SDK = Path(__file__).resolve().parents[2] / '.dev-env/tools/renpy-8.5.3'
+SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK', str(Path(__file__).resolve().parents[2] / '.dev-env/tools/renpy-8.5.3')))
 
 
 class ImageDeliveryTests(unittest.TestCase):

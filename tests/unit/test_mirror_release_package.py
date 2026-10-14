@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -58,6 +59,11 @@ class MirrorReleasePackageTests(unittest.TestCase):
                 "PROTECTED_PATH_PREFIXES": (),
             }
             with contextlib.ExitStack() as stack:
+                # A synthetic fixture must not inherit the containing real run's
+                # wider write scope, even when TMPDIR is inside that run.
+                environment = os.environ.copy()
+                environment.pop("VNTEXT_ARTIFACT_SCOPE_ROOT", None)
+                stack.enter_context(patch.dict(os.environ, environment, clear=True))
                 for key, value in values.items():
                     stack.enter_context(patch.object(paths, key, value))
                 yield root, work, manifest

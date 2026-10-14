@@ -43,6 +43,8 @@ def _environment(args: argparse.Namespace) -> dict[str, str]:
     env["PYTHONPATH"] = os.pathsep.join(python_path_entries + existing_pythonpath)
     env["TMPDIR"] = str(temp_root)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     env["VNTEXT_ARTIFACT_SCOPE_ID"] = args.scope_id
     env["VNTEXT_ARTIFACT_RUN_ID"] = args.run_id
     env["VNTEXT_ARTIFACT_SCOPE_ROOT"] = str(Path(args.scope_root).expanduser().resolve())

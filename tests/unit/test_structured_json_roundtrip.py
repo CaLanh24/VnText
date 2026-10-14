@@ -36,7 +36,8 @@ class StructuredJsonRoundtripTests(unittest.TestCase):
     def test_extract_patch_reopen_and_preserve_original(self):
         with tempfile.TemporaryDirectory(prefix="vntext-structured-json-") as name:
             root = Path(name)
-            source = root / "Sample_Data" / "StreamingAssets" / "Localization" / "en.json"
+            game = root / "game"
+            source = game / "Sample_Data" / "StreamingAssets" / "Localization" / "en.json"
             source.parent.mkdir(parents=True)
             document = {
                 "dialogue": "Hello from JSON",
@@ -47,7 +48,7 @@ class StructuredJsonRoundtripTests(unittest.TestCase):
             source.write_bytes(codecs.BOM_UTF8 + rendered.encode("utf-8"))
             original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
 
-            main, review, stats = extract_project(str(root), "deep", None, "balanced")
+            main, review, stats = extract_project(str(game), "deep", None, "balanced")
             json_entries = [entry for entry in main if entry.import_method == "structured_json_value"]
             self.assertEqual({entry.source_text for entry in json_entries}, {
                 "Hello from JSON",
@@ -76,7 +77,7 @@ class StructuredJsonRoundtripTests(unittest.TestCase):
             apply_translation_package(
                 str(package / "translation.csv"),
                 str(package / "manifest.json"),
-                str(root),
+                str(game),
                 str(patch_out),
             )
 
