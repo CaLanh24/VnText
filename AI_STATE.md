@@ -1,3 +1,6 @@
+# Release 0.1.7 preparation — in progress (2026-10-19)
+Owner authorizes GitHub publication and temporary3GiB artifacts, terminal<=1GiB/shared .dev-env<=5GiB. Clean main52eb28a baseline; single writer, no games/downloads. Version/strict budget admission and gates in progress; no public0.1.7 yet. Canonical docs/RELEASE_0.1.7.md.
+
 # Sidebar compositing audit — PM_DECISION_REQUIRED for pixel acceptance (2026-10-18)
 Owner rejects color-match claims: actual3hover/2selected captured/measured. Flat fills replaced by shared translucent hover#0E000000/selected#212563EB, light sidebar vertical anchors calibrated, dark/strength0 preserved. Final upperselected/upperhover/Journalhover RGB exact at sample points; Settingshover max1 and Settingsselected max3 per-channel remain, differing window heights; do not claim full equality. Evidence DEV_RUN/sidebar-color-audit/{paired-measured.png,measurements.json,REVIEW.md}; final DEVbuild/configured worker smoke0, source0631970 + task diff. TEST_RUN absent/no games/downloads/publication. DEV_RUN/VNText Studio.lnk current; canonical docs/SETTINGS_PLAN.md.
 

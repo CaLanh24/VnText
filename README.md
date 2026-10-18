@@ -4,6 +4,8 @@ Phiên bản ổn định mới nhất: [**0.1.6**](https://github.com/CaLanh24/
 
 Nâng cấp bản này bằng Setup: đóng VNText và chọn đúng thư mục cài hiện tại để giữ dữ liệu trong `data/`. Không gỡ bản cũ trước vì Uninstall xóa cả dữ liệu. Bản 0.1.6 không kèm gói cập nhật toàn ứng dụng trong app.
 
+Bản 0.1.7 đang được kiểm thử và đóng gói; chưa phát hành.
+
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 
 VNText Studio giúp bạn nhận diện cấu trúc game, lấy văn bản, dịch và đưa bản dịch trở lại **bản sao an toàn** của game. Mọi bước nằm trong một quy trình rõ ràng để bạn dễ theo dõi từ đầu đến cuối.
