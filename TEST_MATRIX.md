@@ -1,5 +1,7 @@
 # VNText Studio — Test Matrix
 
+App journal Cockpit follow-up: `JournalStore_BoundsHistorySearchSeverityAndClear` exercises real daily persistence, severity/literal/regex filters, file rotation/caps, traversal rejection, selected-file deletion preserving other files and modal navigation preserving the active tab. Same canonical WPF workflow gate, DEV build/configured worker smoke and native modal inspection.
+
 App journal (Owner2026-10-18): WPF harness `Journal_RoutesProgressAndErrorsWithoutCrossTabLeak` checks navigation, task-ID routing after tab changes, independent bounded progress, app-wide stderr/errors/UI exception logging and caps. Affected source/workflow test gate plus DEV build/configured worker smoke; native Journal/Extract/Translate/Patch inspection confirms one heading and shared card rhythm, separate Patch preflight. No game copies or Release claim.
 
 Automatic image drafts (Owner2026-10-18): `test_image_batch.py` covers real Windows OCR/CT2 and extraction hook, original/CSV protection, outside-region pixels/alpha, duplicate names, RPA provenance, missing model/OCR, unsupported backgrounds, cancellation, budget and fresh retry output. Run together with image-text/manual checks, RenPy extraction/archive, worker protocol and WPF workflow. Generated fixtures only; DEV build plus configured worker smoke and native hidden-OCR/retry-action inspection required. Auto drafts never bypass manual renderer approvals or prove patch/game/translation quality.

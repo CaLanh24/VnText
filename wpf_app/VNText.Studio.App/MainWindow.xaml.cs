@@ -31,6 +31,7 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             vm.CompletionRequested += OnCompletionRequested;
+            vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
             vm.RestoreWindow(this);
             WindowState = !_presentationFixture && vm.StartMinimized ? WindowState.Minimized : WindowState.Maximized;
             UpdatePresentation.OfferRequested += OpenUpdateDialog;

@@ -1,5 +1,15 @@
 # App journal and task progress
 
+## Current correction — Cockpit troubleshooting dialog
+
+Owner explicitly requested Cockpit behavior after the initial page. Native Cockpit observation confirms a modal troubleshooting/log viewer, not a full navigation page. Current scope at clean main4883656: replace journal navigation with modal invocation preserving the underlying page; daily local log files, file choice, search/regex, level filter, page size/paging, refresh, open file/folder, clipboard file path/diagnostics and explicit confirmed clear of the selected log. Preserve existing independent task progress/cards. New AppJournalStore owns only strict app.log.date names below app data/logs, no links, max1MiB/file and30files; full storage stops disk logging with a visible session warning, no automatic purge. This supersedes the initial session-only decision below; prior evidence remains historical. Store/search/routing harness → DEV build/worker smoke → native comparison. No game, dependency, release or external upload.
+
+## Current outcome — PASS bounded DEV
+
+accepted-final.json: canonical workflow9 tests including actual WPF store/filter/rotation/selected-file deletion/navigation harness, zero failures/errors/skips/warnings, child/wrapper0 and cleanupPASS. build-smoke-final.json exit0, configured five-step worker smoke and quotaPASS. modal-final.png inspected on the actual final DEV app. Evidence DEV_RUN/journal-cockpit, source4883656205f027fc67f4c7a06e7d7b1c4555a43a + task diff. Previous compile failure receipt retained. TEST_RUN absent, no games/downloads/publication. Six accepted UI micro values and independent task progress unchanged. Not a pixel-identical/font or full crash-history claim; level is inferred from existing message text.
+
+## Historical initial page implementation
+
 Owner2026-10-18: add Nhật ký above Settings in the sidebar, for app-wide information/warnings/errors. Extract/Translate/Patch cards show only their own task progress, with identical appearance and a single Nhật ký heading; remove explanatory and duplicate log labels. Sole Coordinator/writer, clean main22bdfe0, no other writer. WPF navigation/viewmodel/event presentation only; no worker/CSV/validator/engine changes. Existing LogLines remains the app journal for compatibility; bounded independent progress collections are assigned by task ID, never selected UI tab. This is current-session logging, no retention across restarts promised.
 
 Acceptance: sidebar journal opens app-wide logs/errors; local progress does not leak across tabs and excludes stderr/errors/system messages. Delayed events keep task ownership. Identical log surfaces/header/rhythm across three tabs, Patch preflight separate. Validate real WPF routing/bounds/navigation, source workflow regression, one DEV build+configured worker smoke, native all4pages. Generated fixtures only, no game copies/downloads, default checkout1GiB/shared .dev-env5GiB; canonical wrappers sequential, TEST_RUN absent terminal. Evidence DEV_RUN/app-journal, executable DEV_RUN/bootstrap-build via DEV_RUN/VNText Studio.lnk. Do not publish this DEV follow-up.

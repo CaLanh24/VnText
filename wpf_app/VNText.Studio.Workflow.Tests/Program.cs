@@ -79,6 +79,7 @@ internal static class Program
             return 1;
         }
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
+        Run("JournalStore_BoundsHistorySearchSeverityAndClear", JournalStore_BoundsHistorySearchSeverityAndClear, failures);
         Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
         Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -193,6 +194,33 @@ internal static class Program
         AssertEqual("extract", snap.Current);
         AssertEqual(WorkflowStepState.Current, snap.ExtractState);
         AssertTrue(snap.StepStatusLine.Contains("Chọn game"));
+    }
+
+    private static void JournalStore_BoundsHistorySearchSeverityAndClear()
+    {
+        var root=CreatePackage(withTranslation:false,withPatch:false);
+        try
+        {
+            var store=new AppJournalStore(Path.Combine(root,"logs"));
+            store.Append("Started fixture");store.Append("[warning] caution fixture");store.Append("Lỗi fixture [a.b]");
+            var file=store.Files().Single();var text=store.Read(file);
+            AssertEqual(3,AppJournalStore.Filter(text,"","ALL",false).Length);
+            AssertEqual(1,AppJournalStore.Filter(text,"","ERROR",false).Length);
+            AssertEqual(1,AppJournalStore.Filter(text,"CAUTION","WARN",false).Length);
+            AssertEqual(1,AppJournalStore.Filter(text,"[a.b]","ALL",false).Length);
+            AssertEqual(1,AppJournalStore.Filter(text,"Started.*fixture","INFO",true).Length);
+            var refused=false;try{store.Read("../owner.csv");}catch(IOException){refused=true;}AssertTrue(refused);
+            refused=false;try{AppJournalStore.Filter(text,"[","ALL",true);}catch(ArgumentException){refused=true;}AssertTrue(refused);
+            for(var i=0;i<300;i++)store.Append(new string('x',4000));
+            AssertTrue(store.Files().Length>=2);
+            AssertTrue(store.Files().All(f=>new FileInfo(store.FilePath(f)).Length<=AppJournalStore.MaxFileBytes));
+            var other=store.Files().First(f=>f!=file);var preserved=store.Read(other);
+            var count=store.Files().Length;store.Clear(file);AssertFalse(File.Exists(store.FilePath(file)));AssertEqual(count-1,store.Files().Length);AssertEqual(preserved,store.Read(other));
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            var before=vm.SelectedTab;var opened=0;vm.JournalRequested+=()=>opened++;
+            vm.NavigateTab(WorkflowTabs.Journal);AssertEqual(1,opened);AssertEqual(before,vm.SelectedTab);
+        }
+        finally{Directory.Delete(root,true);}
     }
 
     private static void Journal_RoutesProgressAndErrorsWithoutCrossTabLeak()

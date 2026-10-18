@@ -228,11 +228,6 @@
                       VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
                 <Grid>
 
-                    <Border x:Name="JournalPage" Style="{StaticResource CardShadowBorder}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=journal}">
-                        <ScrollViewer Height="480" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding LogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" />
-                        </ScrollViewer>
-                    </Border>
                     <!-- Extract page -->
                     <Grid x:Name="ExtractPage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
                         <Grid.RowDefinitions>

@@ -738,6 +738,11 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(tab))
             return;
+        if(tab == WorkflowTabs.Journal && JournalRequested is not null)
+        {
+            JournalRequested.Invoke();
+            return;
+        }
         var sw = Stopwatch.StartNew();
         var from = SelectedTab;
         SelectedTab = tab;
@@ -1005,6 +1010,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         if (content.Length > 4000) content = content[..4000];
         var stamped = $"[{DateTime.Now:HH:mm:ss}] {content}";
         LogLines.Add(stamped);
+        PersistJournal(content);
         const int max = 1000;
         while (LogLines.Count > max)
             LogLines.RemoveAt(0);

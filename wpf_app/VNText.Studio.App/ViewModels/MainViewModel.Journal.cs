@@ -6,6 +6,19 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    internal AppJournalStore JournalStore { get; } = new(System.IO.Path.Combine(WorkerPaths.AppDataRoot(),"logs"));
+    internal event Action? JournalRequested;
+    private bool _journalWriteFailed;
+    internal bool JournalWriteFailed => _journalWriteFailed;
+    internal void PersistJournal(string message)
+    {
+        try { JournalStore.Append(message); _journalWriteFailed=false; }
+        catch(Exception ex)
+        {
+            if(!_journalWriteFailed) LogLines.Add($"[{DateTime.Now:HH:mm:ss}] Không ghi được nhật ký: {ex.Message}");
+            _journalWriteFailed=true;
+        }
+    }
     public ObservableCollection<string> ExtractLogLines { get; } = new();
     public ObservableCollection<string> TranslateLogLines { get; } = new();
     public ObservableCollection<string> PatchLogLines { get; } = new();
