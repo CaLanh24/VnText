@@ -44,9 +44,9 @@ class SetupPackageTests(unittest.TestCase):
         release_root = run_root / "ReleaseRoot"
         helper = ["Resolve-IsolatedPublishArtifactRoot"]
 
-        def invoke(dev=source, parent_arg=parent, release=release_root):
+        def invoke(dev=source, parent_arg=parent, release=release_root, work_root=work):
             command = ("Resolve-IsolatedPublishArtifactRoot "
-                       f"'{dev}' '{source / 'RELEASE_RUN'}' '{parent_arg}' '{run_scope}' '{release}' $true")
+                       f"'{dev}' '{work_root}' '{parent_arg}' '{run_scope}' '{release}' $true")
             return self._publisher_call(helper, command)
 
         allowed = invoke()
@@ -63,6 +63,8 @@ class SetupPackageTests(unittest.TestCase):
         self.assertNotEqual(0, wrong_parent.returncode)
         outside_release = invoke(release=work / "ReleaseRoot")
         self.assertNotEqual(0, outside_release.returncode)
+        contradictory_snapshot_work_root = invoke(work_root=source / "RELEASE_RUN")
+        self.assertNotEqual(0, contradictory_snapshot_work_root.returncode)
 
     def test_wpf_brand_assets_require_all_product_files_and_exact_hashes(self):
         import shutil

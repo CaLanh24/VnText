@@ -76,7 +76,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
             (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
-            -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Join-Path $DevRoot 'RELEASE_RUN')), [System.StringComparison]::OrdinalIgnoreCase)) {
+            -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered candidate-0.1.5 parent containing this exact source snapshot."
         }
         $artifactRoot = Join-Path $parent $Scope
@@ -772,7 +772,7 @@ if (-not $SkipTests) {
     Write-Host "`n[1/5] Regression skipped (-SkipTests)" -ForegroundColor DarkYellow
 }
 
-$wpfPublish = Join-Path $DevRunRoot "wpf_publish"
+$wpfPublish = if ($RequireIsolatedArtifacts) { Join-Path $publishArtifactRoot "wpf_publish" } else { Join-Path $DevRunRoot "wpf_publish" }
 $wpfBuiltExe = Join-Path $wpfPublish "VNText.Studio.App.exe"
 $wpfUpdatePublish = Join-Path $publishArtifactRoot "wpf_update_publish"
 $dotnetRuntimeRoot = Join-Path $publishArtifactRoot "_dotnet"
