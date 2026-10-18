@@ -1,3 +1,6 @@
+# Workspace right gutter — PASS bounded DEV (2026-10-18)
+Owner reference: card right edge too close to window. UiPageInset right24→32DIP only, left/top/bottom and card internals unchanged; shared workflow/settings/CSV pages. Build/configured worker smoke0, native Extract+Settings inspected/captured DEV_RUN/right-gutter. Evidence source9ccbfbe + theme diff, no exact-HEAD Release claim; TEST_RUN absent, no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk. Canonical docs/SETTINGS_PLAN.md right-gutter decision.
+
 # Journal paired hover audit — bounded implementation PASS / Owner review pending (2026-10-18)
 Actual Cockpit/VNText normal+refresh-hover+regex screenshots, equal-size paired sheets in DEV_RUN/journal-hover. Corrected local hover blue tint/outline/1DIP140ms return, primary gradient/regex ink, filter min widths, modal width, footer widths/color, selected/log type and4DIP spacing. Sole writer JournalWindow-only, global frozen styles unchanged. Workflow first updater file-replace FAIL/rollback retained; recheck9PASS/child+wrapper0/cleanupPASS. Final DEV build/configured worker smoke0/native inspected, sourcec7a2112 + diff, no exact font/motion/pixel parity or Release claim. TEST_RUN absent, no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk. Canonical docs/APP_JOURNAL.md.
 

@@ -77,3 +77,8 @@ Remaining P2/P3 observations: About hero roughly4px offset; tiny grid-gap differ
 
 ## Owner continuation — gradients and live motion (2026-10-18)
 Owner requests the bounded remaining pass: Settings page-title blue→cyan; light workspace upper-right cyan light fading to neutral bottom based on same-size reference samples. Keep all six accepted micro values, geometry/sidebar/colors and logo/ICO frozen; workflow titles and dark canvas retain existing appearance without reference. Background strength must still neutralize the decorative canvas at0. Live motion timing/easing needs continuous evidence; native post-action snapshots do not prove it, clip requested; no guessed timing changes.
+
+## Owner correction — workspace right gutter (2026-10-18)
+Owner supplied aligned whole-window reference showing VNText card right edge closer to the window than Cockpit. Sole writer clean main9ccbfbe. Bounded exception to prior geometry freeze: shared UiPageInset right24→32DIP only, left/top/bottom unchanged; applies all workflow/settings/CSV page content consistently. No card padding, typography, sidebar or motion edits. Validation one DEV build/configured worker smoke and native right-edge inspection; no game/copy/download, default1GiB/shared5GiB, TEST_RUN absent. Evidence DEV_RUN/right-gutter.
+
+Right-gutter outcome PASS bounded correction: build-smoke.json exit0/configured five-step worker smokePASS, actual Extract/Settings inspected at32DIP right inset, captures DEV_RUN/right-gutter. Source9ccbfbe + one-token theme diff, docs follow build; no clean exact-HEAD Release claim. Shared token covers other pages by construction; no unrelated regression suite for a margin-only change. TEST_RUN absent, no games/downloads/publication.
