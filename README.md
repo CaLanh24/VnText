@@ -1,6 +1,8 @@
 # VNText Studio
 
-Phiên bản source đang chuẩn bị: **0.1.6**. Bản public ổn định mới nhất là **0.1.5**.
+Phiên bản ổn định mới nhất: [**0.1.6**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.6).
+
+Nâng cấp bản này bằng Setup: đóng VNText và chọn đúng thư mục cài hiện tại để giữ dữ liệu trong `data/`. Không gỡ bản cũ trước vì Uninstall xóa cả dữ liệu. Bản 0.1.6 không kèm gói cập nhật toàn ứng dụng trong app.
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 
@@ -29,7 +31,7 @@ Hỗ trợ các cấu trúc và asset Unity phù hợp, gồm những dạng vă
 
 ## Quy trình sử dụng
 
-1. Tải và chạy [Setup từ GitHub Releases](https://github.com/CaLanh24/VnText/releases) từ [GitHub Releases](https://github.com/CaLanh24/VnText/releases).
+1. Tải và chạy [Setup từ GitHub Releases](https://github.com/CaLanh24/VnText/releases).
 2. Cài ứng dụng trên Windows và chọn một bản sao game để làm việc.
 3. Chọn **Extract** để nhận diện game và tạo workspace văn bản.
 4. **Dịch trong ứng dụng** hoặc xuất, chỉnh sửa rồi nhập CSV lại.

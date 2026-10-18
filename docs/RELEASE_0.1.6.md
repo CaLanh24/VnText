@@ -1,5 +1,20 @@
 # Release 0.1.6 preparation
 
+## Published outcome — PASS (2026-10-18)
+
+Stable release: https://github.com/CaLanh24/VnText/releases/tag/v0.1.6. Tag and binary source remain `0150fdc9798768964647e42a717d64e1b4832af7`; later main commits only merge the Owner-approved remote publication receipt and record this outcome. No binary evidence is relabelled as later HEAD.
+
+- Setup `VNTextStudio-0.1.6-Setup.exe`: 222,377,472 bytes; SHA256 `80393a825728bf5124bcafddf563f716b360675f5f67607cef535e32ff7a55f8`. All four public asset sizes/digests and source tag independently read back from GitHub API.
+- Exact full regression: 799 tests, zero failures/errors/warnings, seven explicit skips, child/wrapper0, cleanupPASS. Three prebuild skips subsequently resolved by actual installed patch-installer2 and GUI-close1 tests: child0, no skips. That wrapper originally returned1 because retained epoch metadata/empty containers remained; its original receipt is preserved, not rewritten. Final verified metadata retention and terminal cleanup PASS separately.
+- Publisher exit0; private-runtime verification and worker smoke in two working directories PASS. Independent embedded payload and installed payload audits: all7,191 files/514,492,739 bytes match hashes. Actual public0.1.5 Setup installation then candidate0.1.6 Setup upgrade PASS; data sentinel preserved; installed bundled worker five-step smoke and native Settings/About inspection PASS.
+- Owner read/accepted Intel customer terms and EULA. Windows automation product policy refused Uninstall.exe; no bypass. Owner manually completed actual uninstall without error, followed by independent empty-install-root and no-candidate-process verification. No fabricated automated-uninstall exit code is claimed.
+- Sole candidate disposed canonically. Initial cleanup scope missing RELEASE_RUN context refused before deletion; corrected context then encountered readonly snapshot Git objects. Cleared readonly only on verified candidate Git object files and retried canonical cleanup successfully. Original failed receipts retained. Verified epoch/registry/history moved unchanged into DEV_RUN/release-0.1.6/terminal-control-evidence; TEST_RUN and candidate absent. Complete default-budget inventory: non-exempt442,848,079/1,073,741,824 bytes, shared .dev-env4,475,640,646/5,368,709,120 bytes.
+- Distribution is Setup only. Close VNText, run Setup and select the existing installation to preserve data; do not uninstall first because uninstall deletes data. No full-app update ZIP is offered for0.1.6. Four external Unity opt-in fixtures remain deferred, exact Cockpit font/motion parity remains unclaimed, and whole-product RELEASE_VERIFIED remains unclaimed.
+
+Evidence: DEV_RUN/release-0.1.6/{exact-full-final.json,embedded-payload-verified.json,setup-upgrade.json,installed-native-gates.json,installed-worker-smoke.stdout.json,installed-payload-audit.json,actual-uninstall.json,candidate-cleanup-retry.json,epoch-terminal-verified.json,terminal-retention.json,terminal-quota.json,publication-verified.json}. Public BUILD-PROVENANCE.json/SHA256SUMS.txt/THIRD_PARTY_NOTICES.md accompany Setup.
+
+Earlier preparation checkpoints below are historical; preserve their original verdicts.
+
 Owner requested public release on 2026-10-18 and waived further Cockpit motion comparison. Sole Coordinator/source writer continues the authorized dirty UI baseline on main. Scope: accepted UI, settings, icon/logo, update presentation and preference behavior; preserve worker protocol, engine behavior, validators and window ICO.
 
 ## Gates and budget
