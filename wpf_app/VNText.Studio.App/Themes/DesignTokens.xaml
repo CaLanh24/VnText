@@ -28,7 +28,7 @@
 
     <Color x:Key="GreenHoverColor">#0BAF5C</Color>
 
-    <Color x:Key="NavActiveBackgroundColor">#CDD8F1</Color>
+    <Color x:Key="NavActiveBackgroundColor">#212563EB</Color>
 
 
 
@@ -97,7 +97,7 @@
 
     <Color x:Key="BrandDarkColor">#253047</Color>
 
-    <Color x:Key="NavHoverColor">#E1E3E9</Color>
+    <Color x:Key="NavHoverColor">#0E000000</Color>
 
     <Color x:Key="NavPressedColor">#E8EFF9</Color>
 
@@ -281,7 +281,7 @@
 
     <SolidColorBrush x:Key="WindowBrush" Color="{StaticResource WindowColor}" />
 
-    <LinearGradientBrush x:Key="SidebarBrush" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#E1E5F1" Offset="0" /><GradientStop Color="#E9EDF4" Offset="0.55" /><GradientStop Color="#F0F4F7" Offset="1" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="SidebarBrush" StartPoint="0,0" EndPoint="0,1"><GradientStop Color="#DEE4F2" Offset="0" /><GradientStop Color="#DEE4F2" Offset="0.2" /><GradientStop Color="#E1E6F2" Offset="0.28" /><GradientStop Color="#E9EEF4" Offset="0.9" /><GradientStop Color="#EAEFF5" Offset="1" /></LinearGradientBrush>
     <SolidColorBrush x:Key="SettingsRowHoverBrush" Color="#F0F0F2" />
 
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />

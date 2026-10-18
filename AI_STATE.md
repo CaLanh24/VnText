@@ -1,3 +1,6 @@
+# Sidebar compositing audit — PM_DECISION_REQUIRED for pixel acceptance (2026-10-18)
+Owner rejects color-match claims: actual3hover/2selected captured/measured. Flat fills replaced by shared translucent hover#0E000000/selected#212563EB, light sidebar vertical anchors calibrated, dark/strength0 preserved. Final upperselected/upperhover/Journalhover RGB exact at sample points; Settingshover max1 and Settingsselected max3 per-channel remain, differing window heights; do not claim full equality. Evidence DEV_RUN/sidebar-color-audit/{paired-measured.png,measurements.json,REVIEW.md}; final DEVbuild/configured worker smoke0, source0631970 + task diff. TEST_RUN absent/no games/downloads/publication. DEV_RUN/VNText Studio.lnk current; canonical docs/SETTINGS_PLAN.md.
+
 # Sidebar lighter hover/selected — bounded PASS / Owner review pending (2026-10-18)
 Owner says states too dark: light hover#D1D7E2→#E1E3E9 matching latest reference; selected#C9D5F0→#CDD8F1 subtly lighter. Fallback and runtime appearance both updated; dark/text/type/geometry unchanged. DEVbuild/configured worker smoke0, actual selected Extract + hovered Translate inspected/final.png. Evidence DEV_RUN/sidebar-state-colors, sourcef220e75 + color diff; no exact-HEAD Release claim. TEST_RUN absent/no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk, canonical docs/SETTINGS_PLAN.md.
 

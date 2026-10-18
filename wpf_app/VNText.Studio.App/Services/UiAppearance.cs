@@ -42,10 +42,10 @@ public static class UiAppearance
         _overrides["SettingsTitleBrush"] = new LinearGradientBrush(
             (Color)ColorConverter.ConvertFromString(C("#2563EB", "#8CB5FF")),
             (Color)ColorConverter.ConvertFromString(C("#089DB2", "#65D6E8")), 0);
-        Set("NavActiveBackgroundBrush", C("#CDD8F1", "#2B4772"));
+        Set("NavActiveBackgroundBrush", C("#212563EB", "#2B4772"));
         Set("NavActiveForegroundBrush", C("#2454EE", "#8CB5FF"));
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));
-        Set("NavHoverBrush", C("#E1E3E9", "#354258"));
+        Set("NavHoverBrush", C("#0E000000", "#354258"));
         Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));
@@ -64,8 +64,9 @@ public static class UiAppearance
             var neutral = dark ? Color.FromRgb(18, 25, 38) : Colors.White;
             return Color.FromRgb((byte)(neutral.R + (source.R - neutral.R) * factor), (byte)(neutral.G + (source.G - neutral.G) * factor), (byte)(neutral.B + (source.B - neutral.B) * factor));
         }
-        _overrides["SidebarBrush"] = new LinearGradientBrush(new GradientStopCollection {
-            new(Tone(C("#E1E5F1", "#1B283E")), 0), new(Tone(C("#E9EDF4", "#182437")), .55), new(Tone(C("#F0F4F7", "#152031")), 1) }, new Point(0,0), new Point(0,1));
+        _overrides["SidebarBrush"] = new LinearGradientBrush(dark
+            ? new GradientStopCollection { new(Tone("#1B283E"),0), new(Tone("#182437"),.55), new(Tone("#152031"),1) }
+            : new GradientStopCollection { new(Tone("#DEE4F2"),0), new(Tone("#DEE4F2"),.2), new(Tone("#E1E6F2"),.28), new(Tone("#E9EEF4"),.9), new(Tone("#EAEFF5"),1) }, new Point(0,0), new Point(0,1));
         if (dark)
         {
             // Preserve the existing dark canvas; no dark reference was supplied.
