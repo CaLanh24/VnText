@@ -1,3 +1,6 @@
+# Sidebar inter-row gap — PASS bounded DEV (2026-10-18)
+Owner reference: menu rows too close. NavButtonStyle bottommargin3→5DIP only, ~7.5px at150%; row42/font13.5Medium/colors unchanged. DEVbuild/configured worker smoke0/native inspected; evidence DEV_RUN/sidebar-gap, source0cbe615 + style diff, no exact-HEAD Release claim. TEST_RUN absent/no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk; canonical docs/SETTINGS_PLAN.md.
+
 # Sidebar font weight — PASS bounded DEV (2026-10-18)
 Owner says font thin: NavButtonStyle default/hover/selected Regular400→Medium500 only; size/family/geometry/colors/brand unchanged, no hover weight change. Final DEVbuild/configured worker smoke0/native inspected; evidence DEV_RUN/sidebar-weight, sourcee7896d1 + style diff, no exact-HEAD Release claim. TEST_RUN absent, no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk; canonical docs/SETTINGS_PLAN.md.
 

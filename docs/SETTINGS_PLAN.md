@@ -92,3 +92,8 @@ Sidebar pass outcome bounded implementationPASS/Owner review pending: additional
 Clean maine7896d1, sole writer. Owner says sidebar text still thin. NavButtonStyle only Normal400→Medium500 in default/hover/selected, no weight transition on hover; size13.5, family, geometry/colors/brand unchanged. Supersedes previous retained nav-normal decision only. Gate DEV build/configured worker smoke + native sidebar inspection; no games/copies/downloads, default1GiB/shared5GiB, TEST_RUN absent. Evidence DEV_RUN/sidebar-weight.
 
 Weight correction outcome boundedPASS: build-smoke.json exit0/configured five-step worker smokePASS, actual native default+selected sidebar inspected/final.png. Sourcee7896d1 + three NavButtonStyle weight setters, docs after build; no exact-HEAD Release claim. TEST_RUN absent/no games/downloads/publication.
+
+## Owner sidebar inter-row gap correction (2026-10-18)
+Clean main0cbe615, sole writer. Owner supplied selected+hover pairs: Cockpit inter-row gap~7px versus VNText~4px at150%. NavButtonStyle bottom margin3→5DIP (~7.5px at150%) only; preserve row42DIP, font13.5/Medium500, colors/brand. Shared nav style applies consistently to sidebar entries. Gate DEVbuild/configured worker smoke/native sidebar; no full regression for margin-only change, no games/copies/downloads; default1GiB/shared5GiB/TEST_RUN absent. Evidence DEV_RUN/sidebar-gap.
+
+Inter-row gap outcomePASS bounded: build-smoke.json exit0/configured five-step worker smokePASS; native sidebar inspected/final.png. Evidence source0cbe615e22570417a14d013ba90f242467491b37 + one margin setter, docs after build; no exact-HEAD Release claim. TEST_RUN absent, no games/downloads/publication.
