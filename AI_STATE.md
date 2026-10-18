@@ -1,3 +1,6 @@
+# Sidebar lighter hover/selected — bounded PASS / Owner review pending (2026-10-18)
+Owner says states too dark: light hover#D1D7E2→#E1E3E9 matching latest reference; selected#C9D5F0→#CDD8F1 subtly lighter. Fallback and runtime appearance both updated; dark/text/type/geometry unchanged. DEVbuild/configured worker smoke0, actual selected Extract + hovered Translate inspected/final.png. Evidence DEV_RUN/sidebar-state-colors, sourcef220e75 + color diff; no exact-HEAD Release claim. TEST_RUN absent/no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk, canonical docs/SETTINGS_PLAN.md.
+
 # Sidebar inter-row gap — PASS bounded DEV (2026-10-18)
 Owner reference: menu rows too close. NavButtonStyle bottommargin3→5DIP only, ~7.5px at150%; row42/font13.5Medium/colors unchanged. DEVbuild/configured worker smoke0/native inspected; evidence DEV_RUN/sidebar-gap, source0cbe615 + style diff, no exact-HEAD Release claim. TEST_RUN absent/no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk; canonical docs/SETTINGS_PLAN.md.
 

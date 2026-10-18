@@ -42,10 +42,10 @@ public static class UiAppearance
         _overrides["SettingsTitleBrush"] = new LinearGradientBrush(
             (Color)ColorConverter.ConvertFromString(C("#2563EB", "#8CB5FF")),
             (Color)ColorConverter.ConvertFromString(C("#089DB2", "#65D6E8")), 0);
-        Set("NavActiveBackgroundBrush", C("#C9D5F0", "#2B4772"));
+        Set("NavActiveBackgroundBrush", C("#CDD8F1", "#2B4772"));
         Set("NavActiveForegroundBrush", C("#2454EE", "#8CB5FF"));
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));
-        Set("NavHoverBrush", C("#D1D7E2", "#354258"));
+        Set("NavHoverBrush", C("#E1E3E9", "#354258"));
         Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));

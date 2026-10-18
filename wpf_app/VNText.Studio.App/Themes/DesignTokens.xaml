@@ -28,7 +28,7 @@
 
     <Color x:Key="GreenHoverColor">#0BAF5C</Color>
 
-    <Color x:Key="NavActiveBackgroundColor">#C9D5F0</Color>
+    <Color x:Key="NavActiveBackgroundColor">#CDD8F1</Color>
 
 
 
@@ -97,7 +97,7 @@
 
     <Color x:Key="BrandDarkColor">#253047</Color>
 
-    <Color x:Key="NavHoverColor">#F0F5FC</Color>
+    <Color x:Key="NavHoverColor">#E1E3E9</Color>
 
     <Color x:Key="NavPressedColor">#E8EFF9</Color>
 
