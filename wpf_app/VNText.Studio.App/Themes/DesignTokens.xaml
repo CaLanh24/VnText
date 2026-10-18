@@ -28,7 +28,7 @@
 
     <Color x:Key="GreenHoverColor">#0BAF5C</Color>
 
-    <Color x:Key="NavActiveBackgroundColor">#D7DFF6</Color>
+    <Color x:Key="NavActiveBackgroundColor">#C9D5F0</Color>
 
 
 
@@ -68,7 +68,7 @@
     <GridLength x:Key="UiSidebarWidth">206</GridLength>
     <Thickness x:Key="UiPageInset">24,0,32,30</Thickness>
     <Thickness x:Key="UiSidebarInset">16</Thickness>
-    <sys:Double x:Key="UiNavRowHeight">44</sys:Double>
+    <sys:Double x:Key="UiNavRowHeight">42</sys:Double>
     <CornerRadius x:Key="UiNavRadius">10</CornerRadius>
     <CornerRadius x:Key="UiCardRadius">18</CornerRadius>
     <Thickness x:Key="UiCardPadding">24,20</Thickness>
@@ -206,6 +206,8 @@
     <SolidColorBrush x:Key="GreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
 
     <SolidColorBrush x:Key="NavActiveBackgroundBrush" Color="{StaticResource NavActiveBackgroundColor}" />
+    <SolidColorBrush x:Key="NavActiveForegroundBrush" Color="#2454EE" />
+    <SolidColorBrush x:Key="NavDividerBrush" Color="#D0D6E3" />
 
 
 

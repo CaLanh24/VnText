@@ -1,3 +1,6 @@
+# Sidebar color/type/spacing — bounded implementation PASS / Owner review pending (2026-10-18)
+Owner explicit sidebar correction: selected fill#C9D5F0 and local blue#2454EE with dark equivalents, runtime override updated; row42DIP, brand15Bold/top43, divider/gap12. Nav13.5 regular Inter retained after optical audit, no global family change. Final DEV build/configured worker smoke0/native inspected; evidence DEV_RUN/sidebar-polish/{final.png,compare.png,build-smoke-accepted.json}, source751306d + task diff. Comparison rescales native100% to Owner150%, no exact raster parity claim. TEST_RUN absent, no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk. Canonical docs/SETTINGS_PLAN.md.
+
 # Workspace right gutter — PASS bounded DEV (2026-10-18)
 Owner reference: card right edge too close to window. UiPageInset right24→32DIP only, left/top/bottom and card internals unchanged; shared workflow/settings/CSV pages. Build/configured worker smoke0, native Extract+Settings inspected/captured DEV_RUN/right-gutter. Evidence source9ccbfbe + theme diff, no exact-HEAD Release claim; TEST_RUN absent, no games/downloads/publication. Current DEV_RUN/VNText Studio.lnk. Canonical docs/SETTINGS_PLAN.md right-gutter decision.
 

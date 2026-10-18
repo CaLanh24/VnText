@@ -459,7 +459,7 @@
 
                         </MultiTrigger>
 
-                        <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value><Setter TargetName="NavSurface" Property="Background" Value="{DynamicResource NavActiveBackgroundBrush}" /><Setter Property="Foreground" Value="{DynamicResource BlueBrush}" /><Setter Property="FontWeight" Value="Normal" /></Trigger>
+                        <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value><Setter TargetName="NavSurface" Property="Background" Value="{DynamicResource NavActiveBackgroundBrush}" /><Setter Property="Foreground" Value="{DynamicResource NavActiveForegroundBrush}" /><Setter Property="FontWeight" Value="Normal" /></Trigger>
                         <Trigger Property="IsEnabled" Value="False">
 
                             <Setter Property="Foreground" Value="{DynamicResource DisabledForegroundBrush}" />
