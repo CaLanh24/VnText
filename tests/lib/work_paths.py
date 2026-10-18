@@ -789,6 +789,14 @@ def dispose_e2e_game_copy(*, reason: str) -> bool:
     return True
 
 
+def _compact_temp_component(value: str) -> str:
+    """Bound generated fixture paths; registry retains full names/scope IDs."""
+    safe = re.sub(r"[^A-Za-z0-9_-]", "_", value)
+    if len(safe) <= 16 and safe == value:
+        return safe
+    return safe[:8] + "-" + hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
+
+
 def work_temp_dir(name: str, *, scope_id: str | None = None, run_id: str | None = None) -> Path:
     ambient = ambient_scope()
     requested_scope = str(scope_id or ambient["scope_id"]).strip()
@@ -807,7 +815,7 @@ def work_temp_dir(name: str, *, scope_id: str | None = None, run_id: str | None 
         scope_id=scope_id,
         run_id=run_id,
     )
-    container = temp_root / name
+    container = temp_root / _compact_temp_component(name)
     register_artifact(
         artifact_id=f"work_temp_container:{ARTIFACT_NAMESPACE}:{name}",
         path=container,
@@ -819,7 +827,7 @@ def work_temp_dir(name: str, *, scope_id: str | None = None, run_id: str | None 
         scope_id=scope_id,
         run_id=run_id,
     )
-    dest = container / unique_scope
+    dest = container / _compact_temp_component(unique_scope)
     assert_artifact_under_work(dest, name)
     dest.mkdir(parents=True, exist_ok=True)
     register_artifact(

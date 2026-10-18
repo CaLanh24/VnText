@@ -2978,6 +2978,10 @@ def _epoch_transition_provenance_failures(
     epoch: dict, manifest: dict, rollback: dict, rollback_path: Path, transition_seen: tuple[str, ...], transition_depth: int
 ) -> list[str]:
     failures = []
+    try:
+        task_id, version, approval = _release_budget_spec(epoch.get("release_task_budget", {}).get("task_id"))
+    except ValueError:
+        return ["epoch_transition_provenance_invalid"]
     transition = epoch.get("transition_provenance")
     if not isinstance(transition, dict):
         return ["epoch_transition_provenance_invalid"]
@@ -2993,10 +2997,10 @@ def _epoch_transition_provenance_failures(
         or previous_sha == target_sha
         or previous_manifest_sha != str(rollback.get("sha256") or "").upper()
         or rollback.get("manifest_absent") is not False
-        or transition.get("owner_authorization") != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL
+        or transition.get("owner_authorization") != approval
         or transition.get("historical_hygiene") != "NOT_RECOVERABLE/UNVERIFIABLE"
         or not isinstance(epoch.get("release_task_budget"), dict)
-        or epoch.get("release_task_budget", {}).get("task_id") != RELEASE_TASK_BUDGET_ID
+        or epoch.get("release_task_budget", {}).get("task_id") != task_id
     ):
         failures.append("epoch_transition_provenance_invalid")
         return failures
@@ -3017,8 +3021,8 @@ def _epoch_transition_provenance_failures(
         return failures
     if (
         not _git_is_ancestor(previous_sha, target_sha)
-        or _git_version_at(previous_sha) != "0.1.5"
-        or _git_version_at(target_sha) != "0.1.5"
+        or _git_version_at(previous_sha) != version
+        or _git_version_at(target_sha) != version
     ):
         failures.append("epoch_transition_source_lineage_invalid")
     old_failures = _epoch_verify_files(
@@ -3256,7 +3260,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id != RELEASE_TASK_BUDGET_ID:
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -3298,7 +3302,7 @@ def activate_prospective_epoch(
                 reasons.append("transition_manifest_hash_mismatch")
             if epoch_id and epoch_id == active_id:
                 reasons.append("transition_new_epoch_id_must_differ")
-            if transition_requested and owner_transition_authorization != RELEASE_TASK_EPOCH_TRANSITION_APPROVAL:
+            if transition_requested and owner_transition_authorization != _release_budget_spec(release_task_id)[2]:
                 reasons.append("transition_owner_authorization_invalid")
             if rebaseline_requested:
                 if owner_rebaseline_authorization_id != RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID:
@@ -3317,12 +3321,12 @@ def activate_prospective_epoch(
             ):
                 reasons.append("transition_active_epoch_integrity_failed")
             release_budget = active.get("release_task_budget")
-            if not isinstance(release_budget, dict) or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID:
+            if not isinstance(release_budget, dict) or release_budget.get("task_id") != release_task_id:
                 reasons.append("transition_active_epoch_release_task_mismatch")
             if not rebaseline_requested:
                 if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
                     reasons.append("transition_source_not_descendant")
-                if _git_version_at(active_sha) != "0.1.5" or _git_version_at(expected_sha) != "0.1.5":
+                if _git_version_at(active_sha) != _release_budget_spec(release_task_id)[1] or _git_version_at(expected_sha) != _release_budget_spec(release_task_id)[1]:
                     reasons.append("transition_source_version_mismatch")
             if incident != active.get("original_incident_identity"):
                 reasons.append("transition_incident_identity_changed")

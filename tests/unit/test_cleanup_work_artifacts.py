@@ -1182,9 +1182,11 @@ class CleanupLifecycleTests(unittest.TestCase):
         *,
         incident_identity: dict | None = None,
         owner_reset_authorization: str | None = None,
+        version: str = "0.1.5",
+        task_id: str = cleanup.RELEASE_TASK_BUDGET_ID,
     ):
         previous_sha = "a" * 40
-        (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
+        (root / "VERSION.txt").write_text(version + "\n", encoding="utf-8")
         git_guard = patch.object(
             cleanup,
             "_git_repository_state",
@@ -1206,12 +1208,12 @@ class CleanupLifecycleTests(unittest.TestCase):
             purpose="retained container for current prospective epoch metadata created by cleanup_work_artifacts.py",
             lifecycle="RETAINED",
         )
-        with git_guard, incident_guard:
+        with git_guard, incident_guard, patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
             created = cleanup.activate_prospective_epoch(
                 dry_run=False,
                 epoch_id="epoch-transition-before",
                 source_sha=previous_sha,
-                release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                release_task_id=task_id,
                 owner_reset_authorization=owner_reset_authorization,
             )
             self.assertTrue(created["ok"], created)
@@ -1317,6 +1319,24 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
             self.assertIsNone(budget_error)
             self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
+
+    def test_release_016_transition_uses_its_own_approval_and_preserves_history(self):
+        task_id = cleanup.RELEASE_TASK_016_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+            previous_sha, old_bytes, _old_doc, _old_epoch, old_scope, old_files = self._active_release_epoch_for_transition(root, manifest, version="0.1.6", task_id=task_id)
+            target_sha, git_guard, ancestry_guard, _version_guard, incident_guard = self._transition_guards()
+            kwargs = dict(dry_run=False, epoch_id="epoch-016-after", source_sha=target_sha, release_task_id=task_id, transition_from_epoch_id="epoch-transition-before", expected_manifest_sha256=cleanup.hashlib.sha256(old_bytes).hexdigest().upper())
+            with git_guard, ancestry_guard, incident_guard, patch.object(cleanup, "_git_version_at", return_value="0.1.6"):
+                refused = cleanup.activate_prospective_epoch(**kwargs, owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL)
+                self.assertFalse(refused["ok"])
+                self.assertEqual(old_bytes, manifest.read_bytes())
+                applied = cleanup.activate_prospective_epoch(**kwargs, owner_transition_authorization=cleanup.RELEASE_TASK_016_BUDGET_APPROVAL)
+                self.assertTrue(applied["ok"], applied)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+            current = json.loads(manifest.read_bytes())["prospective_epoch"]
+            self.assertEqual(old_bytes, Path(current["rollback"]["path"]).read_bytes())
+            self.assertEqual(previous_sha, current["transition_provenance"]["previous_source_sha"])
+            self.assertEqual(old_files, {p.relative_to(old_scope).as_posix():p.read_bytes() for p in old_scope.rglob("*") if p.is_file()})
 
     def test_transition_chain_eight_hops_preserves_history_and_refuses_ninth(self):
         with self.isolated_workspace() as (root, work, game, manifest):

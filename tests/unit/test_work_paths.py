@@ -40,6 +40,14 @@ from work_paths import dispose_e2e_game_copy, prepare_e2e_game_copy
 
 
 class WorkPathContractTests(unittest.TestCase):
+    def test_generated_temp_components_are_bounded_stable_and_distinct(self):
+        long_name = "native-worker-scope-" * 8
+        first = paths._compact_temp_component(long_name)
+        self.assertLessEqual(len(first), 21)
+        self.assertEqual(first, paths._compact_temp_component(long_name))
+        self.assertNotEqual(first, paths._compact_temp_component(long_name + "2"))
+        self.assertNotIn("/", paths._compact_temp_component("../outside"))
+
     def test_registry_writer_refuses_malformed_manifest_without_rewriting_it(self):
         with tempfile.TemporaryDirectory(prefix="vntext-work-paths-") as name:
             root = Path(name)
