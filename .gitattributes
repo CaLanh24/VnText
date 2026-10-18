@@ -1,4 +1,5 @@
 # Source CSV fixtures may contain meaningful spaces before embedded newlines.
 tests/golden/e2e_fixture/translation.csv whitespace=-trailing-space
 # Preserve the upstream bytes recorded in the Lucide provenance receipt.
-wpf_app/VNText.Studio.App/Assets/Icons/Lucide/* -text
+wpf_app/VNText.Studio.App/Assets/Icons/Lucide/*.svg -text
+wpf_app/VNText.Studio.App/Assets/Icons/Lucide/LICENSE -text
