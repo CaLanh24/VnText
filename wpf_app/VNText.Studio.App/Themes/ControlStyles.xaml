@@ -426,7 +426,7 @@
 
         <Setter Property="FontFamily" Value="{StaticResource AppFont}" />
 
-        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="FontWeight" Value="Medium" />
 
         <Setter Property="HorizontalContentAlignment" Value="Left" />
 
@@ -455,11 +455,11 @@
                         <MultiTrigger><MultiTrigger.Conditions><Condition Property="IsMouseOver" Value="True" /><Condition Property="Tag"><Condition.Value><sys:Boolean>False</sys:Boolean></Condition.Value></Condition></MultiTrigger.Conditions>
 
                             <Setter TargetName="NavSurface" Property="Background" Value="{DynamicResource NavHoverBrush}" />
-                            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="FontWeight" Value="Normal" />
+                            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" /><Setter Property="FontWeight" Value="Medium" />
 
                         </MultiTrigger>
 
-                        <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value><Setter TargetName="NavSurface" Property="Background" Value="{DynamicResource NavActiveBackgroundBrush}" /><Setter Property="Foreground" Value="{DynamicResource NavActiveForegroundBrush}" /><Setter Property="FontWeight" Value="Normal" /></Trigger>
+                        <Trigger Property="Tag"><Trigger.Value><sys:Boolean>True</sys:Boolean></Trigger.Value><Setter TargetName="NavSurface" Property="Background" Value="{DynamicResource NavActiveBackgroundBrush}" /><Setter Property="Foreground" Value="{DynamicResource NavActiveForegroundBrush}" /><Setter Property="FontWeight" Value="Medium" /></Trigger>
                         <Trigger Property="IsEnabled" Value="False">
 
                             <Setter Property="Foreground" Value="{DynamicResource DisabledForegroundBrush}" />
