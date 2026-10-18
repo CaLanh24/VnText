@@ -183,11 +183,12 @@ def render_image(document, output, font_path):
     return str(output)
 
 
-def discover_images(root, *, is_cancelled=None):
+def discover_images(root, *, is_cancelled=None, exclude_roots=()):
     root = _regular(root)
     if not root.is_dir(): raise ValueError("Chọn thư mục game/ảnh để tìm ảnh.")
     paths = []; errors = []; seen = 0; deadline = time.monotonic() + 30
     for base, dirs, names in os.walk(root, followlinks=False):
+        dirs[:] = [name for name in dirs if not any((Path(base)/name).resolve() == Path(excluded).resolve() for excluded in exclude_roots)]
         for name in dirs + names:
             seen += 1
             if seen > 10000 or time.monotonic() > deadline: raise ValueError("Inventory ảnh vượt budget; chọn thư mục ảnh nhỏ hơn.")

@@ -33,16 +33,23 @@ public sealed partial class MainViewModel
     public RelayCommand CreateImageDeliveryCommand { get; private set; } = null!;
     public RelayCommand InstallImageDeliveryCommand { get; private set; } = null!;
     public RelayCommand RecoverImageDeliveryCommand { get; private set; } = null!;
+    public RelayCommand RetryImageCommand { get; private set; } = null!;
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
     {
         foreach (var command in new[] { ChooseOcrImageCommand, DiscoverImagesCommand, RunImageOcrCommand,
             OpenImageReviewCommand, SaveImageReviewCommand, RenderImageCommand, AddImageRegionCommand,
-            RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand })
+            RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand, RetryImageCommand })
             command?.RaiseCanExecuteChanged();
     }
     private void InitImageTextCommands()
     {
+        RetryImageCommand = new RelayCommand(_ =>
+        {
+            var image = _pathPicker.PickImageFile();
+            if (image is null) return;
+            BeginTask("image_batch", new { src = image, @out = OutputPath }, "Đang dịch lại ảnh…");
+        }, _ => !Busy && Directory.Exists(OutputPath));
         CreateImageDeliveryCommand = new RelayCommand(_ =>
         {
             _imageTaskRoot = NewImageRoot();
@@ -164,6 +171,12 @@ public sealed partial class MainViewModel
     }
     private void CompleteImageTask(string task, WorkerEvent evt)
     {
+        if (task == "image_batch")
+        {
+            ImageStatus = evt.Ok ? evt.Summary ?? "Đã xử lý ảnh; xem thư mục images cạnh CSV." : evt.Error ?? "Chưa dịch được ảnh.";
+            StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+            return;
+        }
         try
         {
             if (!evt.Ok) { ImageStatus = "Chưa hoàn tất: " + evt.Error; return; }

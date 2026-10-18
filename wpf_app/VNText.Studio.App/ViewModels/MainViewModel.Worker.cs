@@ -142,7 +142,7 @@ public sealed partial class MainViewModel
                     _pendingExternalTranslationImportTargetPath = "";
                 Busy = false;
                 _runningTask = null;
-                if (completedTask is "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback")
+                if (completedTask is "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback")
                 {
                     CompleteImageTask(completedTask, evt);
                     break;

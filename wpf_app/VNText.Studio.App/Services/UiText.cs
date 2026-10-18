@@ -142,6 +142,7 @@ public static class UiText
         ["Chọn ảnh"] = "Choose image",
         ["Text trong ảnh — OCR và bản dịch duyệt"] = "Text in images — OCR and reviewed translations",
         ["Tìm ảnh từ thư mục game"] = "Find images in game folder",
+        ["Dịch lại ảnh…"] = "Retry image translation…",
         ["OCR ảnh đã chọn"] = "OCR selected image",
         ["Thêm region thủ công"] = "Add region manually",
         ["Duyệt text/crop"] = "Review text/crop",

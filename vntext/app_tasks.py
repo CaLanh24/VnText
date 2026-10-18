@@ -1309,6 +1309,20 @@ def run_extract_task(
             )
         if engine.engine == "RENPY_LOOSE_SOURCE":
             payload["renpy_sdk_missing"] = renpy_sdk_missing
+        # Image drafts are independent of CSV completion/patch eligibility.
+        # An OCR/model failure must not discard a successfully extracted package.
+        try:
+            from vntext.image_batch import run_image_batch
+            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress)
+            if images['total']:
+                note = f"Ảnh: {images['translated']} bản dịch nháp, {images['untranslated']} chưa dịch; xem {images['output']}."
+                log(note)
+                payload['summary'] += " " + note
+        except Exception as image_error:
+            log("CSV đã được giữ; xử lý ảnh chưa hoàn tất: " + str(image_error))
+            payload['summary'] += " Xử lý ảnh chưa hoàn tất; xem nhật ký."
+        if is_cancelled is not None and is_cancelled():
+            raise UnityAnalysisCancelled()
         complete(payload)
     except UnityAnalysisCancelled:
         _emit_complete(

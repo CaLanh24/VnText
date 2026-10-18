@@ -195,6 +195,10 @@ Archive adapters chỉ hỗ trợ các RPA header/version được khai báo và
 
 **Tests/evidence:** `tests/unit/test_renpy_patch.py`, `tests/unit/test_patch_delivery.py`, `tests/unit/test_worker_protocol.py`, `tests/unit/test_wpf_workflow.py`, WPF harness; external full-game/Release evidence chỉ được claim khi fixture và exact Release gate được cung cấp.
 
+### Automatic image drafts — Owner decision 2026-10-18 (after0.1.6)
+
+Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi translation beside CSV. This supersedes the manual-review requirement above only for the new automatic draft route; existing manual APIs retain their checks. Hide the OCR table; keep one action to retry an image. Export `images/original`, `images/translated`, `images/untranslated` and a per-image report, preserving source/archive identity. Generated translations are drafts, never fake human approvals. Unsupported/failed images remain unchanged with reasons; missing OCR/model does not invalidate CSV or authorize downloads. No new model/generative inpainting, automatic game installation, or claim of artwork/translation quality. Retry creates a new output set, never overwrites prior results. Use existing CT2/OPUS-MT, infer flat/transparent backgrounds automatically; unsupported complex backgrounds remain untranslated. Preserve dimensions and all pixels outside detected regions.
+
 ## 9. Compatibility facade
 
 **Owner:** `vntext_studio.py`, `vntext/extract.py`, `vntext/mt_ct2.py`, `vntext/patch.py`.

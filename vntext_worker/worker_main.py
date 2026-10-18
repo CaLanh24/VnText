@@ -38,7 +38,7 @@ def _dispatch(task_id: str, task: str, params: dict[str, Any], cancel_event: thr
             )
         elif task == "extract":
             run_extract_worker(task_id, params, is_cancelled)
-        elif task in {"image_inventory", "image_extract", "image_render", "image_delivery", "image_apply", "image_rollback"}:
+        elif task in {"image_batch", "image_inventory", "image_extract", "image_render", "image_delivery", "image_apply", "image_rollback"}:
             from vntext_worker.image_tasks import run_image_worker
             run_image_worker(task_id, task, params, is_cancelled)
         elif task == "analyze":
@@ -78,7 +78,7 @@ def _configure_stdio_utf8() -> None:
 def main() -> int:
     _configure_stdio_utf8()
     emit_ready()
-    # Initialize CT2 synchronously only on the translate command path. Loading
+    # Initialize CT2 synchronously on translate and optional image paths. Loading
     # the native runtime in a background thread races file I/O in patch/extract
     # tasks on Windows; _ensure_ct2_on_main_thread() still preserves translate
     # readiness semantics.
@@ -120,6 +120,13 @@ def main() -> int:
             emit_complete(task_id, ok=False, error="Worker busy")
             continue
 
+        # Keep native CT2 initialization on the command thread. Optional image
+        # drafts cannot make text extraction fail when the model is missing.
+        if task in {"extract", "image_batch"}:
+            try:
+                _ensure_ct2_on_main_thread()
+            except Exception:
+                pass  # The image report records the concrete missing-model error.
         if task == "translate":
             model = str(params.get("model") or "ct2").strip().lower()
             if model != "ct2":
