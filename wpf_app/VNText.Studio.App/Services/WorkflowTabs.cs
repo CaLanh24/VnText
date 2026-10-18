@@ -7,4 +7,5 @@ public static class WorkflowTabs
     public const string Patch = "patch";
     public const string EditCsv = "editcsv";
     public const string Settings = "settings";
+    public const string Journal = "journal";
 }

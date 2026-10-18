@@ -8,7 +8,11 @@ namespace VNText.Studio.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private string _settingsStatus = "";
-    public string SettingsStatus { get => UiText.Translate(_settingsStatus); private set => Set(ref _settingsStatus, value); }
+    public string SettingsStatus
+    {
+        get => UiText.Translate(_settingsStatus);
+        private set { if (Set(ref _settingsStatus,value) && !string.IsNullOrWhiteSpace(value)) AppendLog(value); }
+    }
     public sealed class SettingsChoice(string key, string label) : System.ComponentModel.INotifyPropertyChanged
     {
         public string Key { get; } = key;

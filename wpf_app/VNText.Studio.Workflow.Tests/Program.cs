@@ -79,6 +79,7 @@ internal static class Program
             return 1;
         }
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
+        Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
         Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
         Run("AfterExtract_CurrentTranslate", AfterExtract_CurrentTranslate, failures);
@@ -192,6 +193,37 @@ internal static class Program
         AssertEqual("extract", snap.Current);
         AssertEqual(WorkflowStepState.Current, snap.ExtractState);
         AssertTrue(snap.StepStatusLine.Contains("Chọn game"));
+    }
+
+    private static void Journal_RoutesProgressAndErrorsWithoutCrossTabLeak()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestBeginTaskLog("extract-log", "extract");
+        vm.TestBeginTaskLog("translate-log", "translate");
+        vm.TestBeginTaskLog("patch-log", "patch");
+        vm.NavigateTab(WorkflowTabs.Journal);
+        AssertEqual("Nhật ký",vm.HeroTitle);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="extract-log",Done=1,Total=10,Step="Extract fixture" });
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="translate-log",Done=2,Total=10,Step="Translate fixture" });
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="patch-log",Done=3,Total=10,Step="Patch fixture" });
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="log", Id="extract-log",Text="[stderr] diagnostic fixture" });
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="patch-log",Error="journal-error-fixture" });
+        AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Extract fixture")));
+        AssertTrue(vm.TranslateLogLines.Any(s=>s.Contains("Translate fixture")));
+        AssertTrue(vm.PatchLogLines.Any(s=>s.Contains("Patch fixture")));
+        AssertFalse(vm.ExtractLogLines.Concat(vm.TranslateLogLines).Concat(vm.PatchLogLines).Any(s=>s.Contains("diagnostic fixture")||s.Contains("journal-error-fixture")));
+        AssertFalse(vm.TranslateLogLines.Any(s=>s.Contains("Extract fixture")));
+        AssertFalse(vm.PatchLogLines.Any(s=>s.Contains("Translate fixture")));
+        AssertTrue(vm.LogLines.Any(s=>s.Contains("journal-error-fixture")));
+        AssertTrue(vm.LogLines.Any(s=>s.Contains("diagnostic fixture")));
+        vm.RecordAppError(new InvalidOperationException("ui-exception-fixture"));
+        AssertTrue(vm.LogLines.Any(s=>s.Contains("ui-exception-fixture")));
+        vm.NavigateTab(WorkflowTabs.Settings);
+        for(var i=0;i<210;i++) vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="extract-log",Done=i,Total=300,Item=$"item-{i}"});
+        AssertEqual(200,vm.ExtractLogLines.Count);
+        for(var i=0;i<1010;i++) vm.TestHandleWorkerEvent(new WorkerEvent {Type="log",Text=$"bounded-{i}"});
+        AssertEqual(1000,vm.LogLines.Count);
+        AssertFalse(vm.TranslateLogLines.Any(s=>s.Contains("item-")));
     }
 
     private static void AfterExtract_CurrentTranslate()

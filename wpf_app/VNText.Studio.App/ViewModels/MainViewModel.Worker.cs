@@ -113,6 +113,7 @@ public sealed partial class MainViewModel
                     if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add(evt.Item);
                     if (!string.IsNullOrWhiteSpace(evt.Eta)) parts.Add($"ETA {evt.Eta}");
                     ProgressSubtitle = string.Join(" • ", parts);
+                    AddTaskProgress(evt.Id, ProgressSubtitle);
                 }
                 break;
             case "complete":
@@ -120,6 +121,7 @@ public sealed partial class MainViewModel
                     break;
 
                 var completedTask = _runningTask;
+                AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
                 if (completedTask == "cloud_export")
                     CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
                 if (completedTask == "cloud_import" && evt.Ok && evt.Complete != false

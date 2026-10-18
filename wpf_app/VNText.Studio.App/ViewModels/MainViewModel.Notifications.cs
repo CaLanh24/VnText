@@ -48,6 +48,7 @@ public sealed partial class MainViewModel
 
         void Apply()
         {
+            if (kind is "error" or "warning") AppendLog($"[{kind}] {message}");
             _toastTimer?.Stop();
             ToastMessage = message.Trim();
             ToastKind = kind;

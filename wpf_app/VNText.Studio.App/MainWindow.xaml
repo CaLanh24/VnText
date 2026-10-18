@@ -36,6 +36,7 @@
             <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource UiPageTitleTextStyle}" Foreground="{DynamicResource SettingsTitleBrush}" VerticalAlignment="Center" />
         </ControlTemplate>
         <ImageBrush x:Key="BrandArtwork" ImageSource="Assets/brand-owner.png" Viewbox="0.1053,0.1013,0.7903,0.7967" ViewboxUnits="RelativeToBoundingBox" Stretch="Fill" />
+        <DataTemplate x:Key="JournalLineTemplate"><TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" FontWeight="Normal" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,0,6" /></DataTemplate>
         <!-- About/updater-only surface resources. -->
         <LinearGradientBrush x:Key="UpdaterGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
         <LinearGradientBrush x:Key="UpdaterReadyGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
@@ -162,7 +163,15 @@
 
                 <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
                     <Border Height="1" Background="{DynamicResource LineBrush}" Margin="3,0,3,19" />
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="settings">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="journal">
+    <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+        <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=journal}" />
+        <Setter Property="Tag" Value="{Binding SelectedTab, Converter={StaticResource StrMatch}, ConverterParameter=journal}" />
+        <Setter Property="Foreground" Value="{Binding SelectedTab, Converter={StaticResource NavFg}, ConverterParameter=journal}" />
+    </Style></Button.Style>
+    <StackPanel Orientation="Horizontal"><Path Data="{StaticResource LogIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" /><TextBlock Text="Nhật ký" /></StackPanel>
+</Button>
+<Button Command="{Binding NavigateTabCommand}" CommandParameter="settings">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=settings}" />
@@ -219,6 +228,11 @@
                       VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
                 <Grid>
 
+                    <Border x:Name="JournalPage" Style="{StaticResource CardShadowBorder}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=journal}">
+                        <ScrollViewer Height="480" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding LogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" />
+                        </ScrollViewer>
+                    </Border>
                     <!-- Extract page -->
                     <Grid x:Name="ExtractPage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
                         <Grid.RowDefinitions>
@@ -470,61 +484,13 @@
                         </Border>
 
                         <Border x:Name="ExtractLogCard" Grid.Row="1" Style="{StaticResource CardShadowBorder}" Margin="0">
-                            <Expander x:Name="ExtractLogDetails" Header="Nhật ký và cảnh báo" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource InkBrush}">
-                                <Expander.Style><Style TargetType="Expander">
-                                    <Setter Property="IsExpanded" Value="False" />
-                                    <Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsExpanded" Value="True" /></DataTrigger></Style.Triggers>
-                                </Style></Expander.Style>
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="Nhật ký" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                        <TextBlock Text="Mở để xem chi tiết và cảnh báo." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
-                                    </StackPanel>
-                                    <Border Grid.Column="1" Style="{StaticResource StatusPillStyle}">
-                                        <TextBlock Text="{Binding Busy, Converter={StaticResource LogState}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource MutedBrush}" />
-                                    </Border>
-                                </Grid>
-                                <Border Grid.Row="1" Style="{StaticResource LogPanelBorderStyle}" Margin="0,16,0,0"
-                                        Height="220" VerticalAlignment="Top">
-                                    <Grid>
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="310"
-                                                    Visibility="{Binding LogLines.Count, Converter={StaticResource EmptyLogVis}}">
-                                            <Border Width="48" Height="48" CornerRadius="16" Background="{DynamicResource IconSoftBrush}" HorizontalAlignment="Center">
-                                            <Path Data="{StaticResource ActivityIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="24" Height="24" HorizontalAlignment="Center" />
-                                            </Border>
-                                            <TextBlock Text="Chưa có hoạt động" Style="{StaticResource UiRowTitleTextStyle}"
-                                                       HorizontalAlignment="Center" Margin="0,15,0,0" />
-                                            <TextBlock Text="Kết quả quét và các cảnh báo sẽ xuất hiện ở đây sau khi bạn bắt đầu."
-                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" LineHeight="19"
-                                                       Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,8,0,0" />
-                                        </StackPanel>
-                                        <ScrollViewer x:Name="ExtractLogScrollViewer"
-                                                      Style="{StaticResource ContentPanelScrollViewer}"
-                                                      VerticalScrollBarVisibility="Auto"
-                                                      Visibility="{Binding LogLines.Count, Converter={StaticResource LogVis}}">
-                                            <ItemsControl ItemsSource="{Binding LogLines}" Margin="14,12">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}"
-                                                                   TextWrapping="Wrap" Margin="0,0,0,6" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                            </Expander>
+                            <Expander x:Name="ExtractLogDetails" Header="Nhật ký" IsExpanded="True" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
+    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
+        <ScrollViewer x:Name="ExtractLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding ExtractLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
+        </ScrollViewer>
+    </Border>
+</Expander>
                         </Border>
                     </Grid>
 
@@ -676,75 +642,13 @@
                         </Border>
 
                         <Border x:Name="TranslateLogCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0">
-                            <Expander Foreground="{DynamicResource InkBrush}" Header="Nhật ký và cảnh báo" FontSize="{StaticResource UiBodySize}">
-                                <Expander.Style><Style TargetType="Expander"><Setter Property="IsExpanded" Value="False" /><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsExpanded" Value="True" /></DataTrigger></Style.Triggers></Style></Expander.Style>
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <TextBlock Text="Nhật ký" Style="{StaticResource UiSectionTitleTextStyle}" />
-                                    </StackPanel>
-                                    <Border Grid.Column="1" Style="{StaticResource StatusPillStyle}">
-                                        <TextBlock Text="{Binding Busy, Converter={StaticResource LogState}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold"
-                                                   Foreground="{DynamicResource MutedBrush}" />
-                                    </Border>
-                                </Grid>
-                                <Border Grid.Row="1" Style="{StaticResource LogPanelBorderStyle}" Margin="0,22,0,18"
-                                        MinHeight="200" VerticalAlignment="Stretch">
-                                    <Grid>
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="310"
-                                                    Visibility="{Binding LogLines.Count, Converter={StaticResource EmptyLogVis}}">
-                                            <Border Width="48" Height="48" CornerRadius="16" Background="{DynamicResource IconSoftBrush}" HorizontalAlignment="Center">
-                                            <Path Data="{StaticResource ActivityIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="24" Height="24" HorizontalAlignment="Center" />
-                                            </Border>
-                                            <TextBlock Text="Chưa có hoạt động" Style="{StaticResource UiRowTitleTextStyle}"
-                                                       HorizontalAlignment="Center" Margin="0,15,0,0" />
-                                            <TextBlock Text="Đang chờ bạn bắt đầu phiên dịch local."
-                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" LineHeight="19"
-                                                       Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center" Margin="0,8,0,0" />
-                                        </StackPanel>
-                                        <ScrollViewer x:Name="TranslateLogScrollViewer"
-                                                      Style="{StaticResource ContentPanelScrollViewer}"
-                                                      VerticalScrollBarVisibility="Auto"
-                                                      Visibility="{Binding LogLines.Count, Converter={StaticResource LogVis}}">
-                                            <ItemsControl ItemsSource="{Binding LogLines}" Margin="14,12">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}"
-                                                                   TextWrapping="Wrap" Margin="0,0,0,8" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
-                                    </Grid>
-                                </Border>
-                                <Grid Grid.Row="2">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Tiến trình dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding ProgressPercent, Converter={StaticResource Pct}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource MutedBrush}" />
-                                    </Grid>
-                                    <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding ProgressPercent}"
-                                                 Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
-                                </Grid>
-                            </Grid>
-                            </Expander>
+                            <Expander  Header="Nhật ký" IsExpanded="True" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
+    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
+        <ScrollViewer x:Name="TranslateLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding TranslateLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
+        </ScrollViewer>
+    </Border>
+</Expander>
                         </Border>
                     </Grid>
 
@@ -884,7 +788,7 @@
                         </Border>
 
                         <Border x:Name="PatchCheckCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0"
-                                VerticalAlignment="Top">
+                                VerticalAlignment="Top" Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -960,36 +864,7 @@
                                   </StackPanel>
                                 </Expander>
 
-                                <Expander Foreground="{DynamicResource InkBrush}" Grid.Row="2" Header="Nhật ký và cảnh báo" FontSize="{StaticResource UiBodySize}" Margin="0,24,0,0">
-<Expander.Style><Style TargetType="Expander"><Setter Property="IsExpanded" Value="False" /><Style.Triggers><DataTrigger Binding="{Binding Busy}" Value="True"><Setter Property="IsExpanded" Value="True" /></DataTrigger></Style.Triggers></Style></Expander.Style>
-<Border Style="{StaticResource LogPanelBorderStyle}" Margin="0,24,0,0"
-                                        MinHeight="160" VerticalAlignment="Stretch">
-                                    <Grid>
-                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="280"
-                                                    Visibility="{Binding LogLines.Count, Converter={StaticResource EmptyLogVis}}">
-                                            <TextBlock Text="Nhật ký patch" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}"
-                                                       HorizontalAlignment="Center" />
-                                            <TextBlock Text="Log phiên làm việc sẽ hiện ở đây khi có hoạt động."
-                                                       TextAlignment="Center" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}"
-                                                       Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0" />
-                                        </StackPanel>
-                                        <ScrollViewer x:Name="PatchLogScrollViewer"
-                                                      Style="{StaticResource ContentPanelScrollViewer}"
-                                                      VerticalScrollBarVisibility="Auto"
-                                                      Visibility="{Binding LogLines.Count, Converter={StaticResource LogVis}}">
-                                            <ItemsControl ItemsSource="{Binding LogLines}" Margin="12,10">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}"
-                                                                   TextWrapping="Wrap" Margin="0,0,0,6" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </ScrollViewer>
-                                    </Grid>
-                                </Border>
 
-                                </Expander>
                                 <Border Grid.Row="3" Background="{DynamicResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,24,0,0"
                                         Visibility="{Binding PatchPreflightEvaluated, Converter={StaticResource BoolToVis}}">
                                     <Grid>
@@ -1014,6 +889,13 @@
                                 </Border>
                             </Grid>
                         </Border>
+<Border x:Name="PatchLogCard" Grid.Row="2" Style="{StaticResource CardShadowBorder}" Margin="0,24,0,0"><Expander  Header="Nhật ký" IsExpanded="True" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
+    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
+        <ScrollViewer x:Name="PatchLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding PatchLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
+        </ScrollViewer>
+    </Border>
+</Expander></Border>
                     </Grid>
 
                     <ScrollViewer x:Name="SettingsScrollViewer" Height="{Binding ActualHeight, ElementName=PageScrollViewer}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">

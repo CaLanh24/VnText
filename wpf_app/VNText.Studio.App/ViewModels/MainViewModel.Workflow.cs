@@ -119,6 +119,11 @@ public sealed partial class MainViewModel
                 HeroIcon = "gear";
                 HeroHint = "Thiết lập giao diện, dữ liệu và cập nhật.";
                 break;
+            case WorkflowTabs.Journal:
+                HeroTitle = "Nhật ký";
+                HeroIcon = "log";
+                HeroHint = "";
+                break;
             default:
                 HeroTitle = "Lấy text";
                 HeroIcon = "extract";
@@ -430,6 +435,7 @@ public sealed partial class MainViewModel
         _activeTaskId = $"task-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
         _completionHandledKey = null;
         _runningTask = task;
+        BeginTaskLog(_activeTaskId, task, statusLabel);
         _lastCompletedTask = null;
         ClearDiagnostic();
         if (task == "patch")

@@ -14,6 +14,7 @@ public static class UiText
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         ["Cài đặt"] = "Settings",
+        ["Nhật ký"] = "Logs",
         ["Chung"] = "General",
         ["Dữ liệu"] = "Data",
         ["Giới thiệu"] = "About",

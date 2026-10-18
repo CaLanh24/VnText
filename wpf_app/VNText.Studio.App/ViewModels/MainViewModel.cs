@@ -115,6 +115,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         _humanReviewRequired = _settings.HumanReviewRequired;
         _extractLevel = ExtractLevels.Normalize(_settings.ExtractLevel);
         LogLines = new ObservableCollection<string>();
+        if (!string.IsNullOrWhiteSpace(settingsError)) AppendLog(settingsError);
         LoadVersion();
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
@@ -1000,15 +1001,18 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (string.IsNullOrWhiteSpace(line))
             return;
-        var stamped = $"[{DateTime.Now:HH:mm:ss}] {line.Trim()}";
+        var content = line.Trim();
+        if (content.Length > 4000) content = content[..4000];
+        var stamped = $"[{DateTime.Now:HH:mm:ss}] {content}";
         LogLines.Add(stamped);
-        LogSubtitle = $"{LogLines.Count} dòng";
-        const int max = 200;
+        const int max = 1000;
         while (LogLines.Count > max)
             LogLines.RemoveAt(0);
+        LogSubtitle = $"{LogLines.Count} dòng";
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}");
 
     internal void TestSetCloudRepairPackagePath(string path) => CloudRepairPackagePath = path;
 

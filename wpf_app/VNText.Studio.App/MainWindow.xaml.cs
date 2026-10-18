@@ -150,10 +150,10 @@ public partial class MainWindow : Window
             return;
         _layoutInitialized = true;
         SetResponsiveLayout(TranslatePage, TranslateConfigCard, TranslateLogCard);
-        SetResponsiveLayout(PatchPage, PatchConfigCard, PatchCheckCard);
+        SetResponsiveLayout(PatchPage, PatchConfigCard, PatchCheckCard, PatchLogCard);
     }
 
-    private static void SetResponsiveLayout(Grid page, FrameworkElement primary, FrameworkElement secondary)
+    private static void SetResponsiveLayout(Grid page, FrameworkElement primary, FrameworkElement secondary, FrameworkElement? third = null)
     {
         page.ColumnDefinitions.Clear();
         page.RowDefinitions.Clear();
@@ -165,8 +165,13 @@ public partial class MainWindow : Window
             Grid.SetRow(primary, 0);
             Grid.SetColumn(secondary, 0);
             Grid.SetRow(secondary, 1);
-            primary.Margin = new Thickness(0, 0, 0, 14);
-            secondary.Margin = new Thickness(0);
+            primary.Margin = new Thickness(0, 0, 0, 24);
+            secondary.Margin = new Thickness(0,0,0,third is null ? 0 : 24);
+            if (third is not null)
+            {
+                page.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                Grid.SetColumn(third,0); Grid.SetRow(third,2); third.Margin = new Thickness(0);
+            }
             page.VerticalAlignment = VerticalAlignment.Top;
     }
 

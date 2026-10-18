@@ -77,6 +77,12 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
         var window = new MainWindow();
         MainWindow = window;
+        DispatcherUnhandledException += (_, args) =>
+        {
+            if (window.DataContext is ViewModels.MainViewModel vm)
+                vm.RecordAppError(args.Exception);
+            // Observability only: preserve existing exception/crash behavior.
+        };
         Exit += (_, _) =>
         {
             if (window.DataContext is IDisposable disposable)
