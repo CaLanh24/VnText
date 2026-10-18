@@ -1,0 +1,37 @@
+[
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/github.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\github.svg",
+    "sha256": "793554449a3078923edeeff585ecc04c44b0d8de17f7e6b5b0e74399f0fd744b"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/folder-open.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\folder-open.svg",
+    "sha256": "ee57452b40e71df310214091dd9da1941a397c83197b8ff8d7ae66dd4242578b"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/messages-square.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\messages-square.svg",
+    "sha256": "eecf35710e7a26095c49f0e8261452f92a3909b4f9e2020ef242211285f7e922"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/table-2.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\table-2.svg",
+    "sha256": "d7590e0427ef0c993cea6d4d3892445e60d5f6c221222e288e6325dabb6b95ac"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/sparkles.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\sparkles.svg",
+    "sha256": "cc8061ee31c43138e081522260d2ddd35465dfb2a4435fddd3d9857952d7231e"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/icons/settings.svg",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\settings.svg",
+    "sha256": "3c7bee2696ce0c2d48d34e813f4fcda31f0ad21ab9309aee3751cde4280ad737"
+  },
+  {
+    "source": "https://raw.githubusercontent.com/lucide-icons/lucide/0.468.0/LICENSE",
+    "path": "wpf_app\\VNText.Studio.App\\Assets\\Icons\\Lucide\\LICENSE",
+    "sha256": "1e7290b35280a048667bbf0ebabac1c7fd52a75300e8b2946ac165715997f2bc"
+  }
+]

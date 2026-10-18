@@ -278,3 +278,7 @@ metadata changes described above still require a new build and separate audit.
 Legal applicability and redistribution approval remain separate from the
 p1451 exact payload/license inventory. WPF project files contain
 no NuGet `PackageReference`; this does not inventory the .NET runtime or SDK.
+
+## Lucide vector icons (0.468.0)
+New GitHub, folder-open, messages-square, table-2, sparkles and settings vectors are adapted from Lucide0.468.0, not covered by the older Owner-created artwork declaration. Original SVGs, complete upstream ISC/MIT notices and exact source/hash receipt are in `wpf_app/VNText.Studio.App/Assets/Icons/Lucide/`. Geometry converted to native WPF paths. Source: https://github.com/lucide-icons/lucide/tree/0.468.0 . GitHub mark identifies the repository destination; no affiliation implied.
+Morphicons documentation was consulted as design/runtime reference; no Morphicons JavaScript/runtime code is bundled.

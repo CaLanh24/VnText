@@ -242,6 +242,10 @@ Archive adapters chỉ hỗ trợ các RPA header/version được khai báo và
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner decision (2026-10-18, Release0.1.6):** Owner explicitly approves `.dev-env` up to **5 GiB** for the shared build environment (SDK10, Python3.12 and Release packages alongside current DEV). This supersedes older3GiB shared-environment limits below. The non-exempt checkout limit remains1GiB; no game/candidate exemption, package limit, cleanup ownership or validator changes follow. Inventory both totals before each payload phase.
+
+**Additional Owner approval (2026-10-18):** Release0.1.6 may temporarily use3GiB non-exempt artifacts for the exact registered `RELEASE_RUN/candidate-0.1.6` scope, bound to a new clean-source0.1.6 prospective epoch and explicit `VNTEXT_RELEASE_TASK_ID=release-0.1.6`. Same exact-source/inventory/ownership guards as0.1.5, with its own approval; no old transition/rebaseline approval inherited. Terminal scope disposal returns non-exempt total to<=1GiB. Shared `.dev-env` stays separately<=5GiB. No package/update validator relaxation.
+
 **Owner:** `tests/lib/work_paths.py`, `tests/tools/cleanup_work_artifacts.py`, `tests/tools/run_with_cleanup.py`, `release/run_regression.ps1`.
 
 **Owner decision (2026-10-15, Release 0.1.5 continuation):** Owner approved the bounded Windows `ERROR_UNABLE_TO_REMOVE_REPLACED` updater remediation, one no-delete evidence rebaseline preserving all prior epoch history, and one use of Setup for people on 0.1.4 (direct approval reply `call_4a31e293dabe487a98c54c4cdf706a07`). The normal 0.1.5 epoch chain remains capped at eight ancestor hops. This one explicit rebaseline records the approval and prior anchor, verifies the complete old chain, and preserves all prior records/files; a later rebaseline needs a new Owner approval. The update claim is Setup-only; no full-app ZIP or in-app update claim follows. Intel Setup terms/UI remain `NOT VERIFIED` until a human accepts them.

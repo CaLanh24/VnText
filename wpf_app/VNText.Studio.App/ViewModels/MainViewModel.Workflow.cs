@@ -105,7 +105,7 @@ public sealed partial class MainViewModel
                     ? $"Sẵn sàng đóng gói {PatchEligibleCount} dòng; {PatchBlockedCount} dòng bị chặn."
                     : ReadyForPatch
                         ? "Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."
-                        : "Cần translation.csv hợp lệ (có bản dịch) và manifest.json cùng thư mục.";
+                        : "Chọn game và bản dịch để kiểm tra rồi đóng gói patch.";
                 break;
             case WorkflowTabs.EditCsv:
                 HeroTitle = "Sửa CSV";

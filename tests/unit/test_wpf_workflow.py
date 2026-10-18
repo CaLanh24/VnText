@@ -35,7 +35,7 @@ from work_paths import ambient_scope, new_scope_id, register_artifacts
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
 DOTNET = Path(os.environ.get("VNTEXT_DOTNET", str(ROOT / ".dev-env" / "dotnet-sdk-10" / "dotnet.exe")))
 WORKFLOW_PROJECT = ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests"
-DOTNET_LAYOUT_VERSION = "8.0.30"
+DOTNET_LAYOUT_VERSION = os.environ.get("VNTEXT_DOTNET_FRAMEWORK_VERSION", "8.0.30")
 APPHOST_PACK_VERSION = os.environ.get("VNTEXT_APPHOST_PACK_VERSION", "10.0.12")
 
 
@@ -227,6 +227,13 @@ class WpfWorkflowTests(unittest.TestCase):
         x_name = "{http://schemas.microsoft.com/winfx/2006/xaml}Name"
         named = {element.attrib[x_name]: element for element in xaml_root.iter() if x_name in element.attrib}
         parents = {child: parent for parent in xaml_root.iter() for child in parent}
+        patch_card = named["PatchCheckCard"]
+        self.assertNotIn("Height", patch_card.attrib)
+        self.assertEqual("Top", patch_card.attrib.get("VerticalAlignment"))
+        row_definitions = next(element for element in patch_card.iter() if element.tag.endswith("Grid.RowDefinitions"))
+        self.assertTrue(all(row.attrib.get("Height") == "Auto" for row in row_definitions))
+        self.assertIn('Text="{Binding ExtractProgressSubtitle}"', xaml)
+        self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
         delivery_panel = named["PatchDeliveryInstructionsPanel"]
         extract_options = named["ExtractOptionsPanel"]
         renpy_options = named["RenpySdkOptionsPanel"]
@@ -289,12 +296,18 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', patch_page)
         self.assertIn('Command="{Binding ChooseTranslationCsvCommand}"', patch_page)
 
-        cloud_title = xaml.index('Text="Dịch bằng công cụ bên ngoài"')
-        rows_start = xaml.rfind("<Grid.RowDefinitions>", 0, cloud_title)
-        rows_end = xaml.index("</Grid.RowDefinitions>", rows_start)
-        self.assertEqual(4, xaml[rows_start:rows_end].count("<RowDefinition"))
-        legacy_section = xaml.index('Text="Dùng lại bản dịch cũ"', rows_end)
-        self.assertIn('<Border Grid.Row="3"', xaml[rows_end:legacy_section])
+        page_root = ET.parse(ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").getroot()
+        parents = {child: parent for parent in page_root.iter() for child in parent}
+        export = next(e for e in page_root.iter() if e.attrib.get("Command") == "{Binding ExportCloudRepairPackageCommand}")
+        reuse = next(e for e in page_root.iter() if e.attrib.get("Command") == "{Binding ImportExistingTranslationCommand}")
+        self.assertLess(list(page_root.iter()).index(export), list(page_root.iter()).index(reuse))
+        for action in (export, reuse):
+            self.assertEqual("1", action.attrib.get("Grid.Column"))
+            self.assertEqual("Center", action.attrib.get("VerticalAlignment"))
+            row = parents[action]
+            labels = next(e for e in row if e.tag.endswith("StackPanel"))
+            self.assertEqual("Wrap", list(labels)[0].attrib.get("TextWrapping"))
+            self.assertEqual("{StaticResource OutlineButton}", action.attrib.get("Style"))
 
     def test_wpf_internal_update_controls_are_available_and_rechecked(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
@@ -302,9 +315,12 @@ class WpfWorkflowTests(unittest.TestCase):
         updater = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "WpfUpdateService.cs").read_text(encoding="utf-8")
         self.assertIn('Header="Giới thiệu"', xaml)
         self.assertIn('Text="{Binding CurrentVersionDisplay}"', xaml)
-        self.assertIn('Command="{Binding RecheckUpdateCommand}"', xaml)
+        self.assertIn('Click="CheckUpdates_Click"', xaml)
+        adapter = (ROOT / "wpf_app" / "VNText.Studio.App" / "UpdatePresentation.cs").read_text(encoding="utf-8")
+        self.assertIn("_vm.RecheckUpdateCommand.Execute(null)", adapter)
+        self.assertIn("_vm.RestartForUpdate()", adapter)
         self.assertIn('Text="{Binding GitHubUpdateStatus}"', xaml)
-        self.assertIn('Content="Kiểm tra cập nhật"', xaml)
+        self.assertIn('AutomationProperties.Name="Kiểm tra cập nhật"', xaml)
         self.assertIn('DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng."', xaml)
         self.assertIn('"Chưa cấu hình nguồn cập nhật."', view_model)
         self.assertNotIn('Local Updates preview', xaml)
@@ -312,8 +328,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('Stable public releases (GitHub)', xaml)
         self.assertNotIn('GitHubUpdateStatus', xaml[:xaml.index('<!-- Main content -->')])
         self.assertNotIn('RecheckUpdateCommand', xaml[:xaml.index('<!-- Main content -->')])
-        self.assertIn('Source="Assets/vntext_studio_logo_128.png"', xaml)
-        self.assertIn('Text="Dự án game"', xaml)
+        self.assertIn('ImageSource="Assets/brand-owner.png"', xaml)
+        self.assertNotIn('Text="Dự án game"', xaml)
+        self.assertNotIn('Text="PROJECT"', xaml)
         self.assertNotIn('Text="Unity project"', xaml)
         self.assertNotIn('BrandMarkGeometry', xaml)
         self.assertNotIn('BrandDarkBrush}" StrokeThickness', xaml[xaml.index('<StackPanel Grid.Row="0"'):xaml.index('<StackPanel Grid.Row="1"')])
@@ -474,6 +491,16 @@ class WpfWorkflowTests(unittest.TestCase):
             proc = _run_harness(harness_env, artifacts_root)
             self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
             self.assertIn("PASS", proc.stdout)
+            fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
+            if fixture_out:
+                import shutil
+                destination = Path(fixture_out).resolve()
+                self.assertEqual(destination, (ROOT / "DEV_RUN" / "bootstrap-build").resolve())
+                for filename in ("VNText.Studio.Workflow.Tests.dll", "VNText.Studio.Workflow.Tests.deps.json", "VNText.Studio.Workflow.Tests.runtimeconfig.json"):
+                    candidates = [artifacts_root / "bin" / "VNText.Studio.Workflow.Tests" / "release" / filename]
+                    self.assertTrue(candidates, filename)
+                    destination.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(candidates[0], destination / filename)
             outcome = "PASS"
         finally:
             subprocess.run(

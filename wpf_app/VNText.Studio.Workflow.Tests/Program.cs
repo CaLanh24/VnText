@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using VNText.Studio.App.Models;
 using VNText.Studio.App.Services;
 using VNText.Studio.App.ViewModels;
@@ -19,6 +20,19 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--preferences-only", StringComparer.Ordinal))
+        {
+            var result=1; var thread=new Thread(() => { try { result=PreferencesTests.Run(); } catch(Exception ex) { Console.Error.WriteLine(ex); } });
+            thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join(); return result;
+        }
+
+        if (args.Contains("--updater-presentation-fixture", StringComparer.Ordinal))
+        {
+            var code = 1;
+            var thread = new Thread(() => { try { code = RunPresentationFixture(args); } catch (Exception ex) { Console.Error.WriteLine(ex); } });
+            thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join(); return code;
+        }
+
         if (args.Contains("--native-update-ui", StringComparer.Ordinal))
         {
             var code = 1;
@@ -32,6 +46,7 @@ internal static class Program
             return code;
         }
         var failures = new List<string>();
+        Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, failures);
         if (args.Contains("--full-app-update-only", StringComparer.Ordinal))
         {
             Run("FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel", FullAppUpdate_AppliesAddReplaceDeleteAndKeepsDataAndModel, failures);
@@ -1070,6 +1085,31 @@ internal static class Program
                 OutputPath = root,
             };
 
+            AssertEqual("", vm.ExtractProgressSubtitle);
+            AssertEqual("", vm.ExtractStatusText);
+            AssertEqual("Chưa bắt đầu", vm.ProgressSubtitle);
+            AssertEqual("Sẵn sàng", vm.StatusText);
+            var changed = new List<string?>();
+            vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+            vm.InputPath = @"C:\game";
+            AssertEqual("Sẵn sàng lấy text", vm.ExtractStatusText);
+            AssertTrue(changed.Contains(nameof(vm.ExtractStatusText)));
+            vm.InputPath = "";
+            foreach (var message in new[] { "Đang quét", "Hoàn tất", "Đã hủy", "Lỗi worker" })
+            {
+                changed.Clear();
+                vm.ProgressSubtitle = message;
+                vm.StatusText = message;
+                AssertEqual(message, vm.ExtractProgressSubtitle);
+                AssertEqual(message, vm.ExtractStatusText);
+                AssertTrue(changed.Contains(nameof(vm.ExtractProgressSubtitle)));
+                AssertTrue(changed.Contains(nameof(vm.ExtractStatusText)));
+            }
+            vm.ProgressSubtitle = "Chưa bắt đầu";
+            vm.StatusText = "Sẵn sàng";
+            vm.SelectedTab = WorkflowTabs.Patch;
+            AssertEqual("Chọn game và bản dịch để kiểm tra rồi đóng gói patch.", vm.HeroHint);
+            vm.SelectedTab = WorkflowTabs.Extract;
             AssertEqual("Chưa phân tích game", vm.AnalyzeStatusText);
             AssertEqual("", vm.AnalyzeScanErrorText);
             AssertEqual("", vm.AnalyzeReportPath);
@@ -3281,6 +3321,150 @@ internal static class Program
         public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    // Explicit TEST ONLY presentation source. No HTTP, settings, packages or process launch.
+    private sealed class FixturePresentation : VNText.Studio.App.IUpdatePresentation
+    {
+        public string CurrentVersion { get; set; } = "TEST-0.1.5";
+        public string Version { get; set; } = "TEST-0.1.6";
+        public string Notes { get; set; } = "# Cải tiến giao diện\n- Cửa sổ cập nhật gọn hơn.\n- Ghi chú phát hành hiển thị trong ứng dụng.\n\n## Chi tiết thay đổi\n" + string.Join("\n", Enumerable.Range(1, 30).Select(i => "- Dòng ghi chú fixture " + i));
+        public string Status { get; private set; } = "TEST ONLY";
+        public bool Available { get; private set; }
+        public bool Downloading { get; private set; }
+        public bool Ready { get; private set; }
+        public long Received { get; private set; }
+        public long Total { get; private set; }
+        public bool CanStart => !Downloading;
+        public bool IsTestFixture => true;
+        public int Starts, Cancels, Restarts, Checks;
+        private TaskCompletionSource? _pending;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        public event Action? OfferRequested;
+        private void Notify() => PropertyChanged?.Invoke(this, new(""));
+        public Task CheckAsync() { Checks++; SetState("available"); OfferRequested?.Invoke(); return Task.CompletedTask; }
+        public Task DownloadAsync()
+        {
+            if (Downloading) return _pending?.Task ?? Task.CompletedTask;
+            Starts++; _pending = new(TaskCreationOptions.RunContinuationsAsynchronously); SetState("downloading"); return _pending.Task;
+        }
+        public void Cancel() { Cancels++; Downloading = false; Status = "TEST ONLY — đã hủy"; _pending?.TrySetResult(); Notify(); }
+        public void Defer(bool skip) { Status = skip ? "TEST ONLY — skip không ghi settings" : "TEST ONLY — để sau"; Notify(); }
+        public void Restart() { if (Ready) { Restarts++; Status = "TEST ONLY — restart được ghi nhận, không chạy process"; Notify(); } }
+        public void SetState(string state)
+        {
+            Available = state is "available" or "downloading" or "ready" or "about-ready" or "notes";
+            Downloading = state == "downloading"; Ready = state is "ready" or "about-ready";
+            Total = Downloading ? 1000 : 0; Received = Downloading ? 420 : 0;
+            Status = "TEST ONLY — " + state;
+            if (Ready) _pending?.TrySetResult(); Notify();
+        }
+        public void Dispose() { _pending?.TrySetCanceled(); }
+    }
+    private static void UpdaterPresentation_DynamicStatesAndSafeActions()
+    {
+        using var source = new FixturePresentation { CurrentVersion = "fixture-current-17", Version = "fixture-next-29" };
+        var offers = 0; source.OfferRequested += () => offers++;
+        source.CheckAsync().GetAwaiter().GetResult(); AssertEqual(1, offers);
+        var available = VNText.Studio.App.UpdateViewState.From(source);
+        AssertEqual("fixture-next-29", available.Version); AssertEqual("fixture-current-17", available.Current);
+        AssertEqual("Cập nhật ngay", available.PrimaryLabel);
+        var first = source.DownloadAsync(); var second = source.DownloadAsync();
+        AssertEqual(1, source.Starts); AssertTrue(ReferenceEquals(first, second));
+        var downloading = VNText.Studio.App.UpdateViewState.From(source);
+        AssertTrue(downloading.Downloading); AssertEqual(42d, downloading.Percent); AssertFalse(downloading.CanStart);
+        source.Cancel(); AssertEqual(1, source.Cancels); AssertFalse(source.Downloading);
+        source.SetState("ready"); var ready = VNText.Studio.App.UpdateViewState.From(source);
+        AssertTrue(ready.Ready); AssertEqual("Khởi động lại", ready.PrimaryLabel);
+        source.Restart(); AssertEqual(1, source.Restarts); source.Defer(true);
+        AssertTrue(source.Status.Contains("không ghi settings", StringComparison.Ordinal));
+    }
+    private static int RunPresentationFixture(string[] args)
+    {
+        string Value(string flag, string fallback) { var i = Array.IndexOf(args, flag); return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback; }
+        var state = Value("--presentation-state", "about");
+        if (!new[] { "about", "available", "downloading", "ready", "notes", "about-ready" }.Contains(state)) throw new ArgumentException("Unsupported TEST ONLY presentation state");
+        var auto = args.Contains("--presentation-smoke", StringComparer.Ordinal);
+        var app = new Application { ShutdownMode = auto ? ShutdownMode.OnExplicitShutdown : ShutdownMode.OnMainWindowClose };
+        foreach (var dictionary in new[] { "DesignTokens", "IconGeometries", "ControlStyles" })
+            app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/VNText.Studio.App;component/Themes/{dictionary}.xaml") });
+        var states = new Queue<string>(auto ? new[] { "about", "available", "downloading", "ready", "notes", "about-ready" } : new[] { state });
+        var checkedStates = new List<string>(); Exception? failed = null;
+        void Next()
+        {
+            if (states.Count == 0) { Console.WriteLine(JsonSerializer.Serialize(new { test_only = true, smoke_states = checkedStates, ok = failed is null })); app.Shutdown(failed is null ? 0 : 1); return; }
+            var current = states.Dequeue();
+            var source = new FixturePresentation(); source.SetState(current);
+            var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false); vm.SelectedTab = WorkflowTabs.Settings;
+            var window = new VNText.Studio.App.MainWindow(vm, source) { Title = "VNText Studio — TEST ONLY updater presentation" };
+            var ticks = 0;
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
+            timer.Tick += (_, _) =>
+            {
+                try
+                {
+                    ticks++;
+                    if (ticks > 30) throw new TimeoutException("TEST ONLY fixture modal did not appear");
+                    var modal = app.Windows.OfType<VNText.Studio.App.UpdateWindow>().SingleOrDefault();
+                    if (current is "about" or "about-ready")
+                    {
+                        AssertTrue(modal is null);
+                        AssertTrue(FindText(window, "Calanh")); AssertTrue(FindText(window, "Apache-2.0"));
+                        AssertTrue(FindText(window, "Phản hồi"));
+                        checkedStates.Add(current); timer.Stop(); window.Close(); return;
+                    }
+                    if (modal is null) return;
+                    AssertTrue(modal.Owner == window); AssertTrue(modal.IsVisible);
+                    if (modal.SizeToContent != SizeToContent.Height) throw new InvalidOperationException("fixture: content sizing disabled");
+                    if (modal.ActualHeight >= window.ActualHeight * .9) throw new InvalidOperationException($"fixture: modal too tall {modal.ActualHeight}/{window.ActualHeight}");
+                    AssertTrue(System.Windows.Input.KeyboardNavigation.GetTabNavigation(modal) == System.Windows.Input.KeyboardNavigationMode.Cycle);
+                    for (var focusStep = 0; focusStep < 10; focusStep++)
+                    {
+                        var focused = System.Windows.Input.Keyboard.FocusedElement as DependencyObject;
+                        if (focused is null || Window.GetWindow(focused) != modal) throw new InvalidOperationException($"fixture: keyboard focus left modal at step {focusStep}; focused={focused}");
+                        if (focused is UIElement control) control.MoveFocus(new System.Windows.Input.TraversalRequest(System.Windows.Input.FocusNavigationDirection.Next));
+                    }
+                    AssertTrue(((UIElement)window.Content).Effect is System.Windows.Media.Effects.BlurEffect);
+                    AssertEqual(1, window.OwnedWindows.Count);
+                    AssertTrue(FindText(modal, source.Version));
+                    if (current == "downloading") AssertTrue(FindText(modal, "42%"));
+                    if (current == "ready") AssertTrue(FindText(modal, "đã sẵn sàng"));
+                    if (current == "notes") AssertTrue(FindText(modal, "Cải tiến giao diện"));
+                    checkedStates.Add(current); timer.Stop(); modal.Close();
+                    AssertTrue(((UIElement)window.Content).Effect is null);
+                    window.Dispatcher.BeginInvoke(new Action(window.Close));
+                }
+                catch (Exception ex)
+                {
+                    failed = ex; Console.Error.WriteLine(ex); timer.Stop();
+                    foreach (var modal in app.Windows.OfType<VNText.Studio.App.UpdateWindow>().ToArray()) modal.Close();
+                    window.Close(); app.Shutdown(1);
+                }
+            };
+            window.Loaded += (_, _) =>
+            {
+                var tabs = FindVisual<TabControl>((ScrollViewer)window.FindName("SettingsScrollViewer")); if (tabs is not null) tabs.SelectedIndex = 2;
+                Console.WriteLine(JsonSerializer.Serialize(new { test_only = true, state = current, no_network = true, no_settings_write = true, no_apply_restart = true, pid = Environment.ProcessId }));
+                if (auto) timer.Start();
+                window.Dispatcher.BeginInvoke(new Action(() => { if (current is "available" or "downloading" or "ready" or "notes") window.ShowUpdateDialog(current == "notes"); }));
+            };
+            window.Closed += (_, _) => { timer.Stop(); if (auto && failed is null) app.Dispatcher.BeginInvoke(new Action(Next)); };
+            window.Show();
+        }
+        Next(); app.Run(); return failed is null ? 0 : 1;
+    }
+    private static bool FindText(DependencyObject parent, string text)
+    {
+        if (parent is TextBlock block && new System.Windows.Documents.TextRange(block.ContentStart, block.ContentEnd).Text.Contains(text, StringComparison.Ordinal)) return true;
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            if (FindText(System.Windows.Media.VisualTreeHelper.GetChild(parent, i), text)) return true;
+        return false;
+    }
+    private static T? FindVisual<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        { var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i); if (child is T found) return found; var nested = FindVisual<T>(child); if (nested is not null) return nested; }
+        return null;
     }
 
     private static int RunNativeUpdateUi(bool layoutOnly)

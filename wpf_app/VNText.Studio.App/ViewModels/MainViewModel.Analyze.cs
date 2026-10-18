@@ -23,7 +23,7 @@ public sealed partial class MainViewModel
 
     public string AnalyzeStatusText
     {
-        get => _analyzeStatusText;
+        get => UiText.Translate(_analyzeStatusText);
         private set => Set(ref _analyzeStatusText, value);
     }
 

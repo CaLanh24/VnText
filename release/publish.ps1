@@ -74,7 +74,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -ne 'candidate-0.1.5' -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Join-Path $DevRoot 'RELEASE_RUN')), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered candidate-0.1.5 parent containing this exact source snapshot."
@@ -195,17 +195,19 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     }
     $snapshotHead = (& git -C $DevRoot rev-parse HEAD).Trim()
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
+    $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim() -ne '0.1.5') {
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6') -or
+        (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
-    $env:VNTEXT_RELEASE_TASK_ID = 'release-0.1.5'
+    $env:VNTEXT_RELEASE_TASK_ID = "release-$snapshotReleaseVersion"
     $parentBudgetProbe = "import json,sys; sys.path.insert(0,sys.argv[1]); from cleanup_work_artifacts import _project_size_snapshot; print(json.dumps(_project_size_snapshot(),sort_keys=True))"
     $parentBudgetRaw = & $PythonPath -B -c $parentBudgetProbe $ArtifactHelpersRoot
     if ($LASTEXITCODE -ne 0) { throw "Canonical parent budget readback failed: $($parentBudgetRaw -join ' ')" }
     try { $parentBudget = ($parentBudgetRaw -join "`n") | ConvertFrom-Json -ErrorAction Stop }
     catch { throw "Canonical parent budget readback was not valid JSON." }
-    if ($parentBudget.budget_profile -ne 'release-0.1.5' -or -not $parentBudget.complete -or
+    if ($parentBudget.budget_profile -ne "release-$snapshotReleaseVersion" -or -not $parentBudget.complete -or
         -not $parentBudget.within_limit -or @($parentBudget.errors).Count -ne 0) {
         throw "Canonical parent budget admission failed closed: $($parentBudget | ConvertTo-Json -Depth 5 -Compress)"
     }

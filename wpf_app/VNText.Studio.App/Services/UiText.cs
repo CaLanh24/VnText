@@ -1,0 +1,247 @@
+using System.Runtime.CompilerServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
+namespace VNText.Studio.App.Services;
+
+// Only literal UI labels are localized. Bindings, editable text and user data stay intact.
+public static class UiText
+{
+    private static bool _installed;
+    public static string Language { get; private set; } = "vi";
+    private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
+    private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
+    {
+        ["Cài đặt"] = "Settings",
+        ["Chung"] = "General",
+        ["Dữ liệu"] = "Data",
+        ["Giới thiệu"] = "About",
+        ["Giao diện"] = "Appearance",
+        ["Ngôn ngữ"] = "Language",
+        ["Chủ đề"] = "Theme",
+        ["Sáng"] = "Light",
+        ["Tối"] = "Dark",
+        ["Theo hệ thống"] = "System",
+        ["Hành động khi đóng"] = "When closing",
+        ["Thoát ứng dụng"] = "Exit application",
+        ["Ẩn xuống khay hệ thống"] = "Hide to system tray",
+        ["Khởi động thu nhỏ"] = "Start minimized",
+        ["Độ đậm nền"] = "Background intensity",
+        ["Sau 4 giờ"] = "After 4 hours",
+        ["Sau 1 ngày"] = "After 1 day",
+        ["Sau 1 tuần"] = "After 1 week",
+        ["Nhắc cập nhật"] = "Update reminder",
+        ["Tự động tải cập nhật nền"] = "Download updates in background",
+        ["Chỉ tải; bạn quyết định khi cài và khởi động lại."] = "Download only; you choose when to install and restart.",
+        ["Khởi động và đóng"] = "Startup and closing",
+        ["Mở VNText Studio"] = "Open VNText Studio",
+        ["Thoát"] = "Exit",
+        ["Tỷ lệ giao diện"] = "Interface scale",
+        ["Nhớ vị trí và kích thước cửa sổ"] = "Remember window position and size",
+        ["Cập nhật"] = "Updates",
+        ["Kiểm tra cập nhật khi mở ứng dụng"] = "Check for updates on startup",
+        ["Thông báo khi có phiên bản mới"] = "Notify when an update is available",
+        ["Chỉ tải khi bạn chọn cập nhật."] = "Download only when you choose to update.",
+        ["Thư mục dữ liệu"] = "Data folder",
+        ["Mở thư mục"] = "Open folder",
+        ["Môi trường dịch local"] = "Local translation environment",
+        ["Lấy text"] = "Extract text",
+        ["Dịch local"] = "Local translation",
+        ["Dịch tự động"] = "Automatic translation",
+        ["Sửa CSV"] = "CSV editor",
+        ["Tạo patch"] = "Create patch",
+        ["Chọn game, rồi bấm Lấy text."] = "Choose a game, then extract text.",
+        ["Dịch bằng mô hình local hoặc chọn CSV đã dịch."] = "Translate with a local model or select a translated CSV.",
+        ["Chọn game và bản dịch để kiểm tra rồi đóng gói patch."] = "Choose a game and translation, validate, then package the patch.",
+        ["Nguồn và gói dịch"] = "Source and translation package",
+        ["Nguồn được giữ nguyên; gói dịch lưu riêng."] = "The source stays unchanged; translation packages are saved separately.",
+        ["Game hoặc asset"] = "Game or asset",
+        ["Game / asset"] = "Game / asset",
+        ["Mở"] = "Open",
+        ["Chọn..."] = "Choose...",
+        ["Chọn file"] = "Choose file",
+        ["Chọn file CSV"] = "Choose CSV file",
+        ["Chọn CSV"] = "Choose CSV",
+        ["Thư mục xuất"] = "Output folder",
+        ["Thư mục xuất / gói dịch"] = "Output / package folder",
+        ["Phân tích game"] = "Analyze game",
+        ["Phân tích"] = "Analyze",
+        ["Kiểm tra khả năng lấy text; không sửa game."] = "Check extraction support without changing the game.",
+        ["Chi tiết phân tích"] = "Analysis details",
+        ["Tuỳ chọn trích xuất"] = "Extraction options",
+        ["Tách dòng cần duyệt"] = "Separate rows requiring review",
+        ["Mức lọc văn bản thô"] = "Raw text filtering",
+        ["Sạch"] = "Clean",
+        ["Cân bằng"] = "Balanced",
+        ["Quét sâu"] = "Deep scan",
+        ["Tiến trình quét"] = "Extraction progress",
+        ["Nhật ký và cảnh báo"] = "Logs and warnings",
+        ["Nhật ký"] = "Log",
+        ["Nguồn dịch"] = "Translation source",
+        ["File CSV cần xử lý"] = "CSV to process",
+        ["Mô hình local"] = "Local model",
+        ["Thuật ngữ ưu tiên"] = "Preferred terminology",
+        ["Chỉnh sửa"] = "Edit",
+        ["Quy tắc dịch"] = "Translation rules",
+        ["Ghi đè bản dịch cũ"] = "Overwrite existing translations",
+        ["Bắt buộc duyệt thủ công kết quả MT"] = "Require manual review of machine translations",
+        ["Công cụ bổ trợ"] = "Additional tools",
+        ["Dịch bằng công cụ bên ngoài"] = "Translate with an external tool",
+        ["Xuất ZIP"] = "Export ZIP",
+        ["Dùng lại bản dịch cũ"] = "Reuse a previous translation",
+        ["Nhập bản dịch cũ"] = "Import previous translation",
+        ["Bắt đầu dịch"] = "Start translation",
+        ["Tiến trình dịch"] = "Translation progress",
+        ["Hủy tác vụ"] = "Cancel task",
+        ["Nguồn đóng gói"] = "Package source",
+        ["File bản dịch"] = "Translation file",
+        ["Kiểm tra"] = "Validate",
+        ["Mở trong Sửa CSV…"] = "Open in CSV editor…",
+        ["Kiểm tra CSV rồi đóng gói cho game."] = "Validate the CSV, then package it for the game.",
+        ["Tiến trình đóng gói"] = "Packaging progress",
+        ["Đóng gói patch"] = "Build patch",
+        ["Kiểm tra trước khi build"] = "Pre-build checks",
+        ["Kết quả kiểm tra"] = "Validation results",
+        ["Phạm vi"] = "Scope",
+        ["Tìm và thay thế bản dịch"] = "Find and replace translations",
+        ["Tìm trong bản dịch"] = "Find in translations",
+        ["Thay bằng"] = "Replace with",
+        ["Xem trước & thay thế"] = "Preview & replace",
+        ["Tải lại"] = "Reload",
+        ["Lưu thay đổi"] = "Save changes",
+        ["Nguồn CSV"] = "CSV source",
+        ["Chỉnh sửa bản dịch trước khi đóng gói."] = "Edit translations before packaging.",
+        ["Xóa bản dịch lỗi"] = "Remove invalid translations",
+        ["Dịch lại dòng lỗi (CT2)"] = "Retranslate invalid rows (CT2)",
+        ["NGUYÊN BẢN"] = "SOURCE",
+        ["BẢN DỊCH TIẾNG VIỆT"] = "VIETNAMESE TRANSLATION",
+        ["TRẠNG THÁI"] = "STATUS",
+        ["CHƯA LƯU"] = "UNSAVED",
+        ["HỢP LỆ"] = "VALID",
+        ["BỊ CHẶN"] = "BLOCKED",
+        ["BƯỚC CUỐI"] = "FINAL STEP",
+        ["Tác giả"] = "Author",
+        ["Giấy phép"] = "License",
+        ["Kho mã nguồn"] = "Source repository",
+        ["Phản hồi"] = "Feedback",
+        ["Ghi chú phát hành"] = "Release notes",
+        ["Kiểm tra cập nhật"] = "Check for updates",
+        ["Báo lỗi và đề xuất trên GitHub"] = "Report issues and suggest features on GitHub",
+        ["VNText hỗ trợ quy trình lấy text, chỉnh CSV và đóng gói patch."] = "Extract text, edit translations and package patches with VNText.",
+        ["Chưa cấu hình nguồn cập nhật."] = "No update source configured.",
+        ["Đóng"] = "Close",
+        ["Thêm"] = "Add",
+        ["Xóa"] = "Remove",
+        ["Từ trong game"] = "In-game term",
+        ["Dịch thành"] = "Translation",
+        ["Ví dụ: pheromones"] = "Example: pheromones",
+        ["Ví dụ: mị lực"] = "Example: allure",
+        ["Chọn cách dịch muốn dùng thống nhất cho những từ thường gặp."] = "Choose consistent translations for frequently used terms.",
+        ["Lưu review riêng"] = "Save review separately",
+        ["Chọn ảnh"] = "Choose image",
+        ["Text trong ảnh — OCR và bản dịch duyệt"] = "Text in images — OCR and reviewed translations",
+        ["Tìm ảnh từ thư mục game"] = "Find images in game folder",
+        ["OCR ảnh đã chọn"] = "OCR selected image",
+        ["Thêm region thủ công"] = "Add region manually",
+        ["Duyệt text/crop"] = "Review text/crop",
+        ["Dựng ảnh từ bản dịch duyệt"] = "Render image from reviewed translation",
+        ["Tạo gói ảnh Ren'Py"] = "Create Ren'Py image package",
+        ["Cài gói vào bản sao game…"] = "Install package into a game copy…",
+        ["Phục hồi giao dịch ảnh…"] = "Recover image transaction…",
+        ["Mở review đã lưu"] = "Open saved review",
+        ["Thay chữ trong suốt"] = "Replace transparent text",
+        ["Thay nền region bằng màu đặc"] = "Replace region with a solid background",
+        ["Clone nền mẫu đã kiểm"] = "Clone a verified background sample",
+        ["Chữ RGB"] = "Text RGB",
+        ["Nền RGB"] = "Background RGB",
+        ["Rộng"] = "Width",
+        ["Cao"] = "Height",
+        ["Tải công cụ rồi lấy text"] = "Download tools, then extract text",
+        ["Tiếp tục, lời thoại cần xem lại"] = "Continue; dialogue needs review",
+        ["Chọn công cụ đã cài"] = "Choose installed tools",
+        ["Chỉ lấy văn bản"] = "Extract text only",
+        ["Tài nguyên"] = "Assets",
+        ["Có thể là văn bản"] = "Possible text",
+        ["Cần xem lại / chưa hỗ trợ"] = "Needs review / unsupported",
+        ["Có đường ghi lại; chưa kiểm patch"] = "Write-back route exists; patch unverified",
+        ["Chưa xác định"] = "Unknown",
+        ["Chưa có hoạt động"] = "No activity yet",
+        ["Mở để xem chi tiết và cảnh báo."] = "Open to view details and warnings.",
+        ["Mở thư mục output"] = "Open output folder",
+        ["Game Ren'Py được nhận diện"] = "Ren'Py game detected",
+        ["Nếu tiếp tục không có SDK, một số lời thoại sẽ cần xem lại."] = "Continuing without the SDK may leave dialogue requiring review.",
+        ["Chỉ tìm trong cột Bản dịch"] = "Search only the Translation column",
+        ["Chỉ nhập dòng khớp mã và câu gốc; dòng khác được giữ để sửa."] = "Import only matching keys and source text; keep other rows for review.",
+        ["Khi bật, kết quả MT được ghi vào review_only.csv và phải duyệt trước khi tạo patch."] = "When enabled, machine translations go to review_only.csv and need review before patching.",
+        ["Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."] = "For CSV files from a ZIP package, package identity is checked before patching.",
+        ["Phân tích chỉ đọc nguồn; kết quả này chưa kiểm tra việc ghi bản dịch vào game."] = "Analysis is read-only and does not verify translation write-back.",
+        ["Kết quả quét và các cảnh báo sẽ xuất hiện ở đây sau khi bạn bắt đầu."] = "Scan results and warnings appear here after you start.",
+        ["Log phiên làm việc sẽ hiện ở đây khi có hoạt động."] = "Session logs appear here when there is activity.",
+        ["Đang chờ bạn bắt đầu phiên dịch local."] = "Waiting for you to start local translation.",
+        ["Tạo gói dịch để dịch bằng công cụ bên ngoài; sau đó chọn CSV kết quả ở Tạo patch."] = "Export a package for external translation, then select the resulting CSV in Create patch.",
+        ["Bản dịch"] = "Translation",
+        ["CTranslate2 · dịch Anh sang Việt · chạy offline."] = "CTranslate2 · English to Vietnamese · offline.",
+        ["Dịch local — Chạy mô hình AI ngay trên máy của bạn. LOCAL AI."] = "Local translation — run AI models on your computer.",
+        ["Nhật ký patch"] = "Patch log",
+        ["Nền phẳng đã kiểm"] = "Verified plain background",
+        ["X nền mẫu"] = "Sample background X",
+        ["Y nền mẫu"] = "Sample background Y",
+        ["Xóa thuật ngữ này"] = "Remove this term",
+        ["Chọn thư mục game..."] = "Select game folder...",
+        ["Chưa phân tích game"] = "Game not analyzed",
+        ["Đã lưu cài đặt."] = "Settings saved.",
+        ["Python worker có sẵn"] = "Python worker available",
+        ["Thiếu Python worker"] = "Python worker missing",
+        ["File model OPUS-MT INT8 có sẵn."] = "OPUS-MT INT8 model files available.",
+        ["Thiếu file model OPUS-MT INT8."] = "OPUS-MT INT8 model files missing.",
+        ["PNG/JPEG/WebP tĩnh. OCR tiếng Anh cần review. Chữ trên nền trong suốt có thể được thay bằng chữ mới; pixel ngoài region giữ nguyên. Nền phức tạp cần xác nhận thay toàn region bằng màu đặc. Output riêng, không tự patch game."] = "Static PNG/JPEG/WebP. English OCR needs review. Transparent text can be replaced; pixels outside the region stay unchanged. Complex backgrounds require explicit approval to replace the whole region with a solid color. Output is separate; games are not patched automatically.",
+        ["Sửa text OCR, bản dịch và crop x/y/rộng/cao (pixel gốc). Với chữ trong suốt, region đã chọn sẽ được làm trong suốt rồi vẽ chữ mới; xác nhận chỉ khi vùng đó không chứa artwork cần giữ. Artwork phức tạp cần xác nhận thay toàn region bằng màu đặc. Chọn đúng một chế độ; pixel ngoài region giữ nguyên."] = "Edit OCR text, translation and crop x/y/width/height in original pixels. Transparent-text mode clears the selected region before drawing new text; approve only if no artwork in that region needs preserving. Complex artwork requires approval to replace the entire region with a solid color. Choose exactly one mode; pixels outside the region stay unchanged.",
+        ["Ngôn ngữ hiển thị"] = "Display language",
+        ["Chọn ngôn ngữ hiển thị giao diện"] = "Choose the interface display language",
+        ["Chủ đề ứng dụng"] = "Application theme",
+        ["Chuyển đổi chế độ sáng, tối hoặc theo hệ thống."] = "Switch between light, dark and system appearance.",
+        ["Điều chỉnh sắc độ nền; không làm mờ chữ và điều khiển."] = "Adjust background tint without fading text or controls.",
+        ["Điều chỉnh kích thước hiển thị của giao diện."] = "Adjust the display size of the interface.",
+        ["Khôi phục vị trí và kích thước cửa sổ ở lần mở sau."] = "Restore the window position and size on the next launch.",
+        ["Thoát ứng dụng hoặc tiếp tục chạy trong khay hệ thống."] = "Exit the application or keep it running in the system tray.",
+        ["Mở ứng dụng ở trạng thái thu nhỏ; dùng khay nếu đã chọn."] = "Start minimized; use the tray when that close action is selected.",
+        ["Tự kiểm tra phiên bản mới khi khởi động và định kỳ khi ứng dụng đang chạy."] = "Check at startup and periodically while the application is running.",
+        ["Hiển thị thông báo khi có bản cập nhật."] = "Show a notification when an update is available.",
+        ["Tải khi ứng dụng rảnh; chỉ cài và khởi động lại khi bạn xác nhận."] = "Download while idle; install and restart only after your confirmation.",
+        ["Chọn thời gian nhắc lại sau khi bạn hoãn cập nhật."] = "Choose when to remind you after postponing an update.",
+        ["Thực thi các tác vụ xử lý trên máy."] = "Run processing tasks on this computer.",
+    };
+    public static string Translate(string text) => Language == "en" && English.TryGetValue(text, out var translated) ? translated : text;
+    public static void SetLanguage(string language) => Language = language == "en" ? "en" : "vi";
+    public static void Install()
+    {
+        if (_installed) return;
+        _installed = true;
+        EventManager.RegisterClassHandler(typeof(FrameworkElement), FrameworkElement.LoadedEvent,
+            new RoutedEventHandler((sender, _) => { if (sender is DependencyObject d) ApplyElement(d); }), true);
+    }
+    public static void Apply(DependencyObject root)
+    {
+        ApplyElement(root);
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++) Apply(VisualTreeHelper.GetChild(root, i));
+    }
+    private static void ApplyElement(DependencyObject element)
+    {
+        if (element is TextBlock) Literal(element, TextBlock.TextProperty);
+        if (element is ContentControl) Literal(element, ContentControl.ContentProperty);
+        if (element is HeaderedContentControl) Literal(element, HeaderedContentControl.HeaderProperty);
+        if (element is FrameworkElement) { Literal(element, FrameworkElement.ToolTipProperty); Literal(element, FrameworkElement.TagProperty); }
+    }
+    private static void Literal(DependencyObject element, DependencyProperty property)
+    {
+        if (System.Windows.Data.BindingOperations.IsDataBound(element, property)) return;
+        var originals = Originals.GetOrCreateValue(element);
+        if (!originals.TryGetValue(property, out var original))
+        {
+            if (element.ReadLocalValue(property) is not string text || !English.ContainsKey(text)) return;
+            originals[property] = original = text;
+        }
+        element.SetCurrentValue(property, Translate(original));
+    }
+}

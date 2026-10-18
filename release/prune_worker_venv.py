@@ -13,6 +13,8 @@ DROP_PACKAGES = {
     "PySide6",
     "PySide6_Addons",
     "PySide6_Essentials",
+    "PySide6_Pdf",
+    "PySide6_WebEngine",
     "pyinstaller_hooks_contrib",
     "setuptools",
     "shiboken6",

@@ -8,7 +8,33 @@ namespace VNText.Studio.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private string _settingsStatus = "";
-    public string SettingsStatus { get => _settingsStatus; private set => Set(ref _settingsStatus, value); }
+    public string SettingsStatus { get => UiText.Translate(_settingsStatus); private set => Set(ref _settingsStatus, value); }
+    public sealed class SettingsChoice(string key, string label) : System.ComponentModel.INotifyPropertyChanged
+    {
+        public string Key { get; } = key;
+        public string Label => UiText.Translate(label);
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        internal void RefreshLabel() => PropertyChanged?.Invoke(this, new(nameof(Label)));
+    }
+    public SettingsChoice[] LanguageOptions { get; } = [new("vi", "Tiếng Việt"), new("en", "English")];
+    public SettingsChoice[] ThemeOptions { get; } = [new("light", "Sáng"), new("dark", "Tối"), new("system", "Theo hệ thống")];
+    public SettingsChoice[] CloseActionOptions { get; } = [new("exit", "Thoát ứng dụng"), new("tray", "Ẩn xuống khay hệ thống")];
+    public SettingsChoice[] UpdateReminderOptions { get; } = [new("4", "Sau 4 giờ"), new("24", "Sau 1 ngày"), new("168", "Sau 1 tuần")];
+    public string Language { get => _settings.Language; set { if (value is not ("vi" or "en") || value == _settings.Language) return; _settings.Language = value; Raise(); SaveSettings(); } }
+    public string Theme { get => _settings.Theme; set { if (value is not ("light" or "dark" or "system") || value == _settings.Theme) return; _settings.Theme = value; Raise(); SaveSettings(); } }
+    public string CloseAction { get => _settings.CloseAction; set { if (value is not ("exit" or "tray") || value == _settings.CloseAction) return; _settings.CloseAction = value; Raise(); SaveSettings(); } }
+    public bool StartMinimized { get => _settings.StartMinimized; set { if (_settings.StartMinimized == value) return; _settings.StartMinimized = value; Raise(); SaveSettings(); } }
+    public double[] BackgroundStrengthOptions => Enumerable.Range(0, 11).Select(n => n * 10d).Append(BackgroundStrength).Distinct().Order().ToArray();
+    public double BackgroundStrength { get => _settings.BackgroundStrength; set { if (!double.IsFinite(value)) return; value = Math.Clamp(value, 0, 100); if (_settings.BackgroundStrength == value) return; _settings.BackgroundStrength = value; Raise(); SaveSettings(); } }
+    public bool BackgroundUpdateDownload { get => _settings.BackgroundUpdateDownload; set { if (_settings.BackgroundUpdateDownload == value) return; _settings.BackgroundUpdateDownload = value; Raise(); SaveSettings(); } }
+    public string UpdateReminder { get => _settings.UpdateReminderHours.ToString(); set { if (!int.TryParse(value, out var h) || h is not (4 or 24 or 168) || h == _settings.UpdateReminderHours) return; _settings.UpdateReminderHours = h; Raise(); SaveSettings(); } }
+    internal void RefreshLocalizedOptions()
+    {
+        foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
+        Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
+        Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
+        Raise(nameof(HeroTitle)); Raise(nameof(HeroHint)); Raise(nameof(SelectedTab));
+    }
     public double[] UiScaleOptions { get; } = [1, 1.1, 1.2];
     public double UiScale
     {
@@ -23,27 +49,29 @@ public sealed partial class MainViewModel
     public bool AutoCheckUpdates
     {
         get => _settings.AutoCheckUpdates;
-        set { _settings.AutoCheckUpdates = value; Raise(); SaveSettings(); }
+        set { _settings.AutoCheckUpdates = value; Raise(); SaveSettings(); ScheduleUpdateChecks(); }
     }
     public bool NotifyUpdates
     {
         get => _settings.NotifyUpdates;
-        set { _settings.NotifyUpdates = value; Raise(); SaveSettings(); }
+        set { _settings.NotifyUpdates = value; Raise(); SaveSettings(); ScheduleUpdateReminder(); }
     }
     public string DataFolder => WorkerPaths.AppDataRoot();
     private string _modelFolder = "";
     private string _modelStatus = "Chưa kiểm tra model.";
     public string ModelFolder => _modelFolder;
-    public string ModelStatus => _modelStatus;
+    public string ModelStatus => UiText.Translate(_modelStatus);
     public string WorkerStatus
     {
-        get { try { return File.Exists(WorkerPaths.PythonExecutable()) ? "Python worker có sẵn" : "Thiếu Python worker"; }
+        get { try { return UiText.Translate(File.Exists(WorkerPaths.PythonExecutable()) ? "Python worker có sẵn" : "Thiếu Python worker"); }
               catch (Exception ex) { return "Worker chưa sẵn sàng: " + ex.Message; } }
     }
     public RelayCommand OpenDataFolderCommand => new(_ => OpenSettingsFolder(DataFolder));
     public RelayCommand OpenModelFolderCommand => new(_ => OpenSettingsFolder(ModelFolder));
     public RelayCommand OpenRepositoryCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText"));
-    public RelayCommand OpenReleaseNotesCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText/releases"));
+    public RelayCommand OpenFeedbackCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText/issues"));
+    public event Action? ReleaseNotesRequested;
+    public RelayCommand OpenReleaseNotesCommand => new(_ => ReleaseNotesRequested?.Invoke());
     private void OpenSettingsLink(string url)
     {
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }

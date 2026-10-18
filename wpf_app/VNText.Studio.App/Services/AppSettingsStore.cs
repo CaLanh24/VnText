@@ -15,6 +15,14 @@ public sealed class AppSettings
     public double WindowTop { get; set; } = double.NaN;
     public double WindowWidth { get; set; } = 1440;
     public double WindowHeight { get; set; } = 920;
+    public string Language { get; set; } = "vi";
+    public string Theme { get; set; } = "light";
+    public string CloseAction { get; set; } = "exit";
+    public bool StartMinimized { get; set; }
+    public double BackgroundStrength { get; set; } = 100;
+    public bool BackgroundUpdateDownload { get; set; }
+    public int UpdateReminderHours { get; set; } = 24;
+    public DateTime NextUpdateReminderUtc { get; set; } = DateTime.MinValue;
     public bool AutoCheckUpdates { get; set; } = true;
     public bool NotifyUpdates { get; set; } = true;
     public string SkippedUpdateVersion { get; set; } = "";
@@ -48,6 +56,11 @@ public static class AppSettingsStore
                 ?? throw new JsonException("Settings must be an object.");
             loaded.ExtractLevel = ExtractLevels.Normalize(loaded.ExtractLevel);
             loaded.UiScale = loaded.UiScale is 1 or 1.1 or 1.2 ? loaded.UiScale : 1;
+            loaded.Language = loaded.Language is "vi" or "en" ? loaded.Language : "vi";
+            loaded.Theme = loaded.Theme is "light" or "dark" or "system" ? loaded.Theme : "light";
+            loaded.CloseAction = loaded.CloseAction is "exit" or "tray" ? loaded.CloseAction : "exit";
+            loaded.BackgroundStrength = double.IsFinite(loaded.BackgroundStrength) ? Math.Clamp(loaded.BackgroundStrength, 0, 100) : 100;
+            loaded.UpdateReminderHours = loaded.UpdateReminderHours is 4 or 24 or 168 ? loaded.UpdateReminderHours : 24;
             return loaded;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)

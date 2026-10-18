@@ -404,6 +404,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             class Entry:
                 def __init__(self, path, mode):
                     self.path = str(path)
+                    self.name = Path(path).name
                     self.mode = mode
 
                 def stat(self, *, follow_symlinks=False):
@@ -2096,37 +2097,38 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(second["idempotent"])
 
     def test_release_task_budget_is_epoch_bound_registered_and_reverts_after_teardown(self):
-        with self.isolated_workspace() as (root, _work, _game, manifest):
-            (root / "VERSION.txt").write_text("0.1.5\n", encoding="utf-8")
-            git_guard, incident_guard = self._epoch_guards()
-            with git_guard, incident_guard, patch.object(cleanup, "ROOT", root):
-                applied = cleanup.activate_prospective_epoch(
-                    dry_run=False,
-                    epoch_id="epoch-release-budget",
-                    source_sha="test-sha",
-                    release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
-                )
-                self.assertTrue(applied["ok"], applied)
-                budget = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]["release_task_budget"]
-                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, budget["limit_bytes"])
-                registered = cleanup.register_release_task_scope()
-                self.assertTrue(registered["ok"], registered)
-                with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}):
-                    limit, error, profile = cleanup._release_task_budget_profile(root)
-                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
-                self.assertIsNone(error)
-                self.assertEqual(cleanup.RELEASE_TASK_BUDGET_ID, profile)
-                paths.set_artifact_status(
-                    cleanup.RELEASE_TASK_BUDGET_ID,
-                    "MISSING",
-                    lifecycle="MISSING",
-                    purpose="terminal release task teardown",
-                )
-                with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_BUDGET_ID}):
-                    limit, error, profile = cleanup._release_task_budget_profile(root)
-                self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
-                self.assertIsNone(error)
-                self.assertEqual("terminal-default", profile)
+        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID)]:
+            with self.subTest(version=version), self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+                (root / "VERSION.txt").write_text(version+"\n", encoding="utf-8")
+                git_guard, incident_guard = self._epoch_guards()
+                with git_guard, incident_guard, patch.object(cleanup, "ROOT", root):
+                    applied = cleanup.activate_prospective_epoch(
+                        dry_run=False,
+                        epoch_id="epoch-release-budget",
+                        source_sha="test-sha",
+                        release_task_id=task_id,
+                    )
+                    self.assertTrue(applied["ok"], applied)
+                    budget = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]["release_task_budget"]
+                    self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, budget["limit_bytes"])
+                    registered = cleanup.register_release_task_scope()
+                    self.assertTrue(registered["ok"], registered)
+                    with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+                        limit, error, profile = cleanup._release_task_budget_profile(root)
+                    self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
+                    self.assertIsNone(error)
+                    self.assertEqual(task_id, profile)
+                    paths.set_artifact_status(
+                        task_id,
+                        "MISSING",
+                        lifecycle="MISSING",
+                        purpose="terminal release task teardown",
+                    )
+                    with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+                        limit, error, profile = cleanup._release_task_budget_profile(root)
+                    self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
+                    self.assertIsNone(error)
+                    self.assertEqual("terminal-default", profile)
 
     def test_prospective_epoch_refuses_dirty_writer_incomplete_and_conflicting_state(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):

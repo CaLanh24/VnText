@@ -1,146 +1,227 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
-using System.Windows.Media.Imaging;
 using System.Windows.Automation;
 using VNText.Studio.App.ViewModels;
+using VNText.Studio.App.Controls;
 
 namespace VNText.Studio.App;
 
+internal sealed record UpdateViewState(string Version, string Current, string Notes, string Status,
+    bool Downloading, bool Ready, bool Available, bool CanStart, bool Indeterminate, double Percent)
+{
+    internal static UpdateViewState From(IUpdatePresentation source) => new(source.Version, source.CurrentVersion,
+        source.Notes, source.Status, source.Downloading, source.Ready, source.Available, source.CanStart,
+        source.Total <= 0, source.Total <= 0 ? 0 : Math.Clamp(100d * source.Received / source.Total, 0, 100));
+    internal string PrimaryLabel => Downloading ? "Đang tải xuống..." : Ready ? "Khởi động lại" : "Cập nhật ngay";
+}
+
 internal sealed class UpdateWindow : Window
 {
+    private readonly IUpdatePresentation _source;
+    private readonly bool _notesOnly;
+    private readonly string? _successVersion;
+    private readonly Button _primary, _skip, _later, _cancel;
+    private readonly TextBlock _version, _current, _status, _banner, _progressText;
+    private readonly ProgressBar _progress;
+    private readonly Border _success, _versionBadge, _notesHeading;
+    private readonly Grid _progressArea;
+    private readonly ScrollViewer _notes;
+    private bool _starting;
+    private Effect? _previousEffect;
+    private string? _renderedNotes;
+    private Panel? _ownerPanel;
+    private Border? _overlay;
     internal UpdateWindow(MainWindow owner, MainViewModel vm, string? successVersion = null)
+        : this(owner, owner.UpdatePresentation, false, successVersion) { }
+    internal UpdateWindow(MainWindow owner, IUpdatePresentation source, bool notesOnly = false, string? successVersion = null)
     {
-        Owner = owner; Title = "Cập nhật VNText Studio";
-        Width = 700; Height = 560; MaxWidth = Math.Max(400, owner.ActualWidth - 40);
-        MaxHeight = Math.Max(360, owner.ActualHeight - 40); WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
-        AllowsTransparency = true; Background = Brushes.Transparent; ShowInTaskbar = false;
-        FontFamily = owner.FontFamily; FontSize = 14;
+        _source = source; _notesOnly = notesOnly; _successVersion = successVersion;
+        Owner = owner; Title = notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio";
+        Width = notesOnly ? 720 : 620; SizeToContent = SizeToContent.Height;
+        MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = Math.Max(300, owner.ActualHeight - 24);
+        WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent;
+        ShowInTaskbar = false; FontFamily = owner.FontFamily; FontSize = 13;
+        KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
+        KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
         Brush Brush(string key) => (Brush)owner.FindResource(key);
-        Foreground = Brush("InkBrush");
-        var surface = new Border { Margin = new Thickness(14), CornerRadius = new CornerRadius(16),
-            Background = Brush("SurfaceBrush"), Effect = new DropShadowEffect { BlurRadius = 24, ShadowDepth = 6, Opacity = .22 } };
+        var surface = new Border { Margin = new Thickness(18), CornerRadius = new CornerRadius(18),
+            Background = Brush("SurfaceBrush"), Effect = new DropShadowEffect { BlurRadius = 32, ShadowDepth = 9, Opacity = .25 } };
         var grid = new Grid(); surface.Child = grid; Content = surface;
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var header = new Grid { Margin = new Thickness(26, 24, 26, 20) };
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var header = new Grid { Margin = new Thickness(24, 17, 24, 17) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        header.ColumnDefinitions.Add(new ColumnDefinition());
-        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var logo = new Image { Width = 32, Height = 32, VerticalAlignment = VerticalAlignment.Top,
-            Source = new BitmapImage(new Uri("pack://application:,,,/VNText.Studio.App;component/Assets/vntext_studio_logo_128.png")), Margin = new Thickness(0, 3, 14, 0) };
-        header.Children.Add(logo);
-        var heading = new StackPanel(); Grid.SetColumn(heading, 1); header.Children.Add(heading);
-        heading.Children.Add(new TextBlock { Text = successVersion is null ? "Có bản cập nhật mới" : "Cập nhật thành công", FontSize = 22, FontWeight = FontWeights.Bold, TextWrapping = TextWrapping.Wrap });
-        var versions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
-        var versionLabel = new TextBlock { Text = successVersion ?? vm.OfferedVersion, FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brush("GreenDarkBrush") };
-        versions.Children.Add(versionLabel);
-        versions.Children.Add(new TextBlock { Text = successVersion is null ? $"  ·  Hiện tại {vm.CurrentVersionDisplay}" : "  ·  Đã cập nhật", Foreground = Brush("MutedBrush"), VerticalAlignment = VerticalAlignment.Center });
-        heading.Children.Add(versions);
-        var close = new Button { Style = (Style)owner.FindResource("OutlineButton"), Width = 34, Height = 34, Padding = new Thickness(8), VerticalAlignment = VerticalAlignment.Top,
-            Content = new System.Windows.Shapes.Path { Data = Geometry.Parse("M2,2 L12,12 M12,2 L2,12"), Stroke = Brush("MutedBrush"), StrokeThickness = 1.7, Stretch = Stretch.Uniform } };
-        AutomationProperties.SetName(close, "Đóng thông báo cập nhật"); close.ToolTip = "Đóng (Esc)";
+        header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var icon = new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(8), Background = Gradient(false), Margin = new Thickness(0, 0, 12, 0) };
+        icon.Child = new TextBlock { Text = notesOnly ? "≡" : "↻", Foreground = Brushes.White, FontSize = 19, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        if (!notesOnly) header.Children.Add(icon);
+        var heading = new TextBlock { Text = notesOnly ? "Ghi chú phát hành" : successVersion is null ? "Có bản cập nhật mới" : "Cập nhật thành công",
+            FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
+        Grid.SetColumn(heading, 1); header.Children.Add(heading);
+        var close = MakeIconButton(owner, "×", 30); HoverMotion.SetKind(close, "Close");
+        close.Background = Brushes.Transparent; AutomationProperties.SetName(close, "Đóng " + Title); close.ToolTip = "Đóng (Esc)";
         close.Click += (_, _) => Close(); Grid.SetColumn(close, 2); header.Children.Add(close);
-        header.MouseLeftButtonDown += (_, e) => { if (e.OriginalSource is TextBlock or Image) DragMove(); };
-        var headerBorder = new Border { BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1), Child = header };
-        grid.Children.Add(headerBorder);
-        var body = new Grid { Margin = new Thickness(26, 20, 26, 20) }; Grid.SetRow(body, 1); grid.Children.Add(body);
-        body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); body.RowDefinitions.Add(new RowDefinition());
-        body.Children.Add(new TextBlock { Text = "Có gì mới", FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 12) });
-        TextBlock NotesText(string text) => new() { Text = text, TextWrapping = TextWrapping.Wrap, LineHeight = 23, Foreground = Brush("InkBrush") };
-        var notes = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            Style = (Style)owner.FindResource("ContentPanelScrollViewer"), Content = NotesText(vm.UpdateNotes) };
-        Grid.SetRow(notes, 1); body.Children.Add(notes);
+        grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
+        var body = new Grid { Margin = new Thickness(26, 18, 26, 18) }; Grid.SetRow(body, 1); grid.Children.Add(body);
+        for (var n = 0; n < 4; n++) body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _version = new TextBlock { Foreground = notesOnly ? Brush("MutedBrush") : Brush("BlueBrush"), FontSize = 13, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        body.Children.Add(_versionBadge = new Border { Child = _version, Background = notesOnly ? new SolidColorBrush(Color.FromRgb(241, 243, 246)) : Brushes.Transparent, CornerRadius = new CornerRadius(8), Padding = notesOnly ? new Thickness(8, 4, 8, 4) : new Thickness(0), HorizontalAlignment = HorizontalAlignment.Left });
+        _current = new TextBlock { Foreground = Brush("MutedBrush"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 12) };
+        Grid.SetRow(_current, 1); body.Children.Add(_current);
+        var stateArea = new StackPanel(); Grid.SetRow(stateArea, 2); body.Children.Add(stateArea);
+        _progressArea = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        _progressArea.ColumnDefinitions.Add(new ColumnDefinition()); _progressArea.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        _progressArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); _progressArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _progress = new ProgressBar { Style = (Style)owner.FindResource("BlueProgressBarStyle"), Foreground = Gradient(false), Height = 3, VerticalAlignment = VerticalAlignment.Center };
+        _progressArea.Children.Add(_progress); _cancel = MakeIconButton(owner, "⊗", 20); _cancel.Margin = new Thickness(8, 0, 0, 0);
+        AutomationProperties.SetName(_cancel, "Hủy tải cập nhật"); _cancel.Click += (_, _) => source.Cancel(); Grid.SetColumn(_cancel, 1); _progressArea.Children.Add(_cancel);
+        _progressText = new TextBlock { HorizontalAlignment = HorizontalAlignment.Center, FontSize = 10, Foreground = Brush("MutedBrush"), Margin = new Thickness(0, 4, 0, 0) };
+        Grid.SetRow(_progressText, 1); Grid.SetColumnSpan(_progressText, 2); _progressArea.Children.Add(_progressText); stateArea.Children.Add(_progressArea);
+        _banner = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brush("GreenDarkBrush") };
+        _success = new Border { Background = Brush("GreenSoftBrush"), CornerRadius = new CornerRadius(9), Padding = new Thickness(10, 7, 10, 7), Margin = new Thickness(0, 0, 0, 12), Child = _banner };
+        stateArea.Children.Add(_success);
+        var notesArea = new Grid(); Grid.SetRow(notesArea, 3); body.Children.Add(notesArea);
+        notesArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); notesArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        _notesHeading = new Border { BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 12, 0, 8),
+            Child = new TextBlock { Text = notesOnly ? "Có gì mới" : "Tính năng mới", FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Foreground = Brush("InkBrush") } };
+        notesArea.Children.Add(_notesHeading);
+        _notes = new ScrollViewer { Style = (Style)owner.FindResource("ContentPanelScrollViewer"), VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        Grid.SetRow(_notes, 1); notesArea.Children.Add(_notes);
         var footer = new StackPanel();
-        var footerBorder = new Border { Background = Brush("CanvasBrush"), CornerRadius = new CornerRadius(0, 0, 16, 16), Padding = new Thickness(26, 18, 26, 20), Child = footer,
-            BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0) };
-        Grid.SetRow(footerBorder, 2); grid.Children.Add(footerBorder);
-        var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = Brush("MutedBrush"), Margin = new Thickness(0, 0, 0, 10),
-            Text = successVersion is null ? "Chỉ tải khi bạn chọn cập nhật." : "Phiên bản và kết quả cập nhật đã được xác nhận." };
-        var progress = new ProgressBar { Style = (Style)owner.FindResource("ExtractionProgressBarStyle"), Height = 6, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 0, 0, 16) };
-        footer.Children.Add(status); footer.Children.Add(progress);
-        var buttons = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
-        footer.Children.Add(buttons);
+        _status = new TextBlock { Foreground = Brush("MutedBrush"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) }; footer.Children.Add(_status);
+        var buttons = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right }; footer.Children.Add(buttons);
+        _later = MakeButton(owner, notesOnly ? "Đóng" : "Hủy", false); _skip = MakeButton(owner, "Bỏ qua phiên bản này", false); _primary = MakeButton(owner, "Cập nhật ngay", true);
+        _later.Margin = _skip.Margin = _primary.Margin = new Thickness(4);
+        buttons.Children.Add(_later); buttons.Children.Add(_skip); buttons.Children.Add(_primary);
+        var footerSurface = new Border { Background = Brush("SubtlePanelBrush"), CornerRadius = new CornerRadius(0, 0, 18, 18), BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(22, 10, 22, 10), Child = footer };
+        Grid.SetRow(footerSurface, 2); grid.Children.Add(footerSurface);
+        _later.Click += (_, _) => Close(); _skip.Click += (_, _) => { source.Defer(true); Close(); };
+        _primary.Click += async (_, _) =>
+        {
+            if (_starting || source.Downloading || !source.CanStart) return;
+            if (source.Ready) { try { source.Restart(); } catch (Exception ex) { _status.Text = ex.Message; } return; }
+            _starting = true; _primary.IsEnabled = false;
+            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = "Không tải được cập nhật: " + ex.Message; }
+            finally { _starting = false; if (IsVisible) Refresh(); }
+        };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { e.Handled = true; Close(); } };
-        DimAdorner? dim = null; AdornerLayer? layer = null;
         Loaded += (_, _) =>
         {
-            layer = AdornerLayer.GetAdornerLayer((UIElement)owner.Content);
-            if (layer is not null) { dim = new DimAdorner((UIElement)owner.Content); layer.Add(dim); }
+            if (owner.Content is UIElement element)
+            {
+                _previousEffect = element.Effect; element.Effect = new BlurEffect { Radius = 8 };
+                _ownerPanel = element as Panel ?? throw new InvalidOperationException("Modal owner must expose the app root panel for dim coverage.");
+                _overlay = new Border { Background = new SolidColorBrush(Color.FromArgb(140, 24, 31, 45)), IsHitTestVisible = false };
+                Grid.SetColumnSpan(_overlay, 2); Grid.SetRowSpan(_overlay, Math.Max(1, (_ownerPanel as Grid)?.RowDefinitions.Count ?? 1));
+                Panel.SetZIndex(_overlay, int.MaxValue); _ownerPanel.Children.Add(_overlay);
+            }
             close.Focus();
         };
-        Closed += (_, _) => { if (dim is not null) layer?.Remove(dim); };
-        void SetAction(Button button, string text, bool restart = false)
+        Closing += (_, _) => { if (!notesOnly && successVersion is null) { source.Defer(false); if (source.Downloading) source.Cancel(); } };
+        Closed += (_, _) => { source.PropertyChanged -= Changed; if (_overlay is not null) _ownerPanel?.Children.Remove(_overlay); if (owner.Content is UIElement element) element.Effect = _previousEffect; };
+        // Content-driven state rows change height after opening; keep the dialog centered.
+        SizeChanged += (_, _) =>
         {
-            var content = new StackPanel { Orientation = Orientation.Horizontal };
-            var icon = new System.Windows.Shapes.Path { Width = 16, Height = 16, Margin = new Thickness(0, 0, 8, 0), Stretch = Stretch.Uniform,
-                StrokeThickness = 1.7, Stroke = button.Foreground, Data = Geometry.Parse(restart ? "M19,9 A8,8 0 1 0 19,15 M19,3 V9 H13" : "M12,3 V15 M7,10 L12,15 L17,10 M4,17 V21 H20 V17") };
-            content.Children.Add(icon); content.Children.Add(new TextBlock { Text = text }); button.Content = content;
-            AutomationProperties.SetName(button, text);
-        }
-        if (successVersion is not null)
-        {
-            notes.Content = NotesText(string.IsNullOrWhiteSpace(vm.VerifiedSuccessNotes) ? "Phiên bản này chưa cung cấp ghi chú phát hành." : vm.VerifiedSuccessNotes);
-            var done = new Button { Content = "Hoàn tất", IsDefault = true, IsCancel = true, Style = (Style)owner.FindResource("PrimaryButton") };
-            done.Click += (_, _) => Close();
-            buttons.Children.Add(done);
-            return;
-        }
-        var defer = new Button { Content = "Để sau", Margin = new Thickness(4), Style = (Style)owner.FindResource("OutlineButton") };
-        var skip = new Button { Content = "Bỏ qua phiên bản này", Margin = new Thickness(4), Style = (Style)owner.FindResource("OutlineButton") };
-        var action = new Button { Content = vm.GitHubApplyEnabled ? "Khởi động lại để cập nhật" : "Cập nhật", Margin = new Thickness(4), Style = (Style)owner.FindResource("PrimaryButton") };
-        SetAction(action, vm.GitHubApplyEnabled ? "Khởi động lại để cập nhật" : "Cập nhật", vm.GitHubApplyEnabled);
-        buttons.Children.Add(defer); buttons.Children.Add(skip); buttons.Children.Add(action);
-        defer.Click += (_, _) => { vm.DeferUpdate(false); Close(); };
-        skip.Click += (_, _) => { vm.DeferUpdate(true); Close(); };
-        vm.PropertyChanged += OnProgress;
-        void OnProgress(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(vm.OfferedVersion) && !string.IsNullOrWhiteSpace(vm.OfferedVersion))
-                versionLabel.Text = vm.OfferedVersion;
-            if (e.PropertyName == nameof(vm.UpdateNotes))
-                notes.Content = NotesText(vm.UpdateNotes);
-            if (e.PropertyName is nameof(vm.DownloadReceived) or nameof(vm.DownloadTotal))
-            {
-                progress.IsIndeterminate = vm.DownloadTotal <= 0;
-                progress.Maximum = Math.Max(1, vm.DownloadTotal); progress.Value = vm.DownloadReceived;
-                status.Text = $"Đang tải: {vm.DownloadReceived:N0} / {vm.DownloadTotal:N0} byte";
-            }
-        }
-        action.Click += async (_, _) =>
-        {
-            if (vm.Busy || vm.CsvEditorDirty)
-            {
-                status.Text = "Hãy hoàn tất tác vụ và lưu CSV trước khi cập nhật.";
-                return;
-            }
-            if (vm.GitHubApplyEnabled)
-            {
-                try { vm.RestartForUpdate(); }
-                catch (Exception ex) { status.Text = "Không khởi chạy được cập nhật: " + ex.Message; }
-                return;
-            }
-            action.IsEnabled = false; skip.IsEnabled = false; defer.Content = "Hủy tải";
-            progress.Visibility = Visibility.Visible; progress.IsIndeterminate = true;
-            try { await vm.DownloadOfferedUpdateAsync(); }
-            catch (Exception ex) { status.Text = "Không tải được cập nhật: " + ex.Message; }
             if (!IsVisible) return;
-            status.Text = vm.GitHubApplyEnabled ? "Đã kiểm tra gói. Sẵn sàng cập nhật." : vm.GitHubUpdateStatus;
-            SetAction(action, vm.GitHubApplyEnabled ? "Khởi động lại để cập nhật" : "Thử lại", vm.GitHubApplyEnabled);
-            action.IsEnabled = true; skip.IsEnabled = true; defer.Content = "Để sau";
+            Left = owner.Left + (owner.ActualWidth - ActualWidth) / 2;
+            Top = owner.Top + (owner.ActualHeight - ActualHeight) / 2;
         };
-        Closing += (_, _) => { vm.DeferUpdate(false); if (vm.DownloadingUpdate) vm.CancelUpdateDownload(); };
-        Closed += (_, _) => vm.PropertyChanged -= OnProgress;
+        source.PropertyChanged += Changed; Refresh();
     }
-
-    private sealed class DimAdorner(UIElement element) : Adorner(element)
+    private void Changed(object? sender, PropertyChangedEventArgs e)
     {
-        protected override void OnRender(DrawingContext drawingContext) => drawingContext.DrawRectangle(
-            new SolidColorBrush(Color.FromArgb(64, 32, 36, 45)), null, new Rect(AdornedElement.RenderSize));
+        if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(Refresh)); return; } Refresh();
+    }
+    private void Refresh()
+    {
+        var state = UpdateViewState.From(_source);
+        var releaseVersion = _successVersion ?? state.Version;
+        _version.Text = string.IsNullOrWhiteSpace(releaseVersion) ? "" : "v" + releaseVersion;
+        _versionBadge.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
+        _current.Visibility = _notesOnly ? Visibility.Collapsed : Visibility.Visible;
+        _notesHeading.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
+        _current.Text = _notesOnly ? "Ghi chú phiên bản" : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới.");
+        var notesText = _successVersion is not null && Owner.DataContext is MainViewModel vm ? vm.VerifiedSuccessNotes : state.Notes;
+        if (string.IsNullOrWhiteSpace(notesText)) notesText = "Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.";
+        if (_renderedNotes != notesText) { _renderedNotes = notesText; var rendered = RenderNotes(notesText); _notes.Content = _notesOnly ? new Border { Child = rendered, Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = new SolidColorBrush(Color.FromRgb(228, 234, 242)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12) } : rendered; }
+        _progressArea.Visibility = state.Downloading && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
+        _progress.IsIndeterminate = state.Indeterminate; _progress.Maximum = 100; _progress.Value = state.Percent;
+        _progressText.Text = state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%";
+        _success.Visibility = state.Ready && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
+        _banner.Text = $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.";
+        _status.Text = _source.IsTestFixture || _notesOnly ? "" : state.Status;
+        _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
+        // Measure actual short content; cap only long release bodies. State rows add their own height.
+        _notes.MaxHeight = Math.Min(_notesOnly ? 300 : 145, Math.Max(90, Owner.ActualHeight * (_notesOnly ? .43 : .22)));
+        MaxHeight = Math.Max(300, Owner.ActualHeight * (_notesOnly ? .86 : .80));
+        var primaryContents = new StackPanel { Orientation = Orientation.Horizontal };
+        var glyph = new TextBlock { Text = state.Downloading ? "◌" : state.Ready ? "↻" : "↓", Margin = new Thickness(0, 0, 8, 0), RenderTransformOrigin = new Point(.5, .5) };
+        if (state.Downloading) { var rotation = new RotateTransform(); glyph.RenderTransform = rotation; rotation.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromSeconds(1.2)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever }); }
+        primaryContents.Children.Add(glyph); primaryContents.Children.Add(new TextBlock { Text = state.PrimaryLabel }); _primary.Content = primaryContents; AutomationProperties.SetName(_primary, state.PrimaryLabel);
+        _primary.IsEnabled = state.CanStart && !state.Downloading && !_starting;
+        _primary.Opacity = state.Downloading ? .65 : 1;
+        _skip.Visibility = !state.Downloading && state.Available && !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
+        _primary.Visibility = !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
+        _later.Content = _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy";
+    }
+    internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);
+    private static Button MakeButton(MainWindow owner, string text, bool primary)
+    {
+        var style = new Style(typeof(Button), (Style)owner.FindResource(primary ? "PrimaryButton" : "OutlineButton"));
+        style.Setters.Add(new Setter(Control.BackgroundProperty, primary ? Gradient(false) : owner.FindResource("SurfaceBrush")));
+        style.Setters.Add(new Setter(Control.ForegroundProperty, primary ? Brushes.White : owner.FindResource("InkBrush")));
+        var border = new FrameworkElementFactory(typeof(Border)); border.Name = "ModalButtonSurface";
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8)); border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+        foreach (var pair in new[] { (Border.BackgroundProperty, "Background"), (Border.BorderBrushProperty, "BorderBrush"), (Border.PaddingProperty, "Padding") })
+            border.SetBinding(pair.Item1, new System.Windows.Data.Binding(pair.Item2) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+        var content = new FrameworkElementFactory(typeof(ContentPresenter)); content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center); content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        content.SetBinding(ContentPresenter.ContentProperty, new System.Windows.Data.Binding("Content") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent }); border.AppendChild(content);
+        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
+        var hover = new Trigger { Property = IsMouseOverProperty, Value = true }; hover.Setters.Add(new Setter(Border.BorderBrushProperty, owner.FindResource("LineBrush"), "ModalButtonSurface")); template.Triggers.Add(hover);
+        var disabled = new Trigger { Property = IsEnabledProperty, Value = false }; disabled.Setters.Add(new Setter(OpacityProperty, .65)); template.Triggers.Add(disabled);
+        style.Setters.Add(new Setter(Control.TemplateProperty, template));
+        var b = new Button { Content = text, Style = style, Padding = new Thickness(12, 6, 12, 6), FontSize = 13 }; AutomationProperties.SetName(b, text); return b;
+    }
+    private static Button MakeIconButton(MainWindow owner, string text, double size)
+    {
+        var border = new FrameworkElementFactory(typeof(Border));
+        border.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(15));
+        var content = new FrameworkElementFactory(typeof(ContentPresenter));
+        content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+        content.SetBinding(ContentPresenter.ContentProperty, new System.Windows.Data.Binding("Content") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+        border.AppendChild(content);
+        var button = new Button { Content = new TextBlock { Text = text, FontSize = size == 20 ? 13 : 20 },
+            Template = new ControlTemplate(typeof(Button)) { VisualTree = border },
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0), Width = size, Height = size,
+            MinWidth = 0, MinHeight = 0, Padding = new Thickness(0), Foreground = (Brush)owner.FindResource("MutedBrush"),
+            FocusVisualStyle = (Style)owner.FindResource("KeyboardFocusStyle"), Cursor = Cursors.Hand };
+        button.MouseEnter += (_, _) => button.Foreground = (Brush)owner.FindResource("InkBrush");
+        button.MouseLeave += (_, _) => button.Foreground = (Brush)owner.FindResource("MutedBrush");
+        return button;
+    }
+    private static StackPanel RenderNotes(string text)
+    {
+        var panel = new StackPanel();
+        foreach (var raw in text.Replace("\r", "").Split('\n'))
+        {
+            var line = raw.Trim(); if (line.Length == 0) continue;
+            var heading = line.StartsWith('#'); var bullet = line.StartsWith("- ") || line.StartsWith("* ");
+            var visible = heading ? line.TrimStart('#', ' ') : bullet ? "• " + line[2..] : line;
+            var block = new TextBlock { TextWrapping = TextWrapping.Wrap,
+                FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal, FontSize = 13, Margin = new Thickness(bullet ? 7 : 0, heading ? 8 : 2, 0, 3), LineHeight = 20 };
+            var chunks = visible.Split("**", StringSplitOptions.None);
+            for (var i = 0; i < chunks.Length; i++)
+                block.Inlines.Add(new Run(chunks[i]) { FontWeight = i % 2 == 1 ? FontWeights.SemiBold : heading ? FontWeights.SemiBold : FontWeights.Normal });
+            panel.Children.Add(block);
+        }
+        return panel;
     }
 }

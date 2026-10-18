@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\vntext_studio.ico" />
+    <Resource Include="Assets\brand-owner.png" />
     <Resource Include="Assets\vntext_studio_logo_128.png" />
     <Resource Include="Assets\vntext_studio_logo_256.png" />
     <Resource Include="Assets\Fonts\Inter-Regular.ttf" />

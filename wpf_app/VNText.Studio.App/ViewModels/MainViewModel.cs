@@ -183,6 +183,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _inputPath, value))
             {
                 Raise(nameof(InputDisplay));
+                Raise(nameof(ExtractStatusText));
                 RefreshWorkflow();
                 RefreshRenpySdkOptionsVisibility(value);
                 OpenInputCommand?.RaiseCanExecuteChanged();
@@ -311,7 +312,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         private set => Set(ref _patchBlockedCount, value);
     }
 
-    public string InputDisplay => string.IsNullOrWhiteSpace(InputPath) ? "Chọn thư mục game..." : InputPath;
+    public string InputDisplay => string.IsNullOrWhiteSpace(InputPath) ? UiText.Translate("Chọn thư mục game...") : InputPath;
     public string OutputDisplay => string.IsNullOrWhiteSpace(OutputPath) ? "Chọn thư mục xuất..." : OutputPath;
 
     public string CurrentWorkflowStep
@@ -400,7 +401,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string HeroTitle
     {
-        get => _heroTitle;
+        get => UiText.Translate(_heroTitle);
         private set => Set(ref _heroTitle, value);
     }
 
@@ -412,7 +413,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string HeroHint
     {
-        get => _heroHint;
+        get => UiText.Translate(_heroHint);
         private set => Set(ref _heroHint, value);
     }
 
@@ -440,8 +441,19 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string ProgressSubtitle
     {
         get => _progressSubtitle;
-        set => Set(ref _progressSubtitle, value);
+        set
+        {
+            if (Set(ref _progressSubtitle, value))
+                Raise(nameof(ExtractProgressSubtitle));
+        }
     }
+
+    // Extract-only presentation leaves shared progress/status values intact.
+    public string ExtractProgressSubtitle => ProgressSubtitle == "Chưa bắt đầu" ? "" : ProgressSubtitle;
+
+    public string ExtractStatusText => StatusText == "Sẵn sàng"
+        ? (string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text")
+        : StatusText;
 
     public string LogSubtitle
     {
@@ -452,7 +464,11 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string StatusText
     {
         get => _statusText;
-        set => Set(ref _statusText, value);
+        set
+        {
+            if (Set(ref _statusText, value))
+                Raise(nameof(ExtractStatusText));
+        }
     }
 
     public string Version
@@ -1015,6 +1031,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
+        _updateReminderTimer?.Stop(); _updateCheckTimer?.Stop();
         var githubCancellation = Interlocked.Exchange(ref _githubUpdateCancellation, null);
         githubCancellation?.Cancel();
         githubCancellation?.Dispose();

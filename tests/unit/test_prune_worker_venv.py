@@ -97,6 +97,9 @@ class PruneWorkerVenvTests(unittest.TestCase):
 
     def test_filtered_copy_handles_windows_long_paths(self):
         root = self.fixture("prune-worker-long-path")
+        # Exercise long paths without requiring a machine-wide Windows policy.
+        if sys.platform == "win32":
+            root = Path("\\\\?\\" + str(root.resolve()))
         source = root / "source.venv"
         destination = root / "stage.venv"
         python = source / "Scripts" / "python.exe"
@@ -218,6 +221,8 @@ class PruneWorkerVenvTests(unittest.TestCase):
             ("argostranslate", "1.11.0"),
             ("PySide6_Addons", "6.8.3"),
             ("PySide6_Essentials", "6.8.3"),
+            ("PySide6_Pdf", "6.12.0"),
+            ("PySide6_WebEngine", "6.12.0"),
             ("pyinstaller_hooks_contrib", "2026.6"),
             ("setuptools", "84.0.0"),
             ("UnityPy", "1.25.3"),

@@ -68,7 +68,7 @@ CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
-PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 3 * 1024 ** 3
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 5 * 1024 ** 3
 RELEASE_TASK_BUDGET_ID = "release-0.1.5"
 RELEASE_TASK_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
 RELEASE_TASK_BUDGET_APPROVAL = (
@@ -78,6 +78,21 @@ RELEASE_TASK_BUDGET_APPROVAL = (
     "cap; terminal task cleanup must return non-exempt files to at most 1 GiB; "
     "do not delete old payloads or user data."
 )
+RELEASE_TASK_016_BUDGET_ID = "release-0.1.6"
+RELEASE_TASK_016_BUDGET_APPROVAL = (
+    "Owner 2026-10-18 explicitly approved 3 GiB temporary non-exempt artifacts "
+    "for release-0.1.6 only; terminal cleanup returns to at most 1 GiB; "
+    "shared .dev-env remains capped separately at 5 GiB."
+)
+
+def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
+    task_id = task_id or str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip() or RELEASE_TASK_BUDGET_ID
+    if task_id == RELEASE_TASK_016_BUDGET_ID:
+        return task_id, "0.1.6", RELEASE_TASK_016_BUDGET_APPROVAL
+    if task_id == RELEASE_TASK_BUDGET_ID:
+        return task_id, "0.1.5", RELEASE_TASK_BUDGET_APPROVAL
+    raise ValueError("unsupported temporary release task budget")
+
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
 RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID = "call_4a31e293dabe487a98c54c4cdf706a07"
 RELEASE_TASK_EPOCH_REBASELINE_APPROVAL = (
@@ -85,7 +100,7 @@ RELEASE_TASK_EPOCH_REBASELINE_APPROVAL = (
     "the ordinary eight-hop transition limit remains unchanged."
 )
 PROJECT_SIZE_EXEMPTIONS = {
-    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (3 GiB cap)",
+    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (5 GiB cap; Owner 2026-10-18)",
 }
 
 # Keep relative to WORK_ROOT
@@ -280,6 +295,16 @@ def _inventory_error(path: Path, exc: BaseException) -> dict:
     }
 
 
+def _filesystem_path(path: Path, *, force: bool = False) -> Path:
+    """Windows long-path spelling for IO only; policy keeps canonical paths."""
+    text = os.fspath(path)
+    if os.name != "nt" or text.startswith("\\\\?\\") or (not force and len(text) < 240):
+        return path
+    if text.startswith("\\\\"):
+        return Path("\\\\?\\UNC\\" + text[2:])
+    return Path("\\\\?\\" + os.path.abspath(text))
+
+
 def _bounded_dir_size(
     path: Path,
     budget: InventoryBudget,
@@ -304,12 +329,12 @@ def _bounded_dir_size(
         try:
             if current.is_symlink():
                 continue
-            if current.is_file():
-                total += int(current.stat().st_size)
+            if _filesystem_path(current).is_file():
+                total += int(_filesystem_path(current).stat().st_size)
                 continue
-            with os.scandir(current) as entries:
+            with os.scandir(_filesystem_path(current)) as entries:
                 for entry in entries:
-                    child = Path(entry.path)
+                    child = current / entry.name
                     budget.check(child)
                     if entry.is_symlink():
                         continue
@@ -375,9 +400,9 @@ def size_tree(
         return out
     kids = []
     try:
-        with os.scandir(path) as entries:
+        with os.scandir(_filesystem_path(path)) as entries:
             for entry in entries:
-                child = Path(entry.path)
+                child = path / entry.name
                 try:
                     budget.check(child)
                     if entry.is_symlink():
@@ -750,7 +775,7 @@ def safe_rmtree(
         if path.is_file() or path.is_symlink():
             path.unlink(missing_ok=True)
         else:
-            shutil.rmtree(path, ignore_errors=False)
+            shutil.rmtree(_filesystem_path(path, force=True), ignore_errors=False)
     except OSError as exc:
         deleted.append({"path": str(path), "skipped": True, "reason": f"os_error:{exc}", "bytes": nbytes})
         return False
@@ -1001,9 +1026,9 @@ def snapshot_tree(
         current = pending.pop()
         try:
             budget.check(current)
-            if not current.is_dir():
+            if not _filesystem_path(current).is_dir():
                 continue
-            entries = os.scandir(current)
+            entries = os.scandir(_filesystem_path(current))
         except (InventoryFailure, OSError) as exc:
             errors.append(_inventory_error(current, exc))
             if isinstance(exc, InventoryFailure):
@@ -1012,7 +1037,7 @@ def snapshot_tree(
         try:
             with entries:
                 for entry in entries:
-                    child = Path(entry.path)
+                    child = current / entry.name
                     try:
                         budget.check(child)
                         # ``os.scandir`` is rooted at an absolute path here;
@@ -1053,7 +1078,7 @@ def snapshot_tree(
                             import hashlib
 
                             digest = hashlib.sha256()
-                            with child.open("rb") as fh:
+                            with _filesystem_path(child).open("rb") as fh:
                                 while True:
                                     # Hash blocks are work within one
                                     # filesystem item; they must consume the
@@ -1905,7 +1930,7 @@ def _project_inventory_root() -> Path:
         nested = (
             relative[:1] == (".scratch",)
             or relative[:3] == ("tests", "golden", "_work")
-            or relative == ("RELEASE_RUN", "candidate-0.1.5", "source")
+            or relative in (("RELEASE_RUN", "candidate-0.1.5", "source"), ("RELEASE_RUN", "candidate-0.1.6", "source"))
         )
         if nested and (parent / "tests/tools/cleanup_work_artifacts.py").is_file() and (parent / "tests/lib/work_paths.py").is_file():
             inventory_root = parent
@@ -1918,7 +1943,9 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
     requested = str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip()
     if not requested:
         return PROJECT_SIZE_LIMIT_BYTES, None, "default"
-    if requested != RELEASE_TASK_BUDGET_ID:
+    try:
+        task_id, version, approval = _release_budget_spec(requested)
+    except ValueError:
         return PROJECT_SIZE_LIMIT_BYTES, "unsupported_release_task_id", "default"
     if root.resolve() != ROOT.resolve():
         return _nested_release_budget_profile(root)
@@ -1934,17 +1961,17 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
     budget = epoch.get("release_task_budget")
     if not isinstance(budget, dict):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
-    expected_scope = (root / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    expected_scope = (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
     state = _git_repository_state()
     if (
-        budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        budget.get("task_id") != task_id
         or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
-        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(expected_scope)
         or budget.get("source_sha") != epoch.get("source_sha")
         or state.get("head") != epoch.get("source_sha")
         or state.get("dirty")
-        or (root / "VERSION.txt").read_text(encoding="utf-8").strip() != "0.1.5"
+        or (root / "VERSION.txt").read_text(encoding="utf-8").strip() != version
     ):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_scope_or_source_mismatch", "default"
     scope_records = []
@@ -1967,19 +1994,20 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
         return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
     if (
         lifecycle != "DISPOSABLE"
-        or str(entry.get("owner") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("owner") or "") != task_id
         or str(entry.get("kind") or "") != "release_task_scope"
-        or str(entry.get("scope_id") or "") != RELEASE_TASK_BUDGET_ID
-        or str(entry.get("run_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("scope_id") or "") != task_id
+        or str(entry.get("run_id") or "") != task_id
         or str(entry.get("scope_root") or "") != str(expected_scope)
     ):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
-    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, RELEASE_TASK_BUDGET_ID
+    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, task_id
 
 
 def _nested_release_budget_profile(root: Path) -> tuple[int, str | None, str]:
     """Read parent authority in an isolated process; never redirect local writes."""
-    if ROOT.resolve() != (root / "RELEASE_RUN/candidate-0.1.5/source").resolve():
+    task_id, version, approval = _release_budget_spec()
+    if ROOT.resolve() != (root / f"RELEASE_RUN/candidate-{version}/source").resolve():
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_snapshot_outside_exact_scope", "default"
     code = """import sys,json
 from pathlib import Path
@@ -2010,8 +2038,9 @@ print(json.dumps(c._parent_release_budget_readback(parent,source)))
 
 def _parent_release_budget_readback(parent: Path, source: Path) -> tuple[int, str | None, str]:
     """Executed by the parent's canonical helper; reads authority without mutation."""
+    task_id, version, approval = _release_budget_spec()
     refused = (PROJECT_SIZE_LIMIT_BYTES, "release_task_snapshot_source_or_registry_changed", "default")
-    if parent.resolve() != ROOT.resolve() or source.resolve() != (parent / "RELEASE_RUN/candidate-0.1.5/source").resolve():
+    if parent.resolve() != ROOT.resolve() or source.resolve() != (parent / f"RELEASE_RUN/candidate-{version}/source").resolve():
         return refused
     try:
         before = MANIFEST_PATH.read_bytes()
@@ -2031,6 +2060,7 @@ def _parent_release_budget_readback(parent: Path, source: Path) -> tuple[int, st
 
 def register_release_task_scope() -> dict:
     """Register the one Owner-approved candidate root without creating it."""
+    task_id, version, approval = _release_budget_spec()
 
     manifest, _raw, errors = _strict_registry_snapshot()
     if errors:
@@ -2039,18 +2069,18 @@ def register_release_task_scope() -> dict:
     if not isinstance(epoch, dict) or _epoch_verify_files(epoch, manifest=manifest):
         return {"ok": False, "reasons": ["release_task_epoch_invalid"]}
     budget = epoch.get("release_task_budget")
-    scope = (ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    scope = (ROOT / "RELEASE_RUN" / f"candidate-{version}").resolve()
     state = _git_repository_state()
     if (
         not isinstance(budget, dict)
-        or budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or budget.get("task_id") != task_id
         or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
-        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(scope)
         or budget.get("source_sha") != state.get("head")
         or epoch.get("source_sha") != state.get("head")
         or state.get("dirty")
-        or (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() != "0.1.5"
+        or (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() != version
     ):
         return {"ok": False, "reasons": ["release_task_budget_scope_or_source_mismatch"]}
     matches = []
@@ -2064,19 +2094,19 @@ def register_release_task_scope() -> dict:
             return {"ok": False, "reasons": ["release_task_registry_invalid"]}
     if matches:
         limit, error, profile = _release_task_budget_profile_for_manifest(ROOT, manifest, state)
-        if error or profile != RELEASE_TASK_BUDGET_ID:
+        if error or profile != task_id:
             return {"ok": False, "reasons": [error or "release_task_scope_registration_conflict"]}
         return {"ok": True, "registered": False, "path": str(scope), "lifecycle": "DISPOSABLE"}
     register_artifact(
-        artifact_id=RELEASE_TASK_BUDGET_ID,
+        artifact_id=task_id,
         path=scope,
         kind="release_task_scope",
         created_by="cleanup_work_artifacts.py",
-        owner=RELEASE_TASK_BUDGET_ID,
+        owner=task_id,
         purpose="Owner-authorized temporary 0.1.5 release acceptance scope",
         lifecycle="DISPOSABLE",
-        scope_id=RELEASE_TASK_BUDGET_ID,
-        run_id=RELEASE_TASK_BUDGET_ID,
+        scope_id=task_id,
+        run_id=task_id,
         scope_root=scope,
         provenance={"source_sha": epoch.get("source_sha"), "epoch_id": epoch.get("epoch_id")},
     )
@@ -2085,16 +2115,17 @@ def register_release_task_scope() -> dict:
 
 def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state: dict) -> tuple[int, str | None, str]:
     """Internal profile resolver when a strict manifest and Git state are already read."""
+    task_id, version, approval = _release_budget_spec()
 
-    expected_scope = (root / "RELEASE_RUN" / "candidate-0.1.5").resolve()
+    expected_scope = (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
     epoch = manifest.get("prospective_epoch")
     budget = epoch.get("release_task_budget") if isinstance(epoch, dict) else None
     if not isinstance(budget, dict):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
     if (
-        budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        budget.get("task_id") != task_id
         or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
-        or budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(expected_scope)
         or budget.get("source_sha") != epoch.get("source_sha")
         or state.get("head") != epoch.get("source_sha")
@@ -2120,14 +2151,14 @@ def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state:
         return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
     if (
         str(entry.get("lifecycle") or "").upper() != "DISPOSABLE"
-        or str(entry.get("owner") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("owner") or "") != task_id
         or str(entry.get("kind") or "") != "release_task_scope"
-        or str(entry.get("scope_id") or "") != RELEASE_TASK_BUDGET_ID
-        or str(entry.get("run_id") or "") != RELEASE_TASK_BUDGET_ID
+        or str(entry.get("scope_id") or "") != task_id
+        or str(entry.get("run_id") or "") != task_id
         or str(entry.get("scope_root") or "") != str(expected_scope)
     ):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
-    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, RELEASE_TASK_BUDGET_ID
+    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, task_id
 
 
 def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
@@ -2167,9 +2198,9 @@ def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT
     while stack and not budget.failure:
         directory, inherited_exemption = stack.pop()
         try:
-            with os.scandir(directory) as children:
+            with os.scandir(_filesystem_path(directory)) as children:
                 for child in children:
-                    path = Path(child.path)
+                    path = directory / child.name
                     try:
                         budget.check(path)
                         info = child.stat(follow_symlinks=False)
@@ -2712,14 +2743,13 @@ def _epoch_provenance(
     if reset_provenance is not None:
         provenance["reset_provenance"] = dict(reset_provenance)
     if release_task_id is not None:
-        if release_task_id != RELEASE_TASK_BUDGET_ID:
-            raise ValueError("unsupported temporary release task budget")
+        task_id, version, approval = _release_budget_spec(release_task_id)
         provenance["release_task_budget"] = {
-            "task_id": RELEASE_TASK_BUDGET_ID,
+            "task_id": task_id,
             "limit_bytes": RELEASE_TASK_BUDGET_LIMIT_BYTES,
-            "scope_path": str((ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve()),
+            "scope_path": str((ROOT / "RELEASE_RUN" / f"candidate-{version}").resolve()),
             "source_sha": source_sha,
-            "owner_approval": RELEASE_TASK_BUDGET_APPROVAL,
+            "owner_approval": approval,
             "terminal_limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
             "lifecycle": "active only while the exact registered candidate scope is DISPOSABLE",
         }
@@ -2831,14 +2861,18 @@ def _epoch_verify_files(
         if not epoch.get(field):
             failures.append(f"epoch_provenance_missing:{field}")
     release_budget = epoch.get("release_task_budget")
+    try:
+        budget_task, budget_version, budget_approval = _release_budget_spec(release_budget.get("task_id")) if isinstance(release_budget, dict) else (None, None, None)
+    except ValueError:
+        budget_task, budget_version, budget_approval = None, None, None
     if release_budget is not None and (
         not isinstance(release_budget, dict)
-        or release_budget.get("task_id") != RELEASE_TASK_BUDGET_ID
+        or release_budget.get("task_id") != budget_task
         or release_budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
         or release_budget.get("terminal_limit_bytes") != PROJECT_SIZE_LIMIT_BYTES
-        or release_budget.get("owner_approval") != RELEASE_TASK_BUDGET_APPROVAL
+        or release_budget.get("owner_approval") != budget_approval
         or release_budget.get("source_sha") != epoch.get("source_sha")
-        or release_budget.get("scope_path") != str((ROOT / "RELEASE_RUN" / "candidate-0.1.5").resolve())
+        or release_budget.get("scope_path") != str((ROOT / "RELEASE_RUN" / f"candidate-{budget_version}").resolve())
     ):
         failures.append("release_task_budget_invalid")
     rollback_value = epoch.get("rollback")
@@ -3231,14 +3265,14 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id != RELEASE_TASK_BUDGET_ID:
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
                 release_version = (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
             except OSError:
                 release_version = ""
-            if release_version != "0.1.5":
+            if release_version != _release_budget_spec(release_task_id)[1]:
                 reasons.append("release_task_budget_version_mismatch")
     writer = _prospective_epoch_writer_status()
     if writer["active"]:
@@ -4841,7 +4875,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID,), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",

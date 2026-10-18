@@ -8,7 +8,8 @@ public sealed partial class MainViewModel
 {
     public event Action? UpdatePopupRequested;
     public event Action<string>? UpdateSuccessRequested;
-    private string _deferredVersion = "";
+    private System.Windows.Threading.DispatcherTimer? _updateReminderTimer;
+    private System.Windows.Threading.DispatcherTimer? _updateCheckTimer;
     public string UpdateNotes => string.IsNullOrWhiteSpace(_githubUpdateResult.ReleaseNotes)
         ? "Phiên bản này chưa cung cấp ghi chú phát hành." : _githubUpdateResult.ReleaseNotes;
     public string OfferedVersion => _githubUpdateResult.Version;
@@ -27,7 +28,22 @@ public sealed partial class MainViewModel
             StartGitHubUpdateCheck(metadataOnly: true);
             await _githubUpdateCheckTask;
         }
+        ScheduleUpdateReminder(); ScheduleUpdateChecks();
         await modelStatus;
+    }
+    private void ScheduleUpdateChecks()
+    {
+        _updateCheckTimer?.Stop();
+        if (!_settings.AutoCheckUpdates || _disposed != 0) return;
+        if (_updateCheckTimer is null)
+        {
+            _updateCheckTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+            _updateCheckTimer.Tick += (_, _) =>
+            {
+                if (_disposed == 0 && !Busy && !CsvEditorDirty && !GitHubApplyEnabled) StartGitHubUpdateCheck(metadataOnly: true);
+            };
+        }
+        _updateCheckTimer.Start();
     }
     private void ShowVerifiedUpdateSuccess()
     {
@@ -58,14 +74,43 @@ public sealed partial class MainViewModel
         await check;
         if (_disposed != 0 || _githubUpdateResult.State != GitHubUpdateState.OfferAvailable) return;
         if (Busy || CsvEditorDirty) return;
-        if (!manual && (!_settings.NotifyUpdates || _settings.SkippedUpdateVersion == OfferedVersion || _deferredVersion == OfferedVersion)) return;
+        if (!manual)
+        {
+            if (_settings.SkippedUpdateVersion == OfferedVersion) return;
+            if (UpdatePreferencePolicy.CanDownload(_settings, Busy, CsvEditorDirty, OfferedVersion))
+            {
+                await DownloadOfferedUpdateAsync();
+                if (_disposed == 0 && _settings.NotifyUpdates && _githubUpdateResult.State == GitHubUpdateState.UpdateAvailable) UpdatePopupRequested?.Invoke();
+                return;
+            }
+            if (!UpdatePreferencePolicy.CanRemind(_settings, DateTime.UtcNow, OfferedVersion)) return;
+        }
         UpdatePopupRequested?.Invoke();
     }
     public void DeferUpdate(bool skip)
     {
         if (string.IsNullOrWhiteSpace(OfferedVersion)) return;
-        _deferredVersion = OfferedVersion;
-        if (skip) { _settings.SkippedUpdateVersion = OfferedVersion; SaveSettings(); }
+        if (skip) _settings.SkippedUpdateVersion = OfferedVersion;
+        else _settings.NextUpdateReminderUtc = DateTime.UtcNow.AddHours(_settings.UpdateReminderHours);
+        SaveSettings(); ScheduleUpdateReminder();
+    }
+    private void ScheduleUpdateReminder()
+    {
+        _updateReminderTimer?.Stop();
+        if (!_settings.NotifyUpdates || _settings.NextUpdateReminderUtc == DateTime.MinValue) return;
+        var delay = _settings.NextUpdateReminderUtc - DateTime.UtcNow;
+        _updateReminderTimer ??= new System.Windows.Threading.DispatcherTimer();
+        _updateReminderTimer.Interval = delay > TimeSpan.Zero ? delay : TimeSpan.FromMinutes(1);
+        _updateReminderTimer.Tick -= OnUpdateReminder;
+        _updateReminderTimer.Tick += OnUpdateReminder;
+        _updateReminderTimer.Start();
+    }
+    private void OnUpdateReminder(object? sender, EventArgs e)
+    {
+        _updateReminderTimer?.Stop();
+        if (_disposed != 0) return;
+        if (Busy || CsvEditorDirty) { ScheduleUpdateReminder(); return; }
+        ResumeDeferredOffer();
     }
     public async Task DownloadOfferedUpdateAsync()
     {
@@ -77,6 +122,7 @@ public sealed partial class MainViewModel
             if (_disposed != 0 || Busy || CsvEditorDirty || _githubUpdateResult.State != GitHubUpdateState.OfferAvailable) return;
         }
         DownloadingUpdate = true;
+        Raise(nameof(DownloadingUpdate));
         _downloadReceived = 0; _downloadTotal = 0;
         RaiseGitHubUpdateCommands();
         var cancellation = new CancellationTokenSource();
@@ -112,6 +158,7 @@ public sealed partial class MainViewModel
         finally
         {
             DownloadingUpdate = false;
+            Raise(nameof(DownloadingUpdate));
             RaiseGitHubUpdateCommands();
             if (ReferenceEquals(_githubUpdateCancellation, cancellation)) _githubUpdateCancellation = null;
             cancellation.Dispose();

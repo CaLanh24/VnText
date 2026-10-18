@@ -3,64 +3,118 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using VNText.Studio.App.ViewModels;
+using VNText.Studio.App.Services;
 
 namespace VNText.Studio.App;
 
 public partial class MainWindow : Window
 {
     private bool _layoutInitialized;
+    private AppTray? _tray;
+    private bool _explicitExit;
+    private bool _pendingUpdateOffer;
 
     public MainWindow() : this(null) { }
 
-    internal MainWindow(MainViewModel? viewModel)
+    public IUpdatePresentation UpdatePresentation { get; }
+    private UpdateWindow? _updateDialog;
+    private readonly bool _presentationFixture;
+
+    internal MainWindow(MainViewModel? viewModel, IUpdatePresentation? presentation = null)
     {
-        DataContext = viewModel ?? new MainViewModel();
+        var currentVm = viewModel ?? new MainViewModel();
+        DataContext = currentVm;
+        UpdatePresentation = presentation ?? new ViewModelUpdatePresentation(currentVm);
+        _presentationFixture = presentation?.IsTestFixture == true;
+        UiText.Install(); UiText.SetLanguage(currentVm.Language);
         InitializeComponent();
         if (DataContext is MainViewModel vm)
         {
             vm.CompletionRequested += OnCompletionRequested;
             vm.RestoreWindow(this);
-            WindowState = WindowState.Maximized;
-            UpdateWindow? updateWindow = null;
-            vm.UpdatePopupRequested += () =>
-            {
-                if (updateWindow is not null) { updateWindow.Activate(); return; }
-                updateWindow = new UpdateWindow(this, vm);
-                updateWindow.Closed += (_, _) => updateWindow = null;
-                updateWindow.ShowDialog();
-            };
-            vm.UpdateSuccessRequested += version => new UpdateWindow(this, vm, version).ShowDialog();
-            Loaded += async (_, _) => await vm.CheckUpdatesOnStartupAsync();
+            WindowState = !_presentationFixture && vm.StartMinimized ? WindowState.Minimized : WindowState.Maximized;
+            UpdatePresentation.OfferRequested += OpenUpdateDialog;
+            vm.ReleaseNotesRequested += OpenReleaseNotes;
+            vm.UpdateSuccessRequested += version => ShowUpdateDialog(false, version);
+            if (!_presentationFixture) Loaded += async (_, _) => await vm.CheckUpdatesOnStartupAsync();
             void ApplyScale()
             {
                 if (Content is FrameworkElement content)
                     content.LayoutTransform = new ScaleTransform(vm.UiScale, vm.UiScale);
             }
-            ApplyScale();
+            var applyingPreferences = false;
+            void ApplyPreferences()
+            {
+                if (applyingPreferences) return;
+                applyingPreferences = true;
+                try { UiText.SetLanguage(vm.Language); UiAppearance.Apply(vm.Theme, vm.BackgroundStrength); UiText.Apply(this); vm.RefreshLocalizedOptions(); }
+                finally { applyingPreferences = false; }
+            }
+            ApplyScale(); ApplyPreferences();
+            Activated += (_, _) =>
+            {
+                if (_pendingUpdateOffer && WindowState != WindowState.Minimized)
+                { _pendingUpdateOffer=false; Dispatcher.BeginInvoke(new Action(OpenUpdateDialog)); }
+            };
+            Loaded += (_, _) =>
+            {
+                ApplyPreferences();
+                Dispatcher.BeginInvoke(new Action(() => UiText.Apply(this)), System.Windows.Threading.DispatcherPriority.ContextIdle);
+                if (!_presentationFixture && vm.StartMinimized && vm.CloseAction == "tray") HideToTray();
+            };
+            void HideToTray()
+            {
+                try { _tray ??= new AppTray(this, () => { _explicitExit=true; Close(); }); if (!_tray.Hide()) { Show(); WindowState=WindowState.Minimized; } }
+                catch { Show(); WindowState=WindowState.Minimized; }
+            }
             vm.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(vm.UiScale)) ApplyScale();
-                if (e.PropertyName == nameof(vm.SelectedTab)) PageScrollViewer.ScrollToTop();
+                if (e.PropertyName is nameof(vm.Language) or nameof(vm.Theme) or nameof(vm.BackgroundStrength)) ApplyPreferences();
+                if (e.PropertyName == nameof(vm.SelectedTab)) { PageScrollViewer.ScrollToTop(); Dispatcher.BeginInvoke(new Action(() => UiText.Apply(this)), System.Windows.Threading.DispatcherPriority.ContextIdle); }
             };
             Closing += (_, e) =>
             {
+                if (!_presentationFixture && !_explicitExit && vm.CloseAction == "tray")
+                {
+                    e.Cancel=true; HideToTray(); return;
+                }
                 if (vm.CsvEditorDirty || vm.Busy)
                 {
                     MessageBox.Show(this, "Hãy hoàn tất hoặc hủy tác vụ và lưu CSV trước khi đóng ứng dụng.", "Công việc chưa hoàn tất");
                     e.Cancel = true;
                     return;
                 }
-                vm.SaveWindow(this);
+                if (!_presentationFixture) vm.SaveWindow(this);
             };
         }
 
         Closed += (_, _) =>
         {
-            if (DataContext is MainViewModel currentVm)
-                currentVm.CompletionRequested -= OnCompletionRequested;
+            UpdatePresentation.OfferRequested -= OpenUpdateDialog;
+            currentVm.ReleaseNotesRequested -= OpenReleaseNotes;
+            _tray?.Dispose();
+            UpdatePresentation.Dispose();
+            if (DataContext is MainViewModel closingVm)
+                closingVm.CompletionRequested -= OnCompletionRequested;
             if (DataContext is IDisposable disposable)
                 disposable.Dispose();
         };
+    }
+
+    private void OpenUpdateDialog() { if (IsVisible && WindowState != WindowState.Minimized) ShowUpdateDialog(false); else _pendingUpdateOffer=true; }
+    private void OpenReleaseNotes() => ShowUpdateDialog(true);
+    internal void ShowUpdateDialog(bool notes, string? successVersion = null)
+    {
+        if (_updateDialog is not null) { _updateDialog.Activate(); return; }
+        _updateDialog = new UpdateWindow(this, UpdatePresentation, notes, successVersion);
+        try { _updateDialog.ShowDialog(); }
+        finally { _updateDialog = null; }
+    }
+    private async void CheckUpdates_Click(object sender, RoutedEventArgs e) => await UpdatePresentation.CheckAsync();
+    private void SidebarUpdate_Click(object sender, RoutedEventArgs e)
+    {
+        if (UpdatePresentation.Available) ShowUpdateDialog(false);
     }
 
     private void OnCompletionRequested(object? sender, CompletionNotification notification)

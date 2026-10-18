@@ -34,7 +34,7 @@ from work_paths import work_temp_dir
 
 WORK = work_temp_dir("worker_translate")
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-MODEL_DIR = DEV_RUN_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"
+MODEL_DIR = Path(os.environ.get("VNTEXT_CT2_MODEL", str(DEV_RUN_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"))).expanduser().resolve()
 
 
 def _venv_python() -> Path:
