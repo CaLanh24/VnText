@@ -1,12 +1,12 @@
-# Current state pointer — 2026-10-19
+# Current state pointer — 2026-10-20
 
-## Phase10 research closed: bounded improvement, no product promotion
-- Owner continues translation quality autonomously; OPUS product unchanged. Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase10, TEST_MATRIX.md.
-- Added finite paraphrase aliases, critical34term bank/sharedOPUSglossary arm, logged source-slot professor/singular role binding; stable original retained unless revised propertyMATCH. No same-model judge.
--73focusedPASS; fresh24fixtures8correctMATCH/16badFAIL, no falseaccept within declared templates. New12sources(8dev/4heldout) unique vs264eval/audit-only strings;17calls,9MATCH/3UNKNOWN,0tokenmismatch/allNEEDS_REVIEW. Allfreshnowseen.
-- Reject translated2newcases;6role counterparts agent-reviewed correct,1owner implicit. Remaining Q10-04-2initial added prohibition; revision removes it but bothUNKNOWN so original retained. Stable selection not semantic oracle; no autoacceptance.
-- Evidence DEV_RUN/translation-quality-phase10/REVIEW.md + rawselection/history/fixtures/summary/wrappers/quota; sourcebase1834bb7+perrunhashes. No human gold/general-language guarantee.
-- Allwrappers0/cleanupPASS; TEST_RUN/RELEASE_RUN absent; artifact1GiB/shared6GiB/VM4GiB unchanged. No app/model/worker/validator/dependency/system/DEV/release/push changes.
+## Phase11 named remediation closed: PASS bounded, OPUS unchanged
+- Owner requests self-added Đừng +3Phase10unknowns fixed, full retest. Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase11; TEST_MATRIX.md.
+- Actual old3/4calls allCONSTRAINTS_MATCH: owner explicit; addedĐừngFAIL then modelaffirmative revisionMATCH selected; unchecked-entry relative clause recognized. No negation deletion/guessed owner.
+- Initialparser2fail retained; final79focusedPASS. Fresh18fixtures6correct/12bad all expected,0falseaccept within template scope; no human gold/general-language claim.
+- New8sources(4dev/4heldout)/11calls:5MATCH/3UNKNOWN,0tokenmismatch/allNEEDS_REVIEW. No addedĐừng fresh;4role directions agent-reviewed correct. New unknowns different domain/scope/paraphrase limits, not proof wholelanguage solved.
+- Evidence DEV_RUN/translation-quality-phase11/REVIEW.md and rawselection/seen/final/fixtures/baseline/summary/wrappers/quota; sourcebase1e762a5+perrunhashes. Allnewoutputsnowseen.
+- RuntimecleanupPASS/TEST_RUN+RELEASE_RUNabsent; artifact1GiB/shared6GiB/VM4GiB unchanged. No productmodel/worker/validator/dependency/system/DEV/release/push changes.
 
 ## Product/release pointers
 - CT2/OPUS remains product route. Last recorded public0.1.8 bounded installed update acceptance: `docs/RELEASE_0.1.8.md` (immutable build1cd24b2); whole-product RELEASE_VERIFIED not inferred.

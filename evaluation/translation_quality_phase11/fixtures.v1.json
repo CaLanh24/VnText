@@ -1,0 +1,130 @@
+{
+  "records": [
+    {
+      "id": "F11-1-0",
+      "source_en": "May I send you my updated abstract before Monday?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể gửi giáo sư bản tóm tắt đã cập nhật của em trước thứ Hai không?",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-1-1",
+      "source_en": "May I send you my updated abstract before Monday?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể gửi ông bản tóm tắt của em trước thứ Hai không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-1-2",
+      "source_en": "May I send you my updated abstract before Monday?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Giáo sư có thể gửi em bản tóm tắt của em trước thứ Hai không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-2-0",
+      "source_en": "Keep unverified entries outside the set eligible for patching.",
+      "address_context": "",
+      "draft": "Giữ các mục nhập chưa xác minh ngoài danh sách những bản có thể được vá.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-2-1",
+      "source_en": "Keep unverified entries outside the set eligible for patching.",
+      "address_context": "",
+      "draft": "Đừng giữ các mục nhập chưa xác minh ngoài danh sách những bản có thể được vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-2-2",
+      "source_en": "Keep unverified entries outside the set eligible for patching.",
+      "address_context": "",
+      "draft": "Giữ các mục nhập chưa xác minh trong danh sách có thể được vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-3-0",
+      "source_en": "Keep unchecked records outside the collection allowed for export.",
+      "address_context": "",
+      "draft": "Hãy để dữ liệu chưa kiểm tra nằm ngoài danh sách có thể được xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-3-1",
+      "source_en": "Keep unchecked records outside the collection allowed for export.",
+      "address_context": "",
+      "draft": "Không được để dữ liệu chưa kiểm tra nằm ngoài danh sách có thể được xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-3-2",
+      "source_en": "Keep unchecked records outside the collection allowed for export.",
+      "address_context": "",
+      "draft": "Giữ dữ liệu chưa kiểm tra ngoài danh sách và vẫn được xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-4-0",
+      "source_en": "I will lend you my spare sweater.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ cho em mượn áo dự phòng của chị.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-4-1",
+      "source_en": "I will lend you my spare sweater.",
+      "address_context": "older sister to younger brother",
+      "draft": "Em sẽ cho chị mượn áo dự phòng của chị.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-4-2",
+      "source_en": "I will lend you my spare sweater.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ cho em mượn áo dự phòng của em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-5-0",
+      "source_en": "Keep rejected translations outside the set permitted for release.",
+      "address_context": "",
+      "draft": "Giữ các bản ghi bị từ chối ngoài tập hợp đủ điều kiện phát hành.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-5-1",
+      "source_en": "Keep rejected translations outside the set permitted for release.",
+      "address_context": "",
+      "draft": "Chớ giữ các bản ghi bị từ chối ngoài tập hợp đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-5-2",
+      "source_en": "Keep rejected translations outside the set permitted for release.",
+      "address_context": "",
+      "draft": "Giữ các bản ghi bị từ chối trong tập hợp đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-6-0",
+      "source_en": "Keep unresolved records outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ bản ghi chưa giải quyết ngoài danh sách có thể được xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F11-6-1",
+      "source_en": "Keep unresolved records outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Đừng lưu bản ghi chưa giải quyết ngoài danh sách có thể được xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F11-6-2",
+      "source_en": "Keep unresolved records outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ bản ghi chưa giải quyết ngoài danh sách và vẫn có thể xuất dữ liệu.",
+      "expected": "FAIL"
+    }
+  ]
+}

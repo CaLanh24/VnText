@@ -1,0 +1,125 @@
+{
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false
+  },
+  "rows": [
+    {
+      "id": "Q11-01-1",
+      "source_en": "May I send you my updated abstract before Monday?",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/1",
+        "group_id": "q11-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q11-01-2",
+      "source_en": "I will show you my revised bibliography.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/1",
+        "group_id": "q11-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q11-02-1",
+      "source_en": "Keep unverified entries outside the set eligible for patching.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/2",
+        "group_id": "q11-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q11-02-2",
+      "source_en": "Keep unchecked records outside the collection allowed for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/2",
+        "group_id": "q11-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q11-03-1",
+      "source_en": "I will lend you my spare sweater.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/3",
+        "group_id": "q11-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q11-03-2",
+      "source_en": "Could you show me your homework?",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/3",
+        "group_id": "q11-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q11-04-1",
+      "source_en": "Keep rejected translations outside the set permitted for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/4",
+        "group_id": "q11-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q11-04-2",
+      "source_en": "Keep unresolved records outside the collection eligible for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase11/4",
+        "group_id": "q11-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}
