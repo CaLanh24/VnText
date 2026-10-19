@@ -413,3 +413,7 @@ Owner explicitly approved temporary 3 GiB non-exempt checkout artifacts for the 
 
 ### Release 0.1.7 uninstall waiver — Owner 2026-10-19
 Owner explicitly requested "Khỏi phải thử, phát hành đi" after Computer Use refused Uninstall.exe. For this 0.1.7 campaign only, publish the tested Setup with actual uninstall acceptance marked NOT VERIFIED / OWNER WAIVED. Canonical disposal of the task-owned candidate is cleanup, never uninstall PASS. This does not waive other gates or change future release requirements.
+
+
+### Owner correction: regular updates stay in-app — 2026-10-19
+Owner rejects asking users to download/reinstall Setup for ordinary app/worker changes. Continue the0.1.7 release campaign by building the missing full-app delta from exact public0.1.6 payload to exact public0.1.7 payload, preserve published Setup/tag/source and verify actual old-app offer/download/apply/restart/data preservation before claiming repair complete. Reuse the already approved same-campaign3GiB exact candidate-0.1.7 temporary scope, terminal<=1GiB/shared .dev-env<=5GiB; no new dependencies or game campaign. Existing hash/provenance/model/baseline/rollback validators remain mandatory. Setup fallback is not acceptance for this correction. Actual0.1.7 uninstall remains Owner-waived; cleanup is separate.
