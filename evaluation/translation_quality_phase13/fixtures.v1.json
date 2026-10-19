@@ -1,0 +1,77 @@
+{
+  "provenance": "Synthetic finite property checks, not human gold",
+  "records": [
+    {
+      "id": "F13-0-good",
+      "source_en": "Keep unresolved records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa giải quyết ngoài nhóm đủ điều kiện vá.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F13-0-unfinished",
+      "source_en": "Keep unresolved records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa hoàn thiện ngoài nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-0-inside",
+      "source_en": "Keep unresolved records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa giải quyết trong nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-1-good",
+      "source_en": "Keep unresolved translations outside the set eligible for release.",
+      "draft": "Giữ bản dịch chưa giải quyết ngoài tập hợp đủ điều kiện phát hành.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F13-1-unfinished",
+      "source_en": "Keep unresolved translations outside the set eligible for release.",
+      "draft": "Giữ bản dịch chưa hoàn thiện ngoài tập hợp đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-1-inside",
+      "source_en": "Keep unresolved translations outside the set eligible for release.",
+      "draft": "Giữ bản dịch chưa giải quyết trong tập hợp đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-2-good",
+      "source_en": "Keep unresolved records outside the set eligible for export.",
+      "draft": "Giữ bản ghi chưa giải quyết ngoài bộ sưu tập đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F13-2-unfinished",
+      "source_en": "Keep unresolved records outside the set eligible for export.",
+      "draft": "Giữ bản ghi chưa hoàn thiện ngoài bộ sưu tập đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-2-inside",
+      "source_en": "Keep unresolved records outside the set eligible for export.",
+      "draft": "Giữ bản ghi chưa giải quyết trong bộ sưu tập đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-3-good",
+      "source_en": "Keep unresolved records outside the set eligible for release.",
+      "draft": "Giữ mục nhập chưa giải quyết ngoài danh sách đủ điều kiện phát hành.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F13-3-unfinished",
+      "source_en": "Keep unresolved records outside the set eligible for release.",
+      "draft": "Giữ mục nhập chưa hoàn thiện ngoài danh sách đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F13-3-inside",
+      "source_en": "Keep unresolved records outside the set eligible for release.",
+      "draft": "Giữ mục nhập chưa giải quyết trong danh sách đủ điều kiện phát hành.",
+      "expected": "FAIL"
+    }
+  ]
+}

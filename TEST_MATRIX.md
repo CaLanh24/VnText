@@ -126,3 +126,6 @@ Phase11 targeted research gate: `test_translation_constraints_v3` and `test_tran
 
 
 Phase12 named-three research gate: `test_translation_constraints_v4`, `test_translation_quality_phase12` plus complete Phase11/prior focused suites (86 tests). Distinguish patching from update; finite hồ sơ/eligibility paraphrases must retain class/outside/action; quoted and ambiguous negative eligibility remain UNKNOWN. Actual named3 required correct model output, not post-deletion of negation. Freeze then fresh18checkerfixtures/new4source actual OPUSdefault/commonterms and Hy-one-retry. All research drafts NEEDS_REVIEW; propertyMATCH is not full semantic acceptance. Unknown new resolution/completion nuance remains explicit; no fresh-output tuning. No app-model promotion.
+
+
+Phase13 unresolved-state research gate: `test_translation_constraints_v5` + `test_translation_quality_phase13` and prior86focused tests (92 total). Verify unresolved versus unfinished/completion remains distinct, genuine unfinished source and quoted scope abstain, failed retries do not overwrite originals. Actual Q12-02-1 plus3earlier exclusions -> freeze -> fresh4source/12checkerfixtures -> actual OPUSdefault/common37terms and pinnedHy. AllNEEDS_REVIEW/propertyMATCH only, no product promotion or fresh-result tuning.

@@ -1,0 +1,65 @@
+{
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false
+  },
+  "rows": [
+    {
+      "id": "Q13-01-1",
+      "source_en": "Keep unresolved entries outside the group permitted for patching.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase13/1",
+        "group_id": "q13-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q13-02-1",
+      "source_en": "Keep unresolved records outside the set allowed for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase13/2",
+        "group_id": "q13-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q13-03-1",
+      "source_en": "Keep unresolved translations outside the collection permitted for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase13/3",
+        "group_id": "q13-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q13-04-1",
+      "source_en": "Keep unresolved entries outside the collection allowed for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase13/4",
+        "group_id": "q13-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    }
+  ]
+}
