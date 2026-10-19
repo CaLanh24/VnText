@@ -282,3 +282,7 @@ no NuGet `PackageReference`; this does not inventory the .NET runtime or SDK.
 ## Lucide vector icons (0.468.0)
 New GitHub, folder-open, messages-square, table-2, sparkles and settings vectors are adapted from Lucide0.468.0, not covered by the older Owner-created artwork declaration. Original SVGs, complete upstream ISC/MIT notices and exact source/hash receipt are in `wpf_app/VNText.Studio.App/Assets/Icons/Lucide/`. Geometry converted to native WPF paths. Source: https://github.com/lucide-icons/lucide/tree/0.468.0 . GitHub mark identifies the repository destination; no affiliation implied.
 Morphicons documentation was consulted as design/runtime reference; no Morphicons JavaScript/runtime code is bundled.
+
+## Test-only contextual translation research (2026-10-19)
+
+Owner approved one local Hy-MT2-1.8B Q4_K_M experiment; neither the model nor llama.cpp is a product dependency or release payload. Model source: [Tencent pinned GGUF repository](https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/tree/a0c709d9fac510f2c807aa3af52872340dc37a4a), Apache-2.0 `LICENSE.txt` retained beside the shared model. Runtime source: [official llama.cpp b11724 Windows CPU x64 release](https://github.com/ggml-org/llama.cpp/releases/tag/b11724), upstream MIT `LICENSE` retained beside the portable runtime. Exact artifact sizes/hashes and local license hashes are retained in DEV_RUN/translation-quality-phase3. Package metadata alone does not establish product redistribution approval; no redistribution is authorized by this experiment.

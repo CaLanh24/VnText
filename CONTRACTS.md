@@ -246,6 +246,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner decision (2026-10-19, translation-quality Step3):** Explicit permission to download the pinned Tencent Hy-MT2-1.8B Q4_K_M model and official portable Windows CPU runtime into shared `.dev-env`, increasing its current cap to **6 GiB** (supersedes the previous5GiB cap). Non-exempt checkout remains1GiB. One model/runtime copy, verified hashes and license provenance; test-only, OPUS product route unchanged. Check guest RAM before loading; no host/VM changes, training, additional candidates, system installation or publication authorized.
+
 **Owner decision (2026-10-18, Release0.1.6):** Owner explicitly approves `.dev-env` up to **5 GiB** for the shared build environment (SDK10, Python3.12 and Release packages alongside current DEV). This supersedes older3GiB shared-environment limits below. The non-exempt checkout limit remains1GiB; no game/candidate exemption, package limit, cleanup ownership or validator changes follow. Inventory both totals before each payload phase.
 
 **Additional Owner approval (2026-10-18):** Release0.1.6 may temporarily use3GiB non-exempt artifacts for the exact registered `RELEASE_RUN/candidate-0.1.6` scope, bound to a new clean-source0.1.6 prospective epoch and explicit `VNTEXT_RELEASE_TASK_ID=release-0.1.6`. Same exact-source/inventory/ownership guards as0.1.5, with its own approval; no old transition/rebaseline approval inherited. Terminal scope disposal returns non-exempt total to<=1GiB. Shared `.dev-env` stays separately<=5GiB. No package/update validator relaxation.

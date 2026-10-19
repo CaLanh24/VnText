@@ -68,7 +68,7 @@ CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
-PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 5 * 1024 ** 3
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 6 * 1024 ** 3
 RELEASE_TASK_BUDGET_ID = "release-0.1.5"
 RELEASE_TASK_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
 RELEASE_TASK_BUDGET_APPROVAL = (
@@ -118,7 +118,7 @@ RELEASE_TASK_EPOCH_REBASELINE_APPROVAL = (
     "the ordinary eight-hop transition limit remains unchanged."
 )
 PROJECT_SIZE_EXEMPTIONS = {
-    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (5 GiB cap; Owner 2026-10-18)",
+    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (6 GiB cap; Owner 2026-10-19 R&D approval)",
 }
 
 # Keep relative to WORK_ROOT
