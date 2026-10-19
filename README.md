@@ -1,10 +1,10 @@
 # VNText Studio
 
-Phiên bản ổn định mới nhất: [**0.1.7**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.7).
+Phiên bản ổn định mới nhất: [**0.1.8**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.8).
 
-Nâng cấp bản này bằng Setup: đóng VNText và chọn đúng thư mục cài hiện tại để giữ dữ liệu trong `data/`. Không gỡ bản cũ trước vì Uninstall xóa cả dữ liệu. Bản 0.1.7 không kèm gói cập nhật toàn ứng dụng trong app.
+Đã cài 0.1.7: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**, tải bản mới và xác nhận khởi động lại. Gói cập nhật 0.1.8 khoảng 3,4 MB; giữ nguyên CSV, glossary, dữ liệu và model.
 
-Bản 0.1.8 đang chuẩn bị kiểm chứng cập nhật toàn ứng dụng trong app từ baseline 0.1.7; chưa phát hành.
+Người mới hoặc đang dùng 0.1.6: cài [Setup 0.1.7](https://github.com/CaLanh24/VnText/releases/tag/v0.1.7) làm baseline lần cuối rồi cập nhật trong app. Khi nâng cấp bằng Setup, đóng VNText và chọn đúng thư mục cài hiện tại; không gỡ bản cũ trước vì Uninstall xóa dữ liệu. Sau khi tải đủ 100%, chờ app xác minh các file trước khi hiện nút khởi động lại. Bằng chứng và giới hạn kiểm chứng: [Release 0.1.8](docs/RELEASE_0.1.8.md).
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 

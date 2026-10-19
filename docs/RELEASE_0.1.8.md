@@ -1,4 +1,20 @@
-#0.1.8 in-app update acceptance — in progress
+# 0.1.8 in-app update acceptance — PASS bounded public update
+
+Published 2026-10-19 with Owner authorization “ok phat hanh di”: https://github.com/CaLanh24/VnText/releases/tag/v0.1.8 is latest stable. Tag/build source `1cd24b298a4dc469791caf6f04bfc8fc0bb15a2f`; later documentation commits do not change this evidence SHA. Four uploaded assets checked against GitHub SHA256/size; full-app ZIP `full-app-update-0.1.8-ffdb293ea8783c53.zip`, 3416989 bytes, SHA256 `ffdb293ea8783c5341f0abe636ff43b29ad5e5ceaa54498f43916e1198343c13`. Public0.1.7 unchanged. No Setup0.1.8 distributed.
+
+Exact-source regression: `python -B -m unittest discover -s tests/unit -v`, 817 tests, child/wrapper0, 0 failures/errors, 7 explained skips, one optional sacremoses tokenizer warning; cleanupPASS. Three post-update packaged patch-installer/GUI-close tests subsequently PASS/child0/no skips/warnings, scope cleanupPASS. Their original wrapper1 is retained faithfully: terminal purge rejected preexisting TEST_RUN control metadata; final verified terminal retention resolves lifecycle without relabelling that original exit. Four external Unity fixture tests remain deferred; no whole-product RELEASE_VERIFIED claim.
+
+Publisher/runtime/worker two-cwd/embedded7192 payload hashes PASS. Initial build blocked on a263-character cached-model path; shorter staging then correctly rejected9 extra empty cache download files. Both failed scopes disposed canonically; final publisher reused exact public0.1.7 model inventory, preserving validators and shared cache. Source/runtime/model content not changed to bypass checks. ModelRoot provenance and original outputs retained in DEV_RUN/release-0.1.8.
+
+Local real0.1.7 helper transaction PASS. Actual public UI gate also PASS: exact public0.1.7 payload automatically offered0.1.8, clicked download, verified downloaded SHA against public asset, clicked restart, real `--apply-github-full-app-update` helper applied and health-checked, new process displayed “Cập nhật thành công”/v0.1.8. Full7191 target file hashes,3 synthetic CSV/glossary/sentinel hashes and24 model records match. Baseline was byte-recovered from the exact publicSetup0.1.7 previously installed/tested in the preceding release task; this is not a newSetup UI installation or fresh0.1.8 uninstall test. Test data only, no user/game data touched.
+
+Known presentation limits: 100% download can remain visible while full baseline verification runs; success modal retains generic “đã có phiên bản mới” helper wording even though its success title/current0.1.8/health receipt are correct. No motion/timing or exact Cockpit parity claim. Public notes disclose these limits.
+
+Evidence: DEV_RUN/release-0.1.8/{exact-full.json,embedded-payload-verified.json,local-transaction-verified.json,installed-native-gates.json,publication-verified.json,live-gate.json,live-transaction-verified.json,live-offer.png,live-download.png,live-ready.png,live-success.png,candidate-cleanup.json,terminal-retention.json,terminal-quota.json}. Public BUILD-PROVENANCE is the immutable prepublication build receipt; final live/public acceptance is recorded here and in the later local receipts.
+
+Terminal cleanupPASS: candidate, RELEASE_RUN and TEST_RUN absent; verified epoch/control metadata moved unchanged to DEV_RUN/release-0.1.8/terminal-control-evidence. Non-exempt693557334<=1GiB/shared4575800745<=5GiB. One current DEV executable remains in DEV_RUN/bootstrap-build with DEV_RUN/VNText Studio.lnk. No dependencies downloaded in this campaign. Outcome PASS for this bounded in-app release, with limits above.
+
+## Original plan and checkpoints (historical)
 
 Owner establishes public Setup0.1.7 as last manual baseline and requires ordinary0.1.8+ releases to update fully in-app. No0.1.6 repair or existing0.1.7 asset changes. Sole writer on main, initial clean9046de6. Scope: mandatory full-app publication admission, cache revalidation headers, version0.1.8, exact-source package and actual public0.1.7 offer/download/apply/restart acceptance. No engine/model/protocol/validator weakening; public0.1.7 tag/payload immutable. Reported Current on another machine remains UNKNOWN and is not attributed to cache without evidence.
 
