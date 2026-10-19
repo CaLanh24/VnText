@@ -147,3 +147,5 @@ Phase19 broad blind research gate: `test_translation_quality_phase19` + prior103
 
 
 Phase20 semantic-hint research: `test_translation_quality_phase20` plus prior105 (108 total). Six hint triggers with negative sense controls, unchanged checker/common terms and unaffected prompts, frozen fresh12 dataset. Actual two seen hypotheses -> frozen fresh12 -> actual OPUS arms/Hy -> full aligned Coordinator review (not blind/gold), preserve semantic failures and UNKNOWN. Prompt sufficiency premise invalid when rollback/switch remain wrong; no app promotion or fresh-output tuning. Canonical wrappers exit0/cleanupPASS; retain actual per-run hashes and differing seen snapshots.
+
+Phase21 research gate: `test_translation_lexical_transport`5 + `test_translation_quality_phase21`3 + prior108 =116PASS. Longest compound, domain/POS/quote/opaque abstention, exact original carrier/structure rejection, finite past fragments and unaffected prompt/draft status. Actual seen attempts then frozen16 OPUS/Hy, blind sequential reviewer, preserve2major+1blocked and all metadata. Never infer semantic acceptance from term restoration/UNKNOWN.

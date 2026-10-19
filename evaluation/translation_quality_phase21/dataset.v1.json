@@ -1,0 +1,197 @@
+{
+  "provenance": "Project-owned synthetic English only, no target gold, unique vs all previous evaluation/audit sources; frozen before inference",
+  "rows": [
+    {
+      "id": "Q21-01",
+      "source_en": "The database must roll back the transaction when the disk is full.",
+      "group": "semantic_transport",
+      "domain_context": "database transactions",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene01.txt",
+        "scene_id": "Q21-01"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-02",
+      "source_en": "Roll back the carpet before opening the cabinet.",
+      "group": "semantic_transport",
+      "domain_context": "household furniture",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene02.txt",
+        "scene_id": "Q21-02"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-03",
+      "source_en": "The safety switch disconnects the pump when the cover opens.",
+      "group": "semantic_transport",
+      "domain_context": "engineering control",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene03.txt",
+        "scene_id": "Q21-03"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-04",
+      "source_en": "Switch the display to the second input.",
+      "group": "semantic_transport",
+      "domain_context": "engineering control",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene04.txt",
+        "scene_id": "Q21-04"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-05",
+      "source_en": "The humidity sensor measures the air inside the chamber.",
+      "group": "semantic_transport",
+      "domain_context": "engineering measurement",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene05.txt",
+        "scene_id": "Q21-05"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-06",
+      "source_en": "Do not rename the file called \"sensor\".",
+      "group": "semantic_transport",
+      "domain_context": "engineering measurement",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene06.txt",
+        "scene_id": "Q21-06"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-07",
+      "source_en": "Your invoice includes the inspection fee.",
+      "group": "semantic_transport",
+      "domain_context": "ordinary business invoice",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene07.txt",
+        "scene_id": "Q21-07"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-08",
+      "source_en": "Invoice the customer after the inspection.",
+      "group": "semantic_transport",
+      "domain_context": "ordinary business",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene08.txt",
+        "scene_id": "Q21-08"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-09",
+      "source_en": "I would have saved the draft if I had noticed the warning.",
+      "group": "semantic_transport",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene09.txt",
+        "scene_id": "Q21-09"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-10",
+      "source_en": "I will save the draft if I notice the warning.",
+      "group": "semantic_transport",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene10.txt",
+        "scene_id": "Q21-10"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-11",
+      "source_en": "The gauge sends one reading to the recorder every minute.",
+      "group": "semantic_transport",
+      "domain_context": "engineering measurement",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene11.txt",
+        "scene_id": "Q21-11"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-12",
+      "source_en": "I am reading the gauge manual before the test.",
+      "group": "semantic_transport",
+      "domain_context": "engineering measurement",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene12.txt",
+        "scene_id": "Q21-12"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-13",
+      "source_en": "The sensor sends %s to {CHANNEL}.",
+      "group": "semantic_transport",
+      "domain_context": "engineering measurement",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene13.txt",
+        "scene_id": "Q21-13"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-14",
+      "source_en": "The sensor and the safety switch share <b>{CIRCUIT}</b>.",
+      "group": "semantic_transport",
+      "domain_context": "engineering control",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene14.txt",
+        "scene_id": "Q21-14"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-15",
+      "source_en": "Keep the receipt until the warranty expires.",
+      "group": "semantic_transport",
+      "domain_context": "ordinary business receipt",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene15.txt",
+        "scene_id": "Q21-15"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q21-16",
+      "source_en": "The model predicts whether the transaction will finish or roll back.",
+      "group": "semantic_transport",
+      "domain_context": "database transactions",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic21/scene16.txt",
+        "scene_id": "Q21-16"
+      },
+      "address_context": ""
+    }
+  ]
+}

@@ -1,5 +1,10 @@
 # Current state pointer — 2026-10-20
 
+## Phase21 terminal — PASS research mechanism evaluation; admission rejected
+- Domain-qualified lexical/tense transport improves six seen cases.116testsPASS; frozen16 actual Hy15drafts/1blocked/17calls, OPUS arms15written/1blocked each; original guard remains strict. No product OPUS change.
+- Separate GPT6LunaMax blind review: Hy8acceptable5minor2major1unusable vs OPUS2acceptable3minor10major1unusable; preferences12/3/tie1. Agent evidence not human gold. Physical roll→fold and OR-undo→OR-NOT-undo remain major; dense markers blocked, doubled đã minor. No fresh-output tuning.
+- Childterminal/ingested, wrappers exit0/cleanupPASS, transientrootsabsent/quotas respected; sourcebase146393a+perrunhashes. Canonical plan Phase21; local DEV_RUN/translation-quality-phase21/REVIEW.md/raw/blind/receipts. No app/dependency/training/publication change.
+
 ## Phase20 terminal — PREMISE_INVALID; prompt cues insufficient, OPUS unchanged
 - Research-only six semantic hints, two bounded seen hypotheses: giver/recipient, discard, invoice and sensor improved; counterfactual clarity/rollback unresolved. Fresh12 frozen before actual model run; OPUS arms12/12 complete each, Hy12drafts/12calls, allNEEDS_REVIEW.
 - Coordinator aligned review NOT blind/human gold:4acceptable5minor2major1uncertain. Rollback still cancellation; switch becomes converter. Candidate rejected; no fresh-output tuning or claim all errors fixed.
