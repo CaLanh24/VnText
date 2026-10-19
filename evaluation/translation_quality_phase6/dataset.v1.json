@@ -1,0 +1,587 @@
+{
+  "schema_version": 1,
+  "dataset_id": "vntext-quality-phase6-v1",
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false,
+    "novelty": "New strings; known phenomena recur; no private/game content"
+  },
+  "split_protocol": {
+    "development": 24,
+    "held_out": 16,
+    "groups_never_cross_split": true
+  },
+  "rows": [
+    {
+      "id": "Q6-01-1",
+      "group": "sense",
+      "split": "development",
+      "source_en": "The porter left our suitcases beside platform seven.",
+      "domain_context": "railway station",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/01",
+        "group_id": "q6-01",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-01-2",
+      "group": "sense",
+      "split": "development",
+      "source_en": "Wait on the north platform until the train stops.",
+      "domain_context": "railway station",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/01",
+        "group_id": "q6-01",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-02-1",
+      "group": "sense",
+      "split": "development",
+      "source_en": "This platform supports three database drivers.",
+      "domain_context": "software deployment",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/02",
+        "group_id": "q6-02",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-02-2",
+      "group": "sense",
+      "split": "development",
+      "source_en": "The platform must remain available during the upgrade.",
+      "domain_context": "software deployment",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/02",
+        "group_id": "q6-02",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-03-1",
+      "group": "sense",
+      "split": "development",
+      "source_en": "The carpenter raised the wooden platform above the floor.",
+      "domain_context": "theater construction",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/03",
+        "group_id": "q6-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-03-2",
+      "group": "sense",
+      "split": "development",
+      "source_en": "Put the blue chair on the platform behind the curtain.",
+      "domain_context": "theater construction",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/03",
+        "group_id": "q6-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-04-1",
+      "group": "address",
+      "split": "development",
+      "source_en": "Younger brother, let me help you repair that kite.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/04",
+        "group_id": "q6-04",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q6-04-2",
+      "group": "address",
+      "split": "development",
+      "source_en": "You can tell me the truth; I am your sister.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/04",
+        "group_id": "q6-04",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q6-05-1",
+      "group": "address",
+      "split": "development",
+      "source_en": "Take my hand before we cross this busy road.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/05",
+        "group_id": "q6-05",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q6-05-2",
+      "group": "address",
+      "split": "development",
+      "source_en": "I will keep a bowl of soup warm for you.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/05",
+        "group_id": "q6-05",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q6-06-1",
+      "group": "address",
+      "split": "development",
+      "source_en": "May I ask you about the final chapter of my thesis?",
+      "domain_context": "university conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/06",
+        "group_id": "q6-06",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q6-06-2",
+      "group": "address",
+      "split": "development",
+      "source_en": "I have corrected the figures you mentioned yesterday.",
+      "domain_context": "university conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/06",
+        "group_id": "q6-06",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q6-07-1",
+      "group": "logic",
+      "split": "development",
+      "source_en": "Keep damaged entries outside the group allowed into the patch.",
+      "domain_context": "software patch eligibility",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/07",
+        "group_id": "q6-07",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-07-2",
+      "group": "logic",
+      "split": "development",
+      "source_en": "Only verified entries may enter the patch queue.",
+      "domain_context": "software patch eligibility",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/07",
+        "group_id": "q6-07",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-08-1",
+      "group": "logic",
+      "split": "development",
+      "source_en": "Do not import a record unless its checksum matches.",
+      "domain_context": "software import conditions",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/08",
+        "group_id": "q6-08",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-08-2",
+      "group": "logic",
+      "split": "development",
+      "source_en": "A valid name alone does not make this record eligible.",
+      "domain_context": "software import conditions",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/08",
+        "group_id": "q6-08",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-09-1",
+      "group": "logic",
+      "split": "development",
+      "source_en": "Save the preview without replacing the source document.",
+      "domain_context": "software file preservation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/09",
+        "group_id": "q6-09",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-09-2",
+      "group": "logic",
+      "split": "development",
+      "source_en": "Canceling this job must not remove the backup.",
+      "domain_context": "software file preservation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/09",
+        "group_id": "q6-09",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-10-1",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "His breathing is better, but he is not out of the woods yet.",
+      "domain_context": "medical recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/10",
+        "group_id": "q6-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-10-2",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "The nurse says he is finally out of danger.",
+      "domain_context": "medical recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/10",
+        "group_id": "q6-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-11-1",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "My aunt drops by only once in a blue moon.",
+      "domain_context": "infrequent visits",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/11",
+        "group_id": "q6-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-11-2",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "We almost never have a chance to talk in person.",
+      "domain_context": "infrequent visits",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/11",
+        "group_id": "q6-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-12-1",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "We walked out of the woods and reached a wheat field.",
+      "domain_context": "literal outdoor description",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/12",
+        "group_id": "q6-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-12-2",
+      "group": "idioms",
+      "split": "development",
+      "source_en": "Tonight the painted moon above the stage is blue.",
+      "domain_context": "literal outdoor description",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/12",
+        "group_id": "q6-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-13-1",
+      "group": "sense",
+      "split": "held_out",
+      "source_en": "{LINE_ID} departs from the eastern platform at noon.",
+      "domain_context": "railway departure display",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/13",
+        "group_id": "q6-13",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-13-2",
+      "group": "sense",
+      "split": "held_out",
+      "source_en": "<b>Platform nine</b> is closed for track repairs.",
+      "domain_context": "railway departure display",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/13",
+        "group_id": "q6-13",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-14-1",
+      "group": "address",
+      "split": "held_out",
+      "source_en": "Little sister, you may use my umbrella this evening.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/14",
+        "group_id": "q6-14",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q6-14-2",
+      "group": "address",
+      "split": "held_out",
+      "source_en": "I will wait for you by the school gate.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/14",
+        "group_id": "q6-14",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q6-15-1",
+      "group": "address",
+      "split": "held_out",
+      "source_en": "Sister, could you explain this puzzle to me?",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/15",
+        "group_id": "q6-15",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q6-15-2",
+      "group": "address",
+      "split": "held_out",
+      "source_en": "I borrowed your ruler and will return it after lunch.",
+      "domain_context": "family conversation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/15",
+        "group_id": "q6-15",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q6-16-1",
+      "group": "logic",
+      "split": "held_out",
+      "source_en": "Exclude unchecked rows from the set permitted for patching.",
+      "domain_context": "software patch eligibility",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/16",
+        "group_id": "q6-16",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-16-2",
+      "group": "logic",
+      "split": "held_out",
+      "source_en": "A row is not ready merely because it has a translation.",
+      "domain_context": "software patch eligibility",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/16",
+        "group_id": "q6-16",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-17-1",
+      "group": "logic",
+      "split": "held_out",
+      "source_en": "Keep only files that do not contain unresolved conflicts.",
+      "domain_context": "software filtering",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/17",
+        "group_id": "q6-17",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-17-2",
+      "group": "logic",
+      "split": "held_out",
+      "source_en": "Unless the user confirms, leave the original files untouched.",
+      "domain_context": "software filtering",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/17",
+        "group_id": "q6-17",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-18-1",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "The broken prototype sent our team back to square one.",
+      "domain_context": "project failure",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/18",
+        "group_id": "q6-18",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-18-2",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "That shortcut put the entire project on thin ice.",
+      "domain_context": "project failure",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/18",
+        "group_id": "q6-18",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-19-1",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "Although her fever has fallen, she is still not out of the woods.",
+      "domain_context": "health recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/19",
+        "group_id": "q6-19",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-19-2",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "We cannot assume that the danger has passed.",
+      "domain_context": "health recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/19",
+        "group_id": "q6-19",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q6-20-1",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "We catch sight of that elusive bird once in a blue moon.",
+      "domain_context": "rare encounters",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/20",
+        "group_id": "q6-20",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q6-20-2",
+      "group": "idioms",
+      "split": "held_out",
+      "source_en": "Seeing it twice in one week would be extraordinary.",
+      "domain_context": "rare encounters",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase6/20",
+        "group_id": "q6-20",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}

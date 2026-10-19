@@ -1,6 +1,13 @@
 # Current state pointer — 2026-10-19
 
-## Research task closed: Phase5 PASS bounded guard/evaluation
+## Latest research: Phase6 bounded evaluation closed; candidate REJECTED
+- Owner: new major errors, negation/idioms/address; product OPUS unchanged.
+- New40 (24dev/16heldout),28focusedPASS;37Hy guardaccepted/3rejected. Agent meaning review: OPUS13major vsHy8acceptedmajor+3reject; held16 OPUS7 vsHy3+1reject. No human gold.
+- Finite sense/role hints improve domain-platform/medical and frequency idioms; cancellation/unless reversal and family address persist. Not solved or promoted.
+- Canonical: docs/TRANSLATION_QUALITY_PLAN.md Phase6; evidence DEV_RUN/translation-quality-phase6/REVIEW.md. Sourcebase77e37e4+perrun hashes; new40nowseen.
+- Runtime/test-only; TEST_RUN/RELEASE_RUN absent, caps unchanged.
+
+## Prior Phase5 bounded guard/evaluation
 - Owner: protect placeholders/symbols first, improve meaning, fresh corpus; keep OPUS in app.
 - Canonical protocol/results: `docs/TRANSLATION_QUALITY_PLAN.md` (Phase5); gates: `TEST_MATRIX.md`.
 - Dataset: `evaluation/translation_quality_phase5/dataset.v1.json`, 60 synthetic sentences /40dev+20heldout; hash199d5bde7dcf9b7ff9f2e08e0782a7ff88d39563b8cb0ec1a645c6570082759d.
