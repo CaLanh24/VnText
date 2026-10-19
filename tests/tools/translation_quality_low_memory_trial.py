@@ -53,16 +53,21 @@ def memory(process=None):
     return result
 
 
-def run_one(prompt, work, label, no_repack=False):
+def run_one(prompt, work, label, no_repack=False, max_tokens=64, completion=False):
     before = memory()
     result = {"label": label, "prompt": prompt, "before": before, "samples": []}
     if before["available_physical"] < 256*MIB or before["available_commit"] < 2048*MIB:
         return {**result, "status": "PREFLIGHT_BLOCKED"}
     command = [str(CLI), "-m", str(MODEL), "-c", "512", "-b", "32", "-ub", "16",
-               "-t", "2", "-n", "64", "--load-mode", "mmap", "--no-warmup",
-               "--cache-ram", "0", "--offline", "--single-turn", "--simple-io",
+               "-t", "2", "-n", str(max_tokens), "--load-mode", "mmap", "--no-warmup",
+               "--cache-ram", "0", "--offline", "--single-turn", "--simple-io", "--no-escape",
                "--no-display-prompt", "--temp", "0", "--seed", "42", "-p", prompt]
     result["command"] = command
+    if completion:
+        command[0] = str(CLI.with_name("llama-completion.exe"))
+        index = command.index("--cache-ram")
+        del command[index:index+2]
+        command.extend(["--jinja", "--conversation"])
     if no_repack:
         command.append("--no-repack")
     started = time.monotonic()
