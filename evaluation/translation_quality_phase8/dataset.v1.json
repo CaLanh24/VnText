@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false,
+    "novelty": "New strings against previous224; recurring phenomena"
+  },
+  "split_protocol": {
+    "development": 12,
+    "held_out": 12,
+    "groups_never_cross_split": true
+  },
+  "rows": [
+    {
+      "id": "Q8-01-1",
+      "group": "address",
+      "source_en": "I will bring you my spare gloves after breakfast.",
+      "domain_context": "family",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/1",
+        "group_id": "q8-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q8-01-2",
+      "group": "address",
+      "source_en": "Please return my flashlight when you finish using it.",
+      "domain_context": "family",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/1",
+        "group_id": "q8-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q8-02-1",
+      "group": "address",
+      "source_en": "I left your warm milk beside the kitchen window.",
+      "domain_context": "family",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/2",
+        "group_id": "q8-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q8-02-2",
+      "group": "address",
+      "source_en": "Will you bring me your drawing before bedtime?",
+      "domain_context": "family",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/2",
+        "group_id": "q8-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q8-03-1",
+      "group": "address",
+      "source_en": "I can show you my revised outline during office hours.",
+      "domain_context": "university",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/3",
+        "group_id": "q8-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q8-03-2",
+      "group": "address",
+      "source_en": "Could you explain the comment beside my conclusion?",
+      "domain_context": "university",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/3",
+        "group_id": "q8-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q8-04-1",
+      "group": "logic",
+      "source_en": "Canceling this transfer must preserve the temporary backup.",
+      "domain_context": "software cancellation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/4",
+        "group_id": "q8-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-04-2",
+      "group": "logic",
+      "source_en": "Do not erase the recovery folder after stopping the upload.",
+      "domain_context": "software cancellation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/4",
+        "group_id": "q8-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-05-1",
+      "group": "logic",
+      "source_en": "Unless the user approves, keep every pending record unchanged.",
+      "domain_context": "software eligibility",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/5",
+        "group_id": "q8-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-05-2",
+      "group": "logic",
+      "source_en": "Only entries with verified signatures may be released.",
+      "domain_context": "software eligibility",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/5",
+        "group_id": "q8-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-06-1",
+      "group": "protected_tokens",
+      "source_en": "Leave {ARCHIVE_ID} untouched when canceling {TRANSFER_ID}.",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/6",
+        "group_id": "q8-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-06-2",
+      "group": "protected_tokens",
+      "source_en": "<b>Reject {ITEM_ID}</b> unless its checksum is valid.",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/6",
+        "group_id": "q8-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-07-1",
+      "group": "address",
+      "source_en": "I can carry your books to the bus stop.",
+      "domain_context": "family",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/7",
+        "group_id": "q8-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q8-07-2",
+      "group": "address",
+      "source_en": "Would you show me your notes from yesterday?",
+      "domain_context": "family",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/7",
+        "group_id": "q8-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q8-08-1",
+      "group": "address",
+      "source_en": "I will lend you my camera for the school trip.",
+      "domain_context": "family",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/8",
+        "group_id": "q8-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q8-08-2",
+      "group": "address",
+      "source_en": "You may use my charger while I am away.",
+      "domain_context": "family",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/8",
+        "group_id": "q8-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q8-09-1",
+      "group": "address",
+      "source_en": "May I send you my corrected table tomorrow morning?",
+      "domain_context": "university",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/9",
+        "group_id": "q8-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q8-09-2",
+      "group": "address",
+      "source_en": "I would appreciate your advice about my research title.",
+      "domain_context": "university",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/9",
+        "group_id": "q8-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q8-10-1",
+      "group": "logic",
+      "source_en": "Aborting the import must leave the saved snapshot intact.",
+      "domain_context": "software cancellation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/10",
+        "group_id": "q8-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-10-2",
+      "group": "logic",
+      "source_en": "Cancel the migration without removing its rollback data.",
+      "domain_context": "software cancellation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/10",
+        "group_id": "q8-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-11-1",
+      "group": "logic",
+      "source_en": "Unless the operator confirms, leave the existing database untouched.",
+      "domain_context": "software permission",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/11",
+        "group_id": "q8-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-11-2",
+      "group": "logic",
+      "source_en": "Keep rejected entries outside the collection eligible for export.",
+      "domain_context": "software permission",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/11",
+        "group_id": "q8-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-12-1",
+      "group": "protected_tokens",
+      "source_en": "Keep {SNAPSHOT_ID} when canceling {TASK_ID}; do not delete it.",
+      "domain_context": "software preservation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/12",
+        "group_id": "q8-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-12-2",
+      "group": "protected_tokens",
+      "source_en": "<i>Do not overwrite {TARGET_ID}</i> unless {OWNER_ID} agrees.",
+      "domain_context": "software preservation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/12",
+        "group_id": "q8-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}

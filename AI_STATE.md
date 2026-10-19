@@ -1,14 +1,14 @@
 # Current state pointer — 2026-10-19
 
-## Phase7 research closed; candidate REJECTED
-- Owner scope: target isolation, negation/conditions and role consistency; product CT2/OPUS unchanged.
-- Canonical protocol/results: docs/TRANSLATION_QUALITY_PLAN.md Phase7; TEST_MATRIX.md research gate.
-- New24 synthetic(12dev/12heldout), hash6c8b2cc9b13a31909a61966c29e52e62d87c20d2a8d929c2105b6bd5db4f0c0b.35focusedPASS,40seen inference calls then frozen24returned/EOG/guardaccepted;0tokenmismatch. Allwrappers0/cleanupPASS.
-- Source isolation fixes seen context-target confusion/heading leakage; new8logic cases retain cancellation/unless/only/outside meaning. No general semantic guarantee.
-- Lexical role carriers cause4newmeaning failures in10role rows, including1heldout regression; reject this approach for product. Remaining: role/relational correctness, not token transport.
-- Agent coremeaning review: all24 OPUSdefault7/common-glossary5/Hy4major; held12:3/3/1. Role-only violations tracked separately; not human gold or model-only comparison.
-- Evidence DEV_RUN/translation-quality-phase7/REVIEW.md and rawselection/summary/wrappers/terminalquota. Sourcebasef68e6fa+perrunhashes; new24nowseen. Earlier phases/evidence in canonical plan.
-- Test-only source; no app/model/download/DEV/release/push. TEST_RUN/RELEASE_RUN absent; artifact1GiB/shared6GiB caps; VM4GiB unchanged.
+## Phase8 natural/audit/retry research closed; automatic admission REJECTED
+- Owner: complete next steps autonomously; retain product OPUS. Canonical protocol/results docs/TRANSLATION_QUALITY_PLAN.md Phase8; gates TEST_MATRIX.md.
+- Implemented isolated natural draft, explicit generic-role postedit with exact edit log/structure gate, advisory audit, maxone model revision; unknown/wrong never successful output. No English role carriers.
+-44focusedPASS. Seen12checkerfixtures x2styles,8natural/retry(12calls),8refinement; frozen24new sources(12dev/12heldout) then12fresh checkerfixtures completed. Rights synthetic/no human gold, newstrings vs224. Allnewoutputsnowseen.
+- Modeljudge invalid: seen6/6bad falselyPASS; fresh5/6bad falselyPASS. Disabled for pipeline. Rule flags5/6freshbad,0freshgood; not complete semantic gate.
+- New24syntaxintact/25calls/0tokenmismatch;12role rows10role-correct/2fail.3core meaning failures remain, including eligibility inversion; agent review only. OPUSdefault10/common22terms9core errors; role errors separate, not causal model comparison.
+- All24NEEDS_REVIEW/0automaticacceptance. One professor row retries once, remains flagged. No product promotion or broad quality guarantee.
+- Evidence DEV_RUN/translation-quality-phase8/REVIEW.md and rawselection/summary/wrappers/terminalquota; sourcebase623ea87+perrunhashes. Earlier experiments in canonical plan.
+- Allwrappers0/cleanupPASS; TEST_RUN/RELEASE_RUN absent; artifact1GiB/shared6GiB, VM4GiB unchanged. No app/model/dependency/system/DEV/release/push changes.
 
 ## Product/release pointers
 - CT2/OPUS remains product route. Last recorded public0.1.8 bounded installed update acceptance: `docs/RELEASE_0.1.8.md` (immutable build1cd24b2); whole-product RELEASE_VERIFIED not inferred.

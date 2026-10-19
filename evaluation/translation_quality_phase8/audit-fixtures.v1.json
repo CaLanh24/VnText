@@ -1,0 +1,175 @@
+{
+  "provenance": "Agent-curated synthetic positive/negative audit fixtures, not independent human gold; withheld from translation prompts",
+  "seen": [
+    {
+      "id": "CAL-1-PASS",
+      "source_en": "I can lend you my red scarf until tomorrow.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị có thể cho em mượn khăn quàng đỏ của chị đến ngày mai.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-1-FAIL",
+      "source_en": "I can lend you my red scarf until tomorrow.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị có thể cho em và chị mượn khăn quàng đỏ đến ngày mai.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "CAL-2-PASS",
+      "source_en": "I will send you my updated bibliography this afternoon.",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Chiều nay em sẽ gửi giáo sư danh mục tài liệu tham khảo đã cập nhật của em.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-2-FAIL",
+      "source_en": "I will send you my updated bibliography this afternoon.",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Chiều nay em sẽ gửi giáo sư và em danh mục tài liệu tham khảo đã cập nhật.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "CAL-3-PASS",
+      "source_en": "Canceling this job must not remove the backup.",
+      "address_context": "",
+      "draft": "Hủy công việc này không được làm mất bản sao lưu.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-3-FAIL",
+      "source_en": "Canceling this job must not remove the backup.",
+      "address_context": "",
+      "draft": "Không được hủy công việc này mà không xóa bản sao lưu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "CAL-4-PASS",
+      "source_en": "Unless the user confirms, leave the original files untouched.",
+      "address_context": "",
+      "draft": "Nếu người dùng không xác nhận, hãy giữ nguyên các tệp gốc.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-4-FAIL",
+      "source_en": "Unless the user confirms, leave the original files untouched.",
+      "address_context": "",
+      "draft": "Chỉ cần người dùng xác nhận, hãy giữ nguyên các tệp gốc.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "CAL-5-PASS",
+      "source_en": "You can tell me the truth; I am your sister.",
+      "address_context": "older sister to younger brother",
+      "draft": "Em có thể nói thật với chị; chị là chị gái của em.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-5-FAIL",
+      "source_en": "You can tell me the truth; I am your sister.",
+      "address_context": "older sister to younger brother",
+      "draft": "Em có thể nói thật với chị; chị là em gái của em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "CAL-6-PASS",
+      "source_en": "<b>Do not delete {SOURCE_ID}</b> unless {USER_ID} confirms.",
+      "address_context": "",
+      "draft": "<b>Đừng xóa {SOURCE_ID}</b> trừ khi {USER_ID} xác nhận.",
+      "expected": "PASS"
+    },
+    {
+      "id": "CAL-6-FAIL",
+      "source_en": "<b>Do not delete {SOURCE_ID}</b> unless {USER_ID} confirms.",
+      "address_context": "",
+      "draft": "<b>Hãy xóa {SOURCE_ID}</b> khi {USER_ID} chưa xác nhận.",
+      "expected": "FAIL"
+    }
+  ],
+  "fresh": [
+    {
+      "id": "NEW-1-PASS",
+      "source_en": "I will bring you my spare gloves after breakfast.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ mang găng tay dự phòng của chị cho em sau bữa sáng.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-1-FAIL",
+      "source_en": "I will bring you my spare gloves after breakfast.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ mang găng tay dự phòng cho em và chị sau bữa sáng.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "NEW-2-PASS",
+      "source_en": "I left your warm milk beside the kitchen window.",
+      "address_context": "mother to young daughter",
+      "draft": "Mẹ để sữa ấm của con bên cửa sổ nhà bếp.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-2-FAIL",
+      "source_en": "I left your warm milk beside the kitchen window.",
+      "address_context": "mother to young daughter",
+      "draft": "Tôi để sữa ấm của bạn bên cửa sổ nhà bếp.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "NEW-3-PASS",
+      "source_en": "I can show you my revised outline during office hours.",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể cho giáo sư xem dàn ý đã sửa của em trong giờ tiếp sinh viên.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-3-FAIL",
+      "source_en": "I can show you my revised outline during office hours.",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể cho giáo sư và em xem dàn ý đã sửa trong giờ tiếp sinh viên.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "NEW-4-PASS",
+      "source_en": "Canceling this transfer must preserve the temporary backup.",
+      "address_context": "",
+      "draft": "Hủy lần chuyển này phải giữ bản sao lưu tạm.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-4-FAIL",
+      "source_en": "Canceling this transfer must preserve the temporary backup.",
+      "address_context": "",
+      "draft": "Đừng hủy lần chuyển này nếu chưa xóa bản sao lưu tạm.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "NEW-5-PASS",
+      "source_en": "Unless the user approves, keep every pending record unchanged.",
+      "address_context": "",
+      "draft": "Nếu người dùng không phê duyệt, giữ nguyên mọi bản ghi đang chờ.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-5-FAIL",
+      "source_en": "Unless the user approves, keep every pending record unchanged.",
+      "address_context": "",
+      "draft": "Chỉ khi người dùng phê duyệt, hãy giữ nguyên mọi bản ghi đang chờ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "NEW-6-PASS",
+      "source_en": "<b>Reject {ITEM_ID}</b> unless its checksum is valid.",
+      "address_context": "",
+      "draft": "<b>Từ chối {ITEM_ID}</b> nếu mã kiểm tra của nó không hợp lệ.",
+      "expected": "PASS"
+    },
+    {
+      "id": "NEW-6-FAIL",
+      "source_en": "<b>Reject {ITEM_ID}</b> unless its checksum is valid.",
+      "address_context": "",
+      "draft": "<b>Chấp nhận {ITEM_ID}</b> nếu mã kiểm tra của nó không hợp lệ.",
+      "expected": "FAIL"
+    }
+  ]
+}
