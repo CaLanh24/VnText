@@ -1,3 +1,6 @@
+# Model trial — guest reclamation PROVEN_BLOCKED (2026-10-19)
+Owner clarifies no host spare RAM; keep VM4GiB, close only VNText app/test processes. Exact checkout-path/name inventory finds none running, nothing stopped. Available702423040bytes < fixed1669951360 RAM guard; no inference. Codex/ChatGPT/system processes untouched. Evidence DEV_RUN/translation-quality-phase3/close-vntext-preflight.json at342773e, canonical translation plan. This supersedes RAM-increase next step; product OPUS unchanged.
+
 # Model trial RAM increase — PROVEN_BLOCKED by host access (2026-10-19)
 Owner explicitly authorizes sufficient VM RAM increase and experiment continuation; canonical CONTRACTS10a/translation plan updated. Guest VNTextStudio-DevWin11 on DESKTOP-4S3QPMN has4GiB; Hyper-V management absent locally, remote CIM/DCOM current-identity probe fails RPC server unavailable. Host RAM/config UNKNOWN, no allocation/shutdown/security change/model load attempted. Need host management access; permission already granted, do not ask again. Product OPUS unchanged; verified model/runtime retained within6GiB. Docs-only validation diff/references; no runtime gate repeated.
 
