@@ -1,5 +1,11 @@
 # Current state pointer — 2026-10-20
 
+## Phase20 terminal — PREMISE_INVALID; prompt cues insufficient, OPUS unchanged
+- Research-only six semantic hints, two bounded seen hypotheses: giver/recipient, discard, invoice and sensor improved; counterfactual clarity/rollback unresolved. Fresh12 frozen before actual model run; OPUS arms12/12 complete each, Hy12drafts/12calls, allNEEDS_REVIEW.
+- Coordinator aligned review NOT blind/human gold:4acceptable5minor2major1uncertain. Rollback still cancellation; switch becomes converter. Candidate rejected; no fresh-output tuning or claim all errors fixed.
+- Final108testsPASS; all wrappers exit0/cleanupPASS, transient roots absent, quotas respected. Sourcebase7bbbe78+perrunhashes; docs-only later commit not exactHEADapp/Release proof. Canonical translation plan Phase20; compact DEV_RUN/translation-quality-phase20/REVIEW.md and raw runs/selections/receipts/quota.
+- No product model/app/worker/framework/dependency/system/training/release/push change. Next mechanism requires new evidence/fresh sources; human acceptance/curated gold/training permission still absent.
+
 ## Phase19 terminal — PASS broader evaluation; Hy admission rejected, OPUS unchanged
 - Fresh60synthetic sources6groups,42dev18heldout; frozenPhase18pipeline/checker/48terms unchanged, no fresh-output tuning.105testsPASS. ActualHy60drafts/61calls/0structuralerrors/allNEEDS_REVIEW;2propertyMATCH58UNKNOWN not semanticgrades. OPUSarms59written/1blocked/incomplete each,0writtenstructuralfailure/model/sourcekeyorderschemaunchanged.
 - One separateGPT6LunaMaxagent blind-reviewedall60; no mapping/modelnames in input, no sourcewriter overlap. Childterminal/ingested, no separateuserchat/worktree. Coordinatorauditedmajor/uncertain beforeunmask,4transparentseverityadjustments; originalreviewpreserved. Agentreview NOT humangold/automaticacceptance.

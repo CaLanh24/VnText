@@ -1,0 +1,185 @@
+{
+  "provenance": "Project-owned synthetic English sources; no target gold; frozen before inference",
+  "rows": [
+    {
+      "id": "Q20-01",
+      "source_en": "I would have opened the door if I had heard the bell.",
+      "group": "semantic_control",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-02",
+      "source_en": "I will open the door if I hear the bell.",
+      "group": "semantic_control",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-03",
+      "source_en": "Please return the notebook I gave you last week.",
+      "group": "semantic_control",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q20-04",
+      "source_en": "Please return the notebook you gave me last week.",
+      "group": "semantic_control",
+      "domain_context": "family conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q20-05",
+      "source_en": "Reload the saved workspace without discarding unsaved notes.",
+      "group": "semantic_control",
+      "domain_context": "desktop app interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-06",
+      "source_en": "Reload the saved workspace without skipping the confirmation.",
+      "group": "semantic_control",
+      "domain_context": "desktop app interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-07",
+      "source_en": "If validation fails, the database transaction must roll back.",
+      "group": "semantic_control",
+      "domain_context": "database transactions",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-08",
+      "source_en": "Roll back the rug before moving the chair.",
+      "group": "semantic_control",
+      "domain_context": "household furniture",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-09",
+      "source_en": "The invoice lists the service fee and the tax separately.",
+      "group": "semantic_control",
+      "domain_context": "ordinary business invoice",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-10",
+      "source_en": "The receipt confirms that the service fee was paid.",
+      "group": "semantic_control",
+      "domain_context": "ordinary business receipt",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-11",
+      "source_en": "The temperature sensor sends a reading every second.",
+      "group": "semantic_control",
+      "domain_context": "engineering measurement",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q20-12",
+      "source_en": "The temperature switch turns the heater off.",
+      "group": "semantic_control",
+      "domain_context": "engineering control",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": ""
+    }
+  ]
+}
