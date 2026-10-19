@@ -1,0 +1,149 @@
+{
+  "provenance": "Project-owned synthetic English, no target gold; frozen before inference and unique vs prior evaluation/audit sources",
+  "rows": [
+    {
+      "id": "Q22-01",
+      "source_en": "The monitor checks whether the transaction will complete or roll back.",
+      "group": "composition",
+      "domain_context": "database transactions",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene01.txt",
+        "scene_id": "Q22-01"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-02",
+      "source_en": "The scheduler determines whether the transaction will finish or roll back.",
+      "group": "composition",
+      "domain_context": "database transactions",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene02.txt",
+        "scene_id": "Q22-02"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-03",
+      "source_en": "The monitor checks whether the transaction will complete or not roll back.",
+      "group": "composition",
+      "domain_context": "database transactions",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene03.txt",
+        "scene_id": "Q22-03"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-04",
+      "source_en": "The transaction will not roll back if the log is intact.",
+      "group": "composition",
+      "domain_context": "database transactions",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene04.txt",
+        "scene_id": "Q22-04"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-05",
+      "source_en": "Roll back the rug before cleaning the floor.",
+      "group": "composition",
+      "domain_context": "household furniture",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene05.txt",
+        "scene_id": "Q22-05"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-06",
+      "source_en": "Roll back the transaction before cleaning the log.",
+      "group": "composition",
+      "domain_context": "database transactions",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene06.txt",
+        "scene_id": "Q22-06"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-07",
+      "source_en": "The pressure sensor and the power switch use <i>{BUS}</i>.",
+      "group": "composition",
+      "domain_context": "engineering control",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene07.txt",
+        "scene_id": "Q22-07"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-08",
+      "source_en": "The temperature sensor sends <b>%s</b> to {DESTINATION}.",
+      "group": "composition",
+      "domain_context": "engineering measurement",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene08.txt",
+        "scene_id": "Q22-08"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-09",
+      "source_en": "The humidity sensor logs <b>{VALUE}</b> every minute.",
+      "group": "composition",
+      "domain_context": "engineering measurement",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene09.txt",
+        "scene_id": "Q22-09"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-10",
+      "source_en": "I would have helped you if I had received the message.",
+      "group": "composition",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene10.txt",
+        "scene_id": "Q22-10"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-11",
+      "source_en": "I would have your address if I had the form.",
+      "group": "composition",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene11.txt",
+        "scene_id": "Q22-11"
+      },
+      "address_context": ""
+    },
+    {
+      "id": "Q22-12",
+      "source_en": "The sensor sends <b>text</b> to {SCREEN}.",
+      "group": "composition",
+      "domain_context": "engineering measurement",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic22/scene12.txt",
+        "scene_id": "Q22-12"
+      },
+      "address_context": ""
+    }
+  ]
+}

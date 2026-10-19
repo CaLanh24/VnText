@@ -1,5 +1,10 @@
 # Current state pointer — 2026-10-20
 
+## Phase22 terminal — PREMISE_INVALID fresh generalization; OPUS unchanged
+- Research-only composition/opaque-density remediation;122testsPASS. Seen physical-roll/temporal/dense-marker/alternative failures improved; frozen fresh12 actualHy12drafts/13calls, final structure intact; OPUSarms11written1blocked each. One rejected revision preserved, no guard weakening.
+- Coordinator review NOT blind/human gold:7acceptable3major2uncertain. New major: complete→completely, scheduler→slideshow, listener-address possession→giving speaker address. Finite MATCH misses wrong actor; no semantic autoapproval. Retry remasking integration gap explicitly unresolved; originals retained.
+- Outcome PREMISE_INVALID/admission REJECTED; no fresh-output tuning. Canonical plan Phase22 and local DEV_RUN/translation-quality-phase22/REVIEW.md/raw/receipts/quota, sourcebase228f038+perrunhashes. Wrappers exit0/cleanupPASS/transientrootsabsent/quotas respected. No app/dependency/system/training/publication changes; human gold/acceptance/training permission still absent.
+
 ## Phase21 terminal — PASS research mechanism evaluation; admission rejected
 - Domain-qualified lexical/tense transport improves six seen cases.116testsPASS; frozen16 actual Hy15drafts/1blocked/17calls, OPUS arms15written/1blocked each; original guard remains strict. No product OPUS change.
 - Separate GPT6LunaMax blind review: Hy8acceptable5minor2major1unusable vs OPUS2acceptable3minor10major1unusable; preferences12/3/tie1. Agent evidence not human gold. Physical roll→fold and OR-undo→OR-NOT-undo remain major; dense markers blocked, doubled đã minor. No fresh-output tuning.
