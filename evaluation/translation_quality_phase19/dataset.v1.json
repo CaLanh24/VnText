@@ -1,0 +1,860 @@
+{
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "kind": "60fresh",
+    "human_gold": false
+  },
+  "rows": [
+    {
+      "id": "Q19-dialogue-01",
+      "source_en": "Mira waited by the gate, but Rowan never arrived.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/1",
+        "group_id": "q19-dialogue-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-02",
+      "source_en": "I thought you had already locked the back door.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/2",
+        "group_id": "q19-dialogue-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-03",
+      "source_en": "There is enough soup for everyone except me.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/3",
+        "group_id": "q19-dialogue-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-04",
+      "source_en": "She almost dropped the cup when the lights went out.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/4",
+        "group_id": "q19-dialogue-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-05",
+      "source_en": "We were about to leave when the telephone rang again.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/5",
+        "group_id": "q19-dialogue-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-06",
+      "source_en": "You can sit here if the other chair is still wet.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/6",
+        "group_id": "q19-dialogue-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-07",
+      "source_en": "He said the train had left ten minutes earlier.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/7",
+        "group_id": "q19-dialogue-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-08",
+      "source_en": "I would have called you if I had found my phone.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/8",
+        "group_id": "q19-dialogue-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-09",
+      "source_en": "Nobody noticed that the small key was missing.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/9",
+        "group_id": "q19-dialogue-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-dialogue-10",
+      "source_en": "The longer we waited, the colder the room became.",
+      "group": "dialogue",
+      "domain_context": "ordinary conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/dialogue/10",
+        "group_id": "q19-dialogue-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-01",
+      "source_en": "Finding that receipt was like looking for a needle in a haystack.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/1",
+        "group_id": "q19-idiom-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-02",
+      "source_en": "Do not spill the beans before the guests arrive.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/2",
+        "group_id": "q19-idiom-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-03",
+      "source_en": "Her sudden resignation came out of the blue.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/3",
+        "group_id": "q19-idiom-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-04",
+      "source_en": "You are barking up the wrong tree if you blame the driver.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/4",
+        "group_id": "q19-idiom-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-05",
+      "source_en": "We had to bite the bullet and cancel the trip.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/5",
+        "group_id": "q19-idiom-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-06",
+      "source_en": "I was pulling your leg about winning the lottery.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/6",
+        "group_id": "q19-idiom-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-07",
+      "source_en": "The new manager has a lot on her plate this week.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/7",
+        "group_id": "q19-idiom-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-08",
+      "source_en": "He finally broke the ice by asking about the dog.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/8",
+        "group_id": "q19-idiom-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-09",
+      "source_en": "Let us not count our chickens before they hatch.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/9",
+        "group_id": "q19-idiom-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-idiom-10",
+      "source_en": "That rumor should be taken with a grain of salt.",
+      "group": "idiom",
+      "domain_context": "figurative everyday speech",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/idiom/10",
+        "group_id": "q19-idiom-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-address-01",
+      "source_en": "Could you lend me your blue pen until noon?",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/1",
+        "group_id": "q19-address-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q19-address-02",
+      "source_en": "I will bring you my clean towel after dinner.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/2",
+        "group_id": "q19-address-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q19-address-03",
+      "source_en": "You may borrow my bicycle if you return it tonight.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/3",
+        "group_id": "q19-address-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q19-address-04",
+      "source_en": "I left your lunch in the bag beside the door.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/4",
+        "group_id": "q19-address-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q19-address-05",
+      "source_en": "May I show you my experimental results after class?",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/5",
+        "group_id": "q19-address-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q19-address-06",
+      "source_en": "Could you send me your comments on the final paragraph?",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/6",
+        "group_id": "q19-address-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q19-address-07",
+      "source_en": "I will return your camera before the weekend.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/7",
+        "group_id": "q19-address-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q19-address-08",
+      "source_en": "Please bring me the scarf I gave you yesterday.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/8",
+        "group_id": "q19-address-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q19-address-09",
+      "source_en": "Your little sister asked me to wait outside.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/9",
+        "group_id": "q19-address-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q19-address-10",
+      "source_en": "I would like to ask you about my application tomorrow.",
+      "group": "address",
+      "domain_context": "conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/address/10",
+        "group_id": "q19-address-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q19-ui-01",
+      "source_en": "Save your changes before closing this window.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/1",
+        "group_id": "q19-ui-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-02",
+      "source_en": "The destination folder is not writable.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/2",
+        "group_id": "q19-ui-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-03",
+      "source_en": "Choose which columns should remain visible.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/3",
+        "group_id": "q19-ui-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-04",
+      "source_en": "This action cannot be undone after the backup is removed.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/4",
+        "group_id": "q19-ui-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-05",
+      "source_en": "Reconnect to continue downloading the update.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/5",
+        "group_id": "q19-ui-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-06",
+      "source_en": "No matching entries were found in this view.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/6",
+        "group_id": "q19-ui-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-07",
+      "source_en": "The selected file has been moved or renamed.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/7",
+        "group_id": "q19-ui-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-08",
+      "source_en": "Restore the previous layout without discarding your work.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/8",
+        "group_id": "q19-ui-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-09",
+      "source_en": "Only show items that still need attention.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/9",
+        "group_id": "q19-ui-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-ui-10",
+      "source_en": "The operation was canceled before any files were written.",
+      "group": "ui",
+      "domain_context": "desktop application interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/ui/10",
+        "group_id": "q19-ui-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-01",
+      "source_en": "Verify the checksum before replacing the archive.",
+      "group": "terminology",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/1",
+        "group_id": "q19-terminology-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-02",
+      "source_en": "The migration preserves the order of all existing records.",
+      "group": "terminology",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/2",
+        "group_id": "q19-terminology-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-03",
+      "source_en": "The certificate expired before the connection was established.",
+      "group": "terminology",
+      "domain_context": "computer networking",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/3",
+        "group_id": "q19-terminology-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-04",
+      "source_en": "Keep the recovery key separate from the encrypted drive.",
+      "group": "terminology",
+      "domain_context": "computer security",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/4",
+        "group_id": "q19-terminology-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-05",
+      "source_en": "A transaction must either finish completely or roll back.",
+      "group": "terminology",
+      "domain_context": "database transactions",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/5",
+        "group_id": "q19-terminology-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-06",
+      "source_en": "The invoice includes tax but excludes shipping costs.",
+      "group": "terminology",
+      "domain_context": "ordinary business invoice",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/6",
+        "group_id": "q19-terminology-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-07",
+      "source_en": "The landlord must approve the transfer of the lease.",
+      "group": "terminology",
+      "domain_context": "house rental contract",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/7",
+        "group_id": "q19-terminology-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-08",
+      "source_en": "The pressure sensor reports a value below the safe threshold.",
+      "group": "terminology",
+      "domain_context": "engineering measurement",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/8",
+        "group_id": "q19-terminology-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-09",
+      "source_en": "The sample must remain frozen until the test begins.",
+      "group": "terminology",
+      "domain_context": "laboratory procedure",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/9",
+        "group_id": "q19-terminology-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-terminology-10",
+      "source_en": "This license permits redistribution but does not transfer ownership.",
+      "group": "terminology",
+      "domain_context": "software licensing description",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/terminology/10",
+        "group_id": "q19-terminology-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-01",
+      "source_en": "Welcome back, {PLAYER_NAME}; your seat is ready.",
+      "group": "protected_tokens",
+      "domain_context": "game interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/1",
+        "group_id": "q19-protected_tokens-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-02",
+      "source_en": "Copy %s to the folder named {TARGET_FOLDER}.",
+      "group": "protected_tokens",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/2",
+        "group_id": "q19-protected_tokens-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-03",
+      "source_en": "You have %d unread messages and %d saved drafts.",
+      "group": "protected_tokens",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/3",
+        "group_id": "q19-protected_tokens-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-04",
+      "source_en": "<b>Warning:</b> Do not remove {DEVICE_ID} yet.",
+      "group": "protected_tokens",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/4",
+        "group_id": "q19-protected_tokens-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-05",
+      "source_en": "<i>Try again</i> after {WAIT_SECONDS} seconds.",
+      "group": "protected_tokens",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/5",
+        "group_id": "q19-protected_tokens-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-06",
+      "source_en": "Line one\\nLine two: keep {LINE_KEY} unchanged.",
+      "group": "protected_tokens",
+      "domain_context": "desktop application interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/6",
+        "group_id": "q19-protected_tokens-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-07",
+      "source_en": "First checkpoint\nSecond checkpoint: {CHECKPOINT_ID}.",
+      "group": "protected_tokens",
+      "domain_context": "game interface",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/7",
+        "group_id": "q19-protected_tokens-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-08",
+      "source_en": "Select [OPTION_B] to keep the current settings.",
+      "group": "protected_tokens",
+      "domain_context": "game interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/8",
+        "group_id": "q19-protected_tokens-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-09",
+      "source_en": "The label reads #R7 beside the red switch.",
+      "group": "protected_tokens",
+      "domain_context": "game interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/9",
+        "group_id": "q19-protected_tokens-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q19-protected_tokens-10",
+      "source_en": "**Keep going** until you see {FINISH_MARKER}.",
+      "group": "protected_tokens",
+      "domain_context": "game interface",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase19/protected_tokens/10",
+        "group_id": "q19-protected_tokens-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    }
+  ]
+}
