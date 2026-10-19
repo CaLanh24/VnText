@@ -246,6 +246,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner decision (2026-10-19, model-trial RAM):** Owner authorizes increasing RAM of the development VM sufficiently for the already approved single-model test and continuing the experiment. Inspect host available memory before choosing allocation; preserve work before any required shutdown. This supersedes the earlier no-VM-RAM-change boundary for this operation only. No host credentials/access are implied, and no security/firewall/service changes, unrelated VM changes, new model or product replacement are authorized.
+
 **Owner decision (2026-10-19, translation-quality Step3):** Explicit permission to download the pinned Tencent Hy-MT2-1.8B Q4_K_M model and official portable Windows CPU runtime into shared `.dev-env`, increasing its current cap to **6 GiB** (supersedes the previous5GiB cap). Non-exempt checkout remains1GiB. One model/runtime copy, verified hashes and license provenance; test-only, OPUS product route unchanged. Check guest RAM before loading; no host/VM changes, training, additional candidates, system installation or publication authorized.
 
 **Owner decision (2026-10-18, Release0.1.6):** Owner explicitly approves `.dev-env` up to **5 GiB** for the shared build environment (SDK10, Python3.12 and Release packages alongside current DEV). This supersedes older3GiB shared-environment limits below. The non-exempt checkout limit remains1GiB; no game/candidate exemption, package limit, cleanup ownership or validator changes follow. Inventory both totals before each payload phase.
