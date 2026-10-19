@@ -409,3 +409,7 @@ Compiled-only inspection must remain non-executing: no arbitrary pickle loading 
 
 ### Release 0.1.7 artifact approval — Owner 2026-10-19
 Owner explicitly approved temporary 3 GiB non-exempt checkout artifacts for the new clean-source `release-0.1.7` prospective epoch and exact registered `RELEASE_RUN/candidate-0.1.7` scope only. Terminal cleanup returns to <=1 GiB; shared `.dev-env` remains <=5 GiB. Same source, inventory, ownership, lineage, CAS, tamper and eight-hop transition guards apply to descendant clean 0.1.7 prerequisite/gate fixes within this campaign. No rebaseline, dependency download, license acceptance, validator relaxation or game campaign is implied.
+
+
+### Release 0.1.7 uninstall waiver — Owner 2026-10-19
+Owner explicitly requested "Khỏi phải thử, phát hành đi" after Computer Use refused Uninstall.exe. For this 0.1.7 campaign only, publish the tested Setup with actual uninstall acceptance marked NOT VERIFIED / OWNER WAIVED. Canonical disposal of the task-owned candidate is cleanup, never uninstall PASS. This does not waive other gates or change future release requirements.
