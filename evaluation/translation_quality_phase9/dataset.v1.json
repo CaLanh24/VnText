@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false,
+    "novelty": "New strings vs prior248; finite grammar templates recur, not unrestricted NLP"
+  },
+  "split_protocol": {
+    "development": 8,
+    "held_out": 8,
+    "groups_never_cross_split": true
+  },
+  "rows": [
+    {
+      "id": "Q9-01-1",
+      "source_en": "I will lend you my blue jacket.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/1",
+        "group_id": "q9-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q9-01-2",
+      "source_en": "Could you lend me your notebook?",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/1",
+        "group_id": "q9-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q9-02-1",
+      "source_en": "You may borrow my umbrella.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/2",
+        "group_id": "q9-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q9-02-2",
+      "source_en": "I will bring you my spare charger.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/2",
+        "group_id": "q9-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q9-03-1",
+      "source_en": "Unless the user confirms, leave the archive untouched.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/3",
+        "group_id": "q9-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q9-03-2",
+      "source_en": "Do not overwrite the database unless the user approves.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/3",
+        "group_id": "q9-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q9-04-1",
+      "source_en": "Keep unverified entries outside the collection eligible for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/4",
+        "group_id": "q9-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q9-04-2",
+      "source_en": "Canceling the migration must preserve the backup.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/4",
+        "group_id": "q9-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q9-05-1",
+      "source_en": "I will send you my revised plan.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/5",
+        "group_id": "q9-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q9-05-2",
+      "source_en": "Could you show me your diagram?",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/5",
+        "group_id": "q9-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q9-06-1",
+      "source_en": "I will lend you my warm coat.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/6",
+        "group_id": "q9-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q9-06-2",
+      "source_en": "You may use my tablet.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/6",
+        "group_id": "q9-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q9-07-1",
+      "source_en": "Reject the file unless its signature is valid.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/7",
+        "group_id": "q9-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q9-07-2",
+      "source_en": "Only records with verified signatures may be released.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/7",
+        "group_id": "q9-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q9-08-1",
+      "source_en": "Keep unchecked records outside the set allowed for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/8",
+        "group_id": "q9-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q9-08-2",
+      "source_en": "Aborting the transfer must not delete the backup.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase9/8",
+        "group_id": "q9-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}

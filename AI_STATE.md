@@ -1,14 +1,13 @@
 # Current state pointer — 2026-10-19
 
-## Phase8 natural/audit/retry research closed; automatic admission REJECTED
-- Owner: complete next steps autonomously; retain product OPUS. Canonical protocol/results docs/TRANSLATION_QUALITY_PLAN.md Phase8; gates TEST_MATRIX.md.
-- Implemented isolated natural draft, explicit generic-role postedit with exact edit log/structure gate, advisory audit, maxone model revision; unknown/wrong never successful output. No English role carriers.
--44focusedPASS. Seen12checkerfixtures x2styles,8natural/retry(12calls),8refinement; frozen24new sources(12dev/12heldout) then12fresh checkerfixtures completed. Rights synthetic/no human gold, newstrings vs224. Allnewoutputsnowseen.
-- Modeljudge invalid: seen6/6bad falselyPASS; fresh5/6bad falselyPASS. Disabled for pipeline. Rule flags5/6freshbad,0freshgood; not complete semantic gate.
-- New24syntaxintact/25calls/0tokenmismatch;12role rows10role-correct/2fail.3core meaning failures remain, including eligibility inversion; agent review only. OPUSdefault10/common22terms9core errors; role errors separate, not causal model comparison.
-- All24NEEDS_REVIEW/0automaticacceptance. One professor row retries once, remains flagged. No product promotion or broad quality guarantee.
-- Evidence DEV_RUN/translation-quality-phase8/REVIEW.md and rawselection/summary/wrappers/terminalquota; sourcebase623ea87+perrunhashes. Earlier experiments in canonical plan.
-- Allwrappers0/cleanupPASS; TEST_RUN/RELEASE_RUN absent; artifact1GiB/shared6GiB, VM4GiB unchanged. No app/model/dependency/system/DEV/release/push changes.
+## Phase9 research closed: source constraints PASS bounded; no semantic promotion
+- Owner: source obligations for who-gives-to-whom, age, negation/permissions; autonomous bounded retry; product OPUS unchanged. Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase9; TEST_MATRIX.md.
+- Finite grammar compiles role/kinship graph and Boolean truth table/action/object, compares Vietnamese; FAIL/UNKNOWN/CONSTRAINTS_MATCH. MATCH is not full translation acceptance. No same-model judge.
+-59focusedPASS. Old24fixtures10correctMATCH/11badFAIL/3UNKNOWN; fresh36(12correct/24bad) all expected statuses,0falseaccept. Agent-authored template-directed fixtures, no human gold/general-language claim.
+- New16synthetic(8dev/8heldout), unique vs248prior eval strings; final22modelcalls/10propertyMATCH+6UNKNOWN/0tokenmismatch/allEOG.8/8address agent/recipient/owner correct by agent review. All16NEEDS_REVIEW,0automaticsemanticacceptance.
+- Remaining: correct paraphrases outside grammar, Reject English, ambiguous eligibility. One retry may worsen ambiguity; preserve both. Agent core table OPUS7/7 vsHy1clearmajor+1ambiguous; role-only violations separate.
+- Evidence DEV_RUN/translation-quality-phase9/REVIEW.md + rawselection/fixtures/summary/wrappers/terminalquota; sourcebase21e0f96+perrunhashes. Allnew sources/checkerfixtures now seen; older evidence in canonical plan.
+- Allwrappers0/cleanupPASS; TEST_RUN/RELEASE_RUN absent; artifact1GiB/shared6GiB/VM4GiB unchanged. No app/model/worker/validator/dependency/system/DEV/release/push changes.
 
 ## Product/release pointers
 - CT2/OPUS remains product route. Last recorded public0.1.8 bounded installed update acceptance: `docs/RELEASE_0.1.8.md` (immutable build1cd24b2); whole-product RELEASE_VERIFIED not inferred.

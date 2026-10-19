@@ -1,0 +1,257 @@
+{
+  "provenance": "Agent-authored fresh source/VI constraint fixtures; no human gold; not supplied to model",
+  "records": [
+    {
+      "id": "F9-01-1",
+      "source_en": "I will lend you my blue jacket.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ cho em mượn áo khoác xanh của chị.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-01-2",
+      "source_en": "I will lend you my blue jacket.",
+      "address_context": "older sister to younger brother",
+      "draft": "Em sẽ cho chị mượn áo khoác xanh của chị.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-01-3",
+      "source_en": "I will lend you my blue jacket.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ cho em mượn áo khoác xanh của em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-02-1",
+      "source_en": "Could you lend me your notebook?",
+      "address_context": "older sister to younger brother",
+      "draft": "Em có thể cho chị mượn vở của em không?",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-02-2",
+      "source_en": "Could you lend me your notebook?",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị có thể cho em mượn vở của em không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-02-3",
+      "source_en": "Could you lend me your notebook?",
+      "address_context": "older sister to younger brother",
+      "draft": "Em có thể cho chị và em mượn vở của em không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-03-1",
+      "source_en": "You may borrow my umbrella.",
+      "address_context": "older brother to younger sister",
+      "draft": "Em có thể mượn ô của anh.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-03-2",
+      "source_en": "You may borrow my umbrella.",
+      "address_context": "older brother to younger sister",
+      "draft": "Anh có thể mượn ô của anh.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-03-3",
+      "source_en": "You may borrow my umbrella.",
+      "address_context": "older brother to younger sister",
+      "draft": "Em có thể mượn ô của mình.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-04-1",
+      "source_en": "Unless the user confirms, leave the archive untouched.",
+      "address_context": "",
+      "draft": "Nếu người dùng không xác nhận, hãy giữ nguyên kho lưu trữ.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-04-2",
+      "source_en": "Unless the user confirms, leave the archive untouched.",
+      "address_context": "",
+      "draft": "Nếu người dùng xác nhận, hãy giữ nguyên kho lưu trữ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-04-3",
+      "source_en": "Unless the user confirms, leave the archive untouched.",
+      "address_context": "",
+      "draft": "Chỉ khi người dùng xác nhận, hãy giữ nguyên kho lưu trữ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-05-1",
+      "source_en": "Do not overwrite the database unless the user approves.",
+      "address_context": "",
+      "draft": "Đừng ghi đè cơ sở dữ liệu trừ khi người dùng phê duyệt.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-05-2",
+      "source_en": "Do not overwrite the database unless the user approves.",
+      "address_context": "",
+      "draft": "Hãy ghi đè cơ sở dữ liệu trừ khi người dùng phê duyệt.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-05-3",
+      "source_en": "Do not overwrite the database unless the user approves.",
+      "address_context": "",
+      "draft": "Đừng ghi đè kho lưu trữ trừ khi người dùng phê duyệt.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-06-1",
+      "source_en": "Keep unverified entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ các mục nhập chưa xác minh ngoài tập hợp đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-06-2",
+      "source_en": "Keep unverified entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ các mục nhập chưa xác minh trong tập hợp đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-06-3",
+      "source_en": "Keep unverified entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ các mục nhập chưa xác minh ngoài tập hợp, và vẫn có thể xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-07-1",
+      "source_en": "Canceling the migration must preserve the backup.",
+      "address_context": "",
+      "draft": "Việc hủy chuyển đổi phải giữ bản sao lưu nguyên vẹn.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-07-2",
+      "source_en": "Canceling the migration must preserve the backup.",
+      "address_context": "",
+      "draft": "Không được hủy chuyển đổi nếu chưa xóa bản sao lưu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-07-3",
+      "source_en": "Canceling the migration must preserve the backup.",
+      "address_context": "",
+      "draft": "Việc hủy chuyển đổi phải giữ bản chụp nguyên vẹn.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-08-1",
+      "source_en": "I will send you my revised plan.",
+      "address_context": "younger brother to older sister",
+      "draft": "Em sẽ gửi chị kế hoạch đã sửa của em.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-08-2",
+      "source_en": "I will send you my revised plan.",
+      "address_context": "younger brother to older sister",
+      "draft": "Chị sẽ gửi em kế hoạch đã sửa của em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-08-3",
+      "source_en": "I will send you my revised plan.",
+      "address_context": "younger brother to older sister",
+      "draft": "Em sẽ gửi chị và em kế hoạch đã sửa của em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-09-1",
+      "source_en": "Could you show me your diagram?",
+      "address_context": "younger brother to older sister",
+      "draft": "Chị có thể cho em xem sơ đồ của chị không?",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-09-2",
+      "source_en": "Could you show me your diagram?",
+      "address_context": "younger brother to older sister",
+      "draft": "Em có thể cho chị xem sơ đồ của chị không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-09-3",
+      "source_en": "Could you show me your diagram?",
+      "address_context": "younger brother to older sister",
+      "draft": "Chị có thể cho em xem sơ đồ của em không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-10-1",
+      "source_en": "Reject the file unless its signature is valid.",
+      "address_context": "",
+      "draft": "Từ chối tệp trừ khi chữ ký hợp lệ.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-10-2",
+      "source_en": "Reject the file unless its signature is valid.",
+      "address_context": "",
+      "draft": "Chấp nhận tệp trừ khi chữ ký hợp lệ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-10-3",
+      "source_en": "Reject the file unless its signature is valid.",
+      "address_context": "",
+      "draft": "Từ chối tệp nếu chữ ký hợp lệ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-11-1",
+      "source_en": "Only records with verified signatures may be released.",
+      "address_context": "",
+      "draft": "Chỉ bản ghi có chữ ký đã xác minh mới được phát hành.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-11-2",
+      "source_en": "Only records with verified signatures may be released.",
+      "address_context": "",
+      "draft": "Chỉ bản ghi có chữ ký chưa xác minh mới được phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-11-3",
+      "source_en": "Only records with verified signatures may be released.",
+      "address_context": "",
+      "draft": "Chỉ bản ghi có chữ ký đã xác minh mới được xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-12-1",
+      "source_en": "You are my younger sister, and I will help you.",
+      "address_context": "older brother to younger sister",
+      "draft": "Em là em gái của anh, anh sẽ giúp em.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F9-12-2",
+      "source_en": "You are my younger sister, and I will help you.",
+      "address_context": "older brother to younger sister",
+      "draft": "Em là chị gái của anh, anh sẽ giúp em.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F9-12-3",
+      "source_en": "You are my younger sister, and I will help you.",
+      "address_context": "older brother to younger sister",
+      "draft": "Em là em trai của anh, anh sẽ giúp em.",
+      "expected": "FAIL"
+    }
+  ]
+}
