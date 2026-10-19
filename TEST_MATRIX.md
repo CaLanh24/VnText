@@ -113,3 +113,5 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 
 
 Research-only Phase6 semantic gate: `tests/unit/test_translation_quality_phase6.py` plus guard/prompt/structural tests, then seen control/roles/final finite-sense refinement and frozen new40 corpus via `translation_quality_phase6.py`. Check directional roles, unknown gender, domain-qualified platform and literal-woods controls. Diagnostic flags are not semantic PASS; finite phrase hints are not general idiom learning. No product OPUS replacement.
+
+Phase7 research-only: `test_translation_quality_phase7` and `test_translation_quality_semantic_transport` plus prior guard/prompt/structural gates; real seen comparison then frozen fresh24. Verify no previous prose reaches isolated prompt, exact role carriers with explicit metadata/unknown/quoted controls, conservative unless transforms, and explicit relation contradiction refusal. Rejections remain unsuccessful rows; no semantic PASS inferred from transport or absent flags. No product model/validator change.

@@ -1,0 +1,363 @@
+{
+  "schema_version": 1,
+  "dataset_id": "phase7-v1",
+  "provenance": {
+    "rights": "generated-for-project",
+    "author": "Coordinator agent",
+    "human_gold": false,
+    "novelty": "New strings against previous200; phenomena recur"
+  },
+  "split_protocol": {
+    "development": 12,
+    "held_out": 12,
+    "groups_never_cross_split": true
+  },
+  "rows": [
+    {
+      "id": "Q7-01-1",
+      "source_en": "Stopping the scan must leave every source file intact.",
+      "group": "logic",
+      "split": "development",
+      "domain_context": "software cancellation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/1",
+        "group_id": "q7-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-01-2",
+      "source_en": "Cancel this operation without deleting its recovery copy.",
+      "group": "logic",
+      "split": "development",
+      "domain_context": "software cancellation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/1",
+        "group_id": "q7-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-02-1",
+      "source_en": "Unless the operator approves, do not overwrite the current archive.",
+      "group": "logic",
+      "split": "development",
+      "domain_context": "software confirmation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/2",
+        "group_id": "q7-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-02-2",
+      "source_en": "Only approved records belong in the patchable collection.",
+      "group": "logic",
+      "split": "development",
+      "domain_context": "software confirmation",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/2",
+        "group_id": "q7-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-03-1",
+      "source_en": "I can lend you my red scarf until tomorrow.",
+      "group": "address",
+      "split": "development",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/3",
+        "group_id": "q7-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q7-03-2",
+      "source_en": "You are my younger brother, and I want to protect you.",
+      "group": "address",
+      "split": "development",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/3",
+        "group_id": "q7-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q7-04-1",
+      "source_en": "I have packed your lunch in the small green bag.",
+      "group": "address",
+      "split": "development",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/4",
+        "group_id": "q7-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q7-04-2",
+      "source_en": "Will you wait for me near the classroom door?",
+      "group": "address",
+      "split": "development",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/4",
+        "group_id": "q7-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "mother to young daughter"
+    },
+    {
+      "id": "Q7-05-1",
+      "source_en": "Could you review my introduction before Friday?",
+      "group": "address",
+      "split": "development",
+      "domain_context": "university",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/5",
+        "group_id": "q7-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q7-05-2",
+      "source_en": "I will send you my updated bibliography this afternoon.",
+      "group": "address",
+      "split": "development",
+      "domain_context": "university",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/5",
+        "group_id": "q7-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q7-06-1",
+      "source_en": "The guard is standing on the western platform.",
+      "group": "sense",
+      "split": "development",
+      "domain_context": "railway station",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/6",
+        "group_id": "q7-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-06-2",
+      "source_en": "The arriving train will stop beside platform twelve.",
+      "group": "sense",
+      "split": "development",
+      "domain_context": "railway station",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/6",
+        "group_id": "q7-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-07-1",
+      "source_en": "Aborting the export must not erase the saved recovery image.",
+      "group": "logic",
+      "split": "held_out",
+      "domain_context": "software recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/7",
+        "group_id": "q7-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-07-2",
+      "source_en": "Do not remove the source folder when the import is canceled.",
+      "group": "logic",
+      "split": "held_out",
+      "domain_context": "software recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/7",
+        "group_id": "q7-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-08-1",
+      "source_en": "Keep unverified translations outside the set allowed for release.",
+      "group": "logic",
+      "split": "held_out",
+      "domain_context": "software filtering",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/8",
+        "group_id": "q7-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-08-2",
+      "source_en": "Unless its signature is valid, reject the downloaded archive.",
+      "group": "logic",
+      "split": "held_out",
+      "domain_context": "software filtering",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/8",
+        "group_id": "q7-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-09-1",
+      "source_en": "I found your notebook under my desk.",
+      "group": "address",
+      "split": "held_out",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/9",
+        "group_id": "q7-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q7-09-2",
+      "source_en": "Could you lend me your pencil for a moment?",
+      "group": "address",
+      "split": "held_out",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/9",
+        "group_id": "q7-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger brother to older sister"
+    },
+    {
+      "id": "Q7-10-1",
+      "source_en": "I will carry your suitcase up the stairs.",
+      "group": "address",
+      "split": "held_out",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/10",
+        "group_id": "q7-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q7-10-2",
+      "source_en": "You can borrow my bicycle after dinner.",
+      "group": "address",
+      "split": "held_out",
+      "domain_context": "family",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/10",
+        "group_id": "q7-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older brother to younger sister"
+    },
+    {
+      "id": "Q7-11-1",
+      "source_en": "The doctor says our patient is not out of the woods despite the lower fever.",
+      "group": "idioms",
+      "split": "held_out",
+      "domain_context": "medical recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/11",
+        "group_id": "q7-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-11-2",
+      "source_en": "We should not stop monitoring her breathing yet.",
+      "group": "idioms",
+      "split": "held_out",
+      "domain_context": "medical recovery",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/11",
+        "group_id": "q7-11",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q7-12-1",
+      "source_en": "Keep {BACKUP_ID} unchanged when you cancel {JOB_ID}.",
+      "group": "protected_tokens",
+      "split": "held_out",
+      "domain_context": "software file safety",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/12",
+        "group_id": "q7-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q7-12-2",
+      "source_en": "<b>Do not delete {SOURCE_ID}</b> unless {USER_ID} confirms.",
+      "group": "protected_tokens",
+      "split": "held_out",
+      "domain_context": "software file safety",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase7/12",
+        "group_id": "q7-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}
