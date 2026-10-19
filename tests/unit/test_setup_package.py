@@ -92,6 +92,30 @@ class SetupPackageTests(unittest.TestCase):
                 self.assertNotEqual(0, self._publisher_call(helpers, command).returncode, name)
                 target.write_bytes(original)
 
+    def test_in_app_release_policy_requires_complete_older_baseline_and_full_app_route(self):
+        work = WORK_ROOT / f"update-policy-{uuid4().hex}"
+        with artifact_scope(work, artifact_id=work.name, kind="test_fixture", owner="test_setup_package.py", purpose="In-app release admission and no mutation"):
+            (work / "app").mkdir(parents=True)
+            (work / "VNText Studio.exe").write_bytes(b"fixture: admission only; not a valid package")
+            (work / "app/VERSION.txt").write_text("0.1.7")
+            (work / "app/RELEASE.json").write_text('{"version":"0.1.7"}')
+            def call(version="0.1.8", baseline=str(work), skip="$true", owner="owner", repo="repo"):
+                return self._publisher_call(["Assert-InAppReleasePolicy"], f"Assert-InAppReleasePolicy '{version}' '{baseline}' {skip} '{owner}' '{repo}'")
+            before = {str(p.relative_to(work)): p.read_bytes() for p in work.rglob('*') if p.is_file()}
+            self.assertEqual(0, call().returncode)
+            for kwargs in ({"baseline":""}, {"skip":"$false"}, {"owner":""}, {"repo":""}, {"version":"0.1.7-rc"}):
+                self.assertNotEqual(0, call(**kwargs).returncode, kwargs)
+            self.assertEqual(0, call(version="0.1.7", baseline="", skip="$false", owner="", repo="").returncode)
+            self.assertEqual(before, {str(p.relative_to(work)): p.read_bytes() for p in work.rglob('*') if p.is_file()})
+            for version in ("0.1.6", "0.1.8"):
+                (work / "app/VERSION.txt").write_text(version)
+                (work / "app/RELEASE.json").write_text(json.dumps({"version":version}))
+                self.assertNotEqual(0, call().returncode)
+            (work / "app/VERSION.txt").write_text("0.1.7")
+            self.assertNotEqual(0, call().returncode)  # metadata still0.1.8
+            (work / "app/RELEASE.json").unlink()
+            self.assertNotEqual(0, call().returncode)
+
     def test_setup_mode_rejects_ambiguous_or_invalid_wpf_versions(self):
         helper = ["Get-WpfUpdateVersionNumeric"]
         self.assertEqual(0, self._publisher_call(helper, "Get-WpfUpdateVersionNumeric '' $true").returncode)

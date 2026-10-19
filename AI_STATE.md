@@ -1,3 +1,6 @@
+#0.1.8 full-app updater baseline — in progress (2026-10-19)
+Owner accepts Setup0.1.7 last manual baseline;0.1.6 repair abandoned before runtime/public changes.0.1.8+ must ship/notify/download/apply/restart in-app. Publisher admission/cache headers/version0.1.8 implementation; focused/exact/native gates pending. Independent approved candidate-0.1.8 temporary3GiB/terminal1GiB/shared5GiB, no games/downloads. Public stable0.1.7 immutable. Canonical docs/RELEASE_0.1.8.md.
+
 # Repair missing0.1.7 in-app update — in progress (2026-10-19)
 Owner rejects Setup workaround; continue0.1.7 campaign with full-app delta exact public0.1.6→0.1.7 and actual old-app button offer/download/apply/restart. Public binaries/tag unchanged, validators preserved, same approved exact candidate3GiB/terminal1GiB/shared5GiB. Reported Current on remote machine UNKNOWN; missing ZIP/popup SetupRequired omission proven. Canonical docs/UPDATE_0.1.7_REPAIR.md.
 

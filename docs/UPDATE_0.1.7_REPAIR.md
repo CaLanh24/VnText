@@ -1,3 +1,7 @@
+# SUPERSEDED — Owner accepts0.1.7 Setup as final baseline
+
+Owner2026-10-19 explicitly says0.1.6 updater need not be repaired; public Setup0.1.7 is the final manual baseline, full in-app updates mandatory from0.1.8. Stop0.1.6→0.1.7 package/public-asset work. No runtime payloads, transient scopes or public mutations were created for that abandoned plan. New plan: docs/RELEASE_0.1.8.md. Earlier plan below is historical only.
+
 # Missing0.1.7 full-app update — repair in progress
 
 Owner explicitly requires existing0.1.6 users to receive/update in-app without reinstalling Setup. Clean main5afcb2a, single Coordinator/writer. Public0.1.7 currently only has Setup/provenance/checksums/notices; GitHub API authenticated and anonymous both list stable0.1.7. Source0.1.6 returns SetupRequired for missing update ZIP; popup only handles OfferAvailable. Reported Current on another machine is not reproduced and its cause remains UNKNOWN. Do not claim lack of a ZIP alone explains Current.

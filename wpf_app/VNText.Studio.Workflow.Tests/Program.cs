@@ -1994,7 +1994,13 @@ internal static class Program
             var handler = new TestHttpMessageHandler((request, _) =>
             {
                 if (request.RequestUri == apiUrl)
+                {
+                    AssertTrue(request.Headers.CacheControl?.NoCache == true);
+                    AssertTrue(request.Headers.CacheControl?.NoStore == true);
+                    AssertEqual(TimeSpan.Zero, request.Headers.CacheControl!.MaxAge!.Value);
+                    AssertTrue(request.Headers.Pragma.Any(value => value.Name == "no-cache"));
                     return Task.FromResult(JsonResponse(releases));
+                }
                 if (request.RequestUri == new Uri(downloadUrl))
                     return Task.FromResult(BinaryResponse(package));
                 throw new HttpRequestException("Unexpected HTTP target: " + request.RequestUri);

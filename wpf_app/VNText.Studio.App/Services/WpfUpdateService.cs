@@ -120,6 +120,9 @@ public static class WpfUpdateService
             request.Headers.TryAddWithoutValidation("Accept", "application/vnd.github+json");
             request.Headers.TryAddWithoutValidation("User-Agent", "VNText-Studio");
             request.Headers.TryAddWithoutValidation("X-GitHub-Api-Version", "2022-11-28");
+            request.Headers.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue
+            { NoCache = true, NoStore = true, MaxAge = TimeSpan.Zero };
+            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
 
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
                 .ConfigureAwait(false);

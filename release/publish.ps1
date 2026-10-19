@@ -74,7 +74,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
@@ -101,6 +101,21 @@ if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLeg
 }
 if ($SkipBuild) {
     throw "Standard Setup publishing requires a fresh WPF app build; -SkipBuild is not supported."
+}
+function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [bool]$SkipLegacyWpf, [string]$Owner, [string]$Repository) {
+    if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Source release version must be a stable semantic version." }
+    if ([version]$Version -lt [version]'0.1.8') { return }
+    if ([string]::IsNullOrWhiteSpace($BaselineRoot)) { throw "Release 0.1.8 and later require FullAppUpdateBaselineRoot; Setup-only release is forbidden." }
+    if (-not $SkipLegacyWpf) { throw "Release 0.1.8 and later require the full-app route with -SkipWpfUpdatePackage; do not create a competing WPF-only update." }
+    if ([string]::IsNullOrWhiteSpace($Owner) -or [string]::IsNullOrWhiteSpace($Repository)) { throw "In-app releases require explicit GitHubOwner and GitHubRepository." }
+    foreach ($name in @('VNText Studio.exe', 'app/VERSION.txt', 'app/RELEASE.json')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $BaselineRoot $name) -PathType Leaf)) { throw "Full-app baseline is missing $name." }
+    }
+    $baselineVersion = (Get-Content -LiteralPath (Join-Path $BaselineRoot 'app/VERSION.txt') -Raw).Trim()
+    if ($baselineVersion -notmatch '^\d+\.\d+\.\d+$' -or [version]$baselineVersion -lt [version]'0.1.7' -or [version]$baselineVersion -ge [version]$Version) { throw "Full-app baseline must be 0.1.7 or later and older than the target release." }
+    $metadata = Get-Content -LiteralPath (Join-Path $BaselineRoot 'app/RELEASE.json') -Raw | ConvertFrom-Json -ErrorAction Stop
+    if ($metadata.version -ne $baselineVersion) { throw "Full-app baseline metadata/version mismatch." }
+    # Full inventory, executable hashes, provenance and model checks remain with publish_full_app_update.py.
 }
 function Get-WpfUpdateVersionNumeric([string]$Version, [bool]$SkipPackage) {
     if ($SkipPackage) {
@@ -183,6 +198,7 @@ if ($isUnsafeRepoPath) {
     throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
 Assert-ReleaseRootLayout -Path $ReleaseRoot
+Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository
 Set-Location $DevRoot
 $SourceSha = if (-not [string]::IsNullOrWhiteSpace($SourceRevision)) { $SourceRevision.Trim() } else { (& git -C $DevRoot rev-parse HEAD).Trim() }
 if ($SourceSha -notmatch '^[0-9a-f]{40}$') {
@@ -197,7 +213,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
