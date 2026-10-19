@@ -129,3 +129,6 @@ Phase12 named-three research gate: `test_translation_constraints_v4`, `test_tran
 
 
 Phase13 unresolved-state research gate: `test_translation_constraints_v5` + `test_translation_quality_phase13` and prior86focused tests (92 total). Verify unresolved versus unfinished/completion remains distinct, genuine unfinished source and quoted scope abstain, failed retries do not overwrite originals. Actual Q12-02-1 plus3earlier exclusions -> freeze -> fresh4source/12checkerfixtures -> actual OPUSdefault/common37terms and pinnedHy. AllNEEDS_REVIEW/propertyMATCH only, no product promotion or fresh-result tuning.
+
+
+Phase14 mixed research replay: `test_translation_quality_phase14` + prior92 (93 total). Exact corpus replay and identity of imported Phase13pipeline/term bank; no tuning. Frozen seen28 -> actual OPUSdefault/common37terms -> actualHy maxone retry -> aligned source review. Report UNKNOWN separately from actual semantic defects; zero structural errors does not prove semantic PASS. Preserve missing-owner/snapshot-object failures and technical precision findings, allNEEDS_REVIEW; no apppromotion.
