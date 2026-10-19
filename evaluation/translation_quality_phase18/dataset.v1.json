@@ -1,0 +1,249 @@
+{
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "kind": "13seen+4fresh",
+    "human_gold": false
+  },
+  "rows": [
+    {
+      "id": "Q8-04-1",
+      "group": "logic",
+      "source_en": "Canceling this transfer must preserve the temporary backup.",
+      "domain_context": "software cancellation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/4",
+        "group_id": "q8-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-04-2",
+      "group": "logic",
+      "source_en": "Do not erase the recovery folder after stopping the upload.",
+      "domain_context": "software cancellation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/4",
+        "group_id": "q8-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-09-1",
+      "group": "address",
+      "source_en": "May I send you my corrected table tomorrow morning?",
+      "domain_context": "university",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/9",
+        "group_id": "q8-9",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q8-10-1",
+      "group": "logic",
+      "source_en": "Aborting the import must leave the saved snapshot intact.",
+      "domain_context": "software cancellation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/10",
+        "group_id": "q8-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q8-10-2",
+      "group": "logic",
+      "source_en": "Cancel the migration without removing its rollback data.",
+      "domain_context": "software cancellation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/10",
+        "group_id": "q8-10",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q8-12-2",
+      "group": "protected_tokens",
+      "source_en": "<i>Do not overwrite {TARGET_ID}</i> unless {OWNER_ID} agrees.",
+      "domain_context": "software preservation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase8/12",
+        "group_id": "q8-12",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q15-06-1",
+      "source_en": "Keep unresolved records outside the collection permitted for patching.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase15/6",
+        "group_id": "q15-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q16-01-1",
+      "source_en": "Canceling this file transfer must preserve the backup.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase16/1",
+        "group_id": "q16-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q16-03-1",
+      "source_en": "Keep the rollback data until the migration is verified.",
+      "group": "terminology",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase16/3",
+        "group_id": "q16-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q16-07-1",
+      "source_en": "The transfer of ownership takes effect next Monday.",
+      "group": "terminology",
+      "domain_context": "legal ownership of a house",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase16/7",
+        "group_id": "q16-7",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q16-08-1",
+      "source_en": "Confirm the transfer before the bank closes.",
+      "group": "terminology",
+      "domain_context": "banking and financial payments",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase16/8",
+        "group_id": "q16-8",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q17-03-1",
+      "source_en": "Confirm the money transfer after the recipient is verified.",
+      "group": "terminology",
+      "domain_context": "banking and financial payments",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase17/3",
+        "group_id": "q17-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q17-04-1",
+      "source_en": "The verified contract permits the transfer of ownership.",
+      "group": "terminology",
+      "domain_context": "legal ownership of a house",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase17/4",
+        "group_id": "q17-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q18-01-1",
+      "source_en": "The contract allows the owner to transfer the house.",
+      "group": "terminology",
+      "domain_context": "legal ownership of a house",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase18/1",
+        "group_id": "q18-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q18-02-1",
+      "source_en": "Keep a copy of the contract after the transfer is complete.",
+      "group": "terminology",
+      "domain_context": "legal ownership of a house",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase18/2",
+        "group_id": "q18-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q18-03-1",
+      "source_en": "Confirm the payment before signing the contract.",
+      "group": "terminology",
+      "domain_context": "banking and financial payments",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase18/3",
+        "group_id": "q18-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q18-04-1",
+      "source_en": "Read the contract before Monday.",
+      "group": "terminology",
+      "domain_context": "conversation",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase18/4",
+        "group_id": "q18-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    }
+  ]
+}

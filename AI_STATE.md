@@ -1,11 +1,10 @@
 # Current state pointer — 2026-10-20
 
-## Translation research campaign closed — PASS execution, Hy admission rejected
-- Owner requested autonomous plan completion. Canonical docs/TRANSLATION_QUALITY_PLAN.md now has final step1–4 disposition, superseding open-ended next-case pointers. No further prompt loop automatically authorized by those old pointers.
-- Phase15 fixed explicitowner/table, snapshotobject, stopping-vscompletion on actual model outputs;96testsPASS. Final40(28seen+12fresh)/43calls:21propertyMATCH/19UNKNOWN/0structuralerrors, allNEEDS_REVIEW. Fresh12=6MATCH/6UNKNOWN;2idioms coremeaning retained, no human gold/full-language claim.
-- Remaining: softwaretransfer lexicalsense, rollbackdata process/storage paraphrase, commaeligible-scope ambiguity. Candidate productadmissionREJECTED; keep CT2/OPUS. TrainingconditionalNOT_TRIGGERED: curatedgold/independentacceptance/approvedbudget-environment-stopcondition absent; no training started or draft relabelled gold.
-- Evidence DEV_RUN/translation-quality-phase15/REVIEW.md aligned40source/OPUS/Hy plus frozenselection/rawhistory/summary/wrappers/quota; sourcebase132524d+perrunhashes. OPUSarms39written/1blocked each, completefalse retained. No fresh-output tuning.
-- CleanupPASS/transientrootsabsent/quotas respected; VM4GiB unchanged. No app/OPUS/worker/productionvalidator/dependency/system/DEV/release/push changes. Future integration/training/largerindependentcampaign needs boundedOwnerdecision.
+## Phase16–18 continuation terminal — PASS bounded repairs/evaluation, OPUS unchanged
+- Owner autonomous continuation followed reported3residuals through file/verification and freshhouse-contract control correction without stopping at microreports. Sixtechnicalpoints now source-aligned in actual outputs; priorownership/snapshot/negation/tokens retained.103testsPASS/0skipwarning.
+- Phase17full52actual/55calls=24propertyMATCH28UNKNOWN/0structuralerrors; freshcontract→hiệp định failure preserved. Phase18house-only repair changes1/52prompts;51promptsequal verified, unknown/programming/treaty contexts unchanged. Actualaffected17/18calls=3MATCH14UNKNOWN/0structuralerrors;new4coremeanings retained in agentreview. AllNEEDS_REVIEW/no independenthumangold/full-language acceptance.
+- Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase16–18/TEST_MATRIX.md. Latestalignedreview DEV_RUN/translation-quality-phase18/REVIEW.md plus immutablephase16/17rawhistories, frozenidentity/OPUS/summary/wrappers/quota. Sourcebase05d2c3a+perrunhashes, no laterexactHEADappclaim.
+- LatestOPUSarms17written/0blocked/completetrue, earlier52arms51written/1blocked/incomplete retained. Models/sourcekeyorderschemaunchanged. CleanupPASS/transientrootsabsent/quotas respected/VM4GiB unchanged. No app/worker/productionvalidator/dependency/system/DEV/release/push/training changes. Productadmission and conditionaltraining prerequisites remain unfulfilled; OPUS remains app route.
 
 ## Product/release pointers
 - CT2/OPUS remains product route. Last recorded public0.1.8 bounded installed update acceptance: `docs/RELEASE_0.1.8.md` (immutable build1cd24b2); whole-product RELEASE_VERIFIED not inferred.
