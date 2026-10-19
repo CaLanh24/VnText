@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 from pathlib import Path
 import sys
 import time
@@ -142,4 +143,9 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--variant", choices=("baseline", "opaque-fix"), default="baseline")
+    args = parser.parse_args()
+    if args.variant == "opaque-fix":
+        REPORT = EVIDENCE / "pipeline-arms.opaque-fix.v1.json"
     raise SystemExit(main())
