@@ -107,6 +107,19 @@ class SetupPackageTests(unittest.TestCase):
                 self.assertNotEqual(0, call(**kwargs).returncode, kwargs)
             self.assertEqual(0, call(version="0.1.7", baseline="", skip="$false", owner="", repo="").returncode)
             self.assertEqual(before, {str(p.relative_to(work)): p.read_bytes() for p in work.rglob('*') if p.is_file()})
+            self.assertNotEqual(0, call(version="0.1.9").returncode)  # previous baseline + legacy0.1.7 required
+            legacy = work / "legacy"
+            (legacy / "app").mkdir(parents=True)
+            (legacy / "VNText Studio.exe").write_bytes(b"legacy fixture")
+            (legacy / "app/VERSION.txt").write_text("0.1.7")
+            (legacy / "app/RELEASE.json").write_text('{"version":"0.1.7"}')
+            (work / "app/VERSION.txt").write_text("0.1.8")
+            (work / "app/RELEASE.json").write_text('{"version":"0.1.8"}')
+            self.assertNotEqual(0, call(version="0.1.9").returncode)
+            routed = self._publisher_call(["Assert-InAppReleasePolicy"], f"Assert-InAppReleasePolicy '0.1.9' '{work}' $true 'owner' 'repo' '{legacy}'")
+            self.assertEqual(0, routed.returncode, routed.stdout + routed.stderr)
+            (legacy / "app/VERSION.txt").write_text("0.1.6")
+            self.assertNotEqual(0, self._publisher_call(["Assert-InAppReleasePolicy"], f"Assert-InAppReleasePolicy '0.1.9' '{work}' $true 'owner' 'repo' '{legacy}'").returncode)
             for version in ("0.1.6", "0.1.8"):
                 (work / "app/VERSION.txt").write_text(version)
                 (work / "app/RELEASE.json").write_text(json.dumps({"version":version}))
@@ -115,6 +128,34 @@ class SetupPackageTests(unittest.TestCase):
             self.assertNotEqual(0, call().returncode)  # metadata still0.1.8
             (work / "app/RELEASE.json").unlink()
             self.assertNotEqual(0, call().returncode)
+
+    def test_baseline_route_copy_checks_identity_digest_and_immutable_collision(self):
+        work = WORK_ROOT / f"route-copy-{uuid4().hex}"
+        with artifact_scope(work, artifact_id=work.name, kind="test_fixture", owner="test_setup_package.py", purpose="Actual baseline route publication copy"):
+            stage, output = work / "stage", work / "output"
+            stage.mkdir(parents=True); output.mkdir()
+            data = b"fixture package: copying guard only"
+            digest = hashlib.sha256(data).hexdigest()
+            name = f"full-app-update-from-0.1.8-to-0.1.9-{digest[:16]}.zip"
+            feed_name = "full-app-update-from-0.1.8-to-0.1.9-current.json"
+            (stage / name).write_bytes(data)
+            feed = {"package_file":name, "package_sha256":digest, "manifest":{"version":"0.1.9", "source_sha":"1"*40, "source_tree_sha256":"2"*64}}
+            (stage / feed_name).write_text(json.dumps(feed))
+            (output / "legacy-sentinel.zip").write_bytes(b"retain old package")
+            def copy():
+                return self._publisher_call(["Get-Sha256", "Copy-BaselineUpdateRoutes"], f"Copy-BaselineUpdateRoutes '{stage}' '{output}' '0.1.9' '{'1'*40}' '{'2'*64}'")
+            first = copy(); self.assertEqual(0, first.returncode, first.stdout + first.stderr)
+            self.assertEqual(data, (output / name).read_bytes())
+            self.assertEqual(0, copy().returncode)
+            (output / name).write_bytes(b"collision")
+            self.assertNotEqual(0, copy().returncode)
+            self.assertEqual(b"collision", (output / name).read_bytes())
+            self.assertEqual(b"retain old package", (output / "legacy-sentinel.zip").read_bytes())
+            (output / name).write_bytes(data)
+            feed['manifest']['source_sha'] = '3'*40
+            (stage / feed_name).write_text(json.dumps(feed))
+            self.assertNotEqual(0, copy().returncode)
+            self.assertEqual(data, (output / name).read_bytes())
 
     def test_setup_mode_rejects_ambiguous_or_invalid_wpf_versions(self):
         helper = ["Get-WpfUpdateVersionNumeric"]

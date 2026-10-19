@@ -57,9 +57,10 @@ internal static class Program
             Run("FullAppUpdate_Persistent1175RollsBack", FullAppUpdate_Persistent1175RollsBack, failures);
             Run("FullAppUpdate_1175RefusesChangedStagedAndTarget", FullAppUpdate_1175RefusesChangedStagedAndTarget, failures);
             Run("FullAppUpdate_GitHubAssetPathSizeAndHashAreBound", FullAppUpdate_GitHubAssetPathSizeAndHashAreBound, failures);
+        Run("FullAppUpdate_BaselineRoutesChooseVerifiedHop", FullAppUpdate_BaselineRoutesChooseVerifiedHop, failures);
             if (failures.Count == 0)
             {
-                Console.WriteLine("Focused full-app updater tests: PASS (8)");
+                Console.WriteLine("Focused full-app updater tests: PASS (9)");
                 return 0;
             }
             Console.Error.WriteLine($"Focused full-app updater tests: FAIL ({failures.Count})");
@@ -3026,6 +3027,46 @@ internal static class Program
             AssertEqual(GitHubUpdateState.InvalidPackage, result.State);
         }
         finally { DeleteFullAppUpdateFixture(badHash); }
+    }
+
+    private static void FullAppUpdate_BaselineRoutesChooseVerifiedHop()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var bytes = File.ReadAllBytes(fixture.PackagePath); var digest = HashBytes(bytes);
+            var current = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!)!;
+            var target = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!)!;
+            var targetCore = Version.Parse(target);
+            var future = new Version(targetCore.Major, targetCore.Minor, targetCore.Build + 1).ToString();
+            _ = CreateFullAppGitHubHandler(fixture, digest, bytes.LongLength, FullAppAssetUrl(fixture, digest), bytes);
+            var name = $"full-app-update-from-{current}-to-{target}-{digest[..16]}.zip";
+            var url = $"https://github.com/test-owner/test-repo/releases/download/v{target}/{name}";
+            object Asset(string assetName, string version) => GitHubAsset(assetName, "sha256:" + digest, bytes.LongLength,
+                $"https://github.com/test-owner/test-repo/releases/download/v{version}/{assetName}");
+            var releases = JsonSerializer.Serialize(new[] {
+                GitHubRelease("v" + future, false, false,
+                    Asset($"full-app-update-{future}-{digest[..16]}.zip", future),
+                    Asset($"full-app-update-from-{target}-to-{future}-{digest[..16]}.zip", future)),
+                GitHubRelease("v" + target, false, false,
+                    Asset($"full-app-update-{target}-{digest[..16]}.zip", target), Asset(name, target)) });
+            var handler = new TestHttpMessageHandler((request, _) => {
+                if (request.RequestUri?.Host == "api.github.com") return Task.FromResult(JsonResponse(releases));
+                AssertEqual(new Uri(url), request.RequestUri!); return Task.FromResult(BinaryResponse(bytes));
+            });
+            var offer = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler, metadataOnly: true).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.OfferAvailable, offer.State); AssertEqual(target, offer.Version);
+            AssertEqual(url, offer.AssetUrl); AssertEqual(1, handler.Requests.Count);
+            var result = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler, expectedOffer: offer).GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.UpdateAvailable, result.State); AssertTrue(result.FullAppPackage);
+            AssertEqual(digest, HashFile(result.PackagePath));
+            WpfUpdateService.DeleteGitHubUpdateCandidate(fixture.Root, result);
+            var invalid = releases.Replace(name, name.Replace(digest[..16], new string('0', 16)));
+            var invalidHandler = new TestHttpMessageHandler((_, _) => Task.FromResult(JsonResponse(invalid)));
+            AssertEqual(GitHubUpdateState.InvalidMetadata, WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, invalidHandler, metadataOnly:true).GetAwaiter().GetResult().State);
+            AssertEqual(1, invalidHandler.Requests.Count);
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
     }
 
     private static string FullAppAssetUrl(FullAppUpdateFixture fixture, string digest)

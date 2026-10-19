@@ -85,6 +85,18 @@ class FullAppUpdatePublisherTests(unittest.TestCase):
                 manifest = json.loads(package.read(publish_full_app_update.MANIFEST_NAME))
                 self.assertIn("app/worker/worker.py", manifest["replace_files"])
 
+            # A named route coexists with the legacy asset/feed for public0.1.7 clients.
+            legacy_feed = (updates / publish_full_app_update.FEED_NAME).read_bytes()
+            route = publish_full_app_update.publish(baseline, candidate, updates, "0.1.1", "1" * 40, "2" * 64, baseline_named=True)
+            named = Path(route["package_path"])
+            self.assertRegex(named.name, r"^full-app-update-from-0\.1\.0-to-0\.1\.1-[0-9a-f]{16}\.zip$")
+            self.assertEqual(legacy_feed, (updates / publish_full_app_update.FEED_NAME).read_bytes())
+            self.assertTrue(package_path.exists())
+            self.assertEqual(hashlib.sha256(named.read_bytes()).hexdigest(), route["package_sha256"])
+            self.assertEqual(2, route["retained_package_count"])
+            with zipfile.ZipFile(named) as archive:
+                self.assertEqual(worker_bytes, archive.read("app/worker/worker.py"))
+
             (candidate / "app" / "worker" / "models" / "pinned.bin").write_bytes(b"changed model")
             (candidate / "app" / "VERSION.txt").write_text("0.1.2\n", encoding="utf-8")
             (candidate / "app" / "RELEASE.json").write_text(json.dumps({

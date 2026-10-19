@@ -1,3 +1,5 @@
+Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and immutable named-route-copy guards in test_setup_package.py; legacy/named coexistence in test_full_app_update_publisher.py; real WPF FullAppUpdate_BaselineRoutesChooseVerifiedHop validates newest-incompatible→older-compatible metadata/download, selected URL/name/digest and package rejection. Actual public0.1.7 offer/download/apply/restart plus complete target/data/model/health readback is mandatory before in-app readiness claim; helper/mock alone does not prove live GitHub acceptance. Future releases keep a legacy0.1.7 asset plus the predecessor-specific route and older hops.
+
 # VNText Studio — Test Matrix
 
 App journal Cockpit follow-up: `JournalStore_BoundsHistorySearchSeverityAndClear` exercises real daily persistence, severity/literal/regex filters, file rotation/caps, traversal rejection, selected-file deletion preserving other files and modal navigation preserving the active tab. Same canonical WPF workflow gate, DEV build/configured worker smoke and native modal inspection.

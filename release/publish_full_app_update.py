@@ -131,8 +131,8 @@ def _candidate_version(root: Path, version: str, source_sha: str, source_tree_sh
         raise ValueError("candidate RELEASE.json source_tree_sha256 does not match the package source")
 
 
-def _read_feed(updates: Path) -> dict[str, object] | None:
-    feed_path = updates / FEED_NAME
+def _read_feed(updates: Path, feed_name: str = FEED_NAME) -> dict[str, object] | None:
+    feed_path = updates / feed_name
     if not feed_path.exists():
         return None
     _assert_regular_path(feed_path)
@@ -157,7 +157,7 @@ def _updates_size(updates: Path) -> tuple[int, int]:
     allowed_feeds = {FEED_NAME, "wpf-update-current.json"}
     for path in updates.iterdir():
         _assert_regular_path(path)
-        if path.name in allowed_feeds or path.name.endswith(".tmp") or path.name.startswith(".") and path.name.endswith(".tmp"):
+        if path.name in allowed_feeds or re.fullmatch(r"full-app-update-from-\d+\.\d+\.\d+-to-\d+\.\d+\.\d+-current\.json", path.name) or path.name.endswith(".tmp") or path.name.startswith(".") and path.name.endswith(".tmp"):
             continue
         if path.is_file() and path.name.startswith((PACKAGE_PREFIX, "wpf-update-")) and path.suffix == ".zip":
             packages.append(path)
@@ -167,7 +167,7 @@ def _updates_size(updates: Path) -> tuple[int, int]:
 
 
 def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, version: str,
-            source_sha: str, source_tree_sha256: str, notes: str = "") -> dict[str, object]:
+            source_sha: str, source_tree_sha256: str, notes: str = "", *, baseline_named: bool = False) -> dict[str, object]:
     _assert_regular_path(baseline_root)
     _assert_regular_path(candidate_root)
     _assert_regular_path(updates_root, must_exist=False)
@@ -206,7 +206,8 @@ def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, versi
 
     updates.mkdir(parents=True, exist_ok=True)
     _assert_regular_path(updates)
-    previous = _read_feed(updates)
+    feed_name = f"full-app-update-from-{current_version}-to-{version}-current.json" if baseline_named else FEED_NAME
+    previous = _read_feed(updates, feed_name)
     if previous is not None:
         previous_version = str(previous.get("manifest", {}).get("version", ""))
         if previous_version and not _is_newer(previous_version, version):
@@ -215,7 +216,7 @@ def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, versi
     fd, temp_name = tempfile.mkstemp(prefix=".full-app-update-", suffix=".tmp", dir=updates)
     os.close(fd)
     temp_package = Path(temp_name)
-    temp_feed = updates / f".{FEED_NAME}.{uuid4().hex}.tmp"
+    temp_feed = updates / f".{feed_name}.{uuid4().hex}.tmp"
     try:
         with zipfile.ZipFile(temp_package, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
             archive.writestr(MANIFEST_NAME, json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
@@ -228,7 +229,8 @@ def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, versi
         if size <= 0 or size > MAX_PACKAGE_BYTES:
             raise ValueError(f"full-app package size {size} exceeds the {MAX_PACKAGE_BYTES}-byte limit")
         package_sha = _sha256(temp_package)
-        package_path = updates / f"{PACKAGE_PREFIX}{version}-{package_sha[:16]}.zip"
+        asset_prefix = f"full-app-update-from-{current_version}-to-{version}-" if baseline_named else f"{PACKAGE_PREFIX}{version}-"
+        package_path = updates / f"{asset_prefix}{package_sha[:16]}.zip"
         if package_path.exists():
             _assert_regular_path(package_path)
             if _sha256(package_path) != package_sha:
@@ -244,7 +246,7 @@ def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, versi
             stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temp_feed, updates / FEED_NAME)
+        os.replace(temp_feed, updates / feed_name)
     finally:
         for temporary in (temp_package, temp_feed):
             try:
@@ -261,7 +263,7 @@ def publish(baseline_root: Path, candidate_root: Path, updates_root: Path, versi
         "added": sorted(added), "replaced": sorted(replaced), "deleted": deleted,
         "unchanged_count": len(unchanged), "target_file_count": len(files),
         "retained_package_count": package_count, "retained_package_bytes": package_bytes,
-        "current_manifest": str(updates / FEED_NAME),
+        "current_manifest": str(updates / feed_name),
     }
 
 
@@ -274,10 +276,11 @@ def main() -> int:
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--source-tree-sha256", required=True)
     parser.add_argument("--notes", default="")
+    parser.add_argument("--baseline-named", action="store_true", help="Publish a baseline-specific asset without changing the legacy0.1.7 feed")
     args = parser.parse_args()
     try:
         result = publish(args.baseline_root, args.candidate_root, args.updates_root,
-                         args.version, args.source_sha, args.source_tree_sha256, args.notes)
+                         args.version, args.source_sha, args.source_tree_sha256, args.notes, baseline_named=args.baseline_named)
     except Exception as exc:
         parser.exit(2, f"Full-app update was not published: {exc}\n")
     print(json.dumps(result, ensure_ascii=False, indent=2))

@@ -160,7 +160,15 @@ public static class WpfUpdateService
                 .ToArray();
             foreach (var release in newer)
             {
-                var updateAssets = release.Assets.Where(asset =>
+                // Keep the legacy asset for public0.1.7; newer clients prefer an exact baseline hop.
+                var baselinePrefix = $"full-app-update-from-{installedVersion}-to-{release.VersionText}-";
+                var baselineAssets = release.Assets.Where(asset => asset.Name.StartsWith(baselinePrefix, StringComparison.Ordinal) &&
+                    asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
+                var hasBaselineRoutes = release.Assets.Any(asset => asset.Name.StartsWith("full-app-update-from-", StringComparison.Ordinal) &&
+                    asset.Name.Contains($"-to-{release.VersionText}-", StringComparison.Ordinal) && asset.Name.EndsWith(".zip", StringComparison.Ordinal));
+                if (baselineAssets.Length == 0 && hasBaselineRoutes && installedVersion != "0.1.7")
+                    continue; // Search older stable releases for the next verified hop, then recheck after restart.
+                var updateAssets = baselineAssets.Length > 0 ? baselineAssets : release.Assets.Where(asset =>
                     (asset.Name.StartsWith("wpf-update-" + release.VersionText, StringComparison.Ordinal) ||
                      asset.Name.StartsWith("full-app-update-" + release.VersionText, StringComparison.Ordinal)) &&
                     asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
@@ -174,7 +182,7 @@ public static class WpfUpdateService
 
                 var asset = updateAssets[0];
                 var fullAppPackage = asset.Name.StartsWith("full-app-update-", StringComparison.Ordinal);
-                if (!TryValidateUpdateAsset(source, release, asset, fullAppPackage, out var packageDigest, out var assetUri, out var metadataError))
+                if (!TryValidateUpdateAsset(source, release, asset, fullAppPackage, out var packageDigest, out var assetUri, out var metadataError, installedVersion))
                     return new(GitHubUpdateState.InvalidMetadata, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: metadataError);
                 if (asset.Size <= 0 || asset.Size > MaxGitHubUpdatePackageBytes)
@@ -721,7 +729,7 @@ public static class WpfUpdateService
         $"https://github.com/{source.GitHubOwner}/{source.GitHubRepository}/releases/latest";
 
     private static bool TryValidateUpdateAsset(UpdateSource source, GitHubReleaseInfo release, GitHubAssetInfo asset,
-        bool fullAppPackage, out string digest, out Uri downloadUri, out string error)
+        bool fullAppPackage, out string digest, out Uri downloadUri, out string error, string baselineVersion = "")
     {
         digest = "";
         downloadUri = new Uri("https://github.com/");
@@ -736,6 +744,11 @@ public static class WpfUpdateService
         }
         digest = asset.Digest[7..].ToLowerInvariant();
         var expectedName = $"{packagePrefix}{release.VersionText}-{digest[..16]}.zip";
+        if (fullAppPackage && asset.Name.StartsWith("full-app-update-from-", StringComparison.Ordinal))
+        {
+            if (!TryParseStableVersion(baselineVersion, out _)) return false;
+            expectedName = $"full-app-update-from-{baselineVersion}-to-{release.VersionText}-{digest[..16]}.zip";
+        }
         if (!string.Equals(asset.Name, expectedName, StringComparison.Ordinal))
         {
             error = $"GitHub {packageLabel} asset name does not match its version and SHA-256 digest.";

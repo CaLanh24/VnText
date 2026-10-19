@@ -12,6 +12,7 @@ param(
     [string]$SourceRevision = "",
     [string]$WpfUpdateVersion = "",
     [string]$FullAppUpdateBaselineRoot = "",
+    [string]$FullAppUpdateLegacyBaselineRoot = "",
     [string]$GitHubOwner = "",
     [string]$GitHubRepository = "",
     [string]$ArtifactScopeId = "",
@@ -102,7 +103,7 @@ if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLeg
 if ($SkipBuild) {
     throw "Standard Setup publishing requires a fresh WPF app build; -SkipBuild is not supported."
 }
-function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [bool]$SkipLegacyWpf, [string]$Owner, [string]$Repository) {
+function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [bool]$SkipLegacyWpf, [string]$Owner, [string]$Repository, [string]$LegacyBaselineRoot = "") {
     if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Source release version must be a stable semantic version." }
     if ([version]$Version -lt [version]'0.1.8') { return }
     if ([string]::IsNullOrWhiteSpace($BaselineRoot)) { throw "Release 0.1.8 and later require FullAppUpdateBaselineRoot; Setup-only release is forbidden." }
@@ -115,7 +116,40 @@ function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [boo
     if ($baselineVersion -notmatch '^\d+\.\d+\.\d+$' -or [version]$baselineVersion -lt [version]'0.1.7' -or [version]$baselineVersion -ge [version]$Version) { throw "Full-app baseline must be 0.1.7 or later and older than the target release." }
     $metadata = Get-Content -LiteralPath (Join-Path $BaselineRoot 'app/RELEASE.json') -Raw | ConvertFrom-Json -ErrorAction Stop
     if ($metadata.version -ne $baselineVersion) { throw "Full-app baseline metadata/version mismatch." }
+    if ([version]$Version -gt [version]'0.1.8' -and [version]$baselineVersion -eq [version]'0.1.7') { throw "Later releases require the previous supported baseline plus the legacy0.1.7 baseline, not only0.1.7." }
+    if ([version]$baselineVersion -gt [version]'0.1.7') {
+        if ([string]::IsNullOrWhiteSpace($LegacyBaselineRoot)) { throw "Preserve the public0.1.7 route with FullAppUpdateLegacyBaselineRoot." }
+        foreach ($name in @('VNText Studio.exe', 'app/VERSION.txt', 'app/RELEASE.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $LegacyBaselineRoot $name) -PathType Leaf)) { throw "Legacy0.1.7 baseline is incomplete." }
+        }
+        $legacyVersion = (Get-Content -LiteralPath (Join-Path $LegacyBaselineRoot 'app/VERSION.txt') -Raw).Trim()
+        $legacyMetadata = Get-Content -LiteralPath (Join-Path $LegacyBaselineRoot 'app/RELEASE.json') -Raw | ConvertFrom-Json -ErrorAction Stop
+        if ($legacyVersion -ne '0.1.7' -or $legacyMetadata.version -ne '0.1.7') { throw "Legacy baseline must be exactly0.1.7." }
+    }
     # Full inventory, executable hashes, provenance and model checks remain with publish_full_app_update.py.
+}
+function Copy-BaselineUpdateRoutes([string]$updatesStaging, [string]$updatesRoot, [string]$version, [string]$SourceSha, [string]$SourceTreeSha256) {
+    foreach ($routeFeed in @(Get-ChildItem -LiteralPath $updatesStaging -File -Filter 'full-app-update-from-*-current.json')) {
+        $route = Get-Content -LiteralPath $routeFeed.FullName -Raw | ConvertFrom-Json
+        $routeName = [string]$route.package_file; $routeSha = [string]$route.package_sha256
+        if ($routeName -notmatch '^full-app-update-from-\d+\.\d+\.\d+-to-\d+\.\d+\.\d+-[0-9a-f]{16}\.zip$' -or
+            $routeSha -notmatch '^[0-9a-f]{64}$' -or $route.manifest.version -ne $version -or
+            $route.manifest.source_sha -ne $SourceSha -or $route.manifest.source_tree_sha256 -ne $SourceTreeSha256) { throw "Invalid baseline-specific route metadata." }
+        $routeBase = [regex]::Match($routeName, '^full-app-update-from-(\d+\.\d+\.\d+)-to-').Groups[1].Value
+        if ($routeName -ne "full-app-update-from-$routeBase-to-$version-$($routeSha.Substring(0,16)).zip" -or
+            $routeFeed.Name -ne "full-app-update-from-$routeBase-to-$version-current.json") { throw "Baseline route name/version/digest mismatch." }
+        $routePackage = Join-Path $updatesStaging $routeName
+        if ((Get-Sha256 $routePackage) -ne $routeSha) { throw "Baseline-specific route package hash mismatch." }
+        foreach ($routeFile in @($routePackage, $routeFeed.FullName)) {
+            $destination = Join-Path $updatesRoot ([IO.Path]::GetFileName($routeFile))
+            if (Test-Path -LiteralPath $destination) {
+                if ((Get-Sha256 $destination) -ne (Get-Sha256 $routeFile)) { throw "Immutable baseline route collision." }
+            } else {
+                Copy-Item -LiteralPath $routeFile -Destination $destination -ErrorAction Stop
+                if ((Get-Sha256 $destination) -ne (Get-Sha256 $routeFile)) { throw "Copied baseline route hash mismatch." }
+            }
+        }
+    }
 }
 function Get-WpfUpdateVersionNumeric([string]$Version, [bool]$SkipPackage) {
     if ($SkipPackage) {
@@ -198,7 +232,7 @@ if ($isUnsafeRepoPath) {
     throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
 Assert-ReleaseRootLayout -Path $ReleaseRoot
-Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository
+Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository $FullAppUpdateLegacyBaselineRoot
 Set-Location $DevRoot
 $SourceSha = if (-not [string]::IsNullOrWhiteSpace($SourceRevision)) { $SourceRevision.Trim() } else { (& git -C $DevRoot rev-parse HEAD).Trim() }
 if ($SourceSha -notmatch '^[0-9a-f]{40}$') {
@@ -1312,9 +1346,10 @@ if ($finalCaches) {
 Write-Host "Final Release audit: no pyc/pyo/log/PDB artifacts" -ForegroundColor Green
 
 if ($FullAppUpdateBaselineRoot) {
+    $legacyBaseline = if ($FullAppUpdateLegacyBaselineRoot) { [IO.Path]::GetFullPath($FullAppUpdateLegacyBaselineRoot) } else { $FullAppUpdateBaselineRoot }
     Write-Host "Build source-bound full-app update from baseline $FullAppUpdateBaselineRoot..." -ForegroundColor Yellow
     & $Python -B (Join-Path $DevRoot "release\publish_full_app_update.py") `
-        --baseline-root $FullAppUpdateBaselineRoot `
+        --baseline-root $legacyBaseline `
         --candidate-root $staging `
         --updates-root $updatesStaging `
         --version $version `
@@ -1322,6 +1357,13 @@ if ($FullAppUpdateBaselineRoot) {
         --source-tree-sha256 $SourceTreeSha256 `
         --notes "VNText Studio $version (full-app update)"
     if ($LASTEXITCODE -ne 0) { throw "Full-app Updates package generation failed" }
+    if ($FullAppUpdateLegacyBaselineRoot) {
+        & $Python -B (Join-Path $DevRoot "release\publish_full_app_update.py") `
+            --baseline-root $FullAppUpdateBaselineRoot --candidate-root $staging --updates-root $updatesStaging `
+            --version $version --source-sha $SourceSha --source-tree-sha256 $SourceTreeSha256 `
+            --notes "VNText Studio $version (baseline-specific full-app update)" --baseline-named
+        if ($LASTEXITCODE -ne 0) { throw "Baseline-specific full-app package generation failed" }
+    }
 } else {
     Write-Host "Full-app Updates package not built: no installed baseline supplied; releases without this feed require Setup for full-app changes." -ForegroundColor DarkYellow
 }
@@ -1490,6 +1532,7 @@ try {
         Copy-Item -LiteralPath $stagedFullAppFeedPath -Destination $pendingFullAppFeed -ErrorAction Stop
         if ((Get-Sha256 $pendingFullAppFeed) -ne $fullAppFeedSha) { throw "Copied full-app Updates manifest hash mismatch" }
     }
+    Copy-BaselineUpdateRoutes $updatesStaging $updatesRoot $version $SourceSha $SourceTreeSha256
     $updateFeedCommitted = $false
     $fullAppFeedCommitted = $false
     if (Test-Path -LiteralPath $dotnet -PathType Leaf) {
