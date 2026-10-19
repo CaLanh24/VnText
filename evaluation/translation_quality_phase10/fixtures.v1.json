@@ -1,0 +1,173 @@
+{
+  "provenance": "Agent-authored template-targeted fixtures; not translation prompt gold",
+  "records": [
+    {
+      "id": "F10-01-0",
+      "source_en": "I will bring you my wool scarf.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ mang cho em khăn len của chị.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-01-1",
+      "source_en": "I will bring you my wool scarf.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ mang cho em và chị khăn len của chị.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-01-2",
+      "source_en": "I will bring you my wool scarf.",
+      "address_context": "older sister to younger brother",
+      "draft": "Chị sẽ mang cho các em khăn len của chị.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-02-0",
+      "source_en": "May I send you my revised summary this evening?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể gửi giáo sư bản tóm tắt đã sửa của em tối nay không?",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-02-1",
+      "source_en": "May I send you my revised summary this evening?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Giáo sư có thể gửi em bản tóm tắt đã sửa của em tối nay không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-02-2",
+      "source_en": "May I send you my revised summary this evening?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể gửi ông bản tóm tắt đã sửa của em tối nay không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-03-0",
+      "source_en": "Reject the archive unless its checksum is valid.",
+      "address_context": "",
+      "draft": "Từ chối kho lưu trữ nếu mã kiểm tra không hợp lệ.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-03-1",
+      "source_en": "Reject the archive unless its checksum is valid.",
+      "address_context": "",
+      "draft": "Reject kho lưu trữ nếu mã kiểm tra không hợp lệ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-03-2",
+      "source_en": "Reject the archive unless its checksum is valid.",
+      "address_context": "",
+      "draft": "Từ chối kho lưu trữ nếu mã kiểm tra hợp lệ.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-04-0",
+      "source_en": "Unless the operator approves, leave the backup untouched.",
+      "address_context": "",
+      "draft": "Nếu người vận hành không phê duyệt, hãy để bản sao lưu nguyên vẹn không thay đổi.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-04-1",
+      "source_en": "Unless the operator approves, leave the backup untouched.",
+      "address_context": "",
+      "draft": "Nếu người vận hành phê duyệt, hãy để bản sao lưu nguyên vẹn không thay đổi.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-04-2",
+      "source_en": "Unless the operator approves, leave the backup untouched.",
+      "address_context": "",
+      "draft": "Nếu người vận hành không phê duyệt, hãy giữ nguyên cơ sở dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-05-0",
+      "source_en": "Canceling the export must not erase the backup.",
+      "address_context": "",
+      "draft": "Việc hủy xuất dữ liệu không được phép xóa bản sao lưu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-05-1",
+      "source_en": "Canceling the export must not erase the backup.",
+      "address_context": "",
+      "draft": "Việc hủy xuất dữ liệu không cần giữ bản sao lưu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-05-2",
+      "source_en": "Canceling the export must not erase the backup.",
+      "address_context": "",
+      "draft": "Không được hủy xuất dữ liệu khi bản sao lưu vẫn được giữ lại.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-06-0",
+      "source_en": "Keep unverified records outside the set eligible for release.",
+      "address_context": "",
+      "draft": "Giữ bản ghi chưa xác minh bên ngoài phạm vi được cho phép để công bố.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-06-1",
+      "source_en": "Keep unverified records outside the set eligible for release.",
+      "address_context": "",
+      "draft": "Giữ bản ghi chưa xác minh trong tập hợp được phép phát hành.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-06-2",
+      "source_en": "Keep unverified records outside the set eligible for release.",
+      "address_context": "",
+      "draft": "Giữ bản ghi chưa xác minh ngoài phạm vi và vẫn được phép công bố.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-07-0",
+      "source_en": "Could you lend me your reference book?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Giáo sư có thể cho em mượn sách tham khảo của giáo sư không?",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-07-1",
+      "source_en": "Could you lend me your reference book?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Em có thể cho giáo sư mượn sách tham khảo của giáo sư không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-07-2",
+      "source_en": "Could you lend me your reference book?",
+      "address_context": "younger student to older professor; gender unknown",
+      "draft": "Giáo sư có thể cho em mượn sách tham khảo của em không?",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-08-0",
+      "source_en": "Keep unchecked entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ mục nhập chưa kiểm tra ngoài tập hợp đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F10-08-1",
+      "source_en": "Keep unchecked entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ mục nhập chưa kiểm tra trong tập hợp đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F10-08-2",
+      "source_en": "Keep unchecked entries outside the collection eligible for export.",
+      "address_context": "",
+      "draft": "Giữ mục nhập chưa kiểm tra ngoài tập hợp và vẫn có thể xuất dữ liệu.",
+      "expected": "FAIL"
+    }
+  ]
+}

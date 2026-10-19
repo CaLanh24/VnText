@@ -1,0 +1,190 @@
+{
+  "schema_version": 1,
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false,
+    "novelty": "New strings vs previous264evaluation and audit-only source; known templates recur"
+  },
+  "split_protocol": {
+    "development": 8,
+    "held_out": 4,
+    "groups_never_cross_split": true
+  },
+  "rows": [
+    {
+      "id": "Q10-01-1",
+      "source_en": "I will bring you my wool scarf.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/1",
+        "group_id": "q10-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q10-01-2",
+      "source_en": "I will lend you my raincoat.",
+      "group": "address",
+      "domain_context": "family conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/1",
+        "group_id": "q10-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "older sister to younger brother"
+    },
+    {
+      "id": "Q10-02-1",
+      "source_en": "May I send you my revised summary this evening?",
+      "group": "address",
+      "domain_context": "university conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/2",
+        "group_id": "q10-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q10-02-2",
+      "source_en": "I can show you my new appendix.",
+      "group": "address",
+      "domain_context": "university conversation",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/2",
+        "group_id": "q10-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q10-03-1",
+      "source_en": "Reject the archive unless its checksum is valid.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/3",
+        "group_id": "q10-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q10-03-2",
+      "source_en": "Unless the operator approves, leave the backup untouched.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/3",
+        "group_id": "q10-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q10-04-1",
+      "source_en": "Canceling the export must not erase the backup.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/4",
+        "group_id": "q10-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q10-04-2",
+      "source_en": "Keep unverified records outside the set eligible for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/4",
+        "group_id": "q10-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    },
+    {
+      "id": "Q10-05-1",
+      "source_en": "Could you lend me your reference book?",
+      "group": "address",
+      "domain_context": "university conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/5",
+        "group_id": "q10-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q10-05-2",
+      "source_en": "I will bring you my corrected chart.",
+      "group": "address",
+      "domain_context": "university conversation",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/5",
+        "group_id": "q10-5",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "younger student to older professor; gender unknown"
+    },
+    {
+      "id": "Q10-06-1",
+      "source_en": "Reject the downloaded file unless its signature is valid.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/6",
+        "group_id": "q10-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q10-06-2",
+      "source_en": "Keep unchecked entries outside the collection eligible for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "held_out",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase10/6",
+        "group_id": "q10-6",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      }
+    }
+  ]
+}
