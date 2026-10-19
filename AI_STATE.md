@@ -1,12 +1,10 @@
 # Current state pointer — 2026-10-20
 
-## Phase11 named remediation closed: PASS bounded, OPUS unchanged
-- Owner requests self-added Đừng +3Phase10unknowns fixed, full retest. Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase11; TEST_MATRIX.md.
-- Actual old3/4calls allCONSTRAINTS_MATCH: owner explicit; addedĐừngFAIL then modelaffirmative revisionMATCH selected; unchecked-entry relative clause recognized. No negation deletion/guessed owner.
-- Initialparser2fail retained; final79focusedPASS. Fresh18fixtures6correct/12bad all expected,0falseaccept within template scope; no human gold/general-language claim.
-- New8sources(4dev/4heldout)/11calls:5MATCH/3UNKNOWN,0tokenmismatch/allNEEDS_REVIEW. No addedĐừng fresh;4role directions agent-reviewed correct. New unknowns different domain/scope/paraphrase limits, not proof wholelanguage solved.
-- Evidence DEV_RUN/translation-quality-phase11/REVIEW.md and rawselection/seen/final/fixtures/baseline/summary/wrappers/quota; sourcebase1e762a5+perrunhashes. Allnewoutputsnowseen.
-- RuntimecleanupPASS/TEST_RUN+RELEASE_RUNabsent; artifact1GiB/shared6GiB/VM4GiB unchanged. No productmodel/worker/validator/dependency/system/DEV/release/push changes.
+## Phase12 named-three remediation closed: PASS bounded, OPUS unchanged
+- Actual Q11-02-1/Q11-02-2/Q11-04-2:3/3 model drafts correct in agent review, propertyMATCH. Patch→update fixed; affirmative export eligibility scope; unresolved hồ sơ retained. No deleted negation/template substitution.
+- Corrected complete regression86PASS; fresh18fixtures6good/12bad all expected. Fresh4sources2dev/2heldout:3MATCH/1UNKNOWN (unresolved→chưa hoàn thiện nuance). All drafts NEEDS_REVIEW; no human gold/full-language claim or fresh-result tuning.
+- Canonical docs/TRANSLATION_QUALITY_PLAN.md Phase12; TEST_MATRIX.md. Evidence DEV_RUN/translation-quality-phase12/REVIEW.md and frozen selection/raw model/OPUS/fixtures/wrappers/quota, sourcebaseea8f614+perrunhashes. New corpus nowseen.
+- CleanupPASS/TEST_RUN+RELEASE_RUNabsent; quotas1GiB/shared6GiB respected. VM4GiB unchanged; transient low free RAM recorded, no guard abort. No app/OPUS/worker/validator/dependency/system/DEV/release/push changes.
 
 ## Product/release pointers
 - CT2/OPUS remains product route. Last recorded public0.1.8 bounded installed update acceptance: `docs/RELEASE_0.1.8.md` (immutable build1cd24b2); whole-product RELEASE_VERIFIED not inferred.

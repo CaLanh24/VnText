@@ -1,0 +1,65 @@
+{
+  "provenance": {
+    "author": "Coordinator agent",
+    "rights": "generated-for-project",
+    "human_gold": false
+  },
+  "rows": [
+    {
+      "id": "Q12-01-1",
+      "source_en": "Keep unchecked entries outside the group eligible for patching.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase12/1",
+        "group_id": "q12-1",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q12-02-1",
+      "source_en": "Keep unresolved translations outside the set permitted for release.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "development",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase12/2",
+        "group_id": "q12-2",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q12-03-1",
+      "source_en": "Keep unverified records outside the collection permitted for export.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase12/3",
+        "group_id": "q12-3",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    },
+    {
+      "id": "Q12-04-1",
+      "source_en": "Keep rejected entries outside the group allowed for patching.",
+      "group": "logic",
+      "domain_context": "software integrity",
+      "split": "heldout",
+      "scenario_boundary": {
+        "file_id": "synthetic/phase12/4",
+        "group_id": "q12-4",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      }
+    }
+  ]
+}

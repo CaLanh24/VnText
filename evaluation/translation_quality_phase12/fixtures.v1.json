@@ -1,0 +1,113 @@
+{
+  "provenance": "Synthetic adversarial properties; not semantic gold",
+  "records": [
+    {
+      "id": "F12-1-good",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa kiểm tra ngoài nhóm đủ điều kiện vá.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-1-inside",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa kiểm tra trong nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-1-prohibition",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Đừng giữ hồ sơ chưa kiểm tra ngoài nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-2-good",
+      "source_en": "Keep unresolved records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ chưa giải quyết ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-2-inside",
+      "source_en": "Keep unresolved records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ chưa giải quyết trong nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-2-prohibition",
+      "source_en": "Keep unresolved records outside the group eligible for export.",
+      "draft": "Đừng giữ hồ sơ chưa giải quyết ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-3-good",
+      "source_en": "Keep unverified records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa xác minh ngoài nhóm đủ điều kiện vá.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-3-inside",
+      "source_en": "Keep unverified records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa xác minh trong nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-3-prohibition",
+      "source_en": "Keep unverified records outside the group eligible for patching.",
+      "draft": "Đừng giữ hồ sơ chưa xác minh ngoài nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-4-good",
+      "source_en": "Keep rejected records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ bị từ chối ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-4-inside",
+      "source_en": "Keep rejected records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ bị từ chối trong nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-4-prohibition",
+      "source_en": "Keep rejected records outside the group eligible for export.",
+      "draft": "Đừng giữ hồ sơ bị từ chối ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-5-good",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa được kiểm tra ngoài nhóm đủ điều kiện vá.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-5-inside",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Giữ hồ sơ chưa được kiểm tra trong nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-5-prohibition",
+      "source_en": "Keep unchecked records outside the group eligible for patching.",
+      "draft": "Đừng giữ hồ sơ chưa được kiểm tra ngoài nhóm đủ điều kiện vá.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-6-good",
+      "source_en": "Keep unverified records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ chưa được xác minh ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "CONSTRAINTS_MATCH"
+    },
+    {
+      "id": "F12-6-inside",
+      "source_en": "Keep unverified records outside the group eligible for export.",
+      "draft": "Giữ hồ sơ chưa được xác minh trong nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    },
+    {
+      "id": "F12-6-prohibition",
+      "source_en": "Keep unverified records outside the group eligible for export.",
+      "draft": "Đừng giữ hồ sơ chưa được xác minh ngoài nhóm đủ điều kiện xuất dữ liệu.",
+      "expected": "FAIL"
+    }
+  ]
+}
