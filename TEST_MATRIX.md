@@ -2,6 +2,8 @@ Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and im
 
 # VNText Studio — Test Matrix
 
+Research-only contextual model guard/fresh-corpus gate: `tests/unit/test_translation_quality_guard.py`, `test_translation_quality_prompt_trial.py`, `test_mt_structural.py`; then pinned real-model seen regression and frozen new-corpus comparison via `translation_quality_phase5.py` under canonical cleanup. Reject missing/extra/duplicated/reordered/damaged carriers, context-token injection and source collisions; preserve exact original tokens, translate tag bodies, keep scenario/split boundaries. Output/model-process success is not semantic acceptance. Test tools do not change product CT2/OPUS routing; new corpus rights/split/hash and per-run source/model identity are mandatory.
+
 App journal Cockpit follow-up: `JournalStore_BoundsHistorySearchSeverityAndClear` exercises real daily persistence, severity/literal/regex filters, file rotation/caps, traversal rejection, selected-file deletion preserving other files and modal navigation preserving the active tab. Same canonical WPF workflow gate, DEV build/configured worker smoke and native modal inspection.
 
 App journal (Owner2026-10-18): WPF harness `Journal_RoutesProgressAndErrorsWithoutCrossTabLeak` checks navigation, task-ID routing after tab changes, independent bounded progress, app-wide stderr/errors/UI exception logging and caps. Affected source/workflow test gate plus DEV build/configured worker smoke; native Journal/Extract/Translate/Patch inspection confirms one heading and shared card rhythm, separate Patch preflight. No game copies or Release claim.
