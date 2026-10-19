@@ -132,3 +132,6 @@ Phase13 unresolved-state research gate: `test_translation_constraints_v5` + `tes
 
 
 Phase14 mixed research replay: `test_translation_quality_phase14` + prior92 (93 total). Exact corpus replay and identity of imported Phase13pipeline/term bank; no tuning. Frozen seen28 -> actual OPUSdefault/common37terms -> actualHy maxone retry -> aligned source review. Report UNKNOWN separately from actual semantic defects; zero structural errors does not prove semantic PASS. Preserve missing-owner/snapshot-object failures and technical precision findings, allNEEDS_REVIEW; no apppromotion.
+
+
+Phase15 final research closure: `test_translation_quality_phase15` + prior93; final96tests after stopping/interruption regression. Atmost2seen hypotheses source-derived owner/criticalterms ->freeze ->28seen+12fresh fullsource/OPUSdefault/common43terms/Hy comparison. Priorfinite12fixtures are reused regression, not fresh. Require exact protectedtokens, retain originals/retries/UNKNOWN, no parserrelaxation. Complete audit even whenOPUS blocks one row; do not label blocked complete. ResearchexecutionPASS is separate from rejected productadmission and conditionaltrainingNOT_TRIGGERED. No further fresh-output tuning or OPUSreplacement.
