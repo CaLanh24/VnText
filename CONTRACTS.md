@@ -246,6 +246,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner decision (2026-10-19, low-memory alternative):** Host has no spare RAM; keep VM4GiB. Owner authorizes identifying/closing unused applications and researching/executing a bounded alternate trial. No blind service termination or security disabling. Same pinned model/runtime, existing pagefile only, no downloads/system changes. Replace the earlier conservative file-size-plus512MiB guard for this test with measured mmap trial safeguards in the translation plan; do not infer quality or deployability from startup.
+
 **Owner decision (2026-10-19, model-trial RAM):** Owner authorizes increasing RAM of the development VM sufficiently for the already approved single-model test and continuing the experiment. Inspect host available memory before choosing allocation; preserve work before any required shutdown. This supersedes the earlier no-VM-RAM-change boundary for this operation only. No host credentials/access are implied, and no security/firewall/service changes, unrelated VM changes, new model or product replacement are authorized.
 
 **Owner decision (2026-10-19, translation-quality Step3):** Explicit permission to download the pinned Tencent Hy-MT2-1.8B Q4_K_M model and official portable Windows CPU runtime into shared `.dev-env`, increasing its current cap to **6 GiB** (supersedes the previous5GiB cap). Non-exempt checkout remains1GiB. One model/runtime copy, verified hashes and license provenance; test-only, OPUS product route unchanged. Check guest RAM before loading; no host/VM changes, training, additional candidates, system installation or publication authorized.

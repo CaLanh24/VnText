@@ -1,3 +1,6 @@
+# Low-memory trial — PASS bounded feasibility (2026-10-19)
+Unchanged4GiB VM can run approved Hy-MT2 Q4 via mmap + --no-repack/context512/batch32/ubatch16/2threads. Background Edge5windowlessprocesses stopped, Codex/system untouched. Default repack hit1792MiB guard (retainedfailure); no-repack10/10returns/child-outer0/cleanupPASS,35.156stotal/peakWS1232142336/private152944640/minfreephysical140738560. Earlier file+512MiB guard overly conservative, no8/16GiB requirement proven. Five development sources only; structural10PASS, semantic defects/contextleak prevent product promotion, no held-out/humanacceptance. ProductOPUS unchanged. Evidence DEV_RUN/translation-quality-phase3/LOW_MEMORY_REVIEW.md and receipts, source2a6356a+scriptdiff; TEST_RUN/RELEASE_RUN absent, within1GiB/shared6GiB. Canonical translation plan has protocol/results.
+
 # Model trial — guest reclamation PROVEN_BLOCKED (2026-10-19)
 Owner clarifies no host spare RAM; keep VM4GiB, close only VNText app/test processes. Exact checkout-path/name inventory finds none running, nothing stopped. Available702423040bytes < fixed1669951360 RAM guard; no inference. Codex/ChatGPT/system processes untouched. Evidence DEV_RUN/translation-quality-phase3/close-vntext-preflight.json at342773e, canonical translation plan. This supersedes RAM-increase next step; product OPUS unchanged.
 
