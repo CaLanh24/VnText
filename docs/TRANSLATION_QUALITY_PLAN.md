@@ -1,5 +1,18 @@
 # Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
 
+## Owner quyết định ngân sách0đ — 2026-10-20
+
+Không thuê reviewer/GPU/máy, mua phần cứng, trial cần thẻ/đặt cọc/autocharge.
+Quyết định này thay gợi ý xin budget trong các mục lịch sử; bản trả phí đang soạn
+đã hủy trước commit. [Lộ trình0đ](TRANSLATION_TRAINING_PILOT_PROPOSAL.md) đề nghị
+gói offline60 nguồn synthetic Phase19/raw đã có, agent-reviewed silver, audit
+bank48/candidate memory, <=5h DEV/1h Brain read-only nghiệm thu; chưa thực thi.
+Không inference/benchmark/prompt campaign mới. Không thuê máy vẫn khép nghiên
+cứu bước1–3/bàn giao plan; bước4 NOT_TRIGGERED/DEFERRED, không giả đã train hoặc
+human gold. Free notebook chỉ tùy chọn chưa kiểm account/card/resources/privacy,
+không prerequisite đóng plan. Nguồn/hardware kiểm2026-10-20; Brain review trước
+Owner giao thực thi. OPUS giữ nguyên, Hy vẫn REJECTED.
+
 ## Disposition hiện hành — 2026-10-20
 
 Phần này thay mọi con trỏ lịch sử gợi ý tự mở phase tiếp theo. Khép chiến dịch

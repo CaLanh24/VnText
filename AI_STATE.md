@@ -1,5 +1,11 @@
 # Current state pointer — 2026-10-20
 
+## Owner budget0đ / proposal ready — execution NOT_AUTHORIZED
+- No hiring reviewers/GPU/machines/hardware or card/deposit/autocharge trials. Paid draft canceled before commit; supersedes historical budget suggestions.
+- `docs/TRANSLATION_TRAINING_PILOT_PROPOSAL.md`: proposed offline60-source Phase19 evidence/silver curation, existing48term audit/candidate memory; <=5h DEV/1h Brain read-only review, no new inference/benchmark. M1–M4 not executed yet.
+- No rental needed to close research steps1–3/plan disposition; conditionaltraining NOT_TRIGGERED/DEFERRED, no human gold/model/product acceptance fabricated. Free notebooks optional/unverified eligibility/card/resources/privacy. Guest4GiB/no exposed CUDA GPU read-only verified2026-10-20; host uninspected.
+- Docs-only proposal; no account/payment/upload/download/dataset/modelrun/training/product changes. Brain reviews before Owner execution decision; DEV implementation/Brain read-only split unchanged. OPUS product remains; Hy candidate rejected.
+
 ## Translation plan closure — PM_DECISION_REQUIRED
 - Canonical `docs/TRANSLATION_QUALITY_PLAN.md` disposition 2026-10-20 supersedes historical next-phase pointers: steps1–3 research measured, candidate REJECTED, OPUS unchanged; step4 conditional NOT_TRIGGERED, no human gold/training permissions/budget/environment/stop condition.
 - DEV sole implementation owner; Brain read-only coordination/acceptance, no source/test/model edits. No further benchmark/prompt/model campaign implied.
