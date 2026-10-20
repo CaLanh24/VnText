@@ -2,6 +2,16 @@ Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and im
 
 # VNText Studio — Test Matrix
 
+Glossary V2 row-local conflict fix: `test_glossary_context_v2`, `test_user_glossary`,
+`test_translation_cache`, `test_mt_structural`, `test_mt_ct2_status`,
+`test_mt_patch_gate_write`: final53PASS, including absent/protected-only/scope/case/
+boundary nonconflict, true conflict closed, nonconflicting sentinel ordinal stable,
+old glossary cache miss/record retained. Worker16PASS on intermediate source;
+final DEV bootstrap/worker smokePASS. Frozen actual `glossary_conflict_scope_check`
+before-trace/after-cache uses2x4synthetic packages, unchanged localOPUS; false blockers
+3->1, control4written unchanged, protected prose restored, true conflict ledger
+retained, oldcache not reused. No general semantic-quality/release claim.
+
 Offline silver packet M1–M4: `test_translation_silver_packet` focused4 tests
 (public hash/mapping/policy verification without ignored originals, raw tamper,
 rehashed unsafe-memory rejection, retained grades/overrides/current exclusions).

@@ -321,6 +321,11 @@ def _translation_cache_context(
         ).encode("utf-8", "surrogatepass")
     ).hexdigest()
     metadata = model_adapter.metadata()
+    strategy_version = "ct2-pipeline-1-overwrite" if allow_overwrite else "ct2-pipeline-1-frozen"
+    if (glossary_v2 or {}).get("entries"):
+        # Older glossary conflict handling could cache structurally valid but
+        # truncated prose. Keep those records, but do not reuse them on retry.
+        strategy_version += "-glossary-applicability-2"
     records = (context_sidecar or {}).get("records") or []
     context_by_key = {
         str(item.get("key") or ""): item
@@ -334,7 +339,7 @@ def _translation_cache_context(
         "memory_scope": memory_scope,
         "classifier_policy_version": CLASSIFIER_POLICY_VERSION,
         "classifier_policy_hash": CLASSIFIER_POLICY_HASH,
-        "strategy_version": "ct2-pipeline-1-overwrite" if allow_overwrite else "ct2-pipeline-1-frozen",
+        "strategy_version": strategy_version,
         "context_builder_version": str(
             (context_sidecar or {}).get("builder_version") or "none"
         ),

@@ -1,5 +1,12 @@
 # Current state pointer — 2026-10-20
 
+## Product glossary conflict fix terminal — PASS bounded feature delivery
+- Runtime glossary_v2.mask_terms only reports conflict for actual maskable term occurrence; absent/protected-only/case/scope/boundary mismatches no longer suppress unrelated rows. True conflicts still blocked; nonconflicting sentinel ordinals unchanged. Product OPUS/validators/protocol unchanged.
+- Cache-context strategy suffix glossary-applicability-2 only with glossary entries; legacy cache retained/missed on explicit retry, no auto-overwrite frozenCSV. Actual4row product path: conflict arm1written/3blocked ->3written/1blocked; control4written unchanged, protected prose restored and ledger/cache correct. Model hash identical; scope not whole-language improvement.
+- Final53affected testsPASS/0skip/warning, worker16PASS intermediate then finalDEVbuild/smokePASS. Expected red and TEMP/model-path setup failures retained; instrumented before-trace and after-cache/source changes justify limited reruns. Actual tokenizer sacremoses warning + noPyTorch informational retained, no install.
+- Public compact evidence `evaluation/glossary_conflict_scope_v1/receipt.json`; canonical raw/receipts `DEV_RUN/glossary-conflict-scope` and Downloads/VM-Acceptance/glossary-conflict-*.json. Base3710bd9+per-run hashes, Debug build identity has dirty diff, docs later do not upgrade model evidence.
+- DEV sole writer/Brain read-only acceptance;0đ/nochild/download/cloud/Hy/training/silver-import/release/push. Max1DEV executable bootstrap-build. Step2 concrete feature delivered; step1–3 research dispositions and Hyrejection preserved, trainingDEFERRED. No automatic quality/product-wide acceptance.
+
 ## Offline M1–M4 terminal — PASS data/technical, not semantic acceptance
 - Owner authorized execution. `evaluation/translation_silver_packet_v1/README.md`:60source/curation rows,12audited IDs,48term audits,3term candidates checksum/migration/copy,9exact-context OPUS memory candidates; all silver/needs-human-review, approved/human_gold/training_eligible=false.
 - Byte-exact original blind evidence/mapping/seal/4historical overrides retained; candidate/2OPUS arms exact compact JSON projections with original file hashes/source/model/code identities. All60 seen; source rights60known generated-for-project/0UNKNOWN, no human gold.

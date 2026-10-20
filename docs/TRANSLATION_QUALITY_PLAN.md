@@ -1,5 +1,109 @@
 # Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
 
+## Product seam0đ — terminal2026-10-20, PASS bounded feature
+
+**Đã bàn giao code và tác dụng product-path**, không chỉ docs/packet:
+glossary conflict chỉ áp dụng occurrence maskable thật; `mode` absent/protected-only
+không chặn unrelated row, conflict thật vẫn review/blocked. Nonconflicting sentinel
+ordinal giữ nguyên. Strategy cache có glossary entries mang suffix applicability2
+để explicit retry không dùng draft lỗi policy cũ; không auto-overwrite CSV frozen.
+
+| Ma trận plan sau triển khai | Trạng thái thật |
+| --- | --- |
+| 1. Evaluation/data | Foundation và silver packet60 đã bàn giao; human gold chưa có, không tái nhãn seen thành heldout. |
+| 2. Existing route product | **Feature delivered**: row-local glossary conflict + cache invalidation; actual OPUS check coverage1/4->3/4 trong package conflict, control4/4 không đổi. Không claim model dịch tốt mọi câu. |
+| 3. Context candidate research | Các thử nghiệm cũ đã đo, HyREJECTED; không model/prompt campaign tiếp hoặc đổi OPUS. |
+| 4. Conditional training | NOT_TRIGGERED/DEFERRED, không thuê máy/chi tiền; không giả trainPASS, không prerequisite trả phí để khép feature này. |
+
+Final affected53PASS/0fail/error/skip/warning, canonical exit0/cleanupPASS.
+Worker16PASS trước final cache/ordinal changes ghi intermediate; final DebugDEV
+bootstrap +5step worker smoke PASS trên source runtime cuối. Actual before-trace:
+control4written/0blocked; conflict1written/3blocked, protected output ` {mode}`
+mất prose vẫn structuralPASS/cache1. Final after-cache: control4written nguyên
+văn, conflict3written/1blocked; outside/boundary bằng control, protected=`Xin hãy
+giữ lại {mode}.`; inside true conflict empty và là ledger/inventory item duy nhất.
+Cache0hits/3newwrites, legacy bad record vẫn còn, key protected đổi; unassisted
+cachekeys không đổi. Schema/order/source/token/model invariant PASS, modeltreeSHA
+`964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4`.
+
+Không chỉnh câu `The model is ready.` vẫn ra `Người mẫu đã sẵn sàng.` ở cảcontrol/
+fix: nguồn thiếu domain, model sense/naturalness không được nhận là repaired.
+Chỉ grammar `_PROTECTED` hiện hữu được giữ, không mở rộng parser; actual check
+không chứng minh mọi control syntax. Semantic/human/game/product-wide acceptance
+và Release không suy từ technicalPASS. Cảnh báo actualrun: transformers noPyTorch
+informational (CT2 dùng được), optional sacremoses UserWarning, không cài dependency.
+
+Raw failures/outputs/ledger/cache và per-runSHA/codehash giữ trong
+`DEV_RUN/glossary-conflict-scope`; canonical wrapper files trong VM-Acceptance.
+[Compact public receipt](../evaluation/glossary_conflict_scope_v1/receipt.json)
+ghi exact identities/diff/gates/limitations. Predeclared actual budget được thêm
+before-trace để thu thiếu ledger, after-final do ordinal remediation, after-cache
+do stale-cache prerequisite; không tuning dữ liệu/model/semantic validators.
+Final build identity nguồn base3710bd9 +dirtydiff và runtime hashes; docs sau build
+không nâng evidence cũ thành exactcommit/ReleasePASS. Chi0đ, không child/Hy/
+download/cloud/training/silver-import/product-memory writes/push/Release.
+
+### Activation và gate history (giữ nguyên failure evidence)
+
+Owner yêu cầu hoàn thiện phần product còn thiếu, không chỉ packet/docs. Steering
+này thay con trỏ researchclosed cho **task bounded này**: DEV sole writer,
+Brain read-only premise/acceptance review, không child. Training vẫn DEFERRED;
+không model/framework/protocol/validator/silver-import/game/user-data change.
+
+Premise đã repro trên base sạch3710bd9: glossaryV2 có2target cùng priority cho
+`mode`; `mask_terms('The red door is open.')` vẫn trả conflicts=['mode','mode'];
+batch đưa unrelated key vào conflict_keys, trả empty, model spy0calls. Đây là
+false-positive applicability trong code, không phải giới hạn nghĩa OPUS.
+Owner/seam: `vntext/glossary_v2.py::mask_terms` và focused/affected tests; chỉ
+báo conflict khi regex term thật sự match đoạn ngoài `_PROTECTED`. Giữ pattern/
+case/scope/priority và structural/quality/Patch gates; không sửa glossary carrier
+transport hoặc chạy lại opaque-remediation đã bị bác ở Phase2.
+
+Acceptance trước sửa: absent term, word-boundary mismatch, case/scope mismatch
+và term chỉ nằm trong vùng protected hiện hỗ trợ không làm block dòng unrelated;
+term conflict thật ngoài protected/exact vẫn fail-closed, không model call cho
+dòng conflict. Unaffected output bằng arm không glossary, source/schema/order/
+placeholder/model bytes giữ nguyên; cache/worker/retry không regression.
+Gate budget: focused red->green, một affected regression batch chọn từ glossary/
+cache/structural/worker matrix; không125research tests. Một actual product-path
+check before/after (2stages, mỗi stage2independent packages *4synthetic rows),
+OPUS offline có sẵn, max120s/stage/peakWS<1GiB, không gamecopies. Sources/glossary
+đóng băng trước run, không tuning outputs. Một DEV bootstrap build+worker smoke
+max600s khi source runtime đã qua gate; nếu gatefail do task thì remediation chỉ
+gate liên quan. TEST_RUN disposable/canonical wrapper sequential, compact raw/
+receipts DEV_RUN/glossary-conflict-scope; max1DEV exe bootstrap-build, khôngRelease/
+download/install/cloud/training/push hoặc chi tiền. Preflight quota1GiB/shared6GiB.
+
+Gate premise red10tests/5failed subcases expected, cleanupPASS. Actual before
+control4written/0blocked vs conflict1written/3blocked; protected-only row lost
+ordinary prose (raw retained), distinct from structural PASS. First wrapper
+START failed before model because TEMP outsideTEST_RUN; corrected harness to
+registeredtemp, original receipt retained. Before mutation one instrumentation-only
+repeat `before-trace` of same frozen2x4 packages is added to capture review ledger/
+blocker inventory/read-only cache rows that first compact report omitted. No source/
+model/prompt tuning or fixture change; final after run compares identical control.
+
+Review prerequisite: first green guard also skipped ordinal allocation for absent
+nonconflicting entries; Brain identified possible carrier/input drift beyond seam.
+Final guard is restricted to conflict branch only; explicit absent-valid-entry
+regression preserves prior ZZG900001ZZG/mapping. First after receipt stays historic;
+one `after-final` rerun required for final source, same frozen inputs/model/control.
+No glossary/semantic tuning; no broad new benchmark. Combined affected gate initially
+failed worker setup because default model path was wrong;16worker tests thenPASS
+with explicit existing release-venv/OPUS path, no download. All failed receipts retained.
+
+Observed prerequisite after raw review: before-trace protected-only row wrote/cache
+` {mode}` as structurallyPASS despite lost prose. Preserve CSV/frozen policy, but
+invalidate old cache fingerprints on explicitly retried glossary packages using
+strategy suffix glossary-applicability-2 when entries exist (not DBschema change,
+unassisted strategy unchanged). Owner seam extends minimally to cache-context
+version in mt_ct2_pipeline plus cache regression; no validator/auto-cleaning.
+One final after-cache instrumentation adds the actual historical protected cache
+record as a disposable regression seed and proves miss/new correct prose/legacy
+record retained. Earlier after/final smoke receipts stay intermediate; rerun only
+affected gate and DEVsmoke after this prerequisite source change. No fixture/model/
+prompt tuning, no silver/approved memory imported.
+
 ## M1–M4 offline0đ đã thực thi — 2026-10-20
 
 Owner giao “Thực hiện đi”; DEV sole writer triển khai, Brain read-only audit/

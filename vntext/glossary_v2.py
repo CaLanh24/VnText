@@ -183,14 +183,17 @@ def mask_terms(source: str, row: Mapping[str, Any], glossary: Mapping[str, Any] 
         target = str(item.get("target") or "")
         if not term or not target or _tokens(term) or _tokens(target):
             continue
+        flags = 0 if str(item.get("case_policy") or "insensitive") == "sensitive" else re.IGNORECASE
+        pattern = re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", flags)
         exact = resolve_exact(term, {**row, "source_text": term}, glossary)
         if exact.get("status") == "conflict":
-            conflicts.append(term)
+            # Keep nonconflicting allocation/transport unchanged. Only an
+            # actual maskable occurrence makes this package conflict row-local.
+            if any(pattern.search(segment) for segment in _PROTECTED.split(masked)):
+                conflicts.append(term)
             continue
         token = f"ZZG{token_index}ZZG"
         token_index += 1
-        flags = 0 if str(item.get("case_policy") or "insensitive") == "sensitive" else re.IGNORECASE
-        pattern = re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", flags)
         chunks: list[str] = []
         last = 0
         for match in _PROTECTED.finditer(masked):

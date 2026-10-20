@@ -1,0 +1,1352 @@
+{
+  "schema_version": 1,
+  "outcome": "PASS bounded product glossary conflict applicability; not general semantic/model/product-wide acceptance",
+  "source_base": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+  "runtime_code_hashes": {
+    "vntext/glossary_v2.py": "a62c9a617dac3e669acf4905c353abaf4574b0eac474104ab5abc3b49a300532",
+    "vntext/mt_ct2_io.py": "03b2c4ce1b5e4268b51c0587109ae784188caa174e24ed3c3184a28fa2e094d0",
+    "vntext/mt_ct2_pipeline.py": "0b5dc48f8dd953c1bc85241a79479749ec7544b69a30749e86b571dc74af83cd",
+    "vntext/mt_strategies.py": "d3dde6d7144b288da83765357160aee6b845538f953447038e0202a629ed74c7",
+    "tests/tools/glossary_conflict_scope_check.py": "6ee515b21522ec350bfa747c0e93cd002fe5215dcaefea386c113d14614ca327"
+  },
+  "fixture": {
+    "rows": [
+      [
+        "outside",
+        "The red door is open."
+      ],
+      [
+        "inside",
+        "Please choose the mode."
+      ],
+      [
+        "protected",
+        "Please keep {mode}."
+      ],
+      [
+        "boundary",
+        "The model is ready."
+      ]
+    ],
+    "glossary": [
+      {
+        "source": "mode",
+        "target": "chế độ",
+        "priority": 5
+      },
+      {
+        "source": "mode",
+        "target": "kiểu",
+        "priority": 5
+      }
+    ],
+    "rights": "agent-generated synthetic for project",
+    "use": "seen technical regression, not benchmark/gold"
+  },
+  "model_tree_sha256": "964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4",
+  "product_model": "dekthedev/opus-mt-en-vi-ct2-int8",
+  "model_revision": "c22547827b876e8ee939d6a9363965e5c9f769e1",
+  "original_runs": {
+    "before-trace": {
+      "file_sha256": "e7644ebed7fa629d2090672774da40c55342c4143984dd257e76ebd4e5845778",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "code_hashes": {
+        "vntext/glossary_v2.py": "38cabe04c52f6495a57a6310ace7d8991fa963f663a2fd0b5cf52ae1e5f6599c",
+        "vntext/mt_ct2_io.py": "03b2c4ce1b5e4268b51c0587109ae784188caa174e24ed3c3184a28fa2e094d0",
+        "vntext/mt_ct2_pipeline.py": "5e935a23c7d11fc2627d6f04c45e5928c09540097f78b072371c0b5be90b56da",
+        "vntext/mt_strategies.py": "d3dde6d7144b288da83765357160aee6b845538f953447038e0202a629ed74c7",
+        "tests/tools/glossary_conflict_scope_check.py": "30ed939d0a933d684107b62fa4f79d5c6c276d3f075d89f026a8d8bc06b97248"
+      },
+      "arms": [
+        {
+          "name": "control",
+          "rows": [
+            {
+              "key": "outside",
+              "source": "The red door is open.",
+              "translation": "Cửa đỏ mở.",
+              "structural_reasons": []
+            },
+            {
+              "key": "inside",
+              "source": "Please choose the mode.",
+              "translation": "Xin hãy chọn chế độ.",
+              "structural_reasons": []
+            },
+            {
+              "key": "protected",
+              "source": "Please keep {mode}.",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "structural_reasons": []
+            },
+            {
+              "key": "boundary",
+              "source": "The model is ready.",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "structural_reasons": []
+            }
+          ],
+          "schema": [
+            "key",
+            "source_text",
+            "translation",
+            "context",
+            "file_path",
+            "object_info",
+            "import_method",
+            "safety",
+            "backend",
+            "byte_limit",
+            "patch_note"
+          ],
+          "source_order_schema_unchanged": true,
+          "counts": {
+            "translated": 4,
+            "blocked": 0,
+            "review_only": 0,
+            "pending": 0,
+            "complete": true
+          },
+          "review_ledger": [],
+          "blocker_inventory": {
+            "schema_version": 1,
+            "source": "ct2",
+            "rows": [],
+            "counts": {},
+            "blocked_rows": 0,
+            "complete": true
+          },
+          "cache": {
+            "kind": "validated_translation_cache",
+            "status": "enabled",
+            "schema_version": 1,
+            "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\glossary-6b6cae4eb228\\canonica-55b44112b627\\control\\.mt\\v2\\translation_cache.sqlite3",
+            "lookups": 4,
+            "hits": 0,
+            "misses": 4,
+            "writes": 4,
+            "invalid_writes": 0,
+            "entries": 4
+          },
+          "cache_rows": [
+            {
+              "cache_key": "645b7344aa8b01076d9827d50abdb6327adeccb1f3fed48bb31268c3967c191a",
+              "translation": "Cửa đỏ mở.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "a90d67e05b17f6b2857c41941efe2a25c916454b0bbabb418418c7384f9ab38f",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "b7b36a2fce0cbc01bae1b6d93d9e8bf6eb4b87a25ea3b40dd89297d31836e0e9",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "c75fb5c4c6763808947539130ab357c4e225f3ebc50689c9955ce8159637fde6",
+              "translation": "Xin hãy chọn chế độ.",
+              "validation_status": "PASS"
+            }
+          ],
+          "legacy_cache_seed": null
+        },
+        {
+          "name": "conflict",
+          "rows": [
+            {
+              "key": "outside",
+              "source": "The red door is open.",
+              "translation": "",
+              "structural_reasons": null
+            },
+            {
+              "key": "inside",
+              "source": "Please choose the mode.",
+              "translation": "",
+              "structural_reasons": null
+            },
+            {
+              "key": "protected",
+              "source": "Please keep {mode}.",
+              "translation": " {mode}",
+              "structural_reasons": []
+            },
+            {
+              "key": "boundary",
+              "source": "The model is ready.",
+              "translation": "",
+              "structural_reasons": null
+            }
+          ],
+          "schema": [
+            "key",
+            "source_text",
+            "translation",
+            "context",
+            "file_path",
+            "object_info",
+            "import_method",
+            "safety",
+            "backend",
+            "byte_limit",
+            "patch_note"
+          ],
+          "source_order_schema_unchanged": true,
+          "counts": {
+            "translated": 1,
+            "blocked": 3,
+            "review_only": 3,
+            "pending": 3,
+            "complete": false
+          },
+          "review_ledger": [
+            {
+              "key": "outside",
+              "source_text": "The red door is open.",
+              "translation": "",
+              "context": "outside",
+              "file_path": "synthetic/glossary-conflict.txt",
+              "object_info": "",
+              "import_method": "plain_text_line",
+              "safety": "safe",
+              "backend": "synthetic",
+              "byte_limit": "",
+              "patch_note": "MT blocked: Glossary V2 conflict — review required; attempt="
+            },
+            {
+              "key": "inside",
+              "source_text": "Please choose the mode.",
+              "translation": "",
+              "context": "inside",
+              "file_path": "synthetic/glossary-conflict.txt",
+              "object_info": "",
+              "import_method": "plain_text_line",
+              "safety": "safe",
+              "backend": "synthetic",
+              "byte_limit": "",
+              "patch_note": "MT blocked: Glossary V2 conflict — review required; attempt="
+            },
+            {
+              "key": "boundary",
+              "source_text": "The model is ready.",
+              "translation": "",
+              "context": "boundary",
+              "file_path": "synthetic/glossary-conflict.txt",
+              "object_info": "",
+              "import_method": "plain_text_line",
+              "safety": "safe",
+              "backend": "synthetic",
+              "byte_limit": "",
+              "patch_note": "MT blocked: Glossary V2 conflict — review required; attempt="
+            }
+          ],
+          "blocker_inventory": {
+            "schema_version": 1,
+            "source": "ct2",
+            "rows": [
+              {
+                "key": "outside",
+                "source": "The red door is open.",
+                "context": "outside",
+                "file_path": "synthetic/glossary-conflict.txt",
+                "import_method": "plain_text_line",
+                "classification": {
+                  "action": "translate",
+                  "reason": "player-visible text",
+                  "classifier_v2": {
+                    "decision": "TRANSLATE",
+                    "ledger": "translation",
+                    "reason_code": "PLAYER_VISIBLE_COPY",
+                    "reason": "player-visible text",
+                    "legacy_action": "translate",
+                    "legacy_reason": "player-visible text",
+                    "confidence": 0.85,
+                    "evidence": {
+                      "engine_family": "unknown",
+                      "file_path": "synthetic/glossary-conflict.txt",
+                      "context": "outside",
+                      "object_info": "",
+                      "import_method": "plain_text_line",
+                      "backend": "synthetic",
+                      "review_only": false,
+                      "raw_route": false,
+                      "locator_present": false,
+                      "locator_fields": [],
+                      "patch_proof_present": false,
+                      "patch_proof_complete": false,
+                      "source_shape": {
+                        "length": 21,
+                        "line_count": 1,
+                        "word_count": 5,
+                        "has_placeholder": false,
+                        "has_tag": false,
+                        "has_escape": false,
+                        "has_randpick": false,
+                        "has_markup_or_control": false
+                      }
+                    },
+                    "policy_version": "local-translation-v2-classifier-3",
+                    "policy_hash": "341226b66145804648058bf9a89286c9dcd9448ee02a1a7c6ec4bafdbb88ab8d"
+                  }
+                },
+                "source_features": {
+                  "word_count": 5,
+                  "has_tags": false,
+                  "placeholder_count": 0,
+                  "randpick_count": 0,
+                  "newline_count": 0,
+                  "special_symbols": [
+                    "."
+                  ]
+                },
+                "initial": {
+                  "strategy": "batch",
+                  "raw_output": "",
+                  "validation_reasons": [
+                    "Glossary V2 conflict — review required"
+                  ]
+                },
+                "route": "glossary_v2_conflict",
+                "candidate": "",
+                "full_sentence_raw": "",
+                "attempts": [],
+                "final_strategy": "glossary_v2_conflict",
+                "final_reasons": [
+                  "Glossary V2 conflict — review required"
+                ],
+                "groups": [
+                  "short_sentence",
+                  "retry_exhausted"
+                ]
+              },
+              {
+                "key": "inside",
+                "source": "Please choose the mode.",
+                "context": "inside",
+                "file_path": "synthetic/glossary-conflict.txt",
+                "import_method": "plain_text_line",
+                "classification": {
+                  "action": "translate",
+                  "reason": "player-visible text",
+                  "classifier_v2": {
+                    "decision": "TRANSLATE",
+                    "ledger": "translation",
+                    "reason_code": "PLAYER_VISIBLE_COPY",
+                    "reason": "player-visible text",
+                    "legacy_action": "translate",
+                    "legacy_reason": "player-visible text",
+                    "confidence": 0.85,
+                    "evidence": {
+                      "engine_family": "unknown",
+                      "file_path": "synthetic/glossary-conflict.txt",
+                      "context": "inside",
+                      "object_info": "",
+                      "import_method": "plain_text_line",
+                      "backend": "synthetic",
+                      "review_only": false,
+                      "raw_route": false,
+                      "locator_present": false,
+                      "locator_fields": [],
+                      "patch_proof_present": false,
+                      "patch_proof_complete": false,
+                      "source_shape": {
+                        "length": 23,
+                        "line_count": 1,
+                        "word_count": 4,
+                        "has_placeholder": false,
+                        "has_tag": false,
+                        "has_escape": false,
+                        "has_randpick": false,
+                        "has_markup_or_control": false
+                      }
+                    },
+                    "policy_version": "local-translation-v2-classifier-3",
+                    "policy_hash": "341226b66145804648058bf9a89286c9dcd9448ee02a1a7c6ec4bafdbb88ab8d"
+                  }
+                },
+                "source_features": {
+                  "word_count": 4,
+                  "has_tags": false,
+                  "placeholder_count": 0,
+                  "randpick_count": 0,
+                  "newline_count": 0,
+                  "special_symbols": [
+                    "."
+                  ]
+                },
+                "initial": {
+                  "strategy": "batch",
+                  "raw_output": "",
+                  "validation_reasons": [
+                    "Glossary V2 conflict — review required"
+                  ]
+                },
+                "route": "glossary_v2_conflict",
+                "candidate": "",
+                "full_sentence_raw": "",
+                "attempts": [],
+                "final_strategy": "glossary_v2_conflict",
+                "final_reasons": [
+                  "Glossary V2 conflict — review required"
+                ],
+                "groups": [
+                  "short_sentence",
+                  "retry_exhausted"
+                ]
+              },
+              {
+                "key": "boundary",
+                "source": "The model is ready.",
+                "context": "boundary",
+                "file_path": "synthetic/glossary-conflict.txt",
+                "import_method": "plain_text_line",
+                "classification": {
+                  "action": "translate",
+                  "reason": "player-visible text",
+                  "classifier_v2": {
+                    "decision": "TRANSLATE",
+                    "ledger": "translation",
+                    "reason_code": "PLAYER_VISIBLE_COPY",
+                    "reason": "player-visible text",
+                    "legacy_action": "translate",
+                    "legacy_reason": "player-visible text",
+                    "confidence": 0.85,
+                    "evidence": {
+                      "engine_family": "unknown",
+                      "file_path": "synthetic/glossary-conflict.txt",
+                      "context": "boundary",
+                      "object_info": "",
+                      "import_method": "plain_text_line",
+                      "backend": "synthetic",
+                      "review_only": false,
+                      "raw_route": false,
+                      "locator_present": false,
+                      "locator_fields": [],
+                      "patch_proof_present": false,
+                      "patch_proof_complete": false,
+                      "source_shape": {
+                        "length": 19,
+                        "line_count": 1,
+                        "word_count": 4,
+                        "has_placeholder": false,
+                        "has_tag": false,
+                        "has_escape": false,
+                        "has_randpick": false,
+                        "has_markup_or_control": false
+                      }
+                    },
+                    "policy_version": "local-translation-v2-classifier-3",
+                    "policy_hash": "341226b66145804648058bf9a89286c9dcd9448ee02a1a7c6ec4bafdbb88ab8d"
+                  }
+                },
+                "source_features": {
+                  "word_count": 4,
+                  "has_tags": false,
+                  "placeholder_count": 0,
+                  "randpick_count": 0,
+                  "newline_count": 0,
+                  "special_symbols": [
+                    "."
+                  ]
+                },
+                "initial": {
+                  "strategy": "batch",
+                  "raw_output": "",
+                  "validation_reasons": [
+                    "Glossary V2 conflict — review required"
+                  ]
+                },
+                "route": "glossary_v2_conflict",
+                "candidate": "",
+                "full_sentence_raw": "",
+                "attempts": [],
+                "final_strategy": "glossary_v2_conflict",
+                "final_reasons": [
+                  "Glossary V2 conflict — review required"
+                ],
+                "groups": [
+                  "short_sentence",
+                  "retry_exhausted"
+                ]
+              }
+            ],
+            "counts": {
+              "retry_exhausted": 3,
+              "short_sentence": 3
+            },
+            "blocked_rows": 3,
+            "complete": false
+          },
+          "cache": {
+            "kind": "validated_translation_cache",
+            "status": "enabled",
+            "schema_version": 1,
+            "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\glossary-6b6cae4eb228\\canonica-55b44112b627\\conflict\\.mt\\v2\\translation_cache.sqlite3",
+            "lookups": 4,
+            "hits": 0,
+            "misses": 4,
+            "writes": 1,
+            "invalid_writes": 0,
+            "entries": 1
+          },
+          "cache_rows": [
+            {
+              "cache_key": "388cc197e33b6224e96334f8e2824712fcbfd81c642ebaf95f8f7d85dc268fb0",
+              "translation": " {mode}",
+              "validation_status": "PASS"
+            }
+          ],
+          "legacy_cache_seed": null
+        }
+      ],
+      "model_unchanged": true,
+      "peak_working_set_bytes": 203599872
+    },
+    "after-cache": {
+      "file_sha256": "486e5a743c33d101837b9f53ba1aaea1cd225e152aa3f5c2fc3f04b7c6d4f16c",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "code_hashes": {
+        "vntext/glossary_v2.py": "a62c9a617dac3e669acf4905c353abaf4574b0eac474104ab5abc3b49a300532",
+        "vntext/mt_ct2_io.py": "03b2c4ce1b5e4268b51c0587109ae784188caa174e24ed3c3184a28fa2e094d0",
+        "vntext/mt_ct2_pipeline.py": "0b5dc48f8dd953c1bc85241a79479749ec7544b69a30749e86b571dc74af83cd",
+        "vntext/mt_strategies.py": "d3dde6d7144b288da83765357160aee6b845538f953447038e0202a629ed74c7",
+        "tests/tools/glossary_conflict_scope_check.py": "6ee515b21522ec350bfa747c0e93cd002fe5215dcaefea386c113d14614ca327"
+      },
+      "arms": [
+        {
+          "name": "control",
+          "rows": [
+            {
+              "key": "outside",
+              "source": "The red door is open.",
+              "translation": "Cửa đỏ mở.",
+              "structural_reasons": []
+            },
+            {
+              "key": "inside",
+              "source": "Please choose the mode.",
+              "translation": "Xin hãy chọn chế độ.",
+              "structural_reasons": []
+            },
+            {
+              "key": "protected",
+              "source": "Please keep {mode}.",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "structural_reasons": []
+            },
+            {
+              "key": "boundary",
+              "source": "The model is ready.",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "structural_reasons": []
+            }
+          ],
+          "schema": [
+            "key",
+            "source_text",
+            "translation",
+            "context",
+            "file_path",
+            "object_info",
+            "import_method",
+            "safety",
+            "backend",
+            "byte_limit",
+            "patch_note"
+          ],
+          "source_order_schema_unchanged": true,
+          "counts": {
+            "translated": 4,
+            "blocked": 0,
+            "review_only": 0,
+            "pending": 0,
+            "complete": true
+          },
+          "review_ledger": [],
+          "blocker_inventory": {
+            "schema_version": 1,
+            "source": "ct2",
+            "rows": [],
+            "counts": {},
+            "blocked_rows": 0,
+            "complete": true
+          },
+          "cache": {
+            "kind": "validated_translation_cache",
+            "status": "enabled",
+            "schema_version": 1,
+            "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\glossary-7725d09ef875\\canonica-955e982d498e\\control\\.mt\\v2\\translation_cache.sqlite3",
+            "lookups": 4,
+            "hits": 0,
+            "misses": 4,
+            "writes": 4,
+            "invalid_writes": 0,
+            "entries": 4
+          },
+          "cache_rows": [
+            {
+              "cache_key": "645b7344aa8b01076d9827d50abdb6327adeccb1f3fed48bb31268c3967c191a",
+              "translation": "Cửa đỏ mở.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "a90d67e05b17f6b2857c41941efe2a25c916454b0bbabb418418c7384f9ab38f",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "b7b36a2fce0cbc01bae1b6d93d9e8bf6eb4b87a25ea3b40dd89297d31836e0e9",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "c75fb5c4c6763808947539130ab357c4e225f3ebc50689c9955ce8159637fde6",
+              "translation": "Xin hãy chọn chế độ.",
+              "validation_status": "PASS"
+            }
+          ],
+          "legacy_cache_seed": null
+        },
+        {
+          "name": "conflict",
+          "rows": [
+            {
+              "key": "outside",
+              "source": "The red door is open.",
+              "translation": "Cửa đỏ mở.",
+              "structural_reasons": []
+            },
+            {
+              "key": "inside",
+              "source": "Please choose the mode.",
+              "translation": "",
+              "structural_reasons": null
+            },
+            {
+              "key": "protected",
+              "source": "Please keep {mode}.",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "structural_reasons": []
+            },
+            {
+              "key": "boundary",
+              "source": "The model is ready.",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "structural_reasons": []
+            }
+          ],
+          "schema": [
+            "key",
+            "source_text",
+            "translation",
+            "context",
+            "file_path",
+            "object_info",
+            "import_method",
+            "safety",
+            "backend",
+            "byte_limit",
+            "patch_note"
+          ],
+          "source_order_schema_unchanged": true,
+          "counts": {
+            "translated": 3,
+            "blocked": 1,
+            "review_only": 1,
+            "pending": 1,
+            "complete": false
+          },
+          "review_ledger": [
+            {
+              "key": "inside",
+              "source_text": "Please choose the mode.",
+              "translation": "",
+              "context": "inside",
+              "file_path": "synthetic/glossary-conflict.txt",
+              "object_info": "",
+              "import_method": "plain_text_line",
+              "safety": "safe",
+              "backend": "synthetic",
+              "byte_limit": "",
+              "patch_note": "MT blocked: Glossary V2 conflict — review required; attempt="
+            }
+          ],
+          "blocker_inventory": {
+            "schema_version": 1,
+            "source": "ct2",
+            "rows": [
+              {
+                "key": "inside",
+                "source": "Please choose the mode.",
+                "context": "inside",
+                "file_path": "synthetic/glossary-conflict.txt",
+                "import_method": "plain_text_line",
+                "classification": {
+                  "action": "translate",
+                  "reason": "player-visible text",
+                  "classifier_v2": {
+                    "decision": "TRANSLATE",
+                    "ledger": "translation",
+                    "reason_code": "PLAYER_VISIBLE_COPY",
+                    "reason": "player-visible text",
+                    "legacy_action": "translate",
+                    "legacy_reason": "player-visible text",
+                    "confidence": 0.85,
+                    "evidence": {
+                      "engine_family": "unknown",
+                      "file_path": "synthetic/glossary-conflict.txt",
+                      "context": "inside",
+                      "object_info": "",
+                      "import_method": "plain_text_line",
+                      "backend": "synthetic",
+                      "review_only": false,
+                      "raw_route": false,
+                      "locator_present": false,
+                      "locator_fields": [],
+                      "patch_proof_present": false,
+                      "patch_proof_complete": false,
+                      "source_shape": {
+                        "length": 23,
+                        "line_count": 1,
+                        "word_count": 4,
+                        "has_placeholder": false,
+                        "has_tag": false,
+                        "has_escape": false,
+                        "has_randpick": false,
+                        "has_markup_or_control": false
+                      }
+                    },
+                    "policy_version": "local-translation-v2-classifier-3",
+                    "policy_hash": "341226b66145804648058bf9a89286c9dcd9448ee02a1a7c6ec4bafdbb88ab8d"
+                  }
+                },
+                "source_features": {
+                  "word_count": 4,
+                  "has_tags": false,
+                  "placeholder_count": 0,
+                  "randpick_count": 0,
+                  "newline_count": 0,
+                  "special_symbols": [
+                    "."
+                  ]
+                },
+                "initial": {
+                  "strategy": "batch",
+                  "raw_output": "",
+                  "validation_reasons": [
+                    "Glossary V2 conflict — review required"
+                  ]
+                },
+                "route": "glossary_v2_conflict",
+                "candidate": "",
+                "full_sentence_raw": "",
+                "attempts": [],
+                "final_strategy": "glossary_v2_conflict",
+                "final_reasons": [
+                  "Glossary V2 conflict — review required"
+                ],
+                "groups": [
+                  "short_sentence",
+                  "retry_exhausted"
+                ]
+              }
+            ],
+            "counts": {
+              "retry_exhausted": 1,
+              "short_sentence": 1
+            },
+            "blocked_rows": 1,
+            "complete": false
+          },
+          "cache": {
+            "kind": "validated_translation_cache",
+            "status": "enabled",
+            "schema_version": 1,
+            "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\glossary-7725d09ef875\\canonica-955e982d498e\\conflict\\.mt\\v2\\translation_cache.sqlite3",
+            "lookups": 4,
+            "hits": 0,
+            "misses": 4,
+            "writes": 3,
+            "invalid_writes": 0,
+            "entries": 4
+          },
+          "cache_rows": [
+            {
+              "cache_key": "0242f7b23813c2b13d9a0956ffeef48f498f9c36dd0b3ba91c1d50750347664d",
+              "translation": "Cửa đỏ mở.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "2534efb944d6d6d64c88f68c80daded080a3f8396e9c3050dd8a00fb8361f67f",
+              "translation": "Người mẫu đã sẵn sàng.",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "388cc197e33b6224e96334f8e2824712fcbfd81c642ebaf95f8f7d85dc268fb0",
+              "translation": " {mode}",
+              "validation_status": "PASS"
+            },
+            {
+              "cache_key": "c8e8062cab62f8e2b8d682ebb0f05b37c90863b4abe1a60772fcc3e391580a86",
+              "translation": "Xin hãy giữ lại {mode}.",
+              "validation_status": "PASS"
+            }
+          ],
+          "legacy_cache_seed": {
+            "key": "388cc197e33b6224e96334f8e2824712fcbfd81c642ebaf95f8f7d85dc268fb0",
+            "translation": " {mode}"
+          }
+        }
+      ],
+      "model_unchanged": true,
+      "peak_working_set_bytes": 203689984
+    }
+  },
+  "gates": {
+    "red": {
+      "original_receipt_sha256": "069aa2ac9b08c5c6c097f59cc44c7a6277573aef4b26716d6f20eb02666b26cd",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_glossary_context_v2"
+      ],
+      "exit_code": 1,
+      "child_exit_code": 1,
+      "test_summary": {
+        "status": "FAIL",
+        "terminal_line": "FAILED (failures=5)",
+        "tests": 10,
+        "failures": 5,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [
+          {
+            "kind": "FAIL",
+            "test": "test_batch_conflict_is_row_local_and_true_conflict_stays_closed (tests.unit.test_glossary_context_v2.GlossaryContextV2Tests.test_batch_conflict_is_row_local_and_true_conflict_stays_closed)",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\unit\\test_glossary_context_v2.py\", line 75, in test_batch_conflict_is_row_local_and_true_conflict_stays_closed\r\n    self.assertEqual(conflicts,{'inside','exact'})\r\nAssertionError: Items in the first set but not the second:\r\n'outside'"
+          },
+          {
+            "kind": "FAIL",
+            "test": "test_conflict_applicability_respects_scope_and_case (tests.unit.test_glossary_context_v2.GlossaryContextV2Tests.test_conflict_applicability_respects_scope_and_case)",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\unit\\test_glossary_context_v2.py\", line 61, in test_conflict_applicability_respects_scope_and_case\r\n    self.assertEqual(mask_terms('Use MODE.',{'context':'menu'},glossary)[2],[])\r\nAssertionError: Lists differ: ['mode', 'mode'] != []\r\n\r\nFirst list contains 2 additional elements.\r\nFirst extra element 0:\r\n'mode'\r\n\r\n- ['mode', 'mode']\r\n+ []"
+          },
+          {
+            "kind": "FAIL",
+            "test": "test_conflicting_term_does_not_block_unrelated_or_protected_text (tests.unit.test_glossary_context_v2.GlossaryContextV2Tests.test_conflicting_term_does_not_block_unrelated_or_protected_text) (source='The red door is open.')",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\unit\\test_glossary_context_v2.py\", line 56, in test_conflicting_term_does_not_block_unrelated_or_protected_text\r\n    self.assertEqual((masked,restore,conflicts),(source,{},[]))\r\nAssertionError: Tuples differ: ('The red door is open.', {}, ['mode', 'mode']) != ('The red door is open.', {}, [])\r\n\r\nFirst differing element 2:\r\n['mode', 'mode']\r\n[]\r\n\r\n- ('The red door is open.', {}, ['mode', 'mode'])\r\n?                                --------------\r\n\r\n+ ('The red door is open.', {}, [])"
+          },
+          {
+            "kind": "FAIL",
+            "test": "test_conflicting_term_does_not_block_unrelated_or_protected_text (tests.unit.test_glossary_context_v2.GlossaryContextV2Tests.test_conflicting_term_does_not_block_unrelated_or_protected_text) (source='The model is ready.')",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\unit\\test_glossary_context_v2.py\", line 56, in test_conflicting_term_does_not_block_unrelated_or_protected_text\r\n    self.assertEqual((masked,restore,conflicts),(source,{},[]))\r\nAssertionError: Tuples differ: ('The model is ready.', {}, ['mode', 'mode']) != ('The model is ready.', {}, [])\r\n\r\nFirst differing element 2:\r\n['mode', 'mode']\r\n[]\r\n\r\n- ('The model is ready.', {}, ['mode', 'mode'])\r\n?                              --------------\r\n\r\n+ ('The model is ready.', {}, [])"
+          },
+          {
+            "kind": "FAIL",
+            "test": "test_conflicting_term_does_not_block_unrelated_or_protected_text (tests.unit.test_glossary_context_v2.GlossaryContextV2Tests.test_conflicting_term_does_not_block_unrelated_or_protected_text) (source='Keep {mode} <mode value=\"mode\">safe</mode>\\\\n.')",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\sourc\n... traceback excerpt ...\nsafe</mode>\\\\n.', {}, ['mode', 'mode']) != ('Keep {mode} <mode value=\"mode\">safe</mode>\\\\n.', {}, [])\r\n\r\nFirst differing element 2:\r\n['mode', 'mode']\r\n[]\r\n\r\n- ('Keep {mode} <mode value=\"mode\">safe</mode>\\\\n.', {}, ['mode', 'mode'])\r\n?                                                         --------------\r\n\r\n+ ('Keep {mode} <mode value=\"mode\">safe</mode>\\\\n.', {}, [])\r\n\r\n----------------------------------------------------------------------\r\nRan 10 tests in 0.084s\r\n\r\nFAILED (failures=5)"
+          }
+        ],
+        "input_bytes": 4552,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "before-wrapper": {
+      "original_receipt_sha256": "9c940ac7d662be5b9a37894d87e0c03d3e4c4bb92d5c5ef0f269c923220b0380",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "before"
+      ],
+      "exit_code": 1,
+      "child_exit_code": 1,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 789,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "before-final-wrapper": {
+      "original_receipt_sha256": "b0fc365bbf852794d609d4acb2785df7dcae485b24a98caa737db2036a750b6c",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "before"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 1,
+        "skip_reasons": [],
+        "warning_records": [
+          {
+            "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+            "category": "UserWarning",
+            "message": "Recommended: pip install sacremoses."
+          }
+        ],
+        "failure_records": [],
+        "input_bytes": 539,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "before-trace-wrapper": {
+      "original_receipt_sha256": "ced520a2850a5a39b5871391bc496fcb39db954f8b50453bd91fd446ba67d2e0",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "before-trace"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 1,
+        "skip_reasons": [],
+        "warning_records": [
+          {
+            "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+            "category": "UserWarning",
+            "message": "Recommended: pip install sacremoses."
+          }
+        ],
+        "failure_records": [],
+        "input_bytes": 545,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "green": {
+      "original_receipt_sha256": "544c1301a5c5dedaff125732e07769d0e70b144a1e128cf54b3df16af2b0dfbd",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_glossary_context_v2",
+        "tests.unit.test_user_glossary",
+        "tests.unit.test_translation_cache",
+        "tests.unit.test_mt_structural",
+        "tests.unit.test_mt_ct2_status",
+        "tests.unit.test_worker_translate",
+        "tests.unit.test_mt_patch_gate_write"
+      ],
+      "exit_code": 1,
+      "child_exit_code": 1,
+      "test_summary": {
+        "status": "FAIL",
+        "terminal_line": "FAILED (errors=1)",
+        "tests": 51,
+        "failures": 0,
+        "errors": 1,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [
+          {
+            "kind": "ERROR",
+            "test": "setUpClass (tests.unit.test_worker_translate.WorkerTranslateTests)",
+            "details": "----------------------------------------------------------------------\r\nTraceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\unit\\test_worker_translate.py\", line 125, in setUpClass\r\n    raise RuntimeError(f\"pre-provisioned OPUS-MT INT8 model is missing: {MODEL_DIR}\")\r\nRuntimeError: pre-provisioned OPUS-MT INT8 model is missing: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\DEV_RUN\\cache\\models\\opus-mt-en-vi-int8\r\n\r\n----------------------------------------------------------------------\r\nRan 51 tests in 0.513s\r\n\r\nFAILED (errors=1)"
+          }
+        ],
+        "input_bytes": 768,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "worker": {
+      "original_receipt_sha256": "cd2cabd5c311d3425c80f019de2241daa019051b53c433aefc0ca1a2749c8bec",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_worker_translate"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 121,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "affected-final": {
+      "original_receipt_sha256": "4c1e0650e9ffd202c4853286acf6993a3744fc0c7012b8eb0d61134a6fcb99ad",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_glossary_context_v2",
+        "tests.unit.test_user_glossary",
+        "tests.unit.test_translation_cache",
+        "tests.unit.test_mt_structural",
+        "tests.unit.test_mt_ct2_status",
+        "tests.unit.test_mt_patch_gate_write"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 51,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 155,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "after-wrapper": {
+      "original_receipt_sha256": "0814dd296388e45a5e4b0ce5f31a3e57c2349f70743ccf6fae24a6df7b71f436",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "after"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 1,
+        "skip_reasons": [],
+        "warning_records": [
+          {
+            "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+            "category": "UserWarning",
+            "message": "Recommended: pip install sacremoses."
+          }
+        ],
+        "failure_records": [],
+        "input_bytes": 538,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "affected-source-final": {
+      "original_receipt_sha256": "d5fca9a53296b3f41a6ab0259baf96b7d3ad64ede2ba8de2767a147aa4b79a6b",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_glossary_context_v2",
+        "tests.unit.test_user_glossary",
+        "tests.unit.test_translation_cache",
+        "tests.unit.test_mt_structural",
+        "tests.unit.test_mt_ct2_status",
+        "tests.unit.test_mt_patch_gate_write"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 52,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 156,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "after-source-final-wrapper": {
+      "original_receipt_sha256": "2582b56dc94fd6ebfff2d43380d6a6c7620cd9e13ba227b53c2f2452bd94603a",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "after-final"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 1,
+        "skip_reasons": [],
+        "warning_records": [
+          {
+            "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+            "category": "UserWarning",
+            "message": "Recommended: pip install sacremoses."
+          }
+        ],
+        "failure_records": [],
+        "input_bytes": 544,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "dev-wrapper": {
+      "original_receipt_sha256": "8b8266f515fecf3f117742abc35c1b321cde2238baf22fef84a42d2ab9afb265",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "release/dev_bootstrap.py",
+        "--action",
+        "smoke",
+        "--python",
+        ".dev-env/release-venv/Scripts/python.exe",
+        "--dotnet",
+        "C:/Program Files/dotnet/dotnet.exe",
+        "--model",
+        ".dev-env/cache/models/opus-mt-en-vi-int8"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 28162,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "historical/intermediate; retain failure and exact source qualification"
+    },
+    "cache-final-gate": {
+      "original_receipt_sha256": "5122dbe68c96be85b4bea164f706c8444375252b6b6705b44fcdd9f3a7973ff3",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "unittest",
+        "tests.unit.test_glossary_context_v2",
+        "tests.unit.test_user_glossary",
+        "tests.unit.test_translation_cache",
+        "tests.unit.test_mt_structural",
+        "tests.unit.test_mt_ct2_status",
+        "tests.unit.test_mt_patch_gate_write"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 53,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 157,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "final source"
+    },
+    "after-cache-wrapper": {
+      "original_receipt_sha256": "0915f49df2365c9d1caf25ac95c1f09080ed6982796f9f1483ef870053b458ef",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "-m",
+        "tests.tools.glossary_conflict_scope_check",
+        "after-cache"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 1,
+        "skip_reasons": [],
+        "warning_records": [
+          {
+            "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+            "category": "UserWarning",
+            "message": "Recommended: pip install sacremoses."
+          }
+        ],
+        "failure_records": [],
+        "input_bytes": 544,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "final source"
+    },
+    "dev-final-wrapper": {
+      "original_receipt_sha256": "81b342bd3ed3187f17ba381be0a8670b5b4cb50c4ab267b2e7b021766284c97f",
+      "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+      "command": [
+        ".dev-env/release-venv/Scripts/python.exe",
+        "-B",
+        "release/dev_bootstrap.py",
+        "--action",
+        "smoke",
+        "--python",
+        ".dev-env/release-venv/Scripts/python.exe",
+        "--dotnet",
+        "C:/Program Files/dotnet/dotnet.exe",
+        "--model",
+        ".dev-env/cache/models/opus-mt-en-vi-int8"
+      ],
+      "exit_code": 0,
+      "child_exit_code": 0,
+      "test_summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 32269,
+        "input_truncated": false
+      },
+      "cleanup": "PASS",
+      "stage": "final source"
+    }
+  },
+  "training": "DEFERRED",
+  "product_opus": "UNCHANGED",
+  "money_spent": 0,
+  "new_children": 0,
+  "limits": [
+    "Existing protected grammar only; no parser expansion",
+    "No automatic overwrite of frozen CSV or removal of legacy cache",
+    "The model is ready retains ambiguous model->fashion-model sense in control and fixed arm",
+    "No silver import, Hy/prompt/benchmark campaign, download, training, cloud or Release",
+    "Worker patch smoke proves bounded payload read-back only; missing installer is not installation acceptance. Build warning count not independently parsed; build/smoke wrapper exit0."
+  ],
+  "build_identity": {
+    "source_sha": "3710bd9e52a20122920d5780c4fa4c2081aee832",
+    "configuration": "Debug",
+    "source_diff_sha256": "0906ddd787093cfe4857dd7b0028eb35b0072c1ca3631ccdffc21e57825202e3",
+    "dirty": true,
+    "git_status": " M AI_STATE.md\n M docs/TRANSLATION_QUALITY_PLAN.md\n M tests/unit/test_glossary_context_v2.py\n M tests/unit/test_translation_cache.py\n M vntext/glossary_v2.py\n M vntext/mt_ct2_pipeline.py\n?? tests/tools/glossary_conflict_scope_check.py\n",
+    "runtime_root": "C:\\Program Files\\dotnet",
+    "executable": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\DEV_RUN\\bootstrap-build\\VNText.Studio.App.exe",
+    "sha256": "494ec1388c88c289889a4fc068239873cec9f25ee05e600314cb657e8061b47c",
+    "assembly_sha256": "4cf270d5acfd2040e6ec48c9e1523d2a7442759b26eee0cb105a6763278fa44c",
+    "worker_python": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Scripts\\python.exe",
+    "model": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\cache\\models\\opus-mt-en-vi-int8"
+  },
+  "smoke": {
+    "ok": true,
+    "failed_step": null,
+    "cleanup_error": null,
+    "report_sha256": "12d57af96c6fbc2d77cff08c889bbc9158663e5bc264cf0612b0542667765aad",
+    "patch_notes": [
+      "Payload đã qua read-back tại C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\tests\\golden\\_work\\smoke_m3_24c5b80604fa44289071f8f54f5ae0f2\\package\\Patch_Viet_Hoa, nhưng thiếu installer. Chưa sẵn sàng cài/gỡ; cần VNTextPatchInstaller.exe phù hợp trước khi phân phối."
+    ]
+  },
+  "actual_run_warnings": [
+    "transformers no-PyTorch informational (CT2 runs, no Torch requirement added)",
+    "Optional tokenizer sacremoses UserWarning, dependency not installed"
+  ],
+  "dev_executable_count": 1,
+  "old_intermediate_apphost_cleanup": {
+    "purpose": "Required one current DEV executable; exact obsolete MSBuild apphost only, no recursive deletion",
+    "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\DEV_RUN\\obj\\VNText.Studio.App\\bin\\Release\\net8.0-windows\\win-x64\\VNText.Studio.App.exe",
+    "verified_root": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\DEV_RUN\\obj",
+    "bytes": 521728,
+    "sha256": "ECE1A5CE17A12C1B810B5937816F53F1EAEF5EA80C629BDEFDF8A74525BC0CAB",
+    "last_write": "2026-10-19T04:10:37.6519419Z",
+    "deps_sha256": "858DF4BE7D4A41AA5E7EFF0B557850D085739E60DD47A214BC7C8008377D4E65",
+    "runtimeconfig_sha256": "73B37384BB001E78DB2014D328750EB2990393712FD63CD00C0F41965B3DBE96",
+    "active_app_processes": 0,
+    "current_build": "DEV_RUN/bootstrap-build/VNText.Studio.App.exe"
+  }
+}

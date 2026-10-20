@@ -40,6 +40,54 @@ class GlossaryContextV2Tests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    def _conflicting_modes(self, **extra):
+        self._write_glossary([
+            dict(source='mode',target='chế độ',priority=5,**extra),
+            dict(source='mode',target='kiểu',priority=5,**extra),
+        ])
+        return load_glossary_v2(self.root)
+
+    def test_conflicting_term_does_not_block_unrelated_or_protected_text(self):
+        glossary=self._conflicting_modes()
+        for source in ['The red door is open.','The model is ready.',
+                       'Keep {mode} <mode value="mode">safe</mode>\\n.']:
+            with self.subTest(source=source):
+                masked,restore,conflicts=mask_terms(source,{},glossary)
+                self.assertEqual((masked,restore,conflicts),(source,{},[]))
+
+    def test_conflict_applicability_respects_scope_and_case(self):
+        glossary=self._conflicting_modes(scope='menu',case_policy='sensitive')
+        self.assertEqual(mask_terms('Use mode.',{'context':'dialogue'},glossary)[2],[])
+        self.assertEqual(mask_terms('Use MODE.',{'context':'menu'},glossary)[2],[])
+        self.assertTrue(mask_terms('Use mode.',{'context':'menu'},glossary)[2])
+
+    def test_absent_nonconflicting_entry_keeps_original_sentinel_ordinal(self):
+        self._write_glossary([
+            dict(source='absent',target='vắng mặt',priority=10),
+            dict(source='cache',target='bộ nhớ đệm',priority=1),
+        ])
+        masked,restore,conflicts=mask_terms('Use cache.',{},load_glossary_v2(self.root))
+        self.assertEqual(masked,'Use ZZG900001ZZG.')
+        self.assertEqual(restore,{'ZZG900001ZZG':'bộ nhớ đệm'})
+        self.assertEqual(conflicts,[])
+
+    def test_batch_conflict_is_row_local_and_true_conflict_stays_closed(self):
+        glossary=self._conflicting_modes()
+        class Spy:
+            def __init__(self):self.calls=[]
+            def translate_many(self,texts):
+                self.calls.extend(texts)
+                return ['Cửa màu đỏ đang mở.' for _ in texts]
+        spy=Spy();conflicts=set()
+        rows=[dict(key='outside',source_text='The red door is open.'),
+              dict(key='inside',source_text='Use mode.'),dict(key='exact',source_text='mode')]
+        outputs=_batch_translate_chunk(spy,rows,v2_glossary=glossary,glossary_conflicts=conflicts)
+        self.assertEqual(conflicts,{'inside','exact'})
+        self.assertEqual(outputs['outside'],'Cửa màu đỏ đang mở.')
+        self.assertEqual(outputs['inside'],outputs['exact'])
+        self.assertEqual(outputs['inside'],'')
+        self.assertEqual(spy.calls,['The red door is open.'])
+
     def test_v2_glossary_exact_scope_and_conflict_fail_closed(self):
         self._write_glossary([
             {"source": "CharacterName", "target": "CharacterName", "kind": "proper_noun", "priority": 10, "scope": "NaninovelScript"},

@@ -103,6 +103,23 @@ class TranslationCacheTests(unittest.TestCase):
         finally:
             reopened.close()
 
+    def test_glossary_applicability_fix_misses_legacy_cache_without_deleting_it(self):
+        adapter=MagicMock();adapter.metadata.return_value=self.model
+        plain=_translation_cache_context(self.root,adapter,{}, {},allow_overwrite=False)
+        self.assertEqual(plain['strategy_version'],'ct2-pipeline-1-frozen')
+        current=_translation_cache_context(self.root,adapter,{}, {},allow_overwrite=False,
+            glossary_v2={'entries':[{'source':'mode','target':'chế độ'}],'fingerprint':'bank1'})
+        args={k:v for k,v in current.items() if k not in {'context_by_key','context_status','context_model_injection'}}
+        legacy=compute_cache_fingerprint(self.row,**{**args,'strategy_version':'ct2-pipeline-1-frozen'})
+        fresh=compute_cache_fingerprint(self.row,**args)
+        self.assertNotEqual(legacy['cache_key'],fresh['cache_key'])
+        cache=TranslationCache(self.root)
+        try:
+            self.assertTrue(cache.put(legacy['cache_key'],self.row,'old structurally valid draft',validation_status='PASS'))
+            self.assertIsNone(cache.lookup(fresh['cache_key']))
+            self.assertEqual(cache.lookup(legacy['cache_key']),'old structurally valid draft')
+        finally:cache.close()
+
     def test_cache_has_single_writer_lock(self):
         first = TranslationCache(self.root)
         try:
