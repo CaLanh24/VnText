@@ -1,0 +1,116 @@
+{
+  "baseline-wrapper.json": {
+    "original_file_sha256": "be5232fae83011f7d660656d550210a6581bff3425e20354b92507b316c1aa97",
+    "source_sha": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+    "status": "PASS",
+    "exit_code": 0,
+    "child_exit_code": 0,
+    "command": [
+      ".dev-env/release-venv/Scripts/python.exe",
+      "-B",
+      "-m",
+      "tests.tools.translation_quality_phase19",
+      "baseline"
+    ],
+    "test_summary": {
+      "status": "NOT_UNITTEST",
+      "tests": null,
+      "failures": null,
+      "errors": null,
+      "skips": null,
+      "warnings": 1,
+      "skip_reasons": [],
+      "warning_records": [
+        {
+          "location": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Lib\\site-packages\\transformers\\models\\marian\\tokenization_marian.py:176",
+          "category": "UserWarning",
+          "message": "Recommended: pip install sacremoses."
+        }
+      ],
+      "failure_records": [],
+      "input_bytes": 380,
+      "input_truncated": false
+    },
+    "cleanup_status": "PASS"
+  },
+  "final-wrapper.json": {
+    "original_file_sha256": "ba1e0388d1ff143810df81870bd139e932ce1982b7c9a9e7e131a650ef383f90",
+    "source_sha": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+    "status": "PASS",
+    "exit_code": 0,
+    "child_exit_code": 0,
+    "command": [
+      ".dev-env/release-venv/Scripts/python.exe",
+      "-B",
+      "-m",
+      "tests.tools.translation_quality_phase19",
+      "final"
+    ],
+    "test_summary": {
+      "status": "NOT_UNITTEST",
+      "tests": null,
+      "failures": null,
+      "errors": null,
+      "skips": null,
+      "warnings": 0,
+      "skip_reasons": [],
+      "warning_records": [],
+      "failure_records": [],
+      "input_bytes": 1530,
+      "input_truncated": false
+    },
+    "cleanup_status": "PASS"
+  },
+  "regression-wrapper.json": {
+    "original_file_sha256": "fc8ade9e35dd4599babf04d5ddd81c08f6af98b65911e675a0acdad1484d76e6",
+    "source_sha": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+    "status": "PASS",
+    "exit_code": 0,
+    "child_exit_code": 0,
+    "command": [
+      ".dev-env/release-venv/Scripts/python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.unit.test_translation_quality_phase19",
+      "tests.unit.test_translation_quality_phase18",
+      "tests.unit.test_translation_quality_phase17",
+      "tests.unit.test_translation_quality_phase16",
+      "tests.unit.test_translation_quality_phase15",
+      "tests.unit.test_translation_quality_phase14",
+      "tests.unit.test_translation_constraints_v5",
+      "tests.unit.test_translation_quality_phase13",
+      "tests.unit.test_translation_quality_phase12",
+      "tests.unit.test_translation_constraints_v4",
+      "tests.unit.test_translation_quality_phase11",
+      "tests.unit.test_translation_constraints_v3",
+      "tests.unit.test_translation_role_binding",
+      "tests.unit.test_translation_quality_phase10",
+      "tests.unit.test_translation_constraints_v2",
+      "tests.unit.test_translation_quality_phase9",
+      "tests.unit.test_translation_constraints",
+      "tests.unit.test_translation_quality_phase8",
+      "tests.unit.test_translation_quality_semantic_transport",
+      "tests.unit.test_translation_quality_phase7",
+      "tests.unit.test_translation_quality_phase6",
+      "tests.unit.test_translation_quality_guard",
+      "tests.unit.test_translation_quality_prompt_trial",
+      "tests.unit.test_mt_structural"
+    ],
+    "test_summary": {
+      "status": "PASS",
+      "terminal_line": "OK",
+      "tests": 105,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 0,
+      "skip_reasons": [],
+      "warning_records": [],
+      "failure_records": [],
+      "input_bytes": 210,
+      "input_truncated": false
+    },
+    "cleanup_status": "PASS"
+  }
+}

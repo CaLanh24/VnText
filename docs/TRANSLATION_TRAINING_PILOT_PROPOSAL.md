@@ -1,5 +1,11 @@
 # Lộ trình chất lượng dịch 0 đồng
 
+**M1–M4 đã được Owner giao thực thi/bàn giao2026-10-20:**
+[packet](../evaluation/translation_silver_packet_v1/README.md)60curation rows,
+12audited IDs,48term audits,3term candidates/9memory candidates. Focused4tests
+PASS/cleanupPASS,0newmodelrun. Chi tiết canonical plan/handoff. Bên dưới là
+thiết kế/budget đã duyệt, không còn chờ quyền cho M1–M4.
+
 Ngày kiểm: **2026-10-20, Asia/Tokyo**. Owner chốt **ngân sách phát sinh0đ**:
 không thuê reviewer/GPU/máy, mua phần cứng, trial cần thẻ/đặt cọc/autocharge.
 Phương án trả phí đang soạn đã hủy trước commit; không phát sinh giao dịch.
@@ -28,8 +34,8 @@ tốt hơn chỉ nhờ đóng gói dữ liệu.
 | M3. Glossary/memory candidate | Audit bank48 terms hiện có theo domain/counter-sense; chọn tối đa12 entries đủ evidence làm candidate bank. Memory candidate tối đa20 exact-source/context pairs, có origin/reviewer-status. Không đủ giữ ít hơn/rỗng có reason. | DEV<=1h. Tất cả silver/needs-human-review; không ghi vào glossary/memory/cache sản phẩm hoặc gọi là approved. |
 | M4. Bàn giao và đóng | Manifest+review table+candidate bank/memory+receipt, ma trận4bước/limitations/cleanup. Brain kiểm traceability/labels/boundary, không semantic human sign-off. | DEV<=1h; **tổng DEV<=5h, Brain<=1h**, không mua agent/API credits. Hết budget đóng đợt, không vòng prompt/benchmark sau. |
 
-Đây là công việc **đề nghị tiếp theo**, chưa tạo manifest60/candidate bank/memory
-trong task proposal. Một lần Owner giao M1–M4 là đủ, không bắt Owner dịch/duyệt
+Đây là scope M1–M4 Owner đã giao thực thi; manifest60/candidate bank/memory đã
+bàn giao. Một lần Owner giao là đủ, không bắt Owner dịch/duyệt
 hàng trăm câu. Dùng schema/token/dedup tooling đã có khi cần; chỉ focused gate
 cho thay đổi thật, không chạy lại125 test/model vì bảng tài liệu. Không inference
 mới. DEV triển khai duy nhất, Brain chỉ read-only nghiệm thu; không writer thứ hai.
@@ -134,8 +140,8 @@ bằng evidence đã có; không dịch lại bằng model/thuê người/máy/u
 Bàn giao silver, glossary/memory candidate và đóng research plan; training ghi
 deferred.” Không bắt Owner thiết kế kỹ thuật hay duyệt hàng trăm câu.
 
-Task hiện tại đã chuẩn bị thiết kế/nhãn/quyền/ma trận/resource/nguồn và stop gates;
-**chưa thực thi M1–M4**. Brain review proposal trước xin Owner giao thực thi.
+Proposal đã được review rồi Owner giao M1–M4; phần offline đã bàn giao packet
+ở đầu tài liệu. Brain read-only nghiệm thu data/technical, không human gold.
 DEV sole implementation owner, Brain read-only nghiệm thu; không child/source
 product/worker/validator change, download/install/account/payment/training/
 inference/benchmark/release. **PASS phần chuẩn bị đề xuất**, không training hoặc

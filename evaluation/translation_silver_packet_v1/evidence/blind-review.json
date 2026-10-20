@@ -1,0 +1,1207 @@
+{
+  "reviewer_kind": "separate_agent_not_human",
+  "mapping_seen": false,
+  "records": [
+    {
+      "id": "Q19-dialogue-01",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "structure",
+            "severity": "minor",
+            "reason": "Unusual capitalization of “Chờ” and “Chưa” and the inserted ellipsis interrupt an otherwise clear sentence."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium",
+      "note": "A is a more natural rendering of waiting by the gate and never arriving."
+    },
+    {
+      "id": "Q19-dialogue-02",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "addition",
+            "severity": "minor",
+            "reason": "The final “chứ” adds an expectation or mild reproach not explicit in the source."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-dialogue-03",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-dialogue-04",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-dialogue-05",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Chuẩn bị đi khi điện thoại lại reo” is less idiomatic and less clearly conveys that they were on the verge of leaving."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-dialogue-06",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-dialogue-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "minor",
+            "reason": "“Từ mười phút trước” can place the departure ten minutes before now; “ten minutes earlier” in the past report is more clearly rendered as an earlier past reference."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-dialogue-08",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The past counterfactual “would have called / had found” becomes a present or future conditional (“nếu ... tìm thấy ... sẽ gọi”)."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The past counterfactual “would have called / had found” becomes a present or future conditional (“sẽ gọi ... nếu tìm thấy”)."
+          }
+        ]
+      },
+      "winner": "tie",
+      "confidence": "high",
+      "note": "Both lose the counterfactual past."
+    },
+    {
+      "id": "Q19-dialogue-09",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "omission",
+            "severity": "major",
+            "reason": "“Nobody” is left untranslated, so the negative subject is not rendered in Vietnamese."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-dialogue-10",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-01",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "The opening word “Finding” is left in English, making the sentence code-switched; “kim đáy bể” also changes the haystack image while retaining the hard-to-find idea."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Tìm kim trong đống rơm” is a close literal rendering but less idiomatic than a Vietnamese expression for something very hard to find."
+          }
+        ]
+      },
+      "winner": "B",
+      "confidence": "medium",
+      "note": "B translates the whole sentence and preserves the source image."
+    },
+    {
+      "id": "Q19-idiom-02",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The figurative request to keep a secret is translated literally as spilling beans."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-03",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "minor",
+            "reason": "“Đơn từ chức ... xuất hiện” can shift the source event of resigning to the physical resignation document appearing."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Lời từ chức ... xảy ra” is awkward Vietnamese phrasing for a resignation occurring unexpectedly."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-idiom-04",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "The idiom is translated literally as “sủa nhầm chỗ,” which sounds odd in Vietnamese although the mistaken-target idea remains inferable."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-idiom-05",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The idiom “bite the bullet” is rendered as physically biting a bullet, omitting the intended idea of accepting something difficult."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-06",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The idiom meaning “I was teasing you” is rendered literally as pulling a leg."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-08",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "addition",
+            "severity": "minor",
+            "reason": "“Không khí căng thẳng” adds tension; the source only says he broke the ice by starting conversation."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "The figurative act of easing social awkwardness is rendered literally as breaking ice."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-idiom-09",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "minor",
+            "reason": "The concrete chickens are generalized to “những điều tốt đẹp,” making the caution less specific than the source idiom."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "The source idiom is translated literally; it is understandable but not the usual Vietnamese expression for premature assumptions."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-idiom-10",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Câu tin đồn” is an awkward noun phrase, though the recommendation to treat the rumor cautiously is conveyed."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Taken with a grain of salt” is translated literally as taking the rumor with a salt grain rather than treating it skeptically."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-01",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "omission",
+            "severity": "minor",
+            "reason": "“Bút màu của chị” omits the source color blue and can mean the sister’s colored pen."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "The given younger-brother-to-older-sister relationship calls for em/chị; “anh ... tôi” reverses the relationship and speaker/addressee pronouns."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-02",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "For an older sister speaking to a younger brother, “tôi ... anh” uses the wrong relationship pronouns."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-03",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "The specified older-brother-to-younger-sister relation calls for anh/em; “anh ... tôi” reverses the addressee and uses mismatched pronouns."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-04",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "omission",
+            "severity": "minor",
+            "reason": "The lunch is left generic; the source specifies that it is the daughter’s lunch."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-05",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "“Các bạn” addresses multiple peers, contrary to a younger student addressing one older professor."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-06",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "minor",
+            "reason": "“Cô” assumes a female professor even though the supplied context says gender is unknown."
+          },
+          {
+            "type": "meaning",
+            "severity": "minor",
+            "reason": "“Lời bình luận ... trong đoạn cuối” can mean comments located in the paragraph rather than comments about it."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "The younger-brother-to-older-sister context calls for em/chị; “tôi ... anh” uses mismatched pronouns and gendered address."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-08",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Em đã đưa cho chị” reverses who gave the scarf: the source says the older sister gave it to the younger brother."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "omission",
+            "severity": "major",
+            "reason": "It omits the defining clause that the sister gave the scarf to the brother yesterday, and instead attaches yesterday to the requested bringing."
+          }
+        ]
+      },
+      "winner": "neither",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-address-09",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Chị em gái nhỏ” is an awkward rendering of “your little sister”; “bảo” also weakens the source’s request/asking nuance."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "address_register",
+            "severity": "major",
+            "reason": "The older-brother-to-younger-sister context calls for anh/em; “tôi” and “cậu” address them as peers."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-address-10",
+      "A": {
+        "verdict": "uncertain",
+        "errors": [
+          {
+            "type": "addition",
+            "severity": "minor",
+            "reason": "“Đơn xin việc” specifies a job application, while the English “application” does not identify its type."
+          },
+          {
+            "type": "address_register",
+            "severity": "minor",
+            "reason": "“Cô” assumes the professor is female despite the supplied gender-unknown context."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "uncertain",
+        "errors": [
+          {
+            "type": "addition",
+            "severity": "minor",
+            "reason": "“Hồ sơ xin việc” specifies a job application, while the English “application” does not identify its type."
+          }
+        ]
+      },
+      "winner": "uncertain",
+      "confidence": "low",
+      "note": "The source leaves the kind of application unspecified, so the job-specific readings cannot be confirmed."
+    },
+    {
+      "id": "Q19-ui-01",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-ui-02",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Không thể được ghi dữ liệu” is cumbersome passive phrasing for a folder that is not writable."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-03",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Nên còn lại hiển thị” is an awkward construction for columns remaining visible."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-04",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-ui-05",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "The action word “Reconnect” is left in English in an otherwise Vietnamese UI message."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Liên kết lại” usually means linking again; “kết nối lại” is the clearer UI/network term for reconnect."
+          }
+        ]
+      },
+      "winner": "B",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-06",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Mục khớp” is understandable but a little literal for matching entries."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Bố cục” means layout, while the source refers to the current view."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Thay đổi tên của nó” is awkward and makes the file sound as if it changed its own name."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-08",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Restore” is left in English and “bố trí trước” is less natural than a UI term for the previous layout."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Không bỏ qua công việc” means not skipping the work, while the source promises not to discard or lose it."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-09",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Những thứ ... cần sự chú ý” is a literal and less concise UI phrasing for items still needing attention."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-ui-10",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-01",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Tổng kiểm tra” is a literal, uncommon rendering of checksum; it may not clearly identify the integrity value."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-terminology-02",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Hồ sơ” is less precise than “bản ghi” for software records; the sentence also starts with an unexplained lowercase verb."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-terminology-03",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "In networking, “chứng chỉ” is the clearer technical term for a certificate; “chứng nhận” is less specific."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-terminology-04",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Ổ khóa” means a lock, not the encrypted drive; this changes the object that must be kept separate."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-05",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "A transaction rollback restores the prior state; “được hủy bỏ” says it is canceled and does not convey rollback."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Quay trở lại” is a literal, imprecise rendering of database rollback, though the rollback idea is recognizable."
+          }
+        ]
+      },
+      "winner": "B",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-terminology-06",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Phiếu thu” is a receipt, not an invoice, changing the document referred to."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-08",
+      "A": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "major",
+            "reason": "“Công tắc áp suất” is a pressure switch, not a pressure sensor, changing the device type."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Báo cáo một giá trị” is slightly awkward for a sensor reporting a measurement."
+          }
+        ]
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-09",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Giữ lạnh” does not require the sample to remain frozen, weakening the source condition."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-terminology-10",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-01",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "major",
+        "errors": [
+          {
+            "type": "meaning",
+            "severity": "major",
+            "reason": "“Welcome back” becomes “Welcome lùi lại,” which means moving backward rather than returning."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-02",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "unusable",
+        "errors": [
+          {
+            "type": "omission",
+            "severity": "major",
+            "reason": "The output is empty and supplies none of the instruction or protected tokens."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-03",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“%d lưu bản nháp” has awkward word order for the saved-drafts count, though the count and concept remain present."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-protected_tokens-04",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Bỏ ra” is an awkward UI verb for removing the device."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Warning” remains in English and “Vẫn chưa” is awkwardly placed after the device instruction."
+          },
+          {
+            "type": "structure",
+            "severity": "minor",
+            "reason": "There is an extra space immediately inside the opening bold tag."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-protected_tokens-05",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Try” remains in English in the translated phrase, and a space follows the opening italic tag."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "B",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-06",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "structure",
+            "severity": "minor",
+            "reason": "Spaces are added around the literal \\n marker, changing the exact line-boundary formatting."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“Line” is left in English and the second line is code-switched."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-protected_tokens-07",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "naturalness",
+            "severity": "minor",
+            "reason": "“First” and “Second” remain in English in the two translated checkpoint lines."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-08",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "winner": "tie",
+      "confidence": "high"
+    },
+    {
+      "id": "Q19-protected_tokens-09",
+      "A": {
+        "verdict": "acceptable",
+        "errors": []
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "terminology",
+            "severity": "minor",
+            "reason": "“Dấu hiệu” means a sign or mark rather than the label specified in the source."
+          }
+        ]
+      },
+      "winner": "A",
+      "confidence": "medium"
+    },
+    {
+      "id": "Q19-protected_tokens-10",
+      "A": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "structure",
+            "severity": "minor",
+            "reason": "The source bold emphasis around “Keep going” is omitted."
+          }
+        ]
+      },
+      "B": {
+        "verdict": "minor",
+        "errors": [
+          {
+            "type": "structure",
+            "severity": "minor",
+            "reason": "The bold markup is retained, but an extra space is inserted just inside the opening marker."
+          }
+        ]
+      },
+      "winner": "B",
+      "confidence": "medium"
+    }
+  ]
+}

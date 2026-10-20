@@ -1,0 +1,110 @@
+{
+  "outcome": "PASS data/technical packet delivery, NOT semantic/product/training acceptance",
+  "source_base": "0b01fa97d8d15864a2099637d0b39947cb49e52c",
+  "builder_sha256": "c2cde520d3b012932e554cf7f917e60f48473dc6c5fa0893976ac428e2c0f3af",
+  "test_sha256": "91d123838b0b18155325ae3066dc8e2413e585336032cfcb4aa5049e7b6bca73",
+  "historical_originals_comparison": "PASS byte-exact snapshots and exact JSON-value outputs; no original modified",
+  "rights_source": "60known generated-for-project/0UNKNOWN; no human gold or target approval inferred",
+  "counts": {
+    "sources": 60,
+    "audited_rows": 12,
+    "terms": 48,
+    "candidate_terms": 3,
+    "memory": 9
+  },
+  "audit12_ids": [
+    "Q19-dialogue-08",
+    "Q19-idiom-06",
+    "Q19-address-02",
+    "Q19-address-08",
+    "Q19-address-10",
+    "Q19-ui-04",
+    "Q19-ui-08",
+    "Q19-terminology-04",
+    "Q19-terminology-05",
+    "Q19-terminology-06",
+    "Q19-terminology-08",
+    "Q19-protected_tokens-02"
+  ],
+  "memory_exclusions": [
+    "all rows with any nonacceptable audited verdict",
+    "Q19-ui-04 undo/cancel",
+    "Q19-dialogue-06 unsupported masculine address"
+  ],
+  "gate": {
+    "original_receipt_sha256": "32b27e1904cb841ffd9d5ef9ad6261fb6c671180e54e7c3fc3828d87a792e720",
+    "source_sha": "0b01fa97d8d15864a2099637d0b39947cb49e52c",
+    "command": [
+      ".dev-env/release-venv/Scripts/python.exe",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.unit.test_translation_silver_packet"
+    ],
+    "exit_code": 0,
+    "test_summary": {
+      "status": "PASS",
+      "terminal_line": "OK",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 0,
+      "skip_reasons": [],
+      "warning_records": [],
+      "failure_records": [],
+      "input_bytes": 107,
+      "input_truncated": false
+    },
+    "cleanup_status": "PASS"
+  },
+  "money_spent": 0,
+  "new_model_runs": 0,
+  "new_children": 0,
+  "training": "NOT_TRIGGERED / DEFERRED",
+  "product_opus": "UNCHANGED",
+  "candidate_hy": "REJECTED",
+  "cleanup": {
+    "original_receipt_sha256": "62836a8a9b9f171bf58b3294962e8bc4ea6de4965c3f1bf847ac1884e4ebb88f",
+    "status": "PASS",
+    "inventory_complete": true,
+    "unknown_count": 0,
+    "locked_count": 0,
+    "errors": [],
+    "test_run_absent": true,
+    "release_run_absent": true,
+    "project_size": {
+      "root": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5",
+      "approved_game_copy_bytes": 0,
+      "approved_game_copy_limit_bytes": 0,
+      "non_exempt_bytes": 722666673,
+      "limit_bytes": 1073741824,
+      "budget_profile": "default",
+      "exempt_bytes": 5778817474,
+      "exempt_limit_bytes": 6442450944,
+      "within_limit": true,
+      "complete": true,
+      "exemptions": [
+        {
+          "path": ".dev-env",
+          "bytes": 5778817474,
+          "reason": "shared DEV Python/SDK/NuGet/model cache (6 GiB cap; Owner 2026-10-19 R&D approval)"
+        }
+      ],
+      "inventory": {
+        "complete": true,
+        "status": "PASS",
+        "reason": null,
+        "path": null,
+        "items_seen": 60997,
+        "timeout_seconds": 30.0,
+        "max_items": 100000,
+        "hashed_bytes": 0,
+        "hash_budget_bytes": 33554432,
+        "failure": null
+      },
+      "errors": []
+    },
+    "measurement": "before final handoff metadata update; all within cap"
+  }
+}

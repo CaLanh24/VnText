@@ -1,0 +1,3248 @@
+{
+  "candidate_rows": [
+    {
+      "id": "Q19-dialogue-01",
+      "source": "Mira waited by the gate, but Rowan never arrived.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Mira đợi ở cổng, nhưng Rowan không hề xuất hiện.",
+          "original_draft": "Mira đợi ở cổng, nhưng Rowan không hề xuất hiện.",
+          "draft": "Mira đợi ở cổng, nhưng Rowan không hề xuất hiện.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "mira đợi ở cổng, nhưng rowan không hề xuất hiện",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Mira đợi ở cổng, nhưng Rowan không hề xuất hiện.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-02",
+      "source": "I thought you had already locked the back door.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi tưởng rằng bạn đã khóa cửa sau rồi.",
+          "original_draft": "Tôi tưởng rằng bạn đã khóa cửa sau rồi.",
+          "draft": "Tôi tưởng rằng bạn đã khóa cửa sau rồi.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "tôi tưởng rằng bạn đã khóa cửa sau rồi",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Tôi tưởng rằng bạn đã khóa cửa sau rồi.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-03",
+      "source": "There is enough soup for everyone except me.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Có đủ súp cho mọi người, trừ tôi.",
+          "original_draft": "Có đủ súp cho mọi người, trừ tôi.",
+          "draft": "Có đủ súp cho mọi người, trừ tôi.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "có đủ súp cho mọi người, trừ tôi",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Có đủ súp cho mọi người, trừ tôi.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-04",
+      "source": "She almost dropped the cup when the lights went out.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Cô ấy suýt làm rơi chiếc cốc khi đèn tắt.",
+          "original_draft": "Cô ấy suýt làm rơi chiếc cốc khi đèn tắt.",
+          "draft": "Cô ấy suýt làm rơi chiếc cốc khi đèn tắt.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "cô ấy suýt làm rơi chiếc cốc khi đèn tắt",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Cô ấy suýt làm rơi chiếc cốc khi đèn tắt.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-05",
+      "source": "We were about to leave when the telephone rang again.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chúng tôi đang chuẩn bị rời đi thì điện thoại lại reo.",
+          "original_draft": "Chúng tôi đang chuẩn bị rời đi thì điện thoại lại reo.",
+          "draft": "Chúng tôi đang chuẩn bị rời đi thì điện thoại lại reo.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chúng tôi đang chuẩn bị rời đi thì điện thoại lại reo",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chúng tôi đang chuẩn bị rời đi thì điện thoại lại reo.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-06",
+      "source": "You can sit here if the other chair is still wet.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn có thể ngồi đây nếu chiếc ghế kia vẫn còn ướt.",
+          "original_draft": "Bạn có thể ngồi đây nếu chiếc ghế kia vẫn còn ướt.",
+          "draft": "Bạn có thể ngồi đây nếu chiếc ghế kia vẫn còn ướt.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "bạn có thể ngồi đây nếu chiếc ghế kia vẫn còn ướt",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Bạn có thể ngồi đây nếu chiếc ghế kia vẫn còn ướt.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-07",
+      "source": "He said the train had left ten minutes earlier.",
+      "group": "dialogue",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Anh ấy nói rằng chuyến tàu đã khởi hành từ mười phút trước.",
+          "original_draft": "Anh ấy nói rằng chuyến tàu đã khởi hành từ mười phút trước.",
+          "draft": "Anh ấy nói rằng chuyến tàu đã khởi hành từ mười phút trước.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "anh ấy nói rằng chuyến tàu đã khởi hành từ mười phút trước",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Anh ấy nói rằng chuyến tàu đã khởi hành từ mười phút trước.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-08",
+      "source": "I would have called you if I had found my phone.",
+      "group": "dialogue",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Nếu tôi tìm thấy điện thoại của mình, tôi sẽ gọi cho bạn.",
+          "original_draft": "Nếu tôi tìm thấy điện thoại của mình, tôi sẽ gọi cho bạn.",
+          "draft": "Nếu tôi tìm thấy điện thoại của mình, tôi sẽ gọi cho bạn.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "nếu tôi tìm thấy điện thoại của mình, tôi sẽ gọi cho bạn",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Nếu tôi tìm thấy điện thoại của mình, tôi sẽ gọi cho bạn.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-09",
+      "source": "Nobody noticed that the small key was missing.",
+      "group": "dialogue",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Không ai nhận ra rằng chìa khóa nhỏ đã mất.",
+          "original_draft": "Không ai nhận ra rằng chìa khóa nhỏ đã mất.",
+          "draft": "Không ai nhận ra rằng chìa khóa nhỏ đã mất.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "không ai nhận ra rằng chìa khóa nhỏ đã mất",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Không ai nhận ra rằng chìa khóa nhỏ đã mất.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-dialogue-10",
+      "source": "The longer we waited, the colder the room became.",
+      "group": "dialogue",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Càng chờ lâu, căn phòng càng trở nên lạnh hơn.",
+          "original_draft": "Càng chờ lâu, căn phòng càng trở nên lạnh hơn.",
+          "draft": "Càng chờ lâu, căn phòng càng trở nên lạnh hơn.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "càng chờ lâu, căn phòng càng trở nên lạnh hơn",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Càng chờ lâu, căn phòng càng trở nên lạnh hơn.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-01",
+      "source": "Finding that receipt was like looking for a needle in a haystack.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Việc tìm thấy tờ hóa đơn đó giống như việc tìm kim trong đống rơm.",
+          "original_draft": "Việc tìm thấy tờ hóa đơn đó giống như việc tìm kim trong đống rơm.",
+          "draft": "Việc tìm thấy tờ hóa đơn đó giống như việc tìm kim trong đống rơm.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "việc tìm thấy tờ hóa đơn đó giống như việc tìm kim trong đống rơm",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Việc tìm thấy tờ hóa đơn đó giống như việc tìm kim trong đống rơm.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-02",
+      "source": "Do not spill the beans before the guests arrive.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Đừng tiết lộ mọi chuyện trước khi khách đến.",
+          "original_draft": "Đừng tiết lộ mọi chuyện trước khi khách đến.",
+          "draft": "Đừng tiết lộ mọi chuyện trước khi khách đến.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "đừng tiết lộ mọi chuyện trước khi khách đến",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Đừng tiết lộ mọi chuyện trước khi khách đến.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-03",
+      "source": "Her sudden resignation came out of the blue.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Lời từ chức đột ngột của cô ấy xảy ra một cách bất ngờ.",
+          "original_draft": "Lời từ chức đột ngột của cô ấy xảy ra một cách bất ngờ.",
+          "draft": "Lời từ chức đột ngột của cô ấy xảy ra một cách bất ngờ.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "lời từ chức đột ngột của cô ấy xảy ra một cách bất ngờ",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Lời từ chức đột ngột của cô ấy xảy ra một cách bất ngờ.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-04",
+      "source": "You are barking up the wrong tree if you blame the driver.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn đang nhầm lẫn khi đổ lỗi cho tài xế.",
+          "original_draft": "Bạn đang nhầm lẫn khi đổ lỗi cho tài xế.",
+          "draft": "Bạn đang nhầm lẫn khi đổ lỗi cho tài xế.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "bạn đang nhầm lẫn khi đổ lỗi cho tài xế",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Bạn đang nhầm lẫn khi đổ lỗi cho tài xế.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-05",
+      "source": "We had to bite the bullet and cancel the trip.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chúng tôi phải chấp nhận và hủy bỏ chuyến đi.",
+          "original_draft": "Chúng tôi phải chấp nhận và hủy bỏ chuyến đi.",
+          "draft": "Chúng tôi phải chấp nhận và hủy bỏ chuyến đi.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chúng tôi phải chấp nhận và hủy bỏ chuyến đi",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chúng tôi phải chấp nhận và hủy bỏ chuyến đi.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-06",
+      "source": "I was pulling your leg about winning the lottery.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi chỉ đùa rằng bạn sẽ trúng xổ số thôi.",
+          "original_draft": "Tôi chỉ đùa rằng bạn sẽ trúng xổ số thôi.",
+          "draft": "Tôi chỉ đùa rằng bạn sẽ trúng xổ số thôi.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "tôi chỉ đùa rằng bạn sẽ trúng xổ số thôi",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Tôi chỉ đùa rằng bạn sẽ trúng xổ số thôi.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-07",
+      "source": "The new manager has a lot on her plate this week.",
+      "group": "idiom",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Người quản lý mới có rất nhiều việc phải xử lý trong tuần này.",
+          "original_draft": "Người quản lý mới có rất nhiều việc phải xử lý trong tuần này.",
+          "draft": "Người quản lý mới có rất nhiều việc phải xử lý trong tuần này.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "người quản lý mới có rất nhiều việc phải xử lý trong tuần này",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Người quản lý mới có rất nhiều việc phải xử lý trong tuần này.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-08",
+      "source": "He finally broke the ice by asking about the dog.",
+      "group": "idiom",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Cuối cùng, anh ấy đã phá vỡ không khí căng thẳng bằng cách hỏi về con chó.",
+          "original_draft": "Cuối cùng, anh ấy đã phá vỡ không khí căng thẳng bằng cách hỏi về con chó.",
+          "draft": "Cuối cùng, anh ấy đã phá vỡ không khí căng thẳng bằng cách hỏi về con chó.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "cuối cùng, anh ấy đã phá vỡ không khí căng thẳng bằng cách hỏi về con chó",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Cuối cùng, anh ấy đã phá vỡ không khí căng thẳng bằng cách hỏi về con chó.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-09",
+      "source": "Let us not count our chickens before they hatch.",
+      "group": "idiom",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Đừng tính toán những điều tốt đẹp trước khi chúng thực sự xuất hiện.",
+          "original_draft": "Đừng tính toán những điều tốt đẹp trước khi chúng thực sự xuất hiện.",
+          "draft": "Đừng tính toán những điều tốt đẹp trước khi chúng thực sự xuất hiện.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "đừng tính toán những điều tốt đẹp trước khi chúng thực sự xuất hiện",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Đừng tính toán những điều tốt đẹp trước khi chúng thực sự xuất hiện.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-idiom-10",
+      "source": "That rumor should be taken with a grain of salt.",
+      "group": "idiom",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Câu tin đồn đó nên được xem xét một cách thận trọng.",
+          "original_draft": "Câu tin đồn đó nên được xem xét một cách thận trọng.",
+          "draft": "Câu tin đồn đó nên được xem xét một cách thận trọng.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "câu tin đồn đó nên được xem xét một cách thận trọng",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Câu tin đồn đó nên được xem xét một cách thận trọng.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-01",
+      "source": "Could you lend me your blue pen until noon?",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn có thể cho tôi mượn cây bút màu của bạn cho đến trưa không?",
+          "original_draft": "Bạn có thể cho tôi mượn cây bút màu của bạn cho đến trưa không?",
+          "draft": "Chị có thể cho em mượn cây bút màu của chị cho đến trưa không?",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Bạn",
+              "after": "Chị"
+            },
+            {
+              "start": 15,
+              "end": 18,
+              "before": "tôi",
+              "after": "em"
+            },
+            {
+              "start": 40,
+              "end": 43,
+              "before": "bạn",
+              "after": "chị"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "CONSTRAINTS_MATCH",
+            "source_contract": {
+              "kind": "transfer",
+              "agent": "chị",
+              "recipient": "em",
+              "owner": "chị",
+              "action": "lend"
+            },
+            "target_facts": {
+              "agent": "chị",
+              "owner": "chị",
+              "action": "lend",
+              "recipient": "em"
+            },
+            "reasons": [],
+            "normalized_target": "chị có thể cho em mượn cây bút màu của chị cho đến trưa không",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "CONSTRAINTS_MATCH",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chị có thể cho em mượn cây bút màu của chị cho đến trưa không?",
+      "constraint_status": "CONSTRAINTS_MATCH",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-02",
+      "source": "I will bring you my clean towel after dinner.",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Sau bữa ăn, tôi sẽ mang cho em chiếc khăn sạch của mình.",
+          "original_draft": "Sau bữa ăn, tôi sẽ mang cho em chiếc khăn sạch của mình.",
+          "draft": "Sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình.",
+          "role_edits": [
+            {
+              "start": 12,
+              "end": 15,
+              "before": "tôi",
+              "after": "chị"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": {
+              "kind": "transfer",
+              "agent": "chị",
+              "recipient": "em",
+              "owner": "chị",
+              "action": "bring"
+            },
+            "target_facts": null,
+            "reasons": [
+              "target role grammar unsupported"
+            ],
+            "normalized_target": "sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        },
+        {
+          "attempt": 1,
+          "raw": "Sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình.",
+          "original_draft": "Sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình.",
+          "draft": "Sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": {
+              "kind": "transfer",
+              "agent": "chị",
+              "recipient": "em",
+              "owner": "chị",
+              "action": "bring"
+            },
+            "target_facts": null,
+            "reasons": [
+              "target role grammar unsupported"
+            ],
+            "normalized_target": "sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Sau bữa ăn, chị sẽ mang cho em chiếc khăn sạch của mình.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-03",
+      "source": "You may borrow my bicycle if you return it tonight.",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn có thể mượn xe đạp của tôi nếu bạn trả lại vào tối nay.",
+          "original_draft": "Bạn có thể mượn xe đạp của tôi nếu bạn trả lại vào tối nay.",
+          "draft": "Em có thể mượn xe đạp của anh nếu em trả lại vào tối nay.",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Bạn",
+              "after": "Em"
+            },
+            {
+              "start": 27,
+              "end": 30,
+              "before": "tôi",
+              "after": "anh"
+            },
+            {
+              "start": 35,
+              "end": 38,
+              "before": "bạn",
+              "after": "em"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "em có thể mượn xe đạp của anh nếu em trả lại vào tối nay",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Em có thể mượn xe đạp của anh nếu em trả lại vào tối nay.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-04",
+      "source": "I left your lunch in the bag beside the door.",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi để bữa trưa của bạn trong túi, ngay bên cạnh cửa.",
+          "original_draft": "Tôi để bữa trưa của bạn trong túi, ngay bên cạnh cửa.",
+          "draft": "Mẹ để bữa trưa của con trong túi, ngay bên cạnh cửa.",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Tôi",
+              "after": "Mẹ"
+            },
+            {
+              "start": 20,
+              "end": 23,
+              "before": "bạn",
+              "after": "con"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "mẹ để bữa trưa của con trong túi, ngay bên cạnh cửa",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Mẹ để bữa trưa của con trong túi, ngay bên cạnh cửa.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-05",
+      "source": "May I show you my experimental results after class?",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi có thể cho giáo sư xem kết quả thí nghiệm của tôi sau giờ học không?",
+          "original_draft": "Tôi có thể cho giáo sư xem kết quả thí nghiệm của tôi sau giờ học không?",
+          "draft": "Em có thể cho giáo sư xem kết quả thí nghiệm của em sau giờ học không?",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Tôi",
+              "after": "Em"
+            },
+            {
+              "start": 50,
+              "end": 53,
+              "before": "tôi",
+              "after": "em"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "CONSTRAINTS_MATCH",
+            "source_contract": {
+              "kind": "transfer",
+              "agent": "em",
+              "recipient": "giáo sư",
+              "owner": "em",
+              "action": "show"
+            },
+            "target_facts": {
+              "agent": "em",
+              "owner": "em",
+              "action": "show",
+              "recipient": "giáo sư"
+            },
+            "reasons": [],
+            "normalized_target": "em có thể cho giáo sư xem kết quả thí nghiệm của em sau giờ học không",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "CONSTRAINTS_MATCH",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Em có thể cho giáo sư xem kết quả thí nghiệm của em sau giờ học không?",
+      "constraint_status": "CONSTRAINTS_MATCH",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-06",
+      "source": "Could you send me your comments on the final paragraph?",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn có thể gửi cho tôi ý kiến của bạn về đoạn văn cuối không?",
+          "original_draft": "Bạn có thể gửi cho tôi ý kiến của bạn về đoạn văn cuối không?",
+          "draft": "Giáo sư có thể gửi cho em ý kiến của giáo sư về đoạn văn cuối không?",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Bạn",
+              "after": "Giáo sư"
+            },
+            {
+              "start": 19,
+              "end": 22,
+              "before": "tôi",
+              "after": "em"
+            },
+            {
+              "start": 34,
+              "end": 37,
+              "before": "bạn",
+              "after": "giáo sư"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "giáo sư có thể gửi cho em ý kiến của giáo sư về đoạn văn cuối không",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Giáo sư có thể gửi cho em ý kiến của giáo sư về đoạn văn cuối không?",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-07",
+      "source": "I will return your camera before the weekend.",
+      "group": "address",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi sẽ trả lại máy ảnh của bạn trước cuối tuần.",
+          "original_draft": "Tôi sẽ trả lại máy ảnh của bạn trước cuối tuần.",
+          "draft": "Em sẽ trả lại máy ảnh của chị trước cuối tuần.",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Tôi",
+              "after": "Em"
+            },
+            {
+              "start": 27,
+              "end": 30,
+              "before": "bạn",
+              "after": "chị"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "em sẽ trả lại máy ảnh của chị trước cuối tuần",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Em sẽ trả lại máy ảnh của chị trước cuối tuần.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-08",
+      "source": "Please bring me the scarf I gave you yesterday.",
+      "group": "address",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Xin em mang lại chiếc khăn mà em đã đưa cho tôi hôm qua.",
+          "original_draft": "Xin em mang lại chiếc khăn mà em đã đưa cho tôi hôm qua.",
+          "draft": "Xin em mang lại chiếc khăn mà em đã đưa cho chị hôm qua.",
+          "role_edits": [
+            {
+              "start": 44,
+              "end": 47,
+              "before": "tôi",
+              "after": "chị"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "xin em mang lại chiếc khăn mà em đã đưa cho chị hôm qua",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Xin em mang lại chiếc khăn mà em đã đưa cho chị hôm qua.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-09",
+      "source": "Your little sister asked me to wait outside.",
+      "group": "address",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chị em gái nhỏ của bạn bảo tôi đợi bên ngoài.",
+          "original_draft": "Chị em gái nhỏ của bạn bảo tôi đợi bên ngoài.",
+          "draft": "Chị em gái nhỏ của em bảo anh đợi bên ngoài.",
+          "role_edits": [
+            {
+              "start": 19,
+              "end": 22,
+              "before": "bạn",
+              "after": "em"
+            },
+            {
+              "start": 27,
+              "end": 30,
+              "before": "tôi",
+              "after": "anh"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chị em gái nhỏ của em bảo anh đợi bên ngoài",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chị em gái nhỏ của em bảo anh đợi bên ngoài.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-address-10",
+      "source": "I would like to ask you about my application tomorrow.",
+      "group": "address",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tôi muốn hỏi bạn về hồ sơ xin việc của mình vào ngày mai.",
+          "original_draft": "Tôi muốn hỏi bạn về hồ sơ xin việc của mình vào ngày mai.",
+          "draft": "Em muốn hỏi giáo sư về hồ sơ xin việc của mình vào ngày mai.",
+          "role_edits": [
+            {
+              "start": 0,
+              "end": 3,
+              "before": "Tôi",
+              "after": "Em"
+            },
+            {
+              "start": 13,
+              "end": 16,
+              "before": "bạn",
+              "after": "giáo sư"
+            }
+          ],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "em muốn hỏi giáo sư về hồ sơ xin việc của mình vào ngày mai",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Em muốn hỏi giáo sư về hồ sơ xin việc của mình vào ngày mai.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-01",
+      "source": "Save your changes before closing this window.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Hãy lưu lại những thay đổi của bạn trước khi đóng cửa sổ này.",
+          "original_draft": "Hãy lưu lại những thay đổi của bạn trước khi đóng cửa sổ này.",
+          "draft": "Hãy lưu lại những thay đổi của bạn trước khi đóng cửa sổ này.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "hãy lưu lại những thay đổi của bạn trước khi đóng cửa sổ này",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Hãy lưu lại những thay đổi của bạn trước khi đóng cửa sổ này.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-02",
+      "source": "The destination folder is not writable.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Thư mục đích không thể được ghi dữ liệu.",
+          "original_draft": "Thư mục đích không thể được ghi dữ liệu.",
+          "draft": "Thư mục đích không thể được ghi dữ liệu.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "thư mục đích không thể được ghi dữ liệu",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Thư mục đích không thể được ghi dữ liệu.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-03",
+      "source": "Choose which columns should remain visible.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Hãy chọn những cột nào sẽ được hiển thị.",
+          "original_draft": "Hãy chọn những cột nào sẽ được hiển thị.",
+          "draft": "Hãy chọn những cột nào sẽ được hiển thị.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "hãy chọn những cột nào sẽ được hiển thị",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Hãy chọn những cột nào sẽ được hiển thị.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-04",
+      "source": "This action cannot be undone after the backup is removed.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Hành động này không thể bị hủy bỏ sau khi bản sao lưu được xóa.",
+          "original_draft": "Hành động này không thể bị hủy bỏ sau khi bản sao lưu được xóa.",
+          "draft": "Hành động này không thể bị hủy bỏ sau khi bản sao lưu được xóa.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "hành động này không thể bị hủy bỏ sau khi bản sao lưu được xóa",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Hành động này không thể bị hủy bỏ sau khi bản sao lưu được xóa.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-05",
+      "source": "Reconnect to continue downloading the update.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Liên kết lại để tiếp tục tải xuống bản cập nhật.",
+          "original_draft": "Liên kết lại để tiếp tục tải xuống bản cập nhật.",
+          "draft": "Liên kết lại để tiếp tục tải xuống bản cập nhật.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "liên kết lại để tiếp tục tải xuống bản cập nhật",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Liên kết lại để tiếp tục tải xuống bản cập nhật.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-06",
+      "source": "No matching entries were found in this view.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Không tìm thấy các mục phù hợp trong bố cục này.",
+          "original_draft": "Không tìm thấy các mục phù hợp trong bố cục này.",
+          "draft": "Không tìm thấy các mục phù hợp trong bố cục này.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "không tìm thấy các mục phù hợp trong bố cục này",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Không tìm thấy các mục phù hợp trong bố cục này.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-07",
+      "source": "The selected file has been moved or renamed.",
+      "group": "ui",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tập tin được chọn đã được di chuyển hoặc đổi tên.",
+          "original_draft": "Tập tin được chọn đã được di chuyển hoặc đổi tên.",
+          "draft": "Tập tin được chọn đã được di chuyển hoặc đổi tên.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "tập tin được chọn đã được di chuyển hoặc đổi tên",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Tập tin được chọn đã được di chuyển hoặc đổi tên.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-08",
+      "source": "Restore the previous layout without discarding your work.",
+      "group": "ui",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Khôi phục lại bố cục trước đó mà không bỏ qua công việc bạn đã làm.",
+          "original_draft": "Khôi phục lại bố cục trước đó mà không bỏ qua công việc bạn đã làm.",
+          "draft": "Khôi phục lại bố cục trước đó mà không bỏ qua công việc bạn đã làm.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "khôi phục lại bố cục trước đó mà không bỏ qua công việc bạn đã làm",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Khôi phục lại bố cục trước đó mà không bỏ qua công việc bạn đã làm.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-09",
+      "source": "Only show items that still need attention.",
+      "group": "ui",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chỉ hiển thị những mục cần được xử lý.",
+          "original_draft": "Chỉ hiển thị những mục cần được xử lý.",
+          "draft": "Chỉ hiển thị những mục cần được xử lý.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chỉ hiển thị những mục cần được xử lý",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chỉ hiển thị những mục cần được xử lý.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-ui-10",
+      "source": "The operation was canceled before any files were written.",
+      "group": "ui",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Thao tác này bị hủy bỏ trước khi có bất kỳ tập tin nào được ghi vào.",
+          "original_draft": "Thao tác này bị hủy bỏ trước khi có bất kỳ tập tin nào được ghi vào.",
+          "draft": "Thao tác này bị hủy bỏ trước khi có bất kỳ tập tin nào được ghi vào.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "thao tác này bị hủy bỏ trước khi có bất kỳ tập tin nào được ghi vào",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Thao tác này bị hủy bỏ trước khi có bất kỳ tập tin nào được ghi vào.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-01",
+      "source": "Verify the checksum before replacing the archive.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ.",
+          "original_draft": "Hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ.",
+          "draft": "Hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-02",
+      "source": "The migration preserves the order of all existing records.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có.",
+          "original_draft": "Việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có.",
+          "draft": "Việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-03",
+      "source": "The certificate expired before the connection was established.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chứng chỉ đã hết hạn trước khi kết nối được thiết lập.",
+          "original_draft": "Chứng chỉ đã hết hạn trước khi kết nối được thiết lập.",
+          "draft": "Chứng chỉ đã hết hạn trước khi kết nối được thiết lập.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chứng chỉ đã hết hạn trước khi kết nối được thiết lập",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chứng chỉ đã hết hạn trước khi kết nối được thiết lập.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-04",
+      "source": "Keep the recovery key separate from the encrypted drive.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Hãy để chìa khóa khôi phục riêng biệt, không được gộp chung với ổ đĩa được mã hóa.",
+          "original_draft": "Hãy để chìa khóa khôi phục riêng biệt, không được gộp chung với ổ đĩa được mã hóa.",
+          "draft": "Hãy để chìa khóa khôi phục riêng biệt, không được gộp chung với ổ đĩa được mã hóa.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "hãy để chìa khóa khôi phục riêng biệt, không được gộp chung với ổ đĩa được mã hóa",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Hãy để chìa khóa khôi phục riêng biệt, không được gộp chung với ổ đĩa được mã hóa.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-05",
+      "source": "A transaction must either finish completely or roll back.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Một giao dịch phải hoàn thành hoàn toàn hoặc được hủy bỏ.",
+          "original_draft": "Một giao dịch phải hoàn thành hoàn toàn hoặc được hủy bỏ.",
+          "draft": "Một giao dịch phải hoàn thành hoàn toàn hoặc được hủy bỏ.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "một giao dịch phải hoàn thành hoàn toàn hoặc được hủy bỏ",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Một giao dịch phải hoàn thành hoàn toàn hoặc được hủy bỏ.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-06",
+      "source": "The invoice includes tax but excludes shipping costs.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Phiếu thu bao gồm thuế, nhưng không bao gồm chi phí vận chuyển.",
+          "original_draft": "Phiếu thu bao gồm thuế, nhưng không bao gồm chi phí vận chuyển.",
+          "draft": "Phiếu thu bao gồm thuế, nhưng không bao gồm chi phí vận chuyển.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "phiếu thu bao gồm thuế, nhưng không bao gồm chi phí vận chuyển",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Phiếu thu bao gồm thuế, nhưng không bao gồm chi phí vận chuyển.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-07",
+      "source": "The landlord must approve the transfer of the lease.",
+      "group": "terminology",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chủ nhà phải phê duyệt việc chuyển nhượng hợp đồng thuê nhà.",
+          "original_draft": "Chủ nhà phải phê duyệt việc chuyển nhượng hợp đồng thuê nhà.",
+          "draft": "Chủ nhà phải phê duyệt việc chuyển nhượng hợp đồng thuê nhà.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chủ nhà phải phê duyệt việc chuyển nhượng hợp đồng thuê nhà",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chủ nhà phải phê duyệt việc chuyển nhượng hợp đồng thuê nhà.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-08",
+      "source": "The pressure sensor reports a value below the safe threshold.",
+      "group": "terminology",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Công tắc áp suất báo ra giá trị thấp hơn ngưỡng an toàn.",
+          "original_draft": "Công tắc áp suất báo ra giá trị thấp hơn ngưỡng an toàn.",
+          "draft": "Công tắc áp suất báo ra giá trị thấp hơn ngưỡng an toàn.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "công tắc áp suất báo ra giá trị thấp hơn ngưỡng an toàn",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Công tắc áp suất báo ra giá trị thấp hơn ngưỡng an toàn.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-09",
+      "source": "The sample must remain frozen until the test begins.",
+      "group": "terminology",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Mẫu phải được giữ ở trạng thái đông lạnh cho đến khi thử nghiệm bắt đầu.",
+          "original_draft": "Mẫu phải được giữ ở trạng thái đông lạnh cho đến khi thử nghiệm bắt đầu.",
+          "draft": "Mẫu phải được giữ ở trạng thái đông lạnh cho đến khi thử nghiệm bắt đầu.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "mẫu phải được giữ ở trạng thái đông lạnh cho đến khi thử nghiệm bắt đầu",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Mẫu phải được giữ ở trạng thái đông lạnh cho đến khi thử nghiệm bắt đầu.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-terminology-10",
+      "source": "This license permits redistribution but does not transfer ownership.",
+      "group": "terminology",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Giấy phép này cho phép phân phối lại, nhưng không chuyển giao quyền sở hữu.",
+          "original_draft": "Giấy phép này cho phép phân phối lại, nhưng không chuyển giao quyền sở hữu.",
+          "draft": "Giấy phép này cho phép phân phối lại, nhưng không chuyển giao quyền sở hữu.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "giấy phép này cho phép phân phối lại, nhưng không chuyển giao quyền sở hữu",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Giấy phép này cho phép phân phối lại, nhưng không chuyển giao quyền sở hữu.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-01",
+      "source": "Welcome back, {PLAYER_NAME}; your seat is ready.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chào mừng bạn trở lại, [VNT000]; chỗ ngồi của bạn đã sẵn sàng.",
+          "original_draft": "Chào mừng bạn trở lại, {PLAYER_NAME}; chỗ ngồi của bạn đã sẵn sàng.",
+          "draft": "Chào mừng bạn trở lại, {PLAYER_NAME}; chỗ ngồi của bạn đã sẵn sàng.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chào mừng bạn trở lại, {player_name}; chỗ ngồi của bạn đã sẵn sàng",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chào mừng bạn trở lại, {PLAYER_NAME}; chỗ ngồi của bạn đã sẵn sàng.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-02",
+      "source": "Copy %s to the folder named {TARGET_FOLDER}.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Sao chép [VNT000] vào thư mục có tên [VNT001].",
+          "original_draft": "Sao chép %s vào thư mục có tên {TARGET_FOLDER}.",
+          "draft": "Sao chép %s vào thư mục có tên {TARGET_FOLDER}.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "sao chép %s vào thư mục có tên {target_folder}",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Sao chép %s vào thư mục có tên {TARGET_FOLDER}.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-03",
+      "source": "You have %d unread messages and %d saved drafts.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Bạn có [VNT000] tin nhắn chưa đọc và [VNT001] bản thảo đã lưu.",
+          "original_draft": "Bạn có %d tin nhắn chưa đọc và %d bản thảo đã lưu.",
+          "draft": "Bạn có %d tin nhắn chưa đọc và %d bản thảo đã lưu.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "bạn có %d tin nhắn chưa đọc và %d bản thảo đã lưu",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Bạn có %d tin nhắn chưa đọc và %d bản thảo đã lưu.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-04",
+      "source": "<b>Warning:</b> Do not remove {DEVICE_ID} yet.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "[VNT000]Cảnh báo:[VNT001] Đừng bỏ ra [VNT002] ngay.",
+          "original_draft": "<b>Cảnh báo:</b> Đừng bỏ ra {DEVICE_ID} ngay.",
+          "draft": "<b>Cảnh báo:</b> Đừng bỏ ra {DEVICE_ID} ngay.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "cảnh báo: đừng bỏ ra {device_id} ngay",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "<b>Cảnh báo:</b> Đừng bỏ ra {DEVICE_ID} ngay.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-05",
+      "source": "<i>Try again</i> after {WAIT_SECONDS} seconds.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "[VNT000]Thử lại[VNT001] sau [VNT002] giây.",
+          "original_draft": "<i>Thử lại</i> sau {WAIT_SECONDS} giây.",
+          "draft": "<i>Thử lại</i> sau {WAIT_SECONDS} giây.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "thử lại sau {wait_seconds} giây",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "<i>Thử lại</i> sau {WAIT_SECONDS} giây.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-06",
+      "source": "Line one\\nLine two: keep {LINE_KEY} unchanged.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Dòng một [VNT000] Dòng hai: giữ [VNT001] nguyên không thay đổi.",
+          "original_draft": "Dòng một \\n Dòng hai: giữ {LINE_KEY} nguyên không thay đổi.",
+          "draft": "Dòng một \\n Dòng hai: giữ {LINE_KEY} nguyên không thay đổi.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "dòng một \\n dòng hai: giữ {line_key} nguyên không thay đổi",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Dòng một \\n Dòng hai: giữ {LINE_KEY} nguyên không thay đổi.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-07",
+      "source": "First checkpoint\nSecond checkpoint: {CHECKPOINT_ID}.",
+      "group": "protected_tokens",
+      "split": "development",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Điểm kiểm tra đầu tiên[VNT000]Điểm kiểm tra thứ hai: [VNT001].",
+          "original_draft": "Điểm kiểm tra đầu tiên\nĐiểm kiểm tra thứ hai: {CHECKPOINT_ID}.",
+          "draft": "Điểm kiểm tra đầu tiên\nĐiểm kiểm tra thứ hai: {CHECKPOINT_ID}.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "điểm kiểm tra đầu tiên điểm kiểm tra thứ hai: {checkpoint_id}",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Điểm kiểm tra đầu tiên\nĐiểm kiểm tra thứ hai: {CHECKPOINT_ID}.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-08",
+      "source": "Select [OPTION_B] to keep the current settings.",
+      "group": "protected_tokens",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Chọn [VNT000] để giữ nguyên thiết lập hiện tại.",
+          "original_draft": "Chọn [OPTION_B] để giữ nguyên thiết lập hiện tại.",
+          "draft": "Chọn [OPTION_B] để giữ nguyên thiết lập hiện tại.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "chọn [option_b] để giữ nguyên thiết lập hiện tại",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Chọn [OPTION_B] để giữ nguyên thiết lập hiện tại.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-09",
+      "source": "The label reads #R7 beside the red switch.",
+      "group": "protected_tokens",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Dấu hiệu được ghi là [VNT000] bên cạnh công tắc màu đỏ.",
+          "original_draft": "Dấu hiệu được ghi là #R7 bên cạnh công tắc màu đỏ.",
+          "draft": "Dấu hiệu được ghi là #R7 bên cạnh công tắc màu đỏ.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "dấu hiệu được ghi là #r7 bên cạnh công tắc màu đỏ",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Dấu hiệu được ghi là #R7 bên cạnh công tắc màu đỏ.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    },
+    {
+      "id": "Q19-protected_tokens-10",
+      "source": "**Keep going** until you see {FINISH_MARKER}.",
+      "group": "protected_tokens",
+      "split": "heldout",
+      "history": [
+        {
+          "attempt": 0,
+          "raw": "Tiếp tục đi cho đến khi bạn thấy [VNT000].",
+          "original_draft": "Tiếp tục đi cho đến khi bạn thấy {FINISH_MARKER}.",
+          "draft": "Tiếp tục đi cho đến khi bạn thấy {FINISH_MARKER}.",
+          "role_edits": [],
+          "metadata_edits": [],
+          "structural_error": "",
+          "constraints": {
+            "status": "UNKNOWN",
+            "source_contract": null,
+            "target_facts": null,
+            "reasons": [
+              "source grammar unsupported"
+            ],
+            "normalized_target": "tiếp tục đi cho đến khi bạn thấy {finish_marker}",
+            "draft_modified_by_parser": false
+          },
+          "advisory_flags": [],
+          "state": "UNKNOWN",
+          "logic_rule": null
+        }
+      ],
+      "draft": "Tiếp tục đi cho đến khi bạn thấy {FINISH_MARKER}.",
+      "constraint_status": "UNKNOWN",
+      "selected_attempt": 0,
+      "selection_reason": "revision not proven better; retain original",
+      "status": "NEEDS_REVIEW",
+      "output": ""
+    }
+  ],
+  "opus_rows": {
+    "unassisted": [
+      {
+        "id": "Q19-dialogue-01",
+        "split": "development",
+        "source": "Mira waited by the gate, but Rowan never arrived.",
+        "output": "Mira Chờ ở cổng, nhưng... Rowan Chưa bao giờ tới.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-02",
+        "split": "development",
+        "source": "I thought you had already locked the back door.",
+        "output": "Tôi tưởng anh đã khóa cửa sau rồi chứ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-03",
+        "split": "development",
+        "source": "There is enough soup for everyone except me.",
+        "output": "Có đủ súp cho tất cả mọi người ngoại trừ tôi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-04",
+        "split": "development",
+        "source": "She almost dropped the cup when the lights went out.",
+        "output": "Cô ấy suýt làm rơi cốc khi đèn tắt.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-05",
+        "split": "development",
+        "source": "We were about to leave when the telephone rang again.",
+        "output": "Chúng tôi chuẩn bị đi khi điện thoại lại reo.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-06",
+        "split": "development",
+        "source": "You can sit here if the other chair is still wet.",
+        "output": "Anh có thể ngồi đây nếu ghế kia vẫn còn ướt.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-07",
+        "split": "development",
+        "source": "He said the train had left ten minutes earlier.",
+        "output": "Anh ta nói chuyến tàu đã khởi hành sớm hơn 10 phút.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-08",
+        "split": "heldout",
+        "source": "I would have called you if I had found my phone.",
+        "output": "Tôi sẽ gọi cho anh nếu tìm thấy điện thoại của tôi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-09",
+        "split": "heldout",
+        "source": "Nobody noticed that the small key was missing.",
+        "output": "Nobody để ý thấy chìa khóa nhỏ bị mất.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-10",
+        "split": "heldout",
+        "source": "The longer we waited, the colder the room became.",
+        "output": "Chúng tôi đợi càng lâu, căn phòng càng lạnh.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-01",
+        "split": "development",
+        "source": "Finding that receipt was like looking for a needle in a haystack.",
+        "output": "Finding Hóa đơn đó giống như tìm kim đáy bể vậy.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-02",
+        "split": "development",
+        "source": "Do not spill the beans before the guests arrive.",
+        "output": "Đừng làm đổ đậu trước khi khách đến.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-03",
+        "split": "development",
+        "source": "Her sudden resignation came out of the blue.",
+        "output": "Đơn từ chức đột ngột của cô ta bất ngờ xuất hiện.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-04",
+        "split": "development",
+        "source": "You are barking up the wrong tree if you blame the driver.",
+        "output": "Cậu đang sủa nhầm chỗ nếu đổ lỗi cho tài xế.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-05",
+        "split": "development",
+        "source": "We had to bite the bullet and cancel the trip.",
+        "output": "Chúng tôi phải cắn viên đạn và hủy chuyến đi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-06",
+        "split": "development",
+        "source": "I was pulling your leg about winning the lottery.",
+        "output": "Tôi đang kéo chân anh về việc trúng xổ số.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-07",
+        "split": "development",
+        "source": "The new manager has a lot on her plate this week.",
+        "output": "Người quản lý mới có rất nhiều việc phải làm tuần này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-08",
+        "split": "heldout",
+        "source": "He finally broke the ice by asking about the dog.",
+        "output": "Cuối cùng anh ta cũng làm vỡ băng bằng cách hỏi về con chó.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-09",
+        "split": "heldout",
+        "source": "Let us not count our chickens before they hatch.",
+        "output": "Chúng ta không nên đếm gà trước khi chúng nở.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-10",
+        "split": "heldout",
+        "source": "That rumor should be taken with a grain of salt.",
+        "output": "Tin đồn đó nên được lấy đi với một hạt muối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-01",
+        "split": "development",
+        "source": "Could you lend me your blue pen until noon?",
+        "output": "Anh cho tôi mượn bút xanh của anh cho đến trưa được không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-02",
+        "split": "development",
+        "source": "I will bring you my clean towel after dinner.",
+        "output": "Tôi sẽ mang khăn sạch cho anh sau bữa tối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-03",
+        "split": "development",
+        "source": "You may borrow my bicycle if you return it tonight.",
+        "output": "Anh có thể mượn xe đạp của tôi nếu anh trả lại tối nay.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-04",
+        "split": "development",
+        "source": "I left your lunch in the bag beside the door.",
+        "output": "Tôi để bữa trưa trong túi bên cạnh cửa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-05",
+        "split": "development",
+        "source": "May I show you my experimental results after class?",
+        "output": "Tôi có thể cho các bạn xem kết quả thử nghiệm sau giờ học không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-06",
+        "split": "development",
+        "source": "Could you send me your comments on the final paragraph?",
+        "output": "Cô có thể gửi cho tôi lời bình luận của cô trong đoạn cuối không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-07",
+        "split": "development",
+        "source": "I will return your camera before the weekend.",
+        "output": "Tôi sẽ trả máy ảnh cho anh trước cuối tuần.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-08",
+        "split": "heldout",
+        "source": "Please bring me the scarf I gave you yesterday.",
+        "output": "Xin hãy mang khăn choàng cho tôi hôm qua.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-09",
+        "split": "heldout",
+        "source": "Your little sister asked me to wait outside.",
+        "output": "Em gái cậu nhờ tôi chờ bên ngoài.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-10",
+        "split": "heldout",
+        "source": "I would like to ask you about my application tomorrow.",
+        "output": "Tôi muốn hỏi cô về đơn xin việc của tôi vào ngày mai.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-01",
+        "split": "development",
+        "source": "Save your changes before closing this window.",
+        "output": "Lưu các thay đổi trước khi đóng cửa sổ này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-02",
+        "split": "development",
+        "source": "The destination folder is not writable.",
+        "output": "Thư mục đích không thể ghi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-03",
+        "split": "development",
+        "source": "Choose which columns should remain visible.",
+        "output": "Chọn những cột nên còn lại hiển thị.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-04",
+        "split": "development",
+        "source": "This action cannot be undone after the backup is removed.",
+        "output": "Không thể hủy bỏ hành động này sau khi gỡ bỏ bản sao lưu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-05",
+        "split": "development",
+        "source": "Reconnect to continue downloading the update.",
+        "output": "Reconnect để tiếp tục tải về bản cập nhật.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-06",
+        "split": "development",
+        "source": "No matching entries were found in this view.",
+        "output": "Không tìm thấy mục khớp nào trong khung xem này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-07",
+        "split": "development",
+        "source": "The selected file has been moved or renamed.",
+        "output": "Tập tin đã chọn đã được di chuyển hay thay đổi tên của nó.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-08",
+        "split": "heldout",
+        "source": "Restore the previous layout without discarding your work.",
+        "output": "Restore bố trí trước mà không bỏ công việc của bạn.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-09",
+        "split": "heldout",
+        "source": "Only show items that still need attention.",
+        "output": "Chỉ hiển thị những thứ vẫn cần sự chú ý.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-10",
+        "split": "heldout",
+        "source": "The operation was canceled before any files were written.",
+        "output": "Thao tác bị hủy trước khi bất kỳ tập tin nào được ghi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-01",
+        "split": "development",
+        "source": "Verify the checksum before replacing the archive.",
+        "output": "Verify trước khi thay thế kho lưu trữ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-02",
+        "split": "development",
+        "source": "The migration preserves the order of all existing records.",
+        "output": "Sự di cư bảo tồn trật tự của tất cả các hồ sơ hiện có.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-03",
+        "split": "development",
+        "source": "The certificate expired before the connection was established.",
+        "output": "Chứng nhận đã hết hạn trước khi thiết lập kết nối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-04",
+        "split": "development",
+        "source": "Keep the recovery key separate from the encrypted drive.",
+        "output": "Giữ chìa khóa phục hồi tách khỏi ổ khóa đã được mã hóa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-05",
+        "split": "development",
+        "source": "A transaction must either finish completely or roll back.",
+        "output": "Một giao dịch phải hoàn thành hoàn toàn hoặc quay trở lại.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-06",
+        "split": "development",
+        "source": "The invoice includes tax but excludes shipping costs.",
+        "output": "Hóa đơn bao gồm thuế nhưng không tính chi phí vận chuyển.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-07",
+        "split": "development",
+        "source": "The landlord must approve the transfer of the lease.",
+        "output": "Chủ nhà phải phê chuẩn việc chuyển nhượng hợp đồng thuê nhà.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-08",
+        "split": "heldout",
+        "source": "The pressure sensor reports a value below the safe threshold.",
+        "output": "Bộ cảm biến áp suất báo cáo một giá trị dưới ngưỡng an toàn.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-09",
+        "split": "heldout",
+        "source": "The sample must remain frozen until the test begins.",
+        "output": "Mẫu vật phải được giữ lạnh cho đến khi thử nghiệm bắt đầu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-10",
+        "split": "heldout",
+        "source": "This license permits redistribution but does not transfer ownership.",
+        "output": "Giấy phép này cho phép tái phân phối nhưng không chuyển quyền sở hữu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-01",
+        "split": "development",
+        "source": "Welcome back, {PLAYER_NAME}; your seat is ready.",
+        "output": "Welcome Lùi lại, {PLAYER_NAME}; ghế đã sẵn sàng.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-02",
+        "split": "development",
+        "source": "Copy %s to the folder named {TARGET_FOLDER}.",
+        "output": "",
+        "structural_reasons": null
+      },
+      {
+        "id": "Q19-protected_tokens-03",
+        "split": "development",
+        "source": "You have %d unread messages and %d saved drafts.",
+        "output": "Bạn có %d tin nhắn chưa đọc và %d lưu bản nháp.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-04",
+        "split": "development",
+        "source": "<b>Warning:</b> Do not remove {DEVICE_ID} yet.",
+        "output": "<b> Warning:</b> Không gỡ bỏ {DEVICE_ID} Vẫn chưa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-05",
+        "split": "development",
+        "source": "<i>Try again</i> after {WAIT_SECONDS} seconds.",
+        "output": "<i> Try lại đi</i> sau {WAIT_SECONDS} giây.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-06",
+        "split": "development",
+        "source": "Line one\\nLine two: keep {LINE_KEY} unchanged.",
+        "output": "Line Một\\n Dòng thứ hai: giữ {LINE_KEY} Không thay đổi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-07",
+        "split": "development",
+        "source": "First checkpoint\nSecond checkpoint: {CHECKPOINT_ID}.",
+        "output": "First Điểm kiểm tra\nSecond Điểm kiểm tra: {CHECKPOINT_ID}.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-08",
+        "split": "heldout",
+        "source": "Select [OPTION_B] to keep the current settings.",
+        "output": "Chọn [OPTION_B] để giữ thiết lập hiện thời.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-09",
+        "split": "heldout",
+        "source": "The label reads #R7 beside the red switch.",
+        "output": "Cái nhãn ghi #R7 bên cạnh công tắc đỏ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-10",
+        "split": "heldout",
+        "source": "**Keep going** until you see {FINISH_MARKER}.",
+        "output": "** Tiếp tục đi** cho đến khi bạn thấy {FINISH_MARKER}.",
+        "structural_reasons": []
+      }
+    ],
+    "glossary": [
+      {
+        "id": "Q19-dialogue-01",
+        "split": "development",
+        "source": "Mira waited by the gate, but Rowan never arrived.",
+        "output": "Mira Chờ ở cổng, nhưng... Rowan Chưa bao giờ tới.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-02",
+        "split": "development",
+        "source": "I thought you had already locked the back door.",
+        "output": "Tôi tưởng anh đã khóa cửa sau rồi chứ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-03",
+        "split": "development",
+        "source": "There is enough soup for everyone except me.",
+        "output": "Có đủ súp cho tất cả mọi người ngoại trừ tôi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-04",
+        "split": "development",
+        "source": "She almost dropped the cup when the lights went out.",
+        "output": "Cô ấy suýt làm rơi cốc khi đèn tắt.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-05",
+        "split": "development",
+        "source": "We were about to leave when the telephone rang again.",
+        "output": "Chúng tôi chuẩn bị đi khi điện thoại lại reo.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-06",
+        "split": "development",
+        "source": "You can sit here if the other chair is still wet.",
+        "output": "Anh có thể ngồi đây nếu ghế kia vẫn còn ướt.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-07",
+        "split": "development",
+        "source": "He said the train had left ten minutes earlier.",
+        "output": "Anh ta nói chuyến tàu đã khởi hành sớm hơn 10 phút.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-08",
+        "split": "heldout",
+        "source": "I would have called you if I had found my phone.",
+        "output": "Tôi sẽ gọi cho anh nếu tìm thấy điện thoại của tôi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-09",
+        "split": "heldout",
+        "source": "Nobody noticed that the small key was missing.",
+        "output": "Nobody để ý thấy chìa khóa nhỏ bị mất.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-dialogue-10",
+        "split": "heldout",
+        "source": "The longer we waited, the colder the room became.",
+        "output": "Chúng tôi đợi càng lâu, căn phòng càng lạnh.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-01",
+        "split": "development",
+        "source": "Finding that receipt was like looking for a needle in a haystack.",
+        "output": "Finding Hóa đơn đó giống như tìm kim đáy bể vậy.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-02",
+        "split": "development",
+        "source": "Do not spill the beans before the guests arrive.",
+        "output": "Đừng làm đổ đậu trước khi khách đến.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-03",
+        "split": "development",
+        "source": "Her sudden resignation came out of the blue.",
+        "output": "Đơn từ chức đột ngột của cô ta bất ngờ xuất hiện.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-04",
+        "split": "development",
+        "source": "You are barking up the wrong tree if you blame the driver.",
+        "output": "Cậu đang sủa nhầm chỗ nếu đổ lỗi cho tài xế.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-05",
+        "split": "development",
+        "source": "We had to bite the bullet and cancel the trip.",
+        "output": "Chúng tôi phải cắn viên đạn và hủy chuyến đi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-06",
+        "split": "development",
+        "source": "I was pulling your leg about winning the lottery.",
+        "output": "Tôi đang kéo chân anh về việc trúng xổ số.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-07",
+        "split": "development",
+        "source": "The new manager has a lot on her plate this week.",
+        "output": "Người quản lý mới có rất nhiều việc phải làm tuần này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-08",
+        "split": "heldout",
+        "source": "He finally broke the ice by asking about the dog.",
+        "output": "Cuối cùng anh ta cũng làm vỡ băng bằng cách hỏi về con chó.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-09",
+        "split": "heldout",
+        "source": "Let us not count our chickens before they hatch.",
+        "output": "Chúng ta không nên đếm gà trước khi chúng nở.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-idiom-10",
+        "split": "heldout",
+        "source": "That rumor should be taken with a grain of salt.",
+        "output": "Tin đồn đó nên được lấy đi với một hạt muối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-01",
+        "split": "development",
+        "source": "Could you lend me your blue pen until noon?",
+        "output": "Anh cho tôi mượn bút xanh của anh cho đến trưa được không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-02",
+        "split": "development",
+        "source": "I will bring you my clean towel after dinner.",
+        "output": "Tôi sẽ mang khăn sạch cho anh sau bữa tối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-03",
+        "split": "development",
+        "source": "You may borrow my bicycle if you return it tonight.",
+        "output": "Anh có thể mượn xe đạp của tôi nếu anh trả lại tối nay.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-04",
+        "split": "development",
+        "source": "I left your lunch in the bag beside the door.",
+        "output": "Tôi để bữa trưa trong túi bên cạnh cửa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-05",
+        "split": "development",
+        "source": "May I show you my experimental results after class?",
+        "output": "Tôi có thể cho các bạn xem kết quả thử nghiệm sau giờ học không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-06",
+        "split": "development",
+        "source": "Could you send me your comments on the final paragraph?",
+        "output": "Cô có thể gửi cho tôi lời bình luận của cô trong đoạn cuối không?",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-07",
+        "split": "development",
+        "source": "I will return your camera before the weekend.",
+        "output": "Tôi sẽ trả máy ảnh cho anh trước cuối tuần.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-08",
+        "split": "heldout",
+        "source": "Please bring me the scarf I gave you yesterday.",
+        "output": "Xin hãy mang khăn choàng cho tôi hôm qua.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-09",
+        "split": "heldout",
+        "source": "Your little sister asked me to wait outside.",
+        "output": "Em gái cậu nhờ tôi chờ bên ngoài.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-address-10",
+        "split": "heldout",
+        "source": "I would like to ask you about my application tomorrow.",
+        "output": "Tôi muốn hỏi cô về đơn xin việc của tôi vào ngày mai.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-01",
+        "split": "development",
+        "source": "Save your changes before closing this window.",
+        "output": "Lưu các thay đổi trước khi đóng cửa sổ này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-02",
+        "split": "development",
+        "source": "The destination folder is not writable.",
+        "output": "Thư mục đích không thể ghi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-03",
+        "split": "development",
+        "source": "Choose which columns should remain visible.",
+        "output": "Chọn những cột nên còn lại hiển thị.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-04",
+        "split": "development",
+        "source": "This action cannot be undone after the backup is removed.",
+        "output": "Không thể hủy bỏ hành động này sau khi gỡ bỏ bản sao lưu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-05",
+        "split": "development",
+        "source": "Reconnect to continue downloading the update.",
+        "output": "Reconnect để tiếp tục tải về bản cập nhật.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-06",
+        "split": "development",
+        "source": "No matching entries were found in this view.",
+        "output": "Không tìm thấy mục khớp nào trong khung xem này.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-07",
+        "split": "development",
+        "source": "The selected file has been moved or renamed.",
+        "output": "Tập tin đã chọn đã được di chuyển hay thay đổi tên của nó.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-08",
+        "split": "heldout",
+        "source": "Restore the previous layout without discarding your work.",
+        "output": "Restore bố trí trước mà không bỏ công việc của bạn.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-09",
+        "split": "heldout",
+        "source": "Only show items that still need attention.",
+        "output": "Chỉ hiển thị những thứ vẫn cần sự chú ý.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-ui-10",
+        "split": "heldout",
+        "source": "The operation was canceled before any files were written.",
+        "output": "Thao tác bị hủy trước khi bất kỳ tập tin nào được ghi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-01",
+        "split": "development",
+        "source": "Verify the checksum before replacing the archive.",
+        "output": "Kiểm tra tổng kiểm tra trước khi thay thế kho lưu trữ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-02",
+        "split": "development",
+        "source": "The migration preserves the order of all existing records.",
+        "output": "di chuyển dữ liệu bảo tồn trật tự của tất cả các hồ sơ hiện có.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-03",
+        "split": "development",
+        "source": "The certificate expired before the connection was established.",
+        "output": "Chứng nhận đã hết hạn trước khi thiết lập kết nối.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-04",
+        "split": "development",
+        "source": "Keep the recovery key separate from the encrypted drive.",
+        "output": "Giữ chìa khóa phục hồi tách khỏi ổ khóa đã được mã hóa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-05",
+        "split": "development",
+        "source": "A transaction must either finish completely or roll back.",
+        "output": "Một giao dịch phải hoàn thành hoàn toàn hoặc quay trở lại.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-06",
+        "split": "development",
+        "source": "The invoice includes tax but excludes shipping costs.",
+        "output": "Hóa đơn bao gồm thuế nhưng không tính chi phí vận chuyển.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-07",
+        "split": "development",
+        "source": "The landlord must approve the transfer of the lease.",
+        "output": "Chủ nhà phải phê chuẩn việc chuyển nhượng hợp đồng thuê nhà.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-08",
+        "split": "heldout",
+        "source": "The pressure sensor reports a value below the safe threshold.",
+        "output": "Bộ cảm biến áp suất báo cáo một giá trị dưới ngưỡng an toàn.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-09",
+        "split": "heldout",
+        "source": "The sample must remain frozen until the test begins.",
+        "output": "Mẫu vật phải được giữ lạnh cho đến khi thử nghiệm bắt đầu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-terminology-10",
+        "split": "heldout",
+        "source": "This license permits redistribution but does not transfer ownership.",
+        "output": "Giấy phép này cho phép tái phân phối nhưng không chuyển quyền sở hữu.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-01",
+        "split": "development",
+        "source": "Welcome back, {PLAYER_NAME}; your seat is ready.",
+        "output": "Welcome Lùi lại, {PLAYER_NAME}; ghế đã sẵn sàng.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-02",
+        "split": "development",
+        "source": "Copy %s to the folder named {TARGET_FOLDER}.",
+        "output": "",
+        "structural_reasons": null
+      },
+      {
+        "id": "Q19-protected_tokens-03",
+        "split": "development",
+        "source": "You have %d unread messages and %d saved drafts.",
+        "output": "Bạn có %d tin nhắn chưa đọc và %d lưu bản nháp.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-04",
+        "split": "development",
+        "source": "<b>Warning:</b> Do not remove {DEVICE_ID} yet.",
+        "output": "<b> Warning:</b> Không gỡ bỏ {DEVICE_ID} Vẫn chưa.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-05",
+        "split": "development",
+        "source": "<i>Try again</i> after {WAIT_SECONDS} seconds.",
+        "output": "<i> Try lại đi</i> sau {WAIT_SECONDS} giây.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-06",
+        "split": "development",
+        "source": "Line one\\nLine two: keep {LINE_KEY} unchanged.",
+        "output": "Line Một\\n Dòng thứ hai: giữ {LINE_KEY} Không thay đổi.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-07",
+        "split": "development",
+        "source": "First checkpoint\nSecond checkpoint: {CHECKPOINT_ID}.",
+        "output": "First Điểm kiểm tra\nSecond Điểm kiểm tra: {CHECKPOINT_ID}.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-08",
+        "split": "heldout",
+        "source": "Select [OPTION_B] to keep the current settings.",
+        "output": "Chọn [OPTION_B] để giữ thiết lập hiện thời.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-09",
+        "split": "heldout",
+        "source": "The label reads #R7 beside the red switch.",
+        "output": "Cái nhãn ghi #R7 bên cạnh công tắc đỏ.",
+        "structural_reasons": []
+      },
+      {
+        "id": "Q19-protected_tokens-10",
+        "split": "heldout",
+        "source": "**Keep going** until you see {FINISH_MARKER}.",
+        "output": "** Tiếp tục đi** cho đến khi bạn thấy {FINISH_MARKER}.",
+        "structural_reasons": []
+      }
+    ]
+  },
+  "term_bank": {
+    "checksum": "mã kiểm tra",
+    "manifest": "bản kê khai",
+    "cache": "bộ nhớ đệm",
+    "glossary": "bảng thuật ngữ",
+    "CSV": "CSV",
+    "placeholder": "biến giữ chỗ",
+    "patch": "bản vá",
+    "locator": "bộ định vị",
+    "fingerprint": "dấu vân tay",
+    "parser": "trình phân tích",
+    "sidecar": "tệp phụ",
+    "worker": "tiến trình xử lý",
+    "read-only": "chỉ đọc",
+    "preview": "xem trước",
+    "copy": "sao chép",
+    "cancel": "hủy",
+    "export": "xuất dữ liệu",
+    "journal": "nhật ký",
+    "shortcut": "phím tắt",
+    "badge": "huy hiệu",
+    "overwrite": "ghi đè",
+    "overwriting": "ghi đè",
+    "reject": "từ chối",
+    "archive": "kho lưu trữ",
+    "unverified": "chưa xác minh",
+    "unchecked": "chưa kiểm tra",
+    "release": "phát hành",
+    "backup": "bản sao lưu",
+    "signature": "chữ ký",
+    "canceling": "việc hủy bỏ",
+    "aborting": "việc hủy bỏ",
+    "tablet": "máy tính bảng",
+    "charger": "bộ sạc",
+    "outline": "dàn ý",
+    "patching": "vá",
+    "eligible": "đủ điều kiện",
+    "unresolved": "chưa giải quyết",
+    "snapshot": "bản chụp trạng thái",
+    "upload": "tải lên",
+    "migration": "di chuyển dữ liệu",
+    "rollback": "hoàn tác",
+    "table": "bảng",
+    "stopping": "dừng",
+    "rollback data": "dữ liệu hoàn tác",
+    "collection": "tập hợp",
+    "permitted": "được phép",
+    "file transfer": "truyền tệp",
+    "verified": "xác minh"
+  }
+}

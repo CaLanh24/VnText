@@ -1,0 +1,233 @@
+{
+  "baseline.json": {
+    "original_file_sha256": "112bd88612cb00af819e195bf1a100e917eecb5308cb3e8198a05787f655a0cc",
+    "historical_locator": "DEV_RUN/translation-quality-phase19/baseline.json",
+    "source_sha": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+    "code_hashes": {
+      "tests/tools/translation_quality_phase5.py": "35152999effa4051596a65cc8916efb1e704a9a83ab8af135a8006663840569f",
+      "tests/tools/translation_quality_guard.py": "6211b1d08197737947aff2771d3fde031eb45db421582e02b84c5baf4ffb6167",
+      "tests/tools/translation_quality_low_memory_trial.py": "dba4fa89d536b7236765091c0a24a7b4b7f35412b9f197c76f214ac7a66a84fd",
+      "tests/tools/translation_quality_prompt_trial.py": "f56685d6c2dd431274036d786dd1836e303183a64fd49c1502d1248c2ba24b16",
+      "tests/tools/translation_quality_phase8.py": "6e9db88dbb62714547164da1b017e4562041796c80cf76f5dd8849786496ddc1",
+      "tests/tools/translation_quality_semantic_transport.py": "c47fbe92108ea460819e6c382e94979470177554d86d0563300cdd6df2f7c21d",
+      "tests/tools/translation_quality_phase6.py": "0513ed481d7652892f089b553022e91c40367914ab726d9f5ea691f7e1c7b3c7",
+      "tests/tools/translation_role_binding.py": "33a84b17a048035b84f674bbbdf3c29a5aa8a0e04a42230f6aa6a89143e67bc5",
+      "tests/tools/translation_constraints_v5.py": "e5816388bf8a7455d1f9a6547e1726d7bdc98758b2c8f8a9589f405b07e70b9a",
+      "tests/tools/translation_constraints_v4.py": "ac1c7684c049c4309d8a331d38f5bde87fc5758cc2c19307bdd36f6a0db87db6",
+      "tests/tools/translation_constraints_v3.py": "252b0c3a825e9e5fa50e58486254f25767c53eae6eedb09e8f0aae93d000b65c",
+      "tests/tools/translation_constraints_v2.py": "10d39145f3021445a3c2a0bcde1ca15f315443385394920a7da85e2bf1215ce7",
+      "tests/tools/translation_constraints.py": "fe867e0d56e701db1540a277cad4641ae7281c80a86d4becf9a9e15b3071b6a7",
+      "tests/tools/translation_quality_phase18.py": "b78845cea7bcffb65f6a69f314fe0a6acc09baea17af019213389935815cea12",
+      "tests/tools/translation_quality_phase19.py": "ad7e414193bdbc5036ba4665d1b268bd43a8ca56a97cd06469268a03f25724f6"
+    },
+    "dataset_sha256": "085c0731f7ca5c1ed3fcc6342c882516c1c95d66d5d82ac47ca49dd78b6013ee",
+    "status": "COMPLETED",
+    "model_identity": {
+      "path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\cache\\models\\opus-mt-en-vi-int8",
+      "repository": "dekthedev/opus-mt-en-vi-ct2-int8",
+      "declared_revision": "c22547827b876e8ee939d6a9363965e5c9f769e1",
+      "file_count": 33,
+      "files": [
+        {
+          "path": ".cache/huggingface/.gitignore",
+          "size_bytes": 1,
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": ".cache/huggingface/CACHEDIR.TAG",
+          "size_bytes": 195,
+          "sha256": "e8893e2dcb3f4545ef67a0a5b7b769113d38eef1aa61c7c7ba14659b02af955f"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.metadata",
+          "size_bytes": 104,
+          "sha256": "4577398eb4620266d461c370bba6afe41815055d652b51992b8ab188e859c64b"
+        },
+        {
+          "path": ".cache/huggingface/download/config.json.metadata",
+          "size_bytes": 104,
+          "sha256": "1aac878bea351699d6764b008c0111b46df825e119b475a10285ffc90a71fc51"
+        },
+        {
+          "path": ".cache/huggingface/download/h_ERsDJjaLfW4DPqrhWdG_HKjc0=.fb8ad63c818f073c246952c91b2cb1f16aa30728bf51b5c179b8481bc0e20bb5.325f0c7c.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/h_ERsDJjaLfW4DPqrhWdG_HKjc0=.fb8ad63c818f073c246952c91b2cb1f16aa30728bf51b5c179b8481bc0e20bb5.6132d218.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/h_ERsDJjaLfW4DPqrhWdG_HKjc0=.fb8ad63c818f073c246952c91b2cb1f16aa30728bf51b5c179b8481bc0e20bb5.91899975.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/j3m-Hy6QvBddw8RXA1uSWl1AJ0c=.2b8dc2b4537510467ef422017be93f30fdf09435.ccca8ebe.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/mBG94Lz8EYH5gU8b5axgj2RF9Tk=.53a1d87fbcdfe1b95e51a8da90b673208895fc986507b68dcd4a8031ca54676c.12e14859.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/mBG94Lz8EYH5gU8b5axgj2RF9Tk=.53a1d87fbcdfe1b95e51a8da90b673208895fc986507b68dcd4a8031ca54676c.1b206d94.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/mBG94Lz8EYH5gU8b5axgj2RF9Tk=.53a1d87fbcdfe1b95e51a8da90b673208895fc986507b68dcd4a8031ca54676c.bdf18504.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/model.bin.metadata",
+          "size_bytes": 128,
+          "sha256": "4fec0f02bc5134336942d31934b12113a5b10d8dc0c6bb7d7bb04e7ed79ca2e7"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.metadata",
+          "size_bytes": 104,
+          "sha256": "940e498ef8ef4ce0c7082b75d2de8aceda9bcd8ab5a387bbde93f6da30c49be5"
+        },
+        {
+          "path": ".cache/huggingface/download/shared_vocabulary.json.metadata",
+          "size_bytes": 104,
+          "sha256": "b862aef18838799a95eb9ade8f68194cb60dbe2d557adcaeb99b3d5e2c8a4453"
+        },
+        {
+          "path": ".cache/huggingface/download/source.spm.metadata",
+          "size_bytes": 128,
+          "sha256": "10fb1c89b2474d0da5ba8ed9e443665b116801416217de33dbbf17ba477a13c6"
+        },
+        {
+          "path": ".cache/huggingface/download/special_tokens_map.json.metadata",
+          "size_bytes": 104,
+          "sha256": "18bc9b9a6562027162e91e26c50944eb4623685fb50896efe7b8e519cace8278"
+        },
+        {
+          "path": ".cache/huggingface/download/target.spm.metadata",
+          "size_bytes": 128,
+          "sha256": "e2160251dc1f6b0eb3979e5b57200fba6a0af0181451d7559382b4498709bb64"
+        },
+        {
+          "path": ".cache/huggingface/download/tokenizer_config.json.metadata",
+          "size_bytes": 103,
+          "sha256": "ec3f5b3ddf5114887f2cbcd562fca29d015791394bf358a2c90d89117af33f48"
+        },
+        {
+          "path": ".cache/huggingface/download/vocab.json.metadata",
+          "size_bytes": 104,
+          "sha256": "72a742e753e29b4fccf75e3d16d0d3880497842b89af20b9c1595296f6ca617c"
+        },
+        {
+          "path": ".cache/huggingface/download/XG33BUjhXEsozhgi_oOX8t22U7k=.fdd9ab486ca8ea060967105e30db7d8928729c78a67448711d2dd7c3153b37cd.269e74b3.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/XG33BUjhXEsozhgi_oOX8t22U7k=.fdd9ab486ca8ea060967105e30db7d8928729c78a67448711d2dd7c3153b37cd.28388066.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/download/XG33BUjhXEsozhgi_oOX8t22U7k=.fdd9ab486ca8ea060967105e30db7d8928729c78a67448711d2dd7c3153b37cd.f0f1271f.incomplete",
+          "size_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".cache/huggingface/trees/c22547827b876e8ee939d6a9363965e5c9f769e1.json",
+          "size_bytes": 1685,
+          "sha256": "bebc0d141b7fe79f9e922f02a65cb73acfacc6011fe35aa1b7ee4101578a53bc"
+        },
+        {
+          "path": ".gitattributes",
+          "size_bytes": 1613,
+          "sha256": "e9ed230f4eee6ff9947dee4b0eb2f4695a1322ed148fe186313b2db2127bb73d"
+        },
+        {
+          "path": "config.json",
+          "size_bytes": 189,
+          "sha256": "4244772990e30069563e3ddfb4ad6dc95bdfd2ac3de667ea8858c9b0a8433fa8"
+        },
+        {
+          "path": "model.bin",
+          "size_bytes": 73683276,
+          "sha256": "53a1d87fbcdfe1b95e51a8da90b673208895fc986507b68dcd4a8031ca54676c"
+        },
+        {
+          "path": "README.md",
+          "size_bytes": 1865,
+          "sha256": "68fa86f5372c24bf211336e5d0e5fb8237d1e6499b34c2386ab376f3b26d3fd4"
+        },
+        {
+          "path": "shared_vocabulary.json",
+          "size_bytes": 935068,
+          "sha256": "5f2a279e57b170f567fb605bd44fb40f8ed22f73a06648eefa9b877831e95a3e"
+        },
+        {
+          "path": "source.spm",
+          "size_bytes": 808612,
+          "sha256": "fdd9ab486ca8ea060967105e30db7d8928729c78a67448711d2dd7c3153b37cd"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "size_bytes": 74,
+          "sha256": "5e4d1f5e759d74cb1c2fe1d165cfc62b5237aa904de759380cd6f43042eec723"
+        },
+        {
+          "path": "target.spm",
+          "size_bytes": 756198,
+          "sha256": "fb8ad63c818f073c246952c91b2cb1f16aa30728bf51b5c179b8481bc0e20bb5"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size_bytes": 849,
+          "sha256": "d4c7b263d0aa35d0cc930f8693804dea1a17cc81b5b7611d3a70f866b5d8fa74"
+        },
+        {
+          "path": "vocab.json",
+          "size_bytes": 1299764,
+          "sha256": "bcc8bbafeb0b6b58fecf244f8da996da9aa45dbea7871164f9c8ce480507f9fe"
+        }
+      ],
+      "tree_sha256": "964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4"
+    },
+    "projection_sha256": "08e268df3b194cc33c894871186ab31c781a86d4573ce13aa0fbbe176d99fa89",
+    "note": "Full original file hash is historical provenance, not recomputable from compact projection; embedded rows are exact JSON values, no new run."
+  },
+  "final.json": {
+    "original_file_sha256": "d40dd6541c55acd53d4be9df8ba66a744d6db8fff26d53a6922358e5ebf1b179",
+    "historical_locator": "DEV_RUN/translation-quality-phase19/final.json",
+    "source_sha": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+    "code_hashes": {
+      "tests/tools/translation_quality_phase5.py": "35152999effa4051596a65cc8916efb1e704a9a83ab8af135a8006663840569f",
+      "tests/tools/translation_quality_guard.py": "6211b1d08197737947aff2771d3fde031eb45db421582e02b84c5baf4ffb6167",
+      "tests/tools/translation_quality_low_memory_trial.py": "dba4fa89d536b7236765091c0a24a7b4b7f35412b9f197c76f214ac7a66a84fd",
+      "tests/tools/translation_quality_prompt_trial.py": "f56685d6c2dd431274036d786dd1836e303183a64fd49c1502d1248c2ba24b16",
+      "tests/tools/translation_quality_phase8.py": "6e9db88dbb62714547164da1b017e4562041796c80cf76f5dd8849786496ddc1",
+      "tests/tools/translation_quality_semantic_transport.py": "c47fbe92108ea460819e6c382e94979470177554d86d0563300cdd6df2f7c21d",
+      "tests/tools/translation_quality_phase6.py": "0513ed481d7652892f089b553022e91c40367914ab726d9f5ea691f7e1c7b3c7",
+      "tests/tools/translation_role_binding.py": "33a84b17a048035b84f674bbbdf3c29a5aa8a0e04a42230f6aa6a89143e67bc5",
+      "tests/tools/translation_constraints_v5.py": "e5816388bf8a7455d1f9a6547e1726d7bdc98758b2c8f8a9589f405b07e70b9a",
+      "tests/tools/translation_constraints_v4.py": "ac1c7684c049c4309d8a331d38f5bde87fc5758cc2c19307bdd36f6a0db87db6",
+      "tests/tools/translation_constraints_v3.py": "252b0c3a825e9e5fa50e58486254f25767c53eae6eedb09e8f0aae93d000b65c",
+      "tests/tools/translation_constraints_v2.py": "10d39145f3021445a3c2a0bcde1ca15f315443385394920a7da85e2bf1215ce7",
+      "tests/tools/translation_constraints.py": "fe867e0d56e701db1540a277cad4641ae7281c80a86d4becf9a9e15b3071b6a7",
+      "tests/tools/translation_quality_phase18.py": "b78845cea7bcffb65f6a69f314fe0a6acc09baea17af019213389935815cea12",
+      "tests/tools/translation_quality_phase19.py": "ad7e414193bdbc5036ba4665d1b268bd43a8ca56a97cd06469268a03f25724f6"
+    },
+    "dataset_sha256": "085c0731f7ca5c1ed3fcc6342c882516c1c95d66d5d82ac47ca49dd78b6013ee",
+    "status": "COMPLETED",
+    "model_identity": {
+      "model_sha256": "dc5f44fcf1fa496ee7ad725982c0c8c553a4de00259b53af84c4b89fb0c06699",
+      "runtime_sha256": "cac0fb622fd8e2529df009f459b7fa797c5d12fd0509d5801d987e2d05846a3f",
+      "model_unchanged": true
+    },
+    "projection_sha256": "f932f93ad0b812c68bc8bd54dd62a91182c21aeedb3f1e6579a573df6be6e6bb",
+    "note": "Full original file hash is historical provenance, not recomputable from compact projection; embedded rows are exact JSON values, no new run."
+  }
+}

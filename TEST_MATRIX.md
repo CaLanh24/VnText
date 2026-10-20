@@ -2,6 +2,14 @@ Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and im
 
 # VNText Studio — Test Matrix
 
+Offline silver packet M1–M4: `test_translation_silver_packet` focused4 tests
+(public hash/mapping/policy verification without ignored originals, raw tamper,
+rehashed unsafe-memory rejection, retained grades/overrides/current exclusions).
+Run through canonical wrapper; no inference/model/build or125-test rerun.
+`python -B tests/tools/translation_silver_packet.py verify` validates public packet
+and tracked dataset. Counts60/12audit/48terms/3candidates/9memory; silver only,
+not human gold or product acceptance. Source/check hashes in packet/handoff.json.
+
 Research-only contextual model guard/fresh-corpus gate: `tests/unit/test_translation_quality_guard.py`, `test_translation_quality_prompt_trial.py`, `test_mt_structural.py`; then pinned real-model seen regression and frozen new-corpus comparison via `translation_quality_phase5.py` under canonical cleanup. Reject missing/extra/duplicated/reordered/damaged carriers, context-token injection and source collisions; preserve exact original tokens, translate tag bodies, keep scenario/split boundaries. Output/model-process success is not semantic acceptance. Test tools do not change product CT2/OPUS routing; new corpus rights/split/hash and per-run source/model identity are mandatory.
 
 App journal Cockpit follow-up: `JournalStore_BoundsHistorySearchSeverityAndClear` exercises real daily persistence, severity/literal/regex filters, file rotation/caps, traversal rejection, selected-file deletion preserving other files and modal navigation preserving the active tab. Same canonical WPF workflow gate, DEV build/configured worker smoke and native modal inspection.

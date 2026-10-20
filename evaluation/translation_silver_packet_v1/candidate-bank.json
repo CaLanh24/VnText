@@ -1,0 +1,73 @@
+{
+  "records": [
+    {
+      "source_term": "checksum",
+      "historical_target": "mã kiểm tra",
+      "bank_provenance": "evidence/outputs.json#/term_bank",
+      "domain_scope": "file integrity",
+      "counter_sense": "ordinary check/payment sum is not a checksum",
+      "counter_sense_status": "manual_scope_design_NOT_model_tested",
+      "occurrence_ids": [
+        "Q19-terminology-01"
+      ],
+      "positive_observations": [
+        {
+          "id": "Q19-terminology-01",
+          "arm": "candidate",
+          "source": "Verify the checksum before replacing the archive.",
+          "target_output": "Hãy kiểm tra mã kiểm tra trước khi thay thế kho lưu trữ."
+        }
+      ],
+      "disposition": "candidate",
+      "label": "silver_candidate_only; needs-human-review",
+      "approved": false,
+      "training_eligible": false
+    },
+    {
+      "source_term": "copy",
+      "historical_target": "sao chép",
+      "bank_provenance": "evidence/outputs.json#/term_bank",
+      "domain_scope": "file-copy imperative preserving literal placeholders",
+      "counter_sense": "copy as publication text is not a file-copy command",
+      "counter_sense_status": "manual_scope_design_NOT_model_tested",
+      "occurrence_ids": [
+        "Q19-protected_tokens-02"
+      ],
+      "positive_observations": [
+        {
+          "id": "Q19-protected_tokens-02",
+          "arm": "candidate",
+          "source": "Copy %s to the folder named {TARGET_FOLDER}.",
+          "target_output": "Sao chép %s vào thư mục có tên {TARGET_FOLDER}."
+        }
+      ],
+      "disposition": "candidate",
+      "label": "silver_candidate_only; needs-human-review",
+      "approved": false,
+      "training_eligible": false
+    },
+    {
+      "source_term": "migration",
+      "historical_target": "di chuyển dữ liệu",
+      "bank_provenance": "evidence/outputs.json#/term_bank",
+      "domain_scope": "ordered database/data-record migration",
+      "counter_sense": "human/bird migration is not data migration",
+      "counter_sense_status": "manual_scope_design_NOT_model_tested",
+      "occurrence_ids": [
+        "Q19-terminology-02"
+      ],
+      "positive_observations": [
+        {
+          "id": "Q19-terminology-02",
+          "arm": "candidate",
+          "source": "The migration preserves the order of all existing records.",
+          "target_output": "Việc di chuyển dữ liệu đảm bảo trật tự của tất cả các bản ghi hiện có."
+        }
+      ],
+      "disposition": "candidate",
+      "label": "silver_candidate_only; needs-human-review",
+      "approved": false,
+      "training_eligible": false
+    }
+  ]
+}

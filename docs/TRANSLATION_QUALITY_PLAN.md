@@ -1,12 +1,44 @@
 # Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
 
+## M1–M4 offline0đ đã thực thi — 2026-10-20
+
+Owner giao “Thực hiện đi”; DEV sole writer triển khai, Brain read-only audit/
+nghiệm thu. [Public packet](../evaluation/translation_silver_packet_v1/README.md)
+có60source/context/curation rows, raw3arms/review/mapping/seal và SHA/identity thật.
+All60 seen development/regression;0model/inference/benchmark mới. Rights nguồn
+generated-for-project60known/0UNKNOWN, không human gold.
+
+Audit12IDs trong README/audit12 bao gồm4historical severity overrides, giữ original
+verdict/winner riêng. Bank48:42 không occurrence,6 có occurrence, chỉ3term candidates
+checksum/migration/copy có exact-phrase observation ở agent-acceptable draft.
+Domain/counter-sense là design scope, chưa model-test negative controls. Memory9
+exact-source/domain/address/scenario pairs: cả2reviewed arms acceptable rồi lấy
+OPUS glossary gốc, không aggregate score. Loại Q19-ui-04 undo/cancel và
+Q19-dialogue-06 xưng hô nam khi context không nêu, không đổi raw/verdict cũ.
+Không padding12/20; tất cả needs-human-review/approved=false/training=false.
+
+Offline verifier kiểm hashes/rights/seal/mapping/adjustments/derived rows/policy
+và JSON Pointer `/rows/<index>`+stableID/source/target. Public clone chỉ cần tracked
+packet/dataset; original full-file hashes là provenance lịch sử, compact projections
+không tự chứng minh lại model execution. Focused4tests PASS/0fail/error/skip/warning,
+canonical exit0/cleanupPASS; gate đầu4PASS giữ riêng, final4PASS sau memory remediation.
+Base0b01fa97+per-file hashes, không nâng model evidence cũ thành exactHEAD.
+
+Outcome **PASS data/technical M1–M4**, không semantic/model/product/training
+acceptance. Chi phát sinh0đ, không child/download/install/cloud/upload/account/
+training/inference/build/release/push/product glossary-memory-cache writes.
+Training **NOT_TRIGGERED/DEFERRED**, Hy REJECTED, OPUS giữ nguyên. Gói offline
+này đã khép, không tự mở phase tiếp. Public `handoff.json`; canonical receipts
+ở Downloads/VM-Acceptance/silver-packet-*.json.
+
 ## Owner quyết định ngân sách0đ — 2026-10-20
 
 Không thuê reviewer/GPU/máy, mua phần cứng, trial cần thẻ/đặt cọc/autocharge.
 Quyết định này thay gợi ý xin budget trong các mục lịch sử; bản trả phí đang soạn
 đã hủy trước commit. [Lộ trình0đ](TRANSLATION_TRAINING_PILOT_PROPOSAL.md) đề nghị
 gói offline60 nguồn synthetic Phase19/raw đã có, agent-reviewed silver, audit
-bank48/candidate memory, <=5h DEV/1h Brain read-only nghiệm thu; chưa thực thi.
+bank48/candidate memory, <=5h DEV/1h Brain read-only nghiệm thu; sau đó Owner
+đã giao thực thi và hoàn tất ở mục trên.
 Không inference/benchmark/prompt campaign mới. Không thuê máy vẫn khép nghiên
 cứu bước1–3/bàn giao plan; bước4 NOT_TRIGGERED/DEFERRED, không giả đã train hoặc
 human gold. Free notebook chỉ tùy chọn chưa kiểm account/card/resources/privacy,

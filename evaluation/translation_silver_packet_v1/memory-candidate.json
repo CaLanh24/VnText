@@ -1,0 +1,310 @@
+{
+  "records": [
+    {
+      "id": "Q19-dialogue-03",
+      "exact_match_key": {
+        "source_en": "There is enough soup for everyone except me.",
+        "domain_context": "ordinary conversation",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/dialogue/3",
+          "group_id": "q19-dialogue-3",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "31d9f1f51413c358d8d13cec5d5b13e0bdefaa0c29f73fac4c6242288ff988bf",
+      "target": "Có đủ súp cho tất cả mọi người ngoại trừ tôi.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/2",
+        "record_id": "Q19-dialogue-03"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-dialogue-04",
+      "exact_match_key": {
+        "source_en": "She almost dropped the cup when the lights went out.",
+        "domain_context": "ordinary conversation",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/dialogue/4",
+          "group_id": "q19-dialogue-4",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "df1ff167c80d98cb1fd24888eb0493ababf8d85d25a6723a728b252fd4835008",
+      "target": "Cô ấy suýt làm rơi cốc khi đèn tắt.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/3",
+        "record_id": "Q19-dialogue-04"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-dialogue-10",
+      "exact_match_key": {
+        "source_en": "The longer we waited, the colder the room became.",
+        "domain_context": "ordinary conversation",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/dialogue/10",
+          "group_id": "q19-dialogue-10",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "94190975355c656b544a614da2d71244e3fee0e8c2c357dbbf2c5778426457df",
+      "target": "Chúng tôi đợi càng lâu, căn phòng càng lạnh.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/9",
+        "record_id": "Q19-dialogue-10"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-idiom-07",
+      "exact_match_key": {
+        "source_en": "The new manager has a lot on her plate this week.",
+        "domain_context": "figurative everyday speech",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/idiom/7",
+          "group_id": "q19-idiom-7",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "a970ffdd28c2ad6c42b0aae62ee32c559c7700e7b5a487c694ad204839cb56b6",
+      "target": "Người quản lý mới có rất nhiều việc phải làm tuần này.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/16",
+        "record_id": "Q19-idiom-07"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-ui-01",
+      "exact_match_key": {
+        "source_en": "Save your changes before closing this window.",
+        "domain_context": "desktop application interface",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/ui/1",
+          "group_id": "q19-ui-1",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "653c824772187ad6077163b58f623725098bd3de8ad34d0183a06c1d4371b61b",
+      "target": "Lưu các thay đổi trước khi đóng cửa sổ này.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/30",
+        "record_id": "Q19-ui-01"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-ui-10",
+      "exact_match_key": {
+        "source_en": "The operation was canceled before any files were written.",
+        "domain_context": "desktop application interface",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/ui/10",
+          "group_id": "q19-ui-10",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "fe6527d01ec358a1d927e804666d9598c62d20198d07dfc852624842927b3a7a",
+      "target": "Thao tác bị hủy trước khi bất kỳ tập tin nào được ghi.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/39",
+        "record_id": "Q19-ui-10"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-terminology-07",
+      "exact_match_key": {
+        "source_en": "The landlord must approve the transfer of the lease.",
+        "domain_context": "house rental contract",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/terminology/7",
+          "group_id": "q19-terminology-7",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "c398a823ab7087cd8e361eefd48fed1da6990f8598e3d29a82f1080e26b0871c",
+      "target": "Chủ nhà phải phê chuẩn việc chuyển nhượng hợp đồng thuê nhà.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/46",
+        "record_id": "Q19-terminology-07"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-terminology-10",
+      "exact_match_key": {
+        "source_en": "This license permits redistribution but does not transfer ownership.",
+        "domain_context": "software licensing description",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/terminology/10",
+          "group_id": "q19-terminology-10",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "185d39a69467eb7ce3f4555d655762482d6453d825504442afaefbb7deb91f17",
+      "target": "Giấy phép này cho phép tái phân phối nhưng không chuyển quyền sở hữu.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/49",
+        "record_id": "Q19-terminology-10"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    },
+    {
+      "id": "Q19-protected_tokens-08",
+      "exact_match_key": {
+        "source_en": "Select [OPTION_B] to keep the current settings.",
+        "domain_context": "game interface",
+        "address_context": "",
+        "scenario_boundary": {
+          "file_id": "synthetic/phase19/protected_tokens/8",
+          "group_id": "q19-protected_tokens-8",
+          "kind": "same_file_scene",
+          "engine": "synthetic",
+          "turn": 1
+        }
+      },
+      "key_sha256": "37abb3dc6c5dad72a8b6a532734dc731837e04b75253d593b18136a1ad3fe816",
+      "target": "Chọn [OPTION_B] để giữ thiết lập hiện thời.",
+      "output_arm": "opus_glossary",
+      "source_rights": {
+        "author": "Coordinator agent",
+        "rights": "generated-for-project",
+        "kind": "60fresh",
+        "human_gold": false
+      },
+      "provenance": {
+        "file": "curation.json",
+        "json_pointer": "/rows/57",
+        "record_id": "Q19-protected_tokens-08"
+      },
+      "label": "agent-reviewed silver; needs-human-review",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false,
+      "product_import_allowed": false
+    }
+  ]
+}

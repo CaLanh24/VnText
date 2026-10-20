@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "source_base": "0b01fa97d8d15864a2099637d0b39947cb49e52c",
+  "source_dataset": {
+    "path": "evaluation/translation_quality_phase19/dataset.v1.json",
+    "sha256": "085c0731f7ca5c1ed3fcc6342c882516c1c95d66d5d82ac47ca49dd78b6013ee",
+    "rights_pointer": "/provenance",
+    "provenance": {
+      "author": "Coordinator agent",
+      "rights": "generated-for-project",
+      "kind": "60fresh",
+      "human_gold": false
+    }
+  },
+  "builder": "tests/tools/translation_silver_packet.py",
+  "budget": "0 monetary spend; DEV<=5h; Brain read-only audit<=1h",
+  "use": "seen development/regression research ONLY",
+  "model_generated_targets_rights": "Model identities and historical license pointers in README; no human authorship or publication/training authorization inferred from source rights.",
+  "counts": {
+    "sources": 60,
+    "audited_rows": 12,
+    "terms": 48,
+    "candidate_terms": 3,
+    "memory": 9
+  },
+  "human_gold": false,
+  "approved": false,
+  "training_eligible": false,
+  "files": {
+    "audit12.json": "876cc712234097c1bb96610d255adc45d8bdb812656d78fcfec177e149c3985a",
+    "candidate-bank.json": "c05c2a62cc9fc811861b193fa0cfbf78d7f72ae3a628bcb35f941c79e628ad1f",
+    "curation.json": "6f47cc9f393238d807a9541b8cc19fb896935f89cf7d89b4a471869f77e1deb8",
+    "evidence/blind-input.json": "e6346338414fd3a9d933ef9883535b43c02bd880b1119fb5247a843f24be6f0c",
+    "evidence/blind-review.json": "54227a8ffefdf2c965fb6b8cd4f62d879ba8a7219c6197d2ebe4706122c5c137",
+    "evidence/blind-rubric.json": "c0f948c0548e13a539d4b8387c64e29404cb393642c320827eaffae9b35a4f16",
+    "evidence/blind-seal.json": "00eddb7bac9bd7032807e566978ddc82b9cf42b6e0bbd7e5b3e05d2649aae382",
+    "evidence/coordinator-blind-audit.json": "8987c25420abcca7d8d2cba24ffbff37cdb1b8c461ff960efc877c720aa86b28",
+    "evidence/outputs.json": "59a4aec5c89de94db154e61b293aa3761229788a0ed4a5871623dce0fe587017",
+    "evidence/run-identities.json": "97d1b46b6c760a98e6e70d7713f2553d87a429a70e860444393b54e3a09066c7",
+    "evidence/run-receipts.json": "361fd574fcb6b38a63034ace2bee795a875183988641260108ca7f67e83e020a",
+    "evidence/sealed-label-map.json": "d41afdbff8281dfb993d101a42002fda90b0a2d19533727111a81ea6d9bce902",
+    "evidence/selection.json": "19285213c6c1cb82fc1977a3407fa080644ec39945b59820e086322444cdd691",
+    "evidence/unmasked-review.json": "45477031cc4628f980432d13f6fc6d9ededb6610c56345d5ade5acc3badec543",
+    "handoff.json": "9065290eaa349f60e10760a7b4b91aff8aa319a2c899439b6027b0f86277dc4d",
+    "memory-candidate.json": "278a9bb316c5ed30fbec72cf113e51fc9495caf58023b0e6de8cc3e8d9e54e52",
+    "README.md": "ff99def37d30b5babc1e6569fb5dec6611a895a6c6a738092793df37fc20e7d7",
+    "term-audit.json": "d6a72a987f0e8c754137db5375c07ca1c7a2fce02897a0038f7f6e7311980cc6"
+  },
+  "builder_sha256": "c2cde520d3b012932e554cf7f917e60f48473dc6c5fa0893976ac428e2c0f3af"
+}

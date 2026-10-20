@@ -1,0 +1,74 @@
+{
+  "kind": "Coordinator audit before unmask; not human gold",
+  "blind_review_sha256": "54227a8ffefdf2c965fb6b8cd4f62d879ba8a7219c6197d2ebe4706122c5c137",
+  "blind_input_sha256": "e6346338414fd3a9d933ef9883535b43c02bd880b1119fb5247a843f24be6f0c",
+  "mapping_read": false,
+  "scope": "All major/unusable/uncertain findings inspected against source and A/B text; adjacent minor/acceptable calibration inspected where relevant.",
+  "agreed_major_ids": [
+    "Q19-dialogue-08",
+    "Q19-dialogue-09",
+    "Q19-idiom-02",
+    "Q19-idiom-05",
+    "Q19-idiom-06",
+    "Q19-idiom-08",
+    "Q19-idiom-10",
+    "Q19-address-01",
+    "Q19-address-02",
+    "Q19-address-03",
+    "Q19-address-05",
+    "Q19-address-07",
+    "Q19-address-08",
+    "Q19-address-09",
+    "Q19-ui-08",
+    "Q19-terminology-04",
+    "Q19-terminology-05",
+    "Q19-terminology-06",
+    "Q19-terminology-08",
+    "Q19-terminology-09",
+    "Q19-protected_tokens-01"
+  ],
+  "agreed_uncertain_ids": [
+    "Q19-address-10"
+  ],
+  "coverage_note": "Q19-protected_tokens-02 empty B is unusable workflow output, not counted as a wrong semantic translation on paired-covered subset.",
+  "overrides": [
+    {
+      "id": "Q19-idiom-06",
+      "label": "A",
+      "from_verdict": "acceptable",
+      "to_verdict": "uncertain",
+      "type": "addition",
+      "severity": "minor",
+      "reason": "Correct teasing idiom, but source winning the lottery leaves who/when unspecified; bạn sẽ trúng invents listener and future event. Source ambiguity prevents full acceptable judgement."
+    },
+    {
+      "id": "Q19-address-02",
+      "label": "B",
+      "from_verdict": "acceptable",
+      "to_verdict": "minor",
+      "type": "omission",
+      "severity": "minor",
+      "reason": "Source after dinner is reduced to sau bữa ăn (after a meal), losing specific evening meal. Explicit roles/ownership correct; do not rate full acceptable."
+    },
+    {
+      "id": "Q19-ui-08",
+      "label": "A",
+      "from_verdict": "minor",
+      "to_verdict": "major",
+      "type": "omission",
+      "severity": "major",
+      "reason": "Primary source imperative Restore remains English. Apply same untranslated-core-predicate standard used for Nobody; UI operation not fully translated. B discard-to-skip issue remains major."
+    },
+    {
+      "id": "Q19-terminology-05",
+      "label": "B",
+      "from_verdict": "minor",
+      "to_verdict": "major",
+      "type": "terminology",
+      "severity": "major",
+      "reason": "Bare quay trở lại supplies no undo/restore-state operation for database rollback. Both drafts fail to express atomic rollback clearly; no evidence B is adequate merely from recognizable literal wording. This is a medium-confidence severity judgement, not human gold."
+    }
+  ],
+  "preference_policy": "Preserve original blind reviewer pairwise preferences separately; audit only recalibrates categorical severity, not preferences.",
+  "limits": "All findings are agent judgments. Ambiguous register/application referents and minor naturalness are not independent human acceptance."
+}

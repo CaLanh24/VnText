@@ -1,0 +1,242 @@
+{
+  "Q19-dialogue-01": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-dialogue-02": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-dialogue-03": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-dialogue-04": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-dialogue-05": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-dialogue-06": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-dialogue-07": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-dialogue-08": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-dialogue-09": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-dialogue-10": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-idiom-01": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-idiom-02": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-idiom-03": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-idiom-04": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-idiom-05": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-idiom-06": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-idiom-07": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-idiom-08": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-idiom-09": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-idiom-10": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-01": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-02": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-address-03": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-04": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-address-05": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-address-06": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-07": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-08": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-09": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-address-10": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-01": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-02": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-03": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-ui-04": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-05": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-06": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-07": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-ui-08": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-09": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-ui-10": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-01": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-terminology-02": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-03": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-04": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-terminology-05": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-06": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-terminology-07": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-08": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-09": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-terminology-10": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-protected_tokens-01": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-02": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-03": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-04": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-05": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-protected_tokens-06": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-07": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-08": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  },
+  "Q19-protected_tokens-09": {
+    "A": "opus_glossary",
+    "B": "candidate"
+  },
+  "Q19-protected_tokens-10": {
+    "A": "candidate",
+    "B": "opus_glossary"
+  }
+}

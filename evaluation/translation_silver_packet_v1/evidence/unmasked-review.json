@@ -1,0 +1,339 @@
+{
+  "review_kind": "separate_agent_blind_not_human_gold",
+  "reviewer_model": "gpt-6-luna",
+  "reviewer_effort": "max",
+  "child_task": "/root/blind_review_phase19",
+  "child_terminal": true,
+  "source_base": "685c810d320da3c9ba3b41cc6ce0cf213214d9fb",
+  "dataset_sha256": "085c0731f7ca5c1ed3fcc6342c882516c1c95d66d5d82ac47ca49dd78b6013ee",
+  "code_hashes": {
+    "tests/tools/translation_quality_phase5.py": "35152999effa4051596a65cc8916efb1e704a9a83ab8af135a8006663840569f",
+    "tests/tools/translation_quality_guard.py": "6211b1d08197737947aff2771d3fde031eb45db421582e02b84c5baf4ffb6167",
+    "tests/tools/translation_quality_low_memory_trial.py": "dba4fa89d536b7236765091c0a24a7b4b7f35412b9f197c76f214ac7a66a84fd",
+    "tests/tools/translation_quality_prompt_trial.py": "f56685d6c2dd431274036d786dd1836e303183a64fd49c1502d1248c2ba24b16",
+    "tests/tools/translation_quality_phase8.py": "6e9db88dbb62714547164da1b017e4562041796c80cf76f5dd8849786496ddc1",
+    "tests/tools/translation_quality_semantic_transport.py": "c47fbe92108ea460819e6c382e94979470177554d86d0563300cdd6df2f7c21d",
+    "tests/tools/translation_quality_phase6.py": "0513ed481d7652892f089b553022e91c40367914ab726d9f5ea691f7e1c7b3c7",
+    "tests/tools/translation_role_binding.py": "33a84b17a048035b84f674bbbdf3c29a5aa8a0e04a42230f6aa6a89143e67bc5",
+    "tests/tools/translation_constraints_v5.py": "e5816388bf8a7455d1f9a6547e1726d7bdc98758b2c8f8a9589f405b07e70b9a",
+    "tests/tools/translation_constraints_v4.py": "ac1c7684c049c4309d8a331d38f5bde87fc5758cc2c19307bdd36f6a0db87db6",
+    "tests/tools/translation_constraints_v3.py": "252b0c3a825e9e5fa50e58486254f25767c53eae6eedb09e8f0aae93d000b65c",
+    "tests/tools/translation_constraints_v2.py": "10d39145f3021445a3c2a0bcde1ca15f315443385394920a7da85e2bf1215ce7",
+    "tests/tools/translation_constraints.py": "fe867e0d56e701db1540a277cad4641ae7281c80a86d4becf9a9e15b3071b6a7",
+    "tests/tools/translation_quality_phase18.py": "b78845cea7bcffb65f6a69f314fe0a6acc09baea17af019213389935815cea12",
+    "tests/tools/translation_quality_phase19.py": "ad7e414193bdbc5036ba4665d1b268bd43a8ca56a97cd06469268a03f25724f6"
+  },
+  "blind_review_sha256": "54227a8ffefdf2c965fb6b8cd4f62d879ba8a7219c6197d2ebe4706122c5c137",
+  "coordinator_blind_audit_sha256": "8987c25420abcca7d8d2cba24ffbff37cdb1b8c461ff960efc877c720aa86b28",
+  "mapping_opened_after_audit": true,
+  "total_rows": 60,
+  "raw_blind": {
+    "verdict_counts": {
+      "candidate": {
+        "acceptable": 38,
+        "minor": 15,
+        "major": 6,
+        "uncertain": 1
+      },
+      "opus_glossary": {
+        "minor": 26,
+        "acceptable": 15,
+        "major": 17,
+        "uncertain": 1,
+        "unusable": 1
+      }
+    },
+    "raw_preference_counts": {
+      "candidate": 36,
+      "tie": 12,
+      "opus_glossary": 10,
+      "neither": 1,
+      "uncertain": 1
+    },
+    "by_group": {
+      "dialogue": {
+        "candidate": {
+          "acceptable": 8,
+          "minor": 1,
+          "major": 1
+        },
+        "opus_glossary": {
+          "minor": 3,
+          "acceptable": 5,
+          "major": 2
+        }
+      },
+      "idiom": {
+        "opus_glossary": {
+          "minor": 4,
+          "major": 5,
+          "acceptable": 1
+        },
+        "candidate": {
+          "minor": 5,
+          "acceptable": 5
+        }
+      },
+      "address": {
+        "candidate": {
+          "minor": 2,
+          "acceptable": 6,
+          "major": 1,
+          "uncertain": 1
+        },
+        "opus_glossary": {
+          "major": 7,
+          "minor": 2,
+          "uncertain": 1
+        }
+      },
+      "ui": {
+        "opus_glossary": {
+          "acceptable": 4,
+          "minor": 6
+        },
+        "candidate": {
+          "acceptable": 6,
+          "minor": 3,
+          "major": 1
+        }
+      },
+      "terminology": {
+        "opus_glossary": {
+          "minor": 5,
+          "major": 2,
+          "acceptable": 3
+        },
+        "candidate": {
+          "acceptable": 7,
+          "major": 3
+        }
+      },
+      "protected_tokens": {
+        "candidate": {
+          "acceptable": 6,
+          "minor": 4
+        },
+        "opus_glossary": {
+          "major": 1,
+          "unusable": 1,
+          "minor": 6,
+          "acceptable": 2
+        }
+      }
+    },
+    "by_split": {
+      "development": {
+        "candidate": {
+          "acceptable": 31,
+          "minor": 9,
+          "major": 2
+        },
+        "opus_glossary": {
+          "minor": 21,
+          "acceptable": 10,
+          "major": 10,
+          "unusable": 1
+        }
+      },
+      "heldout": {
+        "candidate": {
+          "major": 4,
+          "acceptable": 7,
+          "minor": 6,
+          "uncertain": 1
+        },
+        "opus_glossary": {
+          "major": 7,
+          "acceptable": 5,
+          "minor": 5,
+          "uncertain": 1
+        }
+      }
+    },
+    "candidate_unique_major_vs_covered_acceptable_minor_opus": [
+      "Q19-ui-08",
+      "Q19-terminology-05",
+      "Q19-terminology-06",
+      "Q19-terminology-08"
+    ],
+    "candidate_avoids_opus_major": [
+      "Q19-dialogue-09",
+      "Q19-idiom-02",
+      "Q19-idiom-05",
+      "Q19-idiom-06",
+      "Q19-idiom-08",
+      "Q19-idiom-10",
+      "Q19-address-01",
+      "Q19-address-02",
+      "Q19-address-03",
+      "Q19-address-05",
+      "Q19-address-07",
+      "Q19-address-09",
+      "Q19-terminology-04",
+      "Q19-terminology-09",
+      "Q19-protected_tokens-01"
+    ]
+  },
+  "coordinator_audited": {
+    "verdict_counts": {
+      "candidate": {
+        "acceptable": 36,
+        "minor": 16,
+        "major": 6,
+        "uncertain": 2
+      },
+      "opus_glossary": {
+        "minor": 24,
+        "acceptable": 15,
+        "major": 19,
+        "uncertain": 1,
+        "unusable": 1
+      }
+    },
+    "raw_preference_counts": {
+      "candidate": 36,
+      "tie": 12,
+      "opus_glossary": 10,
+      "neither": 1,
+      "uncertain": 1
+    },
+    "by_group": {
+      "dialogue": {
+        "candidate": {
+          "acceptable": 8,
+          "minor": 1,
+          "major": 1
+        },
+        "opus_glossary": {
+          "minor": 3,
+          "acceptable": 5,
+          "major": 2
+        }
+      },
+      "idiom": {
+        "opus_glossary": {
+          "minor": 4,
+          "major": 5,
+          "acceptable": 1
+        },
+        "candidate": {
+          "minor": 5,
+          "acceptable": 4,
+          "uncertain": 1
+        }
+      },
+      "address": {
+        "candidate": {
+          "minor": 3,
+          "acceptable": 5,
+          "major": 1,
+          "uncertain": 1
+        },
+        "opus_glossary": {
+          "major": 7,
+          "minor": 2,
+          "uncertain": 1
+        }
+      },
+      "ui": {
+        "opus_glossary": {
+          "acceptable": 4,
+          "minor": 5,
+          "major": 1
+        },
+        "candidate": {
+          "acceptable": 6,
+          "minor": 3,
+          "major": 1
+        }
+      },
+      "terminology": {
+        "opus_glossary": {
+          "minor": 4,
+          "major": 3,
+          "acceptable": 3
+        },
+        "candidate": {
+          "acceptable": 7,
+          "major": 3
+        }
+      },
+      "protected_tokens": {
+        "candidate": {
+          "acceptable": 6,
+          "minor": 4
+        },
+        "opus_glossary": {
+          "major": 1,
+          "unusable": 1,
+          "minor": 6,
+          "acceptable": 2
+        }
+      }
+    },
+    "by_split": {
+      "development": {
+        "candidate": {
+          "acceptable": 29,
+          "minor": 10,
+          "uncertain": 1,
+          "major": 2
+        },
+        "opus_glossary": {
+          "minor": 20,
+          "acceptable": 10,
+          "major": 11,
+          "unusable": 1
+        }
+      },
+      "heldout": {
+        "candidate": {
+          "major": 4,
+          "acceptable": 7,
+          "minor": 6,
+          "uncertain": 1
+        },
+        "opus_glossary": {
+          "major": 8,
+          "acceptable": 5,
+          "minor": 4,
+          "uncertain": 1
+        }
+      }
+    },
+    "candidate_unique_major_vs_covered_acceptable_minor_opus": [
+      "Q19-terminology-06",
+      "Q19-terminology-08"
+    ],
+    "candidate_avoids_opus_major": [
+      "Q19-dialogue-09",
+      "Q19-idiom-02",
+      "Q19-idiom-05",
+      "Q19-idiom-08",
+      "Q19-idiom-10",
+      "Q19-address-01",
+      "Q19-address-02",
+      "Q19-address-03",
+      "Q19-address-05",
+      "Q19-address-07",
+      "Q19-address-09",
+      "Q19-terminology-04",
+      "Q19-terminology-09",
+      "Q19-protected_tokens-01"
+    ]
+  },
+  "audit_adjustments": 4,
+  "pairwise_preferences_unchanged_by_audit": true,
+  "paired_covered_rows": 59,
+  "coverage_unusable_not_semantic_failure": true,
+  "human_acceptance": "NOT_CONDUCTED",
+  "product_model": "CT2/OPUS unchanged",
+  "paired_covered_preference_counts": {
+    "candidate": 35,
+    "tie": 12,
+    "opus_glossary": 10,
+    "neither": 1,
+    "uncertain": 1
+  }
+}

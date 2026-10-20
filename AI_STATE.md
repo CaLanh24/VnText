@@ -1,10 +1,17 @@
 # Current state pointer — 2026-10-20
 
-## Owner budget0đ / proposal ready — execution NOT_AUTHORIZED
+## Offline M1–M4 terminal — PASS data/technical, not semantic acceptance
+- Owner authorized execution. `evaluation/translation_silver_packet_v1/README.md`:60source/curation rows,12audited IDs,48term audits,3term candidates checksum/migration/copy,9exact-context OPUS memory candidates; all silver/needs-human-review, approved/human_gold/training_eligible=false.
+- Byte-exact original blind evidence/mapping/seal/4historical overrides retained; candidate/2OPUS arms exact compact JSON projections with original file hashes/source/model/code identities. All60 seen; source rights60known generated-for-project/0UNKNOWN, no human gold.
+- Memory exclusions Q19-ui-04 undo/cancel and Q19-dialogue-06 unsupported masculine address preserve raw/historical acceptable grades. No nonacceptable row or padding in positive memory. Valid typed JSON Pointers resolve source/target/ID; no DEV_RUN needed for verify.
+- Final focused4tests PASS/0fail/error/skip/warning, canonical exit0/cleanupPASS; earlier4PASS receipt retained, final rerun after membership remediation. Base0b01fa9+per-file hashes; no current-HEADmodel claim. Public handoff.json plus Downloads/VM-Acceptance/silver-packet-{focused,focused-final,cleanup,final}.json.
+- Budget0đ/no child/download/install/cloud/upload/training/inference/product change. DEV sole writer/Brain read-only audit; offline execution ended, training DEFERRED, Hy rejected, OPUS unchanged; no new research phase implied.
+
+## Owner budget0đ — historical proposal, executed above
 - No hiring reviewers/GPU/machines/hardware or card/deposit/autocharge trials. Paid draft canceled before commit; supersedes historical budget suggestions.
-- `docs/TRANSLATION_TRAINING_PILOT_PROPOSAL.md`: proposed offline60-source Phase19 evidence/silver curation, existing48term audit/candidate memory; <=5h DEV/1h Brain read-only review, no new inference/benchmark. M1–M4 not executed yet.
+- `docs/TRANSLATION_TRAINING_PILOT_PROPOSAL.md`: offline60-source Phase19 evidence/silver curation, existing48term audit/candidate memory; <=5h DEV/1h Brain read-only review. M1–M4 subsequently authorized/completed above.
 - No rental needed to close research steps1–3/plan disposition; conditionaltraining NOT_TRIGGERED/DEFERRED, no human gold/model/product acceptance fabricated. Free notebooks optional/unverified eligibility/card/resources/privacy. Guest4GiB/no exposed CUDA GPU read-only verified2026-10-20; host uninspected.
-- Docs-only proposal; no account/payment/upload/download/dataset/modelrun/training/product changes. Brain reviews before Owner execution decision; DEV implementation/Brain read-only split unchanged. OPUS product remains; Hy candidate rejected.
+- Proposal was docs-only; subsequent authorized offline task delivered packet above. No account/payment/upload/download/modelrun/training/product changes. DEV implementation/Brain read-only split unchanged; OPUS product remains, Hy rejected.
 
 ## Translation plan closure — PM_DECISION_REQUIRED
 - Canonical `docs/TRANSLATION_QUALITY_PLAN.md` disposition 2026-10-20 supersedes historical next-phase pointers: steps1–3 research measured, candidate REJECTED, OPUS unchanged; step4 conditional NOT_TRIGGERED, no human gold/training permissions/budget/environment/stop condition.

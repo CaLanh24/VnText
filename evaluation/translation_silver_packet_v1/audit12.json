@@ -1,0 +1,53 @@
+{
+  "kind": "current DEV source/mapping/severity audit; not human gold",
+  "records": [
+    {
+      "id": "Q19-dialogue-08",
+      "note": "Both lose past counterfactual; original major/major retained."
+    },
+    {
+      "id": "Q19-idiom-06",
+      "note": "Original A acceptable remains original; historical override A uncertain records invented listener/future lottery event."
+    },
+    {
+      "id": "Q19-address-02",
+      "note": "Historical B acceptable->minor loses dinner specificity; keep ownership/roles finding separate."
+    },
+    {
+      "id": "Q19-address-08",
+      "note": "Candidate reverses giver/receiver; OPUS omits relative clause. Neither is positive memory."
+    },
+    {
+      "id": "Q19-address-10",
+      "note": "Application kind and professor gender are underspecified; both uncertain retained."
+    },
+    {
+      "id": "Q19-ui-04",
+      "note": "Historical acceptable/acceptable retained. Current conservative exclusion: undone->huy bo may mean cancellation rather than undo. No new categorical severity or repaired output claimed."
+    },
+    {
+      "id": "Q19-ui-08",
+      "note": "Keep original A minor and historical A->major for untranslated Restore; B discard->skip remains major. Original winner A is not acceptance."
+    },
+    {
+      "id": "Q19-terminology-04",
+      "note": "OPUS drive->lock changes object; candidate acceptable remains agent judgment."
+    },
+    {
+      "id": "Q19-terminology-05",
+      "note": "Candidate cancellation loses rollback. Original B minor and historical B->major remain separate; original winner B is not acceptance."
+    },
+    {
+      "id": "Q19-terminology-06",
+      "note": "Candidate invoice->receipt is major; OPUS acceptable does not justify selecting aggregate Hy winner."
+    },
+    {
+      "id": "Q19-terminology-08",
+      "note": "Candidate sensor->switch is major; OPUS minor naturalness retained."
+    },
+    {
+      "id": "Q19-protected_tokens-02",
+      "note": "Empty OPUS output is unusable workflow coverage, not a paired semantic mistranslation. No memory positive from this row."
+    }
+  ]
+}
