@@ -1,5 +1,58 @@
 # Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
 
+## Disposition hiện hành — 2026-10-20
+
+Phần này thay mọi con trỏ lịch sử gợi ý tự mở phase tiếp theo. Khép chiến dịch
+nghiên cứu hiện tại; không mở thêm benchmark, model hay vòng prompt từ các lỗi
+đã quan sát. Outcome bàn giao: **PM_DECISION_REQUIRED** cho hướng tiếp theo của
+plan; không phải product acceptance hoặc tuyên bố đã thực hiện huấn luyện.
+
+Phân vai Owner đã sửa và Brain chuyển giao: DEV là implementation owner duy
+nhất; Brain chỉ điều phối và nghiệm thu read-only, không tự sửa source/test/model.
+Owner quyết định acceptance và kích hoạt công việc tiếp theo. Không writer/child
+thứ hai, không chuyển phần triển khai tồn đọng ngược cho Brain.
+
+| Bước gốc | Đã thực hiện, SHA và receipt thực | Chưa đạt / disposition |
+| --- | --- | --- |
+| 1. Bộ đánh giá | Frozen 100 câu synthetic có provenance, split/rubric và baseline OPUS thật. Base `10873fc61db4f97db9a42d63fcac9f8b993e3570`, `DEV_RUN/translation-quality-phase1/baseline-wrapper.json` PASS. Corpus SHA `7f75108ff031022f94b5a68965eebc6f0a99ff37d3fd1804ebec4c6d2fe9242d`. | Foundation đã đo; không có gold tiếng Việt/nghiệm thu ngữ nghĩa độc lập của người. Synthetic không đại diện toàn game. |
+| 2. Route hiện có | Đã so OPUS/glossary/memory, ablation lexical và opaque; candidate runtime bị bác và khôi phục. Base `4c72525226301d7230db88b8d22f06c8129f1528`, `DEV_RUN/translation-quality-phase2/opaque-pipeline-wrapper.json` cùng raw/review Phase2. | Runner PASS không phải chất lượng candidate PASS. Memory nhất quán không chứng minh câu mới; OPUS product giữ nguyên. |
+| 3. Một candidate có context | Pinned Hy Q4/runtime đã được duyệt trước đây; direct/context/repair thực ở Phase4 (base `d78f53c`, exact hash trong `DEV_RUN/translation-quality-phase4/final.json`, receipt `final-wrapper.json`). Phase19 broad60/separate-agent review base `685c810d320da3c9ba3b41cc6ce0cf213214d9fb`; Phase22 raw12/review base `228f0387baeda60a9d1569ae5f40cde4d2e2a288`. | Nghiên cứu đã có kết quả và candidate REJECTED. Phase22 còn 3 major/2 uncertain/7 acceptable do agent đánh giá, không human gold. Scheduler/complete/possession còn sai; finite MATCH không phải semantic approval. Không thay OPUS. |
+| 4. Huấn luyện có điều kiện | Đã có corpus synthetic có quyền/split, raw lỗi và phân loại lỗi để đề xuất tuyển dữ liệu; yêu cầu pilot SFT/LoRA và held-out đã được mô tả ở mục 4. Chưa tạo corpus training đã duyệt hoặc chạy training. | NOT_TRIGGERED. Thiếu bản dịch gold được duyệt độc lập, curator/reviewer, quyền cho từng nguồn training, ngưỡng acceptance, ngân sách/môi trường/GPU/dung lượng và stop condition được Owner duyệt. Output model/agent không tự thành gold. |
+
+Đề xuất cụ thể cho bước 4, chưa kích hoạt: nếu Owner chọn pilot, trước tiên chỉ
+tuyển một corpus synthetic có provenance từ nguồn đã có, để người duyệt độc lập
+viết/duyệt target và lỗi; tạo split training/validation/held-out theo scenario và
+khử trùng trước training. Các câu đã xem ở Phase1–22 chỉ dùng development hay
+regression, không đổi tên thành held-out mới. Owner cần quyết định người duyệt,
+phạm vi/quyền dữ liệu, candidate/runtime/license cho training, nơi chạy, trần
+chi phí/thời gian/dung lượng, tiêu chí cải thiện nghĩa và no-new-major/structure,
+và điều kiện dừng pilot. Không mặc định VM 4GiB đủ train. Giấy phép inference
+đã kiểm trước đây không tự xác nhận mọi điều kiện của training/publication.
+Nếu chưa kích hoạt, giữ OPUS và kết thúc nghiên cứu hiện tại; không tự bù bằng
+một phase prompt khác. Không xin hay giả cấp quyền tải/cài/dùng dữ liệu user,
+training/GPU hoặc publication trong task khép này.
+
+### Khép prerequisite retry Phase22
+
+Base sạch `1c863838522c7b889f4c0b49d11a68ca2cafea3f`, thay đổi chỉ research
+helper/test và tài liệu. Retry trước đây đưa draft đã decode lexical vào prompt,
+làm mất carrier. Nay dùng draft carrier-bearing đã qua restore gate, trước
+lexical decode/role edits, để builder remask LEX/BND và token gốc cùng nhau.
+Không đảo ngược chuỗi tiếng Việt để đoán marker; raw sai vẫn bị reject, bản gốc
+được giữ và output luôn NEEDS_REVIEW. Production validator/services không đổi.
+
+Focused receipt đầu `translation-plan-closure-focused.json` FAIL 1/8 do fixture
+có tag ngoài finite source contract nên không kích hoạt retry; đã sửa fixture
+để kiểm pipeline contract thật, tách bundle prompt thành case riêng. Giữ receipt
+FAIL/cleanup PASS. Gate affected dùng nguyên danh sách module của Phase22 cộng
+3 test mới: **125 PASS, 0 failures/errors/skips/warnings, exit 0, cleanup PASS**.
+Receipt mới ở `C:/Users/VNTextDev/Downloads/VM-Acceptance/translation-plan-closure-regression.json`;
+command chính xác trong receipt, không chạy model/benchmark/build/game thêm.
+`translation-plan-closure-cleanup.json` là dry-run inventory/quota terminal.
+Raw Phase22 và hashes lịch sử giữ nguyên; fix này chưa có model-run quality
+evidence, không đổi 3 major thành repaired, không nâng evidence cũ thành exact-HEAD.
+
+
 ## Owner kích hoạt Phase 1 — 2026-10-19
 
 Owner authorizes phase 1 after the UI and release work closed: create a public,

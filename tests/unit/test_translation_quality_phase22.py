@@ -42,3 +42,40 @@ class CompositionTests(unittest.TestCase):
         rows=json.loads(t.DATA.read_text(encoding='utf-8'))['rows']
         self.assertEqual(len(rows),12);self.assertEqual(len({r['id'] for r in rows}),12)
         self.assertEqual(t.natural.prior.digest(t.DATA),t.DATA_HASH)
+
+    def test_retry_keeps_lexical_and_bundled_carriers(self):
+        r=dict(id='retry',group='protected',split='development',
+               source_en='The model predicts whether the transaction will complete or roll back.',
+               domain_context='database transactions',address_context='')
+        observed=[]
+        def infer(prompt,label):
+            observed.append(prompt)
+            _,bundle,_=t.translation_prompt(r,'',[])
+            return bundle[1].masked
+        result=t.constrained_pipeline(r,infer)
+        self.assertEqual(len(observed),2)
+        revision=observed[1].split('Incorrect Vietnamese draft to revise: ',1)[1].split('\n',1)[0]
+        _,bundle,_=t.translation_prompt(r,'',[])
+        self.assertEqual(revision,bundle[1].masked)
+        self.assertNotIn('[LEX',revision);self.assertNotIn('[BND',revision)
+        self.assertTrue(all(not h['structural_error'] for h in result['history']))
+        self.assertEqual(result['status'],'NEEDS_REVIEW');self.assertEqual(result['output'],'')
+
+    def test_bundled_retry_prompt_remasks_all_original_carriers(self):
+        r=self.row('The sensor reads <b>{ID}</b>.','engineering control')
+        _,bundle,_=t.translation_prompt(r,'',[])
+        prior=t.restore_carriers(bundle[1],bundle[1].masked)
+        prompt,_,_=t.translation_prompt(r,prior,['revise'])
+        revision=prompt.split('Incorrect Vietnamese draft to revise: ',1)[1].split('\n',1)[0]
+        self.assertEqual(revision,bundle[1].masked)
+
+    def test_damaged_retry_is_rejected_without_losing_original(self):
+        r=dict(id='damaged',group='ui',split='development',
+               source_en='The model predicts whether the transaction will complete or roll back.',
+               domain_context='database transactions',address_context='')
+        _,bundle,_=t.translation_prompt(r,'',[])
+        calls=iter([bundle[1].masked,'broken revision'])
+        result=t.constrained_pipeline(r,lambda *_:next(calls))
+        self.assertTrue(result['history'][1]['structural_error'])
+        self.assertEqual(result['selected_attempt'],0)
+        self.assertTrue(result['draft']);self.assertEqual(result['output'],'')

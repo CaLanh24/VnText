@@ -1,5 +1,11 @@
 # Current state pointer — 2026-10-20
 
+## Translation plan closure — PM_DECISION_REQUIRED
+- Canonical `docs/TRANSLATION_QUALITY_PLAN.md` disposition 2026-10-20 supersedes historical next-phase pointers: steps1–3 research measured, candidate REJECTED, OPUS unchanged; step4 conditional NOT_TRIGGERED, no human gold/training permissions/budget/environment/stop condition.
+- DEV sole implementation owner; Brain read-only coordination/acceptance, no source/test/model edits. No further benchmark/prompt/model campaign implied.
+- Phase22 retry prerequisite fixed using validated carrier-bearing draft before lexical decoding; affected125 tests PASS/0skip/warning, cleanupPASS. No model rerun or claim semantic defects repaired. Base1c863838 plus task diff; receipts `C:/Users/VNTextDev/Downloads/VM-Acceptance/translation-plan-closure-{focused,regression,cleanup}.json` (first focused FAIL preserved).
+- Owner decision for any next pilot requires independent curated gold/data rights, reviewer/acceptance, runtime/license/environment, budget and stop condition. No training/download/product promotion/publication executed.
+
 ## Phase22 terminal — PREMISE_INVALID fresh generalization; OPUS unchanged
 - Research-only composition/opaque-density remediation;122testsPASS. Seen physical-roll/temporal/dense-marker/alternative failures improved; frozen fresh12 actualHy12drafts/13calls, final structure intact; OPUSarms11written1blocked each. One rejected revision preserved, no guard weakening.
 - Coordinator review NOT blind/human gold:7acceptable3major2uncertain. New major: complete→completely, scheduler→slideshow, listener-address possession→giving speaker address. Finite MATCH misses wrong actor; no semantic autoapproval. Retry remasking integration gap explicitly unresolved; originals retained.

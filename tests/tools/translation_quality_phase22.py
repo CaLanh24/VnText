@@ -10,7 +10,7 @@ from tests.tools import translation_lexical_transport_v2 as transport
 from tests.tools import translation_alternative_constraints as constraints
 import re
 from tests.tools.translation_role_binding import bind_metadata_roles
-from tests.tools.translation_quality_guard import protect,sanitize_context
+from tests.tools.translation_quality_guard import protect,sanitize_context,restore as restore_carriers
 from tests.tools.translation_quality_low_memory_trial import run_one,MODEL,CLI
 from tests.tools.translation_quality_prompt_trial import completion_output
 
@@ -71,7 +71,10 @@ def constrained_pipeline(row,infer):
                             metadata_edits=metadata_edits,structural_error=structural_error,constraints=audit,advisory_flags=flags,state=state,logic_rule=logic_rule))
         retry=state=='FAIL' or (state=='UNKNOWN' and contract is not None) or not draft
         if not retry or attempt==1:break
-        previous=draft
+        # Retry from the validated carrier-bearing draft, before lexical decoding
+        # and role edits. The prompt builder remasks LEX/BND and original tokens
+        # together; decoded Vietnamese cannot reliably be inverted to carriers.
+        previous=restore_carriers(p[1],raw) if draft and not structural_error else ''
         feedback=[sanitize_context(constraints.feedback(contract))]+audit['reasons']+flags
         if not draft:feedback.append('Return only a translation and keep every source marker unchanged.')
     chosen,reason=constraints.select_attempt(history)
