@@ -1,8 +1,8 @@
 # Current state pointer — 2026-10-21
 
-## Active Release 0.1.9 — preparation, not published
+## Active Release 0.1.9 — candidate reviewed, publication pending
 
-Owner requested Release after verified Git delivery. Sole DEV writer, Brain read-only; no child or research resume. Source version now0.1.9; current public stable remains0.1.8. Mandatory next-patch release gates and both predecessor0.1.8/legacy0.1.7 update routes are required. No payload created: default1GiB artifact cap cannot hold even one514.5MB baseline alongside current709.6MB; Owner approved independent0.1.9 temporary3GiB scope/new clean epoch; terminal<=1GiB. Shared6GiB remains. Plan/evidence pointer: docs/RELEASE_0.1.9.md.
+Exact candidate source8f3f382, full1007tests0fail/error,7qualifiedskips/1warning, publisher/Releaseverify/two-cwdsmoke/payloadPASS. Both local017/018 update transactions/inventory/health/data/modelPASS; PatchInstaller2PASS, candidateGUI shutdown1PASS and packaged-runtimeGUI1PASS (original wrapper lifecycle qualifications retained). Brain bounded technicalreviewPASS. Two~3.49MBrouteZIPs/provenance/sums/notices ready; noSetup019distribution. Publicstable remains018 until actual publication/readback. CurrentdocsSHA does not upgrade evidence source. Scope019temporary3GiB/terminal1GiB/shared6GiB; finalcleanup and actualpublicbuttonacceptance pending. See docs/RELEASE_0.1.9.md. Researchplan stayspaused, nochild orautomaticwatcher.
 
 ## Accepted changes delivered to GitHub main
 
