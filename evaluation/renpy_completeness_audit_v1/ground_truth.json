@@ -1,0 +1,248 @@
+{
+  "basic": {
+    "script": "define e = Character(\"Eileen\")\ndefine f = Character(\"Frank\")\ndefault name = \"Player\"\nlabel start:\n    e \"Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}\"\n    \"Narrator: bracket [[ literal. 日本語\"\n    e \"Repeated dialogue\"\n    e \"Repeated dialogue\"\n    f \"Repeated dialogue\"\n    e \"Escaped \\\"quote\\\" and [name.upper()]\"\n    menu:\n        \"First choice\":\n            menu:\n                \"Nested choice\":\n                    pass\n    $ local = _(\"Localized setting\")\n    $ internal = \"INTERNAL_KEY_001\"\n    $ path = \"images/bg.png\"\n    $ variable_name = \"player_health\"\n    $ dynamic = \"Generated \" + name\n    return\nscreen audit_ui():\n    text \"Plain screen label\"\n    textbutton \"Plain button label\" action NullAction()\n    textbutton _(\"Wrapped button label\") action NullAction() tooltip _(\"Helpful tooltip\")\n    text _(\"Shared UI text\")\n    text _(\"Shared UI text\")\n    text _(\"images/bg.png\")\n    text _(\"   \")\n",
+    "expectations": [
+      {
+        "text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Narrator: bracket [[ literal. 日本語",
+        "category": "NARRATION",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Repeated dialogue",
+        "category": "DIALOGUE",
+        "occurrences": 3,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Escaped \"quote\" and [name.upper()]",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "First choice",
+        "category": "MENU_CHOICE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Nested choice",
+        "category": "MENU_CHOICE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Localized setting",
+        "category": "LOCALIZATION_STRING",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Plain screen label",
+        "category": "SCREEN_UI",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Plain button label",
+        "category": "SCREEN_UI",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Wrapped button label",
+        "category": "SCREEN_UI",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Helpful tooltip",
+        "category": "SCREEN_UI",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Shared UI text",
+        "category": "SCREEN_UI",
+        "occurrences": 2,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "images/bg.png",
+        "category": "PATH_OR_FILENAME",
+        "occurrences": 0,
+        "decision": "SHOULD_NOT_EXTRACT",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "INTERNAL_KEY_001",
+        "category": "INTERNAL_KEY",
+        "occurrences": 0,
+        "decision": "SHOULD_NOT_EXTRACT",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "player_health",
+        "category": "VARIABLE_OR_IDENTIFIER",
+        "occurrences": 0,
+        "decision": "SHOULD_NOT_EXTRACT",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Generated ",
+        "category": "RUNTIME_GENERATED",
+        "occurrences": -1,
+        "decision": "CONDITIONAL_RUNTIME_ONLY",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "   ",
+        "category": "TECHNICAL_STRING",
+        "occurrences": 0,
+        "decision": "SHOULD_NOT_EXTRACT",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  },
+  "multiline": {
+    "script": "define e = Character(\"Eileen\")\nlabel start:\n    e \"\"\"First multiline\n    second multiline\"\"\"\n    return\n",
+    "expectations": [
+      {
+        "text": "First multiline second multiline",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  },
+  "single_quote": {
+    "script": "define e = Character('Eileen')\nlabel start:\n    e 'Single quoted dialogue'\n    return\n",
+    "expectations": [
+      {
+        "text": "Single quoted dialogue",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  },
+  "speaker_literal": {
+    "script": "label start:\n    \"Guide\" \"Literal speaker dialogue\"\n    return\n",
+    "expectations": [
+      {
+        "text": "Literal speaker dialogue",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  },
+  "say_suffix": {
+    "script": "define e = Character(\"Eileen\")\nlabel start:\n    e \"Timed dialogue\" with dissolve\n    return\n",
+    "expectations": [
+      {
+        "text": "Timed dialogue",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  },
+  "old_new": {
+    "script": "label start:\n    \"Original dialogue\"\n    return\ntranslate None strings:\n\n    old \"Original localized\"\n    new \"Existing localized\"\n",
+    "expectations": [
+      {
+        "text": "Original dialogue",
+        "category": "DIALOGUE",
+        "occurrences": 1,
+        "decision": "SHOULD_EXTRACT",
+        "patchability": "EXPECTED_STATIC_MAPPING",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Original localized",
+        "category": "LOCALIZATION_STRING",
+        "occurrences": -1,
+        "decision": "CONDITIONAL_RUNTIME_ONLY",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      },
+      {
+        "text": "Existing localized",
+        "category": "LOCALIZATION_STRING",
+        "occurrences": -1,
+        "decision": "CONDITIONAL_RUNTIME_ONLY",
+        "patchability": "NOT_REQUIRED",
+        "location": "game/script.rpy",
+        "context": "start or audit_ui; inspect line records"
+      }
+    ]
+  }
+}

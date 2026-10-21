@@ -1,0 +1,94 @@
+{
+  "standard": {
+    "member": "nested/script.rpy",
+    "workspace_inventory": {
+      "files": 0,
+      "bytes": 0,
+      "archive_sources": {}
+    },
+    "events": [
+      {
+        "ok": false,
+        "summary": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "error": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "complete": false,
+        "pending": 0,
+        "review_only": 0,
+        "blocked": 0,
+        "extract_status": "EMPTY",
+        "excluded_engine_common": 316,
+        "technical_skipped": 0,
+        "native_units": 316,
+        "native_accounted": 316,
+        "native_accounting_complete": true
+      }
+    ],
+    "rows": [],
+    "official_loader": {
+      "exit": 0,
+      "stdout": "﻿Ren'Py 8.5.3.26051504 lint report, generated at: Wed Oct 21 19:53:32 2026\nIt is advised to set config.check_conflicting_properties to True.\n\n\nStatistics:\n\nThe game contains 0 menus, 0 images, and 0 screens.\n\n\nLint is not a substitute for thorough testing. Remember to update Ren'Py\nbefore releasing. New releases fix bugs and improve compatibility.\n",
+      "stderr": "",
+      "readback": {
+        "loadable": true,
+        "content": "label archive_only:\n    \"Archive standard-root dialogue\"\n    return\n"
+      }
+    }
+  },
+  "prefixed": {
+    "member": "game/nested/script.rpy",
+    "workspace_inventory": {
+      "files": 1,
+      "bytes": 68,
+      "archive_sources": {
+        "game/nested/script.rpy": {
+          "archive_path": "game/scripts.rpa",
+          "archive_sha256": "85110e7944b726263409729c93dd3896a53289625664d1020c23023b149cd341",
+          "member_name": "game/nested/script.rpy",
+          "member_sha256": "d37270094d92051e7cb5304db4be6f1e953489d1db969c2f9acb502b123a8f66",
+          "size": 68
+        }
+      }
+    },
+    "events": [
+      {
+        "ok": true,
+        "summary": "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-ar-6796306a72bc\\canonica-c6069dcc681f\\prefixed\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+        "error": "",
+        "complete": true,
+        "pending": 0,
+        "review_only": 0,
+        "blocked": 0,
+        "extract_status": "COMPLETE",
+        "excluded_engine_common": 316,
+        "technical_skipped": 0,
+        "native_units": 317,
+        "native_accounted": 317,
+        "native_accounting_complete": true
+      }
+    ],
+    "rows": [
+      {
+        "key": "9df915d11fd629d9",
+        "source_text": "Archive standard-root dialogue",
+        "translation": "",
+        "context": "RenPy:game/nested/script.rpy:2:archive_only_83b92dd3",
+        "file_path": "game/nested/script.rpy",
+        "object_info": "",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_loose_source",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      }
+    ],
+    "official_loader": {
+      "exit": 0,
+      "stdout": "﻿Ren'Py 8.5.3.26051504 lint report, generated at: Wed Oct 21 19:53:36 2026\nIt is advised to set config.check_conflicting_properties to True.\n\n\nStatistics:\n\nThe game contains 0 menus, 0 images, and 0 screens.\n\n\nLint is not a substitute for thorough testing. Remember to update Ren'Py\nbefore releasing. New releases fix bugs and improve compatibility.\n",
+      "stderr": "",
+      "readback": {
+        "loadable": true,
+        "content": "label archive_only:\n    \"Archive standard-root dialogue\"\n    return\n"
+      }
+    }
+  }
+}

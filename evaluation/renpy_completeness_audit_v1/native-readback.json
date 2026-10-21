@@ -1,0 +1,67 @@
+{
+  "command": [
+    "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\tools\\renpy-8.5.3\\lib\\py3-windows-x86_64\\python.exe",
+    "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\tools\\renpy-8.5.3\\renpy.py",
+    "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-ro-41360c8635e9\\canonica-4216b1bb9b27\\source",
+    "lint"
+  ],
+  "exit": 0,
+  "stdout": "﻿Ren'Py 8.5.3.26051504 lint report, generated at: Wed Oct 21 19:54:56 2026\n\ngame/readback.rpy:1 The init priority (1000) is not in the -999 to 999 range.\nIt is advised to set config.check_conflicting_properties to True.\n\n\nStatistics:\n\nThe game contains 6 dialogue blocks, containing 20 words and 190 characters,\nfor an average of 3.3 words and 32 characters per block.\n\nThe vietnamese translation contains 6 dialogue blocks, containing 26 words and\n208 characters, for an average of 4.3 words and 35 characters per block.\n\nThe game contains 2 menus, 0 images, and 1 screens.\n\n\nLint is not a substitute for thorough testing. Remember to update Ren'Py\nbefore releasing. New releases fix bugs and improve compatibility.\n",
+  "stderr": "",
+  "readback": {
+    "dialogue": {
+      "start_549dcbd4": {
+        "text": "VI Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+        "translated": true
+      },
+      "start_364916a0": {
+        "text": "VI Narrator: bracket [[ literal. 日本語",
+        "translated": true
+      },
+      "start_6d82fa01": {
+        "text": "VI Repeated dialogue",
+        "translated": true
+      },
+      "start_6d82fa01_1": {
+        "text": "VI Repeated dialogue",
+        "translated": true
+      },
+      "start_f5c93d47": {
+        "text": "VI Repeated dialogue",
+        "translated": true
+      },
+      "start_b46eff49": {
+        "text": "VI Escaped \"quote\" and [name.upper()]",
+        "translated": true
+      }
+    },
+    "strings": {
+      "First choice": "VI First choice",
+      "Nested choice": "VI Nested choice",
+      "Localized setting": "VI Localized setting",
+      "Wrapped button label": "VI Wrapped button label",
+      "Helpful tooltip": "VI Helpful tooltip",
+      "Shared UI text": "VI Shared UI text",
+      "images/bg.png": "VI images/bg.png"
+    }
+  },
+  "expected_dialogue": {
+    "start_549dcbd4": "VI Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+    "start_364916a0": "VI Narrator: bracket [[ literal. 日本語",
+    "start_6d82fa01": "VI Repeated dialogue",
+    "start_6d82fa01_1": "VI Repeated dialogue",
+    "start_f5c93d47": "VI Repeated dialogue",
+    "start_b46eff49": "VI Escaped \"quote\" and [name.upper()]"
+  },
+  "expected_strings": {
+    "First choice": "VI First choice",
+    "Nested choice": "VI Nested choice",
+    "Localized setting": "VI Localized setting",
+    "Wrapped button label": "VI Wrapped button label",
+    "Helpful tooltip": "VI Helpful tooltip",
+    "Shared UI text": "VI Shared UI text",
+    "images/bg.png": "VI images/bg.png"
+  },
+  "original_script_unchanged": true,
+  "mapping_pass": true
+}

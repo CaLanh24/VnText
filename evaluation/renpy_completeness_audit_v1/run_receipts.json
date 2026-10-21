@@ -1,0 +1,92 @@
+{
+  "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+  "production_source_hashes": {
+    "vntext/renpy_adapter.py": "379eed7d1aedd07d99c57477400f047f575874877dedd9c1119ff81046d9f341",
+    "vntext/renpy_archive.py": "fa310da3c96d805e81f7d6b3e12427a1b1d9040d94fcd6ddbc5fd50082108aec",
+    "vntext/renpy_compiled.py": "74dda74b56ab0d402187fd32fb64333468396fbcc71ca4fedd889c5a88e3ae73",
+    "vntext/renpy_extract.py": "dc2647a677852576638ae7f5d2218a1a2242ada7e0645bfad10dba75edd8b8a6",
+    "vntext/renpy_toolchain.py": "d9418f0985f028ac32052d9ec8953a6dd8a2dbe738192cacdb4b9b0e871a115f",
+    "vntext/patch_renpy.py": "640b1c3202151a0549ab679a95c727866ac22b70abc367f8a9886ad85a9d7869",
+    "vntext/app_tasks.py": "45f50d97cb4acee8a3c81e9e31165324110377ade6e9b2380ac09608516cc0f7",
+    "vntext/package_io.py": "15f3bd7f4a8d47bb881518a85369298a0874bb2f292a96fdcb1f48fc6221966b",
+    "vntext/mt_classify.py": "0e3fd6e122b26ba5994c1abf2a1414cf6413d7a7ddb547428673c0ef95ac2f3e",
+    "vntext/patchability.py": "2f1f10f2977a7cb0fe50ef4a856ee01e277d162976f2c06f0556617149c4b72c"
+  },
+  "runs": [
+    {
+      "receipt": "DEV_RUN\\renpy-audit-run.json",
+      "sha256": "195410c7cf0056e5dbf2e820f87070076b4fa3e41489abce2cb911fd24f37429",
+      "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+      "command": [
+        ".dev-env/.venv/Scripts/python.exe",
+        "-B",
+        "evaluation/renpy_completeness_audit_v1/run_audit.py"
+      ],
+      "child_exit": 1,
+      "cleanup": "PASS",
+      "unknown_roots": 0,
+      "stderr": "Traceback (most recent call last):\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\evaluation\\renpy_completeness_audit_v1\\run_audit.py\", line 85, in <module>\r\n    result[f'rpa{version}']['inventory']={p.name:list(RenPyArchive(p).members)for p in (src/'game').glob('*.rpa')}\r\n                                                      ~~~~~~~~~~~~^^^\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\vntext\\renpy_archive.py\", line 141, in __init__\r\n    index = _safe_index(raw)\r\n  File \"C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\vntext\\renpy_archive.py\", line 105, in _safe_index\r\n    raise RenPyArchiveError(f\"unsupported RPA index opcode: {name}\")\r\nvntext.renpy_archive.RenPyArchiveError: unsupported RPA index opcode: GLOBAL",
+      "stdout": ""
+    },
+    {
+      "receipt": "DEV_RUN\\renpy-audit-run-continued.json",
+      "sha256": "7cbefaeb8eb7c8d444a5dd29a5353de15aa9eb40c328701c27e6f5e656baed6a",
+      "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+      "command": [
+        ".dev-env/.venv/Scripts/python.exe",
+        "-B",
+        "evaluation/renpy_completeness_audit_v1/run_audit.py"
+      ],
+      "child_exit": 0,
+      "cleanup": "PASS",
+      "unknown_roots": 0,
+      "stderr": "",
+      "stdout": "cked\": 1, \"diagnostic_stage\": \"EXTRACT\", \"diagnostic_root_cause\": \"UNKNOWN\", \"diagnostic_affected_count\": 1, \"diagnostic_action\": \"Inspect the extract error and diagnostic evidence before retrying.\", \"diagnostic_status\": \"FAILED\"}], \"parse_error\": \"RenPyTemplateParseError('script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix')\", \"rows\": 0}, \"say_suffix\": {\"events\": [{\"ok\": false, \"summary\": \"\", \"error\": \"script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix\", \"complete\": false, \"pending\": 1, \"review_only\": 1, \"blocked\": 1, \"diagnostic_stage\": \"EXTRACT\", \"diagnostic_root_cause\": \"UNKNOWN\", \"diagnostic_affected_count\": 1, \"diagnostic_action\": \"Inspect the extract error and diagnostic evidence before retrying.\", \"diagnostic_status\": \"FAILED\"}], \"parse_error\": \"RenPyTemplateParseError('script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix')\", \"rows\": 0}, \"old_new\": {\"events\": [{\"ok\": true, \"summary\": \"Xong: 1 d\\u00f2ng translation.csv, 0 review/extract-only. Xu\\u1ea5t t\\u1ea1i: C:\\\\Users\\\\VNTextDev\\\\source\\\\VnText-v0.1.5\\\\TEST_RUN\\\\tmp\\\\renpy-co-ea08d582f026\\\\canonica-54de92d535f0\\\\old_new\\\\package; \\u0111\\u00e3 lo\\u1ea1i 316 chu\\u1ed7i Ren'Py common kh\\u1ecfi ph\\u1ea1m vi text c\\u1ee7a game\", \"error\": \"\", \"complete\": true, \"pending\": 0, \"review_only\": 0, \"blocked\": 0, \"extract_status\": \"COMPLETE\", \"excluded_engine_common\": 316, \"technical_skipped\": 0, \"native_units\": 317, \"native_accounted\": 317, \"native_accounting_complete\": true, \"renpy_sdk_missing\": false}], \"parse_error\": null, \"rows\": 1}}, \"compiled_rows\": 6, \"roundtrip_error\": null, \"work\": \"C:\\\\Users\\\\VNTextDev\\\\source\\\\VnText-v0.1.5\\\\TEST_RUN\\\\tmp\\\\renpy-co-ea08d582f026\\\\canonica-cfee8f89a644\"}"
+    },
+    {
+      "receipt": "DEV_RUN\\renpy-audit-references.json",
+      "sha256": "1383fc397a272c095857cbc0e03a29c83bd35ca15794843d0335127ba3b71172",
+      "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+      "command": [
+        ".dev-env/.venv/Scripts/python.exe",
+        "-B",
+        "evaluation/renpy_completeness_audit_v1/run_references.py"
+      ],
+      "child_exit": 0,
+      "cleanup": "PASS",
+      "unknown_roots": 0,
+      "stderr": "",
+      "stdout": "{\"unrpyc_exit\": 0, \"recovered\": true, \"rpa\": {\"2\": {\"members\": [\"nested/script.rpy\", \"other/path.rpy\"], \"exact_bytes\": true}, \"3\": {\"members\": [\"nested/script.rpy\", \"other/path.rpy\"], \"exact_bytes\": true}, \"3.2\": {\"error\": \"ValueError('saving is only supported for version 2 and 3 archives')\"}}, \"independent_keys\": [\"file_path\", \"characters\", \"dialogues\", \"ui_texts\"]}"
+    },
+    {
+      "receipt": "DEV_RUN\\renpy-audit-archive-probe.json",
+      "sha256": "fe6f2d4e7c1b190eb5f34630d6ecbaec61781351cae5bf9947445148f6c7bc81",
+      "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+      "command": [
+        ".dev-env/.venv/Scripts/python.exe",
+        "-B",
+        "evaluation/renpy_completeness_audit_v1/run_archive_probe.py"
+      ],
+      "child_exit": 0,
+      "cleanup": "PASS",
+      "unknown_roots": 0,
+      "stderr": "",
+      "stdout": "{\"standard\": {\"rows\": 0, \"loader\": {\"loadable\": true, \"content\": \"label archive_only:\\n    \\\"Archive standard-root dialogue\\\"\\n    return\\n\"}}, \"prefixed\": {\"rows\": 1, \"loader\": {\"loadable\": true, \"content\": \"label archive_only:\\n    \\\"Archive standard-root dialogue\\\"\\n    return\\n\"}}}"
+    },
+    {
+      "receipt": "DEV_RUN\\renpy-audit-native-readback.json",
+      "sha256": "efeb4f1f169f3a762eb6963ffa2a4e4eea5d979705ae1a2a0c78406818bdb8ae",
+      "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+      "command": [
+        ".dev-env/.venv/Scripts/python.exe",
+        "-B",
+        "evaluation/renpy_completeness_audit_v1/run_roundtrip_probe.py"
+      ],
+      "child_exit": 0,
+      "cleanup": "PASS",
+      "unknown_roots": 0,
+      "stderr": "",
+      "stdout": "{\"exit\": 0, \"mapping_pass\": true, \"dialogues\": 6, \"strings\": 7}"
+    }
+  ]
+}

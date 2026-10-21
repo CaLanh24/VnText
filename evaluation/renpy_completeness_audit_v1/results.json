@@ -1,0 +1,2846 @@
+{
+  "source_sha": "0344b882066dffd501236769530d90f466c2157b",
+  "ground_truth_sha256": "39e9a61a37d47f660ba8a3ebea244a423a99daae5353373821be2cd89a953491",
+  "cases": {
+    "basic": {
+      "script_sha256": "148f029fe57b80824d6478f7d2054facaa50526d4712808e3c6e2b3442949cc8",
+      "ground_truth": [
+        [
+          "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+          "DIALOGUE",
+          1
+        ],
+        [
+          "Narrator: bracket [[ literal. 日本語",
+          "NARRATION",
+          1
+        ],
+        [
+          "Repeated dialogue",
+          "DIALOGUE",
+          3
+        ],
+        [
+          "Escaped \"quote\" and [name.upper()]",
+          "DIALOGUE",
+          1
+        ],
+        [
+          "First choice",
+          "MENU_CHOICE",
+          1
+        ],
+        [
+          "Nested choice",
+          "MENU_CHOICE",
+          1
+        ],
+        [
+          "Localized setting",
+          "LOCALIZATION_STRING",
+          1
+        ],
+        [
+          "Plain screen label",
+          "SCREEN_UI",
+          1
+        ],
+        [
+          "Plain button label",
+          "SCREEN_UI",
+          1
+        ],
+        [
+          "Wrapped button label",
+          "SCREEN_UI",
+          1
+        ],
+        [
+          "Helpful tooltip",
+          "SCREEN_UI",
+          1
+        ],
+        [
+          "Shared UI text",
+          "SCREEN_UI",
+          2
+        ],
+        [
+          "images/bg.png",
+          "PATH_OR_FILENAME",
+          0
+        ],
+        [
+          "INTERNAL_KEY_001",
+          "INTERNAL_KEY",
+          0
+        ],
+        [
+          "player_health",
+          "VARIABLE_OR_IDENTIFIER",
+          0
+        ],
+        [
+          "Generated ",
+          "RUNTIME_GENERATED",
+          -1
+        ],
+        [
+          "   ",
+          "TECHNICAL_STRING",
+          0
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:5\ntranslate vietnamese start_549dcbd4:\n\n    # e \"Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}\"\n    e \"\"\n\n# game/script.rpy:6\ntranslate vietnamese start_364916a0:\n\n    # \"Narrator: bracket [[ literal. 日本語\"\n    \"\"\n\n# game/script.rpy:7\ntranslate vietnamese start_6d82fa01:\n\n    # e \"Repeated dialogue\"\n    e \"\"\n\n# game/script.rpy:8\ntranslate vietnamese start_6d82fa01_1:\n\n    # e \"Repeated dialogue\"\n    e \"\"\n\n# game/script.rpy:9\ntranslate vietnamese start_f5c93d47:\n\n    # f \"Repeated dialogue\"\n    f \"\"\n\n# game/script.rpy:10\ntranslate vietnamese start_b46eff49:\n\n    # e \"Escaped \\\"quote\\\" and [name.upper()]\"\n    e \"\"\n\ntranslate vietnamese strings:\n\n    # game/script.rpy:12\n    old \"First choice\"\n    new \"\"\n\n    # game/script.rpy:14\n    old \"Nested choice\"\n    new \"\"\n\n    # game/script.rpy:16\n    old \"Localized setting\"\n    new \"\"\n\n    # game/script.rpy:25\n    old \"Wrapped button label\"\n    new \"\"\n\n    # game/script.rpy:25\n    old \"Helpful tooltip\"\n    new \"\"\n\n    # game/script.rpy:26\n    old \"Shared UI text\"\n    new \"\"\n\n    # game/script.rpy:28\n    old \"images/bg.png\"\n    new \"\"\n\n    # game/script.rpy:29\n    old \"   \"\n    new \"\"\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_units": [
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_549dcbd4",
+          "source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 5,
+          "template_file": "script.rpy",
+          "template_line": 3,
+          "target_line": 6,
+          "order": 316,
+          "block_order": 2,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "narration",
+          "language": "vietnamese",
+          "native_id": "start_364916a0",
+          "source_text": "Narrator: bracket [[ literal. 日本語",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 6,
+          "template_file": "script.rpy",
+          "template_line": 9,
+          "target_line": 12,
+          "order": 317,
+          "block_order": 3,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_6d82fa01",
+          "source_text": "Repeated dialogue",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 7,
+          "template_file": "script.rpy",
+          "template_line": 15,
+          "target_line": 18,
+          "order": 318,
+          "block_order": 4,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_6d82fa01_1",
+          "source_text": "Repeated dialogue",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 8,
+          "template_file": "script.rpy",
+          "template_line": 21,
+          "target_line": 24,
+          "order": 319,
+          "block_order": 5,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_f5c93d47",
+          "source_text": "Repeated dialogue",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 9,
+          "template_file": "script.rpy",
+          "template_line": 27,
+          "target_line": 30,
+          "order": 320,
+          "block_order": 6,
+          "speaker": "f",
+          "expression": "",
+          "target_speaker": "f",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_b46eff49",
+          "source_text": "Escaped \"quote\" and [name.upper()]",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 10,
+          "template_file": "script.rpy",
+          "template_line": 33,
+          "target_line": 36,
+          "order": 321,
+          "block_order": 7,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "First choice",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 12,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 42,
+          "order": 322,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "Nested choice",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 14,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 46,
+          "order": 323,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "Localized setting",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 16,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 50,
+          "order": 324,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "Wrapped button label",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 25,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 54,
+          "order": 325,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "Helpful tooltip",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 25,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 58,
+          "order": 326,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "Shared UI text",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 26,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 62,
+          "order": 327,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "images/bg.png",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 28,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 66,
+          "order": 328,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        },
+        {
+          "unit_kind": "string",
+          "statement_class": "string",
+          "language": "vietnamese",
+          "native_id": "",
+          "source_text": "   ",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 29,
+          "template_file": "script.rpy",
+          "template_line": 38,
+          "target_line": 70,
+          "order": 329,
+          "block_order": 8,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        }
+      ],
+      "product": {
+        "events": [
+          {
+            "ok": true,
+            "summary": "Xong: 13 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\basic\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game; 1 dòng kỹ thuật được ghi riêng",
+            "error": "",
+            "complete": true,
+            "pending": 0,
+            "review_only": 0,
+            "blocked": 0,
+            "extract_status": "COMPLETE",
+            "excluded_engine_common": 316,
+            "technical_skipped": 1,
+            "native_units": 330,
+            "native_accounted": 330,
+            "native_accounting_complete": true,
+            "renpy_sdk_missing": false
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\basic\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 973 bytes; sẽ dọn khi terminal.",
+          "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+          "Xong: 13 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\basic\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game; 1 dòng kỹ thuật được ghi riêng",
+          "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+        ],
+        "rows": [
+          {
+            "key": "b2da4930e5e14e67",
+            "source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:5:start_549dcbd4",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "bf65445155183bdf",
+            "source_text": "Narrator: bracket [[ literal. 日本語",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:6:start_364916a0",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "39609ede8505cdee",
+            "source_text": "Repeated dialogue",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:7:start_6d82fa01",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "f8992a490624da86",
+            "source_text": "Repeated dialogue",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:8:start_6d82fa01_1",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "d113a92cad4e838e",
+            "source_text": "Repeated dialogue",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:9:start_f5c93d47",
+            "file_path": "game/script.rpy",
+            "object_info": "f",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "c3ec370eafe652c1",
+            "source_text": "Escaped \"quote\" and [name.upper()]",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:10:start_b46eff49",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "5e967ec8d8dd0316",
+            "source_text": "First choice",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:12:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "97a81fea0c644550",
+            "source_text": "Nested choice",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:14:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "a6d13dfdfdf4fe36",
+            "source_text": "Localized setting",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:16:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "a8a688d3f0a8ff6e",
+            "source_text": "Wrapped button label",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "80d993fbedc13a73",
+            "source_text": "Helpful tooltip",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "59411df509ac6d32",
+            "source_text": "Shared UI text",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:26:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "ac8a4a52d7269cd4",
+            "source_text": "images/bg.png",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:28:string:script.rpy:8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "entries": [
+          {
+            "key": "b2da4930e5e14e67",
+            "source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:5:start_549dcbd4",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_549dcbd4",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_549dcbd4"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_549dcbd4"
+              },
+              "precondition": {
+                "native_source": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_549dcbd4"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 5,
+                "language": "vietnamese",
+                "original_source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 2,
+                "source_span": {
+                  "line": 5,
+                  "start_column": 7,
+                  "end_column": 80
+                }
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:5:start_549dcbd4",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [
+                  "Narrator: bracket [[ literal. 日本語"
+                ],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "77f66d7f94919d7f6c8ba1a00fcc132a1239ce650eda1bcde3491ad534ddc3ee"
+            }
+          },
+          {
+            "key": "bf65445155183bdf",
+            "source_text": "Narrator: bracket [[ literal. 日本語",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:6:start_364916a0",
+            "object_info": "",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_364916a0",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_364916a0"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_364916a0"
+              },
+              "precondition": {
+                "native_source": "Narrator: bracket [[ literal. 日本語",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_364916a0"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 6,
+                "language": "vietnamese",
+                "original_source_text": "Narrator: bracket [[ literal. 日本語",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 3,
+                "source_span": {
+                  "line": 6,
+                  "start_column": 5,
+                  "end_column": 39
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:6:start_364916a0",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [
+                  "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}"
+                ],
+                "next": [
+                  "Repeated dialogue"
+                ],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "3d467679a9db761da869852bd283913e47a14eac3f00241b98bc9f6a8e647d38"
+            }
+          },
+          {
+            "key": "39609ede8505cdee",
+            "source_text": "Repeated dialogue",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:7:start_6d82fa01",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_6d82fa01",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_6d82fa01"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_6d82fa01"
+              },
+              "precondition": {
+                "native_source": "Repeated dialogue",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_6d82fa01"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 7,
+                "language": "vietnamese",
+                "original_source_text": "Repeated dialogue",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 4,
+                "source_span": {
+                  "line": 7,
+                  "start_column": 7,
+                  "end_column": 25
+                }
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:7:start_6d82fa01",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [
+                  "Narrator: bracket [[ literal. 日本語"
+                ],
+                "next": [
+                  "Repeated dialogue"
+                ],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "c24ee25fe2f8e26172e057777c7dde1575c08b37eb38fa8950a84a8c0f127d28"
+            }
+          },
+          {
+            "key": "f8992a490624da86",
+            "source_text": "Repeated dialogue",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:8:start_6d82fa01_1",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_6d82fa01_1",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_6d82fa01_1"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_6d82fa01_1"
+              },
+              "precondition": {
+                "native_source": "Repeated dialogue",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_6d82fa01_1"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 8,
+                "language": "vietnamese",
+                "original_source_text": "Repeated dialogue",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 5,
+                "source_span": {
+                  "line": 8,
+                  "start_column": 7,
+                  "end_column": 25
+                }
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:8:start_6d82fa01_1",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [
+                  "Repeated dialogue"
+                ],
+                "next": [
+                  "Repeated dialogue"
+                ],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "c2077517378e8223ae5d21d026fb93cd2d46b3f7c63d9b91da3d64156fd0467e"
+            }
+          },
+          {
+            "key": "d113a92cad4e838e",
+            "source_text": "Repeated dialogue",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:9:start_f5c93d47",
+            "object_info": "f",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_f5c93d47",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_f5c93d47"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_f5c93d47"
+              },
+              "precondition": {
+                "native_source": "Repeated dialogue",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_f5c93d47"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 9,
+                "language": "vietnamese",
+                "original_source_text": "Repeated dialogue",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 6,
+                "source_span": {
+                  "line": 9,
+                  "start_column": 7,
+                  "end_column": 25
+                }
+              },
+              "context": {
+                "speaker": "f",
+                "source_context": "RenPy:game/script.rpy:9:start_f5c93d47",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [
+                  "Repeated dialogue"
+                ],
+                "next": [
+                  "Escaped \"quote\" and [name.upper()]"
+                ],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "7c287d87544ae55c0d63fa98d13ad6a4dcb0473bb1402c83bd16d8b0f49542ab"
+            }
+          },
+          {
+            "key": "c3ec370eafe652c1",
+            "source_text": "Escaped \"quote\" and [name.upper()]",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:10:start_b46eff49",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_b46eff49",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_b46eff49"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_b46eff49"
+              },
+              "precondition": {
+                "native_source": "Escaped \"quote\" and [name.upper()]",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_b46eff49"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 10,
+                "language": "vietnamese",
+                "original_source_text": "Escaped \"quote\" and [name.upper()]",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 7,
+                "source_span": {
+                  "line": 10,
+                  "start_column": 7,
+                  "end_column": 44
+                }
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:10:start_b46eff49",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [
+                  "Repeated dialogue"
+                ],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "2e8afad1f146ed14a1d0f771cc0744d17c2b6929ede8f7311c29ab56e83c0a1e"
+            }
+          },
+          {
+            "key": "5e967ec8d8dd0316",
+            "source_text": "First choice",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:12:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "First choice",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "First choice"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "First choice"
+              },
+              "precondition": {
+                "native_source": "First choice",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 12,
+                "language": "vietnamese",
+                "original_source_text": "First choice",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 12,
+                  "start_column": 9,
+                  "end_column": 22
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:12:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "3055a7a5ff2e2075fb252be4315428c1228ba8899b85b44f58161b372761ffe7"
+            }
+          },
+          {
+            "key": "97a81fea0c644550",
+            "source_text": "Nested choice",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:14:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "Nested choice",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "Nested choice"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "Nested choice"
+              },
+              "precondition": {
+                "native_source": "Nested choice",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 14,
+                "language": "vietnamese",
+                "original_source_text": "Nested choice",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 14,
+                  "start_column": 17,
+                  "end_column": 31
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:14:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "bd4e1baf30d9a25956f361aed584a9b743f5aa62d406437f53fa19abf91e606b"
+            }
+          },
+          {
+            "key": "a6d13dfdfdf4fe36",
+            "source_text": "Localized setting",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:16:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "Localized setting",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "Localized setting"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "Localized setting"
+              },
+              "precondition": {
+                "native_source": "Localized setting",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 16,
+                "language": "vietnamese",
+                "original_source_text": "Localized setting",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 16,
+                  "start_column": 17,
+                  "end_column": 35
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:16:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "1d61f046e1db0d954a38261ffae2de75143b0396eae04c7453172afb66383d34"
+            }
+          },
+          {
+            "key": "a8a688d3f0a8ff6e",
+            "source_text": "Wrapped button label",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "Wrapped button label",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "Wrapped button label"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "Wrapped button label"
+              },
+              "precondition": {
+                "native_source": "Wrapped button label",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 25,
+                "language": "vietnamese",
+                "original_source_text": "Wrapped button label",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 25,
+                  "start_column": 18,
+                  "end_column": 39
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "d35dd1602fbe2cb198b6514d733b197dcd64b73c233949ffbeb8955566752199"
+            }
+          },
+          {
+            "key": "80d993fbedc13a73",
+            "source_text": "Helpful tooltip",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "Helpful tooltip",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "Helpful tooltip"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "Helpful tooltip"
+              },
+              "precondition": {
+                "native_source": "Helpful tooltip",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 25,
+                "language": "vietnamese",
+                "original_source_text": "Helpful tooltip",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 25,
+                  "start_column": 72,
+                  "end_column": 88
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:25:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "fb58e3d29bc7e02e230ee1712ea007b149fe98527aec7304835292b2969bed5e"
+            }
+          },
+          {
+            "key": "59411df509ac6d32",
+            "source_text": "Shared UI text",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:26:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "Shared UI text",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "Shared UI text"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "Shared UI text"
+              },
+              "precondition": {
+                "native_source": "Shared UI text",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 26,
+                "language": "vietnamese",
+                "original_source_text": "Shared UI text",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 26,
+                  "start_column": 12,
+                  "end_column": 27
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:26:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "e1b11d07f15e981bf2510ff91e0ab851370c2c720ba097bcfe3cc44bb9d7509d"
+            }
+          },
+          {
+            "key": "ac8a4a52d7269cd4",
+            "source_text": "images/bg.png",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:28:string:script.rpy:8",
+            "object_info": "",
+            "import_method": "renpy_string",
+            "safety": "safe",
+            "locator": {
+              "source": "images/bg.png",
+              "unit_type": "string"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_string",
+                "unit_type": "string",
+                "language": "vietnamese",
+                "source": "images/bg.png"
+              },
+              "locator": {
+                "unit_type": "string",
+                "source": "images/bg.png"
+              },
+              "precondition": {
+                "native_source": "images/bg.png",
+                "source_file": "game/script.rpy",
+                "source_sha256": "9aef82adaa5c18d30842db4969b9ce68267784b53bb3df17dd5264d6b4e5c56f",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40",
+                "unit_type": "string",
+                "language": "vietnamese"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 28,
+                "language": "vietnamese",
+                "original_source_text": "images/bg.png",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "65cbd7fb2d79bf6070372ef1d30b71868bcccc7f6f99b9f87fdf2aeb7dd82e40"
+                },
+                "block_order": 8,
+                "owner": "game_owned",
+                "source_available": true,
+                "auto_patchable": true,
+                "disposition": "game_owned",
+                "ledger": "translation_csv",
+                "source_span": {
+                  "line": 28,
+                  "start_column": 12,
+                  "end_column": 26
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:28:string:script.rpy:8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "37153a657bca06df0645079a2866f8f15f45fe8edaa7a385dd420f3b60a89730"
+            }
+          }
+        ]
+      }
+    },
+    "multiline": {
+      "script_sha256": "41e7b699e56203b33af1d007fd792e2fdee4d49a1eeb47293e63aeaf7edcc405",
+      "ground_truth": [
+        [
+          "First multiline second multiline",
+          "DIALOGUE",
+          1
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:3\ntranslate vietnamese start_8aa4bb15:\n\n    # e \"First multiline second multiline\"\n    e \"\"\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_units": [
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_8aa4bb15",
+          "source_text": "First multiline second multiline",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 3,
+          "template_file": "script.rpy",
+          "template_line": 3,
+          "target_line": 6,
+          "order": 316,
+          "block_order": 2,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        }
+      ],
+      "product": {
+        "events": [
+          {
+            "ok": true,
+            "summary": "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\multiline\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+            "error": "",
+            "complete": true,
+            "pending": 0,
+            "review_only": 0,
+            "blocked": 0,
+            "extract_status": "COMPLETE",
+            "excluded_engine_common": 316,
+            "technical_skipped": 0,
+            "native_units": 317,
+            "native_accounted": 317,
+            "native_accounting_complete": true,
+            "renpy_sdk_missing": false
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\multiline\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 109 bytes; sẽ dọn khi terminal.",
+          "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+          "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\multiline\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+          "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+        ],
+        "rows": [
+          {
+            "key": "f316e6501eadffca",
+            "source_text": "First multiline second multiline",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:3:start_8aa4bb15",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "entries": [
+          {
+            "key": "f316e6501eadffca",
+            "source_text": "First multiline second multiline",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:3:start_8aa4bb15",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_8aa4bb15",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_8aa4bb15"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_8aa4bb15"
+              },
+              "precondition": {
+                "native_source": "First multiline second multiline",
+                "source_file": "game/script.rpy",
+                "source_sha256": "b45b554e786bd3662308a585d9b4c526f406a257fe3c3b6572840d08d1cc0ff2",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "862580d7dc3c63a14e3cdb4cebe88774788a0d2d8c9b669295abfd498916aaf2",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_8aa4bb15"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 3,
+                "language": "vietnamese",
+                "original_source_text": "First multiline second multiline",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "862580d7dc3c63a14e3cdb4cebe88774788a0d2d8c9b669295abfd498916aaf2"
+                },
+                "block_order": 2
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:3:start_8aa4bb15",
+                "enrichment": {
+                  "status": "MISMATCH",
+                  "authoritative": false,
+                  "reason": "native source line is not a supported dialogue statement: statement has an ambiguous suffix"
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240"
+              },
+              "fingerprint": "efff95d47206e06060eabfea1812e967519df3574c8c4ce97dd17e37115ebe4d"
+            }
+          }
+        ]
+      }
+    },
+    "single_quote": {
+      "script_sha256": "169b4858adeab99e90c62506a96ffeb70b7faf6374400c77d07150e32e397912",
+      "ground_truth": [
+        [
+          "Single quoted dialogue",
+          "DIALOGUE",
+          1
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:3\ntranslate vietnamese start_3f04727c:\n\n    # e \"Single quoted dialogue\"\n    e \"\"\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_units": [
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "dialogue",
+          "language": "vietnamese",
+          "native_id": "start_3f04727c",
+          "source_text": "Single quoted dialogue",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 3,
+          "template_file": "script.rpy",
+          "template_line": 3,
+          "target_line": 6,
+          "order": 316,
+          "block_order": 2,
+          "speaker": "e",
+          "expression": "",
+          "target_speaker": "e",
+          "target_expression": ""
+        }
+      ],
+      "product": {
+        "events": [
+          {
+            "ok": true,
+            "summary": "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\single_quote\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+            "error": "",
+            "complete": true,
+            "pending": 0,
+            "review_only": 0,
+            "blocked": 0,
+            "extract_status": "COMPLETE",
+            "excluded_engine_common": 316,
+            "technical_skipped": 0,
+            "native_units": 317,
+            "native_accounted": 317,
+            "native_accounting_complete": true,
+            "renpy_sdk_missing": false
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\single_quote\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 90 bytes; sẽ dọn khi terminal.",
+          "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+          "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\single_quote\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+          "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+        ],
+        "rows": [
+          {
+            "key": "29747e07d81d63cb",
+            "source_text": "Single quoted dialogue",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:3:start_3f04727c",
+            "file_path": "game/script.rpy",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "entries": [
+          {
+            "key": "29747e07d81d63cb",
+            "source_text": "Single quoted dialogue",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:3:start_3f04727c",
+            "object_info": "e",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_3f04727c",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_3f04727c"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_3f04727c"
+              },
+              "precondition": {
+                "native_source": "Single quoted dialogue",
+                "source_file": "game/script.rpy",
+                "source_sha256": "047419837b78902deba46ebfa219587a10b24a3093d1a047bac39c59a8dde6f3",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "17dbcaca4e1e41216ea978b710495d1641967a6dad1032dbec9294ff4ec05139",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_3f04727c"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 3,
+                "language": "vietnamese",
+                "original_source_text": "Single quoted dialogue",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "17dbcaca4e1e41216ea978b710495d1641967a6dad1032dbec9294ff4ec05139"
+                },
+                "block_order": 2
+              },
+              "context": {
+                "speaker": "e",
+                "source_context": "RenPy:game/script.rpy:3:start_3f04727c",
+                "enrichment": {
+                  "status": "MISMATCH",
+                  "authoritative": false,
+                  "reason": "native source line is not a supported dialogue statement: statement has no quoted text"
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240"
+              },
+              "fingerprint": "dc3ee27a0ead8b0fb419fb650e84f2a33d680c481536dde2a7d385516548f653"
+            }
+          }
+        ]
+      }
+    },
+    "speaker_literal": {
+      "script_sha256": "eb215d8b7deaa8a64e51e26b3a0cdf519d602007cf4be9b9bb9d8b2acbfa179a",
+      "ground_truth": [
+        [
+          "Literal speaker dialogue",
+          "DIALOGUE",
+          1
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:2\ntranslate vietnamese start_9bb69b85:\n\n    # \"Guide\" \"Literal speaker dialogue\"\n    \"Guide\" \"\"\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_parse_error": "RenPyTemplateParseError('script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix')",
+      "product": {
+        "events": [
+          {
+            "ok": false,
+            "summary": "",
+            "error": "script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix",
+            "complete": false,
+            "pending": 1,
+            "review_only": 1,
+            "blocked": 1,
+            "diagnostic_stage": "EXTRACT",
+            "diagnostic_root_cause": "UNKNOWN",
+            "diagnostic_affected_count": 1,
+            "diagnostic_action": "Inspect the extract error and diagnostic evidence before retrying.",
+            "diagnostic_status": "FAILED"
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\speaker_literal\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 66 bytes; sẽ dọn khi terminal."
+        ],
+        "rows": [],
+        "entries": []
+      }
+    },
+    "say_suffix": {
+      "script_sha256": "8afa0f0c685c717a9c470255fa4d4343b368c2b097193977de292052279b809b",
+      "ground_truth": [
+        [
+          "Timed dialogue",
+          "DIALOGUE",
+          1
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:3\ntranslate vietnamese start_8bcc5cb4:\n\n    # e \"Timed dialogue\" with dissolve\n    e \"\" with dissolve\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_parse_error": "RenPyTemplateParseError('script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix')",
+      "product": {
+        "events": [
+          {
+            "ok": false,
+            "summary": "",
+            "error": "script.rpy:5: unsupported native dialogue source statement: statement has an ambiguous suffix",
+            "complete": false,
+            "pending": 1,
+            "review_only": 1,
+            "blocked": 1,
+            "diagnostic_stage": "EXTRACT",
+            "diagnostic_root_cause": "UNKNOWN",
+            "diagnostic_affected_count": 1,
+            "diagnostic_action": "Inspect the extract error and diagnostic evidence before retrying.",
+            "diagnostic_status": "FAILED"
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\say_suffix\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 96 bytes; sẽ dọn khi terminal."
+        ],
+        "rows": [],
+        "entries": []
+      }
+    },
+    "old_new": {
+      "script_sha256": "b58586aaad722a6134bd39eb81ed8f72e7b424b83765ecdcdfc5183e76095b1e",
+      "ground_truth": [
+        [
+          "Original dialogue",
+          "DIALOGUE",
+          1
+        ],
+        [
+          "Original localized",
+          "LOCALIZATION_STRING",
+          -1
+        ],
+        [
+          "Existing localized",
+          "LOCALIZATION_STRING",
+          -1
+        ]
+      ],
+      "official": {
+        "exit": 0,
+        "templates": {
+          "game/tl/vietnamese/script.rpy": "﻿\n# game/script.rpy:2\ntranslate vietnamese start_aef43ec8:\n\n    # \"Original dialogue\"\n    \"\"\n\n"
+        },
+        "stdout": "",
+        "stderr": ""
+      },
+      "native_units": [
+        {
+          "unit_kind": "dialogue",
+          "statement_class": "narration",
+          "language": "vietnamese",
+          "native_id": "start_aef43ec8",
+          "source_text": "Original dialogue",
+          "target_text": "",
+          "source_file": "game/script.rpy",
+          "source_line": 2,
+          "template_file": "script.rpy",
+          "template_line": 3,
+          "target_line": 6,
+          "order": 316,
+          "block_order": 2,
+          "speaker": "",
+          "expression": "",
+          "target_speaker": "",
+          "target_expression": ""
+        }
+      ],
+      "product": {
+        "events": [
+          {
+            "ok": true,
+            "summary": "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\old_new\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+            "error": "",
+            "complete": true,
+            "pending": 0,
+            "review_only": 0,
+            "blocked": 0,
+            "extract_status": "COMPLETE",
+            "excluded_engine_common": 316,
+            "technical_skipped": 0,
+            "native_units": 317,
+            "native_accounted": 317,
+            "native_accounting_complete": true,
+            "renpy_sdk_missing": false
+          }
+        ],
+        "logs": [
+          "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\old_new\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+          "Đang extract text, mức lọc raw: balanced...",
+          "Ren'Py SDK workspace isolated: 1 file(s), 138 bytes; sẽ dọn khi terminal.",
+          "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+          "Xong: 1 dòng translation.csv, 0 review/extract-only. Xuất tại: C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-54de92d535f0\\old_new\\package; đã loại 316 chuỗi Ren'Py common khỏi phạm vi text của game",
+          "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+        ],
+        "rows": [
+          {
+            "key": "75329b031d1c7a46",
+            "source_text": "Original dialogue",
+            "translation": "",
+            "context": "RenPy:game/script.rpy:2:start_aef43ec8",
+            "file_path": "game/script.rpy",
+            "object_info": "",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "backend": "renpy_loose_source",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "entries": [
+          {
+            "key": "75329b031d1c7a46",
+            "source_text": "Original dialogue",
+            "file_path": "game/script.rpy",
+            "context": "RenPy:game/script.rpy:2:start_aef43ec8",
+            "object_info": "",
+            "import_method": "renpy_dialogue",
+            "safety": "safe",
+            "locator": {
+              "native_id": "start_aef43ec8",
+              "unit_type": "dialogue"
+            },
+            "backend": "renpy_loose_source",
+            "review_only": false,
+            "duplicate_locations": [],
+            "patch_proof": {
+              "reader": true,
+              "writer": true,
+              "preflight": true,
+              "reopen": true,
+              "semantic_verify": true
+            },
+            "native_contract": {
+              "version": 1,
+              "engine": "renpy",
+              "identity": {
+                "backend": "renpy_loose_source",
+                "import_method": "renpy_dialogue",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_aef43ec8"
+              },
+              "locator": {
+                "unit_type": "dialogue",
+                "native_id": "start_aef43ec8"
+              },
+              "precondition": {
+                "native_source": "Original dialogue",
+                "source_file": "game/script.rpy",
+                "source_sha256": "1dbcb28506997acbe9b985a469d3ef4f3d87d5bc927ec6317d1f6929cf880596",
+                "template_file": "<generated-renpy-template>",
+                "template_sha256": "947fe3464d18df2847811c4375fa5078f237c6d04a264a88aaa0b4e300d6c1e1",
+                "unit_type": "dialogue",
+                "language": "vietnamese",
+                "native_id": "start_aef43ec8"
+              },
+              "provenance": {
+                "source_file": "game/script.rpy",
+                "source_line": 2,
+                "language": "vietnamese",
+                "original_source_text": "Original dialogue",
+                "generated_artifact": {
+                  "file": "<generated-renpy-template>",
+                  "sha256": "947fe3464d18df2847811c4375fa5078f237c6d04a264a88aaa0b4e300d6c1e1"
+                },
+                "block_order": 2,
+                "source_span": {
+                  "line": 2,
+                  "start_column": 5,
+                  "end_column": 23
+                }
+              },
+              "context": {
+                "speaker": "",
+                "source_context": "RenPy:game/script.rpy:2:start_aef43ec8",
+                "enrichment": {
+                  "status": "RESOLVED",
+                  "authoritative": false
+                },
+                "previous": [],
+                "next": [],
+                "context_truncation_policy": "max_items=1;max_chars=240",
+                "context_group": "label:start"
+              },
+              "fingerprint": "23d07b4ba674dc4c4d6e4f051ed8893066370e244851510688b8271b8ed84c30"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "references": {},
+  "rpa2": {
+    "events": [
+      {
+        "ok": false,
+        "summary": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "error": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "complete": false,
+        "pending": 0,
+        "review_only": 0,
+        "blocked": 0,
+        "extract_status": "EMPTY",
+        "excluded_engine_common": 316,
+        "technical_skipped": 0,
+        "native_units": 316,
+        "native_accounted": 316,
+        "native_accounting_complete": true
+      }
+    ],
+    "logs": [
+      "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\rpa2\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+      "Đang extract text, mức lọc raw: balanced...",
+      "Ren'Py SDK workspace isolated: 0 file(s), 0 bytes; sẽ dọn khi terminal.",
+      "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+      "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+      "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+    ],
+    "rows": [],
+    "entries": [],
+    "inventory": {
+      "extra.rpa": [
+        "extras/other.rpy"
+      ],
+      "scripts.rpa": [
+        "nested/script.rpy"
+      ]
+    }
+  },
+  "rpa3": {
+    "events": [
+      {
+        "ok": false,
+        "summary": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "error": "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+        "complete": false,
+        "pending": 0,
+        "review_only": 0,
+        "blocked": 0,
+        "extract_status": "EMPTY",
+        "excluded_engine_common": 316,
+        "technical_skipped": 0,
+        "native_units": 316,
+        "native_accounted": 316,
+        "native_accounting_complete": true
+      }
+    ],
+    "logs": [
+      "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\rpa3\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+      "Đang extract text, mức lọc raw: balanced...",
+      "Ren'Py SDK workspace isolated: 0 file(s), 0 bytes; sẽ dọn khi terminal.",
+      "Ren'Py SDK 8.5.3 đã tạo native template identity trên workspace tạm.",
+      "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét.",
+      "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+    ],
+    "rows": [],
+    "entries": [],
+    "inventory": {
+      "extra.rpa": [
+        "extras/other.rpy"
+      ],
+      "scripts.rpa": [
+        "nested/script.rpy"
+      ]
+    }
+  },
+  "compiled": {
+    "events": [
+      {
+        "ok": false,
+        "summary": "Extract chưa hoàn tất: đã tạo partial package tại C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\compiled\\package; 6 lỗi discovery/extract.",
+        "error": "Extract chưa hoàn tất do lỗi discovery/extract: game/script.rpyc: static compiled coverage unresolved: renpy.ast.Default | game/script.rpyc: static compiled coverage unresolved: renpy.ast.Define | game/script.rpyc: static compiled coverage unresolved: renpy.ast.Menu",
+        "complete": false,
+        "pending": 0,
+        "review_only": 0,
+        "blocked": 0,
+        "extract_status": "PARTIAL",
+        "excluded_engine_common": 0,
+        "technical_skipped": 0,
+        "native_units": 6,
+        "native_accounted": 6,
+        "native_accounting_complete": true,
+        "diagnostic_stage": "EXTRACT",
+        "diagnostic_root_cause": "DISCOVERY_GAP",
+        "diagnostic_affected_count": 6,
+        "diagnostic_action": "Resolve the non-terminal trace run before trusting downstream completion.",
+        "diagnostic_status": "FAILED",
+        "diagnostic_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\compiled\\package\\.mt\\diagnostic_summary.json"
+      }
+    ],
+    "logs": [
+      "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\compiled\\package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+      "Đang extract text, mức lọc raw: balanced...",
+      "Extract chưa hoàn tất: đã tạo partial package tại C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\compiled\\package; 6 lỗi discovery/extract.",
+      "Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa."
+    ],
+    "rows": [
+      {
+        "key": "fde488a9d20f43ad",
+        "source_text": "Escaped \"quote\" and [name.upper()]",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_b46eff49",
+        "file_path": "game/script.rpyc",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      },
+      {
+        "key": "0b7604157ec24a21",
+        "source_text": "Repeated dialogue",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_f5c93d47",
+        "file_path": "game/script.rpyc",
+        "object_info": "f",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      },
+      {
+        "key": "ea6c047e17e7d4ef",
+        "source_text": "Repeated dialogue",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_6d82fa01_1",
+        "file_path": "game/script.rpyc",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      },
+      {
+        "key": "82b773a4574d4561",
+        "source_text": "Repeated dialogue",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_6d82fa01",
+        "file_path": "game/script.rpyc",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      },
+      {
+        "key": "418018d6dfcfe518",
+        "source_text": "Narrator: bracket [[ literal. 日本語",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_364916a0",
+        "file_path": "game/script.rpyc",
+        "object_info": "",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      },
+      {
+        "key": "88bc9e769b505722",
+        "source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+        "translation": "",
+        "context": "RenPyCompiled:game/script.rpyc:start_549dcbd4",
+        "file_path": "game/script.rpyc",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "backend": "renpy_compiled_static",
+        "byte_limit": "",
+        "patch_note": "Patch tự động"
+      }
+    ],
+    "entries": [
+      {
+        "key": "fde488a9d20f43ad",
+        "source_text": "Escaped \"quote\" and [name.upper()]",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_b46eff49",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_b46eff49",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_b46eff49"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_b46eff49"
+          },
+          "precondition": {
+            "native_source": "Escaped \"quote\" and [name.upper()]",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_b46eff49"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 10,
+            "language": "vietnamese",
+            "original_source_text": "Escaped \"quote\" and [name.upper()]",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "e",
+            "source_context": ""
+          },
+          "fingerprint": "cc68b3c9d698e538f03147d41e94795fc4808a07f7392d88c721f0f998dcc2e9"
+        }
+      },
+      {
+        "key": "0b7604157ec24a21",
+        "source_text": "Repeated dialogue",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_f5c93d47",
+        "object_info": "f",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_f5c93d47",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_f5c93d47"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_f5c93d47"
+          },
+          "precondition": {
+            "native_source": "Repeated dialogue",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_f5c93d47"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 9,
+            "language": "vietnamese",
+            "original_source_text": "Repeated dialogue",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "f",
+            "source_context": ""
+          },
+          "fingerprint": "6601ee35f975f6c0d8dcd81719438e281d4574f5d4cec5b40f969e703e2fc309"
+        }
+      },
+      {
+        "key": "ea6c047e17e7d4ef",
+        "source_text": "Repeated dialogue",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_6d82fa01_1",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_6d82fa01_1",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_6d82fa01_1"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_6d82fa01_1"
+          },
+          "precondition": {
+            "native_source": "Repeated dialogue",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_6d82fa01_1"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 8,
+            "language": "vietnamese",
+            "original_source_text": "Repeated dialogue",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "e",
+            "source_context": ""
+          },
+          "fingerprint": "3b5a3d2c8201251cea58e822badc6f609bee90f4bbb904f0dc1bfb8051aca7fc"
+        }
+      },
+      {
+        "key": "82b773a4574d4561",
+        "source_text": "Repeated dialogue",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_6d82fa01",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_6d82fa01",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_6d82fa01"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_6d82fa01"
+          },
+          "precondition": {
+            "native_source": "Repeated dialogue",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_6d82fa01"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 7,
+            "language": "vietnamese",
+            "original_source_text": "Repeated dialogue",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "e",
+            "source_context": ""
+          },
+          "fingerprint": "b611f2c66cc860d83f3f8f36976881a62f8c50fcff09babc15ae4d1f961119c4"
+        }
+      },
+      {
+        "key": "418018d6dfcfe518",
+        "source_text": "Narrator: bracket [[ literal. 日本語",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_364916a0",
+        "object_info": "",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_364916a0",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_364916a0"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_364916a0"
+          },
+          "precondition": {
+            "native_source": "Narrator: bracket [[ literal. 日本語",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_364916a0"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 6,
+            "language": "vietnamese",
+            "original_source_text": "Narrator: bracket [[ literal. 日本語",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "",
+            "source_context": ""
+          },
+          "fingerprint": "690f56a413fe3c4578e6f9cf9405c53a926326a667a266cec200ac674b8ecaeb"
+        }
+      },
+      {
+        "key": "88bc9e769b505722",
+        "source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+        "file_path": "game/script.rpyc",
+        "context": "RenPyCompiled:game/script.rpyc:start_549dcbd4",
+        "object_info": "e",
+        "import_method": "renpy_dialogue",
+        "safety": "safe",
+        "locator": {
+          "native_id": "start_549dcbd4",
+          "unit_type": "dialogue"
+        },
+        "backend": "renpy_compiled_static",
+        "review_only": false,
+        "duplicate_locations": [],
+        "patch_proof": {
+          "reader": true,
+          "writer": true,
+          "preflight": true,
+          "reopen": true,
+          "semantic_verify": true
+        },
+        "native_contract": {
+          "version": 1,
+          "engine": "renpy",
+          "identity": {
+            "backend": "renpy_compiled_static",
+            "import_method": "renpy_dialogue",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_549dcbd4"
+          },
+          "locator": {
+            "unit_type": "dialogue",
+            "native_id": "start_549dcbd4"
+          },
+          "precondition": {
+            "native_source": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+            "source_file": "game/script.rpyc",
+            "source_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "template_file": "<compiled-slot-2>",
+            "template_sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823",
+            "unit_type": "dialogue",
+            "language": "vietnamese",
+            "native_id": "start_549dcbd4"
+          },
+          "provenance": {
+            "source_file": "game/script.rpyc",
+            "source_line": 5,
+            "language": "vietnamese",
+            "original_source_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+            "generated_artifact": {
+              "file": "<compiled-slot-2>",
+              "sha256": "652cf77e96bd23f112aec2910d33de16d85ad893533c49f7ff13d735a5a08823"
+            },
+            "block_order": null
+          },
+          "context": {
+            "speaker": "e",
+            "source_context": ""
+          },
+          "fingerprint": "6a0fbcde56da5ef3508fb9f9ea68b04dbd51922487f5a7a499f9075d1f11dbd6"
+        }
+      }
+    ],
+    "static_ast": {
+      "script.rpyc": [
+        [
+          {
+            "native_id": "start_b46eff49",
+            "text": "Escaped \"quote\" and [name.upper()]",
+            "speaker": "e",
+            "line": 10
+          },
+          {
+            "native_id": "start_f5c93d47",
+            "text": "Repeated dialogue",
+            "speaker": "f",
+            "line": 9
+          },
+          {
+            "native_id": "start_6d82fa01_1",
+            "text": "Repeated dialogue",
+            "speaker": "e",
+            "line": 8
+          },
+          {
+            "native_id": "start_6d82fa01",
+            "text": "Repeated dialogue",
+            "speaker": "e",
+            "line": 7
+          },
+          {
+            "native_id": "start_364916a0",
+            "text": "Narrator: bracket [[ literal. 日本語",
+            "speaker": "",
+            "line": 6
+          },
+          {
+            "native_id": "start_549dcbd4",
+            "text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+            "speaker": "e",
+            "line": 5
+          }
+        ],
+        [
+          "renpy.ast.Default",
+          "renpy.ast.Define",
+          "renpy.ast.Menu",
+          "renpy.ast.Pass",
+          "renpy.ast.Python",
+          "renpy.ast.Screen"
+        ]
+      ]
+    }
+  },
+  "roundtrip": {
+    "overlay": {
+      "COPY_TO_GAME_ROOT/game/zzz_vntext_vietnamese.rpy": "init 999 python:\n    config.language = \"vietnamese\"\n",
+      "COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy": "# Generated by VNText Studio. Do not edit native IDs.\n\ntranslate vietnamese start_549dcbd4:\n    # e \"Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}\"\n    e \"VI Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}\"\n\ntranslate vietnamese start_364916a0:\n    # \"Narrator: bracket [[ literal. 日本語\"\n    \"VI Narrator: bracket [[ literal. 日本語\"\n\ntranslate vietnamese start_6d82fa01:\n    # e \"Repeated dialogue\"\n    e \"VI Repeated dialogue\"\n\ntranslate vietnamese start_6d82fa01_1:\n    # e \"Repeated dialogue\"\n    e \"VI Repeated dialogue\"\n\ntranslate vietnamese start_f5c93d47:\n    # f \"Repeated dialogue\"\n    f \"VI Repeated dialogue\"\n\ntranslate vietnamese start_b46eff49:\n    # e \"Escaped \\\"quote\\\" and [name.upper()]\"\n    e \"VI Escaped \\\"quote\\\" and [name.upper()]\"\n\ntranslate vietnamese strings:\n    old \"First choice\"\n    new \"VI First choice\"\n    old \"Helpful tooltip\"\n    new \"VI Helpful tooltip\"\n    old \"Localized setting\"\n    new \"VI Localized setting\"\n    old \"Nested choice\"\n    new \"VI Nested choice\"\n    old \"Shared UI text\"\n    new \"VI Shared UI text\"\n    old \"Wrapped button label\"\n    new \"VI Wrapped button label\"\n    old \"images/bg.png\"\n    new \"VI images/bg.png\"\n"
+    },
+    "reextract": {
+      "events": [
+        {
+          "ok": false,
+          "summary": "",
+          "error": "vntext.rpy:3: native translation block must have a blank line after header",
+          "complete": false,
+          "pending": 1,
+          "review_only": 1,
+          "blocked": 1,
+          "diagnostic_stage": "EXTRACT",
+          "diagnostic_root_cause": "UNKNOWN",
+          "diagnostic_affected_count": 1,
+          "diagnostic_action": "Inspect the extract error and diagnostic evidence before retrying.",
+          "diagnostic_status": "FAILED"
+        }
+      ],
+      "logs": [
+        "Unity analyzer: NOT_DETECTED; report=C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-co-ea08d582f026\\canonica-cfee8f89a644\\basic\\replay-package\\unity_analysis.json; tiếp tục filesystem route hiện tại.",
+        "Đang extract text, mức lọc raw: balanced...",
+        "Ren'Py SDK workspace isolated: 3 file(s), 2296 bytes; sẽ dọn khi terminal."
+      ],
+      "rows": [],
+      "entries": []
+    }
+  }
+}

@@ -1,0 +1,373 @@
+{
+  "tools": {
+    "independent": {
+      "source": {
+        "url": "https://github.com/yschdxm/renpy-translator/blob/4cbb00cee29c73a66437cc0828ba0a88bcb40873/src/renpy_parser.py",
+        "sha256": "6e0b0cae008539a9156d12b7dd72f3bd2e4e7f8a25eaabc92faeff58f6060154",
+        "bytes": 25451
+      },
+      "license": {
+        "url": "https://github.com/yschdxm/renpy-translator/blob/4cbb00cee29c73a66437cc0828ba0a88bcb40873/LICENSE",
+        "sha256": "affb7070a7838975dd6271894e93919e2c64f29a0077778ed23145e4126d4e5c",
+        "bytes": 1775
+      }
+    },
+    "unrpyc": {
+      "files": [
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/LICENSE",
+          "sha256": "766c195777d0e687bc11ecb91a2fc8956f9dd65b804b93308684125cfe8ea5dd",
+          "bytes": 3892
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/__init__.py",
+          "sha256": "29a9f118e546759903d8298cbefa05ce2dcb0d56ae4988ca007dc47ce64b307f",
+          "bytes": 36969
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/astdump.py",
+          "sha256": "2eec53000a74694d69a0c743770c9c3fbfbde88b90c162167ad0061e3a5f31d3",
+          "bytes": 12058
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/atldecompiler.py",
+          "sha256": "af477495961bf966a0abfbd6260c75bd126db6e2fb560fcfd1936809c3061e06",
+          "bytes": 8894
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/magic.py",
+          "sha256": "358644232f0dfc37c8993135142019f734ddd6033bbdd5246d20575d71f14023",
+          "bytes": 29946
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/renpycompat.py",
+          "sha256": "7485333ca92e8025263dd7b8eac478d64c5a185f6327bf51a8968e64f5e005d6",
+          "bytes": 12832
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/sl2decompiler.py",
+          "sha256": "2ef32f573cce822ad20075f4a53d5a11d98acfd49a7c8ca8dd69629313524ed1",
+          "bytes": 26110
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/testcasedecompiler.py",
+          "sha256": "76672ad24bebfac5362ca3991b8c149e4672efeaae4019cb9b4a253446ee3490",
+          "bytes": 5476
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/translate.py",
+          "sha256": "b5678a0511179db901508bf4ae60d6086744e4b75143d074a688ee64a040bc58",
+          "bytes": 5532
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/decompiler/util.py",
+          "sha256": "5762a72f26982ee1b6491b6b575e3bae839b08891623727f22cfd435461e2974",
+          "bytes": 22344
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/deobfuscate.py",
+          "sha256": "eba39393bbebf73fccbbc6ab247b4c0b973fa399921a1f8233279e858e1c7a54",
+          "bytes": 10387
+        },
+        {
+          "url": "https://github.com/CensoredUsername/unrpyc/blob/3ae8334ed71a05535927dcc559663d3aca51215b/unrpyc.py",
+          "sha256": "b1b675eb1695783d610d6ed9206ff182b9a93730c07820206ce42bcdb20b2b71",
+          "bytes": 21076
+        }
+      ]
+    },
+    "rpatool": {
+      "source": {
+        "url": "https://github.com/Shizmob/rpatool/blob/74f26d5dfdd645483e02552aa766ca447ad6b191/rpatool",
+        "sha256": "d343124cebd832f712540cc6468253f7e303979467e11c7490807f42c13963f1",
+        "bytes": 18594
+      },
+      "license": {
+        "url": "https://github.com/Shizmob/rpatool/blob/74f26d5dfdd645483e02552aa766ca447ad6b191/LICENSE",
+        "sha256": "24393751f6d4ac5331c31857a277bfb426aad202ec7beb9530edd1877d304c10",
+        "bytes": 484
+      }
+    }
+  },
+  "comparative": {
+    "basic": {
+      "dialogue": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 5,
+          "character": "Eileen",
+          "original_text": "Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 6,
+          "character": "",
+          "original_text": "Narrator: bracket [[ literal. 日本語",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 7,
+          "character": "Eileen",
+          "original_text": "Repeated dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 8,
+          "character": "Eileen",
+          "original_text": "Repeated dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 9,
+          "character": "Frank",
+          "original_text": "Repeated dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 10,
+          "character": "Eileen",
+          "original_text": "Escaped \\\"quote\\\" and [name.upper()]",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 12,
+          "character": "",
+          "original_text": "First choice",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 14,
+          "character": "",
+          "original_text": "Nested choice",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        }
+      ],
+      "ui": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 1,
+          "character": "[UI]",
+          "original_text": "Eileen",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 2,
+          "character": "[UI]",
+          "original_text": "Frank",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 3,
+          "character": "[UI]",
+          "original_text": "Player",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpy",
+          "line_number": 23,
+          "character": "[UI]",
+          "original_text": "Plain screen label",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        }
+      ],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    },
+    "multiline": {
+      "dialogue": [],
+      "ui": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\multiline\\game\\script.rpy",
+          "line_number": 1,
+          "character": "[UI]",
+          "original_text": "Eileen",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        }
+      ],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    },
+    "single_quote": {
+      "dialogue": [],
+      "ui": [],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    },
+    "speaker_literal": {
+      "dialogue": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\speaker_literal\\game\\script.rpy",
+          "line_number": 2,
+          "character": "Guide",
+          "original_text": "Literal speaker dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        }
+      ],
+      "ui": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\speaker_literal\\game\\script.rpy",
+          "line_number": 2,
+          "character": "[UI]",
+          "original_text": "Guide",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        }
+      ],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    },
+    "say_suffix": {
+      "dialogue": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\say_suffix\\game\\script.rpy",
+          "line_number": 3,
+          "character": "Eileen",
+          "original_text": "Timed dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        }
+      ],
+      "ui": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\say_suffix\\game\\script.rpy",
+          "line_number": 1,
+          "character": "[UI]",
+          "original_text": "Eileen",
+          "translated_text": "",
+          "is_translated": false,
+          "label": ""
+        }
+      ],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    },
+    "old_new": {
+      "dialogue": [
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\old_new\\game\\script.rpy",
+          "line_number": 2,
+          "character": "",
+          "original_text": "Original dialogue",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\old_new\\game\\script.rpy",
+          "line_number": 6,
+          "character": "old",
+          "original_text": "Original localized",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        },
+        {
+          "file_path": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\old_new\\game\\script.rpy",
+          "line_number": 7,
+          "character": "new",
+          "original_text": "Existing localized",
+          "translated_text": "",
+          "is_translated": false,
+          "label": "start"
+        }
+      ],
+      "ui": [],
+      "keys": [
+        "file_path",
+        "characters",
+        "dialogues",
+        "ui_texts"
+      ]
+    }
+  },
+  "unrpyc": {
+    "command": [
+      "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\.venv\\Scripts\\python.exe",
+      "-B",
+      "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\unrpyc\\unrpyc.py",
+      "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpyc"
+    ],
+    "exit": 0,
+    "stdout": "Found 1 file to process. Performing decompilation using 1 worker.\nDecompiling C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\TEST_RUN\\tmp\\renpy-re-391b613eb772\\canonica-0113f31f42d3\\fixtures\\basic\\game\\script.rpyc to script.rpy ...\n\n\n-------------------------------------------------------\nUnrpyc v2.0.3 results summary:\n-------------------------------------------------------\nProcessed 1 file.\n> 1 file were successfully decompiled.\n",
+    "stderr": "",
+    "recovered": "define e = Character(\"Eileen\")\ndefine f = Character(\"Frank\")\ndefault name = \"Player\"\nlabel start:\n    e \"Hello [name]! {b}Bold{/b} {i}italic{/i} {color=#ff0000}red{/color}{w}{p}\"\n    \"Narrator: bracket [[ literal. 日本語\"\n    e \"Repeated dialogue\"\n    e \"Repeated dialogue\"\n    f \"Repeated dialogue\"\n    e \"Escaped \\\"quote\\\" and [name.upper()]\"\n    menu:\n        \"First choice\":\n            menu:\n                \"Nested choice\":\n                    pass\n    $ local = _(\"Localized setting\")\n    $ internal = \"INTERNAL_KEY_001\"\n    $ path = \"images/bg.png\"\n    $ variable_name = \"player_health\"\n    $ dynamic = \"Generated \" + name\n    return\nscreen audit_ui():\n    text \"Plain screen label\"\n    textbutton \"Plain button label\" action NullAction()\n    textbutton _(\"Wrapped button label\") action NullAction() tooltip _(\"Helpful tooltip\")\n    text _(\"Shared UI text\")\n    text _(\"Shared UI text\")\n    text _(\"images/bg.png\")\n    text _(\"   \")\nreturn\n# Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc\n"
+  },
+  "rpa": {
+    "2": {
+      "members": [
+        "nested/script.rpy",
+        "other/path.rpy"
+      ],
+      "exact_bytes": true
+    },
+    "3": {
+      "members": [
+        "nested/script.rpy",
+        "other/path.rpy"
+      ],
+      "exact_bytes": true
+    },
+    "3.2": {
+      "error": "ValueError('saving is only supported for version 2 and 3 archives')"
+    }
+  }
+}
