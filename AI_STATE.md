@@ -1,5 +1,11 @@
 # Current state pointer — 2026-10-21
 
+## RenPy final aggregate + real-game gate packet — PROVEN_BLOCKED acceptance
+
+Owner authorized canonical aggregate (immutable baseline19/qualifiedprecision) then sequential legal real-game extract/patch/nativevisual/roundtrip acceptance across structures. SoleDEVwriter/nochild/automation/push/version/Release/Unity. Initial source062a8a2 clean; bounded harness/test/docs and gate-defect remediation only. Exact scope/budget/gate order and pending candidate prerequisites: docs/RENPY_FINAL_ACCEPTANCE_20261022.md. Prior accepted tasks below remain closed; new gates pending, no wholeRenPy claim.
+
+Gate1PASS19/19recall/19of20qualifiedprecision+119tests. Three original real-game samples normalPatch/reextract/repatchPASS: PDL nativeVI menu but dialogue startupLabelNotFound underSDK8.5.3/originUNKNOWN; Aqua nativeVI menu/choice/dialogue reached but secondtarget missing accentedglyphs (game font override); AbsurdSaga nativeVI menu/two narratives/fullaccents/two-linewrap/PreferencesPASS bounded. All original distributions mixedrpy+rpyc/noRPA, so required genuine compiled-only/RPA route NOT_PROVEN. No game/font/source workaround or production changes. Final2harnesstestsPASS, all3wrappercleanupPASS/UNKNOWN0; native cache/compiled deltas distinguished from originalrpy/archive preservation. Exact evidence/residual/supported-surface freeze in checkpoint; acceptance PROVEN_BLOCKED on external game/font/runtime prerequisites, no Release/wholeRenPyPASS.
+
 ## RenPy multiline/dynamic recovery terminal — PASS bounded, Brain accepted
 
 Owner authorized separate implementation after accepted85e1d72: SDK-grounded multiline/static composition and source-template recovery, loose/compiled/RPA native writer round-trip, explicit dynamic/unproven ledger/PARTIAL. SoleDEVwriter/nochild/push/Release/model/Unity/schema/shared-validator/protocol/runtimehook changes. Premise/subphases/gates/budget: docs/RENPY_MULTILINE_DYNAMIC_20261022.md. Prior accepted remediation below remains closed.
