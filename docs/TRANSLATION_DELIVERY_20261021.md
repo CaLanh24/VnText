@@ -122,3 +122,11 @@ identity per command; repository/global Git configuration is not changed.
 Final candidate commit and remote readback are reported in the delivery handoff
 after creation. A normal push must refuse any non-fast-forward remote change;
 no reset, stash, history rewrite, tag or Release publication is part of delivery.
+
+## Verified publication
+
+Implementation/evidence commit `d2b90ada97ce9137ef375ba28093c5952d36c19f`
+was pushed normally to `main`. Both `git ls-remote` and the GitHub commit API
+returned that exact SHA. The working tree was clean after push. This docs-only
+follow-up records that completed operation; it does not change runtime evidence
+or reopen the paused plan. Final repository HEAD is reported in the handoff.
