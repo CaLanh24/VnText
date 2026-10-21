@@ -1222,6 +1222,7 @@ def run_extract_task(
         extract_errors = [str(item) for item in (stats.get("errors") or []) if str(item)]
         native_units = int(stats.get("native_units") or 0)
         native_accounted = main_count + review_count + technical_skipped + excluded_engine_common
+        native_accounted -= int(stats.get("renpy_non_native_review_entries")or 0)
         native_accounting_complete = not native_units or native_units == native_accounted
         if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"} and not renpy_sdk_missing and not native_accounting_complete:
             extract_errors.append(

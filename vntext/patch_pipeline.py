@@ -37,7 +37,13 @@ def detect_patch_engine(manifest: dict) -> str:
     entries = manifest.get("entries")
     if not isinstance(entries, list):
         raise ValueError("patch manifest entries must be a list")
-    methods = {str(item.get("import_method") or "").strip() for item in entries if isinstance(item, dict)}
+    def inventory_only(item):
+        return (item.get("import_method")=="renpy_screen_candidate"
+                and item.get("backend")=="renpy_static_ui_inventory"
+                and item.get("review_only")is True
+                and not item.get("patch_proof")and not item.get("native_contract"))
+    methods = {str(item.get("import_method") or "").strip() for item in entries
+               if isinstance(item, dict)and not inventory_only(item)}
     methods.discard("")
     renpy_methods = methods & _RENPY_PATCH_METHODS
     renpy_backend = any(

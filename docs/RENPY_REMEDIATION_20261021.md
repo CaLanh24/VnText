@@ -35,3 +35,13 @@ Raw member names remain exact archive lookup identities. `resolved_game_path` in
 Readable `.rpy` archive recovery is source discovery, not runtime execution proof. Provenance explicitly records `runtime_execution_proven=false`; recovered archive source forces PARTIAL. The actual SDK fixture recovers `story/script.rpy` for extraction, then confirms the unmaterialized original archive does not load its label. Existing task assertion was updated from COMPLETE to PARTIAL based on this new runtime evidence, not by weakening validation.
 
 Receipts: `renpy-r4-red.json` demonstrates missing standard-root recovery/collision refusal; initial path-only `renpy-r4-green.json`73PASS. `renpy-r4-runtime.json` retains the expected former COMPLETE assertion failure (13 other tests passed). Final `renpy-r4-final.json`77PASS/0fail/error/skip/warning, child0/cleanupPASS, dirty-base9c780f5 with recorded hashes. R4 bounded checkpoint PASS; actual archived-source gameplay remains unproven. R3/R6/finalDEV remain outstanding.
+
+R4 committed locallyb47622e. R3 follows on this source.
+
+## R3 static UI inventory checkpoint
+
+Single-line literal screen text/textbutton/tooltip slots are tokenized as inert strings, preserving source text, screen/kind, line/character columns and original source SHA. Wrapped native localization slots, dynamic expressions and comments are not guessed. Candidate rows and a manifest-stats ledger are explicitly review-only, with no native contract or patch proof. Scope is bounded; dynamic/multiline UI remains unproven. Native accounting excludes these non-native review rows without hiding review counts.
+
+Engine routing recognizes only the exact review-only candidate method/backend with empty proof/contract; removing that review boundary fails mixed-engine routing. Shared extraction-completion/patch validators remain unchanged: full frozen basic audit input now truthfully produces PARTIAL with its two unmarked UI candidates, and final Patch remains blocked. R5's repeat-patch fixture now explicitly derives only the admitted native subset; the full immutable audit input is exercised separately by R3 and is not rewritten.
+
+Receipts `renpy-r3-red.json` missing inventory function; `renpy-r3-green.json` and `renpy-r3-final.json` retain integration failures at mixed-method routing and incomplete-extraction gate respectively. Final `renpy-r3-final2.json`:72PASS/0fail/error/skip/warning, child0/cleanupPASS, dirty-baseb47622e with recorded hashes. R3 inventory/truthful-partial checkpoint PASS; static unmarked UI patch/runtime mapping is NOT proven or authorized by this evidence. R6 and finalDEV remain outstanding.

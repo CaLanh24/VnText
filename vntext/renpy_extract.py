@@ -4,7 +4,9 @@ from __future__ import annotations
 import ast
 from dataclasses import dataclass
 import hashlib
+import io
 import re
+import tokenize
 from pathlib import Path
 
 from vntext.entry import Entry
@@ -427,6 +429,40 @@ def parse_renpy_translation_templates(
 
 
 parse_native_templates = parse_renpy_translation_templates
+
+
+def static_screen_candidates(script: str, file_path: str, source_sha256: str) -> list[Entry]:
+    """Inventory one-line literal screen slots without evaluating expressions."""
+    rows=[];screen=None
+    for line_number,line in enumerate(script.splitlines(),1):
+        stripped=line.strip()
+        if not stripped or stripped.startswith('#'):continue
+        indent=len(line)-len(line.lstrip())
+        header=re.match(r'^screen\s+([A-Za-z_]\w*)\b.*:\s*(?:#.*)?$',stripped)
+        if header:
+            screen=(header.group(1),indent);continue
+        if screen is None:continue
+        if indent<=screen[1]:screen=None;continue
+        if len(line)>65536:raise ValueError('Screen candidate line exceeds inventory budget')
+        try:
+            tokens=[token for token in tokenize.generate_tokens(io.StringIO(stripped).readline)
+                    if token.type not in {tokenize.NEWLINE,tokenize.NL,tokenize.ENDMARKER,tokenize.COMMENT}]
+        except (tokenize.TokenError,IndentationError):continue
+        for index,token in enumerate(tokens[:-1]):
+            if token.type!=tokenize.NAME or token.string not in {'text','textbutton','tooltip'}:continue
+            if token.string!='tooltip'and index!=0:continue
+            literal=tokens[index+1]
+            if literal.type!=tokenize.STRING:continue
+            try:value=ast.literal_eval(literal.string)
+            except (ValueError,SyntaxError):continue
+            if not isinstance(value,str)or not value.strip():continue
+            locator={'line':line_number,'column':indent+literal.start[1],
+                     'end_column':indent+literal.end[1],'kind':token.string,
+                     'screen':screen[0],'source_sha256':source_sha256,'runtime_mapping_proven':False}
+            rows.append(Entry(value,file_path,f'RenPyScreen:{file_path}:{line_number}:{locator["column"]}',
+                object_info=f'screen {screen[0]} / {token.string}',import_method='renpy_screen_candidate',
+                backend='renpy_static_ui_inventory',safety='review',locator=locator,review_only=True).finalize())
+    return rows
 
 
 def existing_translation_inventory(root: str | Path, language: str = "vietnamese") -> dict:
@@ -938,6 +974,22 @@ def extract_native_template_entries(
                 if "tl" not in {part.casefold() for part in path.relative_to(game_dir).parts}:
                     source_files.add(path)
     string_entries = [entry for entry in entries if entry.import_method == "renpy_string"]
+    ui_candidates=[];ui_errors=[];ui_bytes=0
+    for path in sorted(source_files|set(source_lines)):
+        if path in source_lines and source_lines[path] is not None:
+            script='\n'.join(source_lines[path])
+            digest=source_hashes.get(path,'')
+        elif path.is_file():
+            if path.stat().st_size>16*1024*1024:
+                ui_errors.append(f'{path.name}: screen inventory file budget exceeded');continue
+            raw=path.read_bytes();script=raw.decode('utf-8-sig');digest=hashlib.sha256(raw).hexdigest()
+        else:continue
+        ui_bytes+=len(script.encode('utf-8'))
+        if ui_bytes>64*1024*1024:
+            ui_errors.append('Screen inventory project budget exceeded');break
+        try:ui_candidates.extend(static_screen_candidates(script,path.relative_to(game_root).as_posix(),digest))
+        except ValueError as exc:ui_errors.append(str(exc))
+    entries.extend(ui_candidates)
     string_owners: dict[str, int] = {}
     string_ledgers: dict[str, int] = {}
     for entry in string_entries:
@@ -975,8 +1027,11 @@ def extract_native_template_entries(
         "native_string_ledger_counts": string_reconciliation["ledger_counts"],
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
-        "errors":[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
+        "errors":ui_errors+[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
         "renpy_native_unresolved":unresolved,
+        "renpy_non_native_review_entries":len(ui_candidates),
+        "renpy_static_ui_candidates":[entry.to_manifest()for entry in ui_candidates],
+        "renpy_static_ui_inventory_scope":"Single-line literal text/textbutton/tooltip in screen blocks; review only; dynamic/multiline/execution unproven.",
     }
     recovered_archives=[record for record in unit_archive_sources if record]
     if recovered_archives:

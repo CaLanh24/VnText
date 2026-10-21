@@ -25,7 +25,10 @@ class RenPyRoundTripTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=work_temp_dir('renpy-roundtrip')) as tmp:
             root=Path(tmp);game=root/'source';(game/'game').mkdir(parents=True)
             gt=json.loads((ROOT/'evaluation/renpy_completeness_audit_v1/ground_truth.json').read_text(encoding='utf-8'))
-            script=game/'game/script.rpy';script.write_text(gt['basic']['script'],encoding='utf-8')
+            # This R5 fixture exercises only the admitted native patch subset.
+            # R3 tests the full immutable audit input and its mandatory PARTIAL.
+            script=game/'game/script.rpy';script.write_text('\n'.join(line for line in gt['basic']['script'].splitlines()
+                if line.strip()not in {'text "Plain screen label"','textbutton "Plain button label" action NullAction()'})+'\n',encoding='utf-8')
             original=script.read_bytes()
             def extract(out):
                 events=[]
@@ -52,7 +55,7 @@ class RenPyRoundTripTests(unittest.TestCase):
             write_csv_rows_file(root/'second/translation.csv',fields,rows)
             apply_translation_package(str(root/'second/translation.csv'),str(root/'second/manifest.json'),str(game),str(root/'repatch'))
             verification=json.loads((root/'repatch/patch_verification.json').read_text(encoding='utf-8'))
-            self.assertEqual(verification['already_satisfied'],len(first['entries']))
+            self.assertEqual(verification['already_satisfied'],sum(e['import_method']in {'renpy_dialogue','renpy_string'}for e in first['entries']))
             self.assertTrue(all(item['reason']=='already_satisfied'for item in verification['results']))
             self.assertEqual(before,{p.relative_to(game).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()for p in game.rglob('*')if p.is_file()})
             # SDK lookup in separate copies proves native semantics before and
