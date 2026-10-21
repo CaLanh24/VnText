@@ -1,8 +1,8 @@
 # Current state pointer — 2026-10-21
 
-## Active Release 0.1.9 — candidate reviewed, publication pending
+## Release 0.1.9 terminal — PASS bounded public update
 
-Exact candidate source8f3f382, full1007tests0fail/error,7qualifiedskips/1warning, publisher/Releaseverify/two-cwdsmoke/payloadPASS. Both local017/018 update transactions/inventory/health/data/modelPASS; PatchInstaller2PASS, candidateGUI shutdown1PASS and packaged-runtimeGUI1PASS (original wrapper lifecycle qualifications retained). Brain bounded technicalreviewPASS. Two~3.49MBrouteZIPs/provenance/sums/notices ready; noSetup019distribution. Publicstable remains018 until actual publication/readback. CurrentdocsSHA does not upgrade evidence source. Scope019temporary3GiB/terminal1GiB/shared6GiB; finalcleanup and actualpublicbuttonacceptance pending. See docs/RELEASE_0.1.9.md. Researchplan stayspaused, nochild orautomaticwatcher.
+Stable v0.1.9 published; tag/build source8f3f382,5asset digest/size readbackPASS. Both017legacy/018predecessor ZIPs available, noSetup019. Actual public018 offer/download/apply/health/restart/inventory/data/modelPASS with bundled runtime/worker; legacy017 local transaction separatelyPASS. Full1007tests0fail/error/7qualifiedskip/1warning plus supplementalinstaller2/GUI1/packagedGUI1PASS; original failed wrappers retained, final lifecycle cleanupseparatePASS. Candidate/TEST_RUN/RELEASE_RUN absent;741266954nonexempt<=1GiB/shared6288841305<=6GiB. Details docs/RELEASE_0.1.9.md and public evaluation/release_0.1.9/receipt.json. No wholeproduct/gameplay/linguistic acceptance, noQwen/training; researchplan remains explicitlypaused, nowatcher/child.
 
 ## Accepted changes delivered to GitHub main
 

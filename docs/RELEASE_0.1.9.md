@@ -1,4 +1,14 @@
-# Release 0.1.9 — active preparation
+# 0.1.9 public release — PASS bounded update acceptance
+
+Published stable [v0.1.9](https://github.com/CaLanh24/VnText/releases/tag/v0.1.9), tag/build source `8f3f382dfe33af876a02221bc7486fed595518cf`. Five assets read back with exact GitHub digest/size; two route ZIPs approximately3.49MB each, BUILD-PROVENANCE, SHA256SUMS and notices. NoSetup019 distributed; publicSetup017 remains last manual baseline. Source/docs commits after this build do not relabel the tested SHA.
+
+Actual public0.1.8 app automatically offered019, downloaded the exact baseline-named publicZIP, validated it, then UI restart launched the real GitHub full-app helper, applied and health-checked019 and restarted. Supported ComputerUse observed “Cập nhật thành công”/v0.1.9 on the exact returned process. Bundled runtime/worker with no DEV overrides;7191target hashes,3synthetic data hashes and24model records preserved. Legacy017->019 and018->019 also passed real local helper transactions independently; public017button acceptance is not inferred. OriginalJPEG and UI binding/geometry retries retained; no fabricated first-click success/timing claim.
+
+Full1007tests0fail/error,7qualifiedskips,1optional tokenizer warning; publisher/WPF/PatchInstaller/DEVsmoke/Releaseverify/two-cwdsmoke/payload auditPASS. SupplementalPatchInstaller2PASS, exactEXE GUIshutdown1PASS and packagedruntime GUIshutdown1PASS; original failure/wrapperREVIEW_REQUIRED metadata preserved and final owned cleanup separatePASS. Four externalUnity gates deferred. No freshSetupUI/uninstall or wholeproduct/gameplay/linguistic acceptance.
+
+Terminal cleanupPASS: exact registered candidate disposed, TEST_RUN/RELEASE_RUN absent, no owned app/worker remaining. Verified epoch/control metadata moved unchanged to DEV_RUN/release-0.1.9/terminal-control-evidence; only empty test containers retained with it. Nonexempt741266954<=1073741824/shared6288841305<=6442450944. No user/model/history deletion. Public compact evidence: `evaluation/release_0.1.9/receipt.json`; guest raw DEV_RUN/release-0.1.9 is optional audit material, not a public-clone prerequisite. ProductOPUS unchanged; Qwen/new-sentencequality plan stays paused.
+
+## Historical preparation checkpoints (superseded by terminal result above)
 
 Owner authorized next stable publication after Git delivery2a14e22. Initial checkout main clean; no child or other source writer. Public stable0.1.8 source1cd24b2 and sourceVERSION0.1.8 verified. Target0.1.9 carries accepted glossary/cache/prose/strict-memory/editor/budget-whitespace fixes; OPUS stays product, Qwen and semantic plan stay paused. No quality/game/Release claim before gates.
 

@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "outcome": "PASS_BOUNDED_PUBLIC_RELEASE_AND018_INSTALLED_UPDATE",
+  "version": "0.1.9",
+  "tag": "v0.1.9",
+  "release_url": "https://github.com/CaLanh24/VnText/releases/tag/v0.1.9",
+  "build_source_sha": "8f3f382dfe33af876a02221bc7486fed595518cf",
+  "source_tree_sha256": "6e025c8d843a41ae82c4279062786413c9888dbe8583c36600c274ba8cc08060",
+  "assets": {
+    "full-app-update-0.1.9-f3283402bf15eaf6.zip": {
+      "sha256": "f3283402bf15eaf61885e3201cfc40fc1ea1fe45ce6f98653548407da9403ba0",
+      "size": 3488222
+    },
+    "full-app-update-from-0.1.8-to-0.1.9-aafd7ada093639c2.zip": {
+      "sha256": "aafd7ada093639c28a83fbc74923f562bd2a18426029f069917ad0fac0f62a4e",
+      "size": 3488231
+    }
+  },
+  "setup_distributed": false,
+  "regression": {
+    "tests": 1007,
+    "failures": 0,
+    "errors": 0,
+    "skips": 7,
+    "warnings": 1,
+    "child_exit": 0,
+    "wrapper_exit": 0,
+    "cleanup": "PASS"
+  },
+  "additional_patch_installer_tests": 2,
+  "additional_gui_shutdown_tests": 1,
+  "additional_packaged_runtime_gui_tests": 1,
+  "local_baseline_routes": [
+    "0.1.7->0.1.9",
+    "0.1.8->0.1.9"
+  ],
+  "actual_public_ui_route": "0.1.8->0.1.9",
+  "actual_public_ui": {
+    "status": "PASS_ACTUAL_PUBLIC018_TO019_OFFER_DOWNLOAD_APPLY_RESTART",
+    "target_files": 7191,
+    "data_files_preserved": 3,
+    "model_records_preserved": 24,
+    "health_passed": true,
+    "download_sha256": "aafd7ada093639c28a83fbc74923f562bd2a18426029f069917ad0fac0f62a4e",
+    "runtime": "bundled app/dotnet; bundled worker, no DEV override"
+  },
+  "cleanup": {
+    "status": "PASS_TERMINAL_RELEASE019_CLEANUP",
+    "candidate_disposed": true,
+    "test_run_absent": true,
+    "release_run_absent": true,
+    "non_exempt_bytes": 741266954,
+    "non_exempt_limit": 1073741824,
+    "shared_bytes": 6288841305,
+    "shared_limit": 6442450944
+  },
+  "limits": [
+    "4externalUnity gates deferred; no gameplay/whole-product RELEASE_VERIFIED",
+    "1optional sacremoses warning, noPyTorch tokenizer information retained",
+    "FreshSetupUI/uninstall not run; no019Setup distributed",
+    "Actualpublic017UI not rerun;017legacy local transaction separately passed",
+    "Original GUI failures and wrapperREVIEW_REQUIRED retained; exact candidate and packagedruntime child tests passed; final lifecycle cleanup separatePASS",
+    "Original screenshotsJPEG; generic successmodal wording retained",
+    "OPUS unchanged, noQwen integration/training/whole-app semantic acceptance; research paused"
+  ],
+  "evidence_files": {
+    "publication-verified.json": "6ff22553957df7fc2ad45f8804925ef876cc368f1909a0dad5f6920022812634",
+    "public-live-verified.json": "48e9b2a8beff275dfac884e7581a6164dbf845431b0cd391895e8e4f5b075ffb",
+    "candidate-cleanup.json": "c0d15d16edfeeb6c35c13e2007791db880e2ebf7df957f7d725b8d1684010e27",
+    "terminal-cleanup.json": "0bdfff19fbb91558a1c967de23ba1d4665958d6652a79a9ef73f993dd4c352ee",
+    "release019-exact-full-ready.json": "09a969311c531213e3fa962c8594f45ea3b23f011bf88554f46ba87340d029dd",
+    "release019-gui-packaged.json": "ee1fd346ee4297ae640a34e384df7b60966f569f75a0f6b4cbc70eb9e001d484",
+    "local017-verified.json": "65075ae82545e5094807f5c61850dd65f9b380e23b7c6eeee02ec8b0470a1d6b",
+    "local018-verified.json": "1dff993462ccaf6f1454082d9cc8f394f5cb577959fa5263eec35c679c77f587"
+  },
+  "evidence_note": "Compact public receipt; raw guest artifacts are optional audit material, not clone prerequisites. Docs commits after build do not upgrade evidence SHA."
+}
