@@ -609,7 +609,9 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             archive_posix = PurePosixPath(archive_relative)
             if archive_posix.is_absolute() or not archive_relative or any(part in {"", ".", ".."} for part in archive_relative.split("/")):
                 raise RenPyPatchError("Ren'Py RPA container path is unsafe")
-            if member_name != str(entry.get("file_path") or "").replace("\\", "/"):
+            from vntext.renpy_archive import resolved_game_path
+            expected_game_path = str(entry.get("file_path") or "").replace("\\", "/")
+            if resolved_game_path(member_name) != expected_game_path or container.get("resolved_game_path",expected_game_path) != expected_game_path:
                 raise RenPyPatchError("Ren'Py RPA member identity mismatch")
             source_path = (root / Path(*archive_posix.parts)).resolve()
             try: source_path.relative_to(root)

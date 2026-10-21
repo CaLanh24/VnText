@@ -170,20 +170,24 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
                 archive = RenPyArchive(archive_path)
                 for member in archive.members:
                     member_path = Path(member)
-                    if member_path.parts[0].casefold() != "game" or member_path.suffix.casefold() not in {".rpy", ".rpym"}:
+                    if member_path.suffix.casefold() not in {".rpy", ".rpym"}:
                         continue
                     if any(part.casefold() in {"cache", "saves", "__pycache__", "tl"} for part in member_path.parts):
                         continue
-                    loose = source / Path(*member_path.parts)
+                    from vntext.renpy_archive import resolved_game_path
+                    game_path = resolved_game_path(member)
+                    collision_key = game_path.casefold()
+                    if collision_key in archive_member_names:
+                        raise RenPyToolchainError(f"RPA scripts collide at {game_path}; refusing ambiguous source ownership")
+                    archive_member_names.add(collision_key)
+                    loose = source / Path(*Path(game_path).parts)
                     if loose.is_file():
                         continue
-                    if member in archive_member_names:
-                        raise RenPyToolchainError(f"RPA scripts collide at {member}; refusing ambiguous source ownership")
                     archived = archive.read_member(member)
-                    archive_member_names.add(member)
                     total += len(archived["content"]); files += 1
                     archive_sources.append({"archive_path": archive_relative, "archive_sha256": archived["container_sha256"],
                                             "member_name": member, "member_sha256": archived["member_sha256"],
+                                            "resolved_game_path":game_path,
                                             "size": len(archived["content"])})
             except RenPyArchiveError as exc:
                 raise RenPyToolchainError(f"Ren'Py archive is unsupported or unsafe ({archive_relative}): {exc}") from exc
@@ -223,7 +227,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
         member = archive.read_member(record["member_name"])
         if member["member_sha256"] != record["member_sha256"]:
             raise RenPyToolchainError(f"RPA script changed during workspace copy: {record['member_name']}")
-        destination = target / Path(*Path(record["member_name"]).parts)
+        destination = target / Path(*Path(record["resolved_game_path"]).parts)
         destination.parent.mkdir(parents=True, exist_ok=True)
         try:
             with destination.open("xb") as stream: stream.write(member["content"])
@@ -231,7 +235,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
             raise RenPyToolchainError(f"RPA script collides with copied source: {record['member_name']}") from exc
         copied += len(member["content"])
         if copied > total: raise RenPyToolchainError("RPA source grew after preflight; stopped copy")
-        resolved_archive_sources[record["member_name"]] = {**record}
+        resolved_archive_sources[record["resolved_game_path"]] = {**record}
     return {"files": files, "bytes": total, "archive_sources": resolved_archive_sources}
 
 

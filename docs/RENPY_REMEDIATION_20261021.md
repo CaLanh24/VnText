@@ -25,3 +25,13 @@ The static one-line Say grammar admits a double-quoted literal speaker, identifi
 Default template parsing remains strict. Extraction may collect an explicit unresolved-block ledger instead: raw generated block, exact native ID, source/template location/hash and reason are retained in manifest stats; supported unrelated rows remain available and accounting/errors force PARTIAL. Unsupported blocks are not patch targets. This does not normalize single-quoted/multiline source or claim support for arbitrary Ren'Py grammar.
 
 Evidence: `renpy-r1r2-red.json` native generated fixture initially failed; `renpy-r1r2-green.json`48PASS and `renpy-r1r2-partial.json`67PASS/0fail/error/skip/warning, cleanupPASS. Actual official SDK lookup compares original/patched Say text, `who`, `with_` and native IDs; only text changes. A generated `with Dissolve(0.5)` block stays in the unresolved ledger while its supported neighbor survives and product extract_status is PARTIAL. Final one-line/injection hardening `renpy-r1r2-final.json`:68PASS/0fail/error/skip/warning, child0/cleanupPASS, dirty-base f08e66e with recorded hashes. R1/R2 bounded checkpoint PASS. R4/R3/R6 and final DEV build/smoke remain outstanding.
+
+R1/R2 committed locally9c780f5, Brain accepted the bounded checkpoint. R4 follows on this source.
+
+## R4 archive roots checkpoint
+
+Raw member names remain exact archive lookup identities. `resolved_game_path` independently maps standard game-relative members and legacy `game/`-prefixed members into the isolated SDK workspace. Container/member hashes and raw-member readback remain authoritative; patch preflight checks the resolved path separately. Multiple/nested RPA2/3 archives with the same case-insensitive resolved script path fail before workspace copy. Existing traversal/link/primitive-index limits remain.
+
+Readable `.rpy` archive recovery is source discovery, not runtime execution proof. Provenance explicitly records `runtime_execution_proven=false`; recovered archive source forces PARTIAL. The actual SDK fixture recovers `story/script.rpy` for extraction, then confirms the unmaterialized original archive does not load its label. Existing task assertion was updated from COMPLETE to PARTIAL based on this new runtime evidence, not by weakening validation.
+
+Receipts: `renpy-r4-red.json` demonstrates missing standard-root recovery/collision refusal; initial path-only `renpy-r4-green.json`73PASS. `renpy-r4-runtime.json` retains the expected former COMPLETE assertion failure (13 other tests passed). Final `renpy-r4-final.json`77PASS/0fail/error/skip/warning, child0/cleanupPASS, dirty-base9c780f5 with recorded hashes. R4 bounded checkpoint PASS; actual archived-source gameplay remains unproven. R3/R6/finalDEV remain outstanding.

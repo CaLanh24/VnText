@@ -20,6 +20,14 @@ class RenPyArchiveError(ValueError):
     pass
 
 
+def resolved_game_path(member: str) -> str:
+    """Resolve a raw member relative to game/, retaining legacy game/ roots."""
+    if not RenPyArchive._safe_name(member):
+        raise RenPyArchiveError("unsafe RPA member path")
+    parts=member.split('/')
+    return 'game/'+ '/'.join(parts[1:])if parts[0].casefold()=='game'else 'game/'+member
+
+
 def member_reference(container: str | Path, member: str) -> str:
     path = Path(container).resolve()
     if not RenPyArchive._safe_name(member):

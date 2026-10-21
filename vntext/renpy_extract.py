@@ -811,7 +811,9 @@ def _native_entry(
             "path": str(archive_source["archive_path"]),
             "container_sha256": str(archive_source["archive_sha256"]),
             "member_name": str(archive_source["member_name"]),
+            "resolved_game_path":str(archive_source.get("resolved_game_path",archive_source["member_name"])),
             "member_sha256": str(archive_source["member_sha256"]),
+            "runtime_execution_proven":False,
         }
     reason = validate_renpy_contract(entry) if contract["provenance"].get("owner") == RENPY_GAME_OWNED else ""
     if reason:
@@ -863,14 +865,15 @@ def extract_native_template_entries(
         if archive_source and source_path.is_file():
             archive_source = None
         if archive_source:
-            from vntext.renpy_archive import RenPyArchive
+            from vntext.renpy_archive import RenPyArchive,resolved_game_path
             try:
-                if str(archive_source.get("member_name") or "") != normalized_source:
+                raw_member = str(archive_source.get("member_name") or "")
+                if resolved_game_path(raw_member) != normalized_source or archive_source.get("resolved_game_path",normalized_source) != normalized_source:
                     raise RenPyTemplateParseError(f"RPA member identity mismatch: {normalized_source}")
                 if normalized_source not in archive_cache:
                     container_path = (game_root / str(archive_source.get("archive_path") or "")).resolve()
                     container_path.relative_to(game_root)
-                    archive_cache[normalized_source] = RenPyArchive(container_path).read_member(normalized_source)
+                    archive_cache[normalized_source] = RenPyArchive(container_path).read_member(raw_member)
                 archived = archive_cache[normalized_source]
                 if archived["container_sha256"] != archive_source.get("archive_sha256") or archived["member_sha256"] != archive_source.get("member_sha256"):
                     raise RenPyTemplateParseError(f"RPA source precondition drift: {normalized_source}")
@@ -975,6 +978,12 @@ def extract_native_template_entries(
         "errors":[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
         "renpy_native_unresolved":unresolved,
     }
+    recovered_archives=[record for record in unit_archive_sources if record]
+    if recovered_archives:
+        stats["renpy_archive_source_recovery"]={"runtime_execution_proven":False,
+            "reason":"Readable archived source was materialized for SDK source discovery; runtime loading/execution of archive .rpy is not established.",
+            "sources":list({record["resolved_game_path"]if "resolved_game_path"in record else record["member_name"]:record for record in recovered_archives}.values())}
+        stats["errors"].append("Archived .rpy source recovered; actual runtime script execution remains unproven (PARTIAL).")
     # Keep target state visible without importing it as source text or approving
     # arbitrary translations. Unknown/orphan mappings remain explicit evidence.
     stats["renpy_existing_translations"] = {

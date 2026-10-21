@@ -34,11 +34,13 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 run_extract_task(str(root),str(Path(temp)/"out"),"safe","balanced",True,
                                  progress=lambda _:None,log=lambda _:None,complete=completed.append)
             self.assertTrue(completed)
-            self.assertTrue(completed[0].get("ok"),completed[0])
+            self.assertFalse(completed[0].get("ok"),completed[0])
+            self.assertEqual(completed[0]["extract_status"],"PARTIAL")
             document=json.loads((Path(temp)/"out/manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(len(document["entries"]),1)
             provenance=document["entries"][0]["native_contract"]["provenance"]["source_container"]
             self.assertEqual(provenance["member_name"],"game/script.rpy")
+            self.assertFalse(provenance["runtime_execution_proven"])
 
     def test_unsupported_engine_never_falls_into_generic_extractor(self):
         for kind in ("compiled", "mixed", "unknown", "missing"):
