@@ -1,5 +1,7 @@
 # VNText Studio
 
+Source đang chuẩn bị **0.1.9**; bản public hiện tại và giới hạn kiểm chứng ở dưới giữ nguyên cho tới khi phát hành.
+
 Phiên bản ổn định mới nhất: [**0.1.8**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.8).
 
 Đã cài 0.1.7: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**, tải bản mới và xác nhận khởi động lại. Gói cập nhật 0.1.8 khoảng 3,4 MB; giữ nguyên CSV, glossary, dữ liệu và model.

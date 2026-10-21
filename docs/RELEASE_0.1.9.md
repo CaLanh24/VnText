@@ -31,3 +31,7 @@ Owner explicitly approved temporary3GiB for Release0.1.9 on2026-10-21. Exact ind
 ## Focused gate
 
 105 lifecycle/publisher/regression-runner tests PASS,0fail/error/skip/warning, wrapper/child0, cleanupPASS. Dirty preparation base2a14e22, not finalcommit evidence. Versionowners VERSION.txt and release/version_info.txt now0.1.9; WPF consumes VERSION.txt. Owner communication rule: reports remain in DEV session, Brain reads directly, no DEV report-back messaging.
+
+## First exact-source gate — retained failure
+
+Source9e0ca08 full1007tests:9failures/3errors/10skips, child1/cleanupPASS. Missing Python version owners fixed in descendant preparation. Other failures involve Windows short TEMP aliases versus normalized long paths; next focused gate uses canonical registered TEST_RUN temp, without weakening validators or changing game/runtime behavior. Initial focused retry was not started: dirty-source epoch quota refusal, retained accurately. Commit and ordinary epoch transition precede retry. PatchInstaller2 and GUI1 missing gate skips must be resolved after fresh candidate build; nativeOCR3 and externalUnity4 remain explicit until respective gates/Owner scope.
