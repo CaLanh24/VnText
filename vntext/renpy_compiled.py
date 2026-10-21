@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import ast
 import pickletools
 import struct
 import zlib
@@ -112,7 +113,7 @@ def inspect_rpyc(data: bytes):
     return static_pickle(decoded)
 
 
-def ast_nodes(root):
+def ast_nodes(root, prefixes=('renpy.ast.',)):
     """Walk cyclic inert graphs once; return raw AST fields without evaluating code."""
     pending=[root]; seen=set(); nodes=[]
     while pending:
@@ -125,7 +126,7 @@ def ast_nodes(root):
                 constructor,args=value.args
                 state=value.state
                 fields=state if isinstance(state,dict) else state[1] if isinstance(state,tuple) and len(state)==2 and state[0] is None and isinstance(state[1],dict) else None
-                if constructor.kind=='global' and str(constructor.args).startswith('renpy.ast.') and fields is not None:
+                if constructor.kind=='global' and str(constructor.args).startswith(prefixes) and fields is not None:
                     nodes.append((constructor.args,fields))
             pending.extend([value.args,value.state])
         elif isinstance(value,dict): pending.extend(value.values())
@@ -133,12 +134,81 @@ def ast_nodes(root):
     return nodes
 
 
-def compiled_dialogues(data: bytes):
-    root = inspect_rpyc(data)
-    if not isinstance(root,tuple) or len(root)!=2 or not isinstance(root[0],dict) or not isinstance(root[1],list):
+def _compiled_root(data):
+    root=inspect_rpyc(data)
+    if not isinstance(root,tuple)or len(root)!=2 or not isinstance(root[0],dict)or not isinstance(root[1],list):
         raise ValueError('Unsupported compiled AST root')
-    if root[0].get('version') != 5003000 or root[0].get('key') != 'unlocked':
+    if root[0].get('version')!=5003000 or root[0].get('key')!='unlocked':
         raise ValueError('Unsupported compiled script version or locked script')
+    return root
+
+
+def _inert_expression(value):
+    if isinstance(value,str):return value
+    if isinstance(value,Symbol)and value.kind in {'NEWOBJ','REDUCE'}:
+        constructor,args=value.args
+        if constructor.kind=='global'and constructor.args in {'renpy.ast.PyExpr','renpy.astsupport.PyExpr'}and args and isinstance(args[0],str):
+            return args[0]
+    return None
+
+
+def _literal_display(expression):
+    source=_inert_expression(expression)
+    if source is None or len(source)>65536:return None
+    try:node=ast.parse(source,mode='eval').body
+    except (SyntaxError,ValueError):return None
+    if isinstance(node,ast.Call)and isinstance(node.func,ast.Name)and node.func.id=='_'and len(node.args)==1 and not node.keywords:
+        node=node.args[0]
+    return node.value if isinstance(node,ast.Constant)and isinstance(node.value,str)else None
+
+
+def compiled_display_candidates(data: bytes):
+    """Read typed static display slots as review inventory, never execute them."""
+    nodes=ast_nodes(_compiled_root(data),prefixes=('renpy.ast.','renpy.sl2.slast.'))
+    rows=[]
+    def add(text,kind,line):
+        if isinstance(text,str)and text.strip():
+            rows.append({'text':text,'kind':kind,'line':line,'ordinal':len(rows),
+                         'runtime_mapping_proven':False})
+    for name,fields in nodes:
+        line=fields.get('linenumber')
+        location=fields.get('location')
+        if line is None and isinstance(location,tuple)and len(location)>=2:line=location[1]
+        if name=='renpy.ast.Menu':
+            items=fields.get('items')
+            if not isinstance(items,list):raise ValueError('Malformed compiled menu items')
+            for item in items:
+                if not isinstance(item,tuple)or len(item)!=3:raise ValueError('Malformed compiled menu item')
+                if isinstance(item[0],str):add(item[0],'menu_label'if item[2]is not None else 'menu_caption',line)
+        elif name=='renpy.ast.Python':
+            code=fields.get('code')
+            if not isinstance(code,Symbol)or code.kind!='NEWOBJ':continue
+            constructor,_=code.args;state=code.state
+            if constructor.kind!='global'or constructor.args!='renpy.ast.PyCode':continue
+            if not isinstance(state,tuple)or len(state)not in {4,5,6,7}or state[0]!=1:continue
+            source=_inert_expression(state[1])
+            if source is None or len(source)>65536:continue
+            try:tree=ast.parse(source)
+            except (SyntaxError,ValueError):continue
+            for node in ast.walk(tree):
+                if isinstance(node,ast.Call)and isinstance(node.func,ast.Name)and node.func.id=='_'and len(node.args)==1 and not node.keywords:
+                    arg=node.args[0]
+                    if isinstance(arg,ast.Constant)and isinstance(arg.value,str):add(arg.value,'python_localization',line)
+        elif name=='renpy.sl2.slast.SLDisplayable':
+            displayable=fields.get('displayable')
+            kind=displayable.args if isinstance(displayable,Symbol)and displayable.kind=='global'else None
+            positional=fields.get('positional')
+            if kind in {'renpy.text.text.Text','renpy.ui._textbutton'}and isinstance(positional,list)and positional:
+                add(_literal_display(positional[0]),'screen_text'if kind=='renpy.text.text.Text'else 'screen_button',line)
+            keyword=fields.get('keyword')
+            if isinstance(keyword,list):
+                for item in keyword:
+                    if isinstance(item,tuple)and len(item)==2 and item[0]=='tooltip':add(_literal_display(item[1]),'screen_tooltip',line)
+    return rows
+
+
+def compiled_dialogues(data: bytes):
+    root = _compiled_root(data)
     nodes = ast_nodes(root)
     dialogues = []; unresolved = set(); identifiers = set()
     for name, fields in nodes:
@@ -163,11 +233,11 @@ def compiled_dialogues(data: bytes):
 
 def extract_compiled_source(root, is_cancelled=None):
     from vntext.image_text import _regular
-    from vntext.renpy_archive import RenPyArchive
+    from vntext.renpy_archive import RenPyArchive,resolved_game_path
     from vntext.entry import Entry
     from vntext.patchability import make_renpy_contract, renpy_contract_fingerprint, validate_renpy_contract, RENPY_DIALOGUE_PATCH_PROOF
     root=_regular(root).resolve(); game=_regular(root/'game')
-    entries=[]; errors=[]; files=0; total_bytes=0; identifiers=set()
+    entries=[]; reviews=[]; errors=[]; files=0; total_bytes=0; identifiers=set()
     for path in sorted(game.rglob('*')):
         if is_cancelled and is_cancelled(): raise ValueError('cancelled')
         if not path.is_file() or 'tl' in path.relative_to(game).parts: continue
@@ -184,8 +254,10 @@ def extract_compiled_source(root, is_cancelled=None):
                 item=archive.read_member(member)
                 if len(sources)>=2000 or sum(len(source[1]) for source in sources)+len(item['content'])>128*1024*1024:
                     raise ValueError('Compiled archive inspection budget exceeded')
-                sources.append((member,item['content'],{'kind':'rpa','path':path.relative_to(root).as_posix(),
-                    'member_name':member,'container_sha256':item['container_sha256'],'member_sha256':item['member_sha256']}))
+                game_path=resolved_game_path(member)
+                sources.append((game_path,item['content'],{'kind':'rpa','path':path.relative_to(root).as_posix(),
+                    'member_name':member,'resolved_game_path':game_path,
+                    'container_sha256':item['container_sha256'],'member_sha256':item['member_sha256']}))
         for relative,data,container in sources:
             files+=1
             total_bytes+=len(data)
@@ -193,6 +265,11 @@ def extract_compiled_source(root, is_cancelled=None):
             rows,unresolved=compiled_dialogues(data)
             errors.extend(f'{relative}: static compiled coverage unresolved: {kind}' for kind in unresolved)
             digest=hashlib.sha256(data).hexdigest()
+            for row in compiled_display_candidates(data):
+                reviews.append(Entry(row['text'],relative,f'RenPyCompiledCandidate:{relative}:{row["kind"]}:{row["ordinal"]}',
+                    object_info=row['kind'],import_method='renpy_compiled_candidate',backend='renpy_compiled_static_inventory',
+                    safety='review',review_only=True,locator={**row,'source_sha256':digest,
+                        'source_container':container}).finalize())
             for row in rows:
                 native_id=row['native_id']
                 if native_id in identifiers: raise ValueError('Duplicate compiled native identity across files')
@@ -210,5 +287,7 @@ def extract_compiled_source(root, is_cancelled=None):
                 reason=validate_renpy_contract(entry)
                 if reason: raise ValueError(reason)
                 entries.append(entry)
-    return entries,[],{'engine':'RENPY_COMPILED_NATIVE','files_scanned':files,'native_units':len(entries),
-        'native_dialogue_units':len(entries),'errors':errors,'compiled_reader':'static-opcodes-slot-2'}
+    return entries,reviews,{'engine':'RENPY_COMPILED_NATIVE','files_scanned':files,'native_units':len(entries),
+        'native_dialogue_units':len(entries),'errors':errors,'compiled_reader':'static-opcodes-slot-2',
+        'renpy_non_native_review_entries':len(reviews),
+        'renpy_compiled_display_candidates':[entry.to_manifest()for entry in reviews]}
