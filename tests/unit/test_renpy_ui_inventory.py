@@ -60,10 +60,10 @@ label start:
     "Dialogue"
 '''
         rows=static_screen_candidates(script,'game/ui.rpy',hashlib.sha256(script.encode()).hexdigest())
-        self.assertEqual([r.source_text for r in rows],['Plain label','Plain button','Helpful tip','Other tip'])
+        self.assertEqual([r.source_text for r in rows],['Plain label','Plain button','Helpful tip','Native label','Native button','Other tip'])
         self.assertTrue(all(r.review_only and not r.patch_proof and not r.native_contract for r in rows))
-        self.assertEqual([r.locator['line']for r in rows],[2,3,3,7])
-        self.assertEqual([r.locator['kind']for r in rows],['text','textbutton','tooltip','tooltip'])
+        self.assertEqual([r.locator['line']for r in rows],[2,3,3,4,7,7])
+        self.assertEqual([r.locator['kind']for r in rows],['text','textbutton','tooltip','text','textbutton','tooltip'])
 
     def test_inventory_review_cannot_be_promoted_to_a_patch_method(self):
         from vntext.patch_pipeline import detect_patch_engine
@@ -77,7 +77,7 @@ label start:
     def test_disabled_or_dynamic_substitution_remains_review_and_dynamic_text_is_unresolved(self):
         unresolved=[]
         rows=static_screen_candidates('screen ui():\n    text "No substitution" substitute False\n    textbutton "Unknown substitution" text_substitute setting\n    text dynamic_value\n    text "Prefix" + name\n','game/ui.rpy','a'*64,unresolved)
-        self.assertEqual(len(rows),3)
+        self.assertEqual(len(rows),2)
         self.assertTrue(all(not row.locator['native_global_eligible']for row in rows))
         self.assertEqual(len(unresolved),2)
         self.assertIn('dynamic',unresolved[0]['reason'])

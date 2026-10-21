@@ -432,54 +432,76 @@ parse_native_templates = parse_renpy_translation_templates
 
 
 def static_screen_candidates(script: str, file_path: str, source_sha256: str, unresolved=None) -> list[Entry]:
-    """Inventory one-line literal screen slots without evaluating expressions."""
-    rows=[];screen=None
-    for line_number,line in enumerate(script.splitlines(),1):
-        stripped=line.strip()
+    """Inspect bounded logical screen statements, retaining exact expression spans."""
+    from vntext.renpy_static import static_string,string_classification
+    rows=[];screen=None;lines=script.splitlines(keepends=True);number=0
+    while number<len(lines):
+        start=number;line=lines[number];number+=1;stripped=line.strip()
         if not stripped or stripped.startswith('#'):continue
         indent=len(line)-len(line.lstrip())
         header=re.match(r'^screen\s+([A-Za-z_]\w*)\b.*:\s*(?:#.*)?$',stripped)
-        def unknown(reason):
-            if unresolved is not None:unresolved.append({'file_path':file_path,'source_sha256':source_sha256,
-                'line':line_number,'raw_statement':stripped,'reason':reason})
-        if stripped.startswith('screen ')and not header:
-            unknown('unsupported screen declaration shape');screen=None;continue
-        if header:
-            screen=(header.group(1),indent);continue
+        if header:screen=(header.group(1),indent);continue
         if screen is None:continue
         if indent<=screen[1]:screen=None;continue
-        if len(line)>65536:raise ValueError('Screen candidate line exceeds inventory budget')
-        try:
-            tokens=[token for token in tokenize.generate_tokens(io.StringIO(stripped).readline)
-                    if token.type not in {tokenize.NEWLINE,tokenize.NL,tokenize.ENDMARKER,tokenize.COMMENT}]
-        except (tokenize.TokenError,IndentationError):
-            if stripped.startswith(('text ','textbutton ','tooltip ')):unknown('unsupported multiline display statement')
-            continue
-        for index,token in enumerate(tokens[:-1]):
-            if token.type!=tokenize.NAME or token.string not in {'text','textbutton','tooltip'}:continue
-            if token.string!='tooltip'and index!=0:continue
-            literal=tokens[index+1]
-            if literal.type!=tokenize.STRING:
-                wrapped=(len(tokens)>index+4 and literal.string=='_'and tokens[index+2].string=='('
-                         and tokens[index+3].type==tokenize.STRING and tokens[index+4].string==')'
-                         and (len(tokens)==index+5 or tokens[index+5].type!=tokenize.OP))
-                if not wrapped:unknown('dynamic or unsupported '+token.string+' display expression')
-                elif any(t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}and tokens[i+1].string!='True'
-                         for i,t in enumerate(tokens[:-1])):
-                    unknown('disabled or dynamic substitution on marked display text')
-                continue
-            try:value=ast.literal_eval(literal.string)
-            except (ValueError,SyntaxError):unknown('unsupported formatted display literal');continue
-            if not isinstance(value,str)or not value.strip():continue
-            locator={'line':line_number,'column':indent+literal.start[1],
-                     'end_column':indent+literal.end[1],'kind':token.string,
-                     'screen':screen[0],'source_sha256':source_sha256,'runtime_mapping_proven':False}
-            overrides=[i for i,t in enumerate(tokens[:-1])if t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}]
-            slot_end=index+2==len(tokens)or tokens[index+2].type==tokenize.NAME
-            locator['native_global_eligible']=(slot_end and not tokens[-1].string==':'and all(tokens[i+1].string=='True'for i in overrides))
-            if not slot_end and tokens[index+2].string!=':':unknown('composed or unsupported display expression')
-            rows.append(Entry(value,file_path,f'RenPyScreen:{file_path}:{line_number}:{locator["column"]}',
-                object_info=f'screen {screen[0]} / {token.string}',import_method='renpy_screen_candidate',
+        if not re.match(r'^(text|textbutton|tooltip)\b',stripped):continue
+        statement=line[indent:];tokens=None
+        for continuation in range(256):
+            if len(statement)>65536:break
+            try:
+                tokens=[t for t in tokenize.generate_tokens(io.StringIO(statement).readline)
+                    if t.type not in {tokenize.NEWLINE,tokenize.NL,tokenize.ENDMARKER,tokenize.COMMENT,
+                                     tokenize.INDENT,tokenize.DEDENT}]
+                break
+            except (tokenize.TokenError,IndentationError):
+                if number>=len(lines):break
+                statement+=lines[number];number+=1
+        def unknown(raw,reason,span=None,classification='UNSUPPORTED_OR_MALFORMED'):
+            if unresolved is not None:unresolved.append({'file_path':file_path,'source_sha256':source_sha256,
+                'line':start+1,'end_line':number,'raw_statement':statement.rstrip(),
+                'raw_expression':raw,'span':span,'classification':classification,
+                'safety':'UNSUPPORTED','reason':reason})
+        if tokens is None or len(tokens)>512:
+            unknown(statement,'malformed, oversized or unterminated multiline display');continue
+        chunks=statement.splitlines(keepends=True)
+        offsets=[0]
+        for chunk in chunks:offsets.append(offsets[-1]+len(chunk))
+        def offset(position):return offsets[position[0]-1]+position[1]
+        depth=0;slots=[]
+        for i,token in enumerate(tokens):
+            if depth==0 and token.type==tokenize.NAME and (i==0 and token.string in {'text','textbutton','tooltip'}or token.string=='tooltip'):
+                slots.append(i)
+            if token.type==tokenize.OP:
+                if token.string in {'(','[','{'}:depth+=1
+                elif token.string in {')',']','}'}:depth-=1
+        overrides=[i for i,t in enumerate(tokens[:-1])if t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}]
+        enabled=all(tokens[i+1].string=='True'for i in overrides)
+        for i in slots:
+            if i+1>=len(tokens):unknown('', 'missing display expression');continue
+            begin=offset(tokens[i+1].start);chosen=None
+            for end in range(i+2,len(tokens)+1):
+                raw=statement[begin:offset(tokens[end-1].end)]
+                try:ast.parse(raw,mode='eval')
+                except (SyntaxError,ValueError,RecursionError):continue
+                chosen=(end,raw)
+            if chosen is None:
+                unknown(statement[begin:],'malformed display expression');continue
+            end,raw=chosen;value=static_string(raw)
+            token_start=tokens[i+1].start;token_end=tokens[end-1].end
+            span={'start_line':start+token_start[0],'start_column':token_start[1]+(indent if token_start[0]==1 else 0),
+                  'end_line':start+token_end[0],'end_column':token_end[1]+(indent if token_end[0]==1 else 0)}
+            if end<len(tokens)and (tokens[end].type==tokenize.OP and tokens[end].string!=':'
+                                  or tokens[end].string in {'if','else','for','lambda','and','or','in','is','not'}):
+                unknown(statement[begin:],'malformed or ambiguous expression suffix; no fragment admitted',span);continue
+            if value is None:
+                unknown(raw,'dynamic runtime expression requires variable/call/branch value; no complete static source string',span,'RUNTIME_GENERATED');continue
+            if not value.strip():continue
+            locator={'line':span['start_line'],'column':span['start_column'],
+                'end_line':span['end_line'],'end_column':span['end_column'],'span':span,
+                'kind':tokens[i].string,'screen':screen[0],'source_sha256':source_sha256,
+                'raw_expression':raw,'classification':string_classification(value),
+                'runtime_mapping_proven':False,'native_global_eligible':enabled and tokens[-1].string!=':'}
+            rows.append(Entry(value,file_path,f'RenPyScreen:{file_path}:{locator["line"]}:{locator["column"]}',
+                object_info=f'screen {screen[0]} / {tokens[i].string}',import_method='renpy_screen_candidate',
                 backend='renpy_static_ui_inventory',safety='review',locator=locator,review_only=True).finalize())
     return rows
 
@@ -675,7 +697,37 @@ def _resolve_source_enrichment(
                 quote_start = raw.find('"',_quote_end(raw,quote_start)+1)
             quote_end = _quote_end(raw, quote_start) + 1
         except (SyntaxError, ValueError) as exc:
-            return _SourceEnrichment(_ENRICHMENT_MISMATCH, f"native source line is not a supported dialogue statement: {exc}")
+            # Source normalization stays SDK-authoritative. Enrich only a
+            # bounded complete literal whose normalized value matches that unit.
+            logical=raw.lstrip();indent=len(raw)-len(logical);tokens=None;end_line=line_number
+            for _ in range(256):
+                if len(logical)>65536:break
+                try:
+                    tokens=list(tokenize.generate_tokens(io.StringIO(logical).readline));break
+                except (tokenize.TokenError,IndentationError):
+                    if end_line>=len(lines):break
+                    logical+='\n'+lines[end_line];end_line+=1
+            literals=[token for token in tokens or []if token.type==tokenize.STRING]
+            if len(literals)!=1:
+                return _SourceEnrichment(_ENRICHMENT_MISMATCH, f"native source line is not a supported dialogue statement: {exc}")
+            token=literals[0]
+            try:value=ast.literal_eval(token.string)
+            except (ValueError,SyntaxError):value=None
+            if not isinstance(value,str)or re.sub(r'[ \n]+',' ',value).strip()!=unit.source_text:
+                return _SourceEnrichment(_ENRICHMENT_MISMATCH,'source literal normalization does not match authoritative SDK unit')
+            parts=logical.splitlines(keepends=True);offsets=[0]
+            for part in parts:offsets.append(offsets[-1]+len(part))
+            begin=offsets[token.start[0]-1]+token.start[1];end=offsets[token.end[0]-1]+token.end[1]
+            import json
+            try:_,speaker,expression,suffix=_say_statement(logical[:begin]+json.dumps(unit.source_text)+logical[end:])
+            except ValueError:
+                return _SourceEnrichment(_ENRICHMENT_MISMATCH,'source literal speaker/suffix unsupported')
+            if (speaker,expression,suffix)!=(unit.speaker,unit.expression,unit.say_suffix):
+                return _SourceEnrichment(_ENRICHMENT_MISMATCH,'source literal semantics differ from SDK unit')
+            return _SourceEnrichment(_ENRICHMENT_RESOLVED,speaker=speaker,
+                source_span={'line':line_number,'start_line':line_number+token.start[0]-1,'start_column':token.start[1]+(indent if token.start[0]==1 else 0)+1,
+                    'end_line':line_number+token.end[0]-1,'end_column':token.end[1]+(indent if token.end[0]==1 else 0)},
+                context_group=_source_context_group(lines,line_number))
         if source_text != unit.source_text:
             return _SourceEnrichment(_ENRICHMENT_MISMATCH, "native source text does not match the exact provenance line")
         if speaker != unit.speaker or expression != unit.expression or suffix != unit.say_suffix:
@@ -1029,6 +1081,9 @@ def extract_native_template_entries(
         try:ui_candidates.extend(static_screen_candidates(script,path.relative_to(game_root).as_posix(),digest,ui_unresolved))
         except ValueError as exc:ui_errors.append(str(exc))
     ui_native=[];ui_review=[]
+    sdk_string_sources={unit.source_text for unit in units if unit.unit_kind==RENPY_STRING_UNIT}
+    ui_candidates=[candidate for candidate in ui_candidates if not (
+        candidate.locator['native_global_eligible']and candidate.source_text in sdk_string_sources)]
     for candidate in ui_candidates:
         if candidate.locator['native_global_eligible']and (game_root/candidate.file_path).is_file():
             ui_native.append(native_global_display_entry(candidate,backend='renpy_loose_source'))

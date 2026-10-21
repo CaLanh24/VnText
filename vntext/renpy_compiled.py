@@ -152,14 +152,23 @@ def _inert_expression(value):
     return None
 
 
+def _expression_span(value,line):
+    source=_inert_expression(value)
+    column=None
+    if isinstance(value,Symbol)and value.kind in {'NEWOBJ','REDUCE'}:
+        _,args=value.args
+        if len(args)>=3 and type(args[2])is int:line=args[2]
+        if len(args)==6 and type(args[5])is int:column=args[5]
+    parts=(source or '').splitlines()or ['']
+    return {'start_line':line,'start_column':column,'end_line':line+len(parts)-1 if type(line)is int else None,
+        'end_column':(column+len(parts[-1])if len(parts)==1 and column is not None else len(parts[-1])if len(parts)>1 else None),
+        'coordinate_basis':'compiled PyExpr metadata; unknown columns remain null'}
+
+
 def _literal_display(expression):
     source=_inert_expression(expression)
-    if source is None or len(source)>65536:return None
-    try:node=ast.parse(source,mode='eval').body
-    except (SyntaxError,ValueError):return None
-    if isinstance(node,ast.Call)and isinstance(node.func,ast.Name)and node.func.id=='_'and len(node.args)==1 and not node.keywords:
-        node=node.args[0]
-    return node.value if isinstance(node,ast.Constant)and isinstance(node.value,str)else None
+    from vntext.renpy_static import static_string
+    return static_string(source)
 
 
 def _python_source(fields):
@@ -179,8 +188,7 @@ def _pure_localization(fields):
     except (SyntaxError,ValueError):return False
     return bool(tree.body)and all(isinstance(node,ast.Assign)and len(node.targets)==1 and isinstance(node.targets[0],ast.Name)
         and isinstance(node.value,ast.Call)and isinstance(node.value.func,ast.Name)and node.value.func.id=='_'
-        and len(node.value.args)==1 and not node.value.keywords and isinstance(node.value.args[0],ast.Constant)
-        and isinstance(node.value.args[0].value,str)for node in tree.body)
+        and len(node.value.args)==1 and not node.value.keywords and _literal_display(ast.unparse(node.value))is not None for node in tree.body)
 
 
 def _static_screen_covered(screen):
@@ -212,14 +220,20 @@ def _static_screen_covered(screen):
     return True
 
 
-def compiled_display_candidates(data: bytes):
+def compiled_display_candidates(data: bytes,unresolved=None):
     """Read typed static display slots as review inventory, never execute them."""
     nodes=ast_nodes(_compiled_root(data),prefixes=('renpy.ast.','renpy.sl2.slast.'))
     rows=[]
-    def add(text,kind,line):
+    def add(text,kind,line,raw=None,span=None):
         if isinstance(text,str)and text.strip():
             rows.append({'text':text,'kind':kind,'line':line,'ordinal':len(rows),'native_global_eligible':True,
                          'runtime_mapping_proven':False})
+            if raw is not None:
+                from vntext.renpy_static import string_classification
+                rows[-1].update(raw_expression=raw,span=span,classification=string_classification(text))
+        elif raw is not None and unresolved is not None:
+            unresolved.append({'kind':kind,'line':line,'raw_expression':raw,'span':span,'classification':'RUNTIME_GENERATED',
+                'safety':'UNSUPPORTED','reason':'runtime expression requires variable/call/branch value; no complete static source string'})
     for name,fields in nodes:
         line=fields.get('linenumber')
         location=fields.get('location')
@@ -237,19 +251,18 @@ def compiled_display_candidates(data: bytes):
             except (SyntaxError,ValueError):continue
             for node in ast.walk(tree):
                 if isinstance(node,ast.Call)and isinstance(node.func,ast.Name)and node.func.id=='_'and len(node.args)==1 and not node.keywords:
-                    arg=node.args[0]
-                    if isinstance(arg,ast.Constant)and isinstance(arg.value,str):add(arg.value,'python_localization',line)
+                    add(_literal_display(ast.unparse(node)),'python_localization',line,ast.get_source_segment(source,node)or ast.unparse(node))
         elif name=='renpy.sl2.slast.SLDisplayable':
             row_start=len(rows)
             displayable=fields.get('displayable')
             kind=displayable.args if isinstance(displayable,Symbol)and displayable.kind=='global'else None
             positional=fields.get('positional')
             if kind in {'renpy.text.text.Text','renpy.ui._textbutton'}and isinstance(positional,list)and positional:
-                add(_literal_display(positional[0]),'screen_text'if kind=='renpy.text.text.Text'else 'screen_button',line)
+                add(_literal_display(positional[0]),'screen_text'if kind=='renpy.text.text.Text'else 'screen_button',line,_inert_expression(positional[0]),_expression_span(positional[0],line))
             keyword=fields.get('keyword')
             if isinstance(keyword,list):
                 for item in keyword:
-                    if isinstance(item,tuple)and len(item)==2 and item[0]=='tooltip':add(_literal_display(item[1]),'screen_tooltip',line)
+                    if isinstance(item,tuple)and len(item)==2 and item[0]=='tooltip':add(_literal_display(item[1]),'screen_tooltip',line,_inert_expression(item[1]),_expression_span(item[1],line))
                 for item in keyword:
                     if isinstance(item,tuple)and len(item)==2 and item[0]in {'substitute','text_substitute'}:
                         if _inert_expression(item[1])!='True':
@@ -315,7 +328,7 @@ def extract_compiled_source(root, is_cancelled=None):
     from vntext.patchability import make_renpy_contract, renpy_contract_fingerprint, validate_renpy_contract, RENPY_DIALOGUE_PATCH_PROOF
     root=_regular(root).resolve(); game=_regular(root/'game')
     target_state=existing_translation_inventory(root)
-    entries=[]; reviews=[]; errors=[]; files=0; total_bytes=0; identifiers=set()
+    entries=[]; reviews=[]; errors=[]; expression_unresolved=[]; files=0; total_bytes=0; identifiers=set()
     for path in sorted(game.rglob('*')):
         if is_cancelled and is_cancelled(): raise ValueError('cancelled')
         if not path.is_file() or 'tl' in {part.casefold()for part in path.relative_to(game).parts}: continue
@@ -344,7 +357,11 @@ def extract_compiled_source(root, is_cancelled=None):
             rows,unresolved=compiled_dialogues(data)
             errors.extend(f'{relative}: static compiled coverage unresolved: {kind}' for kind in unresolved)
             digest=hashlib.sha256(data).hexdigest()
-            for row in compiled_display_candidates(data):
+            local_unresolved=[]
+            display_rows=compiled_display_candidates(data,local_unresolved)
+            expression_unresolved.extend({**item,'file_path':relative,'source_sha256':digest,'source_container':container}for item in local_unresolved)
+            errors.extend(f'{relative}:{item["line"]}: {item["reason"]}'for item in local_unresolved)
+            for row in display_rows:
                 candidate=Entry(row['text'],relative,f'RenPyCompiledCandidate:{relative}:{row["kind"]}:{row["ordinal"]}',
                     object_info=row['kind'],import_method='renpy_compiled_candidate',backend='renpy_compiled_static_inventory',
                     safety='review',review_only=True,locator={**row,'source_sha256':digest,
@@ -379,6 +396,7 @@ def extract_compiled_source(root, is_cancelled=None):
         'native_string_units':sum(entry.import_method=='renpy_string'for entry in entries),
         'errors':errors,'compiled_reader':'static-opcodes-slot-2',
         'renpy_non_native_review_entries':len(reviews),
+        'renpy_compiled_expression_unresolved':expression_unresolved,
         'renpy_existing_translations':{kind:[{'identity':identity,**{key:str(value)if isinstance(value,Path)else value for key,value in record.items()}}
             for identity,record in target_state[kind].items()]for kind in ('dialogues','strings')},
         'renpy_compiled_display_candidates':[

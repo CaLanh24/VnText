@@ -1,5 +1,9 @@
 # Current state pointer — 2026-10-21
 
+## Active RenPy multiline/dynamic recovery — no Release
+
+Owner authorized separate implementation after accepted85e1d72: SDK-grounded multiline/static composition and source-template recovery, loose/compiled/RPA native writer round-trip, explicit dynamic/unproven ledger/PARTIAL. SoleDEVwriter/nochild/push/Release/model/Unity/schema/shared-validator/protocol/runtimehook changes. Premise/subphases/gates/budget: docs/RENPY_MULTILINE_DYNAMIC_20261022.md. Prior accepted remediation below remains closed.
+
 ## RenPy remediation terminal — PASS bounded, Brain accepted
 
 Owner authorized R5→R1/R2→R4→R3→R6 bounded fixes after auditdbca0ee. Sole DEV writer/main, Brain reads this session directly; no child/push/Release or MT/Unity/schema/validator relaxation. R5 source/template versus existing target-mapping reconciliation first, actualSDK round-trip/readback and conflict/failure arms; frozen audit remains immutable.0đ/nonexempt1GiB/shared6GiB, generated registered fixtures only. Detailed checkpoint docs/RENPY_REMEDIATION_20261021.md.
