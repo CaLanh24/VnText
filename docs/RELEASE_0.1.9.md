@@ -35,3 +35,7 @@ Owner explicitly approved temporary3GiB for Release0.1.9 on2026-10-21. Exact ind
 ## First exact-source gate — retained failure
 
 Source9e0ca08 full1007tests:9failures/3errors/10skips, child1/cleanupPASS. Missing Python version owners fixed in descendant preparation. Other failures involve Windows short TEMP aliases versus normalized long paths; next focused gate uses canonical registered TEST_RUN temp, without weakening validators or changing game/runtime behavior. Initial focused retry was not started: dirty-source epoch quota refusal, retained accurately. Commit and ordinary epoch transition precede retry. PatchInstaller2 and GUI1 missing gate skips must be resolved after fresh candidate build; nativeOCR3 and externalUnity4 remain explicit until respective gates/Owner scope.
+
+## Exact regression prerequisite refinement
+
+Second source d4eccc7:1007tests0failures/3errors/7skips, one optional tokenizer warning; wrapper1/child1/cleanupPASS. NativeOCR3passed. Addressables2errors are Windows path length under nested snapshot TEMP; next run uses exact registered short parent TEST_RUN/t. Lifecycle teardown1error was test harness clearing the caller release task ID before real parent quota cleanup: restore caller authorization only at real teardown; synthetic cases still run in isolated default-budget contexts, production guards unchanged.38focused version/readback/path tests had0fail/error,1externalUnityskip/child0; original wrapper1 epoch terminal-purge qualification retained.

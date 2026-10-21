@@ -70,6 +70,10 @@ class CleanupLifecycleTests(unittest.TestCase):
     def tearDownClass(cls):
         try:
             tempfile.tempdir = cls._prior_tempdir
+            # Synthetic cases run without ambient release authorization, but
+            # the real fixture teardown belongs to the caller's release scope.
+            if cls._prior_release_task_id is not None:
+                os.environ["VNTEXT_RELEASE_TASK_ID"] = cls._prior_release_task_id
             result = cleanup.cleanup_after_test(
                 [cls._fixture_temp_path],
                 reason="test_cleanup_work_artifacts fixture teardown",
