@@ -104,11 +104,23 @@ def _render_overlay(dialogues: list[tuple[dict, str]], strings: dict[tuple[str, 
     for entry, translation in dialogues:
         locator = entry["locator"]
         speaker = str(locator.get("speaker") or entry.get("object_info") or "")
+        precondition = entry.get("native_contract",{}).get("precondition",{})
+        prefix = str(precondition.get("say_prefix",speaker))
+        suffix = str(precondition.get("say_suffix", ""))
+        from vntext.renpy_extract import _say_statement
+        try:
+            parsed = _say_statement((prefix+' 'if prefix else '')+'"VNText probe"'+(' '+suffix if suffix else ''))
+        except (ValueError,SyntaxError) as exc:
+            raise RenPyPatchError(f"unsupported native Say semantics: {exc}") from exc
+        if parsed[0]!='VNText probe' or parsed[3]!=suffix or prefix!=" ".join(part for part in parsed[1:3]if part):
+            raise RenPyPatchError("ambiguous native Say semantics")
+        prefix = prefix+' 'if prefix else ''
+        suffix = ' '+suffix if suffix else ''
         payload.extend(
             [
                 f"translate vietnamese {locator['native_id']}:",
-                f"    # {speaker + ' ' if speaker else ''}{_quote(str(entry['source_text']))}",
-                f"    {speaker + ' ' if speaker else ''}{_quote(translation)}",
+                f"    # {prefix}{_quote(str(entry['source_text']))}{suffix}",
+                f"    {prefix}{_quote(translation)}{suffix}",
                 "",
             ]
         )
@@ -686,7 +698,10 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     for entry, translation in dialogues:
         prior = existing_state["dialogues"].get(entry["locator"]["native_id"])
         if prior is not None:
-            if prior["translation"] != translation or prior["speaker"] != str(entry.get("object_info") or ""):
+            precondition = entry.get("native_contract",{}).get("precondition",{})
+            expected_prefix = str(precondition.get("say_prefix",entry.get("object_info")or ""))
+            prior_prefix = " ".join(part for part in (prior["speaker"],prior["expression"])if part)
+            if prior["translation"] != translation or prior_prefix != expected_prefix or prior["suffix"] != precondition.get("say_suffix", ""):
                 raise RenPyPatchError(f"Ren'Py dialogue mapping conflict: {entry['locator']['native_id']}")
         else:
             new_dialogues.append((entry, translation))

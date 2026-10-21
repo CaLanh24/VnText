@@ -70,6 +70,8 @@ class RenPyNativeUnit:
     expression: str = ""
     target_speaker: str = ""
     target_expression: str = ""
+    say_suffix: str = ""
+    target_say_suffix: str = ""
 
     @property
     def unit_type(self) -> str:
@@ -148,7 +150,9 @@ def _quote_end(value: str, start: int) -> int:
     raise ValueError("unterminated quoted Ren'Py string")
 
 
-def _statement(value: str, *, comment: bool = False) -> tuple[str, str, str]:
+def _say_statement(value: str, *, comment: bool = False) -> tuple[str, str, str, str]:
+    if '\n' in value or '\r' in value:
+        raise ValueError("Say statement must occupy one physical line")
     text = value.strip()
     if comment:
         if not text.startswith("#"):
@@ -158,11 +162,21 @@ def _statement(value: str, *, comment: bool = False) -> tuple[str, str, str]:
     if quote_start < 0:
         raise ValueError("statement has no quoted text")
     quote_end = _quote_end(text, quote_start)
+    literal_speaker = ""
+    if quote_start == 0 and text[quote_end+1:].lstrip().startswith('"'):
+        literal_speaker = text[:quote_end+1]
+        quote_start = quote_end+1 + len(text[quote_end+1:])-len(text[quote_end+1:].lstrip())
+        quote_end = _quote_end(text, quote_start)
     suffix = text[quote_end + 1:].strip()
-    if suffix and not suffix.startswith("#"):
+    transition = ""
+    if suffix and not suffix.startswith("#") and re.fullmatch(r'with\s+[A-Za-z_]\w*(?:\s*#.*)?',suffix):
+        transition = suffix.split('#',1)[0].strip()
+    elif suffix and not suffix.startswith("#"):
         raise ValueError("statement has an ambiguous suffix")
     prefix = text[:quote_start].strip()
-    if prefix:
+    if literal_speaker:
+        speaker, expression = literal_speaker, ""
+    elif prefix:
         parts = prefix.split()
         if not all(_IDENTIFIER.fullmatch(part) for part in parts):
             raise ValueError("speaker/expression is not unambiguous")
@@ -170,7 +184,11 @@ def _statement(value: str, *, comment: bool = False) -> tuple[str, str, str]:
         expression = " ".join(parts[1:])
     else:
         speaker = expression = ""
-    return str(ast.literal_eval(text[quote_start:quote_end + 1])), speaker, expression
+    return str(ast.literal_eval(text[quote_start:quote_end + 1])), speaker, expression, transition
+
+
+def _statement(value: str, *, comment: bool = False) -> tuple[str, str, str]:
+    return _say_statement(value,comment=comment)[:3]
 
 
 def _keyed_string(value: str) -> tuple[str, str]:
@@ -277,18 +295,18 @@ def _parse_native_block(
 
     if not _IDENTIFIER.fullmatch(target) or target in {"python", "style"}:
         raise _error(template_file, header_line, "unsupported or ambiguous native translation block")
-    source_items: list[tuple[int, str, str, str]] = []
-    target_items: list[tuple[int, str, str, str]] = []
+    source_items: list[tuple[int, str, str, str, str]] = []
+    target_items: list[tuple[int, str, str, str, str]] = []
     for line_number, value in meaningful:
         if value.startswith("#"):
             try:
-                parsed = _statement(value, comment=True)
+                parsed = _say_statement(value, comment=True)
             except (SyntaxError, ValueError) as exc:
                 raise _error(template_file, line_number, f"unsupported native dialogue source statement: {exc}") from exc
             source_items.append((line_number, *parsed))
         else:
             try:
-                parsed = _statement(value, comment=False)
+                parsed = _say_statement(value, comment=False)
             except (SyntaxError, ValueError) as exc:
                 raise _error(template_file, line_number, f"unsupported native dialogue target statement: {exc}") from exc
             target_items.append((line_number, *parsed))
@@ -301,8 +319,10 @@ def _parse_native_block(
         )
     if provenance is None:
         raise _error(template_file, header_line, "native dialogue block is missing source filename/line provenance")
-    source_line, source_text, speaker, expression = source_items[0]
-    target_line, target_text, target_speaker, target_expression = target_items[0]
+    source_line, source_text, speaker, expression, say_suffix = source_items[0]
+    target_line, target_text, target_speaker, target_expression, target_say_suffix = target_items[0]
+    if (speaker,expression,say_suffix)!=(target_speaker,target_expression,target_say_suffix):
+        raise _error(template_file,target_line,"source/target Say semantics differ")
     source_class = "narration" if not speaker else "dialogue"
     target_class = "narration" if not target_speaker else "dialogue"
     if source_class != target_class:
@@ -327,6 +347,8 @@ def _parse_native_block(
             expression=expression,
             target_speaker=target_speaker,
             target_expression=target_expression,
+            say_suffix=say_suffix,
+            target_say_suffix=target_say_suffix,
         )
     ]
 
@@ -335,12 +357,14 @@ def parse_renpy_translation_templates(
     template_root: str | Path,
     *,
     language: str | None = None,
+    unresolved: list[dict] | None = None,
 ) -> list[RenPyNativeUnit]:
     """Parse generated native dialogue and string translation templates.
 
     The parser only accepts the one-to-one generated shapes needed by Wave B.
-    It returns no partial result: malformed or unsupported selected blocks raise
-    ``RenPyTemplateParseError`` instead of guessing or silently dropping units.
+    By default malformed/unsupported blocks raise. The extraction orchestrator
+    may supply an unresolved ledger to retain supported blocks and report PARTIAL;
+    rejected raw blocks and provenance remain visible and are never patch targets.
     """
     base, paths = _template_paths(template_root)
     units: list[RenPyNativeUnit] = []
@@ -386,10 +410,16 @@ def parse_renpy_translation_templates(
                         order=len(units),
                         block_order=block_order,
                     )
-                except RenPyTemplateParseError:
-                    raise
-                except (SyntaxError, ValueError) as exc:
-                    raise _error(template_file, line_number, str(exc)) from exc
+                except (RenPyTemplateParseError, SyntaxError, ValueError) as exc:
+                    if unresolved is None:
+                        raise _error(template_file, line_number, str(exc)) from exc
+                    unresolved.append({"template_file":template_file,"template_line":line_number,
+                        "native_id":target if target!='strings'else '',"language":selected_language,
+                        "source_file":header_provenance[0]if header_provenance else '',
+                        "source_line":header_provenance[1]if header_provenance else None,
+                        "raw_block":"\n".join(lines[line_number-1:end_line-1]),
+                        "reason":str(exc),"disposition":"UNSUPPORTED_REVIEW"})
+                    parsed=[]
                 units.extend(parsed)
                 block_order += 1
             line_number = end_line
@@ -460,9 +490,9 @@ def existing_translation_inventory(root: str | Path, language: str = "vietnamese
             else:
                 if not _IDENTIFIER.fullmatch(target) or target in {"python", "style"} or len(content) != 1:
                     raise RenPyTemplateParseError(f"unverifiable existing dialogue block: {path}:{start+1}")
-                translation, speaker, expression = _statement(content[0][1])
+                translation, speaker, expression, suffix = _say_statement(content[0][1])
                 add("dialogues", target, dict(translation=translation,speaker=speaker,expression=expression,
-                    path=path,line=content[0][0],sha256=digest))
+                    suffix=suffix,path=path,line=content[0][0],sha256=digest))
     return result
 
 
@@ -564,14 +594,16 @@ def _resolve_source_enrichment(
     raw = lines[line_number - 1]
     if unit.unit_kind == RENPY_DIALOGUE_UNIT:
         try:
-            source_text, speaker, expression = _statement(raw)
+            source_text, speaker, expression, suffix = _say_statement(raw)
             quote_start = raw.find('"')
+            if speaker.startswith('"'):
+                quote_start = raw.find('"',_quote_end(raw,quote_start)+1)
             quote_end = _quote_end(raw, quote_start) + 1
         except (SyntaxError, ValueError) as exc:
             return _SourceEnrichment(_ENRICHMENT_MISMATCH, f"native source line is not a supported dialogue statement: {exc}")
         if source_text != unit.source_text:
             return _SourceEnrichment(_ENRICHMENT_MISMATCH, "native source text does not match the exact provenance line")
-        if speaker != unit.speaker or expression != unit.expression:
+        if speaker != unit.speaker or expression != unit.expression or suffix != unit.say_suffix:
             return _SourceEnrichment(_ENRICHMENT_MISMATCH, "native source speaker/expression does not match the native unit")
         return _SourceEnrichment(
             _ENRICHMENT_RESOLVED,
@@ -721,6 +753,11 @@ def _native_entry(
                 source_available=source_available,
             )
         )
+    elif unit.expression or unit.say_suffix or unit.speaker.startswith('"'):
+        from vntext.patchability import renpy_contract_fingerprint
+        contract["precondition"]["say_prefix"] = " ".join(part for part in (unit.speaker,unit.expression)if part)
+        contract["precondition"]["say_suffix"] = unit.say_suffix
+        contract["fingerprint"] = renpy_contract_fingerprint(contract)
     if enrichment.source_span is not None:
         contract["provenance"]["source_span"] = dict(enrichment.source_span)
     native_context = contract["context"]
@@ -796,9 +833,15 @@ def extract_native_template_entries(
     game_root = Path(root).resolve()
     if not game_root.is_dir():
         raise RenPyTemplateParseError(f"Ren'Py game root is not a directory: {game_root}")
-    units = parse_renpy_translation_templates(template_root, language=language)
+    unresolved=[]
+    units = parse_renpy_translation_templates(template_root, language=language,unresolved=unresolved)
     existing = existing_translation_inventory(game_root, language)
     template_sha256 = _template_identity(template_root)
+    for record in unresolved:
+        record["template_sha256"] = template_sha256
+        if record["source_file"]:
+            _,source_path = _native_source_path(game_root,record["source_file"],record["template_file"],record["template_line"],allow_missing=True)
+            record["source_sha256"] = _sha256(source_path)if source_path.is_file()else None
     source_hashes: dict[Path, str] = {}
     source_lines: dict[Path, list[str] | None] = {}
     archive_cache: dict[str, dict] = {}
@@ -919,7 +962,9 @@ def extract_native_template_entries(
         "native_contract_version": RENPY_NATIVE_CONTRACT_VERSION,
         "native_template": True,
         "native_template_sha256": template_sha256,
-        "native_units": len(units),
+        "native_units": len(units)+len(unresolved),
+        "native_supported_units": len(units),
+        "native_unresolved_blocks": len(unresolved),
         "native_dialogue_units": dialogue_count,
         "native_string_units": string_count,
         "native_string_unique_sources": string_reconciliation["unique_exact_sources"],
@@ -927,6 +972,8 @@ def extract_native_template_entries(
         "native_string_ledger_counts": string_reconciliation["ledger_counts"],
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
+        "errors":[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
+        "renpy_native_unresolved":unresolved,
     }
     # Keep target state visible without importing it as source text or approving
     # arbitrary translations. Unknown/orphan mappings remain explicit evidence.
