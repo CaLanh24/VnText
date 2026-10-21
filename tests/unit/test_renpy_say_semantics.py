@@ -27,10 +27,21 @@ class RenPySaySemanticsTests(unittest.TestCase):
 
     @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official SDK8.5.3 absent')
     def test_literal_speaker_and_transition_keep_native_semantics(self):
+        self._assert_say_semantics('define e = Character("Eileen")\nlabel start:\n    "Guide" "Literal speaker dialogue"\n    e "Timed dialogue" with dissolve\n    return\n')
+
+    @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official SDK8.5.3 absent')
+    def test_compiled_literal_speaker_and_transition_keep_native_semantics(self):
+        self._assert_say_semantics('label start:\n    "Guide" "Literal speaker dialogue"\n    "Timed dialogue" with dissolve\n    return\n',compiled=True)
+
+    def _assert_say_semantics(self,script,compiled=False):
         with tempfile.TemporaryDirectory(dir=work_temp_dir('renpy-say')) as tmp:
             root=Path(tmp);game=root/'source';(game/'game').mkdir(parents=True)
-            script='define e = Character("Eileen")\nlabel start:\n    "Guide" "Literal speaker dialogue"\n    e "Timed dialogue" with dissolve\n    return\n'
             source=game/'game/script.rpy';source.write_text(script,encoding='utf-8');before=source.read_bytes()
+            if compiled:
+                sdk=validate_sdk(SDK)
+                result=subprocess.run([str(sdk.python),str(sdk.renpy_py),str(game),'compile'],cwd=sdk.root,capture_output=True,text=True,encoding='utf-8',timeout=60)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                source.unlink();source=source.with_suffix('.rpyc');before=source.read_bytes()
             events=[]
             run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(SDK),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
             self.assertTrue(events[-1].get('ok'),events[-1])
@@ -44,7 +55,7 @@ class RenPySaySemanticsTests(unittest.TestCase):
             sdk=validate_sdk(SDK);readbacks=[]
             for patched in (False,True):
                 lookup=root/'lookup';(lookup/'game').mkdir(parents=True)
-                (lookup/'game/script.rpy').write_bytes(before)
+                (lookup/'game'/source.name).write_bytes(before)
                 if patched:shutil.copytree(root/'patch/COPY_TO_GAME_ROOT',lookup,dirs_exist_ok=True)
                 probe='init 1000 python:\n    import json, os\n    renpy.game.preferences.language="vietnamese"\n    result={}\n'
                 for entry in entries:

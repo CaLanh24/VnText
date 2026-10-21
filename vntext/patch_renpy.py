@@ -650,11 +650,26 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         if source_sha256 != entry["native_contract"]["precondition"]["source_sha256"]:
             raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
         if entry.get("backend") == "renpy_compiled_static":
-            from vntext.renpy_compiled import compiled_dialogues
-            native_rows, _unresolved = compiled_dialogues(script)
-            if not any(item['native_id'] == locator.get('native_id') and item['text'] == source_text
-                       and item['speaker'] == str(entry.get('object_info') or '') for item in native_rows):
-                raise RenPyPatchError('Compiled native identity/source/speaker precondition drift')
+            from vntext.renpy_compiled import compiled_dialogues,compiled_display_candidates
+            if entry.get('import_method')=='renpy_string':
+                slot=entry['native_contract']['precondition'].get('display_slot',{})
+                if not any(item['text']==source_text and item['native_global_eligible']and all(item.get(k)==v for k,v in slot.items())
+                           for item in compiled_display_candidates(script)):
+                    raise RenPyPatchError('Compiled static display precondition drift')
+            else:
+                native_rows, _unresolved = compiled_dialogues(script)
+                if not any(item['native_id'] == locator.get('native_id') and item['text'] == source_text
+                           and item['speaker'] == str(entry.get('object_info') or '')
+                           and all(item.get(key)==entry['native_contract']['precondition'].get(key)for key in ('say_prefix','say_suffix'))
+                           for item in native_rows):
+                    raise RenPyPatchError('Compiled native identity/source/speaker precondition drift')
+        elif entry['native_contract']['precondition'].get('display_slot'):
+            from vntext.renpy_extract import static_screen_candidates
+            slot=entry['native_contract']['precondition']['display_slot']
+            if not any(item.source_text==source_text and item.locator.get('native_global_eligible')and
+                       all(item.locator.get(k)==v for k,v in slot.items())
+                       for item in static_screen_candidates(script,str(entry['file_path']),source_sha256)):
+                raise RenPyPatchError('Static screen display precondition drift')
         elif not _source_present(script, source_text):
             raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
         method = str(entry.get("import_method"))

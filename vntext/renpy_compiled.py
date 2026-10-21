@@ -162,13 +162,63 @@ def _literal_display(expression):
     return node.value if isinstance(node,ast.Constant)and isinstance(node.value,str)else None
 
 
+def _python_source(fields):
+    code=fields.get('code')
+    if not isinstance(code,Symbol)or code.kind!='NEWOBJ':return None
+    constructor,_=code.args;state=code.state
+    if constructor.kind!='global'or constructor.args!='renpy.ast.PyCode':return None
+    if not isinstance(state,tuple)or len(state)not in {4,5,6,7}or state[0]!=1:return None
+    source=_inert_expression(state[1])
+    return source if source is not None and len(source)<=65536 else None
+
+
+def _pure_localization(fields):
+    source=_python_source(fields)
+    if source is None:return False
+    try:tree=ast.parse(source)
+    except (SyntaxError,ValueError):return False
+    return bool(tree.body)and all(isinstance(node,ast.Assign)and len(node.targets)==1 and isinstance(node.targets[0],ast.Name)
+        and isinstance(node.value,ast.Call)and isinstance(node.value.func,ast.Name)and node.value.func.id=='_'
+        and len(node.value.args)==1 and not node.value.keywords and isinstance(node.value.args[0],ast.Constant)
+        and isinstance(node.value.args[0].value,str)for node in tree.body)
+
+
+def _static_screen_covered(screen):
+    pending=[screen];seen=set()
+    while pending:
+        node=pending.pop()
+        if id(node)in seen:continue
+        seen.add(id(node))
+        if not isinstance(node,Symbol)or node.kind!='NEWOBJ':return False
+        constructor,_=node.args;fields=node.state
+        if constructor.kind!='global'or not isinstance(fields,dict):return False
+        if constructor.args not in {'renpy.sl2.slast.SLScreen','renpy.sl2.slast.SLDisplayable'}:return False
+        if constructor.args.endswith('SLDisplayable'):
+            display=fields.get('displayable');positional=fields.get('positional')
+            if not isinstance(display,Symbol)or display.kind!='global'or display.args not in {'renpy.text.text.Text','renpy.ui._textbutton'}:return False
+            if not isinstance(positional,list)or len(positional)!=1 or _literal_display(positional[0])is None:return False
+        for item in fields.get('keyword',[]):
+            if not isinstance(item,tuple)or len(item)!=2:return False
+            if item[0]=='tooltip'and _literal_display(item[1])is not None:continue
+            expr=_inert_expression(item[1])
+            try:value=ast.parse(expr,mode='eval').body if expr is not None else None
+            except (SyntaxError,ValueError):return False
+            if isinstance(value,ast.Constant):continue
+            if item[0]=='action'and isinstance(value,ast.Call)and isinstance(value.func,ast.Name)and value.func.id=='NullAction'and not value.args and not value.keywords:continue
+            return False
+        children=fields.get('children',[])
+        if not isinstance(children,list):return False
+        pending.extend(children)
+    return True
+
+
 def compiled_display_candidates(data: bytes):
     """Read typed static display slots as review inventory, never execute them."""
     nodes=ast_nodes(_compiled_root(data),prefixes=('renpy.ast.','renpy.sl2.slast.'))
     rows=[]
     def add(text,kind,line):
         if isinstance(text,str)and text.strip():
-            rows.append({'text':text,'kind':kind,'line':line,'ordinal':len(rows),
+            rows.append({'text':text,'kind':kind,'line':line,'ordinal':len(rows),'native_global_eligible':True,
                          'runtime_mapping_proven':False})
     for name,fields in nodes:
         line=fields.get('linenumber')
@@ -181,13 +231,8 @@ def compiled_display_candidates(data: bytes):
                 if not isinstance(item,tuple)or len(item)!=3:raise ValueError('Malformed compiled menu item')
                 if isinstance(item[0],str):add(item[0],'menu_label'if item[2]is not None else 'menu_caption',line)
         elif name=='renpy.ast.Python':
-            code=fields.get('code')
-            if not isinstance(code,Symbol)or code.kind!='NEWOBJ':continue
-            constructor,_=code.args;state=code.state
-            if constructor.kind!='global'or constructor.args!='renpy.ast.PyCode':continue
-            if not isinstance(state,tuple)or len(state)not in {4,5,6,7}or state[0]!=1:continue
-            source=_inert_expression(state[1])
-            if source is None or len(source)>65536:continue
+            source=_python_source(fields)
+            if source is None:continue
             try:tree=ast.parse(source)
             except (SyntaxError,ValueError):continue
             for node in ast.walk(tree):
@@ -195,6 +240,7 @@ def compiled_display_candidates(data: bytes):
                     arg=node.args[0]
                     if isinstance(arg,ast.Constant)and isinstance(arg.value,str):add(arg.value,'python_localization',line)
         elif name=='renpy.sl2.slast.SLDisplayable':
+            row_start=len(rows)
             displayable=fields.get('displayable')
             kind=displayable.args if isinstance(displayable,Symbol)and displayable.kind=='global'else None
             positional=fields.get('positional')
@@ -204,6 +250,10 @@ def compiled_display_candidates(data: bytes):
             if isinstance(keyword,list):
                 for item in keyword:
                     if isinstance(item,tuple)and len(item)==2 and item[0]=='tooltip':add(_literal_display(item[1]),'screen_tooltip',line)
+                for item in keyword:
+                    if isinstance(item,tuple)and len(item)==2 and item[0]in {'substitute','text_substitute'}:
+                        if _inert_expression(item[1])!='True':
+                            for row in rows[row_start:]:row['native_global_eligible']=False
     return rows
 
 
@@ -213,21 +263,46 @@ def compiled_dialogues(data: bytes):
     dialogues = []; unresolved = set(); identifiers = set()
     for name, fields in nodes:
         if name != 'renpy.ast.TranslateSay':
-            if name not in {'renpy.ast.Label','renpy.ast.Return','renpy.ast.Init'}:
+            covered=(name=='renpy.ast.Python'and _pure_localization(fields)
+                or name=='renpy.ast.Screen'and _static_screen_covered(fields.get('screen'))
+                or name=='renpy.ast.Menu'and isinstance(fields.get('items'),list)
+                    and all(isinstance(item,tuple)and len(item)==3 and isinstance(item[0],str)
+                        and _inert_expression(item[1])=='True'for item in fields['items'])
+                    and not any(fields.get(key)for key in ('set','with_','arguments')))
+            if not covered and name not in {'renpy.ast.Label','renpy.ast.Return','renpy.ast.Init','renpy.ast.Pass'}:
                 unresolved.add(name)
             continue
         if fields.get('language') is not None:
             unresolved.add('existing translated dialogue'); continue
         native_id=fields.get('identifier'); text=fields.get('what'); speaker=fields.get('who')
+        if isinstance(speaker,Symbol):
+            speaker=_inert_expression(speaker)
+            if speaker is None:
+                unresolved.add('dialogue speaker expression');continue
         if (not isinstance(native_id,str) or not re.fullmatch(r'[A-Za-z_]\w*',native_id)
                 or not isinstance(text,str) or not text
-                or speaker is not None and (not isinstance(speaker,str) or not re.fullmatch(r'[A-Za-z_]\w*',speaker))):
+                or speaker is not None and not isinstance(speaker,str)):
             raise ValueError('Unsupported compiled dialogue identity or speaker')
         if native_id in identifiers: raise ValueError('Duplicate compiled dialogue identifier')
-        if fields.get('interact') is False or any(fields.get(key) for key in ('attributes','temporary_attributes','arguments','with_')):
+        if fields.get('interact') is False or any(fields.get(key) for key in ('temporary_attributes','arguments')):
             unresolved.add('dialogue attributes or arguments'); continue
+        attributes=fields.get('attributes')or ()
+        transition=_inert_expression(fields.get('with_'))if fields.get('with_')is not None else ''
+        if not isinstance(attributes,(tuple,list))or not all(isinstance(value,str)and re.fullmatch(r'[A-Za-z_]\w*',value)for value in attributes):
+            unresolved.add('dialogue attributes or arguments');continue
+        prefix=' '.join(value for value in [speaker or '',*attributes]if value)
+        suffix='with '+transition if transition else ''
+        from vntext.renpy_extract import _say_statement
+        try:
+            if fields.get('with_')is not None and (not isinstance(transition,str)or not re.fullmatch(r'[A-Za-z_]\w*',transition)):
+                raise ValueError('unsupported transition expression')
+            _say_statement((prefix+' 'if prefix else '')+'"probe"'+(' '+suffix if suffix else ''))
+        except ValueError:
+            unresolved.add('dialogue speaker or transition expression');continue
         identifiers.add(native_id)
-        dialogues.append({'native_id':native_id,'text':text,'speaker':speaker or '', 'line':fields.get('linenumber')})
+        row={'native_id':native_id,'text':text,'speaker':speaker or '', 'line':fields.get('linenumber')}
+        if attributes or suffix or (speaker or '').startswith('"'):row.update(say_prefix=prefix,say_suffix=suffix)
+        dialogues.append(row)
     return dialogues, sorted(unresolved)
 
 
@@ -235,12 +310,16 @@ def extract_compiled_source(root, is_cancelled=None):
     from vntext.image_text import _regular
     from vntext.renpy_archive import RenPyArchive,resolved_game_path
     from vntext.entry import Entry
+    from vntext.renpy_adapter import is_native_activation_helper
+    from vntext.renpy_extract import existing_translation_inventory
     from vntext.patchability import make_renpy_contract, renpy_contract_fingerprint, validate_renpy_contract, RENPY_DIALOGUE_PATCH_PROOF
     root=_regular(root).resolve(); game=_regular(root/'game')
+    target_state=existing_translation_inventory(root)
     entries=[]; reviews=[]; errors=[]; files=0; total_bytes=0; identifiers=set()
     for path in sorted(game.rglob('*')):
         if is_cancelled and is_cancelled(): raise ValueError('cancelled')
-        if not path.is_file() or 'tl' in path.relative_to(game).parts: continue
+        if not path.is_file() or 'tl' in {part.casefold()for part in path.relative_to(game).parts}: continue
+        if is_native_activation_helper(path,game):continue
         sources=[]
         if path.suffix.lower() in {'.rpyc','.rpymc'}:
             path=_regular(path)
@@ -266,10 +345,14 @@ def extract_compiled_source(root, is_cancelled=None):
             errors.extend(f'{relative}: static compiled coverage unresolved: {kind}' for kind in unresolved)
             digest=hashlib.sha256(data).hexdigest()
             for row in compiled_display_candidates(data):
-                reviews.append(Entry(row['text'],relative,f'RenPyCompiledCandidate:{relative}:{row["kind"]}:{row["ordinal"]}',
+                candidate=Entry(row['text'],relative,f'RenPyCompiledCandidate:{relative}:{row["kind"]}:{row["ordinal"]}',
                     object_info=row['kind'],import_method='renpy_compiled_candidate',backend='renpy_compiled_static_inventory',
                     safety='review',review_only=True,locator={**row,'source_sha256':digest,
-                        'source_container':container}).finalize())
+                        'source_container':container}).finalize()
+                if row['native_global_eligible']:
+                    from vntext.renpy_extract import native_global_display_entry
+                    entries.append(native_global_display_entry(candidate,backend='renpy_compiled_static'))
+                else:reviews.append(candidate)
             for row in rows:
                 native_id=row['native_id']
                 if native_id in identifiers: raise ValueError('Duplicate compiled native identity across files')
@@ -278,6 +361,8 @@ def extract_compiled_source(root, is_cancelled=None):
                     source_text=row['text'],file_path=relative,source_sha256=digest,template_sha256=digest,
                     native_id=native_id,source_line=row['line'],speaker=row['speaker'])
                 contract['precondition']['template_file']='<compiled-slot-2>'
+                if 'say_prefix'in row:
+                    contract['precondition'].update(say_prefix=row['say_prefix'],say_suffix=row['say_suffix'])
                 contract['provenance']['generated_artifact']={'file':'<compiled-slot-2>','sha256':digest}
                 if container: contract['provenance']['source_container']=container
                 contract['fingerprint']=renpy_contract_fingerprint(contract)
@@ -287,7 +372,15 @@ def extract_compiled_source(root, is_cancelled=None):
                 reason=validate_renpy_contract(entry)
                 if reason: raise ValueError(reason)
                 entries.append(entry)
+    if existing_translation_inventory(root)['snapshots']!=target_state['snapshots']:
+        raise ValueError('Existing compiled-game translation inventory changed during extraction')
     return entries,reviews,{'engine':'RENPY_COMPILED_NATIVE','files_scanned':files,'native_units':len(entries),
-        'native_dialogue_units':len(entries),'errors':errors,'compiled_reader':'static-opcodes-slot-2',
+        'native_dialogue_units':sum(entry.import_method=='renpy_dialogue'for entry in entries),
+        'native_string_units':sum(entry.import_method=='renpy_string'for entry in entries),
+        'errors':errors,'compiled_reader':'static-opcodes-slot-2',
         'renpy_non_native_review_entries':len(reviews),
-        'renpy_compiled_display_candidates':[entry.to_manifest()for entry in reviews]}
+        'renpy_existing_translations':{kind:[{'identity':identity,**{key:str(value)if isinstance(value,Path)else value for key,value in record.items()}}
+            for identity,record in target_state[kind].items()]for kind in ('dialogues','strings')},
+        'renpy_compiled_display_candidates':[
+            {**entry.to_manifest(),'disposition':'NATIVE_GLOBAL_DISPLAY'if not entry.review_only else 'REVIEW'}
+            for entry in entries+reviews if entry.review_only or entry.native_contract.get('precondition',{}).get('display_slot')]}

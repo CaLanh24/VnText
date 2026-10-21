@@ -31,6 +31,17 @@ class RenPyEngineDetectionTests(unittest.TestCase):
             result = detect_engine(root)
             self.assertEqual((result.engine, result.status), ("RENPY_LOOSE_SOURCE", "SUPPORTED"))
 
+    def test_translation_overlay_and_exact_helper_do_not_hide_compiled_source(self):
+        with self._folder()as temp:
+            root=Path(temp);(root/'game/tl/vietnamese').mkdir(parents=True)
+            (root/'game/script.rpyc').write_bytes(b'compiled evidence')
+            (root/'game/tl/vietnamese/vntext.rpy').write_text('translate vietnamese strings:\n    old "A"\n    new "B"\n',encoding='utf-8')
+            helper=root/'game/zzz_vntext_vietnamese.rpy'
+            helper.write_text('init 999 python:\n    config.language = "vietnamese"\n',encoding='utf-8')
+            self.assertEqual(detect_engine(root).engine,'RENPY_COMPILED_ONLY')
+            helper.write_text('label extra_source:\n    "Do not hide this source"\n',encoding='utf-8')
+            self.assertEqual(detect_engine(root).engine,'RENPY_LOOSE_SOURCE')
+
     def test_compiled_only_is_not_patchable(self):
         with self._folder() as temp:
             root = Path(temp)

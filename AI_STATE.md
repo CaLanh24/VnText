@@ -4,7 +4,7 @@
 
 Owner authorized R5→R1/R2→R4→R3→R6 bounded fixes after auditdbca0ee. Sole DEV writer/main, Brain reads this session directly; no child/push/Release or MT/Unity/schema/validator relaxation. R5 source/template versus existing target-mapping reconciliation first, actualSDK round-trip/readback and conflict/failure arms; frozen audit remains immutable.0đ/nonexempt1GiB/shared6GiB, generated registered fixtures only. Detailed checkpoint docs/RENPY_REMEDIATION_20261021.md.
 
-Local checkpoints: R5f08e66e, R1/R2 9c780f5, R4b47622e, R3 864c4a9; R6 typed compiled Menu/localization/UI review inventory validated40affected+8archive-focusedPASS, no runtime patch-proof promotion. Static UI, archived source execution and unsupported/dynamic compiled AST remain explicitlyPARTIAL. Final DEV build/smoke and terminal inventory pending; no wholeRenPy/Release acceptance.
+Local checkpoints: R5f08e66e, R1/R2 9c780f5, R4b47622e, R3 864c4a9, initial R6 6ae500e. Inventory-only checkpoints were not terminal acceptance: subsequent actual product/SDK evidence proves native global-string writeback for bounded static UI/Menu/localization in loose, compiled and compiled-RPA inputs, including repeat patch and unchanged source. Fingerprinted source-slot/AST preflight added; compiled Say literal speaker/transition also native-readbackPASS. Dynamic/disabled/multiline/unknown AST and source-only RPA execution remain explicit limitations/PARTIAL. Final combined validation/refreshed DEV build/smoke/terminal inventory pending; no wholeRenPy/Release acceptance. See task checkpoint for exact dirty-base receipts and historical failures.
 
 ## Ren’Py completeness audit — RENPY_EXTRACTOR_GAPS_CONFIRMED
 

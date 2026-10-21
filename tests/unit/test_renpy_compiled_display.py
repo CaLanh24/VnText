@@ -16,7 +16,7 @@ SDK=Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3'
 
 class RenPyCompiledDisplayTests(unittest.TestCase):
     @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official SDK8.5.3 absent')
-    def test_compiled_menu_localization_and_screen_are_visible_review_inventory(self):
+    def test_compiled_static_mapping_and_dynamic_review_are_separate(self):
         with tempfile.TemporaryDirectory(dir=work_temp_dir('renpy-compiled-display'))as tmp:
             root=Path(tmp);game=root/'source';(game/'game').mkdir(parents=True)
             source=game/'game/script.rpy'
@@ -33,10 +33,10 @@ class RenPyCompiledDisplayTests(unittest.TestCase):
             run_extract_task(str(game),str(root/'package'),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=events.append)
             self.assertEqual(events[-1]['extract_status'],'PARTIAL',events[-1])
             manifest=json.loads((root/'package/manifest.json').read_text(encoding='utf-8'))
-            candidates=[e for e in manifest['entries']if e['import_method']=='renpy_compiled_candidate']
+            candidates=[e for e in manifest['entries']if e['import_method']=='renpy_string']
             self.assertTrue({'Menu option','Localized setting','Plain screen','Wrapped button','Plain tooltip'}<={r['source_text']for r in candidates})
-            self.assertTrue(all(e['review_only']and not e.get('patch_proof')and not e.get('native_contract')for e in candidates))
-            self.assertTrue(all(e['locator']['source_sha256']==hashlib.sha256(before).hexdigest()for e in candidates))
+            self.assertTrue(all(not e['review_only']and e.get('patch_proof')and e.get('native_contract')for e in candidates))
+            self.assertTrue(all(e['native_contract']['precondition']['source_sha256']==hashlib.sha256(before).hexdigest()for e in candidates))
             self.assertEqual(compiled.read_bytes(),before)
             from vntext.patch_pipeline import apply_translation_package
             with self.assertRaisesRegex(ValueError,'Extraction is incomplete'):

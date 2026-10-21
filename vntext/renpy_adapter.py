@@ -21,6 +21,15 @@ class EngineDetection:
     reason: str
 
 
+def is_native_activation_helper(path: Path, game: Path) -> bool:
+    source=path.with_suffix('.rpy')if path.suffix.lower()=='.rpyc'else path
+    if source.parent!=game or source.name!='zzz_vntext_vietnamese.rpy':return False
+    if source.is_symlink()or not source.is_file()or getattr(source.lstat(),'st_file_attributes',0)&0x400:return False
+    return source.stat().st_size<128 and source.read_bytes()in {
+        b'init 999 python:\n    config.language = "vietnamese"\n',
+        b'init 999 python:\r\n    config.language = "vietnamese"\r\n'}
+
+
 def detect_engine(path: str | Path) -> EngineDetection:
     """Return a conservative engine classification without writing anything."""
     root = Path(path)
@@ -39,6 +48,9 @@ def detect_engine(path: str | Path) -> EngineDetection:
             if not candidate.is_file():
                 continue
             suffix = candidate.suffix.casefold()
+            if 'tl'in {part.casefold()for part in candidate.relative_to(game).parts[:-1]}:
+                continue
+            if is_native_activation_helper(candidate,game):continue
             if suffix in {".rpy", ".rpym"}:
                 loose.append(candidate)
             elif suffix in {".rpyc", ".rpymc"}:

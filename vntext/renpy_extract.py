@@ -431,7 +431,7 @@ def parse_renpy_translation_templates(
 parse_native_templates = parse_renpy_translation_templates
 
 
-def static_screen_candidates(script: str, file_path: str, source_sha256: str) -> list[Entry]:
+def static_screen_candidates(script: str, file_path: str, source_sha256: str, unresolved=None) -> list[Entry]:
     """Inventory one-line literal screen slots without evaluating expressions."""
     rows=[];screen=None
     for line_number,line in enumerate(script.splitlines(),1):
@@ -439,6 +439,11 @@ def static_screen_candidates(script: str, file_path: str, source_sha256: str) ->
         if not stripped or stripped.startswith('#'):continue
         indent=len(line)-len(line.lstrip())
         header=re.match(r'^screen\s+([A-Za-z_]\w*)\b.*:\s*(?:#.*)?$',stripped)
+        def unknown(reason):
+            if unresolved is not None:unresolved.append({'file_path':file_path,'source_sha256':source_sha256,
+                'line':line_number,'raw_statement':stripped,'reason':reason})
+        if stripped.startswith('screen ')and not header:
+            unknown('unsupported screen declaration shape');screen=None;continue
         if header:
             screen=(header.group(1),indent);continue
         if screen is None:continue
@@ -447,22 +452,56 @@ def static_screen_candidates(script: str, file_path: str, source_sha256: str) ->
         try:
             tokens=[token for token in tokenize.generate_tokens(io.StringIO(stripped).readline)
                     if token.type not in {tokenize.NEWLINE,tokenize.NL,tokenize.ENDMARKER,tokenize.COMMENT}]
-        except (tokenize.TokenError,IndentationError):continue
+        except (tokenize.TokenError,IndentationError):
+            if stripped.startswith(('text ','textbutton ','tooltip ')):unknown('unsupported multiline display statement')
+            continue
         for index,token in enumerate(tokens[:-1]):
             if token.type!=tokenize.NAME or token.string not in {'text','textbutton','tooltip'}:continue
             if token.string!='tooltip'and index!=0:continue
             literal=tokens[index+1]
-            if literal.type!=tokenize.STRING:continue
+            if literal.type!=tokenize.STRING:
+                wrapped=(len(tokens)>index+4 and literal.string=='_'and tokens[index+2].string=='('
+                         and tokens[index+3].type==tokenize.STRING and tokens[index+4].string==')'
+                         and (len(tokens)==index+5 or tokens[index+5].type!=tokenize.OP))
+                if not wrapped:unknown('dynamic or unsupported '+token.string+' display expression')
+                elif any(t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}and tokens[i+1].string!='True'
+                         for i,t in enumerate(tokens[:-1])):
+                    unknown('disabled or dynamic substitution on marked display text')
+                continue
             try:value=ast.literal_eval(literal.string)
-            except (ValueError,SyntaxError):continue
+            except (ValueError,SyntaxError):unknown('unsupported formatted display literal');continue
             if not isinstance(value,str)or not value.strip():continue
             locator={'line':line_number,'column':indent+literal.start[1],
                      'end_column':indent+literal.end[1],'kind':token.string,
                      'screen':screen[0],'source_sha256':source_sha256,'runtime_mapping_proven':False}
+            overrides=[i for i,t in enumerate(tokens[:-1])if t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}]
+            slot_end=index+2==len(tokens)or tokens[index+2].type==tokenize.NAME
+            locator['native_global_eligible']=(slot_end and not tokens[-1].string==':'and all(tokens[i+1].string=='True'for i in overrides))
+            if not slot_end and tokens[index+2].string!=':':unknown('composed or unsupported display expression')
             rows.append(Entry(value,file_path,f'RenPyScreen:{file_path}:{line_number}:{locator["column"]}',
                 object_info=f'screen {screen[0]} / {token.string}',import_method='renpy_screen_candidate',
                 backend='renpy_static_ui_inventory',safety='review',locator=locator,review_only=True).finalize())
     return rows
+
+
+def native_global_display_entry(candidate: Entry, *, backend: str) -> Entry:
+    """Bind a proven static display slot to the existing global-string writer."""
+    from vntext.patchability import renpy_contract_fingerprint
+    slot={k:v for k,v in candidate.locator.items()if k not in {'source_sha256','source_container'}}
+    digest=candidate.locator['source_sha256']
+    contract=make_renpy_contract(method='renpy_string',backend=backend,unit_type='string',
+        source_text=candidate.source_text,file_path=candidate.file_path,source_sha256=digest,
+        template_sha256=digest,source_line=slot.get('line'),source_context=candidate.context)
+    contract['precondition']['template_file']='<static-display-native-global>'
+    contract['precondition']['display_slot']=slot
+    contract['provenance']['generated_artifact']={'file':'<static-display-native-global>','sha256':digest}
+    contract['provenance']['display_mapping']='Native global string mapping at Text display time; raw values unchanged; substitute=False excluded.'
+    container=candidate.locator.get('source_container')
+    if container:contract['provenance']['source_container']=container
+    contract['fingerprint']=renpy_contract_fingerprint(contract)
+    return Entry(candidate.source_text,candidate.file_path,candidate.context,object_info=candidate.object_info,
+        import_method='renpy_string',backend=backend,safety='safe',locator={'source':candidate.source_text,'unit_type':'string'},
+        patch_proof=dict(RENPY_STRING_PATCH_PROOF),native_contract=contract).finalize()
 
 
 def existing_translation_inventory(root: str | Path, language: str = "vietnamese") -> dict:
@@ -974,7 +1013,7 @@ def extract_native_template_entries(
                 if "tl" not in {part.casefold() for part in path.relative_to(game_dir).parts}:
                     source_files.add(path)
     string_entries = [entry for entry in entries if entry.import_method == "renpy_string"]
-    ui_candidates=[];ui_errors=[];ui_bytes=0
+    ui_candidates=[];ui_errors=[];ui_unresolved=[];ui_bytes=0
     for path in sorted(source_files|set(source_lines)):
         if path in source_lines and source_lines[path] is not None:
             script='\n'.join(source_lines[path])
@@ -987,9 +1026,17 @@ def extract_native_template_entries(
         ui_bytes+=len(script.encode('utf-8'))
         if ui_bytes>64*1024*1024:
             ui_errors.append('Screen inventory project budget exceeded');break
-        try:ui_candidates.extend(static_screen_candidates(script,path.relative_to(game_root).as_posix(),digest))
+        try:ui_candidates.extend(static_screen_candidates(script,path.relative_to(game_root).as_posix(),digest,ui_unresolved))
         except ValueError as exc:ui_errors.append(str(exc))
-    entries.extend(ui_candidates)
+    ui_native=[];ui_review=[]
+    for candidate in ui_candidates:
+        if candidate.locator['native_global_eligible']and (game_root/candidate.file_path).is_file():
+            ui_native.append(native_global_display_entry(candidate,backend='renpy_loose_source'))
+        else:ui_review.append(candidate)
+    entries.extend(ui_native+ui_review)
+    ui_emitted={entry.context:entry for entry in ui_native+ui_review}
+    string_entries=[entry for entry in entries if entry.import_method=='renpy_string']
+    string_count+=len(ui_native)
     string_owners: dict[str, int] = {}
     string_ledgers: dict[str, int] = {}
     for entry in string_entries:
@@ -1000,7 +1047,7 @@ def extract_native_template_entries(
         string_ledgers[ledger] = string_ledgers.get(ledger, 0) + 1
     string_reconciliation = {
         "total": string_count,
-        "unique_exact_sources": len({unit.source_text for unit in units if unit.unit_kind == RENPY_STRING_UNIT}),
+        "unique_exact_sources": len({unit.source_text for unit in units if unit.unit_kind == RENPY_STRING_UNIT}|{entry.source_text for entry in ui_native}),
         "ownership_counts": dict(sorted(string_owners.items())),
         "ledger_counts": dict(sorted(string_ledgers.items())),
         "common_runtime_count": sum(
@@ -1017,8 +1064,10 @@ def extract_native_template_entries(
         "native_contract_version": RENPY_NATIVE_CONTRACT_VERSION,
         "native_template": True,
         "native_template_sha256": template_sha256,
-        "native_units": len(units)+len(unresolved),
-        "native_supported_units": len(units),
+        "native_units": len(units)+len(unresolved)+len(ui_native),
+        "native_sdk_units":len(units),
+        "native_static_display_units":len(ui_native),
+        "native_supported_units": len(units)+len(ui_native),
         "native_unresolved_blocks": len(unresolved),
         "native_dialogue_units": dialogue_count,
         "native_string_units": string_count,
@@ -1027,11 +1076,15 @@ def extract_native_template_entries(
         "native_string_ledger_counts": string_reconciliation["ledger_counts"],
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
-        "errors":ui_errors+[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
+        "errors":ui_errors+[f"{item['file_path']}:{item['line']}: {item['reason']}"for item in ui_unresolved]
+            +[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
         "renpy_native_unresolved":unresolved,
-        "renpy_non_native_review_entries":len(ui_candidates),
-        "renpy_static_ui_candidates":[entry.to_manifest()for entry in ui_candidates],
-        "renpy_static_ui_inventory_scope":"Single-line literal text/textbutton/tooltip in screen blocks; review only; dynamic/multiline/execution unproven.",
+        "renpy_non_native_review_entries":len(ui_review),
+        "renpy_static_ui_candidates":[{**entry.to_manifest(),
+            'disposition':'NATIVE_GLOBAL_DISPLAY'if not ui_emitted[entry.context].review_only else 'REVIEW',
+            'emitted_key':ui_emitted[entry.context].key}for entry in ui_candidates],
+        "renpy_static_ui_unresolved":ui_unresolved,
+        "renpy_static_ui_inventory_scope":"Single-line literal slots use native global mapping at Text display time when substitution is proven enabled; block/dynamic/disabled substitution remains review.",
     }
     recovered_archives=[record for record in unit_archive_sources if record]
     if recovered_archives:
