@@ -1,5 +1,9 @@
 # Current state pointer — 2026-10-21
 
+## Active Release 0.1.9 — preparation, not published
+
+Owner requested Release after verified Git delivery. Sole DEV writer, Brain read-only; no child or research resume. Source version now0.1.9; current public stable remains0.1.8. Mandatory next-patch release gates and both predecessor0.1.8/legacy0.1.7 update routes are required. No payload created: default1GiB artifact cap cannot hold even one514.5MB baseline alongside current709.6MB; Owner approved independent0.1.9 temporary3GiB scope/new clean epoch; terminal<=1GiB. Shared6GiB remains. Plan/evidence pointer: docs/RELEASE_0.1.9.md.
+
 ## Accepted changes delivered to GitHub main
 
 - Accepted source/test/docs were committed as `d2b90ada97ce9137ef375ba28093c5952d36c19f` and pushed normally to GitHub `main`; both Git remote and GitHub API readback matched that exact commit. It includes the prior29 local translation-work commits. This small documentation follow-up records delivery; no Release/tag/assets or model promotion. Working base for the recorded runtime evidence remains `c9825d466ada179b39bca7968f6f50c43e95b412`. See `docs/TRANSLATION_DELIVERY_20261021.md` for scope and evidence qualifications.

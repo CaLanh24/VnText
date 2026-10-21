@@ -262,6 +262,12 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner coordination decision (2026-10-21):** DEV records progress, candidate and terminal reports only in its own session. Brain actively reads that session and sends only necessary reviewed decisions/remediation; DEV does not message Brain back. This supersedes earlier report-back requests; no separate commit is needed solely for this rule.
+
+
+**Owner approval (2026-10-21, Release0.1.9):** “Cho phép 3 GiB cho Release 0.1.9”. Temporary3GiB total non-exempt checkout artifacts only for exact registered `RELEASE_RUN/candidate-0.1.9`, independent clean0.1.9 prospective epoch and `VNTEXT_RELEASE_TASK_ID=release-0.1.9`. Terminal scope cleanup returns to<=1GiB; shared `.dev-env` stays<=6GiB. Inventory/project each phase; preserve historical/user data. Descendant clean-source prerequisite fixes within this campaign retain same-version lineage/CAS/tamper/eight-hop guards. No rebaseline, validator relaxation, research resume or model promotion.
+
+
 **Owner decision (2026-10-19, low-memory alternative):** Host has no spare RAM; keep VM4GiB. Owner authorizes identifying/closing unused applications and researching/executing a bounded alternate trial. No blind service termination or security disabling. Same pinned model/runtime, existing pagefile only, no downloads/system changes. Replace the earlier conservative file-size-plus512MiB guard for this test with measured mmap trial safeguards in the translation plan; do not infer quality or deployability from startup.
 
 **Owner decision (2026-10-19, model-trial RAM):** Owner authorizes increasing RAM of the development VM sufficiently for the already approved single-model test and continuing the experiment. Inspect host available memory before choosing allocation; preserve work before any required shutdown. This supersedes the earlier no-VM-RAM-change boundary for this operation only. No host credentials/access are implied, and no security/firewall/service changes, unrelated VM changes, new model or product replacement are authorized.

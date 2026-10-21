@@ -75,7 +75,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
@@ -247,7 +247,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
