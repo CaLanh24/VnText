@@ -69,3 +69,25 @@ Repeat extraction exposed and fixed target/helper scripts incorrectly overriding
 Evidence under the same external directory: `renpy-native-global-display-proof.json` native writer/display oracle PASS after a retained test-setup failure requiring explicit button styles outside a screen stack; `renpy-native-display-product.json`9PASS; `renpy-display-affected.json`110PASS; `renpy-display-repeat-red.json` retains compiled re-extract EMPTY before engine fix; `renpy-display-repeat-final.json`51PASS; `renpy-remediation-final-regression.json`111PASS; `renpy-display-archive-runtime-final.json`14PASS; `renpy-display-source-preservation-final.json`7PASS; `renpy-display-boundary-final.json` boundary/worker/delivery PASS. All final receipts child0/cleanupPASS, zero failures/errors/skips/warnings. Compiled Say's initial typed-PyExpr failure remains in `renpy-compiled-say-final.json`; corrected `renpy-compiled-say-green.json`41PASS/0fail/error/skip/warning, cleanupPASS. These runs use base6ae500e plus recorded dirty file hashes. Final source commit, combined validation and refreshed DEV build/smoke pending.
 
 Remaining limitations are explicit, not silently claimed fixed: arbitrary dynamic/multiline display grammar, custom substitution/Screen trees, unknown compiled AST/version/schema, expression transitions/arguments and full external gameplay are unproven. Source-only RPA execution premise is invalid for the tested SDK fixture. No whole-game/whole-RenPy, linguistic quality or Release acceptance; no Unity/MT/model/CSV schema/shared-validator/protocol changes or publication.
+
+## Final technical handoff — 2026-10-22
+
+Outcome **PASS for the bounded remediation and declared gates**, reviewer acceptance pending; not RENPY_COMPLETE/whole-game/Release. Implementation tested on clean main **ba3606547115183e975e8d2ccec300effb61171a**, no dirty diff. This final documentation follows that tested source and does not upgrade its evidence to a different runtime SHA.
+
+- Final command `.dev-env/.venv/Scripts/python.exe -B -m unittest discover -s tests/unit -p 'test_renpy*.py' -v` through canonical wrapper:113PASS, failures/errors/skips/warnings0, child/wrapper0, cleanupPASS, UNKNOWN0. Includes actual SDK loose/compiled/RPA display and repeat-patch source preservation, compiled/loose Say speaker/transition, malformed/version/inert reducer controls, dynamic/disabled/composed review and conflict/CAS/owned rollback.
+- Additional current-source delivery/worker gate:13PASS, failures/errors/skips/warnings0, child/wrapper0, cleanupPASS. No duplicated full/Release campaign.
+- `release/dev_bootstrap.py --action smoke --python .dev-env/release-venv/Scripts/python.exe --model .dev-env/cache/models/opus-mt-en-vi-int8`: exit0; build0warnings/0errors; actual cancel/extract/translate/patch/crash worker smoke5stepsPASS, cleanup_error=null. Generated smoke's missing installer qualification remains explicit; this is DEV worker acceptance, not installer/gameplay/linguistic acceptance.
+- Sole runnable DEV executable `DEV_RUN/bootstrap-build/VNText.Studio.App.exe`, Debug/sourceba36065/dirtyfalse, apphostSHA256 **2d7d9f6ca40700e0643613ed1be38ab2dcb88a0980e53850b903b0c3e218ddfa**, assemblySHA256 **ee74321cc8d0fc34df934165e34eec532b7577eac42e3a8d1bc2b29fe224019c**. A stale compiler-generated apphost in `DEV_RUN/obj/.../bin/Release/...` was removed only after exact hash and compiler FileListAbsolute ownership verification; receipt `renpy-stale-apphost-disposal.json`, all other history/build files retained.
+- Separate final canonical dry-run inventoryPASS/cleanupPASS, complete=true, UNKNOWN/locked/errors0; TEST_RUN/RELEASE_RUN absent. Non-exempt742782377<=1073741824bytes; shared6288837655<=6442450944bytes. No new environment/model/download/child/push/Release.
+- Immutable audit directory has no diff; groundtruthSHA256 remains39e9a61a37d47f660ba8a3ebea244a423a99daae5353373821be2cd89a953491.
+
+Exact external receipts under `C:/Users/VNTextDev/Downloads/VM-Acceptance/`:
+
+| Receipt | SHA256 |
+| --- | --- |
+| renpy-ba36065-final.json | 11cc12fceb4bf5e21ebe72d0049bd8d96cd54af61d048995913a5ec4b75ad147 |
+| renpy-ba36065-delivery.json | 8463ae961d3a69cbe9332042c00fe18c0e5fa6e96bab5437ba803430fe60ce74 |
+| renpy-ba36065-dev-smoke.json | 6c0ff967087035073b8bae47f9f3326e919268f761106b8b5d6e01fadc39b932 |
+| renpy-terminal-final.json | 9cb724aa83b2a5eabe1acd46cf0a1e838067a7092964c226efe030e8c871eda6 |
+
+Residual boundary: dynamic/multiline/composed display, disabled/custom substitution, custom Screen trees and unknown compiled AST/version/schema remain explicitly unproven/PARTIAL; no unsafe evaluation or completion-validator relaxation. Literal `_()` and tooltip translate when displayed through default Text substitution; raw values stay unchanged. Source-only `.rpy` archive execution premise is invalid in the tested fixture, while valid compiled-backed standard RPA native writeback is independently proven. Full external-game interaction/layout/gameplay and human translation quality remain outside these synthetic technical gates. Brain reads this DEV report directly; no reverse message was sent.
