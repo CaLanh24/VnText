@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "outcome": "PASS_BOUNDED_REMEDIATION_AND_EVIDENCE_CAMPAIGN",
+  "date": "2026-10-21",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "exact_commit_build": false,
+  "committed": false,
+  "brain_acceptance": "All original four campaign requirements accepted; no unmet numbered gate identified. Bounded editor feature separately accepted.",
+  "requirements": {
+    "1": "ACCEPTED",
+    "2": "ACCEPTED",
+    "3": "ACCEPTED",
+    "4": "ACCEPTED"
+  },
+  "evidence_hashes": {
+    "evaluation/translation_quality_goal_v1/receipt.json": "b28f8e86caae5dd509acf82bfe28d2cb7a0ce4be624b43006a4879b7eadfac44",
+    "evaluation/translation_quality_goal_v1/SEMANTIC_DECISION.md": "d709e3c769249d0e2c6c81155415aae2b402956a44883ec4cc1b528d1f0f55b7",
+    "evaluation/translation_owner_approval_v1/entrypoint-delivery.json": "37ee0a5440f320e6eefe2751f5d7a0ea00143bf0a6873ff50573d9399bb183af",
+    "evaluation/translation_owner_approval_v1/entrypoint-ui-delivery.json": "2b05d9d55545214add1f8c3ec6b5af926cbb2235f1472d17d02ba156269d3a45",
+    "evaluation/translation_owner_approval_v1/scoped-delivery.json": "410d6c7a23c0f23aa9b572de82e2f20ecb815f24a6c81403fcdb8958ddbb75e6"
+  },
+  "current_source_build_receipt": "evaluation/translation_owner_approval_v1/entrypoint-ui-delivery.json",
+  "final_audit": "Current33source/test and16externalreceipt hashes match; exe/assembly match; harness/currentDEVbuildsmoke/ownedcleanup PASS; one DEV and absent TEST_RUN/RELEASE_RUN",
+  "historical_skips": "Three external Unity fixture tests skipped; outside authorized synthetic scope. Original raw reasons retained.",
+  "limits": [
+    "Not whole-app linguistic or human semantic acceptance",
+    "OPUS model unchanged; no new dependencies, paid services, user data mutation, child, push or Release",
+    "Training NOT_TRIGGERED/DEFERRED; original residual errors/rejected research retained",
+    "Final styled native Cancel tool-refused; earlier functional cancel/confirm accepted separately",
+    "Original screenshots are JPEG, not PNG",
+    "Author identity absent; task changes staged/uncommitted, no Git config invented"
+  ]
+}

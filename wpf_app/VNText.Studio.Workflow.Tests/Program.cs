@@ -16,7 +16,7 @@ using VNText.Studio.App.ViewModels;
 
 namespace VNText.Studio.Workflow.Tests;
 
-internal static class Program
+internal static partial class Program
 {
     private static int Main(string[] args)
     {
@@ -46,6 +46,7 @@ internal static class Program
             return code;
         }
         var failures = new List<string>();
+        Run("ReviewedMemory_ExplicitSelectionCancelAndState", ReviewedMemory_ExplicitSelectionCancelAndState, failures);
         Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, failures);
         if (args.Contains("--full-app-update-only", StringComparer.Ordinal))
         {

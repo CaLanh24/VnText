@@ -1,0 +1,396 @@
+{
+  "schema_version": 1,
+  "outcome": "IMPLEMENTED_PENDING_BRAIN_ACCEPTANCE",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "dirty_runtime": true,
+  "exact_commit_build": false,
+  "final_commit_does_not_relabel_run_provenance": true,
+  "model": {
+    "repository": "dekthedev/opus-mt-en-vi-ct2-int8",
+    "declared_revision": "c22547827b876e8ee939d6a9363965e5c9f769e1",
+    "tree_sha256": "964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4",
+    "unchanged": true
+  },
+  "dataset": {
+    "sha256": "7f75108ff031022f94b5a68965eebc6f0a99ff37d3fd1804ebec4c6d2fe9242d",
+    "rows": 100,
+    "previously_seen": true,
+    "human_gold": false,
+    "generalization_claim": false
+  },
+  "arms": [
+    {
+      "name": "unassisted",
+      "before_written": 98,
+      "before_blocked": 2,
+      "after_written": 98,
+      "after_blocked": 2,
+      "new_written_structural_failures": 0
+    },
+    {
+      "name": "supplied_glossary",
+      "before_written": 98,
+      "before_blocked": 2,
+      "after_written": 96,
+      "after_blocked": 4,
+      "new_written_structural_failures": 0
+    }
+  ],
+  "changed_rows": {
+    "unassisted": [
+      {
+        "id": "ADDR-016",
+        "before": "Professor Anh có thể xem qua trang cuối cùng khi anh rảnh không?",
+        "after": "Giáo sư, ông có thể xem qua trang cuối cùng khi có thời gian không?"
+      },
+      {
+        "id": "UI-001",
+        "before": "Open phiên chạy đã lưu",
+        "after": "Mở phiên chạy đã lưu"
+      }
+    ],
+    "supplied_glossary": [
+      {
+        "id": "ADDR-016",
+        "before": "Professor Anh có thể xem qua trang cuối cùng khi anh rảnh không?",
+        "after": "Giáo sư, ông có thể xem qua trang cuối cùng khi có thời gian không?"
+      },
+      {
+        "id": "UI-001",
+        "before": "Open phiên chạy đã lưu",
+        "after": "Mở phiên chạy đã lưu"
+      },
+      {
+        "id": "TERM-001",
+        "before": "Bảng liệt kê mọi tập tin nguồn và hệ thống kiểm tra.",
+        "after": ""
+      },
+      {
+        "id": "TERM-004",
+        "before": "Cần phải thông qua lại một lần nữa trước khi dùng lại bộ nhớ tạm.",
+        "after": ""
+      }
+    ]
+  },
+  "runtime_and_test_file_hashes": {
+    "tests/tools/translation_glossary_sentence_probe.py": "2a54dfdbb4198ed4d22d796ce5fa741d8070aa4aafa823048d48abd070d1b5d8",
+    "tests/tools/translation_goal_audit.py": "09bef2de4ea5b194cce96e2a15c213a45fbbe7f32153f03d8cea318d5494310c",
+    "tests/tools/translation_goal_longtext.py": "a6c4fb9c3779ff10aee1193759c808358ab3f050d27ac2febc9400430a7d1679",
+    "tests/tools/translation_goal_receipt.py": "0ca26344400e53ef800a63d6a0de438aa0a5e8d9a47004ecfc3a6c04acc6ec56",
+    "tests/tools/translation_goal_workflow.py": "4aae394ff541308614512448ba6a59aa0488450274c5d4ec39146716728dfe21",
+    "tests/unit/test_glossary_context_v2.py": "77f5ada2a409a3d0565a7d824bb105a6c592eb6fe6e4bfab4c9191dcb8ed5acb",
+    "tests/unit/test_mt_strategies.py": "8980c20f36f6cc9eb69c51e966ca9ef586ad8f4457db089fa27ff617c159bd94",
+    "tests/unit/test_translation_cache.py": "e03b2301241fc8c03940ebaa1e00fccf59699d6a054ff38d2a878296b808fd79",
+    "tests/unit/test_user_glossary.py": "cb02c8880e7f63d340f676bc760c1de541b11d5cb3e89d9456c3728dc53b41b2",
+    "vntext/glossary_v2.py": "07d2396bc642093f6f806f16b23d729dbea5b97ba7ddd515530d8f5e191db085",
+    "vntext/mt_check.py": "6a225bc1d21127d05f195769fd3b860c55977821f426e3e23a33111171bbde68",
+    "vntext/mt_ct2_pipeline.py": "b92c3424f755ee89c1bd83928f06db6dadde11a0928b9b91906e72bf0008d0ea",
+    "vntext/mt_strategies.py": "60770f5206eb0b550aaf53409d02192c2b9645b8c718e131b2737a81062f91c4",
+    "vntext/package_glossary.py": "ff6de9e8d39828213f7a551b1cbb9b398f6d8911a8e9272892aad2e193c0c30d"
+  },
+  "provenance_caveat": "Original final audit omitted mt_check from code_hashes; separate owner identity and later longtext capture retain its hash. Supplement is not an original audit field.",
+  "source_identity_supplement": {
+    "name": "headwords-owner-identity.json",
+    "sha256": "43e899c07ae703eb43263b9090a31a5f2793877e378c76b1d0193873be91ddc4",
+    "size_bytes": 477
+  },
+  "workflow": {
+    "status": "PASS",
+    "branches": {
+      "local": {
+        "fields": [
+          "key",
+          "source_text",
+          "translation",
+          "context",
+          "file_path",
+          "object_info",
+          "import_method",
+          "safety",
+          "backend",
+          "byte_limit",
+          "patch_note"
+        ],
+        "rows": [
+          {
+            "key": "b27390b26d3054ee",
+            "source_text": "Please keep <b>{mode}</b>\\n.",
+            "translation": "Xin hãy giữ lại <b>{mode}</b>\\n.",
+            "context": "line:1",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "9ac95e20a5bf7f21",
+            "source_text": "Open the red door.",
+            "translation": "Mở cửa đỏ ra.",
+            "context": "line:2",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "ae6ebc3b31363c2c",
+            "source_text": "Do not close the window.",
+            "translation": "Đừng đóng cửa sổ.",
+            "context": "line:3",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "406814703febb6e9",
+            "source_text": "Please wait here.",
+            "translation": "Xin hãy chờ ở đây.",
+            "context": "line:4",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "patched_lines": [
+          "Xin hãy giữ lại <b>{mode}</b>\\n.",
+          "Mở cửa đỏ ra.",
+          "Đừng đóng cửa sổ.",
+          "Xin hãy chờ ở đây."
+        ],
+        "readback_exact": true,
+        "input_unchanged": true
+      },
+      "import": {
+        "fields": [
+          "key",
+          "source_text",
+          "translation",
+          "context",
+          "file_path",
+          "object_info",
+          "import_method",
+          "safety",
+          "backend",
+          "byte_limit",
+          "patch_note"
+        ],
+        "rows": [
+          {
+            "key": "b27390b26d3054ee",
+            "source_text": "Please keep <b>{mode}</b>\\n.",
+            "translation": "Giữ <b>{mode}</b>\\n.",
+            "context": "line:1",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "9ac95e20a5bf7f21",
+            "source_text": "Open the red door.",
+            "translation": "Mở cánh cửa màu đỏ.",
+            "context": "line:2",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "ae6ebc3b31363c2c",
+            "source_text": "Do not close the window.",
+            "translation": "Đừng đóng cửa sổ.",
+            "context": "line:3",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          },
+          {
+            "key": "406814703febb6e9",
+            "source_text": "Please wait here.",
+            "translation": "Vui lòng chờ ở đây.",
+            "context": "line:4",
+            "file_path": "fixture.txt",
+            "object_info": "",
+            "import_method": "plain_text_line",
+            "safety": "safe",
+            "backend": "plain_text",
+            "byte_limit": "",
+            "patch_note": "Patch tự động"
+          }
+        ],
+        "patched_lines": [
+          "Giữ <b>{mode}</b>\\n.",
+          "Mở cánh cửa màu đỏ.",
+          "Đừng đóng cửa sổ.",
+          "Vui lòng chờ ở đây."
+        ],
+        "readback_exact": true,
+        "input_unchanged": true
+      },
+      "invalid": {
+        "target_csv_unchanged": true,
+        "missing_placeholder_not_imported": true,
+        "patch_rejected": true
+      }
+    },
+    "worker_exit_code": 1,
+    "input_unchanged": true,
+    "worker_lifecycle": "Existing _stop_worker explicitly terminates idle child after task completion; native exit1 retained, helper/wrapper exit0 is separate.",
+    "donor": "agent-authored controlled fixture; not human gold or approved product memory"
+  },
+  "affected_tests": {
+    "status": "PASS",
+    "terminal_line": "OK (skipped=3)",
+    "tests": 242,
+    "failures": 0,
+    "errors": 0,
+    "skips": 3,
+    "warnings": 0,
+    "skip_reasons": [],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 7344,
+    "input_truncated": false
+  },
+  "skip_details": {
+    "status": "PASS",
+    "terminal_line": "OK (skipped=3)",
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skips": 3,
+    "warnings": 0,
+    "skip_reasons": [
+      {
+        "test": "test_full_workflow_game_copy (tests.unit.test_worker_qa_m3.WorkerQaM3Tests.test_full_workflow_game_copy)",
+        "reason": "external Unity fixture is not configured; set VNTEXT_GAME_COPY_ASSET for opt-in E2E"
+      },
+      {
+        "test": "test_patch_without_translations_fails (tests.unit.test_worker_qa_m3.WorkerQaM3Tests.test_patch_without_translations_fails)",
+        "reason": "external Unity fixture is not configured; set VNTEXT_GAME_COPY_ASSET for opt-in E2E"
+      },
+      {
+        "test": "test_workflow_second_run (tests.unit.test_worker_qa_m3.WorkerQaM3Tests.test_workflow_second_run)",
+        "reason": "external Unity fixture is not configured; set VNTEXT_GAME_COPY_ASSET for opt-in E2E"
+      }
+    ],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 8422,
+    "input_truncated": false
+  },
+  "build": {
+    "configuration": "Debug",
+    "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+    "source_diff_sha256": "cf147923554f1274df6bb35f7de0cc42e1d32c0aec114a8226822b2c88e6fe75",
+    "executable": "DEV_RUN/bootstrap-build/VNText.Studio.App.exe",
+    "sha256": "6fe96ea326bae10f40e84ec08bf56b59bf24d11055df263e1153fd6f86826c3d",
+    "assembly_sha256": "d62e1089186cb51bf1cc9069a31604ab223d0524769b85c79a5b2edce9eddebc"
+  },
+  "worker_smoke": {
+    "ok": true,
+    "exit_code": 0,
+    "steps": [
+      "cancel",
+      "extract",
+      "translate",
+      "patch",
+      "crash"
+    ],
+    "installer_acceptance": false,
+    "caveat": "Payload read-back succeeds; patch installer absent."
+  },
+  "semantic_disposition": "docs/TRANSLATION_QUALITY_PLAN.md: Current measured semantic disposition and remaining acceptance",
+  "training": "NOT_TRIGGERED/DEFERRED",
+  "silver_imported": false,
+  "remaining": [
+    "Brain whole-goal acceptance including explicit residual semantic limits",
+    "human semantic acceptance is not established by agent audit"
+  ],
+  "raw_references": [
+    {
+      "name": "baseline.json",
+      "sha256": "fb37d2c18343e7ecede5368a4776a3556ac1554c7e3381577ed4c9e68203aabd",
+      "size_bytes": 160287
+    },
+    {
+      "name": "final.json",
+      "sha256": "559f11f092fff9162d1257a7307c66aa1d64d29b5ad0a97c2ed9dbc8f6b497b9",
+      "size_bytes": 176304
+    },
+    {
+      "name": "final-headwords.json",
+      "sha256": "9d427d8536962595feca32c88a37a4f7d0af13697a10f736b0813af1fd934ba1",
+      "size_bytes": 177107
+    },
+    {
+      "name": "workflow.json",
+      "sha256": "a131e0dc7b22e5609877e6bbcaf1ffd4216f6f9078449cfc3a20f0554f4f3a19",
+      "size_bytes": 12084
+    },
+    {
+      "name": "workflow-headwords.json",
+      "sha256": "47ba149c164bb4cf2c61fc717214db8534f169352766ddb989aca198c8adc215",
+      "size_bytes": 12078
+    },
+    {
+      "name": "longtext-before.json",
+      "sha256": "23ff1925a5fac1e9e821e2ec4de752c3eb59e0b94f95b9900a7dc3ac0ebcfba4",
+      "size_bytes": 15186
+    },
+    {
+      "name": "sentence-probe.json",
+      "sha256": "7095c4718f683918ac9fbff4a025ab3b82bdcd2b4f7f21c4b113ea47be69ad95",
+      "size_bytes": 9473
+    },
+    {
+      "name": "sentence-probe-numeric.json",
+      "sha256": "086da57397150af0548d7f793ffb375606bf58d336f00ade637ab5ae2cf0a903",
+      "size_bytes": 9353
+    },
+    {
+      "name": "translation-goal-final-affected.json",
+      "sha256": "eda72bfe5d9e8fb6f7dac07f6b0aef8782fd3332a3f6e5fb1eb6375c04ef81db",
+      "size_bytes": 163229
+    },
+    {
+      "name": "translation-goal-qa-skip-details.json",
+      "sha256": "dce30828b262877174c0d14bba184e294f5f15c2b2ae651e4831dbbe868b5c68",
+      "size_bytes": 61286
+    },
+    {
+      "name": "translation-goal-dev-final-wrapper.json",
+      "sha256": "f153fd65a4382d3e19da48082132c434ffff8a80c63fae99a4cf654ec9165fbb",
+      "size_bytes": 42128
+    },
+    {
+      "name": "translation-goal-workflow-headwords-module-wrapper.json",
+      "sha256": "1cbbf85cae411c550e7c72256fcb64a380816c8612d9caf3ff8560cacde159af",
+      "size_bytes": 77552
+    }
+  ]
+}

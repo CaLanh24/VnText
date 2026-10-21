@@ -1,0 +1,784 @@
+{
+  "schema_version": 1,
+  "status": "PENDING_OWNER_REVIEW",
+  "approved": false,
+  "product_imported": false,
+  "use": "Owner review only; synthetic seen development examples, not production defaults, training or fresh benchmark",
+  "dataset_canonical_sha256": "fcc33b73cca12c42355ff04b237ed8f4741e5ec9d8e89483f711730487bdcc54",
+  "source_rights": {
+    "author": "agent-generated synthetic",
+    "rights": "generated-for-project",
+    "semantic_review_status": "draft/unreviewed",
+    "source_note": "Independently authored synthetic sentences; no game, user, CSV, web, or copyrighted benchmark material."
+  },
+  "observation_provenance": {
+    "raw_name": "final-headwords.json",
+    "raw_sha256": "9d427d8536962595feca32c88a37a4f7d0af13697a10f736b0813af1fd934ba1",
+    "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+    "code_hashes": {
+      "vntext/package_glossary.py": "ff6de9e8d39828213f7a551b1cbb9b398f6d8911a8e9272892aad2e193c0c30d",
+      "vntext/glossary_v2.py": "07d2396bc642093f6f806f16b23d729dbea5b97ba7ddd515530d8f5e191db085",
+      "vntext/mt_ct2_pipeline.py": "b92c3424f755ee89c1bd83928f06db6dadde11a0928b9b91906e72bf0008d0ea",
+      "vntext/mt_ct2_io.py": "03b2c4ce1b5e4268b51c0587109ae784188caa174e24ed3c3184a28fa2e094d0",
+      "vntext/mt_strategies.py": "60770f5206eb0b550aaf53409d02192c2b9645b8c718e131b2737a81062f91c4",
+      "vntext/mt_memory.py": "8ca2d92e214f8db1aa1566b1564ccbfdc4a3358587dc8a5eaf27a88193929cb1",
+      "tests/tools/translation_goal_audit.py": "09bef2de4ea5b194cce96e2a15c213a45fbbe7f32153f03d8cea318d5494310c"
+    },
+    "qualification": "Historic intermediate OPUS run, no current-source inference claim"
+  },
+  "translations": [
+    {
+      "id": "IDI-001",
+      "source": "Mara nearly spilled the beans about the surprise.",
+      "observed_opus": "Mara Suýt nữa thì làm đổ đậu ra vì bất ngờ.",
+      "proposed_translation": "Mara suýt để lộ bí mật về điều bất ngờ ấy.",
+      "review_note": "spill the beans = để lộ bí mật; nearly chỉ suýt, chưa xác nhận đã lộ.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-01",
+        "group_id": "idioms-scene-01",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-001",
+          "source": "Mara nearly spilled the beans about the surprise."
+        },
+        {
+          "id": "IDI-002",
+          "source": "The secret came out of the bag when the curtain fell."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/16",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-01",
+        "scenario_id": "idioms-scene-01",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-004",
+      "source": "At the next village, we can call it a day.",
+      "observed_opus": "Ở làng kế bên, chúng ta có thể gọi đó là một ngày.",
+      "proposed_translation": "Đến ngôi làng tiếp theo, chúng ta có thể nghỉ thôi.",
+      "review_note": "call it a day = dừng công việc/chặng đi hôm nay; không phải đặt tên một ngày. Không thêm kế hoạch ngày mai.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-02",
+        "group_id": "idioms-scene-02",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-003",
+          "source": "We should hit the road before the bridge closes."
+        },
+        {
+          "id": "IDI-004",
+          "source": "At the next village, we can call it a day."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/19",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-02",
+        "scenario_id": "idioms-scene-02",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-005",
+      "source": "For Lin, the first puzzle was a piece of cake.",
+      "observed_opus": "Cho Lin Câu đố đầu tiên là một miếng bánh.",
+      "proposed_translation": "Với Lin, câu đố đầu tiên dễ như ăn kẹo.",
+      "review_note": "piece of cake = rất dễ; giữ tên Lin, không tự gán giới tính.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-03",
+        "group_id": "idioms-scene-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-005",
+          "source": "For Lin, the first puzzle was a piece of cake."
+        },
+        {
+          "id": "IDI-006",
+          "source": "The next riddle made her bite the bullet and ask for a hint."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/20",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-03",
+        "scenario_id": "idioms-scene-03",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-006",
+      "source": "The next riddle made her bite the bullet and ask for a hint.",
+      "observed_opus": "Câu đố tiếp theo khiến cô ta cắn viên đạn và hỏi ý kiến.",
+      "proposed_translation": "Câu đố tiếp theo khiến cô ấy phải cắn răng xin gợi ý.",
+      "review_note": "bite the bullet = chấp nhận làm việc khó/ngại; her cho phép cô ấy. Xin duyệt sắc thái cắn răng.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-03",
+        "group_id": "idioms-scene-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-005",
+          "source": "For Lin, the first puzzle was a piece of cake."
+        },
+        {
+          "id": "IDI-006",
+          "source": "The next riddle made her bite the bullet and ask for a hint."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/21",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-03",
+        "scenario_id": "idioms-scene-03",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-007",
+      "source": "I feel under the weather after standing in the cold rain.",
+      "observed_opus": "Tôi cảm thấy dưới thời tiết sau khi đứng trong cơn mưa giá lạnh.",
+      "proposed_translation": "Tôi thấy trong người không khỏe sau khi đứng dưới mưa lạnh.",
+      "review_note": "under the weather = không khỏe; không tự chẩn đoán bệnh cụ thể.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-04",
+        "group_id": "idioms-scene-04",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-007",
+          "source": "I feel under the weather after standing in the cold rain."
+        },
+        {
+          "id": "IDI-008",
+          "source": "I am not out of the woods until the fever is gone."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/22",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-04",
+        "scenario_id": "idioms-scene-04",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-010",
+      "source": "Even so, its repair cost an arm and a leg.",
+      "observed_opus": "Dù vậy, việc sửa chữa của nó cũng tốn cả một cánh tay và một chân.",
+      "proposed_translation": "Dù vậy, việc sửa nó vẫn tốn một khoản tiền rất lớn.",
+      "review_note": "an arm and a leg = rất tốn tiền; its giữ liên hệ vật ở câu cùng cảnh, không tự đổi vật.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-05",
+        "group_id": "idioms-scene-05",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-009",
+          "source": "The old radio works only once in a blue moon."
+        },
+        {
+          "id": "IDI-010",
+          "source": "Even so, its repair cost an arm and a leg."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/25",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-05",
+        "scenario_id": "idioms-scene-05",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-012",
+      "source": "I will take that promise with a grain of salt until the repair is done.",
+      "observed_opus": "Tôi sẽ thực hiện lời hứa đó với một hạt muối cho đến khi sửa chữa xong.",
+      "proposed_translation": "Tôi sẽ còn hoài nghi lời hứa đó cho đến khi việc sửa chữa hoàn tất.",
+      "review_note": "grain of salt = chưa hoàn toàn tin; giữ mốc until, không khẳng định lời hứa chắc chắn sai.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-06",
+        "group_id": "idioms-scene-06",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-011",
+          "source": "We need to be on the same page before signing the lease."
+        },
+        {
+          "id": "IDI-012",
+          "source": "I will take that promise with a grain of salt until the repair is done."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/27",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-06",
+        "scenario_id": "idioms-scene-06",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-015",
+      "source": "Please do not let the cat out of the bag before her birthday.",
+      "observed_opus": "Xin đừng để con mèo ra khỏi túi trước sinh nhật nó.",
+      "proposed_translation": "Xin đừng để lộ bí mật trước sinh nhật của cô ấy.",
+      "review_note": "let the cat out of the bag = để lộ bí mật; giữ phủ định và before.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-15",
+        "group_id": "idioms-standalone-15",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-015",
+          "source": "Please do not let the cat out of the bag before her birthday."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/30",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-15",
+        "scenario_id": "idioms-standalone-15",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-016",
+      "source": "The patient was out of the woods after the fever broke.",
+      "observed_opus": "Bệnh nhân đã ra khỏi rừng sau khi cơn sốt tan.",
+      "proposed_translation": "Bệnh nhân đã qua cơn nguy hiểm sau khi hạ sốt.",
+      "review_note": "out of the woods trong ngữ cảnh sốt = hết nguy hiểm; không khẳng định đã khỏi bệnh hoàn toàn.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-16",
+        "group_id": "idioms-standalone-16",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-016",
+          "source": "The patient was out of the woods after the fever broke."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/31",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-16",
+        "scenario_id": "idioms-standalone-16",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-017",
+      "source": "The gutters overflow because it is raining cats and dogs outside.",
+      "observed_opus": "Những máng nước tràn ngập bởi vì nó là những con mèo và những con chó ở bên ngoài.",
+      "proposed_translation": "Máng xối bị tràn vì ngoài trời đang mưa như trút nước.",
+      "review_note": "raining cats and dogs = mưa rất to; giữ quan hệ vì và địa điểm ngoài trời.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-17",
+        "group_id": "idioms-standalone-17",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "IDI-017",
+          "source": "The gutters overflow because it is raining cats and dogs outside."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/32",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-17",
+        "scenario_id": "idioms-standalone-17",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-008",
+      "source": "I will send the corrected page as soon as I return.",
+      "observed_opus": "Tôi sẽ gửi ngay khi tôi trở về.",
+      "proposed_translation": "Ngay khi trở lại, tôi sẽ gửi trang đã chỉnh sửa.",
+      "review_note": "Nhân viên nói với quản lý: giữ đối tượng trang đã sửa và as soon as; tôi không gán giới tính quản lý.",
+      "address_context": "A direct report speaks professionally to a manager.",
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-04",
+        "group_id": "address-scene-04",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "direct_report",
+        "addressee_id": "manager",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "ADDR-007",
+          "source": "Could I review the schedule with you after lunch?"
+        },
+        {
+          "id": "ADDR-008",
+          "source": "I will send the corrected page as soon as I return."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/40",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-04",
+        "scenario_id": "address-scene-04",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-014",
+      "source": "You can tell me the truth; I will not be angry with you.",
+      "observed_opus": "Ngươi có thể nói thật, ta sẽ không giận ngươi đâu.",
+      "proposed_translation": "Em có thể nói thật với chị; chị sẽ không giận em đâu.",
+      "review_note": "Metadata gốc: chị gái nói dịu dàng với em trai. Chị/em có căn cứ; giữ cho phép và sẽ không giận.",
+      "address_context": "An older sister speaks gently to her younger brother.",
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-07",
+        "group_id": "address-scene-07",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "older_sister",
+        "addressee_id": "younger_brother",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "ADDR-014",
+          "source": "You can tell me the truth; I will not be angry with you."
+        },
+        {
+          "id": "ADDR-015",
+          "source": "We have known each other too long for that excuse."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/46",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-07",
+        "scenario_id": "address-scene-07",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-015",
+      "source": "We have known each other too long for that excuse.",
+      "observed_opus": "Chúng ta đã biết nhau quá lâu rồi.",
+      "proposed_translation": "Chị em mình đã biết nhau lâu đến thế rồi, cái cớ đó không thuyết phục đâu.",
+      "review_note": "Cùng chị gái/em trai ở câu trước; diễn đạt ý bác cái cớ. Không thêm mệnh lệnh hoặc biến thành chỉ nói quen lâu.",
+      "address_context": "An older sister speaks gently to her younger brother.",
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-07",
+        "group_id": "address-scene-07",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "older_sister",
+        "addressee_id": "younger_brother",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "ADDR-014",
+          "source": "You can tell me the truth; I will not be angry with you."
+        },
+        {
+          "id": "ADDR-015",
+          "source": "We have known each other too long for that excuse."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/47",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-07",
+        "scenario_id": "address-scene-07",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-016",
+      "source": "Professor, would you look over the last page when you have a moment?",
+      "observed_opus": "Giáo sư, ông có thể xem qua trang cuối cùng khi có thời gian không?",
+      "proposed_translation": "Thưa giáo sư, khi nào có thời gian, xin xem giúp trang cuối.",
+      "review_note": "Học viên cao học nói kính trọng với giáo sư lớn tuổi. Giới tính UNKNOWN: tránh ông/bà/thầy/cô; không tự chọn giới tính.",
+      "address_context": "A graduate student speaks respectfully to an older professor.",
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-08",
+        "group_id": "address-scene-08",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "graduate_student",
+        "addressee_id": "professor",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "ADDR-016",
+          "source": "Professor, would you look over the last page when you have a moment?"
+        },
+        {
+          "id": "ADDR-017",
+          "source": "I can revise it this evening if you think it needs more work."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/48",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-08",
+        "scenario_id": "address-scene-08",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-001",
+      "source": "The patch manifest lists every source file and its checksum.",
+      "observed_opus": "Bảng liệt kê mọi tập tin nguồn và hệ thống kiểm tra.",
+      "proposed_translation": "Bản kê khai của bản vá liệt kê mọi tệp nguồn cùng mã kiểm tra của từng tệp.",
+      "review_note": "Giữ patch, manifest, mọi source file và checksum ứng với từng tệp. Mã kiểm tra là thuật ngữ đề xuất, chưa duyệt.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-01",
+        "group_id": "terms-note-01",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "same_scenario_sources": [
+        {
+          "id": "TERM-001",
+          "source": "The patch manifest lists every source file and its checksum."
+        },
+        {
+          "id": "TERM-002",
+          "source": "A locator identifies the exact text field that can be written back."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/67",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-01",
+        "scenario_id": "terms-note-01",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-004",
+      "source": "A cache hit must pass validation again before it can be reused.",
+      "observed_opus": "Cần phải thông qua lại một lần nữa trước khi dùng lại bộ nhớ tạm.",
+      "proposed_translation": "Kết quả tìm thấy trong bộ nhớ đệm phải được kiểm tra tính hợp lệ một lần nữa trước khi dùng lại.",
+      "review_note": "Nguồn dùng cache hit/it cho kết quả cache; đề xuất làm rõ kết quả, không biến validation thành đăng nhập/xác thực danh tính. Cần duyệt cách diễn đạt.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-02",
+        "group_id": "terms-note-02",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "TERM-003",
+          "source": "The package keeps review-only entries outside the patchable set."
+        },
+        {
+          "id": "TERM-004",
+          "source": "A cache hit must pass validation again before it can be reused."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/70",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-02",
+        "scenario_id": "terms-note-02",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-014",
+      "source": "The export stores its manifest beside the translation table in one package.",
+      "observed_opus": "Xuất khẩu lưu trữ bản kê khai bên cạnh bảng dịch trong một gói.",
+      "proposed_translation": "Khi xuất, bản kê khai được lưu cạnh bảng dịch trong cùng một gói.",
+      "review_note": "export là thao tác xuất dữ liệu, không phải thương mại; giữ beside và one package. Cần duyệt cách chuyển câu sang bị động.",
+      "address_context": "UNKNOWN / not supplied",
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-07",
+        "group_id": "terms-note-07",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "same_scenario_sources": [
+        {
+          "id": "TERM-013",
+          "source": "A stable key keeps the same source row identifiable after CSV reordering."
+        },
+        {
+          "id": "TERM-014",
+          "source": "The export stores its manifest beside the translation table in one package."
+        }
+      ],
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/80",
+        "rights_pointer": "/provenance"
+      },
+      "intended_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-07",
+        "scenario_id": "terms-note-07",
+        "source_exact": true
+      },
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false,
+      "human_gold": false,
+      "training_eligible": false
+    }
+  ],
+  "glossary": [
+    {
+      "id": "G01",
+      "source": "checksum",
+      "proposed_target": "mã kiểm tra",
+      "occurrence_ids": [
+        "TERM-001"
+      ],
+      "domain_note": "Giá trị kiểm tra đi kèm tệp; không tự gán thuật toán/hash mật mã.",
+      "exclusions": "Không áp cho dấu tick, kiểm tra thủ công hoặc mã đăng nhập.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    },
+    {
+      "id": "G02",
+      "source": "manifest",
+      "proposed_target": "bản kê khai",
+      "occurrence_ids": [
+        "TERM-001",
+        "TERM-014"
+      ],
+      "domain_note": "Danh mục tệp/metadata trong gói hoặc bản vá.",
+      "exclusions": "Không áp cho manifest động từ: biểu lộ, hay ngữ cảnh vận đơn chưa được duyệt.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    },
+    {
+      "id": "G03",
+      "source": "patch",
+      "proposed_target": "bản vá",
+      "occurrence_ids": [
+        "TERM-001"
+      ],
+      "domain_note": "Gói thay đổi phần mềm.",
+      "exclusions": "Không áp cho miếng vá quần áo/vùng đất/động từ chữa lành.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    },
+    {
+      "id": "G04",
+      "source": "cache",
+      "proposed_target": "bộ nhớ đệm",
+      "occurrence_ids": [
+        "TERM-004"
+      ],
+      "domain_note": "Dữ liệu đã lưu để dùng lại trong phần mềm.",
+      "exclusions": "Không áp cho chỗ giấu đồ trong game; không đồng nhất với translation memory.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    },
+    {
+      "id": "G05",
+      "source": "cache hit",
+      "proposed_target": "tìm thấy trong bộ nhớ đệm",
+      "occurrence_ids": [
+        "TERM-004"
+      ],
+      "domain_note": "Sự kiện tìm thấy dữ liệu; toàn câu dùng kết quả tìm thấy để xử lý it.",
+      "exclusions": "Không thay mọi hit thành tìm thấy; không dùng cụm này thay toàn câu.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    },
+    {
+      "id": "G06",
+      "source": "export",
+      "proposed_target": "xuất",
+      "occurrence_ids": [
+        "TERM-014"
+      ],
+      "domain_note": "Thao tác tạo gói dữ liệu xuất.",
+      "exclusions": "Không áp cho xuất khẩu thương mại. Cấu trúc danh từ/động từ phải duyệt cả câu.",
+      "approval_status": "PENDING_OWNER_REVIEW",
+      "approved": false
+    }
+  ],
+  "memory_boundary_warning": "Existing memory key is normalized source/import_method/context_family; same-method unique wording may fall back across context families inside package. Intended file/scenario approval is not a guaranteed hard isolation boundary. No memory file generated or imported.",
+  "address_policy": "Use supplied address_context only; UNKNOWN gender remains unknown. Source/context provenance accompanies each proposal."
+}

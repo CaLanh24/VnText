@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "status": "BOUNDARY_FIX_READY_FOR_BRAIN_REVIEW_NOT_WHOLE_QUALITY",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "exact_commit_build": false,
+  "source_hashes": {
+    "vntext/mt_ct2_model.py": "5252b3c5adc273deb693986a535f0a3ef44214cd86047910c39b6a7c76722e28",
+    "vntext/mt_model_adapter.py": "8b40e72fc02421f8d5d309848ac46bbc5b441c0a2a910c182771bdae86bc692e",
+    "tests/unit/test_mt_ct2_long_input.py": "6de2a00e3c3897151615b28b8fa0ceb8548c06f1f9ea9f81e7d746c1b8cb69bc",
+    "tests/unit/test_translation_cache.py": "206e4ec3672a5e0b3dd64fd3d035ae0f2a99defcae6cc5194dadb144d422c4d6",
+    "tests/tools/translation_semantic_beam_probe.py": "37ab503f6d232002c0c9eacd01f35ce556c842b9f749b44158e20200ace92a93",
+    "tests/tools/translation_semantic_boundary_probe.py": "f7793a88aeaa35920ffc3ab4ad05e5bca60c74df1e43ba80044383eae2ccbc87",
+    "tests/tools/translation_semantic_boundary_workflow.py": "81d9d31772c8dff95b3713bad5106b590b71448eecd34cd1c5e7162c62ff26b1"
+  },
+  "receipts": {
+    "semantic-beam-development.json": "c21e6c1d5db60d706b75fc73720c23c8934b5012fbe58df5b7d333f0a6596eff",
+    "semantic-beam-development-wrapper.json": "8c9ad0881f474144e91988013b4cfca2d6db8124ad7d94d68d55729de1fd4d75",
+    "semantic-boundary-before.json": "b8b52e089b64a9471372c1f097d733c3a544ab4f2f36176f26c097065aebbaaa",
+    "semantic-boundary-before-wrapper.json": "0175d5f232d8c4a73f07336c233218ad36c56012399c3b2f9957c51ef53f21f5",
+    "semantic-boundary-red.json": "ce1612a2077d578371045a408f04cea0751945b57aa64202d5014c76f4553640",
+    "semantic-boundary-green.json": "f56e6c4e63a8c2ae462e7e578d3e2c9303a436d9cda26dbee821c768a9e2a801",
+    "semantic-boundary-worker-configured.json": "79c83c0771efbc5c60aa797b5c5a1f0f585df3c6dc31939e8b75b9c1ba0551af",
+    "semantic-boundary-after.json": "26a5b4681a8d7914bc2ccbadce00d03361605e367e7240ff38c73eae023af27b",
+    "semantic-boundary-after-wrapper.json": "b9da5f400be7995104842ebb0f4e8d746b4b1dc54bacba5231785899aa1ab688",
+    "semantic-boundary-focused-final.json": "304ddf0392b0daf80fafc74bff0f004e7bc4a0ea645ca83d13cf9d4bdead14ce",
+    "semantic-boundary-join-final.json": "16edf47d18ab87ed617b39498d634681a63eb506938e21da69d0951deb30e63f",
+    "semantic-boundary-workflow.json": "f462f37db068942c5ca4b5d45af2e319b26d1174b1f13890b106eb455557db50",
+    "semantic-boundary-workflow-wrapper.json": "29443f997fbd4d8479d861f870c57873b8ff9418088506afbc8cd3e031a693f5",
+    "semantic-boundary-dev.json": "a0eca63506b7fec3f19a2d1a35bf0448992f09b00d3f212d25a23eef72bb8d88",
+    "semantic-boundary-loss-localization.json": "5ad9edf3d9872b1060cf7ad558c7310b169bb01859bfeaef34724b800f9a30e6"
+  },
+  "build": {
+    "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+    "configuration": "Debug",
+    "source_diff_sha256": "cb15b96325ecc61153badcd9353e09a84140a371ec442191a3febbfdc3b5c36d",
+    "dirty": true,
+    "git_status": "M  .gitattributes\nM  AI_STATE.md\nM  CONTRACTS.md\nM  TEST_MATRIX.md\nA  docs/TRANSLATION_APPROVED_MEMORY_ENTRYPOINT.md\nA  docs/TRANSLATION_APPROVED_MEMORY_SCOPE.md\nM  docs/TRANSLATION_QUALITY_PLAN.md\nAM docs/TRANSLATION_SEMANTIC_CAMPAIGN_20261021.md\nA  evaluation/translation_owner_approval_v1/README.md\nA  evaluation/translation_owner_approval_v1/decision.json\nA  evaluation/translation_owner_approval_v1/entrypoint-delivery.json\nA  evaluation/translation_owner_approval_v1/entrypoint-ui-delivery.json\nA  evaluation/translation_owner_approval_v1/scoped-delivery.json\nA  evaluation/translation_owner_review_v1/REVIEW.md\nA  evaluation/translation_owner_review_v1/handoff.json\nA  evaluation/translation_owner_review_v1/manifest.json\nA  evaluation/translation_owner_review_v1/owner-decisions.csv\nA  evaluation/translation_owner_review_v1/proposals.json\nA  evaluation/translation_quality_goal_v1/README.md\nA  evaluation/translation_quality_goal_v1/SEMANTIC_DECISION.md\nA  evaluation/translation_quality_goal_v1/brain-g2-followup.json\nA  evaluation/translation_quality_goal_v1/cleanup.json\nA  evaluation/translation_quality_goal_v1/completion.json\nA  evaluation/translation_quality_goal_v1/receipt.json\nA  tests/tools/translation_editor_memory_workflow.py\nA  tests/tools/translation_glossary_sentence_probe.py\nA  tests/tools/translation_goal_audit.py\nA  tests/tools/translation_goal_longtext.py\nA  tests/tools/translation_goal_receipt.py\nA  tests/tools/translation_goal_sentence_segmentation.py\nA  tests/tools/translation_goal_workflow.py\nA  tests/tools/translation_owner_approval.py\nA  tests/tools/translation_owner_review_packet.py\nA  tests/tools/translation_strict_memory_probe.py\nM  tests/unit/test_glossary_context_v2.py\n M tests/unit/test_mt_ct2_long_input.py\nM  tests/unit/test_mt_strategies.py\nA  tests/unit/test_reviewed_memory_editor.py\nA  tests/unit/test_strict_approval_memory.py\nMM tests/unit/test_translation_cache.py\nA  tests/unit/test_translation_owner_approval.py\nA  tests/unit/test_translation_owner_review_packet.py\nM  tests/unit/test_user_glossary.py\nM  vntext/csv_editor_api.py\nM  vntext/glossary_v2.py\nM  vntext/mt_check.py\n M vntext/mt_ct2_model.py\nM  vntext/mt_ct2_pipeline.py\nM  vntext/mt_memory.py\n M vntext/mt_model_adapter.py\nM  vntext/mt_strategies.py\nM  vntext/package_glossary.py\nM  vntext/translation_cache.py\nM  wpf_app/VNText.Studio.App/MainWindow.xaml\nM  wpf_app/VNText.Studio.App/Services/TranslationCsvEditorService.cs\nM  wpf_app/VNText.Studio.App/Services/UiText.cs\nM  wpf_app/VNText.Studio.App/ViewModels/MainViewModel.CsvEditor.cs\nA  wpf_app/VNText.Studio.App/ViewModels/MainViewModel.ReviewedMemory.cs\nM  wpf_app/VNText.Studio.Workflow.Tests/Program.cs\nA  wpf_app/VNText.Studio.Workflow.Tests/ReviewedMemoryTests.cs\n?? evaluation/translation_semantic_campaign_v1/boundary-frozen.json\n?? evaluation/translation_semantic_campaign_v1/development-review.json\n?? evaluation/translation_semantic_campaign_v1/frozen.json\n?? tests/tools/translation_semantic_beam_probe.py\n?? tests/tools/translation_semantic_boundary_probe.py\n?? tests/tools/translation_semantic_boundary_workflow.py\n",
+    "runtime_root": "C:\\Program Files\\dotnet",
+    "executable": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\DEV_RUN\\bootstrap-build\\VNText.Studio.App.exe",
+    "sha256": "6fe96ea326bae10f40e84ec08bf56b59bf24d11055df263e1153fd6f86826c3d",
+    "assembly_sha256": "1ee94e05f467ec723639242314a9670c31f6a55b7979ad468525953bfa064821",
+    "worker_python": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\release-venv\\Scripts\\python.exe",
+    "model": "C:\\Users\\VNTextDev\\source\\VnText-v0.1.5\\.dev-env\\cache\\models\\opus-mt-en-vi-int8"
+  },
+  "boundary": "One space restored, unchanged model output tokens/parameters/split boundaries; source whitespace preserved both seams; no invented hard-cut separator",
+  "semantic": "Major long-row omission in backend23tokenoutput/480tokeninput remains; idiom/actor/register/term errors remain, beam4 rejected; fresh controls not consumed",
+  "historical_failures": [
+    "red2failedsubcases",
+    "initial affectedworker setup missing explicit existing model path;48 tests passed;correctconfiguredworker16PASS",
+    "tokenizer-only localization first assertion omitted existinglanguageprefix;corrected,noinference"
+  ],
+  "warnings": [
+    "Actual model/tokenizer probes retain recommended optional sacremoses warning and noPyTorch informational; no installation"
+  ],
+  "gates": {
+    "semantic-boundary-focused-final": {
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 3010,
+        "input_truncated": false
+      },
+      "cleanup": "PASS"
+    },
+    "semantic-boundary-join-final": {
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 1327,
+        "input_truncated": false
+      },
+      "cleanup": "PASS"
+    },
+    "semantic-boundary-worker-configured": {
+      "status": "PASS",
+      "summary": {
+        "status": "PASS",
+        "terminal_line": "OK",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skips": 0,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 3242,
+        "input_truncated": false
+      },
+      "cleanup": "PASS"
+    },
+    "semantic-boundary-workflow-wrapper": {
+      "status": "PASS",
+      "summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 23,
+        "input_truncated": false
+      },
+      "cleanup": "PASS"
+    },
+    "semantic-boundary-dev": {
+      "status": "PASS",
+      "summary": {
+        "status": "NOT_UNITTEST",
+        "tests": null,
+        "failures": null,
+        "errors": null,
+        "skips": null,
+        "warnings": 0,
+        "skip_reasons": [],
+        "warning_records": [],
+        "failure_records": [],
+        "input_bytes": 444176,
+        "input_truncated": true
+      },
+      "cleanup": "PASS"
+    }
+  }
+}

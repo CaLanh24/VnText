@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import csv
 import os
 import re
@@ -80,6 +81,134 @@ def load_document(csv_path: str | Path) -> dict[str, Any]:
         "review_keys": review_keys,
         "row_count": len(rows),
     }
+
+
+def _reviewed_memory_snapshot(csv_path: Path) -> dict:
+    """Bind preview to disk authority, approval state and validation inputs."""
+    package=csv_path.parent
+    names=('manifest.json','.mt/translation_memory.json','.mt/translation_memory_scope.json',
+           '.mt/translation_memory_decisions.json','.mt/glossary.json','.mt/v2/glossary.json',
+           '.mt/whitelist.json')
+    paths={'csv':csv_path,**{name:package/name for name in names}}
+    result={}
+    for name,path in paths.items():
+        for ancestor in (path,*path.parents):
+            if ancestor==package.parent:
+                break
+            if ancestor.exists() and getattr(ancestor.lstat(),'st_file_attributes',0)&0x400:
+                raise ValueError('Không dùng dữ liệu gói qua reparse point')
+        if path.is_symlink():
+            raise ValueError('Không dùng file liên kết để duyệt bản dịch')
+        if path.exists() and not path.is_file():
+            raise ValueError('Dữ liệu gói không hợp lệ')
+        if path.is_file() and path.stat().st_size>32*1024*1024:
+            raise ValueError('Dữ liệu duyệt vượt giới hạn an toàn')
+        result[name]=hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+    return result
+
+
+def preview_reviewed_memory(csv_path: str | Path, keys: list[str]) -> dict[str, Any]:
+    """Read-only preview; selection identifies saved rows, never target text."""
+    from vntext.mt_memory import load_translation_memory,_strict_requested,_package_binding
+    from vntext.glossary_v2 import candidate_term_issues,load_compatible_entries
+    from vntext.mt_translation_safety import validate_candidate
+    try:
+        raw=Path(csv_path)
+        if raw.is_symlink() or raw.parent.is_symlink() or (raw.parent/'.mt').is_symlink():
+            raise ValueError('Không dùng đường dẫn liên kết để duyệt bản dịch')
+        csv_path=raw.resolve();package=csv_path.parent
+        if csv_path.name!='translation.csv' or not (package/'manifest.json').is_file():
+            raise ValueError('Hãy mở translation.csv trong gói đã extract')
+        if (not isinstance(keys,list) or not keys or len(keys)>1000
+                or any(not isinstance(key,str) or not key for key in keys) or len(set(keys))!=len(keys)):
+            raise ValueError('Chọn từ 1 đến 1000 dòng khác nhau để duyệt')
+        before=_reviewed_memory_snapshot(csv_path)
+        _fields,rows=_read_editor_csv(csv_path)
+        by_key={row['key']:row for row in rows}
+        if any(key not in by_key for key in keys):
+            raise ValueError('Dòng đã chọn không còn trong CSV đã lưu')
+        memory=load_translation_memory(package)
+        strict=_strict_requested(package)
+        if strict and memory.get('scope_error'):
+            raise ValueError('Bộ nhớ đã duyệt bị thiếu hoặc không hợp lệ; không tự sửa')
+        if not strict and before['.mt/translation_memory.json'] is not None:
+            legacy=json.loads((package/'.mt/translation_memory.json').read_text(encoding='utf-8'))
+            if (not isinstance(legacy,dict) or legacy.get('version')!='1.0.0'
+                    or not isinstance(legacy.get('entries'),list)
+                    or any(not isinstance(e,dict) or any(not isinstance(e.get(k),str) for k in
+                           ('source','translation','context_family','import_method')) for e in legacy['entries'])):
+                raise ValueError('Bộ nhớ cũ không hợp lệ; không tự chuyển đổi')
+        glossary=load_compatible_entries(package);whitelist=load_whitelist(package)
+        scope_fields=('source_text','file_path','context','import_method')
+        scope_counts={}
+        for row in rows:
+            identity=tuple(row.get(k,'') for k in scope_fields)
+            scope_counts[identity]=scope_counts.get(identity,0)+1
+        selected=[];seen=set()
+        for key in keys:
+            row=by_key[key]
+            if any(not str(row.get(k) or '').strip() for k in
+                   ('source_text','translation','file_path','context','import_method')):
+                raise ValueError('Dòng duyệt phải có nguồn, bản dịch, file và ngữ cảnh đầy đủ')
+            scope=tuple(row[k] for k in ('source_text','file_path','context','import_method'))
+            if scope in seen:
+                raise ValueError('Có nhiều dòng cùng phạm vi; cần xử lý trước khi duyệt')
+            seen.add(scope)
+            # Reject ambiguity outside the selection too; keys alone are not a scope.
+            if scope_counts[scope]!=1:
+                raise ValueError('Phạm vi của dòng không duy nhất trong gói')
+            reasons=list(validate_candidate(row,row['translation'],whitelist))
+            reasons+=candidate_term_issues(row['source_text'],row,row['translation'],glossary)
+            if reasons:
+                raise ValueError('Bản dịch chưa qua kiểm tra: '+'; '.join(map(str,reasons)))
+            for entry in memory.get('entries',[]) if strict else []:
+                if all(row[field]==entry[exact] for field,exact in
+                       (('source_text','source_text_exact'),('file_path','file_path_exact'),
+                        ('context','context_exact'),('import_method','import_method'))):
+                    if row['translation']!=entry['translation']:
+                        raise ValueError('Phạm vi đã có bản dịch được duyệt khác; không tự thay thế')
+            selected.append({name:row[name] for name in
+                             ('key','source_text','translation','file_path','context','import_method')})
+        if _reviewed_memory_snapshot(csv_path)!=before:
+            raise ValueError('CSV hoặc dữ liệu gói vừa đổi; hãy xem trước lại')
+        token_data=dict(version=1,package_binding=_package_binding(package),keys=keys,rows=selected,snapshot=before)
+        token=hashlib.sha256(json.dumps(token_data,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode('utf-8')).hexdigest()
+        return dict(ok=True,rows=selected,count=len(selected),preview_token=token,
+                    _snapshot=before,
+                    converts_legacy=not strict and before['.mt/translation_memory.json'] is not None,
+                    scope_summary='Chỉ gói hiện tại và đúng nguồn, file, ngữ cảnh, cách nhập; không dùng cho gói khác.')
+    except (OSError,ValueError,TypeError,KeyError) as error:
+        return dict(ok=False,error=str(error))
+
+
+def confirm_reviewed_memory(csv_path: str | Path, keys: list[str], preview_token: str) -> dict[str, Any]:
+    """Explicit UI confirmation; obtain ownership then recompute disk preview."""
+    import uuid
+    from vntext.mt_memory import activate_reviewed_memory
+    lock=None;owned=None
+    try:
+        # Validate without writes before creating the ownership marker.
+        preview=preview_reviewed_memory(csv_path,keys)
+        if not preview.get('ok') or preview.get('preview_token')!=preview_token:
+            return dict(ok=False,error=preview.get('error') or 'Dữ liệu đã đổi; hãy xem trước lại')
+        path=Path(csv_path).resolve();meta=path.parent/'.mt'
+        meta.mkdir(exist_ok=True)
+        lock=meta/'translation_memory_approval.lock';owned=uuid.uuid4().hex.encode('ascii')
+        try:
+            with lock.open('xb') as handle:handle.write(owned)
+        except FileExistsError:
+            owned=None
+            return dict(ok=False,error='Một lượt duyệt khác đang giữ gói; hãy thử lại sau')
+        preview=preview_reviewed_memory(path,keys)
+        if not preview.get('ok') or preview.get('preview_token')!=preview_token:
+            return dict(ok=False,error=preview.get('error') or 'Dữ liệu đã đổi; hãy xem trước lại')
+        snapshot=preview['_snapshot']
+        return activate_reviewed_memory(path.parent,preview['rows'],snapshot,lambda:_reviewed_memory_snapshot(path))
+    except (OSError,ValueError,TypeError,KeyError) as error:
+        return dict(ok=False,error=str(error))
+    finally:
+        if lock is not None and owned is not None and not lock.is_symlink() and lock.is_file() and lock.read_bytes()==owned:
+            lock.unlink()
 
 
 def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> dict[str, Any]:
@@ -626,6 +755,12 @@ def main() -> int:
     p_rt = sub.add_parser("retranslate")
     add_payload_arg(p_rt)
 
+    for command in ('preview-reviewed-memory','confirm-reviewed-memory'):
+        p_memory=sub.add_parser(command)
+        p_memory.add_argument('csv_path',type=Path)
+        p_memory.add_argument('--keys',type=Path,required=True)
+        if command=='confirm-reviewed-memory':p_memory.add_argument('--preview-token',required=True)
+
     def add_replace_arg(p):
         p.add_argument("csv_path", type=Path)
         p.add_argument("--payload", type=Path)
@@ -645,7 +780,12 @@ def main() -> int:
 
     args = parser.parse_args()
     try:
-        if args.cmd == "load":
+        if args.cmd in {'preview-reviewed-memory','confirm-reviewed-memory'}:
+            keys=json.loads(args.keys.read_text(encoding='utf-8'))
+            result=(preview_reviewed_memory(args.csv_path,keys) if args.cmd=='preview-reviewed-memory'
+                    else confirm_reviewed_memory(args.csv_path,keys,args.preview_token))
+            result.pop('_snapshot',None)
+        elif args.cmd == "load":
             result = load_document(args.csv_path)
         elif args.cmd == "save":
             if not args.payload or not args.payload.is_file():

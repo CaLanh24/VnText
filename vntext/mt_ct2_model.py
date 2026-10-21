@@ -35,6 +35,21 @@ class TranslateCancelled(MtCt2Error):
     pass
 
 
+def _join_translated_budget_parts(sources: list[str], translations: list[str]) -> str:
+    """Restore source separators lost by decoding already-required budget chunks."""
+    if len(sources) != len(translations):
+        raise MtCt2Error("Translation chunk count does not match source chunks")
+    pieces: list[str] = []
+    for source, translated in zip(sources, translations):
+        if not source.strip():
+            pieces.append(source)
+            continue
+        lead = source[:len(source) - len(source.lstrip())]
+        trail = source[len(source.rstrip()):]
+        pieces.append(lead + translated.strip() + trail)
+    return "".join(pieces)
+
+
 def _default_inter_threads() -> int:
     raw = os.environ.get("VNTEXT_CT2_INTER_THREADS", "").strip()
     if raw:
@@ -371,7 +386,7 @@ class Ct2Translator:
                     and "".join(parts) == active_texts[i]
                     and all(self._token_len(p) <= self._max_src_tokens for p in parts)
                 ):
-                    translated_active[i] = "".join(self._translate_token_batch(parts))
+                    translated_active[i] = _join_translated_budget_parts(parts, self._translate_token_batch(parts))
                 else:
                     translated_active[i] = active_texts[i]
             if safe_tokens:
@@ -397,30 +412,30 @@ class Ct2Translator:
         cleaned = [t if (t or "").strip() else "" for t in texts]
         # Flatten long inputs into sub-segments, translate, then reassemble.
         flat: list[str] = []
-        spans: list[tuple[int, int]] = []  # (start, count) in flat for each cleaned item
+        spans: list[tuple[int, int, list[str]]] = []  # Retain exact pre-encoding boundaries.
         for text in cleaned:
             if not text.strip():
-                spans.append((-1, 0))
+                spans.append((-1, 0, []))
                 continue
             parts = _split_text_under_token_limit(
                 text, self._input_token_len, max_tokens=self._max_src_tokens
             )
             start = len(flat)
             flat.extend(self._model_input(part) for part in parts)
-            spans.append((start, len(parts)))
+            spans.append((start, len(parts), parts))
 
         if not flat:
             return list(cleaned)
 
         translated_flat = self._translate_token_batch(flat)
         out: list[str] = []
-        for text, (start, count) in zip(cleaned, spans):
+        for text, (start, count, source_parts) in zip(cleaned, spans):
             if count <= 0:
                 out.append(text)
             elif count == 1:
                 out.append(translated_flat[start])
             else:
-                out.append("".join(translated_flat[start : start + count]))
+                out.append(_join_translated_budget_parts(source_parts, translated_flat[start : start + count]))
         return out
 
 

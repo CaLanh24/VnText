@@ -45,6 +45,43 @@ from vntext.patch_gate import has_garbage_repetition, translation_passes_patch_g
 
 
 class MtStrategiesTests(unittest.TestCase):
+    def test_initial_english_command_and_title_are_not_forced_into_name_spans(self):
+        for source in ['Open the saved session','Professor, please read the page.',
+                       'Close the window.','Doctor, please wait here.']:
+            with self.subTest(source=source):
+                _prepared,parts=split_parts(source,protect_lexical=False)
+                self.assertEqual(parts,[('text',source)])
+        for source in ['Mira waited by the gate.','SampleName opens the door.']:
+            _prepared,parts=split_parts(source,protect_lexical=False)
+            self.assertEqual(parts[0],('tech',source.split()[0]))
+        self.assertEqual(split_parts('Open',protect_lexical=False)[1],[('tech','Open')])
+        self.assertEqual(split_parts('Open University welcomes Mira.',protect_lexical=False)[1][0],('tech','Open'))
+
+    def test_batch_sends_complete_initial_command_to_model(self):
+        from vntext.mt_ct2_io import _batch_translate_chunk
+        class Spy:
+            def __init__(self):self.calls=[]
+            def translate_many(self,texts):
+                self.calls.extend(texts);return ['Mở phiên chạy đã lưu.' for _ in texts]
+        spy=Spy();source='Open the saved session'
+        result=_batch_translate_chunk(spy,[{'key':'ui','source_text':source}])
+        self.assertEqual(spy.calls,[source])
+        self.assertEqual(result['ui'],'Mở phiên chạy đã lưu.')
+
+    def test_retry_cannot_silently_drop_explicit_glossary_target(self):
+        translator=MagicMock()
+        translator.translate.return_value='Dùng dữ liệu.'
+        translator.translate_many.side_effect=lambda values:['Dùng dữ liệu.' for _ in values]
+        trace=[]
+        candidate,_name,reasons=retry_row_strategies(
+            {'key':'term','source_text':'Use cache.','import_method':'plain_text_line'},
+            translator,set(),batch_raw='Dùng dữ liệu.',full_raw='Dùng dữ liệu.',
+            fast=True,user_glossary={'cache':'bộ nhớ đệm'},trace=trace)
+        self.assertIsNone(candidate)
+        self.assertTrue(any('required glossary target missing' in reason for reason in reasons))
+        self.assertTrue(trace)
+        self.assertFalse(any(item['passed'] for item in trace))
+
     def test_cond_expr_captures_multi_digit(self):
         src = "when Submissive>=90 & Corruption<50 & DEPRESSION>=1 Marriage"
         self.assertEqual(

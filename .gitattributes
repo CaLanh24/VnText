@@ -8,3 +8,11 @@ wpf_app/VNText.Studio.App/Assets/Icons/Lucide/provenance.json text eol=lf
 evaluation/translation_silver_packet_v1/** -text whitespace=cr-at-eol
 evaluation/translation_quality_phase19/dataset.v1.json text eol=crlf
 tests/tools/translation_silver_packet.py text eol=lf
+# Pending Owner review packet hashes bind bytes; no automatic product import.
+evaluation/translation_owner_review_v1/** -text whitespace=cr-at-eol
+evaluation/translation_owner_approval_v1/** -text whitespace=cr-at-eol
+
+# Preserve the new frozen protocols and immutable run/acceptance receipts.
+evaluation/translation_quality_goal_v1/** -text whitespace=cr-at-eol
+evaluation/translation_semantic_campaign_v1/** -text whitespace=cr-at-eol
+evaluation/translation_delivery_v1/** -text whitespace=cr-at-eol

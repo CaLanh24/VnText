@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "PASS",
+  "dry_run": true,
+  "inventory_complete": true,
+  "unknown_count": 0,
+  "locked_count": 0,
+  "error_count": 0,
+  "non_exempt_bytes": 723481855,
+  "non_exempt_limit_bytes": 1073741824,
+  "shared_environment_bytes": 5778817474,
+  "shared_environment_limit_bytes": 6442450944,
+  "test_run_absent": true,
+  "release_run_absent": true,
+  "dev_executable_count": 1,
+  "raw_receipt": "translation-goal-final-cleanup.json",
+  "raw_sha256": "6232CF37B9BD835411D1D386391F026A45EC40646A31A440E6F85E6D30ED5CE5",
+  "qualification": "Read-only terminal inventory; not whole-product test outcome. Small subsequent docs/receipt changes do not imply model rerun."
+}

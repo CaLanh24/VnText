@@ -188,6 +188,13 @@ DEFAULT_WHITELIST = {
 # loanwords that the game may retain in Vietnamese output.
 DEFAULT_SOURCE_LITERALS = frozenset({'bar', 'cocktail', 'karaoke', 'sushi'})
 
+# English lexical classes, not translated answers or game-specific names.
+# A command before a determiner, or a vocative title before punctuation, is
+# prose even when sentence capitalization resembles a character name.
+_INITIAL_COMMANDS = frozenset('open close select choose press click enter apply continue resume retry return confirm copy paste cut delete restore import export start stop remove keep save load read write'.split())
+_INITIAL_TITLES = frozenset('professor doctor teacher captain officer commander chief nurse manager president sir madam lord lady'.split())
+_DETERMINERS = frozenset('the a an your my this that these those'.split())
+
 
 def source_proper_name_tokens(src, whitelist=None):
     """Return conservative source name-like tokens safe to retain in MT output.
@@ -205,6 +212,13 @@ def source_proper_name_tokens(src, whitelist=None):
     matches = list(re.finditer(r"[A-Za-z]+", body))
     for index, match in enumerate(matches):
         token = match.group(0)
+        if index == 0 and len(matches) > 1:
+            next_match = matches[1]
+            following = next_match.group(0)
+            separator = body[match.end():next_match.start()]
+            if ((token.casefold() in _INITIAL_COMMANDS and following in _DETERMINERS)
+                    or (token.casefold() in _INITIAL_TITLES and re.match(r'\s*[,!:]', separator))):
+                continue
         if (
             len(token) >= 2
             and is_plain_ascii_word(token)

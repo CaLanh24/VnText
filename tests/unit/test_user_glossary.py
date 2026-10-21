@@ -41,6 +41,23 @@ class FakeTranslator:
 
 
 class UserGlossaryTests(unittest.TestCase):
+    def test_flat_terms_cannot_rewrite_placeholder_or_control_spelling(self):
+        source=r'Keep {mode} ${mode} [br]\n.'
+        masked,restore=mask_user_glossary_terms(source,{'mode':'chế độ','br':'ngắt','n':'nờ'})
+        self.assertEqual(masked,source)
+        self.assertEqual(restore,{})
+
+    def test_exact_flat_glossary_rejects_missing_or_changed_structure(self):
+        source=r'Keep {mode} [br]\n.'
+        for target in ['Giữ nguyên.',r'Giữ {other} [br]\n.',r'Giữ {mode} [br].']:
+            with self.subTest(target=target):
+                self.assertIsNone(lookup_user_phrase(source,{source:target}))
+        self.assertEqual(lookup_user_phrase(source,{source:r'Giữ {mode} [br]\n.'}),r'Giữ {mode} [br]\n.')
+
+    def test_flat_term_target_cannot_inject_structural_tokens(self):
+        source='Keep mode.'
+        self.assertEqual(mask_user_glossary_terms(source,{'mode':'{EXTRA}'}),(source,{}))
+
     def test_existing_rows_refresh_only_when_overwrite_is_explicit(self):
         rows = [
             {"key": "old", "source_text": "Use pheromones", "translation": "Dùng nội tiết"},

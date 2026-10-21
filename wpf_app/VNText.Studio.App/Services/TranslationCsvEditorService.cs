@@ -15,6 +15,8 @@ public sealed record CsvEditorDocument(
     string? Error = null);
 
 public sealed record CsvEditorSaveResult(bool Ok, string? Error = null, int RowCount = 0);
+public sealed record ReviewedMemoryResult(bool Ok, string? Error, int Count, string PreviewToken,
+    bool ConvertsLegacy, string ScopeSummary, IReadOnlyList<Dictionary<string,string>> Rows);
 
 public sealed record CsvEditorValidateResult(
     bool Ok,
@@ -69,6 +71,30 @@ public sealed record CsvEditorReplaceResult(
 
 public static class TranslationCsvEditorService
 {
+    public static ReviewedMemoryResult ReviewMemory(string csvPath, IReadOnlyList<string> keys, string? token = null)
+    {
+        string? keysPath = null;
+        try
+        {
+            var directory = WorkerPaths.WorkArtifactsRoot();
+            Directory.CreateDirectory(directory);
+            keysPath = Path.Combine(directory, $"csv_review_keys_{Guid.NewGuid():N}.json");
+            File.WriteAllText(keysPath, JsonSerializer.Serialize(keys), new UTF8Encoding(false));
+            var json = RunPython(token is null ? "preview-reviewed-memory" : "confirm-reviewed-memory",
+                csvPath, null, keysPath, extraArgs: token is null ? null : new[] { "--preview-token", token });
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            string Text(string name) => root.TryGetProperty(name, out var value) ? value.GetString() ?? "" : "";
+            var rows = root.TryGetProperty("rows", out var data)
+                ? JsonSerializer.Deserialize<List<Dictionary<string,string>>>(data.GetRawText()) ?? [] : [];
+            return new ReviewedMemoryResult(root.TryGetProperty("ok", out var ok) && ok.GetBoolean(), Text("error"),
+                root.TryGetProperty("count", out var count) ? count.GetInt32() : 0, Text("preview_token"),
+                root.TryGetProperty("converts_legacy", out var converts) && converts.GetBoolean(), Text("scope_summary"), rows);
+        }
+        catch (Exception error) { return new(false, error.Message, 0, "", false, "", []); }
+        finally { if (keysPath is not null) { try { File.Delete(keysPath); } catch (IOException) { } } }
+    }
+
     public static CsvEditorDocument Load(string? csvPath)
     {
         var path = (csvPath ?? "").Trim().Trim('"');

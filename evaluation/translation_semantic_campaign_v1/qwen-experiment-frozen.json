@@ -1,0 +1,49 @@
+{
+  "status": "FROZEN_BEFORE_ANY_QWEN_OUTPUT",
+  "model_repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+  "model_revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+  "model_file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+  "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+  "runtime": "llama-b11724 commit99db719bd",
+  "runtime_binary_sha256": "cac0fb622fd8e2529df009f459b7fa797c5d12fd0509d5801d987e2d05846a3f",
+  "source_hashes": {
+    "evaluation\\translation_semantic_campaign_v1\\relation-frozen.json": "c7400c9e669536b72b5bee267c86427a6891e7b4b448ded493047e4b5fbb5195",
+    "evaluation\\translation_semantic_campaign_v1\\frozen.json": "30c7ce38547747ede14443d3429f51abeeb1b2b9e846a6c10d9af5c258426c59"
+  },
+  "prompt_template": "Translate the English source into Vietnamese. Preserve every action, actor, recipient, negation, condition and technical meaning. Copy proper names, placeholders and tags exactly. Do not add explanations or facts. Return only the translation.\n\nEnglish source:\n{source}\n\nVietnamese translation:\n",
+  "template_policy": "Use existing model-embedded chat template via supported --jinja/--conversation; verify tokenization/template metadata and output transport before semantic inference. No alternate prompt search.",
+  "args": [
+    "--ctx-size",
+    "512",
+    "--predict",
+    "128",
+    "--threads",
+    "2",
+    "--gpu-layers",
+    "0",
+    "--batch-size",
+    "64",
+    "--temp",
+    "0",
+    "--seed",
+    "17",
+    "--jinja",
+    "--conversation",
+    "--no-display-prompt",
+    "--no-escape"
+  ],
+  "budgets": {
+    "transport_generated_control_outputs": 1,
+    "development_outputs": 4,
+    "fresh_outputs_if_admitted": 12,
+    "per_call_seconds": 120,
+    "process_peak_bytes": 1610612736,
+    "min_free_physical_bytes": 268435456,
+    "min_available_commit_bytes": 1073741824
+  },
+  "transport_control": "Translate only: The door is open.",
+  "transport_acceptance": "No crash/template error; output is actual complete stdout with stderr separate, no source echo truncation/escape rewriting; do not judge semantic candidate from transport alone.",
+  "semantic_acceptance": "Development: at least2complete repairs/no newmajor/no exactname or structural failure vs retained OPUSproduct; fresh only after admitted development. No prompt/parameter variants after output.",
+  "rubric": "docs/TRANSLATION_SEMANTIC_ACCEPTANCE.md",
+  "scope": "TEST ONLY; no product route changes or acceptance implied"
+}

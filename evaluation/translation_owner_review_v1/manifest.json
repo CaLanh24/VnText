@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "status": "PENDING_OWNER_REVIEW",
+  "files": {
+    "owner-decisions.csv": "ce0c31db53ab228c717819a61528692b7e8a38e10d275c19df5da7e79ec13192",
+    "proposals.json": "f7ef0f5f8d556c8a48fba2f24fa3a1eca2dbdf8cc46335e091164975fcffae4c",
+    "REVIEW.md": "07553a217a07071ac04671a75cc6696d26e68ff0d424c24eea390137f989671f"
+  },
+  "builder_normalized_sha256": "0d4f81e06cba5662776744241a7b4ba9381c9205b820f94720262937ec9b7cc3"
+}

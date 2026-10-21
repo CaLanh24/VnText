@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 
-_GLOSSARY_PROTECTED = re.compile(r"<[^>]*>|\\{[^{}]*\\}|\\\\n|\\[br\\]", re.IGNORECASE)
+_GLOSSARY_PROTECTED = re.compile(r"<[^>]*>|\$?\{[^{}]*\}|\\n|\[br\]", re.IGNORECASE)
 
 
 def _normalise(value: object) -> str:
@@ -77,7 +77,8 @@ def mask_user_glossary_terms(
     table = glossary or {}
     if not src or not table:
         return src, {}
-    terms = [(key, value) for key, value in table.items() if key and value and not _structure_tokens(key)]
+    terms = [(key, value) for key, value in table.items()
+             if key and value and not _structure_tokens(key) and not _structure_tokens(str(value))]
     terms.sort(key=lambda item: len(item[0]), reverse=True)
     if not terms:
         return src, {}

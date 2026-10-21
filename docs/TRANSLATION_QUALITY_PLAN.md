@@ -1,5 +1,307 @@
 # Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
 
+## Active goal quality campaign — Owner continued2026-10-20
+
+Owner explicitly authorized goal execution beyond earlier terminal micro-fixes.
+Goal active across commits/turns; DEV sole source writer, Brain read-only
+acceptance reviewer; no child. Baseclean c9825d466ada179b39bca7968f6f50c43e95b412.
+Historical researchclosed/terminal pointers do not stop this campaign. Budget0đ,
+same existing CT2/OPUS, no downloads/training/cloud/accounts/host changes/user-data/
+protocol/architecture/model/push/Release or silver->approved memory promotion.
+
+### Proposed measurable goal acceptance (Brain review required before complete)
+
+1. Inventory every demonstrated open code defect in the known Phase2/19/22
+   transport/glossary/memory/protected/retry evidence; close reproducible in-scope
+   defects with red/green regression and actual product-path evidence. Distinguish
+   model semantic limits/conditional prerequisites rather than silently relabel
+   them repaired. Do not declare goal complete from one micro-fix/tests/docs alone.
+2. Freeze a bounded before/after product-route audit on the existing100source
+   synthetic corpus (all now seen, not a new heldout/benchmark or prompt campaign),
+   same OPUS/modelbytes, package isolation, unchanged CSV source/key/order/schema,
+   zero new written structural failures. Review changed outputs and observed
+   semantic regressions separately; never alter answers/validators to improve
+   a score. Do not infer whole-language/game or human acceptance from this audit.
+3. Actual synthetic workflow proof: extract -> local translation and separately
+   explicit CSV import -> patch gate/read-back, preserving source/locator/keys/
+   placeholders/tags/newlines. Invalid imported structures must stay rejected;
+   no user/game mutation or claimed full-game support. Preserve original raw
+   failures, cache/ledger/status and unsupported cases.
+4. Final affected gates plus one current DEV executable/build/worker smoke and
+   complete cleanup/quota, source/build/runtime/model identities. Final four-step
+   matrix must state which product behavior delivered, residual model meaning/
+   register/idiom limitations and training NOT_TRIGGERED/DEFERRED. Brain must
+   accept the whole bounded goal before create_goal is marked complete.
+
+### Final bounded goal evidence matrix — 2026-10-21, Brain accepted
+
+This matrix evaluates the four campaign requirements above, not general language
+quality. Historical receipts keep the actual source hashes they ran; current UI
+evidence does not relabel the older model audit as an exact-current-commit run.
+
+| Requirement | Delivered evidence | Limits / remaining acceptance |
+| --- | --- | --- |
+| 1. Demonstrated defects and backlog | G1 protected flat-glossary spans/structural admission, G2 requested-term retry/cache admission and G5 initial prose headwords have recorded bounded fixes. Strict reviewed memory adds exact package/source/file/context/method, no CSV autoapproval, CAS/rollback/provenance and cache/rebuild boundaries. `evaluation/translation_quality_goal_v1/receipt.json`, `evaluation/translation_owner_approval_v1/scoped-delivery.json` and `entrypoint-delivery.json` retain evidence. | Idiom, actor, register, gender and term-sense errors remain model limits. Rejected carrier/segmentation experiments stay rejected; no new dictionary campaign or automatic semantic acceptance. |
+| 2. Frozen 100-source audit | Same seen corpus/model: unassisted 98 written/2 blocked before and after; supplied glossary 98/2 to 96/4, zero new written structural failures. Two changed unassisted texts and two additional glossary refusals are recorded separately in the goal receipt. | All inputs seen, not heldout or human gold. Professor address gender remains unresolved. Missing original mt_check provenance field is explicitly qualified by the separate supplement, not rewritten. |
+| 3. Real synthetic product workflow | Goal receipt records local translation and explicit import branches through patch/read-back, source/CSV invariants and hostile import rejection. Later editor workflow records selected approval and exact four-row reuse through patch/read-back; native two-row fixture verifies preview, cancel/no writes and confirm selected-only reuse. | Original failures retained. Generated fixtures only, not user/game acceptance; reviewed exact reuse does not improve all new sentences. |
+| 4. Current delivery, cleanup and disposition | `entrypoint-ui-delivery.json` binds current source/test hashes, affected localized WPF harness, current DEV build/worker smoke and native evidence. Existing app resources repair the new preview dialog. Registered native fixtures/processes disposed, terminal purge PASS. Brain accepted the feature and four-requirement campaign. | Dirty-base build, not exact-commit Release. New styled preview has refused Cancel input/no writes, separate from prior accepted functional cancel/confirm. Absent Git author identity remains separate. |
+
+Four-step disposition: existing CT2/OPUS route retained; demonstrated code
+defects repaired within scope; actual product and native evidence retained;
+training NOT_TRIGGERED/DEFERRED for lack of independent human gold, an accepted
+training criterion and explicit training permission. No new model, dependency,
+paid service, user-data approval, push or Release. Whole-language quality and
+human linguistic acceptance are not claimed. Brain explicitly accepted all four
+bounded objective requirements on 2026-10-21 and identified no remaining numbered
+gate. Inspection of the stored goal confirms this bounded campaign is its scope.
+Known disclosed OPUS semantic limits do not become an indefinite technical
+blocker. Closure does not authorize training, new campaigns, push or Release.
+
+### Initial backlog and first implementation owner
+
+| Item | Evidence/premise | Scope and disposition |
+| --- | --- | --- |
+| G1 flat glossary protected spans | package_glossary._GLOSSARY_PROTECTED double-escaped braces/control regex; may mask identifiers or accept exact target missing tokens. Read-only repro next. | package_glossary + targeted tests, preserve existing structural validator semantics; no generic lexical/translation replacement. |
+| G2 requested glossary lost in retry | Phase2 recorded ZZG carrier drift then unassisted retries losing requested terms; opaque workaround was rejected for semantic regressions. | Diagnose final admission of caller-supplied glossary, not resurrect rejected transport/lexical changes; actual baseline before mutation. |
+| G3 model semantic limits | Phase19/22 actor/polarity/idiom/term-sense failures, no independent human gold; Hy rejected. | Keep raw/limits; no sentence hardcoding/new model/prompt campaign. Does not block independent G1/G2/workflow work. |
+| G4 cross-flow proof | worker smoke exists but its patch installer caveat is not full import/read-back acceptance. | Dedicated synthetic extract/translate/import/patch positive+hostile proof, scoped disposable outputs. |
+
+Run budget before edits: read-only diagnosis -> focused red/green -> affected
+regression; one100row baseline audit (2 independent unassisted/supplied-glossary
+arms) frozen before G1/G2 product edits, one final same-input audit after fixes;
+max180s/stage/peakWS<1GiB, current model offline. Small actual seam checks only
+when needed for demonstrated prerequisite. Synthetic workflow<=1positive+1invalid
+import run with registered TEST_RUN scopes, no gamecopies. Final DEV build/smoke
+<=600s, repeat only if runtime source changes. Shared6GiB/artifact1GiB complete
+inventory; retain compact evidence DEV_RUN/translation-quality-goal; source-based
+gates may be refined from evidence, with reason persisted before dependent runs.
+
+G1 repro confirmed: flat mask rewrote `{mode}`/`${mode}`/`[br]`/literal newline;
+exact lookup admitted missing/changed tokens. Red11tests/5failed subcases;
+fixed escaped regex + reject structural-token term targets; green46affectedPASS,
+0skip/warning/cleanupPASS. Glossary cache strategy additionally flat-protection2.
+100source baseline frozen and completed before runtime edits:98written/2blocked
+per unassisted/supplied6term arms, no written structural failures, model unchanged.
+
+G2 bounded mechanism probe before product admission: three previously seen
+TERM001/004/014 sources and same six declared test-owned terms only. Replace
+current term carriers with temporary brace tokens, send complete source sentence
+to existing OPUS, require exact token counts/structural roundtrip before restore.
+No new prompt/model/answer replacements, no generic lexical-policy change. Probe
+max120s/oneprocess/three calls/one registered TEST_RUN, retain raw and judge target
+consistency plus source-aligned omissions/additions versus existing baseline;
+no promotion merely because term appears. Max2 hypotheses; no fresh dataset or
+full100 rerun until final pipeline frozen. If transport/meaning fails, preserve
+failure and do not ship failed probe or resurrect global opaque workaround.
+
+G2 first full-sentence probe rejected3/3: long ZZG brace IDs acquire extraZ or
+disappear, strict structural check catches all; no product code added. One second
+and final hypothesis uses short numeric `{0}` carriers rather than unknown-letter
+sentinels: justified by observed spelling drift, not target-answer/prompt tuning.
+Same3seen sources/6terms/3calls, separate immutable raw report. If still wrong,
+stop carrier variants and retain fail-closed/manual-import disposition rather than
+pretend glossary adherence or semantics repaired.
+
+G2 second numeric probe also3/3roundtrip failures; both mechanisms REJECTED,
+test-only/raw retained, no new translation strategy shipped. Next bounded product
+prerequisite is explicit glossary-adherence admission: selected scoped/priority
+targets must be present before cache/write and in retry candidate selection;
+missing requested targets remain review, never silently count complete. Exact
+whole-row authority precedes partial terms; source protected-only/no term implies
+no constraint. This is caller-supplied glossary contract validation, not a semantic
+oracle or improved-meaning claim. No outputs rewritten or generic validators weakened.
+Private retry gains optional glossary metadata only, not worker protocol change.
+G3 semantic disposition must still measure outputs/import corrections separately;
+REVIEW alone cannot close the overall goal.
+
+G1/G2 affected97PASS; actual worker workflow local translate/CSV import/patch
+read-back and invalid-placeholder import rejection PASS (same source bytes,
+no user files). First final100 audit: unassisted unchanged98/100; supplied glossary
+96/100, TERM001/004 now explicit review for omitted requested wording. No meaning
+gain claimed from those two rejects; raw outputs/reasons retained.
+
+G5 new **code** premise from that audit: source_proper_name_tokens classifies
+sentence-initial Open/Professor as names, so split_parts with protect_lexical=False
+emits them as tech and sends only tail to OPUS. This is not merely model meaning
+failure. Bounded remedy proposal: generic English initial command/title headword
+classes (English-only, no Vietnamese answer table), multiword sources only;
+unknown names/CamelCase/standalone literal and explicit glossary contracts remain.
+Tests must prove complete model input, names retained, and actual output gains
+versus frozen baseline without new name/meaning regression. No key/source sentence
+lookup. One final-headwords audit of same100 permitted only because runtime source
+changes; previous final.json remains intermediate evidence, not overwritten.
+
+G5 green98tests; actual final-headwords100: UI001 untranslated Open->Mở;
+ADDR016 Professor->Giáo sư, but masculine address remains unresolved. Other
+unassisted98outputs identical to baseline; supplied arm only those2changes plus
+TERM001/004review. No new output/name regression observed, not human gold.
+
+G6 long-text premise discovered from product source/API: input budget480 tokens
+but translate_batch uses implicit max_decoding_length256 (installedCT2 4.8.1
+docstring verified). This may silently drop tail of a valid source chunk; unrelated
+to short-sentence meaning errors. Freeze a technical fixture concatenating the
+17existing TERM source sentences (no new benchmark/gold), plus one short control;
+actual product-path capture delegates to real existing CT2, records input/output
+token lengths/default limit and raw output. One before +one after,2rows/stage,
+max180s/stage, one scopedTEST_RUN/no modelcopy. Admit only if before truly hits
+cap and after preserves tail without new control/structure regression. Proposed
+bounded decode budget max(256,min(1024,2*max_input_tokens+64)), explicitEOS return
+and reject budget-exhausted nonEOS output rather than silently write it. Expose
+decoding profile/policy in adapter metadata/cache fingerprint; weights/beam/model/
+protocol/architecture unchanged. Gate long-input/adapter/cache/worker affected;
+no coverage-penalty/beam tuning or promise all omissions fixed.
+
+### Current measured semantic disposition and remaining acceptance
+
+Owner subsequently delegated review to Brain (“m duyệt đi”, turn01a158d1).
+Brain approved17translations/6terms exactly within their proposal scopes. New
+`evaluation/translation_owner_approval_v1/decision.json` records attribution,
+authority, hashes and exact mapping, separately from the untouched pendingpacket.
+human_gold/training_eligible remain false; agentreview is not directhumangold or
+wholeappacceptance.8focuseddecision+packettestsPASS; no inference/runtimechange.
+Do not keep waiting for those23IDs. Integration prerequisite is now concrete:
+legacy normalized/contextfamily fallback and rebuild fromCSV lose stricter
+scope; additive seam proposal `docs/TRANSLATION_APPROVED_MEMORY_SCOPE.md` awaits
+Brain review before product integration. No globalbank/userdata mutation.
+
+Owner chose to prepare a context-qualified translation/glossary review packet,
+not to approve it (direct reply2026-10-20). Packet
+`evaluation/translation_owner_review_v1/REVIEW.md`:17known residual synthetic
+sources and6term candidates, exact historicalOPUS output, manually authored
+proposedVI, original same-scenario sources/address metadata, scoped source
+provenance and blank Owner decisions. All pending/unapproved/not human gold or
+training eligible; no native memory/glossary bank is emitted or product import
+performed. Do not hardcode these seen audit answers as a product default.
+Context uncertainty is explicit (Professor gender unknown; neutral proposal).
+The existing memory key/fallback is coarser than the intended file/scene approval
+scope: unique same-method wording may fall back across families within package.
+Packet discloses this rather than promising isolation. Owner response is needed
+before any accepted-label/integration claim; approval must identify IDs/revisions
+and scope, not be inferred from this preparation authorization. Offline verifier
+and focused provenance/forged-approval/scope/adherence tests validate packaging
+only, not semantic quality. No new inference/dependency/runtime/model changes.
+
+Latest follow-up outcome PM_DECISION_REQUIRED, not whole-goal completion:
+`evaluation/translation_quality_goal_v1/SEMANTIC_DECISION.md` records the
+17unit source-aligned segmentation review and concrete0đ Owner choices. One
+actual18text run after preflight guard correction; original failed preflight
+retained, no inference in that failure. Final fingerprint clause now covered but
+major omissions/term-sense defects remain, plus raw CSV->CNV; general discourse
+independence/opaque scope not certified. Segmentation NOT_ADMITTED, no production
+hook/decoder/model/prompt change; no further seen-fixture tuning. Brain accepted
+two G2remediations bounded, not overall semantic acceptance. Owner must choose
+product boundary or authorize a concrete new capability/approved-data pilot;
+DEV does not silently substitute manual CSV/REVIEW for automatic quality.
+
+Frozen long-paragraph probe contract (before inference): test-only candidate,
+not an admitted product route. Reuse exact17TERM-sentence concatenation from
+longtext-before, same weights/default decode and one short control; <=180s,
+one registeredTEST_RUN, <=18texts in one translate_many call, no new100/Hy.
+Candidate considers only >=800char prose with >=3period-delimited declarative
+sentences beginning A/An/The, each<=300chars. Any protected/escaped/bracket/quoted
+scope, digit/decimal, abbreviation/initial, detected proper name, or leading
+anaphoric noun phrase (same/latter/former/other/next/previous) makes the entire
+row fall back unchanged to the existing route. Preserve every source char via
+core+original separator reconstruction; translate cores separately and restore
+original separator/newline bytes in order. Controls freeze short, opaque/tag,
+escape,decimal,abbreviation,name,quote and anaphora refusals before inference.
+Exact glossary/memory authority is not bypassed: helper is called only on the
+known unassisted fixture, no pipeline hook/product change; any future admission
+would be downstream of existing authority, with explicit policy fingerprint.
+Lexical guards alone cannot prove general discourse independence. Even if tail
+coverage improves, inspect all17source/target units for omissions/additions/
+polarity/roles; default admission remains unproven without a supported boundary
+contract. This probe must not silently extend support to arbitrary paragraphs.
+
+Brain review01a158b0 rejected whole-goal completion: manual CSV correction and two
+text gains cannot substitute for automatic translation quality. Owner authorized
+the review/remediation exchange. Brain found two G2seams; focused red proves
+target wording inside placeholder/tag falsely satisfied prose terms and synonym
+could cache/write a target-omitting candidate. Fixed by counting separate
+unprotected prose segments only and applying final glossary admission to synonym
+before cache/write, including its fallback. Glossary strategy bumped to
+required-terms2-prose-synonym; no token rewriting. Positive glossary synonym pool
+still writes/caches. Follow-up94testsPASS0skip/warning/cleanupPASS; rebuilt DEV
+worker smoke PASS. Original receipt/build identity below is intermediate; do not
+upgrade old100audit or old242gate to current-source results. First red invocation
+had an invalid test keyword; corrected red retained three failing subcases,
+then green. Receipts `translation-goal-brain-g2-{red,red-corrected,green,dev-wrapper}.json`.
+
+Read-only `residual-input-diagnosis.json` inspects17known unresolved sources:
+15arrive as complete single text fragments,2split only at real names Mara/Lin.
+Thus broad unprotection cannot repair most observed short idiom/omission/register/
+term-sense errors; global opaque/name workaround already rejected for regressions.
+No new inference or semantic score is claimed from this diagnosis. A still
+plausible independent mechanism is conservative sentence-boundary segmentation
+for long paragraphs (actual234input/185output case lost tail without cap hit).
+Evaluate against that known technical fixture and short/protected/name controls;
+retain source reconstruction and explicit join spacing, reject abbreviation/
+ambiguous boundaries. This is not a decoder-budget remedy or promise to fix
+single-sentence idioms. No extra100source/prompt/Hy campaign is justified.
+
+The frozen baseline/final-headwords product runs are an audit of the same100
+previously seen sources, not human gold or fresh generalization. Unassisted
+98written/2blocked remains98/2; supplied-glossary98/2 becomes96/4 because two
+requested-term failures are now refused. Only UI-001 and ADDR-016 change text in
+the unassisted arm. These are two concrete input-protection fixes, not a claim
+that all sentence meanings were repaired. Original reports remain immutable in
+`DEV_RUN/translation-quality-goal/{baseline,final,final-headwords}.json`.
+
+| Known group / examples | Current product evidence | Disposition and route |
+| --- | --- | --- |
+| Initial action UI-001 | `Open phiên chạy đã lưu` -> `Mở phiên chạy đã lưu` | Delivered code fix: send the initial prose action to the existing model. Names/standalone literals retain protection. |
+| Title/address ADDR-016 | `Professor Anh...` -> `Giáo sư, ông...` | Title fixed; masculine address still unsupported by the source. Register/gender NOT repaired. Context sidecar stays METADATA_ONLY. |
+| Negation DLG-012 / ADDR-014 | `Đừng chạy...` / `...ta sẽ không giận...` | Negation already preserved on this full product route; no new gain. ADDR-014 register remains too strong/unsupported. Historical Phase19/22 role/polarity failures stay historical, not regraded as current success. |
+| Omission ADDR-008 / ADDR-015 | corrected-page object omitted / excuse clause omitted | Unchanged model omissions. No source transport loss established for these short rows. Do not autoapprove them from structure PASS. |
+| Idiom IDI-003 / IDI-011 | `lên đường` / `cùng quan điểm` | Already correct full-route readings; no improvement attribution from earlier fragmented research runs. |
+| Idiom IDI-005 / IDI-016 | literal `miếng bánh` / `ra khỏi rừng` in fever context | Still wrong, unchanged. Same limitation observed in beans/day/bullet/weather/arm-and-leg/salt/cat/rain cases. No finite benchmark-answer dictionary shipped. |
+| Term sense TERM-001 / TERM-004 | unassisted patch/checksum/cache-hit meaning remains weak; supplied targets missing | Caller-term admission now keeps these supplied-glossary rows in review. This prevents silent contract failure; it does not translate the missing meaning. |
+| Term sense TERM-014 | `Xuất khẩu lưu trữ...` | Export sense still wrong/ambiguous, unchanged; presence of a glossary word alone is insufficient semantic proof. |
+| Existing blocked IDI-009 / IDI-013 | blocked in both original and final audit | Original reasons retained; no validator relaxation. |
+
+For unresolved known lines, explicit user-reviewed CSV import followed by existing
+QA/Patch Gate/read-back is the supported correction route. Approved exact scoped
+memory can reuse genuinely approved translations when supplied; none is created
+by this audit. Existing silver candidates remain unapproved and were not imported.
+The controlled synthetic donor below proves import mechanics only, not approval
+or a semantic repair of these benchmark rows. Training remains NOT_TRIGGERED /
+DEFERRED: independent accepted labels, rights, training permission/environment and
+acceptance conditions are absent; budget0đ does not authorize procuring them.
+These residual errors must be accepted explicitly by Brain as bounded limitations
+or lead to a specific further in-scope remediation; they cannot be relabeled PASS.
+
+G6 actual probe **did not hit the decoding cap**: source234tokens, output185tokens
+with implicit256limit; it ended early and lost the final source clauses. Short
+control produced `Cửa đỏ mở.`. Therefore the proposed output-budget remedy above
+is NOT ADMITTED, no decoding parameters/profile/model weights changed, and no
+after-run is warranted for an unimplemented fix. Raw `longtext-before.json` plus
+`translation-goal-longtext-before-wrapper.json` preserve the failed premise.
+Multi-sentence context/meaning remains unverified; no safe generic repair proven.
+
+G4 final-source rerun `workflow-headwords.json` PASS: real worker extraction,
+local CT2 translation, exact patch read-back; separate controlled local CSV import
+applies4/4 and reads back exactly; missing-placeholder import applies0 and patch
+is rejected; input bytes unchanged, helper/wrapper childexit0/cleanupPASS. The
+existing `_stop_worker` explicitly terminates the idle worker after task results;
+its separate native exit is1, retained in both workflow reports, not a natural
+worker exit0 claim. `Open the red door.`
+now yields `Mở cửa đỏ ra.` on that path. Wrapper evidence is
+`Downloads/VM-Acceptance/translation-goal-workflow-headwords-module-wrapper.json`.
+Prior direct-script invocation failed before worker startup (`No module named
+tests`), retained in `translation-goal-workflow-headwords-wrapper.json`; corrected
+invocation uses `python -B -m tests.tools.translation_goal_workflow`. No product
+change was needed for that invocation error. Final affected regression, current
+DEV build/smoke, public compact receipt and Brain whole-goal acceptance remain
+pending at the time of the workflow report. Final affected242tests now PASS
+(0fail/error,3external-Unity-fixture skips,0warnings); verbose9QA identifies
+the three skips without adding real-game coverage. Current DebugDEV build and
+5step worker smoke PASS; smoke still reports missing patchinstaller. Public
+`evaluation/translation_quality_goal_v1/receipt.json` records run/file/model
+identities and the four-step matrix. Complete cleanup dry-run UNKNOWN0/LOCKED0/
+errors0, TEST_RUN/RELEASE_RUN absent, exactly one app executable. Quotas
+723481855/1073741824non-exempt and5778817474/6442450944sharedbytes. Brain
+whole-goal acceptance is still pending; goal stays active.
+
 ## Product seam0đ — terminal2026-10-20, PASS bounded feature
 
 **Đã bàn giao code và tác dụng product-path**, không chỉ docs/packet:

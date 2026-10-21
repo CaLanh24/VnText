@@ -1,0 +1,489 @@
+{
+  "schema_version": 1,
+  "status": "APPROVED_BY_OWNER_DELEGATED_AGENT",
+  "reviewer": "Brain read-only",
+  "authority": {
+    "owner_quote": "m duyệt đi",
+    "thread_id": "01a0ffa3-6f97-7882-898b-33c11559d267",
+    "turn_id": "01a158d1-2185-7bc3-951f-1c82dc6c06af",
+    "grant": "Review the named 17 translations and six glossary proposals in their recorded contexts"
+  },
+  "packet_manifest_sha256": "3d591e9cd14af59c8641e4fdd3e7d6b80e8b1949ba91e174369129afd4a43c2b",
+  "proposal_file_sha256": "f7ef0f5f8d556c8a48fba2f24fa3a1eca2dbdf8cc46335e091164975fcffae4c",
+  "direct_human_linguistic_review": false,
+  "human_gold": false,
+  "training_authorized": false,
+  "product_imported": false,
+  "whole_app_accepted": false,
+  "translations": [
+    {
+      "id": "IDI-001",
+      "source": "Mara nearly spilled the beans about the surprise.",
+      "translation": "Mara suýt để lộ bí mật về điều bất ngờ ấy.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-01",
+        "scenario_id": "idioms-scene-01",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-01",
+        "group_id": "idioms-scene-01",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-004",
+      "source": "At the next village, we can call it a day.",
+      "translation": "Đến ngôi làng tiếp theo, chúng ta có thể nghỉ thôi.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-02",
+        "scenario_id": "idioms-scene-02",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-02",
+        "group_id": "idioms-scene-02",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-005",
+      "source": "For Lin, the first puzzle was a piece of cake.",
+      "translation": "Với Lin, câu đố đầu tiên dễ như ăn kẹo.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-03",
+        "scenario_id": "idioms-scene-03",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-03",
+        "group_id": "idioms-scene-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-006",
+      "source": "The next riddle made her bite the bullet and ask for a hint.",
+      "translation": "Câu đố tiếp theo khiến cô ấy phải cắn răng xin gợi ý.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-03",
+        "scenario_id": "idioms-scene-03",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-03",
+        "group_id": "idioms-scene-03",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-007",
+      "source": "I feel under the weather after standing in the cold rain.",
+      "translation": "Tôi thấy trong người không khỏe sau khi đứng dưới mưa lạnh.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-04",
+        "scenario_id": "idioms-scene-04",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-04",
+        "group_id": "idioms-scene-04",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-010",
+      "source": "Even so, its repair cost an arm and a leg.",
+      "translation": "Dù vậy, việc sửa nó vẫn tốn một khoản tiền rất lớn.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-05",
+        "scenario_id": "idioms-scene-05",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-05",
+        "group_id": "idioms-scene-05",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-012",
+      "source": "I will take that promise with a grain of salt until the repair is done.",
+      "translation": "Tôi sẽ còn hoài nghi lời hứa đó cho đến khi việc sửa chữa hoàn tất.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/scene-06",
+        "scenario_id": "idioms-scene-06",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/scene-06",
+        "group_id": "idioms-scene-06",
+        "kind": "same_file_scene",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-015",
+      "source": "Please do not let the cat out of the bag before her birthday.",
+      "translation": "Xin đừng để lộ bí mật trước sinh nhật của cô ấy.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-15",
+        "scenario_id": "idioms-standalone-15",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-15",
+        "group_id": "idioms-standalone-15",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-016",
+      "source": "The patient was out of the woods after the fever broke.",
+      "translation": "Bệnh nhân đã qua cơn nguy hiểm sau khi hạ sốt.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-16",
+        "scenario_id": "idioms-standalone-16",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-16",
+        "group_id": "idioms-standalone-16",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "IDI-017",
+      "source": "The gutters overflow because it is raining cats and dogs outside.",
+      "translation": "Máng xối bị tràn vì ngoài trời đang mưa như trút nước.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/idioms/standalone-17",
+        "scenario_id": "idioms-standalone-17",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/idioms/standalone-17",
+        "group_id": "idioms-standalone-17",
+        "kind": "standalone_line",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-008",
+      "source": "I will send the corrected page as soon as I return.",
+      "translation": "Ngay khi trở lại, tôi sẽ gửi trang đã chỉnh sửa.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-04",
+        "scenario_id": "address-scene-04",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-04",
+        "group_id": "address-scene-04",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "direct_report",
+        "addressee_id": "manager",
+        "turn": 2
+      },
+      "address_context": "A direct report speaks professionally to a manager.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-014",
+      "source": "You can tell me the truth; I will not be angry with you.",
+      "translation": "Em có thể nói thật với chị; chị sẽ không giận em đâu.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-07",
+        "scenario_id": "address-scene-07",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-07",
+        "group_id": "address-scene-07",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "older_sister",
+        "addressee_id": "younger_brother",
+        "turn": 1
+      },
+      "address_context": "An older sister speaks gently to her younger brother.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-015",
+      "source": "We have known each other too long for that excuse.",
+      "translation": "Chị em mình đã biết nhau lâu đến thế rồi, cái cớ đó không thuyết phục đâu.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-07",
+        "scenario_id": "address-scene-07",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-07",
+        "group_id": "address-scene-07",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "older_sister",
+        "addressee_id": "younger_brother",
+        "turn": 2
+      },
+      "address_context": "An older sister speaks gently to her younger brother.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "ADDR-016",
+      "source": "Professor, would you look over the last page when you have a moment?",
+      "translation": "Thưa giáo sư, khi nào có thời gian, xin xem giúp trang cuối.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/address/scene-08",
+        "scenario_id": "address-scene-08",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/address/scene-08",
+        "group_id": "address-scene-08",
+        "kind": "same_file_scene_speaker",
+        "engine": "synthetic",
+        "speaker_id": "graduate_student",
+        "addressee_id": "professor",
+        "turn": 1
+      },
+      "address_context": "A graduate student speaks respectfully to an older professor.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-001",
+      "source": "The patch manifest lists every source file and its checksum.",
+      "translation": "Bản kê khai của bản vá liệt kê mọi tệp nguồn cùng mã kiểm tra của từng tệp.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-01",
+        "scenario_id": "terms-note-01",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-01",
+        "group_id": "terms-note-01",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 1
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-004",
+      "source": "A cache hit must pass validation again before it can be reused.",
+      "translation": "Kết quả tìm thấy trong bộ nhớ đệm phải được kiểm tra tính hợp lệ một lần nữa trước khi dùng lại.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-02",
+        "scenario_id": "terms-note-02",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-02",
+        "group_id": "terms-note-02",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "TERM-014",
+      "source": "The export stores its manifest beside the translation table in one package.",
+      "translation": "Khi xuất, bản kê khai được lưu cạnh bảng dịch trong cùng một gói.",
+      "approval_scope": {
+        "package": "synthetic-owner-review-v1 ONLY",
+        "file_id": "synthetic/terms/note-07",
+        "scenario_id": "terms-note-07",
+        "source_exact": true
+      },
+      "scenario_boundary": {
+        "file_id": "synthetic/terms/note-07",
+        "group_id": "terms-note-07",
+        "kind": "same_file_document",
+        "engine": "synthetic",
+        "turn": 2
+      },
+      "address_context": "UNKNOWN / not supplied",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    }
+  ],
+  "glossary": [
+    {
+      "id": "G01",
+      "source": "checksum",
+      "translation": "mã kiểm tra",
+      "occurrence_ids": [
+        "TERM-001"
+      ],
+      "domain_note": "Giá trị kiểm tra đi kèm tệp; không tự gán thuật toán/hash mật mã.",
+      "exclusions": "Không áp cho dấu tick, kiểm tra thủ công hoặc mã đăng nhập.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "G02",
+      "source": "manifest",
+      "translation": "bản kê khai",
+      "occurrence_ids": [
+        "TERM-001",
+        "TERM-014"
+      ],
+      "domain_note": "Danh mục tệp/metadata trong gói hoặc bản vá.",
+      "exclusions": "Không áp cho manifest động từ: biểu lộ, hay ngữ cảnh vận đơn chưa được duyệt.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "G03",
+      "source": "patch",
+      "translation": "bản vá",
+      "occurrence_ids": [
+        "TERM-001"
+      ],
+      "domain_note": "Gói thay đổi phần mềm.",
+      "exclusions": "Không áp cho miếng vá quần áo/vùng đất/động từ chữa lành.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "G04",
+      "source": "cache",
+      "translation": "bộ nhớ đệm",
+      "occurrence_ids": [
+        "TERM-004"
+      ],
+      "domain_note": "Dữ liệu đã lưu để dùng lại trong phần mềm.",
+      "exclusions": "Không áp cho chỗ giấu đồ trong game; không đồng nhất với translation memory.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "G05",
+      "source": "cache hit",
+      "translation": "tìm thấy trong bộ nhớ đệm",
+      "occurrence_ids": [
+        "TERM-004"
+      ],
+      "domain_note": "Sự kiện tìm thấy dữ liệu; toàn câu dùng kết quả tìm thấy để xử lý it.",
+      "exclusions": "Không thay mọi hit thành tìm thấy; không dùng cụm này thay toàn câu.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    },
+    {
+      "id": "G06",
+      "source": "export",
+      "translation": "xuất",
+      "occurrence_ids": [
+        "TERM-014"
+      ],
+      "domain_note": "Thao tác tạo gói dữ liệu xuất.",
+      "exclusions": "Không áp cho xuất khẩu thương mại. Cấu trúc danh từ/động từ phải duyệt cả câu.",
+      "approved": true,
+      "human_gold": false,
+      "training_eligible": false
+    }
+  ],
+  "integration_status": "NOT_APPLIED_SCOPE_PREREQUISITE_UNRESOLVED",
+  "caveats": [
+    "Existing memory may fall back across context families within package.",
+    "Memory rebuild currently drops any proposed strict approval boundary.",
+    "Approval is not a global bank, training grant or proof of unseen translation quality."
+  ]
+}

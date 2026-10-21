@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "status": "READY_FOR_COMMIT_REVIEW",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "remote_main_sha": "10873fc61db4f97db9a42d63fcac9f8b993e3570",
+  "prior_outgoing_commits": 29,
+  "exact_commit_build": false,
+  "source_hashes": {
+    "vntext/csv_editor_api.py": "3ca2d7aeb8e4af1c6f2377639d8ca2b1f5ba059888b7b9203de33409d14126d8",
+    "vntext/glossary_v2.py": "1982e2d929fba6c2082b0f1e3f29e51fa76884a963701123a7e0a37c21c1209b",
+    "vntext/mt_check.py": "6a225bc1d21127d05f195769fd3b860c55977821f426e3e23a33111171bbde68",
+    "vntext/mt_ct2_pipeline.py": "a1b5a918284dd1969e142339d71f433b6e837c85e8d66fa05753eca0c1fe7868",
+    "vntext/mt_memory.py": "2dbc5037f8372db6ff767ef2168992dcf3c8a8e3cfbe83a6be87203da7671322",
+    "vntext/mt_strategies.py": "60770f5206eb0b550aaf53409d02192c2b9645b8c718e131b2737a81062f91c4",
+    "vntext/package_glossary.py": "ff6de9e8d39828213f7a551b1cbb9b398f6d8911a8e9272892aad2e193c0c30d",
+    "vntext/translation_cache.py": "fd3c15feaad1da0ed463a16f219ae854289198aa0960839baae1af36d0120db3",
+    "wpf_app/VNText.Studio.App/MainWindow.xaml": "cfc1d5d6d8053e15e2a6d447cb91ae3f30e9fd0a1449e8978a94b42ab94ab915",
+    "wpf_app/VNText.Studio.App/Services/TranslationCsvEditorService.cs": "c07ad3f6816308472523ea500a942a17b5241c388ad6442ea0b090d534d993cf",
+    "wpf_app/VNText.Studio.App/Services/UiText.cs": "8330c071c379af38d0b2539f57ecf1562f67044fac29aa86e1e09a0712a0df0e",
+    "wpf_app/VNText.Studio.App/ViewModels/MainViewModel.CsvEditor.cs": "bda73abc3d7b41292305c64c07eee358f0c0a4e4d0e1d3bae4c73790b8789aa5",
+    "wpf_app/VNText.Studio.App/ViewModels/MainViewModel.ReviewedMemory.cs": "eef7167b7c01cb5b5f5ee804254ebf821baa06d66a075225d612cba047f2e441",
+    "wpf_app/VNText.Studio.Workflow.Tests/Program.cs": "c2f4de2ca1e387e24b54d47616726c4b4b4f6ca8603bda3037465cedc9ae4532",
+    "wpf_app/VNText.Studio.Workflow.Tests/ReviewedMemoryTests.cs": "07c6c1cc7ccce0eb2995126caf1137c6459a59c9114d9e81e18c6a094b4d70fa",
+    "vntext/mt_ct2_model.py": "5252b3c5adc273deb693986a535f0a3ef44214cd86047910c39b6a7c76722e28",
+    "vntext/mt_model_adapter.py": "8b40e72fc02421f8d5d309848ac46bbc5b441c0a2a910c182771bdae86bc692e"
+  },
+  "accepted_evidence_audit": [
+    {
+      "receipt": "evaluation/translation_owner_approval_v1/entrypoint-ui-delivery.json",
+      "matching_sources": 32,
+      "superseded_source_paths": [
+        "tests/unit/test_translation_cache.py"
+      ],
+      "missing": [],
+      "external": [
+        {
+          "path": "editor-dialog-style-harness.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-style-dev.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-launch.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-before.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-cancel.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-cleanup.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-terminal.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-dialog-styled-preview-original.jpg",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-identity-launch-contract.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-identity-controlled-launch.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-before.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-cancel.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-confirm.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-preview-original.jpg",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-confirm-original.jpg",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "editor-native-settings-original.jpg",
+          "exists": true,
+          "matches": true
+        }
+      ]
+    },
+    {
+      "receipt": "evaluation/translation_semantic_campaign_v1/boundary-delivery.json",
+      "matching_sources": 7,
+      "superseded_source_paths": [],
+      "missing": [],
+      "external": [
+        {
+          "path": "semantic-beam-development.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-beam-development-wrapper.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-before.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-before-wrapper.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-red.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-green.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-worker-configured.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-after.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-after-wrapper.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-focused-final.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-join-final.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-workflow.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-workflow-wrapper.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-dev.json",
+          "exists": true,
+          "matches": true
+        },
+        {
+          "path": "semantic-boundary-loss-localization.json",
+          "exists": true,
+          "matches": true
+        }
+      ]
+    }
+  ],
+  "packet_delivery_gate": {
+    "command": "python -B tests/tools/run_with_cleanup.py --timeout-seconds 120 --report <external-receipt> -- python -B -m unittest tests.unit.test_translation_owner_review_packet tests.unit.test_translation_owner_approval -v",
+    "child_exit_code": 0,
+    "test_summary": {
+      "status": "PASS",
+      "terminal_line": "OK",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 0,
+      "skip_reasons": [],
+      "warning_records": [],
+      "failure_records": [],
+      "input_bytes": 1904,
+      "input_truncated": false
+    },
+    "cleanup": "PASS",
+    "external_receipt_sha256": "01c3ae4ec665769c3deebc1216b34640dbf712833a7f3a1091ae38bc2b84bb4e"
+  },
+  "historical_outgoing_blob_count": 202,
+  "historical_largest_blob_bytes": 272360,
+  "new_secret_pattern_paths": [],
+  "paused_research": "PLAN_TEMPORARILY_CLOSED_BY_OWNER",
+  "deferred_terminal": "CANCELLED_BEFORE_LOAD",
+  "whole_app_semantic_acceptance": false,
+  "release": false,
+  "model_promoted": false
+}

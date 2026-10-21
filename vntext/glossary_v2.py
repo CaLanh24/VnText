@@ -217,6 +217,31 @@ def restore_terms(text: str, restores: Mapping[str, str]) -> str:
     return result
 
 
+def candidate_term_issues(source: str, row: Mapping[str, Any], candidate: str,
+                          glossary: Mapping[str, Any] | None) -> list[str]:
+    """Check caller-selected literal terms, not sentence semantic correctness."""
+    exact = resolve_exact(source, row, glossary)
+    if exact['status'] == 'conflict':
+        return ['Glossary V2 conflict — review required']
+    value = _normalise(candidate)
+    if exact['status'] == 'match':
+        return [] if value == _normalise(exact['target']) else ['required exact glossary wording missing']
+    masked, restores, conflicts = mask_terms(source, row, glossary)
+    if conflicts:
+        return ['Glossary V2 conflict — review required']
+    # Opaque token contents are not translated prose. Count each free segment
+    # separately so a placeholder cannot provide wording or bridge a phrase.
+    prose = [_normalise(segment) for segment in _PROTECTED.split(str(candidate or ''))]
+    issues = []
+    for token,target in restores.items():
+        expected = masked.count(token)
+        phrase = _normalise(target)
+        pattern = re.compile(r'(?<!\w)'+re.escape(phrase)+r'(?!\w)')
+        if sum(len(pattern.findall(segment)) for segment in prose) < expected:
+            issues.append('required glossary target missing: '+str(target))
+    return issues
+
+
 __all__ = [
     "SCHEMA_VERSION",
     "GLOSSARY_RELATIVE_PATH",
@@ -225,4 +250,5 @@ __all__ = [
     "resolve_exact",
     "mask_terms",
     "restore_terms",
+    "candidate_term_issues",
 ]

@@ -222,6 +222,12 @@ public sealed partial class MainViewModel
 
     private void InitCsvEditorCommands()
     {
+        ApproveCsvMemoryCommand = new RelayCommand(_ => ApproveCsvMemory(), _ => CanApproveCsvMemory());
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(Busy) or nameof(CsvEditorDirty) or nameof(CsvEditorLoading) or nameof(CsvEditorPath))
+                ApproveCsvMemoryCommand.RaiseCanExecuteChanged();
+        };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile());
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),
@@ -247,6 +253,7 @@ public sealed partial class MainViewModel
         }
         ClearBlockedCsvCommand.RaiseCanExecuteChanged();
         RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
+        ApproveCsvMemoryCommand.RaiseCanExecuteChanged();
     }
 
     private bool CanRunCsvBatchAction() =>

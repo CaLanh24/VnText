@@ -68,6 +68,7 @@ def compute_cache_fingerprint(
     glossary: Mapping[str, Any] | None = None,
     glossary_hash: str = "",
     memory_scope: str = "",
+    memory_scope_policy: str = "",
     classifier_policy_version: str = "",
     classifier_policy_hash: str = "",
     strategy_version: str = "local-translation-v2-strategy-1",
@@ -95,6 +96,10 @@ def compute_cache_fingerprint(
         "decoding": dict(decoding or {}),
         "memory_scope": str(memory_scope or ""),
     }
+    if memory_scope_policy:
+        fingerprint['memory_scope_policy']=str(memory_scope_policy)
+        fingerprint['memory_exact_row_scope']=_hash({name:str(row.get(name) or '')
+                                                   for name in ('context','file_path','import_method')})
     return {"fingerprint": fingerprint, "cache_key": _hash(fingerprint)}
 
 

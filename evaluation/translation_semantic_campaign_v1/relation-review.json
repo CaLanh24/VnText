@@ -1,0 +1,31 @@
+{
+  "outcome": "REJECTED_FULL_SENTENCE_AS_GENERAL_REMEDY",
+  "admitted": false,
+  "raw_sha256": "2a6b796121aa0fad0f23e286ecf680dc160959fc4cbd6139445ac20e3273cdff",
+  "frozen_sha256": "c7400c9e669536b72b5bee267c86427a6891e7b4b448ded493047e4b5fbb5195",
+  "reviewer": "Coordinator source-aligned agent, not human gold/blind",
+  "rows": [
+    {
+      "id": "R15",
+      "finding": "New major name corruption Mila->Mita and left->forgot; split preserved name. Reject."
+    },
+    {
+      "id": "R21",
+      "finding": "Actual semantic gain: offered action and messenger recipient restored in full sentence; exact name preserved."
+    },
+    {
+      "id": "R22",
+      "finding": "Both variants wrongly render borrowed ladder as ladder returned to borrower; role defect remains."
+    },
+    {
+      "id": "R37",
+      "finding": "Both variants lose serial identifier sense as number of times/last time; no repair."
+    }
+  ],
+  "semantic_gains": 1,
+  "new_major_cases": 1,
+  "name_corruptions": 1,
+  "seconds": 2.7809999999881256,
+  "peak_working_set": 200220672,
+  "disposition": "No runtime change, fresh controls unconsumed, no parameter/selection variants. Need a context-preserving mechanism with protected identity fidelity and independent semantic acceptance before broader product quality can be claimed."
+}

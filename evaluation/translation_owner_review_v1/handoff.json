@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "outcome": "PREPARATION_PASS_PENDING_OWNER_DECISIONS",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "committed": false,
+  "manifest_sha256": "3D591E9CD14AF59C8641E4FDD3E7D6B80E8B1949BA91E174369129AFD4A43C2B",
+  "translations": 17,
+  "glossary_proposals": 6,
+  "approved_count": 0,
+  "product_imported": false,
+  "new_inference": false,
+  "runtime_changed": false,
+  "focused_tests": {
+    "status": "PASS",
+    "terminal_line": "OK",
+    "tests": 4,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "warnings": 0,
+    "skip_reasons": [],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 975,
+    "input_truncated": false
+  },
+  "focused_child_exit": 0,
+  "focused_cleanup": "PASS",
+  "focused_receipt_sha256": "DE9449BD55493D1BEFA3C19976484F2EF1959F24E02D46BFA554647689215125",
+  "cleanup": {
+    "locked_count": 0,
+    "unknown_count": 0,
+    "error_count": 0,
+    "status": "PASS",
+    "shared_bytes": 5778823454,
+    "inventory_complete": true,
+    "non_exempt_bytes": 724168298
+  },
+  "cleanup_receipt_sha256": "06AC7849C6324628B98C062C48E48B2642495DFBD0AAD7186E8C70FC89D7063C",
+  "brain_review": "PASS preparation only, direct review messages in thread 01a0ffa3-6f97-7882-898b-33c11559d267; not human semantic approval",
+  "whole_quality_goal_complete": false,
+  "next": "Owner approve/revise/reject specific IDs and intended scope; no automatic import"
+}

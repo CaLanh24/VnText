@@ -2,6 +2,50 @@ Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and im
 
 # VNText Studio — Test Matrix
 
+Reviewed-memory editor entrypoint:66backendtestsPASS incl cancelpreview/stale/
+selection/legacyconversion/rollback/foreignmutation/mixedattribution; localized
+WPFharnessPASS vi/encontrols; actualgenerated4rowCLIworkerextract/import/approval/
+reuse/patchreadbackPASS, currentDEVsmokePASS. Currenthashes/receipts at
+`evaluation/translation_owner_approval_v1/entrypoint-delivery.json`. NativeUI
+NOTVERIFIED: supportedskyreturned conflictingappidentity, no UIinput/capture.
+TechnicalPASS does not waive native gate or whole-goal semantic acceptance.
+
+Strict approved memory: `test_strict_approval_memory`14tests includes exact scope/
+binding/proposalIDs,missing/corrupt/unknownpolicy nolegacyrebuild,duplicates,
+liveguardcache read/write refusal,positivecachehit then samekey wrongfile/rawcase
+miss, structuralgate unchanged. Finalaffected161PASS0skip/warning inclworker/
+legacy/glossary/status/cache/traceability; actual17reuse+5wrongscope+wrongpackage
+probe and currentDEV recoveryworkersmokePASS. Evidence at
+`evaluation/translation_owner_approval_v1/scoped-delivery.json`; scoped approved
+reuse only, not inference learning/generalization/whole-app acceptance.
+
+Owner-delegated approval: `test_translation_owner_approval` plus original
+`test_translation_owner_review_packet` (8tests) verifies separate exact23ID
+decision mapping/authority/package-context restrictions, rejects target additions,
+scope broadening and false human_gold/training/whole-app flags, preserves sealed
+originals. Approval is not runtime import or direct human semantic gold. Approved
+memory integration remains subject to strict scope/cache/rebuild prerequisite.
+
+Owner review packet: `test_translation_owner_review_packet` covers portable
+original-packet hashes/provenance, rejects forged approval/gold/training flags
+and cross-scene/broadened-scope/address metadata, checks proposed term wording
+against whole-sentence proposals. `python -B -m
+tests.tools.translation_owner_review_packet verify` needs tracked packet/dataset
+only, no ignored reports/model/inference. It checks the original pending packet;
+Owner may copy the blank decision CSV or reply with IDs/revisions, not edit
+sealed originals and silently turn them approved. Neither gate grants semantic
+acceptance, memory import/training authority or fresh benchmark quality.
+
+Active zero-cost translation goal: public compact evidence at
+`evaluation/translation_quality_goal_v1/receipt.json`, canonical residual decisions
+in TRANSLATION_QUALITY_PLAN. Final affected242tests/0fail/error/3external Unity
+fixture skips/0warnings, currentDEVbuild/workersmoke and actual synthetic local
+translate/import->patch/read-back/hostile-placeholder refusal PASS. Three skips
+have separate verbose9QA receipt, not game acceptance. Same seen100source/model
+audit changes2unassisted outputs; two additional glossary rejects are not meaning
+improvements. No decoder/training/silver promotion; Brain whole-goal acceptance
+pending, no human-gold/generalization/whole-language claim.
+
 Glossary V2 row-local conflict fix: `test_glossary_context_v2`, `test_user_glossary`,
 `test_translation_cache`, `test_mt_structural`, `test_mt_ct2_status`,
 `test_mt_patch_gate_write`: final53PASS, including absent/protected-only/scope/case/

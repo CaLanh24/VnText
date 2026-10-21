@@ -326,17 +326,20 @@ def _translation_cache_context(
         # Older glossary conflict handling could cache structurally valid but
         # truncated prose. Keep those records, but do not reuse them on retry.
         strategy_version += "-glossary-applicability-2"
+        strategy_version += "-flat-protection-2"
+        strategy_version += "-required-terms-2-prose-synonym"
     records = (context_sidecar or {}).get("records") or []
     context_by_key = {
         str(item.get("key") or ""): item
         for item in records
         if isinstance(item, dict) and item.get("key")
     }
-    return {
+    context = {
         "model_metadata": metadata,
         "glossary": dict(user_glossary or {}),
         "glossary_hash": glossary_hash,
         "memory_scope": memory_scope,
+        "memory_scope_policy": str(translation_memory.get("scope_policy") or ""),
         "classifier_policy_version": CLASSIFIER_POLICY_VERSION,
         "classifier_policy_hash": CLASSIFIER_POLICY_HASH,
         "strategy_version": strategy_version,
@@ -347,9 +350,21 @@ def _translation_cache_context(
         "context_model_injection": bool((context_sidecar or {}).get("model_injection", False)),
         "decoding": dict(metadata.get("decoding") or {}),
         "context_by_key": context_by_key,
-        "protected_span_schema_version": "1",
+        "protected_span_schema_version": "2-initial-prose",
         "engine_profile": "ct2:" + str(metadata.get("model_id") or "unknown"),
     }
+    if translation_memory.get("scope_policy"):
+        context["approval_memory"] = translation_memory
+    return context
+
+
+def _glossary_checked_candidate(row, candidate, reasons, glossary):
+    if candidate:
+        from vntext.glossary_v2 import candidate_term_issues
+        term_issues = candidate_term_issues(str(row.get('source_text') or ''), row, candidate, glossary)
+        if term_issues:
+            return None, list(reasons or []) + term_issues
+    return candidate, reasons
 
 
 def _open_translation_cache(package_dir: Path):
@@ -377,14 +392,14 @@ def _cached_batch_translate_chunk(
 ) -> tuple[dict[str, str], set[str], set[str]]:
     from vntext.mt_ct2_io import _batch_translate_chunk
     from vntext.package_glossary import lookup_user_phrase
-    from vntext.mt_memory import lookup_translation_memory
+    from vntext.mt_memory import lookup_translation_memory, memory_scope_is_current
     from vntext.glossary_v2 import resolve_exact
     from vntext.translation_cache import compute_cache_fingerprint
 
     fingerprint_context = {
         key: value
         for key, value in cache_context.items()
-        if key not in {"context_by_key", "context_status", "context_model_injection"}
+        if key not in {"context_by_key", "context_status", "context_model_injection", "approval_memory"}
     }
 
     def record_fingerprints() -> None:
@@ -399,6 +414,10 @@ def _cached_batch_translate_chunk(
             fingerprint = compute_cache_fingerprint(cache_row, **fingerprint_context)
             cache_fingerprints[key] = str(fingerprint["cache_key"])
 
+    if not memory_scope_is_current(translation_memory):
+        # A previously loaded approval snapshot cannot authorize cached text
+        # after its guard/store changed or disappeared.
+        cache = None
     authoritative_keys = set()
     for row in rows:
         source = str(row.get("source_text") or "")
@@ -461,6 +480,9 @@ def _cache_validated_candidate(
 ) -> None:
     if not candidate:
         return
+    from vntext.mt_memory import memory_scope_is_current
+    if not memory_scope_is_current(cache_context.get("approval_memory")):
+        return
     from vntext.translation_cache import compute_cache_fingerprint
 
     context_record = cache_context.get("context_by_key", {}).get(str(row.get("key") or ""))
@@ -468,7 +490,7 @@ def _cache_validated_candidate(
     fingerprint_context = {
         key: value
         for key, value in cache_context.items()
-        if key not in {"context_by_key", "context_status", "context_model_injection"}
+        if key not in {"context_by_key", "context_status", "context_model_injection", "approval_memory"}
     }
     fingerprint = compute_cache_fingerprint(cache_row, **fingerprint_context)
     key = str(row.get("key") or "")
@@ -807,6 +829,7 @@ def run_ct2_translate(
                 # Fallback cuối: giữ nguyên pool EN (đủ cấu trúc synonym).
                 candidate, reasons = _safe_candidate(row, src, whitelist, quality=True)
                 raw = src
+            candidate, reasons = _glossary_checked_candidate(row,candidate,reasons,glossary_v2)
             if candidate:
                 _cache_validated_candidate(
                     cache,
@@ -917,6 +940,7 @@ def run_ct2_translate(
                 quality=True,
                 preserve_candidate=row["key"] in authoritative_keys,
             )
+            candidate, reasons = _glossary_checked_candidate(row,candidate,reasons,glossary_v2)
             if candidate:
                 _cache_validated_candidate(
                     cache,
@@ -965,6 +989,7 @@ def run_ct2_translate(
                 retry_cand, _strat, retry_reasons = retry_row_strategies(
                     row, translator, whitelist, batch_raw=raw, fast=fast_retry,
                     user_glossary=user_glossary, full_raw=full_by_key.get(row["key"], ""),
+                    v2_glossary=glossary_v2,
                     trace=retry_trace,
                 )
                 if not retry_cand and fast_retry:
@@ -978,6 +1003,7 @@ def run_ct2_translate(
                         batch_raw=raw,
                         fast=False,
                         user_glossary=user_glossary,
+                        v2_glossary=glossary_v2,
                         full_raw=full_by_key.get(row["key"], ""),
                         trace=retry_trace,
                     )
@@ -1003,6 +1029,7 @@ def run_ct2_translate(
                     }
                 )
             retry_attempts_by_key[row["key"]] = retry_trace
+            retry_cand, retry_reasons = _glossary_checked_candidate(row,retry_cand,retry_reasons,glossary_v2)
             if retry_cand:
                 _cache_validated_candidate(
                     cache,
@@ -1345,6 +1372,7 @@ def run_ct2_translate_keys(
                 quality=True,
                 preserve_candidate=row["key"] in authoritative_keys,
             )
+            candidate, reasons = _glossary_checked_candidate(row,candidate,reasons,glossary_v2)
             if candidate:
                 _cache_validated_candidate(
                     cache,
@@ -1382,6 +1410,7 @@ def run_ct2_translate_keys(
                 retry_cand, _strat, retry_reasons = retry_row_strategies(
                     row, translator, whitelist, batch_raw=raw, fast=False,
                     user_glossary=user_glossary, full_raw=full_by_key.get(row["key"], ""),
+                    v2_glossary=glossary_v2,
                     trace=retry_trace,
                 )
             except Exception as exc:
@@ -1406,6 +1435,7 @@ def run_ct2_translate_keys(
                     }
                 )
             retry_attempts_by_key[row["key"]] = retry_trace
+            retry_cand, retry_reasons = _glossary_checked_candidate(row,retry_cand,retry_reasons,glossary_v2)
             if retry_cand:
                 _cache_validated_candidate(
                     cache,

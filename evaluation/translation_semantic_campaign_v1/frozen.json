@@ -1,0 +1,289 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_BEFORE_OUTPUT",
+  "created_date": "2026-10-21",
+  "rights": "agent-generated-for-project; development sources retain original provenance",
+  "human_gold": false,
+  "blind_review": false,
+  "development": [
+    {
+      "id": "IDI-001",
+      "source": "Mara nearly spilled the beans about the surprise.",
+      "category": "IDI",
+      "expected_meaning": "spill the beans = để lộ bí mật; nearly chỉ suýt, chưa xác nhận đã lộ.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/16",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "IDI-004",
+      "source": "At the next village, we can call it a day.",
+      "category": "IDI",
+      "expected_meaning": "call it a day = dừng công việc/chặng đi hôm nay; không phải đặt tên một ngày. Không thêm kế hoạch ngày mai.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/19",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "IDI-006",
+      "source": "The next riddle made her bite the bullet and ask for a hint.",
+      "category": "IDI",
+      "expected_meaning": "bite the bullet = chấp nhận làm việc khó/ngại; her cho phép cô ấy. Xin duyệt sắc thái cắn răng.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/21",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "ADDR-014",
+      "source": "You can tell me the truth; I will not be angry with you.",
+      "category": "ADDR",
+      "expected_meaning": "Metadata gốc: chị gái nói dịu dàng với em trai. Chị/em có căn cứ; giữ cho phép và sẽ không giận.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/46",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "ADDR-016",
+      "source": "Professor, would you look over the last page when you have a moment?",
+      "category": "ADDR",
+      "expected_meaning": "Học viên cao học nói kính trọng với giáo sư lớn tuổi. Giới tính UNKNOWN: tránh ông/bà/thầy/cô; không tự chọn giới tính.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/48",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "TERM-001",
+      "source": "The patch manifest lists every source file and its checksum.",
+      "category": "TERM",
+      "expected_meaning": "Giữ patch, manifest, mọi source file và checksum ứng với từng tệp. Mã kiểm tra là thuật ngữ đề xuất, chưa duyệt.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/67",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "TERM-004",
+      "source": "A cache hit must pass validation again before it can be reused.",
+      "category": "TERM",
+      "expected_meaning": "Nguồn dùng cache hit/it cho kết quả cache; đề xuất làm rõ kết quả, không biến validation thành đăng nhập/xác thực danh tính. Cần duyệt cách diễn đạt.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/70",
+        "rights_pointer": "/provenance"
+      }
+    },
+    {
+      "id": "TERM-014",
+      "source": "The export stores its manifest beside the translation table in one package.",
+      "category": "TERM",
+      "expected_meaning": "export là thao tác xuất dữ liệu, không phải thương mại; giữ beside và one package. Cần duyệt cách chuyển câu sang bị động.",
+      "source_provenance": {
+        "file": "evaluation/translation_quality_phase1/dataset.v1.json",
+        "json_pointer": "/rows/80",
+        "rights_pointer": "/provenance"
+      }
+    }
+  ],
+  "fresh": [
+    {
+      "id": "F01",
+      "category": "idiom",
+      "source": "The new guide told a harmless joke to break the ice before the meeting.",
+      "expected_propositions": [
+        "Joke reduces initial social tension",
+        "No literal breaking ice"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F02",
+      "category": "idiom",
+      "source": "Lina kept a straight face even when the absurd plan made everyone else laugh.",
+      "expected_propositions": [
+        "Lina does not laugh or show amusement",
+        "Others laugh; no facial injury"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F03",
+      "category": "register",
+      "source": "Doctor, could you explain the result once more without using technical terms?",
+      "expected_propositions": [
+        "Polite request to doctor to explain again",
+        "Avoid technical jargon; no invented doctor gender"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F04",
+      "category": "term",
+      "source": "The archive can be inspected, but its original files must remain read-only.",
+      "expected_propositions": [
+        "Inspection allowed",
+        "Original files cannot be modified; permission contrast retained"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F05",
+      "category": "actor",
+      "source": "Nora handed the spare key to Felix, but Felix returned it to Nora before leaving.",
+      "expected_propositions": [
+        "Nora gives key to Felix",
+        "Felix returns same key to Nora; actor roles unchanged"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F06",
+      "category": "polarity",
+      "source": "Only Mila may unlock the cabinet; being able to reach the handle does not grant anyone else permission.",
+      "expected_propositions": [
+        "Mila alone authorized",
+        "Physical ability is not authorization; preserve negation"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F07",
+      "category": "polarity",
+      "source": "Unless the backup has been verified, do not replace the original file.",
+      "expected_propositions": [
+        "Verification prerequisite",
+        "Do not replace before verification; not opposite condition"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F08",
+      "category": "actor",
+      "source": "Iris did not ask Theo to apologize; she asked him to return the missing notebook.",
+      "expected_propositions": [
+        "Iris did not request apology",
+        "Requested action is Theo returning notebook"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F09",
+      "category": "long-omission",
+      "source": "Before sending the repaired radio to the village, Elena recorded its serial number, tested both switches, and attached a note describing the remaining fault. The red switch worked, but the blue switch still needed to be held down. She asked the courier to keep the box upright and to give the note to the technician rather than to the shopkeeper. The courier agreed to deliver it on Thursday, not on Tuesday, and Elena kept the original receipt in her desk.",
+      "expected_propositions": [
+        "All three preparation actions",
+        "Red works; blue needs holding",
+        "Upright box; technician receives note not shopkeeper",
+        "Thursday not Tuesday; Elena keeps original receipt"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F10",
+      "category": "long-omission",
+      "source": "The assistant copied the report into a temporary folder and checked that every page was present. When the checksum differed, she stopped the transfer and kept the original report unchanged. She then sent the reviewer a list of missing attachments, without including the confidential notes. The reviewer requested a corrected copy but did not authorize deletion of the temporary folder. After receiving that request, the assistant updated the attachment list and waited for a new verification result.",
+      "expected_propositions": [
+        "Copy and complete-page check",
+        "Checksum mismatch stops transfer; original unchanged",
+        "Reviewer gets missing attachments list not confidential notes",
+        "Corrected copy requested; deletion not authorized",
+        "Update list then wait for new verification"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F11",
+      "category": "protected",
+      "source": "Do not replace {player_name} with the name of the person who delivered the letter.",
+      "expected_propositions": [
+        "Preserve placeholder exactly",
+        "Do not substitute courier name"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    },
+    {
+      "id": "F12",
+      "category": "protected",
+      "source": "<b>Keep the backup</b>\\nDo not overwrite it when the verification fails.",
+      "expected_propositions": [
+        "Tags/literal newline retained",
+        "Keep backup; no overwrite on verification failure"
+      ],
+      "forbidden": [
+        "Omit or reverse any listed proposition",
+        "Invent actor/gender/permission not supported by source"
+      ]
+    }
+  ],
+  "profiles": {
+    "baseline": {
+      "beam_size": 2
+    },
+    "candidate": {
+      "beam_size": 4
+    }
+  },
+  "budget": {
+    "profiles": 2,
+    "development_outputs": 16,
+    "fresh_outputs": 24,
+    "total_outputs_max": 40,
+    "per_stage_timeout_seconds": 180,
+    "memory_peak_bytes_max": 1610612736,
+    "no_download": true
+  },
+  "admission": {
+    "development_min_repairs": 2,
+    "development_new_major_max": 0,
+    "fresh_min_improvements": 2,
+    "fresh_categories_min": 2,
+    "fresh_major_count_must_decrease": true,
+    "fresh_new_major_max": 0,
+    "uncertainty_not_gain": true,
+    "refusal_not_gain": true,
+    "no_fresh_tuning": true
+  }
+}

@@ -746,6 +746,7 @@ def retry_row_strategies(
     *,
     fast: bool = False,
     user_glossary: dict[str, str] | None = None,
+    v2_glossary: dict | None = None,
     full_raw: str = "",
     trace: list[dict[str, Any]] | None = None,
 ) -> tuple[str | None, str, list[str]]:
@@ -755,6 +756,10 @@ def retry_row_strategies(
     """
     strategies: list[tuple[str, str]] = []
     src = row["source_text"]
+    from vntext.glossary_v2 import candidate_term_issues
+    term_policy = v2_glossary if v2_glossary is not None else {
+        'entries': [dict(source=s,target=t) for s,t in (user_glossary or {}).items()]
+    }
     if mt_check.PH.search(src):
         strategies.append(("placeholder_safe_first", translate_protected_ct2(src, translator)))
     if batch_raw.strip():
@@ -777,6 +782,11 @@ def retry_row_strategies(
             candidate, reasons = None, ["placeholder-safe route required"]
         else:
             candidate, reasons = evaluate_candidate(row, raw_text, whitelist, quality=True)
+        if candidate:
+            term_reasons = candidate_term_issues(src,row,candidate,term_policy)
+            if term_reasons:
+                candidate = None
+                reasons = list(reasons or []) + term_reasons
         if (
             candidate
             and candidate.strip() == src.strip()

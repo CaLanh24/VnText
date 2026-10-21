@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "FROZEN_BEFORE_OUTPUT",
+  "rights": "agent-generated mechanism fixture; not human gold or fresh benchmark",
+  "purpose": "Existing >480token budget splitting, output cap and boundary separator diagnosis, not new segmentation policy",
+  "rows": [
+    {
+      "id": "long-events",
+      "source": "Elena placed the cracked blue vase on the lowest shelf without repairing it. Tomas counted the empty wooden boxes before opening the north storage room. Rina gave the spare bronze key to the caretaker rather than the visitor. Omar recorded the damaged wheel in a notebook and kept the receipt. Nadia checked the green lamp but left the red lamp switched off. Felix asked the courier to return on Friday instead of Monday. Mila put the unopened letters beside the clock without reading them. Jonas carried the silver tray upstairs while the cook stayed downstairs. Elena locked the small cabinet after returning the missing paper map. Tomas measured the narrow window before ordering a replacement wooden frame. Rina warned the children not to touch the wet painted bench. Omar moved the yellow chair away from the leaking water pipe. Nadia handed the folded blanket to the nurse at the east gate. Felix cleaned the glass bottle without pouring away the remaining medicine. Mila left the repaired shoes outside the bedroom for the sleeping guest. Jonas compared both lists and circled the names that appeared only once. Elena told the gardener to keep the gate closed until sunset. Tomas packed the fragile cup separately from the heavy iron tools. Rina found the torn envelope underneath the large dining table. Omar stopped the delivery because the address belonged to another village. Nadia offered the tired messenger a warm meal and a dry coat. Felix returned the borrowed ladder before the neighbour began painting the roof. Mila refused to sell the old violin because it belonged to her family. Jonas checked that the rope was dry before raising the wooden platform. Elena saved the unsigned form for the manager rather than the accountant. Tomas asked for written permission before entering the locked archive room. Rina placed a warning beside the bridge but did not close the road. Omar waited until the water cooled before carrying the metal pot. Nadia discovered that the red bag contained books rather than spare clothes. Felix sent the amended schedule to the driver without changing the destination. Mila kept the broken compass as evidence instead of throwing it away. Jonas noticed that the outer door was open although the inner door was locked. Elena moved the paper files to a dry room after the roof began leaking. Tomas asked the guard to escort the visitor back to the station. Rina stored the original photograph in a sealed envelope inside the desk. Omar confirmed that the missing parcel had arrived before paying the courier. Nadia wrote down the final serial number and kept a copy of the invoice. Felix returned the blue umbrella to its owner on Saturday rather than Sunday. Mila checked the last drawer and found three unused theatre tickets. Jonas left the final note beneath the white ceramic bowl for the inspector.",
+      "expected_tail": [
+        "Mila checks last drawer and finds three unused theatre tickets (index38)",
+        "Jonas leaves final note beneath white ceramic bowl for inspector (index39)"
+      ],
+      "expected_boundary": "Keep existing source whitespace between decoded chunks"
+    },
+    {
+      "id": "short-control",
+      "source": "Mila left the green suitcase outside the locked office.",
+      "expected": [
+        "Mila actor",
+        "Green suitcase outside locked office"
+      ]
+    }
+  ]
+}

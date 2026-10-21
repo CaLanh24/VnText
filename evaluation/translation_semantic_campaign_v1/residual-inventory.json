@@ -1,0 +1,332 @@
+{
+  "schema_version": 1,
+  "outcome": "PM_DECISION_REQUIRED_FOR_GENERAL_SEMANTIC_REMEDY_NOT_WHOLE_QUALITY_PASS",
+  "method": "Read-only known-residual inventory, no inference/test/build",
+  "packet_sha256": "f7ef0f5f8d556c8a48fba2f24fa3a1eca2dbdf8cc46335e091164975fcffae4c",
+  "fixed": [
+    {
+      "item": "G1",
+      "owner": "vntext/package_glossary.py",
+      "evidence": "evaluation/translation_quality_goal_v1/receipt.json",
+      "disposition": "PROVEN_FIXED protected spans/structural admission"
+    },
+    {
+      "item": "G2",
+      "owner": "vntext/mt_ct2_pipeline.py/vntext/glossary_v2.py",
+      "evidence": "evaluation/translation_quality_goal_v1/receipt.json",
+      "disposition": "PROVEN_FIXED caller-required-term retry/cache admission; refusals not meaning gains"
+    },
+    {
+      "item": "G5",
+      "owner": "vntext/mt_check.py",
+      "evidence": "evaluation/translation_quality_goal_v1/receipt.json",
+      "disposition": "PROVEN_FIXED initial ordinary prose misclassified as protected name, bounded gains only"
+    },
+    {
+      "item": "strict reviewed memory",
+      "owner": "vntext/mt_memory.py/vntext/csv_editor_api.py",
+      "evidence": "evaluation/translation_owner_approval_v1/entrypoint-ui-delivery.json",
+      "disposition": "PROVEN_FIXED scoped reuse/approval/CAS/rollback boundary; prior accepted receipt historical after laterPythondelta"
+    },
+    {
+      "item": "required-budget whitespace",
+      "owner": "vntext/mt_ct2_model.py",
+      "evidence": "evaluation/translation_semantic_campaign_v1/boundary-delivery.json",
+      "disposition": "PROVEN_FIXED both seams; Brain accepted; no major omission repair"
+    }
+  ],
+  "residuals": [
+    {
+      "id": "IDI-001",
+      "source": "Mara nearly spilled the beans about the surprise.",
+      "observed": "Mara Suýt nữa thì làm đổ đậu ra vì bất ngờ.",
+      "expected_meaning": "spill the beans = để lộ bí mật; nearly chỉ suýt, chưa xác nhận đã lộ.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-004",
+      "source": "At the next village, we can call it a day.",
+      "observed": "Ở làng kế bên, chúng ta có thể gọi đó là một ngày.",
+      "expected_meaning": "call it a day = dừng công việc/chặng đi hôm nay; không phải đặt tên một ngày. Không thêm kế hoạch ngày mai.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-005",
+      "source": "For Lin, the first puzzle was a piece of cake.",
+      "observed": "Cho Lin Câu đố đầu tiên là một miếng bánh.",
+      "expected_meaning": "piece of cake = rất dễ; giữ tên Lin, không tự gán giới tính.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-006",
+      "source": "The next riddle made her bite the bullet and ask for a hint.",
+      "observed": "Câu đố tiếp theo khiến cô ta cắn viên đạn và hỏi ý kiến.",
+      "expected_meaning": "bite the bullet = chấp nhận làm việc khó/ngại; her cho phép cô ấy. Xin duyệt sắc thái cắn răng.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-007",
+      "source": "I feel under the weather after standing in the cold rain.",
+      "observed": "Tôi cảm thấy dưới thời tiết sau khi đứng trong cơn mưa giá lạnh.",
+      "expected_meaning": "under the weather = không khỏe; không tự chẩn đoán bệnh cụ thể.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-010",
+      "source": "Even so, its repair cost an arm and a leg.",
+      "observed": "Dù vậy, việc sửa chữa của nó cũng tốn cả một cánh tay và một chân.",
+      "expected_meaning": "an arm and a leg = rất tốn tiền; its giữ liên hệ vật ở câu cùng cảnh, không tự đổi vật.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-012",
+      "source": "I will take that promise with a grain of salt until the repair is done.",
+      "observed": "Tôi sẽ thực hiện lời hứa đó với một hạt muối cho đến khi sửa chữa xong.",
+      "expected_meaning": "grain of salt = chưa hoàn toàn tin; giữ mốc until, không khẳng định lời hứa chắc chắn sai.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-015",
+      "source": "Please do not let the cat out of the bag before her birthday.",
+      "observed": "Xin đừng để con mèo ra khỏi túi trước sinh nhật nó.",
+      "expected_meaning": "let the cat out of the bag = để lộ bí mật; giữ phủ định và before.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-016",
+      "source": "The patient was out of the woods after the fever broke.",
+      "observed": "Bệnh nhân đã ra khỏi rừng sau khi cơn sốt tan.",
+      "expected_meaning": "out of the woods trong ngữ cảnh sốt = hết nguy hiểm; không khẳng định đã khỏi bệnh hoàn toàn.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "IDI-017",
+      "source": "The gutters overflow because it is raining cats and dogs outside.",
+      "observed": "Những máng nước tràn ngập bởi vì nó là những con mèo và những con chó ở bên ngoài.",
+      "expected_meaning": "raining cats and dogs = mưa rất to; giữ quan hệ vì và địa điểm ngoài trời.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Product source text is preserved; idiomatic sense selection wrong. Generic lexical tables/carrier/segmentation cannot establish a safe repair.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "ADDR-008",
+      "source": "I will send the corrected page as soon as I return.",
+      "observed": "Tôi sẽ gửi ngay khi tôi trở về.",
+      "expected_meaning": "Nhân viên nói với quản lý: giữ đối tượng trang đã sửa và as soon as; tôi không gán giới tính quản lý.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Surface validation preserves structure but cannot establish intended meaning.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "ADDR-014",
+      "source": "You can tell me the truth; I will not be angry with you.",
+      "observed": "Ngươi có thể nói thật, ta sẽ không giận ngươi đâu.",
+      "expected_meaning": "Metadata gốc: chị gái nói dịu dàng với em trai. Chị/em có căn cứ; giữ cho phép và sẽ không giận.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Speaker/register/gender facts not supplied to the model; context sidecar metadata-only by contract. Inference can choose unsupported address. No authorized demonstrated context mechanism.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "ADDR-015",
+      "source": "We have known each other too long for that excuse.",
+      "observed": "Chúng ta đã biết nhau quá lâu rồi.",
+      "expected_meaning": "Cùng chị gái/em trai ở câu trước; diễn đạt ý bác cái cớ. Không thêm mệnh lệnh hoặc biến thành chỉ nói quen lâu.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Speaker/register/gender facts not supplied to the model; context sidecar metadata-only by contract. Inference can choose unsupported address. No authorized demonstrated context mechanism.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "ADDR-016",
+      "source": "Professor, would you look over the last page when you have a moment?",
+      "observed": "Giáo sư, ông có thể xem qua trang cuối cùng khi có thời gian không?",
+      "expected_meaning": "Học viên cao học nói kính trọng với giáo sư lớn tuổi. Giới tính UNKNOWN: tránh ông/bà/thầy/cô; không tự chọn giới tính.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Speaker/register/gender facts not supplied to the model; context sidecar metadata-only by contract. Inference can choose unsupported address. No authorized demonstrated context mechanism.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "TERM-001",
+      "source": "The patch manifest lists every source file and its checksum.",
+      "observed": "Bảng liệt kê mọi tập tin nguồn và hệ thống kiểm tra.",
+      "expected_meaning": "Giữ patch, manifest, mọi source file và checksum ứng với từng tệp. Mã kiểm tra là thuật ngữ đề xuất, chưa duyệt.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Term event/relationship/sense wrong; exact reviewed occurrence fixes only that scope. General context-free term substitution not justified.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "TERM-004",
+      "source": "A cache hit must pass validation again before it can be reused.",
+      "observed": "Cần phải thông qua lại một lần nữa trước khi dùng lại bộ nhớ tạm.",
+      "expected_meaning": "Nguồn dùng cache hit/it cho kết quả cache; đề xuất làm rõ kết quả, không biến validation thành đăng nhập/xác thực danh tính. Cần duyệt cách diễn đạt.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Term event/relationship/sense wrong; exact reviewed occurrence fixes only that scope. General context-free term substitution not justified.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    },
+    {
+      "id": "TERM-014",
+      "source": "The export stores its manifest beside the translation table in one package.",
+      "observed": "Xuất khẩu lưu trữ bản kê khai bên cạnh bảng dịch trong một gói.",
+      "expected_meaning": "export là thao tác xuất dữ liệu, không phải thương mại; giữ beside và one package. Cần duyệt cách chuyển câu sang bị động.",
+      "classification": "OBSERVED_MODEL_SEMANTIC_ERROR_NO_PROVEN_ADDITIONAL_CODE_DEFECT",
+      "causal_limit": "No per-case controlled full-sentence comparison for every residual; do not claim every error isolated to backend rather than fragmentation.",
+      "investigated_owners": [
+        "vntext/mt_ct2_io.py:_batch_translate_chunk",
+        "vntext/mt_translation_safety.py:split_parts/postprocess",
+        "vntext/mt_ct2_pipeline.py:first-pass admission/selective retries",
+        "vntext/context_builder.py:build_context_records"
+      ],
+      "finding": "Term event/relationship/sense wrong; exact reviewed occurrence fixes only that scope. General context-free term substitution not justified.",
+      "approved_reuse": "Separate Owner-delegated exact-scope decision, not generalized model improvement"
+    }
+  ],
+  "additional_seen": [
+    {
+      "id": "long-events",
+      "finding": "Direct backend480source->23target tokens; product protectednames gives40fragments/max18 with more clauses but remaining semantic errors",
+      "evidence": "semantic-product-direct-comparison.json/semantic-boundary-loss-localization.json"
+    },
+    {
+      "id": "R15/R21/R22/R37",
+      "finding": "One fullsentence predicate gain, one new major/namecorruption; ladder and serial errors persist; frozen candidate rejected",
+      "evidence": "evaluation/translation_semantic_campaign_v1/relation-review.json"
+    }
+  ],
+  "still_unexamined": "Not every semantic error has a per-case causal comparison; no concrete additional unexamined code-defect premise identified. Broad counterfactual model experiments need a justified mechanism, not automatically another run.",
+  "not_proven": "No exhaustive proof that every possible code defect is absent; no whole-app linguistic completion.",
+  "missing_prerequisites": [
+    "A context-preserving translation mechanism that retains exact protected names/tokens and improves actor/polarity/idiom/term-sense on independent source-aligned controls",
+    "Independent bilingual semantic acceptance criteria/data covering actual product domains and rights; current agent reviews are not human gold",
+    "If current OPUS cannot meet the criterion, explicit bounded authorization to evaluate an alternative model or training/data route; installation/download/model/training not currently authorized"
+  ],
+  "safe_disposition": "Retain accepted fixes/currentDEV/raw failures, reject failed hypotheses, do not expand dictionaries/promote exactanswerbank/refusal or loop parameter variants. Brain/Owner technology/data decision required for next scope."
+}

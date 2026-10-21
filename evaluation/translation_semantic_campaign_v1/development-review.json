@@ -1,0 +1,19 @@
+{
+  "admitted": false,
+  "frozen_sha256": "30c7ce38547747ede14443d3429f51abeeb1b2b9e846a6c10d9af5c258426c59",
+  "raw_sha256": "c21e6c1d5db60d706b75fc73720c23c8934b5012fbe58df5b7d333f0a6596eff",
+  "reviewer": "Coordinator source-aligned agent review; not human gold/blind",
+  "semantic_repairs": 0,
+  "new_major_errors": "No new repaired-case regression; existing errors remain. ADDR candidate introduces unsupported masculine address, so not an acceptable register repair.",
+  "findings": {
+    "IDI-001": "Literal beans persists; candidate nearly->gần như adds no idiomatic repair",
+    "IDI-004": "Identical literal call it a day",
+    "IDI-006": "Identical literal bite bullet and wrong hint",
+    "ADDR-014": "Ngươi/ta replaced but Anh unsupported; no accepted repair",
+    "ADDR-016": "Identical unsupported male address",
+    "TERM-001": "Checksum rendering improves partially; patch/manifest relationship remains missing; not complete semantic repair",
+    "TERM-004": "Cache-hit event wrong in both outputs; candidate choose-cache wrong",
+    "TERM-014": "Identical export-as-commerce wrong"
+  },
+  "disposition": "REJECTED; development threshold not met; fresh controls not run; no beam/penalty sweep"
+}

@@ -13,6 +13,20 @@ public static class UiText
     private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["Duyệt dòng đã chọn để dùng trong gói"] = "Approve selected rows for this package",
+        ["Duyệt bản dịch trong gói này"] = "Review translations for this package",
+        ["Xác nhận đã duyệt"] = "Confirm reviewed translations",
+        ["Hủy"] = "Cancel",
+        ["{0} dòng đã chọn."] = "Selected rows: {0}.",
+        ["Nguồn:"] = "Source:",
+        ["Bản dịch:"] = "Translation:",
+        ["Chỉ gói hiện tại và đúng nguồn, file, ngữ cảnh, cách nhập; không dùng cho gói khác."] = "Only this package and the exact source, file, context and import method; never another package.",
+        ["Không dùng để huấn luyện hoặc làm bản dịch mặc định toàn app."] = "Not used for training or as app-wide default translations.",
+        ["Bộ nhớ cũ sẽ được giữ bản sao; chỉ các dòng xác nhận được đưa vào bộ nhớ đã duyệt."] = "A copy of the old memory will be retained; only confirmed rows enter reviewed memory.",
+        ["Đã duyệt {0} dòng để dùng trong gói hiện tại."] = "Approved rows: {0} for reuse in the current package.",
+        ["Không thể xem trước bản dịch."] = "Cannot preview translations.",
+        ["Không thể ghi bản dịch đã duyệt."] = "Cannot save reviewed translations.",
+        ["Dữ liệu đã đổi; hãy chọn và xem trước lại."] = "Data changed; select the rows and preview again.",
         ["Cài đặt"] = "Settings",
         ["Nhật ký"] = "Logs",
         ["Chung"] = "General",

@@ -1,0 +1,16 @@
+{
+  "admitted": false,
+  "outcome": "REJECTED_PREFIX_AS_SEMANTIC_REMEDY",
+  "reviewer": "Coordinator source-aligned agent; not human gold",
+  "raw_sha256": "152132b6da7910bbea40fe7893917a0f021cd2053e7a25d0a5da3d8064350e31",
+  "definition_sha256": "27d0964350f5d4a03acb2e7ee6b978676e02aadcbe157ea9b0236b307a5d20fd",
+  "findings": {
+    "R15": "Mila exact now, but left->forgot semantic regression remains vs product split",
+    "R21": "Same offered-action gain as unconstrained full sentence; prefix adds no new meaning repair",
+    "R22": "Borrower-role error persists",
+    "R37": "Serial-number error persists"
+  },
+  "conclusion": "Exact prefix controls spelling, not adequacy; no further prefix/beam/length variants or fresh controls admitted",
+  "elapsed_seconds": 2.8440000000118744,
+  "peak_working_set": 200802304
+}

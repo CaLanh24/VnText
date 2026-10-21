@@ -1,0 +1,15 @@
+{
+  "status": "FROZEN_BEFORE_OUTPUT",
+  "relation_source_sha256": "c7400c9e669536b72b5bee267c86427a6891e7b4b448ded493047e4b5fbb5195",
+  "mechanism": "Full unchanged sentence with exact sentence-initial proper-name target_prefix, tokens encoded using target tokenizer without EOS; no source replacement",
+  "candidate": {
+    "target_prefix": "source initial name only",
+    "beam_size": 2,
+    "other_decoding": "existing defaults"
+  },
+  "new_output_budget": 4,
+  "timeout_seconds": 120,
+  "peak_bytes": 1610612736,
+  "admission": "Exact names AND whole meaning; any new major rejects. One partial gain is not whole quality; no targetanswerprefix or arbitrary name postediting.",
+  "reference": "https://opennmt.net/CTranslate2/decoding.html#autocompletion"
+}

@@ -19,6 +19,47 @@ from vntext.translation_cache import (
 
 
 class TranslationCacheTests(unittest.TestCase):
+    def test_synonym_cannot_cache_or_write_draft_missing_requested_glossary_term(self):
+        from vntext.mt_ct2_pipeline import run_ct2_translate
+        from vntext.package_io import read_csv_rows_file
+        csv_path=self.root/'translation.csv'
+        csv_path.write_text('key,source_text,translation,context,file_path,import_method\n'
+                            'k1,"cache,storage",,TextAsset:_synonyms:1,_synonyms.txt,unity_textasset_line\n',encoding='utf-8')
+        (self.root/'.mt').mkdir()
+        (self.root/'.mt/glossary.json').write_text(json.dumps({'cache':'bộ nhớ đệm'}),encoding='utf-8')
+        delegate=MagicMock();delegate.config={'batch_size':8,'inter_threads':1,'flush_every':8}
+        with patch('vntext.mt_ct2_model.get_translator',return_value=delegate), \
+             patch('vntext.mt_ct2_pipeline.translate_synonym_row',return_value='dữ liệu,lưu trữ'):
+            result=run_ct2_translate(csv_path)
+        self.assertEqual(read_csv_rows_file(csv_path)[1][0]['translation'],'')
+        self.assertEqual(result['blocked'],1)
+        self.assertEqual(result['cache']['writes'],0)
+
+        # A valid pool remains writable: admission must not reject all synonyms.
+        with patch('vntext.mt_ct2_model.get_translator',return_value=delegate), \
+             patch('vntext.mt_ct2_pipeline.translate_synonym_row',return_value='bộ nhớ đệm,lưu trữ'):
+            result=run_ct2_translate(csv_path)
+        self.assertEqual(read_csv_rows_file(csv_path)[1][0]['translation'],'bộ nhớ đệm,lưu trữ')
+        self.assertEqual(result['blocked'],0)
+        self.assertEqual(result['cache']['writes'],1)
+
+    def test_pipeline_does_not_cache_or_write_retry_that_lost_required_term(self):
+        csv_path=self.root/'translation.csv'
+        csv_path.write_text('key,source_text,translation,context,file_path,import_method\n'
+                            'k1,Use cache.,,TextAsset:tech,fixture.txt,plain_text_line\n',encoding='utf-8')
+        (self.root/'.mt').mkdir()
+        (self.root/'.mt/glossary.json').write_text(json.dumps({'cache':'bộ nhớ đệm'}),encoding='utf-8')
+        delegate=MagicMock();delegate.config={'batch_size':8,'inter_threads':1,'flush_every':8}
+        delegate.translate_many.return_value=['Dùng dữ liệu.']
+        with patch('vntext.mt_ct2_model.get_translator',return_value=delegate), \
+             patch('vntext.mt_ct2_io._batch_translate_chunk',return_value={'k1':'Dùng dữ liệu.'}), \
+             patch('vntext.mt_ct2_pipeline.retry_row_strategies',return_value=('Dùng dữ liệu.','mock_retry',[])):
+            result=run_ct2_translate_keys(csv_path,['k1'],backup=False)
+        from vntext.package_io import read_csv_rows_file
+        self.assertEqual(read_csv_rows_file(csv_path)[1][0]['translation'],'')
+        self.assertEqual(result['blocked'],1)
+        self.assertEqual(result['cache']['writes'],0)
+
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="vntext-cache-")
         self.root = Path(self.temp.name)
@@ -160,7 +201,7 @@ class TranslationCacheTests(unittest.TestCase):
         self.assertEqual(adapter.metadata()["model_id"], "opus-mt-en-vi-ct2-int8")
         self.assertEqual(
             adapter.metadata()["decoding"]["profile"],
-            "ct2-translate-batch-defaults-v1",
+            "ct2-defaults-source-chunk-whitespace-v2",
         )
         context = _translation_cache_context(
             self.root,
@@ -171,7 +212,7 @@ class TranslationCacheTests(unittest.TestCase):
         )
         self.assertEqual(
             context["decoding"]["profile"],
-            "ct2-translate-batch-defaults-v1",
+            "ct2-defaults-source-chunk-whitespace-v2",
         )
 
     def test_ct2_trace_uses_concrete_resolved_model_revision(self):

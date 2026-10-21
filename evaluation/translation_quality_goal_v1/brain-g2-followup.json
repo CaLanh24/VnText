@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "outcome": "G2_REMEDIATED_WHOLE_GOAL_NOT_ACCEPTED",
+  "base_source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "committed": false,
+  "previous_receipt": "receipt.json (intermediate immutable evidence)",
+  "changes": [
+    "Count requested targets only within separate unprotected prose spans",
+    "Apply glossary admission to synonym candidate/fallback before cache/write",
+    "Version glossary cache strategy required-terms2-prose-synonym"
+  ],
+  "runtime_test_hashes": {
+    "vntext/glossary_v2.py": "1982E2D929FBA6C2082B0F1E3F29E51FA76884A963701123A7E0A37C21C1209B",
+    "vntext/mt_ct2_pipeline.py": "EEDC9490E69F3075CCF1DC3726A97F3B32CA1C4A1C19B918E2B19D58CC4180A4",
+    "tests/unit/test_glossary_context_v2.py": "C0021CDD8B5EDEB155857823267D16580EFCF4ACAF7C49601E2700297877934E",
+    "tests/unit/test_translation_cache.py": "8A77D1C236F4E3B3DFA905BBA8AF1AD3CBA36B543196C96F65636C3F54A8B9AB"
+  },
+  "tests": {
+    "status": "PASS",
+    "terminal_line": "OK",
+    "tests": 94,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "warnings": 0,
+    "skip_reasons": [],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 15849,
+    "input_truncated": false
+  },
+  "build": {
+    "dirty": true,
+    "assembly_sha256": "d62e1089186cb51bf1cc9069a31604ab223d0524769b85c79a5b2edce9eddebc",
+    "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+    "sha256": "6fe96ea326bae10f40e84ec08bf56b59bf24d11055df263e1153fd6f86826c3d",
+    "executable": "DEV_RUN/bootstrap-build/VNText.Studio.App.exe",
+    "configuration": "Debug",
+    "source_diff_sha256": "61ddec93ec9655865184c3391f2585530866dfbb82e57aff33bdffab04365348"
+  },
+  "build_wrapper_exit": 0,
+  "build_cleanup": "PASS",
+  "worker_smoke_ok": true,
+  "cleanup": {
+    "inventory_complete": true,
+    "shared_bytes": 5778823454,
+    "unknown_count": 0,
+    "locked_count": 0,
+    "status": "PASS",
+    "non_exempt_bytes": 723638012,
+    "errors": 0
+  },
+  "raw_receipts": [
+    {
+      "name": "translation-goal-brain-g2-red.json",
+      "sha256": "EFF7F87B98374E7214CE145C0857C854CAF6B506421E73B20D652B1079C57D5E"
+    },
+    {
+      "name": "translation-goal-brain-g2-red-corrected.json",
+      "sha256": "CE8DE29F0DC15CDCBB1910E820EA268909A92971B7F535B3BA76CC110EBC7427"
+    },
+    {
+      "name": "translation-goal-brain-g2-green.json",
+      "sha256": "7FA88B08466524AD272ABFFE3875568E57004598E8EB5AB161635D8F2355D3AD"
+    },
+    {
+      "name": "translation-goal-brain-g2-dev-wrapper.json",
+      "sha256": "4644F0BE68BDA45C054A2F80527AC1D0238A7BED6943F73032B75A400CE8AEAE"
+    },
+    {
+      "name": "translation-goal-brain-g2-cleanup.json",
+      "sha256": "A3D25F15AF8FE4535FC95DD2A37DF0A078DA268AEBBE2B7232ACA6F28DC7E9ED"
+    }
+  ],
+  "residual_diagnosis": {
+    "proper_name_splits": 2,
+    "new_inference": false,
+    "complete_fragments": 15,
+    "sha256": "AE3149C86EB4043F52E5F4D0E1B52EABEDBBBFF1B83EFC9DC546BD785BA4D35F",
+    "name": "residual-input-diagnosis.json",
+    "rows": 17
+  },
+  "remaining": [
+    "Evaluate conservative long paragraph sentence segmentation",
+    "Unresolved short semantic errors require mechanism or concrete Owner decision; no full-goal acceptance",
+    "Owner-supplied Git author identity required for commit"
+  ]
+}

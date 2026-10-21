@@ -59,7 +59,7 @@ class Ct2ModelAdapter:
             # (and therefore invalidate validated candidates).
             "decoding": {
                 "backend_api": "ctranslate2.translate_batch",
-                "profile": "ct2-translate-batch-defaults-v1",
+                "profile": "ct2-defaults-source-chunk-whitespace-v2",
                 "max_src_tokens": config.get("max_src_tokens"),
             },
         }

@@ -19,6 +19,7 @@ from bootstrap import bootstrap
 TESTS, ROOT, LIB = bootstrap(__file__)
 
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -26,6 +27,53 @@ from vntext.mt_ct2 import CT2_MAX_SRC_TOKENS, Ct2Translator, _split_text_under_t
 
 
 class Ct2LongInputTests(unittest.TestCase):
+    def test_join_handles_split_whitespace_and_count_mismatch(self):
+        from vntext.mt_ct2_model import _join_translated_budget_parts, MtCt2Error
+        self.assertEqual(
+            _join_translated_budget_parts(["North. ", "\t", "\nNadia."], [" Bắc. ", "ignored", " Nadia. "]),
+            "Bắc. \t\nNadia.",
+        )
+        with self.assertRaises(MtCt2Error):
+            _join_translated_budget_parts(["North.", "Nadia."], ["Bắc."])
+
+    def test_recursive_token_guard_restores_original_separator(self):
+        inst = object.__new__(Ct2Translator)
+        inst._batch_size = 8
+        inst._max_batch_size = 64
+        inst._max_src_tokens = 10
+        class Tokenizer:
+            def encode(self, text, add_special_tokens=True):
+                return list(range(len(text)))
+            def convert_ids_to_tokens(self, ids):
+                return ["t"] * len(ids)
+            def convert_tokens_to_ids(self, tokens):
+                return [int(tokens[0])]
+            def decode(self, ids, skip_special_tokens=True):
+                return "Bắc." if ids[0] == 1 else "Nadia."
+        class Backend:
+            def translate_batch(self, tokens, **kwargs):
+                from types import SimpleNamespace
+                return [SimpleNamespace(hypotheses=[[str(i+1)]]) for i in range(len(tokens))]
+        inst._tokenizer = Tokenizer()
+        inst._translator = Backend()
+        with patch("vntext.mt_ct2_model._split_text_under_token_limit", return_value=["North.\n\t", "Nadia."]):
+            self.assertEqual(inst._translate_token_batch(["North.\n\tNadia."]), ["Bắc.\n\tNadia."])
+
+    def test_reassembly_preserves_source_chunk_separators_not_decoder_spaces(self):
+        inst = object.__new__(Ct2Translator)
+        inst._max_src_tokens = 8
+        inst._input_token_len = len
+        inst._model_input = lambda value: value
+        for parts, decoded, expected in [
+            (["North. ", "Nadia."], ["phía bắc.", "Nadia."], "phía bắc. Nadia."),
+            (["North.\n\t", "Nadia."], [" phía bắc. ", "Nadia."], "phía bắc.\n\tNadia."),
+            (["abcdefgh", "ijkl"], ["một", "hai"], "mộthai"),
+        ]:
+            with self.subTest(parts=parts):
+                inst._translate_token_batch = lambda values: decoded
+                with patch("vntext.mt_ct2_model._split_text_under_token_limit", return_value=parts):
+                    self.assertEqual(inst.translate_many(["".join(parts)]), [expected])
+
     def test_split_preserves_all_characters(self):
         text = ("Hello world. " * 40) + "End marker XYZ."
         max_tok = 50

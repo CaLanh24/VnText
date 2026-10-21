@@ -1,0 +1,86 @@
+{
+  "status": "FROZEN_BEFORE_COMPARISON",
+  "rows": [
+    {
+      "id": "R15",
+      "source": "Mila left the repaired shoes outside the bedroom for the sleeping guest.",
+      "source_origin": "boundary-frozen long-events seen product workflow",
+      "expected": [
+        "Mila leaves repaired shoes outside bedroom for sleeping guest",
+        "Mila actor; shoes repaired; guest sleeping"
+      ],
+      "required_names": [
+        "Mila"
+      ],
+      "forbidden": [
+        "Reverse actor/recipient/borrower",
+        "Omit action, negation or relation",
+        "Corrupt original name"
+      ]
+    },
+    {
+      "id": "R21",
+      "source": "Nadia offered the tired messenger a warm meal and a dry coat.",
+      "source_origin": "boundary-frozen long-events seen product workflow",
+      "expected": [
+        "Nadia offers tired messenger warm meal and dry coat",
+        "Nadia agent; messenger recipient"
+      ],
+      "required_names": [
+        "Nadia"
+      ],
+      "forbidden": [
+        "Reverse actor/recipient/borrower",
+        "Omit action, negation or relation",
+        "Corrupt original name"
+      ]
+    },
+    {
+      "id": "R22",
+      "source": "Felix returned the borrowed ladder before the neighbour began painting the roof.",
+      "source_origin": "boundary-frozen long-events seen product workflow",
+      "expected": [
+        "Felix returns borrowed ladder before neighbour starts painting roof",
+        "Felix borrower returns ladder; not returns to borrower"
+      ],
+      "required_names": [
+        "Felix"
+      ],
+      "forbidden": [
+        "Reverse actor/recipient/borrower",
+        "Omit action, negation or relation",
+        "Corrupt original name"
+      ]
+    },
+    {
+      "id": "R37",
+      "source": "Nadia wrote down the final serial number and kept a copy of the invoice.",
+      "source_origin": "boundary-frozen long-events seen product workflow",
+      "expected": [
+        "Nadia records final serial number and keeps invoice copy",
+        "Serial identifier not number of repetitions"
+      ],
+      "required_names": [
+        "Nadia"
+      ],
+      "forbidden": [
+        "Reverse actor/recipient/borrower",
+        "Omit action, negation or relation",
+        "Corrupt original name"
+      ]
+    }
+  ],
+  "profiles": [
+    "current_product_split",
+    "existing_full_sentence_retry"
+  ],
+  "model_unchanged": true,
+  "semantic_review": "source-aligned agent, not human gold",
+  "budget": {
+    "max_rows": 4,
+    "max_backend_outputs": 8,
+    "timeout_seconds": 120,
+    "peak_bytes": 1610612736
+  },
+  "admission": "Any new major/name corruption rejects; no fresh control or production admission from seen gain alone"
+}

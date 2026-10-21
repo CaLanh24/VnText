@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "outcome": "TECHNICAL_DELIVERY_NATIVE_ACCEPTANCE_BLOCKED",
+  "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+  "committed": false,
+  "exact_commit_build": false,
+  "source_test_hashes": {
+    "tests/tools/translation_editor_memory_workflow.py": "1728776586b23af3c8d64db00f06a2f65e363e35be8b0f440c20e458139906a2",
+    "tests/tools/translation_glossary_sentence_probe.py": "2a54dfdbb4198ed4d22d796ce5fa741d8070aa4aafa823048d48abd070d1b5d8",
+    "tests/tools/translation_goal_audit.py": "09bef2de4ea5b194cce96e2a15c213a45fbbe7f32153f03d8cea318d5494310c",
+    "tests/tools/translation_goal_longtext.py": "a6c4fb9c3779ff10aee1193759c808358ab3f050d27ac2febc9400430a7d1679",
+    "tests/tools/translation_goal_receipt.py": "0ca26344400e53ef800a63d6a0de438aa0a5e8d9a47004ecfc3a6c04acc6ec56",
+    "tests/tools/translation_goal_sentence_segmentation.py": "eccd8cb10ccb8edc258da5596a74a378bd3442835d8e4a231cc13f0b9d947532",
+    "tests/tools/translation_goal_workflow.py": "4aae394ff541308614512448ba6a59aa0488450274c5d4ec39146716728dfe21",
+    "tests/tools/translation_owner_approval.py": "dedcf970ae1e709fb40cf8e723d1b673d332aa7ecfec00063eeebf86dcada118",
+    "tests/tools/translation_owner_review_packet.py": "0d4f81e06cba5662776744241a7b4ba9381c9205b820f94720262937ec9b7cc3",
+    "tests/tools/translation_strict_memory_probe.py": "2c20a3d8286a6d23fe74c69a5737507d49057d5fce30029c182554a5a54987b9",
+    "tests/unit/test_glossary_context_v2.py": "c0021cdd8b5edeb155857823267d16580efcf4acaf7c49601e2700297877934e",
+    "tests/unit/test_mt_strategies.py": "8980c20f36f6cc9eb69c51e966ca9ef586ad8f4457db089fa27ff617c159bd94",
+    "tests/unit/test_reviewed_memory_editor.py": "73e32ed2e22439d8e26fab156dfb28ddf9db57abfe2f0c9980ff8b85cd220558",
+    "tests/unit/test_strict_approval_memory.py": "9e0e4e9299ebe4b32f575b8e571793e1b5c4e8f79436d9b134aecae042d6e417",
+    "tests/unit/test_translation_cache.py": "8a77d1c236f4e3b3dfa905bba8af1ad3cba36b543196c96f65636c3f54a8b9ab",
+    "tests/unit/test_translation_owner_approval.py": "f96a16129176f8f290281244b2b9303a2893b183bf5d16bca4815bc52f4dc683",
+    "tests/unit/test_translation_owner_review_packet.py": "9680000b1c97d5498557fcbbbc11ae48e2be50a8de1d4ac571a35114d91d25b3",
+    "tests/unit/test_user_glossary.py": "cb02c8880e7f63d340f676bc760c1de541b11d5cb3e89d9456c3728dc53b41b2",
+    "vntext/csv_editor_api.py": "3ca2d7aeb8e4af1c6f2377639d8ca2b1f5ba059888b7b9203de33409d14126d8",
+    "vntext/glossary_v2.py": "1982e2d929fba6c2082b0f1e3f29e51fa76884a963701123a7e0a37c21c1209b",
+    "vntext/mt_check.py": "6a225bc1d21127d05f195769fd3b860c55977821f426e3e23a33111171bbde68",
+    "vntext/mt_ct2_pipeline.py": "a1b5a918284dd1969e142339d71f433b6e837c85e8d66fa05753eca0c1fe7868",
+    "vntext/mt_memory.py": "2dbc5037f8372db6ff767ef2168992dcf3c8a8e3cfbe83a6be87203da7671322",
+    "vntext/mt_strategies.py": "60770f5206eb0b550aaf53409d02192c2b9645b8c718e131b2737a81062f91c4",
+    "vntext/package_glossary.py": "ff6de9e8d39828213f7a551b1cbb9b398f6d8911a8e9272892aad2e193c0c30d",
+    "vntext/translation_cache.py": "fd3c15feaad1da0ed463a16f219ae854289198aa0960839baae1af36d0120db3",
+    "wpf_app/VNText.Studio.App/MainWindow.xaml": "cfc1d5d6d8053e15e2a6d447cb91ae3f30e9fd0a1449e8978a94b42ab94ab915",
+    "wpf_app/VNText.Studio.App/Services/TranslationCsvEditorService.cs": "c07ad3f6816308472523ea500a942a17b5241c388ad6442ea0b090d534d993cf",
+    "wpf_app/VNText.Studio.App/Services/UiText.cs": "eca90fd94eaa4a103fedd78ae40ceaa25522c628cfd8a7cd926748012e89decb",
+    "wpf_app/VNText.Studio.App/ViewModels/MainViewModel.CsvEditor.cs": "bda73abc3d7b41292305c64c07eee358f0c0a4e4d0e1d3bae4c73790b8789aa5",
+    "wpf_app/VNText.Studio.App/ViewModels/MainViewModel.ReviewedMemory.cs": "07194cdb9b73260d5e5e809699954dae3eccdee1deca74be4057242e7f8c803e",
+    "wpf_app/VNText.Studio.Workflow.Tests/Program.cs": "c2f4de2ca1e387e24b54d47616726c4b4b4f6ca8603bda3037465cedc9ae4532",
+    "wpf_app/VNText.Studio.Workflow.Tests/ReviewedMemoryTests.cs": "a7c95826d016e5fdfcd22d42e48445d8bbc94283844953f648b10bb2e11b5592"
+  },
+  "backend_tests": {
+    "status": "PASS",
+    "terminal_line": "OK",
+    "tests": 66,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "warnings": 0,
+    "skip_reasons": [],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 11485,
+    "input_truncated": false
+  },
+  "localized_harness": {
+    "status": "PASS",
+    "terminal_line": "OK",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "warnings": 0,
+    "skip_reasons": [],
+    "warning_records": [],
+    "failure_records": [],
+    "input_bytes": 225,
+    "input_truncated": false
+  },
+  "workflow": {
+    "exact_approved_reuse": 4,
+    "patch_readback": true,
+    "preview_no_writes": true,
+    "source_and_donor_unchanged": true,
+    "wrong_package_refused": true,
+    "raw_sha256": "99780a097047ef540fa6d83009bfd918539c6fdaa8d6afec534c8df1951dddcb",
+    "worker_native_exit": 1,
+    "shutdown_qualification": "Existing test helper explicitly terminates idle child; not natural exit0."
+  },
+  "build": {
+    "source_sha": "c9825d466ada179b39bca7968f6f50c43e95b412",
+    "configuration": "Debug",
+    "source_diff_sha256": "a779263f0b62515d61a2b11cb1efd785cf7f19e132a8c84536aa279e7f488f37",
+    "dirty": true,
+    "sha256": "6fe96ea326bae10f40e84ec08bf56b59bf24d11055df263e1153fd6f86826c3d",
+    "assembly_sha256": "066a3c65c8c200f774e71a5d49481ebce8b3b78bb50ff9441717c69f56d7efa6"
+  },
+  "smoke": {
+    "ok": true,
+    "steps": [
+      "cancel",
+      "extract",
+      "translate",
+      "patch",
+      "crash"
+    ],
+    "installer_acceptance": false
+  },
+  "native": {
+    "outcome": "PROVEN_BLOCKED_NATIVE_TARGET_IDENTITY",
+    "returned_window": {
+      "id": 591012,
+      "app": "OpenAI.Codex_2p2nqsd0c76g0!App",
+      "title": "VNText Studio"
+    },
+    "ui_actions": 0,
+    "screenshots": 0,
+    "qualification": "Supported sky target app conflicts with guest DEV executable. No Codex/ChatGPT UI input or capture. Client integration target-selection limitation, not proof of VNText GUI failure."
+  },
+  "cleanup": {
+    "status": "PASS",
+    "complete": true,
+    "unknown": 0,
+    "locked": 0,
+    "errors": 0,
+    "non_exempt_bytes": 724987638,
+    "shared_bytes": 5797446623,
+    "test_run_absent": true,
+    "release_run_absent": true,
+    "dev_executable_count": 1
+  },
+  "receipts": [
+    {
+      "name": "translation-editor-memory-confirm-boundaries.json",
+      "sha256": "fe456985c63cff17f87b4017d2a959ea068cb19594116013c88a12a132e6bb1e"
+    },
+    {
+      "name": "translation-editor-memory-workflow-copyfix-wrapper.json",
+      "sha256": "7291f968cbe1c95dc17a07eed7fea17d3b392581099393c7d552eb81aed133d7"
+    },
+    {
+      "name": "translation-editor-memory-localized-harness.json",
+      "sha256": "59b0fc888392a3234c702688c5bcea84b721b0e5563836147e2ba7a1dd535149"
+    },
+    {
+      "name": "translation-editor-memory-dev-wrapper.json",
+      "sha256": "d55f2d958d885e90393c37fcc6a225537642a50e3ac70a09e57cd52d518286a5"
+    },
+    {
+      "name": "translation-editor-memory-final-cleanup.json",
+      "sha256": "912f91992af3eba107a2a676f4a1d8f17af49b8e89b2e2f1f065adfbc3ae9837"
+    },
+    {
+      "name": "translation-editor-memory-native-blocker.json",
+      "sha256": "ead8091a4d513906d49d76cf3709af72fa551fac7cbce98775374317a5c1c379"
+    },
+    {
+      "name": "translation-editor-memory-native-cleanup.json",
+      "sha256": "3a989bedf38723665787e65f58aebf3a3ef70af2105e2c1660d9a53c66f64e09"
+    },
+    {
+      "name": "translation-editor-memory-native-terminal.json",
+      "sha256": "1b5dc43df574d871019c9e8cc26a0d38b48a9b18e34eb6acfddc60335dfb316f"
+    }
+  ],
+  "original_failures_retained": [
+    "FirstworkflowfailedcopyingliveSQLiteWAL;positivepatchhadpassed;immutableartifactcopyfixrerunPASS",
+    "FirstWPFcompilefailedtestprivatepropertysetter;correctedharnessPASS"
+  ],
+  "limits": [
+    "Syntheticgenerateddataonly; no userstore approved by agent",
+    "Backend errors retain existing Vietnamese messages; app-owned dialog/action strings use UiText vi/en",
+    "No native UI evidence because supported target app identity conflicted with DEV executable",
+    "No model learning, new model, training, human gold, unseen-quality or whole-goal acceptance"
+  ]
+}

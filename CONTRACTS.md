@@ -94,6 +94,20 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 
 ## 4. Translation states và memory
 
+Owner decision 2026-10-21 (direct instruction in Brain, relayed under existing
+coordination authority): necessary downloads and execution permissions for the
+active product semantic-quality goal may proceed without routine reapproval.
+This supersedes that task's earlier no-download restriction. Each acquisition
+still requires exact provenance/license/resource preflight and owned lifecycle;
+0đ budget, one writer/no child, shared6GiB/nonexempt1GiB, no user/historical-data
+deletion or unrelated host/publication actions remain. Model acquisition/testing
+does not establish semantic/product acceptance. Integration must satisfy product
+contracts and Brain review with actual semantic/workflow/native evidence.
+Owner paused this semantic-quality plan on2026-10-21 because of guest RAM;
+that pause takes precedence over execution permission. No automatic watcher,
+retry or research resume until explicit Owner reopening. Subsequent Git delivery
+authorization covers accepted source/test/docs only, not model integration or Release.
+
 **Owner:** current product route: `mt_ct2_status.py`, `mt_ct2_pipeline.py`, `mt_memory.py`, `app_tasks.py`.
 
 **Invariant:**
@@ -103,6 +117,7 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 - WPF Dịch local preflight dùng CSV đang chọn, không kiểm một thư mục xuất khác. Sau dịch, hiển thị counts mới và hủy preflight cũ; package chưa complete không sẵn sàng đóng gói final Patch. CSV/manifest và structural/Patch validator vẫn là trust boundary.
 - CT2 giữ model readiness, retry/quality routing, known-bad clearing, translation memory/context family và retranslate behavior; retry của dòng bị gate chặn phải dùng đầy đủ mask/restore/segment strategy dù full batch chọn fast retry.
 - Memory/glossary chỉ áp dụng khi đúng package/context; external reference data là read-only evidence, không phải translation memory và không dùng cache cũ để ghi đè bản dịch frozen ngoài policy.
+- Owner có thể ủy quyền agent duyệt nội dung; phải lưu riêng quyết định, nguồn quyền/reviewer, đúng ID/source/target/context/exclusions và hash gói gốc, không sửa bản nháp gốc thành approved. Duyệt do agent được ủy quyền không phải direct human linguistic gold, không tự cấp quyền training, bank toàn cục hay acceptance toàn app. Quyết định2026-10-20 “m duyệt đi” tại Brain turn01a158d1 áp dụng17câu/6terms của `evaluation/translation_owner_review_v1` theo `evaluation/translation_owner_approval_v1/decision.json`; giữ human_gold/training_eligible=false. Trước tích hợp phải chứng minh scope thực không rộng hơn scope được duyệt, kể cả fallback/cache/rebuild.
 - Mỗi E2E run phải tạo package tạm từ input được khai báo, cô lập output dưới `_work`; `.mt`, review ledgers và patch output của run khác không được đi qua run sau. Bài partial chỉ chứng minh safety với `complete=false` và không chạy final Patch; bài final E2E chỉ gọi Patch sau `complete=true`.
 
 **Tests/evidence:** `tests/unit/test_worker_translate.py`, `test_worker_qa_m3.py`, `test_mt_patch_gate_write.py`, `test_user_glossary.py`, `test_mt_structural.py`; `tests/lib/worker_test_lib.py`.

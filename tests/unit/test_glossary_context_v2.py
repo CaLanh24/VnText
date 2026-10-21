@@ -16,6 +16,7 @@ from vntext.glossary_v2 import (
     mask_terms,
     resolve_exact,
     restore_terms,
+    candidate_term_issues,
 )
 from vntext.mt_ct2_io import _batch_translate_chunk
 
@@ -26,6 +27,34 @@ class _FakeTranslator:
 
 
 class GlossaryContextV2Tests(unittest.TestCase):
+    def test_required_target_inside_opaque_span_does_not_satisfy_prose_term(self):
+        glossary={'entries':[dict(source='cache',target='bộ nhớ đệm')]}
+        for token in ('{bộ nhớ đệm}', '<tag title="bộ nhớ đệm">'):
+            source='Use cache. Keep '+token+'.'
+            with self.subTest(token=token):
+                self.assertTrue(candidate_term_issues(source,{},'Dùng dữ liệu. Giữ '+token+'.',glossary))
+                self.assertEqual(candidate_term_issues(source,{},'Dùng bộ nhớ đệm. Giữ '+token+'.',glossary),[])
+        self.assertTrue(candidate_term_issues('Use cache.',{},'bộ {mode}nhớ đệm',glossary))
+
+    def test_required_targets_follow_scope_priority_and_actual_occurrences(self):
+        glossary={'entries':[dict(source='cache',target='bộ nhớ đệm',priority=10,scope='tech'),
+                             dict(source='cache',target='kho',priority=1)]}
+        self.assertEqual(candidate_term_issues('Use cache.',{'context':'tech'},'Dùng bộ nhớ đệm.',glossary),[])
+        self.assertTrue(candidate_term_issues('Use cache.',{'context':'tech'},'Dùng kho.',glossary))
+        self.assertEqual(candidate_term_issues('Use cache.',{'context':'other'},'Dùng kho.',glossary),[])
+        self.assertEqual(candidate_term_issues('Keep {cache}.',{},'Giữ {cache}.',glossary),[])
+        self.assertEqual(candidate_term_issues('Open the door.',{},'Mở cửa.',glossary),[])
+
+    def test_exact_phrase_authority_does_not_impose_overlapped_partial_terms(self):
+        glossary={'entries':[dict(source='Use cache.',target='Dùng vùng nhớ.',priority=10),
+                             dict(source='cache',target='bộ nhớ đệm',priority=1)]}
+        self.assertEqual(candidate_term_issues('Use cache.',{},'Dùng vùng nhớ.',glossary),[])
+        self.assertTrue(candidate_term_issues('Use cache.',{},'Dùng bộ nhớ đệm.',glossary))
+
+    def test_required_repeated_terms_need_each_occurrence(self):
+        glossary={'entries':[dict(source='cache',target='bộ nhớ đệm')]}
+        self.assertTrue(candidate_term_issues('cache and cache',{},'bộ nhớ đệm',glossary))
+        self.assertEqual(candidate_term_issues('cache and cache',{},'Bộ nhớ đệm và bộ nhớ đệm',glossary),[])
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="vntext-glossary-context-")
         self.root = Path(self.temp.name)
