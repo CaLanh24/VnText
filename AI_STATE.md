@@ -1,5 +1,9 @@
 # Current state pointer — 2026-10-21
 
+## Active RenPy remediation — implementation authorized, no Release
+
+Owner authorized R5→R1/R2→R4→R3→R6 bounded fixes after auditdbca0ee. Sole DEV writer/main, Brain reads this session directly; no child/push/Release or MT/Unity/schema/validator relaxation. R5 source/template versus existing target-mapping reconciliation first, actualSDK round-trip/readback and conflict/failure arms; frozen audit remains immutable.0đ/nonexempt1GiB/shared6GiB, generated registered fixtures only. Detailed checkpoint docs/RENPY_REMEDIATION_20261021.md.
+
 ## Ren’Py completeness audit — RENPY_EXTRACTOR_GAPS_CONFIRMED
 
 Investigation only at source0344b882; no production changes or remediation approval.

@@ -226,6 +226,7 @@ def _publish_overlay_pair(
     activation_payload: str,
     existing_snapshots: dict[Path, str],
     source_snapshots: dict[Path, str],
+    verify_target_inventory=None,
 ) -> None:
     output_was_present = output.exists()
     if output_was_present and not output.is_dir():
@@ -263,6 +264,8 @@ def _publish_overlay_pair(
             raise RenPyPatchError("Ren'Py overlay read-back failed during staging: activation mismatch")
 
         _verify_existing_snapshots(existing_snapshots)
+        if verify_target_inventory is not None:
+            verify_target_inventory()
         for source_path, expected_sha256 in source_snapshots.items():
             try:
                 actual_sha256 = _sha256(source_path)
@@ -298,6 +301,8 @@ def _publish_overlay_pair(
             reasons.append("activation read-back mismatch")
         try:
             _verify_existing_snapshots(existing_snapshots)
+            if verify_target_inventory is not None:
+                verify_target_inventory()
         except RenPyPatchError as exc:
             reasons.append(str(exc))
         for source_path, expected_sha256 in source_snapshots.items():
@@ -501,6 +506,7 @@ def _build_verification_records(
     dialogues: list[tuple[dict, str]],
     target: Path,
     already_satisfied: dict[tuple[str, str], dict[str, object]],
+    existing_dialogues: dict | None = None,
 ) -> tuple[list[dict], list[dict]]:
     verification_entries = [entry for entry, _translation in dialogues]
     verification_entries.extend(
@@ -526,6 +532,12 @@ def _build_verification_records(
                     "old_line": existing["old_line"],
                     "new_line": existing["new_line"],
                 }
+        elif existing_dialogues:
+            existing = existing_dialogues.get(entry["locator"]["native_id"])
+            if existing is not None:
+                record["target"] = str(existing["path"])
+                record["reason"] = "already_satisfied"
+                record["existing_mapping"] = {"target_line": existing["line"], "sha256": existing["sha256"]}
         verification_records.append(record)
     return verification_entries, verification_records
 
@@ -654,6 +666,30 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         if RenPyArchive(archive_path).container_sha256 != expected_hash:
             raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")
     existing_strings, existing_snapshots = _inventory_target_language_mappings(root, "vietnamese")
+    from vntext.renpy_extract import existing_translation_inventory
+    try:
+        existing_state = existing_translation_inventory(root)
+    except (ValueError, OSError, UnicodeError) as exc:
+        raise RenPyPatchError(f"existing target mapping is unverifiable: {exc}") from exc
+    if any(path in existing_state["snapshots"] and existing_state["snapshots"][path] != digest
+           for path, digest in existing_snapshots.items()):
+        raise RenPyPatchError("existing target mappings changed during inventory")
+    existing_snapshots.update(existing_state["snapshots"])
+    def verify_target_inventory():
+        try:
+            current = existing_translation_inventory(root)
+        except (ValueError, OSError, UnicodeError) as exc:
+            raise RenPyPatchError(f"existing target inventory changed: {exc}") from exc
+        if current["snapshots"] != existing_state["snapshots"]:
+            raise RenPyPatchError("existing target inventory changed during patch")
+    new_dialogues = []
+    for entry, translation in dialogues:
+        prior = existing_state["dialogues"].get(entry["locator"]["native_id"])
+        if prior is not None:
+            if prior["translation"] != translation or prior["speaker"] != str(entry.get("object_info") or ""):
+                raise RenPyPatchError(f"Ren'Py dialogue mapping conflict: {entry['locator']['native_id']}")
+        else:
+            new_dialogues.append((entry, translation))
     _verify_existing_snapshots(existing_snapshots)
     strings: dict[tuple[str, str], str] = {}
     already_satisfied: dict[tuple[str, str], dict[str, object]] = {}
@@ -674,7 +710,12 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         raise RenPyPatchError("Ren'Py patch output must be outside the original game")
     _validate_overlay_pair(target, activation)
     try:
-        payload = _render_overlay(dialogues, strings)
+        payload = _render_overlay(new_dialogues, strings)
+        prior_overlay = root / "game/tl/vietnamese/vntext.rpy"
+        if prior_overlay in existing_snapshots:
+            # The delivered file replaces this exact path. Preserve all earlier
+            # mappings, including those not selected by the current package.
+            payload = prior_overlay.read_text(encoding="utf-8") + "\n" + payload
     except RenPyPatchError:
         raise
     except Exception as exc:  # noqa: BLE001 - fail closed at the patch boundary.
@@ -690,6 +731,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         dialogues,
         target,
         already_satisfied,
+        existing_state["dialogues"],
     )
     try:
         _publish_overlay_pair(
@@ -700,6 +742,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             activation_payload,
             existing_snapshots,
             source_snapshots,
+            verify_target_inventory,
         )
     except RenPyPatchError as exc:
         try:
@@ -711,7 +754,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                 False,
                 str(exc),
                 records=verification_records,
-                already_satisfied=len(already_satisfied),
+                already_satisfied=len(already_satisfied) + len(dialogues) - len(new_dialogues),
             )
             verification["review_only_skipped"] = excluded_review_only
             (output / "patch_verification.json").write_text(
@@ -722,8 +765,8 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             pass
         raise
     report = [
-        "patched_lines: " + str(len(dialogues) + len(strings)),
-        "already_satisfied: " + str(len(already_satisfied)),
+        "patched_lines: " + str(len(new_dialogues) + len(strings)),
+        "already_satisfied: " + str(len(already_satisfied) + len(dialogues) - len(new_dialogues)),
         "review_only_skipped: " + str(excluded_review_only),
         "RENPY native overlay written",
     ]
@@ -734,7 +777,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         verification_entries,
         True,
         records=verification_records,
-        already_satisfied=len(already_satisfied),
+        already_satisfied=len(already_satisfied) + len(dialogues) - len(new_dialogues),
     )
     verification["review_only_skipped"] = excluded_review_only
     (output / "patch_verification.json").write_text(

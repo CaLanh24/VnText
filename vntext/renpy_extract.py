@@ -399,6 +399,73 @@ def parse_renpy_translation_templates(
 parse_native_templates = parse_renpy_translation_templates
 
 
+def existing_translation_inventory(root: str | Path, language: str = "vietnamese") -> dict:
+    """Read static target state without demanding generator source provenance.
+
+    Native IDs/old strings identify targets, never replace authoritative source
+    units. Dynamic or ambiguous target statements fail closed, without execution.
+    """
+    root = Path(root).resolve()
+    folder = root / "game/tl" / language
+    result = {"dialogues": {}, "strings": {}, "snapshots": {}}
+    for ancestor in (folder, folder.parent, folder.parent.parent):
+        if ancestor.is_symlink() or (ancestor.exists() and getattr(ancestor.lstat(), "st_file_attributes", 0) & 0x400):
+            raise RenPyTemplateParseError("linked existing translation state")
+    if not folder.exists():
+        return result
+    total = 0
+    for path in sorted(folder.rglob("*")):
+        if path.is_symlink() or getattr(path.lstat(), "st_file_attributes", 0) & 0x400:
+            raise RenPyTemplateParseError("linked existing translation state")
+        if path.suffix.lower() in {".rpyc", ".rpymc"} and not path.with_suffix(
+                ".rpy" if path.suffix.lower() == ".rpyc" else ".rpym").is_file():
+            raise RenPyTemplateParseError("unverifiable compiled-only existing translation state")
+        if not path.is_file() or path.suffix.lower() not in {".rpy", ".rpym"}:
+            continue
+        size = path.stat().st_size
+        if size > 16*1024*1024 or total + size > 64*1024*1024:
+            raise RenPyTemplateParseError("existing translation inventory exceeds budget")
+        raw = path.read_bytes(); total += len(raw)
+        if len(raw) != size:
+            raise RenPyTemplateParseError("existing translation state changed during inventory")
+        digest = hashlib.sha256(raw).hexdigest()
+        result["snapshots"][path] = digest
+        lines = raw.decode("utf-8-sig").splitlines()
+        headers = [(i, _NATIVE_BLOCK.fullmatch(line)) for i,line in enumerate(lines)
+                   if _NATIVE_BLOCK.fullmatch(line)]
+        if any(line.lstrip().startswith("translate "+language+" ") and not _NATIVE_BLOCK.fullmatch(line)
+               for line in lines):
+            raise RenPyTemplateParseError(f"unverifiable existing translate header: {path}")
+        for index, (start, header) in enumerate(headers):
+            if header.group("language") != language:
+                continue
+            end = headers[index+1][0] if index+1 < len(headers) else len(lines)
+            target = header.group("target").strip()
+            content = [(i+1,line.strip()) for i,line in enumerate(lines[start+1:end],start+1)
+                       if line.strip() and not line.lstrip().startswith("#")]
+            def add(kind, identity, record):
+                prior = result[kind].get(identity)
+                if prior is not None and (kind == "dialogues" or prior["translation"] != record["translation"]):
+                    raise RenPyTemplateParseError(f"existing translation conflict: {identity!r}")
+                result[kind][identity] = record
+            if target == "strings":
+                if len(content) % 2:
+                    raise RenPyTemplateParseError(f"unverifiable existing string pair: {path}")
+                for offset in range(0, len(content), 2):
+                    old_line, old = content[offset]; new_line, new = content[offset+1]
+                    old_key, source = _keyed_string(old); new_key, translation = _keyed_string(new)
+                    if old_key != "old" or new_key != "new":
+                        raise RenPyTemplateParseError(f"unverifiable existing string order: {path}")
+                    add("strings", source, dict(translation=translation,path=path,line=new_line,sha256=digest))
+            else:
+                if not _IDENTIFIER.fullmatch(target) or target in {"python", "style"} or len(content) != 1:
+                    raise RenPyTemplateParseError(f"unverifiable existing dialogue block: {path}:{start+1}")
+                translation, speaker, expression = _statement(content[0][1])
+                add("dialogues", target, dict(translation=translation,speaker=speaker,expression=expression,
+                    path=path,line=content[0][0],sha256=digest))
+    return result
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -730,6 +797,7 @@ def extract_native_template_entries(
     if not game_root.is_dir():
         raise RenPyTemplateParseError(f"Ren'Py game root is not a directory: {game_root}")
     units = parse_renpy_translation_templates(template_root, language=language)
+    existing = existing_translation_inventory(game_root, language)
     template_sha256 = _template_identity(template_root)
     source_hashes: dict[Path, str] = {}
     source_lines: dict[Path, list[str] | None] = {}
@@ -860,6 +928,16 @@ def extract_native_template_entries(
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
     }
+    # Keep target state visible without importing it as source text or approving
+    # arbitrary translations. Unknown/orphan mappings remain explicit evidence.
+    stats["renpy_existing_translations"] = {
+        kind: [{"identity": identity, **{k:str(v) if isinstance(v,Path) else v for k,v in record.items()}}
+               for identity,record in existing[kind].items()]
+        for kind in ("dialogues", "strings")
+    }
+    for path,digest in existing["snapshots"].items():
+        if _sha256(path) != digest:
+            raise RenPyTemplateParseError("existing target state changed during extraction")
     engine_common_exclusions = [
         entry
         for entry in entries

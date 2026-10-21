@@ -238,6 +238,15 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
 def generate_empty_vietnamese_template(sdk: RenPySdk, workspace: str | Path, *, timeout: int = 120, is_cancelled=None) -> subprocess.CompletedProcess[str]:
     """Ask Ren'Py itself to create native IDs in an already-approved copy."""
     target = Path(workspace).resolve()
+    # Existing target scripts are not generated source templates. Preserve them
+    # in this disposable workspace while Ren'Py enumerates all source identities.
+    # The original game's mapping inventory is reconciled separately by extract.
+    existing = target / "game/tl/vietnamese"
+    retained = target / ".vntext-existing-vietnamese"
+    if existing.exists():
+        if retained.exists():
+            raise RenPyToolchainError("existing translation workspace already retained")
+        shutil.move(str(existing), str(retained))
     if not (target / "game").is_dir():
         raise RenPyToolchainError("template workspace must be a Ren'Py game copy with game/")
     command = [str(sdk.python), str(sdk.renpy_py), str(target), "translate", "vietnamese", "--empty", "--no-todo", "--savedir", str(target / ".native-saves")]

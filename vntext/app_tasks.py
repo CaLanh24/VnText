@@ -1162,6 +1162,8 @@ def run_extract_task(
             else:
                 Path(out).mkdir(parents=True, exist_ok=True)
                 with tempfile.TemporaryDirectory(prefix="vntext-renpy-", dir=out) as temp:
+                    from vntext.renpy_extract import existing_translation_inventory
+                    existing_target_snapshot = existing_translation_inventory(src)["snapshots"]
                     workspace = Path(temp) / "gamecopy"
                     inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled, translation_only=True)
                     log(f"Ren'Py SDK workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
@@ -1172,6 +1174,8 @@ def run_extract_task(
                         language="vietnamese",
                         archive_sources=inventory.get("archive_sources"),
                     )
+                    if existing_translation_inventory(src)["snapshots"] != existing_target_snapshot:
+                        raise RenPyToolchainError("Existing Ren'Py target mappings changed during extraction; retry with a new output")
                 log(f"Ren'Py SDK {sdk.version} đã tạo native template identity trên workspace tạm.")
         else:
             file_inventory = None
