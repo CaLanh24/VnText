@@ -1,10 +1,10 @@
 # Current state pointer — 2026-10-21
 
-## RenPy multiline/dynamic recovery — technical PASS, Brain review pending
+## RenPy multiline/dynamic recovery terminal — PASS bounded, Brain accepted
 
 Owner authorized separate implementation after accepted85e1d72: SDK-grounded multiline/static composition and source-template recovery, loose/compiled/RPA native writer round-trip, explicit dynamic/unproven ledger/PARTIAL. SoleDEVwriter/nochild/push/Release/model/Unity/schema/shared-validator/protocol/runtimehook changes. Premise/subphases/gates/budget: docs/RENPY_MULTILINE_DYNAMIC_20261022.md. Prior accepted remediation below remains closed.
 
-Implementation05962873614dba9dac389bb587bb4df98b0b4084:119affected+24boundary+23finalfocusedPASS(no fail/error/skip/warning), per-file test/source hashes match committedbytes; exactcleanSHADEVbuild0warnings/errors+5step worker smokePASS. Separate cleanup/inventoryPASS, UNKNOWN/locked/errors0, TEST_RUN/RELEASE_RUNabsent,743030069nonexempt<=1GiB/shared6288837513<=6GiB, soleDEVexe. Static multiline/composition/template nativewriteback proven on loose/compiled/RPA incl repatch/sourcepreservation/driftrefusal; runtimeconcat/call/branch remain exactledger/PARTIAL without fragments/inventedfinaltext. Docs-only final handoff follows testedsource; Brain acceptance pending, no wholeRenPy/Release. Exact receipts/hashes/residual in task checkpoint.
+Implementation05962873614dba9dac389bb587bb4df98b0b4084:119affected+24boundary+23finalfocusedPASS(no fail/error/skip/warning), dirtybase85e1d72+retained per-file test/source hashes match committedbytes; exactcleanSHADEVbuild0warnings/errors+5step worker smokePASS. Separate cleanup/inventoryPASS, UNKNOWN/locked/errors0, TEST_RUN/RELEASE_RUNabsent,743030069nonexempt<=1GiB/shared6288837513<=6GiB, soleDEVexe. Static multiline/composition/template nativewriteback proven on loose/compiled/RPA incl repatch/sourcepreservation/driftrefusal; runtimeconcat/call/branch remain untranslated exactledger/PARTIAL without fragments/inventedfinaltext. Brain accepted2026-10-22 after direct source/SDK/receipts/hash review; report0e1b1ea and this acceptance update are docs-only descendants, no repeated gate or exactSHA upgrade. No wholeRenPy/wholegame/Release or new task. Exact receipts/hashes/residual in task checkpoint.
 
 ## RenPy remediation terminal — PASS bounded, Brain accepted
 
