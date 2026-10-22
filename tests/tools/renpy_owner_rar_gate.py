@@ -58,7 +58,9 @@ def extract_text(game,output,sdk,work):
 
 def main():
     global REPORT
-    parser=argparse.ArgumentParser();parser.add_argument('--stem',default='renpy-owner-rar-run');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--stem',default='renpy-owner-rar-run')
+    parser.add_argument('--font-profile-vietnamese',action='store_true',help='Authorized disposable VM trial only; default off')
+    args=parser.parse_args()
     if not args.stem.replace('-','').isalnum():raise ValueError('invalid evidence stem')
     REPORT=EVIDENCE/(args.stem+'.json')
     if REPORT.exists():raise ValueError('refusing to overwrite prior run receipt')
@@ -110,7 +112,17 @@ def main():
             if not report['roundtrip_identity']:raise ValueError('full text roundtrip identity drift')
             create_declared_sample(work/'repeat',work/'repeat-sample',pairs)
             apply_translation_package(str(work/'repeat-sample/translation.csv'),str(work/'repeat-sample/manifest.json'),str(game),str(work/'repatch'))
+            shutil.copytree(work/'repatch/COPY_TO_GAME_ROOT',game,dirs_exist_ok=True)
             report['repatch']='PASS_NORMAL_VALIDATORS';report['before_native_quota']=quota(8*1024*1024);save(report)
+            overlay=game/'game/tl/vietnamese/vntext.rpy'
+            report['actual_text_overlay']={'sha256':sha(overlay),'utf8':overlay.read_text(encoding='utf-8')}
+            trial_receipt=None
+            if args.font_profile_vietnamese:
+                from tests.tools.renpy_vm_font_trial import install_trial
+                quota(9*1024*1024)
+                trial_receipt=install_trial(game,enabled=True)
+                report['font_trial']=trial_receipt
+                report['after_font_trial_quota']=quota(8*1024*1024);save(report)
             log=work/'native.log';command=[str(sdk.python),str(sdk.renpy_py),str(game),'--savedir',str(work/'native-saves')]
             with log.open('wb')as stream:
                 process=subprocess.Popen(command,cwd=sdk.root,stdout=stream,stderr=subprocess.STDOUT)
@@ -126,6 +138,10 @@ def main():
                         except subprocess.TimeoutExpired:process.kill();process.wait(timeout=10)
                 report['native_exit']=process.returncode
             report['native_log_excerpt']=log.read_text(encoding='utf-8',errors='replace')[-8000:]
+            if trial_receipt:
+                from tests.tools.renpy_vm_font_trial import own_generated_bytecode,rollback_trial
+                own_generated_bytecode(trial_receipt)
+                report['font_trial_rollback']=rollback_trial(trial_receipt)
             report['post_native_original_changes']=[name for name,digest in original.items()if not(game/name).is_file()or sha(game/name)!=digest]
             report['original_rpa_unchanged']=sha(game/'game/archive.rpa')==preflight['rpa_sha256']
             report['native_window_waiting']=False;report['outcome']='TECHNICAL_PIPELINE_COMPLETED_NATIVE_EVIDENCE_EXTERNAL';save(report)
