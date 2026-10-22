@@ -39,6 +39,9 @@ def main():
     result={'source_rpa_sha256':pre['rpa_sha256'],'member':'screens.rpyc','member_sha256':hashlib.sha256(data).hexdigest(),
         'error':error,'failure':failure,'recent_inert_mapping_ops':list(history),'rows':len(rows),'unresolved':unresolved,
         'scope':'READ_ONLY production inert-parser trace; no pickle.loads/import of game classes/reducer execution'}
+    pairs=json.loads((EVIDENCE/'renpy-owner-rar-run4-translations.json').read_text(encoding='utf-8-sig'))
+    neutral={pair['source_text']for pair in pairs[:2]}
+    result['neutral_exact_matches']=[row for row in rows if row['text']in neutral]
     (EVIDENCE/'renpy-compiled-mapping-probe.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
     print(json.dumps({'error':error,'failure':failure}))
 

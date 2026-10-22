@@ -19,6 +19,7 @@ class Symbol:
     kind: str
     args: object = None
     state: object = None
+    mapping: dict | None = None
 
 
 def static_pickle(data: bytes):
@@ -78,12 +79,24 @@ def static_pickle(data: bytes):
                 if name == 'SETITEM':
                     value = stack.pop(); key = stack.pop(); values = [key,value]
                 else: values = marked()
-                if not isinstance(stack[-1],dict) or len(values)%2: raise ValueError('Malformed mapping')
+                target=stack[-1]
+                if isinstance(target,Symbol)and target.kind in {'NEWOBJ','REDUCE'}:
+                    constructor,args=target.args
+                    if (isinstance(constructor,Symbol)and constructor.kind=='global'
+                            and (target.kind,constructor.args)in {
+                                ('NEWOBJ','renpy.revertable.RevertableDict'),
+                                ('REDUCE','collections.OrderedDict')}
+                            and args==()):
+                        # Preserve the inert object's identity/state separately.
+                        # Never import, construct, or invoke this dict subclass.
+                        if target.mapping is None:target.mapping={}
+                        target=target.mapping
+                if not isinstance(target,dict) or len(values)%2: raise ValueError('Malformed mapping')
                 for i in range(0,len(values),2):
                     key = values[i]
                     if not isinstance(key,(str,int,bytes,type(None))): raise ValueError('Unsupported mapping key')
-                    if key in stack[-1]: raise ValueError('Duplicate mapping key')
-                    stack[-1][key] = values[i+1]
+                    if key in target: raise ValueError('Duplicate mapping key')
+                    target[key] = values[i+1]
             else: raise ValueError('Unsupported compiled opcode: '+name)
     except (IndexError,KeyError,TypeError,OverflowError) as exc:
         raise ValueError('Malformed compiled pickle') from exc
@@ -128,7 +141,7 @@ def ast_nodes(root, prefixes=('renpy.ast.',)):
                 fields=state if isinstance(state,dict) else state[1] if isinstance(state,tuple) and len(state)==2 and state[0] is None and isinstance(state[1],dict) else None
                 if constructor.kind=='global' and str(constructor.args).startswith(prefixes) and fields is not None:
                     nodes.append((constructor.args,fields))
-            pending.extend([value.args,value.state])
+            pending.extend([value.args,value.state,value.mapping])
         elif isinstance(value,dict): pending.extend(value.values())
         elif isinstance(value,(tuple,list)): pending.extend(value)
     return nodes
