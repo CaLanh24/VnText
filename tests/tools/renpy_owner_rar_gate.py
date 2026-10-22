@@ -60,6 +60,7 @@ def main():
     global REPORT
     parser=argparse.ArgumentParser();parser.add_argument('--stem',default='renpy-owner-rar-run')
     parser.add_argument('--font-profile-vietnamese',action='store_true',help='Authorized disposable VM trial only; default off')
+    parser.add_argument('--windowed-native',action='store_true',help='SDK documented process-local RENPY_DISABLE_FULLSCREEN')
     args=parser.parse_args()
     if not args.stem.replace('-','').isalnum():raise ValueError('invalid evidence stem')
     REPORT=EVIDENCE/(args.stem+'.json')
@@ -125,7 +126,10 @@ def main():
                 report['after_font_trial_quota']=quota(8*1024*1024);save(report)
             log=work/'native.log';command=[str(sdk.python),str(sdk.renpy_py),str(game),'--savedir',str(work/'native-saves')]
             with log.open('wb')as stream:
-                process=subprocess.Popen(command,cwd=sdk.root,stdout=stream,stderr=subprocess.STDOUT)
+                native_env=os.environ.copy()
+                if args.windowed_native:native_env['RENPY_DISABLE_FULLSCREEN']='1'
+                report['native_display_environment']={'RENPY_DISABLE_FULLSCREEN':'1'if args.windowed_native else 'not overridden'}
+                process=subprocess.Popen(command,cwd=sdk.root,env=native_env,stdout=stream,stderr=subprocess.STDOUT)
                 report['owned_native_process']={'pid':process.pid,'command':command,'expected_executable':str(sdk.python)}
                 report['native_window_waiting']=True;save(report)
                 try:
