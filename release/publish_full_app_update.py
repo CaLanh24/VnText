@@ -23,6 +23,18 @@ SOURCE_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 REPARSE_POINT = 0x400
 
 
+def _long_path(path: Path) -> Path:
+    """Use the Windows extended-length form so deeply nested installs remain readable."""
+    if os.name != "nt":
+        return path
+    absolute = os.path.abspath(os.fspath(path))
+    if absolute.startswith("\\\\?\\"):
+        return Path(absolute)
+    if absolute.startswith("\\\\"):
+        return Path("\\\\?\\UNC\\" + absolute[2:])
+    return Path("\\\\?\\" + absolute)
+
+
 def _safe_name(name: str) -> str:
     path = PurePosixPath(name)
     if (not name or path.is_absolute() or "\\" in name or ":" in name or
@@ -72,6 +84,7 @@ def _is_newer(current: str, candidate: str) -> bool:
 
 
 def _inventory(root: Path) -> dict[str, dict[str, object]]:
+    root = _long_path(root)
     exe = root / "VNText Studio.exe"
     app = root / "app"
     _assert_regular_path(exe)

@@ -27,6 +27,50 @@ from cleanup_work_artifacts import cleanup_after_test
 
 
 class FullAppUpdatePublisherTests(unittest.TestCase):
+    def test_inventory_reads_deep_windows_paths(self):
+        if sys.platform != "win32":
+            self.skipTest("Windows path prefix behavior is platform-specific")
+        ambient = ambient_scope()
+        scope = ambient["scope_id"]
+        run_id = ambient["run_id"]
+        if scope == "legacy":
+            scope = run_id = new_scope_id("full-app-long-path")
+        work = work_temp_dir("full-app-long-path", scope_id=scope, run_id=run_id)
+        register_artifact(
+            artifact_id=f"full-app-long-path:{scope}", path=work,
+            kind="test_workspace", created_by="test_full_app_update_publisher.py",
+            owner="test_full_app_update_publisher.py",
+            purpose="full-app publisher Windows long path test",
+            lifecycle="DISPOSABLE", scope_id=scope, run_id=run_id,
+        )
+        outcome = "FAIL"
+        try:
+            root = work / "candidate"
+            app = root / "app"
+            for index in range(5):
+                app /= f"segment-{index}-" + ("x" * 42)
+            publish_full_app_update._long_path(app).mkdir(parents=True)
+            exe = publish_full_app_update._long_path(root / "VNText Studio.exe")
+            exe.write_bytes(b"app")
+            publish_full_app_update._long_path(root / "app" / "VERSION.txt").write_text("0.1.1\n", encoding="utf-8")
+            publish_full_app_update._long_path(root / "app" / "RELEASE.json").write_text("{}\n", encoding="utf-8")
+            payload = publish_full_app_update._long_path(app / "deep-worker.bin")
+            payload.write_bytes(b"deep payload")
+            self.assertGreater(len(str(payload)), 260)
+            inventory = publish_full_app_update._inventory(root)
+            relative = "app/" + payload.relative_to(publish_full_app_update._long_path(root / "app")).as_posix()
+            self.assertIn(relative, inventory)
+            self.assertEqual(len(b"deep payload"), inventory[relative]["size"])
+            outcome = "PASS"
+        finally:
+            report = cleanup_after_test(
+                [work], reason="test_full_app_update_publisher.py long path",
+                outcome=outcome, scope_id=scope, run_id=run_id,
+            )
+        if outcome == "PASS":
+            self.assertTrue(report["ok"], report)
+            self.assertFalse(work.exists(), report)
+
     def test_changed_worker_file_is_in_package_with_candidate_bytes(self):
         ambient = ambient_scope()
         scope = ambient["scope_id"]
