@@ -70,6 +70,8 @@ scope đã tồn tại bị từ chối. Tùy chọn này chỉ dùng cùng
 
 ## Dòng public 0.1
 
+Quy tắc bắt buộc về Setup theo version, full-app updater, nội dung tiếng Việt của release body và vị trí lưu evidence được quy định tại [`CONTRACTS.md` §10](../CONTRACTS.md#10-portable-release).
+
 `v0.1` là bản public đầu tiên; stable mới nhất là `0.1.10`. Setup 0.1.10 đã được công bố, nhưng acceptance cài mới qua Setup UI và worker-health smoke hiện PROVEN_BLOCKED do supported state capture timeout hai lần tại màn hình Intel terms; chưa bấm chấp thuận, chưa cài và đây không phải kết luận Setup bị lỗi. Acceptance cập nhật công khai từ bản cài 0.1.9 là evidence riêng. Không suy ra `RELEASE_VERIFIED` từ tag hoặc asset.
 Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
 `-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
