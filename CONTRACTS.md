@@ -168,6 +168,8 @@ authorization covers accepted source/test/docs only, not model integration or Re
 
 **Tests/evidence:** `tests/unit/test_wpf_workflow.py`, `test_ui_app_workflow.py`, `test_qt_app_workflow.py`, `test_legacy_ui_task_contract.py`, `test_ui_progress.py`; WPF workflow harness trong `wpf_app/VNText.Studio.Workflow.Tests/Program.cs`.
 
+**Owner UX decision for the next update (2026-10-24):** Text extraction defaults to exhaustive/deep mode; prior persisted Clean/Balanced values do not override this default and the normal extraction page does not expose a mode chooser. This does not change eligibility, review classification, locator, or patch validation. A structurally valid generated `translation.csv` with blank translation cells is ready to start local CT2 translation; Patch readiness still requires actual translations and all existing gates. Progress ETA is advisory seconds/minutes/hours and malformed/unknown values are omitted in favor of an estimating status. Engine analysis must report only evidence-backed detection and explicitly retain unknown/mixed states; Unity analyzer output alone does not classify other engines.
+
 ## 7. Patch, UnityFS và Addressables
 
 **Owner:** `patch_gate.py`, `patch_pipeline.py::apply_translation_package`, `patch_plain.py`, `patch_unity.py`, `patch_safety.py`, `patch_output.py`, `unity_fs.py`, `addressables.py`.
@@ -475,3 +477,6 @@ Owner explicitly approved temporary3GiB non-exempt artifacts for the independent
 
 
 Future baseline routing (same Owner requirement,2026-10-19): retain the legacy `full-app-update-{target}-{digest16}.zip` from exact public0.1.7 for its immutable client. New0.1.8+ additionally support `full-app-update-from-{installed}-to-{target}-{digest16}.zip`, prefer exactly matching baseline, and search older stable releases for a compatible hop when the newest release advertises other baseline routes. After restart normal discovery advances again. No fallback past an invalid/tampered matching asset; all existing source/URL/size/digest/full-inventory/model/rollback validation remains. Future releases after0.1.8 must supply the supported predecessor baseline and exact legacy0.1.7 baseline, publish both route assets, and retain older stable hops. No promise of skipped-version support may be made from only a latest-version package test.
+
+### Owner release distribution and notes decision — 2026-10-24
+Every public release must provide both a version-matched Setup executable for new installations and the supported in-app updater package for existing installations. The release body is Vietnamese and describes only user-visible feature, interface, and bug-fix changes; test counts, source hashes, internal gates/reports, and workarounds for older Setup versions stay in canonical repository evidence. Required notices, checksums, and provenance remain in their appropriate release assets and evidence. The next queued task after 0.1.11 UX acceptance is to update the public 0.1.10 release body and provide its missing Setup from immutable source `b9e2a661a58dd85979a6a10b9bb30f713107847b`; do not build/publish that work alongside the active UX task.

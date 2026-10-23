@@ -153,10 +153,15 @@ class WpfWorkflowTests(unittest.TestCase):
         workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
         run = workflow[workflow.index("private async void RunTranslate()"):workflow.index("private void ExportCloudRepairPackage()")]
         self.assertIn("var csv = ResolveActiveCsvPath();", run)
-        self.assertIn("CsvPackageValidator.Validate(csv)", run)
+        self.assertIn("CsvPackageValidator.Validate(csv, requireTranslations: false)", run)
         self.assertIn("if (!validation.Ok)", run)
         self.assertIn("BuildTranslateParameters(csv)", run)
         self.assertNotIn("WorkflowStatus.Evaluate", run)
+
+    def test_completion_notifications_use_the_app_theme_surface(self):
+        window = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        self.assertIn("vm.ShowCompletionToast(notification)", window)
+        self.assertNotIn("MessageBox.Show(", window[window.index("private void OnCompletionRequested"):window.index("private void MainWindow_SizeChanged")])
 
     def test_workflow_options_are_not_duplicated(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")

@@ -171,6 +171,7 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 - Focused csv_editor_api + WPF harness: immutable baseline mutation/order/header/width/quoted-record rejection, UTF8/BOM/multiline and extra field roundtrip, error rollback preserves exact CSV/review bytes, Cancel reload preserves dirty edits.
 - Affected external_translation_import, human_review_workflow, characterization_package_split: existing draft warnings/review gate and safe no-drop import remain intact.
 - Actual WPF generated fixture: open/filter/edit/save/reload and visible invalid input; preserve manifest, keys, sources, all non-translation fields/order and backup bytes. Import functional route receipt is separate from import-button interaction. No game/Patch/Release acceptance implied.
+- UX workflow regression: a structurally valid generated blank-translation package passes local-translation preflight while strict Patch validation still rejects it; verify CT2 command/request, progress, non-empty result, save/reload using an existing offline model. Check ETA number/string/non-finite handling and extraction mode ignores legacy saved choices.
 
 ## Patch input and bounded native acceptance
 - `test_patch_input_safety`: traversal/absolute source rejection, output/game separation, exact preservation of existing output, duplicate/ambiguous CSV rejection, CSV/manifest source identity and partial-sidecar rejection before output mutation.

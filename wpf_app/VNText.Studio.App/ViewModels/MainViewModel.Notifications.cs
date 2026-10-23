@@ -22,6 +22,9 @@ public sealed partial class MainViewModel
     // MessageBox blocking the dispatcher before state can be collected.
     internal bool SuppressCompletionNotifications { get; set; }
 
+    internal void ShowCompletionToast(CompletionNotification notification) =>
+        ShowToast(notification.Message, notification.Kind, playSound: notification.Kind is "error" or "warning");
+
     public string ToastMessage
     {
         get => _toastMessage;

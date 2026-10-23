@@ -12,6 +12,7 @@ public sealed partial class MainViewModel
     private bool _analyzeHasReport;
     private bool _analyzeResultsExpanded;
     private string _analyzeUnityStatus = "NOT_DETECTED";
+    private string _analyzeEngineSummary = "Chưa xác định engine";
     private bool _analyzeInventoryComplete;
     private int _analyzeResourceCount;
     private int _analyzeTextCandidateCount;
@@ -55,6 +56,12 @@ public sealed partial class MainViewModel
     {
         get => _analyzeUnityStatus;
         private set => Set(ref _analyzeUnityStatus, value);
+    }
+
+    public string AnalyzeEngineSummary
+    {
+        get => _analyzeEngineSummary;
+        private set => Set(ref _analyzeEngineSummary, value);
     }
 
     public bool AnalyzeInventoryComplete
@@ -153,6 +160,7 @@ public sealed partial class MainViewModel
         {
             AnalyzeInventoryComplete = false;
             AnalyzeUnityStatus = "UNKNOWN";
+            AnalyzeEngineSummary = "Engine: chưa xác định — không đủ bằng chứng để phân loại.";
             AnalyzeStatusText = evt.Ok
                 ? "Đã chạy nhưng không đọc được report"
                 : "Phân tích thất bại";
@@ -165,6 +173,17 @@ public sealed partial class MainViewModel
 
         AnalyzeInventoryComplete = snapshot.InventoryComplete && evt.Ok;
         AnalyzeUnityStatus = snapshot.UnityStatus;
+        var renpySource = false;
+        try { renpySource = RenpyGameDetector.HasLooseSourceFiles(InputPath, CancellationToken.None); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        { /* Detection remains unknown when the filesystem cannot be inspected. */ }
+        AnalyzeEngineSummary = snapshot.UnityStatus == "DETECTED" && renpySource
+            ? "Engine: Unity + Ren’Py evidence detected — mixed engine; confidence score unavailable."
+            : snapshot.UnityStatus == "DETECTED"
+                ? "Engine: Unity detected by analyzer report; other engines not classified; confidence score unavailable."
+                : renpySource
+                    ? "Engine: Ren’Py loose source detected from .rpy/.rpym files; other engines not classified; confidence score unavailable."
+                    : "Engine: unknown — no supported engine signature was confirmed; mixed status unknown.";
         AnalyzeResourceCount = snapshot.ResourceCount;
         AnalyzeTextCandidateCount = snapshot.TextCandidateCount;
         AnalyzePatchableCount = snapshot.PatchableCount;

@@ -13,7 +13,7 @@ public sealed record CsvValidationResult(
 
 public static class CsvPackageValidator
 {
-    public static CsvValidationResult Validate(string? csvPath)
+    public static CsvValidationResult Validate(string? csvPath, bool requireTranslations = true)
     {
         var path = (csvPath ?? "").Trim().Trim('"');
         if (string.IsNullOrEmpty(path))
@@ -60,7 +60,7 @@ public static class CsvPackageValidator
             if (total == 0)
                 return Fail(path, "CSV không có dòng dữ liệu");
 
-            if (translated == 0)
+            if (translated == 0 && requireTranslations)
                 return Fail(path, $"CSV hợp lệ nhưng chưa có bản dịch (0/{total} dòng)");
 
             return new CsvValidationResult(

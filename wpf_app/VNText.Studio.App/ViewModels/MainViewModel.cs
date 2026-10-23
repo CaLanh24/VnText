@@ -113,7 +113,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         _separateReview = _settings.SeparateReview;
         _overwriteTranslation = _settings.OverwriteTranslation;
         _humanReviewRequired = _settings.HumanReviewRequired;
-        _extractLevel = ExtractLevels.Normalize(_settings.ExtractLevel);
+        // Owner-selected product default: exhaustive extraction. Older persisted choices are ignored.
+        _extractLevel = ExtractLevels.Exhaustive;
         LogLines = new ObservableCollection<string>();
         if (!string.IsNullOrWhiteSpace(settingsError)) AppendLog(settingsError);
         LoadVersion();
@@ -633,15 +634,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string ExtractLevel
     {
         get => _extractLevel;
-        set
-        {
-            var normalized = ExtractLevels.Normalize(value);
-            if (Set(ref _extractLevel, normalized))
-            {
-                _settings.ExtractLevel = normalized;
-                SaveSettings();
-            }
-        }
+        set => Set(ref _extractLevel, ExtractLevels.Exhaustive);
     }
 
     public bool Busy

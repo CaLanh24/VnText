@@ -111,7 +111,8 @@ public sealed partial class MainViewModel
                     var parts = new List<string> { $"{ProgressPercent}%" };
                     if (!string.IsNullOrWhiteSpace(evt.Step)) parts.Add(evt.Step);
                     if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add(evt.Item);
-                    if (!string.IsNullOrWhiteSpace(evt.Eta)) parts.Add($"ETA {evt.Eta}");
+                    var eta = ProgressEtaFormatter.Format(evt.Eta);
+                    parts.Add(string.IsNullOrWhiteSpace(eta) ? "Đang ước tính thời gian" : $"Còn khoảng {eta}");
                     ProgressSubtitle = string.Join(" • ", parts);
                     AddTaskProgress(evt.Id, ProgressSubtitle);
                 }

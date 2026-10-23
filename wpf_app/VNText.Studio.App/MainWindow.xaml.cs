@@ -122,18 +122,8 @@ public partial class MainWindow : Window
     {
         void Show()
         {
-            MessageBox.Show(
-                this,
-                notification.Message,
-                notification.Title,
-                MessageBoxButton.OK,
-                notification.Kind switch
-                {
-                    "error" => MessageBoxImage.Error,
-                    "warning" => MessageBoxImage.Warning,
-                    "info" => MessageBoxImage.Information,
-                    _ => MessageBoxImage.Information,
-                });
+            if (DataContext is MainViewModel vm)
+                vm.ShowCompletionToast(notification);
         }
 
         if (Dispatcher.CheckAccess())

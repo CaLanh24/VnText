@@ -299,6 +299,7 @@
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock Text="{Binding AnalyzeStatusText}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding AnalyzeEngineSummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource BlueBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                                 <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>
@@ -428,7 +429,7 @@
                                     </Grid>
                                 </Border>
 
-                                <StackPanel Grid.Row="5" Margin="0,21,0,0">
+                                <StackPanel Grid.Row="5" Margin="0,21,0,0" Visibility="Collapsed">
                                     <TextBlock Text="Mức lọc văn bản thô" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
                                         <RadioButton Content="Sạch" GroupName="ExtractFilter" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,25,0"
@@ -626,7 +627,8 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding ProgressSubtitle}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="{Binding TranslationCsvPathDisplay}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding TranslationCsvPathDisplay}" />
+                                        <TextBlock Text="{Binding CsvValidationMessage}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <Button Grid.Column="1" Content="Bắt đầu dịch"
                                             Style="{StaticResource PrimaryButton}"

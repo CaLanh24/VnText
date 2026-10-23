@@ -52,7 +52,14 @@ public sealed class WorkerEvent
             if (root.TryGetProperty("total", out var totalEl)) evt.Total = totalEl.GetInt32();
             if (root.TryGetProperty("step", out var stepEl)) evt.Step = stepEl.GetString() ?? "";
             if (root.TryGetProperty("item", out var itemEl)) evt.Item = itemEl.GetString() ?? "";
-            if (root.TryGetProperty("eta", out var etaEl)) evt.Eta = etaEl.GetString();
+            if (root.TryGetProperty("eta", out var etaEl))
+                evt.Eta = etaEl.ValueKind switch
+                {
+                    JsonValueKind.String => etaEl.GetString(),
+                    JsonValueKind.Number when etaEl.TryGetDouble(out var seconds) && double.IsFinite(seconds) && seconds >= 0
+                        => seconds.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    _ => null,
+                };
             if (root.TryGetProperty("ok", out var okEl)) evt.Ok = okEl.GetBoolean();
             if (root.TryGetProperty("complete", out var compEl)) evt.Complete = compEl.GetBoolean();
             if (root.TryGetProperty("renpy_sdk_missing", out var renpySdkEl)) evt.RenpySdkMissing = renpySdkEl.GetBoolean();

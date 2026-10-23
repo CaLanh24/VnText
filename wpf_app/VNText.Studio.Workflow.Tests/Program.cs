@@ -102,6 +102,7 @@ internal static partial class Program
         Run("RenpySdkMissing_ReportsPartialExtraction", RenpySdkMissing_ReportsPartialExtraction, failures);
         Run("DiagnosticCompletion_IsVisibleAndActionable", DiagnosticCompletion_IsVisibleAndActionable, failures);
         Run("WorkerEvent_ParsesDiagnosticFields", WorkerEvent_ParsesDiagnosticFields, failures);
+        Run("WorkerEvent_FormatsNumericEta", WorkerEvent_FormatsNumericEta, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
         Run("BlockedCompletion_IsNotAccepted", BlockedCompletion_IsNotAccepted, failures);
@@ -801,6 +802,16 @@ internal static partial class Program
         AssertEqual("Copy overlay into the Ren'Py game root.", evt.PatchInstallInstructions);
     }
 
+    private static void WorkerEvent_FormatsNumericEta()
+    {
+        var evt = WorkerEvent.FromJson("{\"type\":\"progress\",\"done\":2,\"total\":10,\"eta\":3661.4}");
+        AssertTrue(evt is not null);
+        AssertEqual("3661.4", evt!.Eta);
+        AssertEqual("1 giờ 1 phút", ProgressEtaFormatter.Format(evt.Eta));
+        AssertEqual("45 giây", ProgressEtaFormatter.Format("45"));
+        AssertEqual("", ProgressEtaFormatter.Format("NaN"));
+    }
+
     private static void PatchDelivery_RoutesRenPyInstructions()
     {
         using var worker = new PythonWorkerHost();
@@ -946,6 +957,9 @@ internal static partial class Program
             var result = CsvPackageValidator.Validate(csv);
             AssertFalse(result.Ok);
             AssertTrue(result.Message.Contains("chưa có bản dịch"));
+            var draft = CsvPackageValidator.Validate(csv, requireTranslations: false);
+            AssertTrue(draft.Ok);
+            AssertEqual(0, draft.TranslatedRows);
         }
         finally
         {
@@ -996,11 +1010,11 @@ internal static partial class Program
             var picker = new FakePathPicker();
             using var worker = new PythonWorkerHost();
             var vm = new MainViewModel(picker, worker, startWorker: false);
-            AssertEqual(ExtractLevels.Balanced, vm.ExtractLevel);
+            AssertEqual(ExtractLevels.Exhaustive, vm.ExtractLevel);
             vm.ExtractLevel = ExtractLevels.Exhaustive;
             AssertEqual(ExtractLevels.Exhaustive, vm.ExtractLevel);
             var reloaded = AppSettingsStore.Load();
-            AssertEqual(ExtractLevels.Exhaustive, reloaded.ExtractLevel);
+            AssertEqual(ExtractLevels.Balanced, reloaded.ExtractLevel);
             vm.UiScale = 1.2;
             vm.AutoCheckUpdates = false;
             vm.NotifyUpdates = false;
@@ -1010,7 +1024,7 @@ internal static partial class Program
             AssertFalse(reloaded.AutoCheckUpdates);
             AssertFalse(reloaded.NotifyUpdates);
             AssertFalse(reloaded.RememberWindow);
-            AssertEqual(ExtractLevels.Exhaustive, reloaded.ExtractLevel);
+            AssertEqual(ExtractLevels.Balanced, reloaded.ExtractLevel);
             File.WriteAllText(path, "{broken");
             _ = AppSettingsStore.Load(out var error);
             AssertTrue(!string.IsNullOrWhiteSpace(error));
@@ -1018,8 +1032,8 @@ internal static partial class Program
             AssertEqual("{broken", File.ReadAllText(path));
             AssertTrue(vm.SettingsStatus.Contains("Không lưu được", StringComparison.Ordinal));
             File.Delete(path);
-            vm.ExtractLevel = "invalid";
-            AssertEqual(ExtractLevels.Balanced, vm.ExtractLevel);
+            vm.ExtractLevel = "clean";
+            AssertEqual(ExtractLevels.Exhaustive, vm.ExtractLevel);
             AssertEqual("extract", vm.HeroIcon);
             vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
             AssertEqual("translate", vm.HeroIcon);
@@ -1087,6 +1101,8 @@ internal static partial class Program
         Directory.CreateDirectory(root);
         try
         {
+            Directory.CreateDirectory(Path.Combine(root, "game"));
+            File.WriteAllText(Path.Combine(root, "game", "script.rpy"), "label start: pass\n", Encoding.UTF8);
             var report = Path.Combine(root, "unity_analysis.json");
             File.WriteAllText(report, """
                 {
@@ -1101,7 +1117,7 @@ internal static partial class Program
             using var worker = new PythonWorkerHost();
             var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false)
             {
-                InputPath = @"C:\game",
+                InputPath = root,
                 OutputPath = root,
                 SelectedTab = WorkflowTabs.Extract,
             };
@@ -1121,6 +1137,8 @@ internal static partial class Program
             AssertFalse(vm.Busy);
             AssertEqual(WorkflowTabs.Extract, vm.SelectedTab);
             AssertEqual("DETECTED", vm.AnalyzeUnityStatus);
+            if (!vm.AnalyzeEngineSummary.Contains("mixed engine", StringComparison.Ordinal))
+                throw new InvalidOperationException(vm.AnalyzeEngineSummary);
             AssertTrue(vm.AnalyzeInventoryComplete);
             AssertEqual(12, vm.AnalyzeResourceCount);
             AssertEqual(19, vm.AnalyzeTextCandidateCount);

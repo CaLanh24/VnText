@@ -49,6 +49,7 @@ public static class UiAppearance
         Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));
+        Set("GreenBrush", C("#16A34A", "#7BDEA7"));
         if (dark)
         {
             Set("DisabledBackgroundBrush", "#263247");

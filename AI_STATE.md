@@ -1,5 +1,11 @@
 # Current state pointer — 2026-10-24
 
+## Next update 0.1.11 — bounded UX/workflow remediation in progress
+
+Owner-authorized task is implementing the WPF workflow acceptance in CONTRACTS.md and TEST_MATRIX.md: deep extraction default, truthful analysis engine summary, numeric ETA presentation, theme-aware completion feedback, and blank-draft CT2 readiness. The focused WPF harness (10 tests) and CSV API regression (16 tests) pass with canonical TEST_RUN cleanup; receipts are under `DEV_RUN/runner-reports/` for source baseline `8783e11b6898199f3f833a24a090f3e4798911b`. Native app interaction, actual offline CT2 E2E, CSV layout and remaining dialog inventory are still pending. No version bump, Release build, publish, or `RELEASE_VERIFIED` claim is authorized by this task.
+
+Owner's queued release decision is recorded in `CONTRACTS.md`: every public release needs both Setup for new installs and the supported updater for existing installs, with a Vietnamese user-facing release body. After Brain accepts 0.1.11 UX, the next task is repairing the 0.1.10 GitHub body and building its missing Setup only from immutable source `b9e2a661a58dd85979a6a10b9bb30f713107847b`; no release allocation or publication is active here.
+
 ## Release 0.1.10 — published; public update acceptance passed
 
 The stable public `v0.1.10` release is live at https://github.com/CaLanh24/VnText/releases/tag/v0.1.10. Its annotated tag targets the exact built source `b9e2a661a58dd85979a6a10b9bb30f713107847b`; remote API readback confirmed the exact five approved asset sizes and SHA-256 digests, with no Setup. Candidate review passed. The exact-source full regression (1,058 tests, 10 explained skips), canonical publisher/release verification, independent-cwd WPF smoke, post-build PatchInstaller regression, real Release GUI shutdown, and both local update routes passed. The 0.1.9 route also passed forced health-failure rollback with app/data/model inventories restored.

@@ -27,6 +27,15 @@ internal static class RenpyGameDetector
         if (hasUnityEvidence)
             return false;
 
+        var hasRenpyFiles = HasLooseSourceFiles(root, cancellationToken);
+        return !hasUnityEvidence && hasRenpyFiles;
+    }
+
+    public static bool HasLooseSourceFiles(string inputPath, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath)) return false;
+        var root = File.Exists(inputPath) ? Path.GetDirectoryName(Path.GetFullPath(inputPath)) : Path.GetFullPath(inputPath);
+        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;
         var gameRoot = Path.Combine(root, "game");
         if (!Directory.Exists(gameRoot))
             return false;

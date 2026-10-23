@@ -239,7 +239,7 @@ public sealed partial class MainViewModel
         CsvValidationResult validation;
         try
         {
-            validation = await Task.Run(() => CsvPackageValidator.Validate(csv));
+            validation = await Task.Run(() => CsvPackageValidator.Validate(csv, requireTranslations: false));
         }
         catch (Exception ex)
         {
@@ -249,8 +249,8 @@ public sealed partial class MainViewModel
         }
         if (!validation.Ok)
         {
-            AppendLog($"Không thể dịch CSV: {validation.Message}");
-            StatusText = "CSV chưa hợp lệ";
+            AppendLog($"Chưa thể dịch {csv}: {validation.Message}");
+            StatusText = "CSV chưa sẵn sàng";
             return;
         }
         TranslateButtonGreen = false;
