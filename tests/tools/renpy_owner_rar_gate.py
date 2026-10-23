@@ -32,6 +32,40 @@ def sha(path):
 def save(report):REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2,default=str),encoding='utf-8')
 
 
+def wait_native_process(process, *, started_monotonic, deadline_monotonic, timeout_seconds, finish_requested, clock=time.monotonic, sleep=time.sleep, utc_now=None):
+    """Wait for the owned process; process launch is not native-window readiness."""
+    from datetime import datetime, timezone
+    stamp=utc_now or (lambda:datetime.now(timezone.utc).isoformat().replace('+00:00','Z'))
+    started=started_monotonic;deadline=deadline_monotonic
+    reason='WAIT_ERROR';ended=started;terminated=False
+    try:
+        while True:
+            exit_code=process.poll()
+            if exit_code is not None:
+                reason='PROCESS_EXITED'
+                break
+            if finish_requested():
+                reason='FINISH_SIGNAL'
+                break
+            if clock()>=deadline:
+                reason='DEADLINE'
+                break
+            sleep(min(1.0,max(0.0,deadline-clock())))
+    finally:
+        ended=clock()
+        if process.poll() is None:
+            terminated=True
+            process.terminate()
+            try:process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                reason='DEADLINE_KILL' if reason=='DEADLINE' else reason+'_KILL'
+                process.kill();process.wait(timeout=10)
+    return {'end_utc':stamp(),
+        'elapsed_seconds':max(0.0,ended-started),'timeout_seconds':timeout_seconds,
+        'termination_reason':reason,'terminated_by_harness':terminated,
+        'exit_code':process.returncode}
+
+
 def quota(reserve=0):
     result=_project_size_snapshot()
     if not result['complete']or result['non_exempt_bytes']+reserve>result['limit_bytes']:raise ValueError('measured global quota/reserve unavailable')
@@ -130,17 +164,32 @@ def main():
                 if args.windowed_native:native_env['RENPY_DISABLE_FULLSCREEN']='1'
                 report['native_display_environment']={'RENPY_DISABLE_FULLSCREEN':'1'if args.windowed_native else 'not overridden'}
                 process=subprocess.Popen(command,cwd=sdk.root,env=native_env,stdout=stream,stderr=subprocess.STDOUT)
-                report['owned_native_process']={'pid':process.pid,'command':command,'expected_executable':str(sdk.python)}
-                report['native_window_waiting']=True;save(report)
+                native_launch_utc=time.time();native_start=time.monotonic()
+                native_deadline_utc=native_launch_utc+300
+                native_deadline=native_start+300
+                report['owned_native_process']={'pid':process.pid,'command':command,'expected_executable':str(sdk.python),
+                    'launch_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(native_launch_utc)),
+                    'deadline_utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(native_deadline_utc)),
+                    'launch_monotonic':native_start,'deadline_monotonic':native_deadline,
+                    'timeout_seconds':300,'window_ready':False,'readiness_source':'SUPPORTED_COMPUTER_USE_EXTERNAL'}
+                report['native_process_started']=True
+                report['native_window_waiting']=True
+                report['native_window_ready']=False
                 try:
-                    deadline=time.monotonic()+300
-                    while process.poll()is None and time.monotonic()<deadline and not(EVIDENCE/(args.stem+'-finish.signal')).exists():time.sleep(1)
+                    save(report)
+                    lifecycle=wait_native_process(process,started_monotonic=native_start,
+                        deadline_monotonic=native_deadline,timeout_seconds=300,
+                        finish_requested=lambda:(EVIDENCE/(args.stem+'-finish.signal')).exists(),
+                        clock=time.monotonic,sleep=time.sleep)
+                    lifecycle.update({'launch_utc':report['owned_native_process']['launch_utc'],
+                        'deadline_utc':report['owned_native_process']['deadline_utc'],
+                        'launch_monotonic':native_start,'deadline_monotonic':native_deadline})
+                    report['native_lifecycle']=lifecycle;report['native_exit']=process.returncode
                 finally:
-                    if process.poll()is None:
+                    if process.poll() is None:
                         process.terminate()
                         try:process.wait(timeout=10)
                         except subprocess.TimeoutExpired:process.kill();process.wait(timeout=10)
-                report['native_exit']=process.returncode
             report['native_log_excerpt']=log.read_text(encoding='utf-8',errors='replace')[-8000:]
             if trial_receipt:
                 from tests.tools.renpy_vm_font_trial import own_generated_bytecode,rollback_trial
