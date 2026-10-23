@@ -2544,12 +2544,14 @@ def _sha256_file(path: Path) -> str:
 def _git_repository_state() -> dict:
     try:
         head = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.STDOUT
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, timeout=10,
         ).strip()
         dirty = subprocess.check_output(
-            ["git", "status", "--porcelain=v1"], cwd=ROOT, text=True, stderr=subprocess.STDOUT
+            ["git", "status", "--porcelain=v1"], cwd=ROOT, text=True, stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL, timeout=10,
         ).strip()
-    except (OSError, subprocess.CalledProcessError) as exc:
+    except (OSError, subprocess.SubprocessError) as exc:
         return {"head": "", "dirty": True, "error": str(exc)}
     return {"head": head, "dirty": bool(dirty), "error": ""}
 
@@ -2563,9 +2565,11 @@ def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
             cwd=ROOT,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            timeout=10,
             check=False,
         )
-    except OSError:
+    except (OSError, subprocess.SubprocessError):
         return False
     return result.returncode == 0
 
@@ -2581,9 +2585,11 @@ def _git_version_at(revision: str) -> str | None:
             text=True,
             encoding="utf-8",
             errors="replace",
+            stdin=subprocess.DEVNULL,
+            timeout=10,
             check=False,
         )
-    except OSError:
+    except (OSError, subprocess.SubprocessError):
         return None
     if result.returncode != 0:
         return None

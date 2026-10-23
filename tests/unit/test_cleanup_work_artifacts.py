@@ -117,6 +117,48 @@ class CleanupLifecycleTests(unittest.TestCase):
             if previous is not None:
                 os.environ[marker] = previous
 
+    def test_git_lineage_probes_close_stdin_and_fail_closed_on_timeout(self):
+        completed = subprocess.CompletedProcess(["git"], 0)
+        with patch.object(cleanup.subprocess, "run", return_value=completed) as run:
+            self.assertTrue(cleanup._git_is_ancestor("older", "newer"))
+            self.assertEqual(run.call_args.kwargs["stdin"], subprocess.DEVNULL)
+            self.assertEqual(run.call_args.kwargs["timeout"], 10)
+
+        with patch.object(
+            cleanup.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["git"], 10),
+        ):
+            self.assertFalse(cleanup._git_is_ancestor("older", "newer"))
+
+        with patch.object(cleanup.subprocess, "check_output", side_effect=["head\n", ""]) as check_output:
+            state = cleanup._git_repository_state()
+            self.assertEqual(state["head"], "head")
+            self.assertFalse(state["dirty"])
+            self.assertEqual(check_output.call_count, 2)
+            for call in check_output.call_args_list:
+                self.assertEqual(call.kwargs["stdin"], subprocess.DEVNULL)
+                self.assertEqual(call.kwargs["timeout"], 10)
+
+        with patch.object(
+            cleanup.subprocess,
+            "check_output",
+            side_effect=subprocess.TimeoutExpired(["git"], 10),
+        ):
+            self.assertTrue(cleanup._git_repository_state()["dirty"])
+
+        version_result = subprocess.CompletedProcess(["git"], 0, stdout="0.1.10\n")
+        with patch.object(cleanup.subprocess, "run", return_value=version_result) as run:
+            self.assertEqual(cleanup._git_version_at("revision"), "0.1.10")
+            self.assertEqual(run.call_args.kwargs["stdin"], subprocess.DEVNULL)
+            self.assertEqual(run.call_args.kwargs["timeout"], 10)
+        with patch.object(
+            cleanup.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["git"], 10),
+        ):
+            self.assertIsNone(cleanup._git_version_at("revision"))
+
     @contextlib.contextmanager
     def isolated_workspace(self):
         with self.isolated_owner_pending(), self.isolated_artifact_scope(), self.isolated_release_task_id(), tempfile.TemporaryDirectory(prefix="vntext-cleanup-") as name:
