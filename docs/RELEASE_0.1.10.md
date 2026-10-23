@@ -1,6 +1,6 @@
 # Release 0.1.10 — preparation plan
 
-Status: Owner approved the task-specific 3 GiB cap; version owners, publisher candidate-path support and this plan are prepared. No candidate, payload, epoch, build, package, tag, or release allocation has begun. The task-specific prospective epoch, canonical scope registration and phase preflight must pass before allocation.
+Status: PROVEN_BLOCKED at read-only prospective-epoch lineage preflight. No candidate, payload, epoch, build, package, tag, or release allocation has begun.
 
 ## Target and authorization
 
@@ -31,4 +31,4 @@ Planned sequential root budget: retain only the registered source snapshot under
 
 ## Preparation state
 
-Version owners and publisher's isolated source-snapshot candidate allowlist include `0.1.10`; stable-public README wording remains `0.1.9` until publication. The task-specific budget is approved; the `release-0.1.10` task profile implementation passes focused tests. The canonical epoch/scope transition must still pass lineage preflight before allocation. Final source SHA, candidate, full tests/build/package, Brain review, push/publication, live update acceptance and terminal cleanup are still outstanding. No release claim follows from source preparation.
+Version owners and publisher's isolated source-snapshot candidate allowlist include `0.1.10`; stable-public README wording remains `0.1.9` until publication. The task-specific budget is approved; the `release-0.1.10` task profile implementation passes focused tests. The canonical prospective-epoch plan on exact source SHA `f6d732356b2a12afb9dc4970e2a821c2ff08a633` returned `PROVEN_BLOCKED` with `owner_reset_authorization_required`: root `artifacts_manifest.json` is absent and the preserved incident manifest is `MISSING`. Applying the helper reset requires an explicit Owner authorization and records historical hygiene `NOT_RECOVERABLE/UNVERIFIABLE`. That would discard the only canonical pointer to the existing lineage; the retained 0.1.9 terminal-control copy does not prove or reconnect the missing registry. The Owner directed preserving epoch/manifest lineage, so no reset or candidate allocation was performed. Resume only after lineage is safely restored from verifiable preserved evidence or Owner explicitly revises this constraint. Candidate, full tests/build/package, Brain review, push/publication, live update acceptance and terminal cleanup remain unstarted because of the lineage blocker. No release claim follows from source preparation.
