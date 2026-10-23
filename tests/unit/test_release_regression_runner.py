@@ -100,6 +100,8 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "        self.assertEqual('utf-8', os.environ['PYTHONIOENCODING'])\n"
             "        self.assertNotIn('VNTEXT_RELEASE_TASK_ID', os.environ)\n"
             "        temp_root = Path(os.environ['TMPDIR']).resolve()\n"
+            "        self.assertTrue(temp_root.name.startswith('t-'), temp_root)\n"
+            "        self.assertLessEqual(len(temp_root.name), 14, temp_root)\n"
             "        self.assertEqual(temp_root, Path(tempfile.gettempdir()).resolve())\n"
             "        self.assertEqual(Path(os.environ['VNTEXT_ARTIFACT_SCOPE_ROOT']).resolve(), temp_root.parent)\n"
             "        child_code = \"import json,os,sys,tempfile,runner_probe; print(json.dumps({'scope':os.getenv('VNTEXT_ARTIFACT_SCOPE_ID'),'run':os.getenv('VNTEXT_ARTIFACT_RUN_ID'),'tmpdir':os.getenv('TMPDIR'),'tempdir':tempfile.gettempdir(),'probe':runner_probe.marker()}))\"\n"

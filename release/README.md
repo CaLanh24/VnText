@@ -62,7 +62,7 @@ giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đ�
 `RELEASE_VERIFIED`.
 
 Với source snapshot nằm trong một candidate đã đăng ký, `-ArtifactScopeParentRoot`
-chỉ nhận đúng thư mục cha `candidate-0.1.5`; publisher kiểm tra snapshot sạch,
+chỉ nhận đúng các thư mục cha được allowlist trong `release/publish.ps1`; publisher kiểm tra snapshot sạch,
 đúng SHA/version và profile ngân sách từ helper canonical của parent trước khi
 tạo dữ liệu. Scope publish mới và `ReleaseRoot` phải nằm bên trong candidate cha;
 scope đã tồn tại bị từ chối. Tùy chọn này chỉ dùng cùng

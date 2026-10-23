@@ -11,7 +11,7 @@ import zlib
 import unittest
 from vntext.renpy_toolchain import validate_sdk, copy_template_workspace, generate_empty_vietnamese_template
 from vntext.renpy_extract import extract_native_template_entries, parse_renpy_translation_templates
-from tests.lib.work_paths import WORK_ROOT, ambient_scope, register_artifact, work_temp_dir
+from tests.lib.work_paths import WORK_ROOT, ambient_scope, make_deletion_provenance, register_artifact, set_artifact_status, work_temp_dir
 
 SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK',str(Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3')))
 
@@ -51,9 +51,29 @@ class NativeRenPySdkTests(unittest.TestCase):
                 self.assertTrue((root/'package'/'manifest.json').is_file())
             finally:
                 proc.stdin.close()
-                self.assertEqual(proc.wait(timeout=10),0)
+                return_code = proc.wait(timeout=10)
                 proc._worker_reader.join(timeout=2)
                 proc.stdout.close()
+                if not quota_diagnostic.exists():
+                    missing_provenance = make_deletion_provenance(
+                        path=quota_diagnostic,
+                        reason="registered quota diagnostic was not emitted; verified absent after the owning worker exited",
+                        deleted_by="test_renpy_native_sdk.py after worker exit",
+                        bytes_deleted=0,
+                        evidence_source="test_renpy_native_sdk.py:worker_exit_precreation_check",
+                        scope_id=scope["scope_id"],
+                        run_id=scope["run_id"],
+                        scope_root=scope["scope_root"],
+                        deletion_result="already_absent",
+                    )
+                    set_artifact_status(
+                        diagnostic_id,
+                        "MISSING",
+                        lifecycle="MISSING",
+                        purpose="native quota diagnostic was not emitted by this worker run",
+                        deletion_provenance=missing_provenance,
+                    )
+                self.assertEqual(return_code,0)
 
     @classmethod
     def setUpClass(cls):
