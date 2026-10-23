@@ -278,6 +278,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 **Owner coordination decision (2026-10-21):** DEV records progress, candidate and terminal reports only in its own session. Brain actively reads that session and sends only necessary reviewed decisions/remediation; DEV does not message Brain back. This supersedes earlier report-back requests; no separate commit is needed solely for this rule.
 
+**Owner role clarification (2026-10-23, bounded RenPy acceptance):** Owner → Brain for coordination, progress/evidence review, acceptance and task assignment → DEV as sole implementation Coordinator/writer. Brain does not edit the repository concurrently. DEV reports in its own chat for direct Brain review; this adds no child, parallel writer or reverse-message authority. The role clarification does not authorize another native trial beyond the currently bounded run11.
+
 
 **Owner approval (2026-10-21, Release0.1.9):** “Cho phép 3 GiB cho Release 0.1.9”. Temporary3GiB total non-exempt checkout artifacts only for exact registered `RELEASE_RUN/candidate-0.1.9`, independent clean0.1.9 prospective epoch and `VNTEXT_RELEASE_TASK_ID=release-0.1.9`. Terminal scope cleanup returns to<=1GiB; shared `.dev-env` stays<=6GiB. Inventory/project each phase; preserve historical/user data. Descendant clean-source prerequisite fixes within this campaign retain same-version lineage/CAS/tamper/eight-hop guards. No rebaseline, validator relaxation, research resume or model promotion.
 
