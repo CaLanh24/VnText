@@ -43,6 +43,11 @@ def _tree_snapshot(root: Path) -> dict[str, dict[str, object]]:
 
 
 class PublishReleaseRootGuardTests(unittest.TestCase):
+    def test_new_release_candidate_snapshot_is_explicitly_versioned(self):
+        script = (ROOT / "release" / "publish.ps1").read_text(encoding="utf-8")
+        self.assertIn("'candidate-0.1.10'", script)
+        self.assertIn("'0.1.10'", script)
+
     def test_dev_smoke_build_is_registered_and_isolated_from_live_dev_exe(self):
         script = (ROOT / "release" / "publish.ps1").read_text(encoding="utf-8")
         self.assertIn('$devSmokeRoot = Join-Path $publishArtifactRoot "dev-smoke"', script)

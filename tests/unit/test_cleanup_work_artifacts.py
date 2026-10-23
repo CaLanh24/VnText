@@ -2121,7 +2121,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(second["idempotent"])
 
     def test_release_task_budget_is_epoch_bound_registered_and_reverts_after_teardown(self):
-        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID)]:
+        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID), ("0.1.10", cleanup.RELEASE_TASK_010_BUDGET_ID)]:
             with self.subTest(version=version), self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
                 (root / "VERSION.txt").write_text(version+"\n", encoding="utf-8")
                 git_guard, incident_guard = self._epoch_guards()
@@ -2135,6 +2135,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                     self.assertTrue(applied["ok"], applied)
                     budget = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]["release_task_budget"]
                     self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, budget["limit_bytes"])
+                    self.assertEqual(cleanup.RELEASE_TASK_010_BUDGET_APPROVAL if version == "0.1.10" else cleanup._release_budget_spec(task_id)[2], budget["owner_approval"])
                     registered = cleanup.register_release_task_scope()
                     self.assertTrue(registered["ok"], registered)
                     with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):

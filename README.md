@@ -1,9 +1,9 @@
 # VNText Studio
 
 
-Phiên bản ổn định mới nhất: [**0.1.9**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.9).
+Source đang chuẩn bị bản cập nhật **0.1.10**; phiên bản stable công khai hiện tại vẫn là [**0.1.9**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.9).
 
-Đã cài 0.1.7 hoặc 0.1.8: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**, tải bản mới và xác nhận khởi động lại. Gói cập nhật 0.1.9 khoảng 3,49 MB; giữ nguyên CSV, glossary, dữ liệu và model.
+Đã cài 0.1.7, 0.1.8 hoặc 0.1.9: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**, tải bản mới và xác nhận khởi động lại khi bản cập nhật mới được phát hành. Hiện tại stable là 0.1.9; gói của bản mới chưa phát hành.
 
 Người mới hoặc đang dùng 0.1.6: cài [Setup 0.1.7](https://github.com/CaLanh24/VnText/releases/tag/v0.1.7) làm baseline lần cuối rồi cập nhật trong app. Khi nâng cấp bằng Setup, đóng VNText và chọn đúng thư mục cài hiện tại; không gỡ bản cũ trước vì Uninstall xóa dữ liệu. Sau khi tải đủ 100%, chờ app xác minh các file trước khi hiện nút khởi động lại. Bằng chứng và giới hạn kiểm chứng: [Release 0.1.9](docs/RELEASE_0.1.9.md).
 
