@@ -272,6 +272,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
   inventory/hash baseline vẫn kiểm nguyên byte, không normalize hay bỏ file.
 - Version lấy từ `VERSION.txt`/`app_backend.VERSION`; publisher báo source SHA, Setup SHA256/size và payload file/byte count.
 
+**Owner decision (2026-10-24, public release assets and notes):** Every public stable VNText release includes a version-matched Setup named `VNTextStudio-<version>-Setup.exe` and the full-app updater package or packages required by the supported baseline routes in this contract. The GitHub release body is Vietnamese and gives a concise, user-facing account of product features, UI changes and fixes delivered in that version. Keep test results, hashes, gate status, internal history, and instructions for working around or reusing an older Setup out of the release body. Keep technical provenance and acceptance evidence in their dedicated records/assets, and retain applicable license notices and legal materials. Release notes must not imply acceptance beyond the evidence for the stated behavior.
+
 **Tests/evidence:** `tests/unit/test_setup_package.py`, `test_runtime_paths.py`, `test_wpf_workflow.py`; `release/package_installer.py`, `release/publish.ps1`, `release/publish_owner_wpf_update.py`, `vntext/release_verify.py`. The package test runs the generated final PowerShell helper on a fixture and verifies that `Uninstall.exe` and every descendant are gone while the regular install root remains empty. Setup UI, selected-folder install, real whole-folder-content uninstall and button-driven A→B update require installed-app verification; do not infer them from package tests alone.
 
 ## 10a. Test artifact retention and cleanup lifecycle
