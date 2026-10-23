@@ -70,7 +70,7 @@ scope đã tồn tại bị từ chối. Tùy chọn này chỉ dùng cùng
 
 ## Dòng public 0.1
 
-`v0.1` là bản public đầu tiên; stable mới nhất là `0.1.10`. Setup 0.1.10 đã được công bố, nhưng acceptance cài mới qua Setup UI và worker-health smoke vẫn đang chờ Owner xác nhận và chạy. Acceptance cập nhật công khai từ bản cài 0.1.9 là evidence riêng. Không suy ra `RELEASE_VERIFIED` từ tag hoặc asset.
+`v0.1` là bản public đầu tiên; stable mới nhất là `0.1.10`. Setup 0.1.10 đã được công bố, nhưng acceptance cài mới qua Setup UI và worker-health smoke hiện PROVEN_BLOCKED do supported state capture timeout hai lần tại màn hình Intel terms; chưa bấm chấp thuận, chưa cài và đây không phải kết luận Setup bị lỗi. Acceptance cập nhật công khai từ bản cài 0.1.9 là evidence riêng. Không suy ra `RELEASE_VERIFIED` từ tag hoặc asset.
 Không phát hành bridge riêng, không hứa một lần Setup cho baseline v0.1. Dùng
 `-SkipWpfUpdatePackage` để không tạo version WPF cao hơn chưa được Owner chọn.
 Không kết hợp switch này với `-WpfUpdateVersion`; gói được yêu cầu vẫn phải qua
@@ -86,3 +86,4 @@ full regression + affected gates trên SHA cuối. Sau build: payload audit/hash
 release verify, smoke hai cwd, installer/GUI và installed upgrade/rollback/recovery.
 Giữ raw command/output/exit code/skip/warning và lifecycle trước disposal. Không
 suy candidate đạt từ focused gate; các giới hạn installer/uninstaller và runtime native vẫn giữ nguyên.
+
