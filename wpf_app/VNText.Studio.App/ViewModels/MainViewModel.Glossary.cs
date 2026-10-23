@@ -98,7 +98,7 @@ public sealed partial class MainViewModel
     {
         if (item is null || string.IsNullOrWhiteSpace(TranslationCsvPath))
             return;
-        if (MessageBox.Show($"Xóa thuật ngữ “{item.Term}”?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppDialogService.Show($"Xóa thuật ngữ “{item.Term}”?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         var entries = PackageGlossaryService.Load(TranslationCsvPath);
         var key = entries.Keys.FirstOrDefault(k => string.Equals(k, item.Term, StringComparison.OrdinalIgnoreCase));

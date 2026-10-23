@@ -39,8 +39,8 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show("VNText Studio could not recover an interrupted update. Keep the install folder intact and contact support:\n" + ex.Message,
-                "VNText Studio Update Recovery", MessageBoxButton.OK, MessageBoxImage.Error);
+            AppDialogService.Show("Không thể khôi phục bản cập nhật bị gián đoạn. Giữ nguyên thư mục cài đặt và liên hệ hỗ trợ:\n" + ex.Message,
+                "Khôi phục bản cập nhật", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(6);
             return;
         }

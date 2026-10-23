@@ -153,6 +153,10 @@ public sealed partial class MainViewModel
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
                 var renpySdkIncomplete = completedTask == "extract" && evt.RenpySdkMissing;
+                if (completedTask == "extract" && evt.RenpySdkMissing)
+                    RenpySdkAction = "missing";
+                else if (completedTask == "extract" && RenpySdkAction is "download" or "existing")
+                    RenpySdkAction = "ready";
                 var extractionIncomplete = completedTask == "extract"
                     && (evt.ExtractStatus is "PARTIAL" or "EMPTY" || (evt.Ok && evt.Complete == false));
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;

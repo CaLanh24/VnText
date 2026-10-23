@@ -51,6 +51,8 @@ internal static class WpfWorkflowE2eProbe
             if (string.IsNullOrWhiteSpace(outputPath))
                 throw new ArgumentException("WPF E2E output is required", nameof(outputPath));
             Directory.CreateDirectory(outputPath);
+            if (Directory.EnumerateFileSystemEntries(outputPath).Any())
+                throw new InvalidDataException("WPF E2E output must be a fresh, empty generated package directory");
 
             var vm = await window.Dispatcher.InvokeAsync(() =>
             {
@@ -76,6 +78,7 @@ internal static class WpfWorkflowE2eProbe
                 "extract",
                 vm.RunExtractCommand,
                 timeout,
+                () => ExtractOutputExists(outputPath),
                 () => ValidateExtract(outputPath),
                 report);
             await RunStepAsync(
@@ -84,6 +87,7 @@ internal static class WpfWorkflowE2eProbe
                 "translate",
                 vm.RunTranslateCommand,
                 timeout,
+                () => TranslateOutputComplete(outputPath),
                 () => ValidateTranslate(outputPath, model, modelRevision),
                 report);
             await RunStepAsync(
@@ -92,6 +96,7 @@ internal static class WpfWorkflowE2eProbe
                 "patch",
                 vm.RunPatchCommand,
                 timeout,
+                () => PatchOutputComplete(outputPath),
                 () => ValidatePatch(outputPath),
                 report);
 
@@ -131,17 +136,18 @@ internal static class WpfWorkflowE2eProbe
         string task,
         RelayCommand command,
         TimeSpan timeout,
+        Func<bool> outputStarted,
         Func<Dictionary<string, object?>> validateOutput,
         Dictionary<string, object?> reportRoot)
     {
         await window.Dispatcher.InvokeAsync(() => command.Execute(null));
-        if (!await WaitUntilAsync(window, () => vm.Busy, TimeSpan.FromSeconds(30)))
+        if (!await WaitUntilAsync(window, () => vm.Busy || outputStarted(), TimeSpan.FromSeconds(30)))
         {
             throw new InvalidOperationException(
                 $"{task} did not start: {JsonSerializer.Serialize(await SnapshotAsync(window, vm))}");
         }
 
-        if (!await WaitUntilAsync(window, () => !vm.Busy, timeout))
+        if (!await WaitUntilAsync(window, () => !vm.Busy && OutputIsReady(validateOutput), timeout))
         {
             await window.Dispatcher.InvokeAsync(() => vm.CancelCommand.Execute(null));
             throw new TimeoutException($"WPF {task} timed out after {timeout}");
@@ -159,6 +165,45 @@ internal static class WpfWorkflowE2eProbe
         result["task"] = task;
         result["ui"] = state;
         ((List<object>)reportRoot["steps"]!).Add(result);
+    }
+
+    private static bool OutputIsReady(Func<Dictionary<string, object?>> validateOutput)
+    {
+        try
+        {
+            _ = validateOutput();
+            return true;
+        }
+        catch (IOException) { return false; }
+        catch (InvalidDataException) { return false; }
+        catch (JsonException) { return false; }
+    }
+
+    private static bool ExtractOutputExists(string outputPath) =>
+        File.Exists(Path.Combine(outputPath, "translation.csv"))
+        && File.Exists(Path.Combine(outputPath, "manifest.json"));
+
+    private static bool TranslateOutputComplete(string outputPath)
+    {
+        var path = Path.Combine(outputPath, ".mt", "translate_status.json");
+        if (!File.Exists(path)) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            return ReadBool(doc.RootElement, "complete");
+        }
+        catch (JsonException) { return false; }
+        catch (IOException) { return false; }
+    }
+
+    private static bool PatchOutputComplete(string outputPath)
+    {
+        var reportPath = Path.Combine(outputPath, "import_report.txt");
+        if (!Directory.Exists(Path.Combine(outputPath, "COPY_TO_GAME_ROOT")) || !File.Exists(reportPath))
+            return false;
+        var report = File.ReadAllText(reportPath);
+        return report.Contains("patch_verification_status: PASS", StringComparison.OrdinalIgnoreCase)
+            && report.Contains("per_target_readback: PASS", StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task WaitForWorkerReadyAsync(

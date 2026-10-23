@@ -19,7 +19,7 @@ public sealed partial class MainViewModel
     private const int CsvEditorUiBatchSize = 350; // kept for potential future chunking
 
     internal Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult> CsvEditorMessageBox { get; set; } =
-        static (message, caption, buttons, image) => MessageBox.Show(message, caption, buttons, image);
+        static (message, caption, buttons, image) => AppDialogService.Show(message, caption, buttons, image);
 
     private readonly ResettableObservableCollection<CsvEditorRow> _csvEditorRows = [];
     private readonly List<string> _csvEditorFields = [];
@@ -647,7 +647,7 @@ public sealed partial class MainViewModel
             $"Tìm: {CsvBulkFind}\nThay bằng: {CsvBulkReplace}\n" +
             "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.\n" +
             "Một file backup sẽ được tạo và CSV sẽ được validate sau khi ghi.";
-        if (MessageBox.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (AppDialogService.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         var result = TranslationCsvEditorService.ReplaceTranslation(
@@ -683,7 +683,7 @@ public sealed partial class MainViewModel
     {
         if (string.IsNullOrWhiteSpace(CsvEditorPath) || string.IsNullOrWhiteSpace(_csvBulkLastBackup))
             return;
-        if (MessageBox.Show("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận Undo", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppDialogService.Show("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận Undo", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         var result = TranslationCsvEditorService.Undo(CsvEditorPath, _csvBulkLastBackup);
         if (!result.Ok)
@@ -956,7 +956,7 @@ public sealed partial class MainViewModel
             $"Xóa cột translation của {preview.Count:N0} dòng bị Patch Gate chặn?\n\n" +
             "Chỉ xóa bản dịch — giữ nguyên key và source.\n" +
             "File backup sẽ được tạo trước khi ghi.";
-        if (MessageBox.Show(msg, "Xác nhận xóa bản dịch lỗi", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppDialogService.Show(msg, "Xác nhận xóa bản dịch lỗi", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
         var result = TranslationCsvEditorService.ClearBlocked(CsvEditorPath, _csvEditorFields, rows, targetKeys);

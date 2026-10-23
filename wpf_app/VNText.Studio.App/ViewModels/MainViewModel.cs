@@ -583,9 +583,11 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string RenpySdkStatus => RenpySdkAction switch
     {
-        "download" => "Sẽ tải công cụ Ren'Py rồi lấy text.",
+        "download" => "Đang thử tải SDK Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn SDK đã cài.",
         "existing" => "Sẽ dùng thư mục công cụ Ren'Py đã chọn.",
         "none" => "Sẽ tiếp tục không có công cụ; một số lời thoại cần xem lại.",
+        "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK sẽ cho kết quả chưa đầy đủ.",
+        "ready" => "Đã sẵn sàng SDK Ren'Py 8.5.3.",
         _ => "Khi lấy text, app tự dùng công cụ đã có; nếu chưa có, kết quả sẽ được báo là chưa đầy đủ.",
     };
 
@@ -765,7 +767,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RefreshWpfUpdateAvailability();
         if (!_updateAvailable)
             return;
-        if (MessageBox.Show("Đóng VNText Studio và áp dụng bản cập nhật?", "Cập nhật VNText Studio",
+        if (AppDialogService.Show("Đóng VNText Studio và áp dụng bản cập nhật?", "Cập nhật VNText Studio",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         try
@@ -774,7 +776,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Không thể khởi chạy updater: {ex.Message}", "Cập nhật VNText Studio",
+            AppDialogService.Show($"Không thể khởi chạy updater: {ex.Message}", "Cập nhật VNText Studio",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -934,7 +936,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Busy || CsvEditorDirty || !GitHubApplyEnabled || _githubUpdateChecking)
             return;
-        if (MessageBox.Show($"Close VNText Studio and apply stable WPF update v{_githubUpdateResult.Version}?",
+        if (AppDialogService.Show($"Đóng VNText Studio và áp dụng bản cập nhật WPF ổn định v{_githubUpdateResult.Version}?",
                 "VNText Studio update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         try
@@ -946,7 +948,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Could not start the verified WPF updater: {ex.Message}", "VNText Studio update",
+            AppDialogService.Show($"Không thể khởi chạy updater đã xác minh: {ex.Message}", "Cập nhật VNText Studio",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

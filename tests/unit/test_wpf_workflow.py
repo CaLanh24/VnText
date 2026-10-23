@@ -188,6 +188,32 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
         self.assertIn("Tải công cụ rồi lấy text", xaml)
         self.assertIn("Tiếp tục, lời thoại cần xem lại", xaml)
+        self.assertIn("không dùng parser thay thế", xaml)
+        self.assertIn('"missing" => "Chưa dùng được SDK Ren\'Py 8.5.3.', view_model)
+        self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', view_model)
+        self.assertIn('RenpySdkAction = "missing"', worker)
+
+    def test_csv_editor_controls_expand_and_validation_stays_automatic(self):
+        xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
+        editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        self.assertNotIn('x:Name="CsvControlsScrollViewer"', xaml)
+        self.assertNotIn('MaxHeight="220"', xaml)
+        self.assertIn('Header="Tìm và thay thế bản dịch"', xaml)
+        for command in ("ClearBlockedCsvCommand", "ValidateCsvEditorCommand", "RetranslateBlockedCsvCommand", "ApproveCsvMemoryCommand"):
+            self.assertNotIn(f'Command="{{Binding {command}}}"', xaml)
+        self.assertIn("ValidateCsvEditor(showLog: false)", editor)
+        self.assertIn('Text="{Binding CsvEditorValidationMessage}"', xaml)
+
+    def test_wpf_app_dialogs_use_the_themed_dialog_surface(self):
+        dialog = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppDialogService.cs").read_text(encoding="utf-8")
+        self.assertIn('TryFindResource("SurfaceBrush")', dialog)
+        self.assertIn('"PrimaryButton" : "OutlineButton"', dialog)
+        self.assertIn('MessageBoxButton.YesNo => MessageBoxResult.No', dialog)
+        self.assertIn('MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel', dialog)
+        for path in (ROOT / "wpf_app" / "VNText.Studio.App").rglob("*.cs"):
+            if path.name == "AppDialogService.cs":
+                continue
+            self.assertNotIn("MessageBox.Show(", path.read_text(encoding="utf-8"), str(path))
 
     def test_workflow_probe_only_accepts_ct2_and_uses_the_selected_local_model(self):
         app = (ROOT / "wpf_app" / "VNText.Studio.App" / "App.xaml.cs").read_text(encoding="utf-8")
@@ -206,6 +232,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('"actual_model_engine"', probe)
         self.assertIn('"actual_model_dir"', probe)
         self.assertIn('if (model != "ct2")', probe)
+        self.assertIn("vm.Busy || outputStarted()", probe)
+        self.assertIn("OutputIsReady(validateOutput)", probe)
+        self.assertIn("WPF E2E output must be a fresh, empty generated package directory", probe)
         self.assertIn('model = "ct2"', workflow)
         self.assertIn('model = "ct2"', (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("human_review_required = HumanReviewRequired", workflow)

@@ -82,7 +82,7 @@ public partial class MainWindow : Window
                 }
                 if (vm.CsvEditorDirty || vm.Busy)
                 {
-                    MessageBox.Show(this, "Hãy hoàn tất hoặc hủy tác vụ và lưu CSV trước khi đóng ứng dụng.", "Công việc chưa hoàn tất");
+                    AppDialogService.Show("Hãy hoàn tất hoặc hủy tác vụ và lưu CSV trước khi đóng ứng dụng.", "Công việc chưa hoàn tất", owner: this);
                     e.Cancel = true;
                     return;
                 }

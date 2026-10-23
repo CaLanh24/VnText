@@ -105,7 +105,7 @@ internal sealed class JournalWindow : Window
         footer.Children.Add(Button("Đóng",Close));footer.Children.Add(Button("Làm mới",Refresh));
         footer.Children.Add(Button("Xóa",()=>
         {
-            if(_files.SelectedItem is string name && MessageBox.Show(this,$"Xóa tệp nhật ký {name}?","Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
+            if(_files.SelectedItem is string name && AppDialogService.Show($"Xóa tệp nhật ký {name}?","Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question,this)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
         }));
         footer.Children.Add(Button("Open nhật ký",()=>
         {

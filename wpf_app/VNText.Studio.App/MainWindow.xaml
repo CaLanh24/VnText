@@ -418,7 +418,7 @@
                                         <StackPanel x:Name="RenpySdkOptionsPanel" Grid.Row="2" Margin="0,13,0,0"
                                                     Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="Game Ren'Py được nhận diện" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBlock Text="Nếu tiếp tục không có SDK, một số lời thoại sẽ cần xem lại." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                            <TextBlock Text="Chọn SDK 8.5.3 đã cài hoặc tải SDK để lấy lời thoại. Tiếp tục khi chưa có SDK sẽ không dùng parser thay thế và kết quả có thể chưa đầy đủ." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding RenpySdkStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             <WrapPanel Margin="0,8,0,0">
                                                 <Button Style="{StaticResource OutlineButton}" Command="{Binding DownloadRenpySdkCommand}"><TextBlock Text="Tải công cụ rồi lấy text" /></Button>
@@ -1236,12 +1236,8 @@
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
                                 </Grid.RowDefinitions>
-                                <ScrollViewer x:Name="CsvControlsScrollViewer" Grid.Row="0" MaxHeight="220"
-                                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
-                                              Style="{StaticResource ContentPanelScrollViewer}">
                                 <Grid>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -1281,22 +1277,7 @@
                                     </Grid>
                                 </Border>
 
-                                <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,14,0,0">
-                                    <Button Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding ClearBlockedCsvCommand}">
-                                        <TextBlock Text="Xóa bản dịch lỗi" />
-                                    </Button>
-                                    <Button Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding ValidateCsvEditorCommand}">
-                                        <TextBlock Text="Kiểm tra" />
-                                    </Button>
-                                    <Button Style="{StaticResource OutlineButton}" Command="{Binding RetranslateBlockedCsvCommand}">
-                                        <TextBlock Text="Dịch lại dòng lỗi (CT2)" />
-                                    </Button>
-                                    <Button Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding ApproveCsvMemoryCommand}">
-                                        <TextBlock Text="Duyệt dòng đã chọn để dùng trong gói" />
-                                    </Button>
-                                </WrapPanel>
-
-                                <Expander Foreground="{DynamicResource InkBrush}" Grid.Row="3" Header="Tìm và thay thế bản dịch" FontSize="{StaticResource UiBodySize}" Margin="0,14,0,0">
+                                <Expander Foreground="{DynamicResource InkBrush}" Grid.Row="2" Header="Tìm và thay thế bản dịch" FontSize="{StaticResource UiBodySize}" Margin="0,14,0,0" Padding="0,4,0,0">
 <Border Style="{StaticResource SubtlePanelBorder}" Margin="0,14,0,0" Padding="11,10">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
@@ -1324,7 +1305,7 @@
                                 </Border>
 
                                 </Expander>
-<StackPanel Grid.Row="4" Margin="0,10,0,0">
+<StackPanel Grid.Row="3" Margin="0,10,0,0">
                                     <TextBlock FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource SoftTextBrush}"
                                                Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" />
                                     <TextBlock FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource SoftTextBrush}" Margin="0,4,0,0"
@@ -1332,7 +1313,6 @@
                                 </StackPanel>
 
                                 </Grid>
-                                </ScrollViewer>
 
                                 <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="0,14,0,0"
                                           Style="{StaticResource CsvDataGridStyle}"
