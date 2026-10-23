@@ -369,18 +369,21 @@ Each active epoch retains an exact pre-transition manifest rollback snapshot, po
 Mỗi public clone mới bắt đầu mà không có artifact epoch của checkout riêng
 trước đó. Không nhập/tái tạo incident registry riêng, không tái dùng timestamp,
 hash hay report lịch sử, và không yêu cầu tìm artifact private làm điều kiện
-cho clone mới. Khi helper khởi tạo epoch mà incident-preservation history vắng,
-helper hiện vẫn yêu cầu caller cung cấp statement tường minh qua
-`--owner-reset-authorization`. Với clone mới, statement chỉ ghi nhận đây là
-fresh public clone không có private history; nó không chứng minh history đã
-được khôi phục, cleanup PASS hay incident đã được giải quyết. Chỉ đăng ký
-evidence của checkout hiện tại theo canonical tool. Registry hiện tại nếu có
-vẫn phải là regular file đọc được và đúng schema; state malformed, partial,
-linked hoặc unreadable phải block. Nếu manifest hiện tại tồn tại, giữ snapshot
-rollback nguyên byte cùng SHA-256 và size; nếu không có thì snapshot ghi nhận
-trạng thái absent. Preflight race không được xóa lock của writer khác. Không
-apply epoch live trước khi source được commit sạch; test chỉ apply/rollback
-trong disposable fixture.
+cho clone mới. Khi incident-preservation history vắng, caller có thể dùng
+`--fresh-public-clone` để khởi tạo epoch bằng evidence hiện tại. Provenance phải
+ghi `FRESH_PUBLIC_CLONE_NO_PRIVATE_HISTORY`, historical hygiene `UNKNOWN`,
+incident identity `MISSING`, và không có reset/owner-reset claim. Đây chỉ ghi
+nhận absence; không chứng minh history đã được khôi phục, cleanup PASS hay
+incident đã được giải quyết. Chỉ đăng ký evidence của checkout hiện tại theo
+canonical tool. Registry hiện tại nếu có vẫn phải là regular file đọc được và
+đúng schema; state malformed, partial, linked hoặc unreadable phải block.
+Active epoch, writer/pending transaction, incomplete inventory, hoặc current
+`UNKNOWN` paths cũng block. Nếu manifest hiện tại tồn tại, giữ snapshot rollback
+nguyên byte cùng SHA-256 và size; nếu không có thì snapshot ghi nhận trạng thái
+absent. Preflight race không được xóa lock của writer khác. Không apply epoch
+live trước khi source được commit sạch; test chỉ apply/rollback trong disposable
+fixture. `--owner-reset-authorization` vẫn là route riêng cho reset có Owner
+ủy quyền thực sự; fresh-clone mode không thay thế hoặc hạ thấp các guard đó.
 
 ### Prospective portable Release acceptance
 

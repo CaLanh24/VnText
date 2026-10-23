@@ -2739,7 +2739,7 @@ def _remove_new_epoch_scope(scope: Path) -> None:
 def _epoch_acceptance_conditions() -> list[str]:
     return [
         "rollback snapshot exists and hash matches before canonical mutation",
-        "the preserved incident matches its identity, or an authorized empty-state reset is recorded",
+        "the preserved incident matches its identity, an authorized empty-state reset is recorded, or an explicit fresh-public-clone declaration records absent private history",
         "source SHA and clean tree are verified with no active registry writer",
         "bounded current inventory is complete and not budget-limited",
         "known items retain evidence-backed lifecycle; unproven items remain UNKNOWN",
@@ -2751,6 +2751,7 @@ def _epoch_acceptance_conditions() -> list[str]:
 def _epoch_provenance(
     *, epoch_id: str, source_sha: str, effective_at: str,
     reset_provenance: dict | None = None,
+    fresh_public_clone_provenance: dict | None = None,
     release_task_id: str | None = None,
 ) -> dict:
     provenance = {
@@ -2778,6 +2779,9 @@ def _epoch_provenance(
     }
     if reset_provenance is not None:
         provenance["reset_provenance"] = dict(reset_provenance)
+    if fresh_public_clone_provenance is not None:
+        provenance["fresh_public_clone_provenance"] = dict(fresh_public_clone_provenance)
+        provenance["historical_hygiene"] = "UNKNOWN"
     if release_task_id is not None:
         task_id, version, approval = _release_budget_spec(release_task_id)
         provenance["release_task_budget"] = {
@@ -2988,8 +2992,38 @@ def _epoch_verify_files(
                 failures.append("epoch_policy_reset_record_mismatch")
         except (OSError, json.JSONDecodeError):
             failures.append("epoch_policy_invalid")
-    elif "transition_provenance" not in epoch and "rebaseline_provenance" not in epoch and _incident_identity().get("status") != "PASS":
-        failures.append("incident_preservation_failed")
+    elif "transition_provenance" not in epoch and "rebaseline_provenance" not in epoch:
+        fresh_clone = epoch.get("fresh_public_clone_provenance")
+        if fresh_clone is None:
+            if _incident_identity().get("status") != "PASS":
+                failures.append("incident_preservation_failed")
+        else:
+            current_incident = _incident_identity()
+            rollback_absent = rollback.get("manifest_absent") is True
+            expected_manifest_state = "ABSENT" if rollback_absent else "PRESENT"
+            expected_manifest_sha = None if rollback_absent else rollback.get("sha256")
+            if not isinstance(fresh_clone, dict) or (
+                fresh_clone.get("status") != "FRESH_PUBLIC_CLONE_NO_PRIVATE_HISTORY"
+                or fresh_clone.get("incident_before") != epoch.get("original_incident_identity")
+                or current_incident != epoch.get("original_incident_identity")
+                or current_incident.get("status") != "MISSING"
+                or fresh_clone.get("manifest_before") != expected_manifest_state
+                or fresh_clone.get("manifest_before_sha256") != expected_manifest_sha
+                or fresh_clone.get("manifest_before_bytes") != rollback.get("bytes")
+                or fresh_clone.get("historical_hygiene") != "UNKNOWN"
+                or fresh_clone.get("imports_or_reconstruction") is not False
+                or epoch.get("historical_hygiene") != "UNKNOWN"
+            ):
+                failures.append("fresh_public_clone_record_invalid")
+            try:
+                policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+                if policy_doc.get("fresh_public_clone_provenance") != fresh_clone:
+                    failures.append("epoch_policy_fresh_clone_record_mismatch")
+                rollback_meta = json.loads(rollback_metadata_path.read_text(encoding="utf-8"))
+                if rollback_meta.get("fresh_public_clone_provenance") != fresh_clone:
+                    failures.append("rollback_metadata_fresh_clone_record_mismatch")
+            except (OSError, json.JSONDecodeError):
+                failures.append("fresh_public_clone_record_unreadable")
     if "transition_provenance" in epoch:
         failures.extend(_epoch_transition_provenance_failures(
             epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,), _transition_depth + 1
@@ -3245,6 +3279,7 @@ def activate_prospective_epoch(
     epoch_id: str | None = None,
     source_sha: str | None = None,
     owner_reset_authorization: str | None = None,
+    fresh_public_clone: bool = False,
     release_task_id: str | None = None,
     transition_from_epoch_id: str | None = None,
     expected_manifest_sha256: str | None = None,
@@ -3275,6 +3310,8 @@ def activate_prospective_epoch(
     ))
     if transition_requested and rebaseline_requested:
         reasons.append("epoch_transition_modes_conflict")
+    if fresh_public_clone and (transition_requested or rebaseline_requested):
+        reasons.append("fresh_public_clone_transition_mode_conflict")
     if expected_manifest_sha256 is not None and not (transition_requested or rebaseline_requested):
         reasons.append("epoch_authorized_mode_required_for_manifest_cas")
     if rebaseline_requested and not all((
@@ -3320,6 +3357,7 @@ def activate_prospective_epoch(
     reasons.extend(_prospective_epoch_pending_reasons(manifest))
     incident = _incident_identity()
     reset_provenance = None
+    fresh_public_clone_provenance = None
     transition_provenance = None
     rebaseline_provenance = None
     active = manifest.get("prospective_epoch")
@@ -3392,20 +3430,35 @@ def activate_prospective_epoch(
                     "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
                 }
     elif incident.get("status") == "MISSING":
-        authorization = str(owner_reset_authorization or "").strip()
-        if not authorization:
-            reasons.append("owner_reset_authorization_required")
-        else:
-            reset_provenance = {
-                "status": "OWNER_AUTHORIZED_RESET",
-                "authorization": authorization,
-                "owner_reported_reset": {"manifest": "ABSENT", "incident": "REMOVED"},
+        if fresh_public_clone:
+            if str(owner_reset_authorization or "").strip():
+                reasons.append("fresh_public_clone_owner_reset_mode_conflict")
+            fresh_public_clone_provenance = {
+                "status": "FRESH_PUBLIC_CLONE_NO_PRIVATE_HISTORY",
+                "incident_before": incident,
                 "manifest_before": "PRESENT" if manifest_existed else "ABSENT",
                 "manifest_before_sha256": hashlib.sha256(raw_manifest).hexdigest().upper() if raw_manifest is not None else None,
                 "manifest_before_bytes": len(raw_manifest or b""),
-                "incident_before": incident,
-                "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+                "historical_hygiene": "UNKNOWN",
+                "imports_or_reconstruction": False,
             }
+        else:
+            authorization = str(owner_reset_authorization or "").strip()
+            if not authorization:
+                reasons.append("owner_reset_authorization_required")
+            else:
+                reset_provenance = {
+                    "status": "OWNER_AUTHORIZED_RESET",
+                    "authorization": authorization,
+                    "owner_reported_reset": {"manifest": "ABSENT", "incident": "REMOVED"},
+                    "manifest_before": "PRESENT" if manifest_existed else "ABSENT",
+                    "manifest_before_sha256": hashlib.sha256(raw_manifest).hexdigest().upper() if raw_manifest is not None else None,
+                    "manifest_before_bytes": len(raw_manifest or b""),
+                    "incident_before": incident,
+                    "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+                }
+    elif fresh_public_clone:
+        reasons.append("fresh_public_clone_requires_missing_private_history")
     elif incident.get("status") != "PASS":
         reasons.append("incident_preservation_failed")
     if isinstance(active, dict):
@@ -3445,6 +3498,8 @@ def activate_prospective_epoch(
     counts = {}
     for item in items:
         counts[item["lifecycle"]] = counts.get(item["lifecycle"], 0) + 1
+    if fresh_public_clone and counts.get("UNKNOWN", 0):
+        reasons.append("current_unknown_artifacts_present")
     plan = {
         "status": "PASS" if not reasons else "PROVEN_BLOCKED",
         "ok": not reasons,
@@ -3455,13 +3510,14 @@ def activate_prospective_epoch(
         "scope_boundary": boundary,
         "incident": incident,
         "reset_provenance": reset_provenance,
+        "fresh_public_clone_provenance": fresh_public_clone_provenance,
         "transition_provenance": transition_provenance,
         "rebaseline_provenance": rebaseline_provenance,
         "inventory_complete": bool(inventory.get("complete") and reconciled.get("inventory_complete")),
         "inventory_count": len(items),
         "counts": counts,
         "reasons": reasons,
-        "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+        "historical_hygiene": "UNKNOWN" if fresh_public_clone_provenance is not None else "NOT_RECOVERABLE/UNVERIFIABLE",
         "deletions": [],
     }
     if dry_run or reasons:
@@ -3543,6 +3599,7 @@ def activate_prospective_epoch(
         provenance = _epoch_provenance(
             epoch_id=epoch_id, source_sha=expected_sha, effective_at=effective_at,
             reset_provenance=reset_provenance,
+            fresh_public_clone_provenance=fresh_public_clone_provenance,
             release_task_id=release_task_id,
         )
         if transition_provenance is not None:
@@ -3561,7 +3618,7 @@ def activate_prospective_epoch(
             "counts": counts,
             "items": items,
             "unknown_preserved": counts.get("UNKNOWN", 0),
-            "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
+            "historical_hygiene": "UNKNOWN" if fresh_public_clone_provenance is not None else "NOT_RECOVERABLE/UNVERIFIABLE",
             "no_deletion": True,
         }
         ledger_path = scope / "prospective_ledger.json"
@@ -3574,6 +3631,7 @@ def activate_prospective_epoch(
                 {
                     "rollback": rollback,
                     "reset_provenance": reset_provenance,
+                    "fresh_public_clone_provenance": fresh_public_clone_provenance,
                     "transition_provenance": transition_provenance,
                     "rebaseline_provenance": rebaseline_provenance,
                 },
@@ -4922,6 +4980,11 @@ def main() -> int:
         default=None,
         help="Explicit Owner authorization statement required when the preserved incident registry is missing",
     )
+    ap.add_argument(
+        "--fresh-public-clone",
+        action="store_true",
+        help="Initialize only current checkout evidence when private historical incident evidence is absent; no history is restored or claimed",
+    )
     ap.add_argument("--register-path", action="append", default=[], help="Register one runner artifact")
     ap.add_argument("--owner", default="cleanup caller")
     ap.add_argument("--purpose", default="registered cleanup-run artifact")
@@ -4969,6 +5032,7 @@ def main() -> int:
                 epoch_id=args.epoch_id,
                 source_sha=args.source_sha,
                 owner_reset_authorization=args.owner_reset_authorization,
+                fresh_public_clone=args.fresh_public_clone,
                 release_task_id=args.release_task_id,
                 transition_from_epoch_id=args.transition_from_epoch_id if transition_mode else None,
                 expected_manifest_sha256=args.expected_manifest_sha256 if (transition_mode or rebaseline_mode) else None,

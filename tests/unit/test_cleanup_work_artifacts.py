@@ -1799,6 +1799,20 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertIn("epoch transition requires", stderr.getvalue())
             self.assertEqual(before, manifest.read_bytes() if manifest.exists() else None)
 
+    def test_fresh_public_clone_cli_forwards_explicit_mode(self):
+        with self.isolated_workspace() as (_root, _work, _game, _manifest):
+            stdout = io.StringIO()
+            with patch.object(
+                cleanup.sys,
+                "argv",
+                ["cleanup_work_artifacts.py", "--prospective-epoch-plan", "--fresh-public-clone", "--epoch-id", "epoch-cli-fresh", "--source-sha", "a" * 40],
+            ), patch.object(cleanup, "activate_prospective_epoch", return_value={"ok": True, "status": "PASS"}) as activate, contextlib.redirect_stdout(stdout):
+                exit_code = cleanup.main()
+            self.assertEqual(0, exit_code)
+            self.assertEqual("PASS", json.loads(stdout.getvalue())["status"])
+            self.assertTrue(activate.call_args.kwargs["fresh_public_clone"])
+            self.assertIsNone(activate.call_args.kwargs["owner_reset_authorization"])
+
     def test_prospective_epoch_rebaseline_cli_forwards_cas_and_authority_for_plan_and_apply(self):
         with self.isolated_workspace() as (_root, _work, _game, _manifest):
             common = [
@@ -1872,6 +1886,136 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertFalse(manifest.exists())
             self.assertFalse((work / "artifact-registry-epochs").exists())
             self.assertEqual(before_paths, {str(path.relative_to(work)) for path in work.rglob("*")})
+
+    def test_fresh_public_clone_initializes_current_epoch_without_private_history(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            git_guard = patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": "test-sha", "dirty": False, "error": ""},
+            )
+            missing_incident = patch.object(
+                cleanup,
+                "_incident_identity",
+                return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"},
+            )
+            with git_guard, missing_incident:
+                plan = cleanup.activate_prospective_epoch(
+                    dry_run=True,
+                    epoch_id="epoch-fresh-public-plan",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+            self.assertTrue(plan["ok"], plan)
+            self.assertEqual("UNKNOWN", plan["historical_hygiene"])
+            self.assertFalse(plan["reset_provenance"])
+            self.assertEqual("FRESH_PUBLIC_CLONE_NO_PRIVATE_HISTORY", plan["fresh_public_clone_provenance"]["status"])
+            self.assertFalse(manifest.exists())
+            self.assertFalse((work / "artifact-registry-epochs").exists())
+
+            with git_guard, missing_incident:
+                applied = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-fresh-public-active",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+                verified = cleanup.verify_prospective_epoch()
+            self.assertTrue(applied["ok"], applied)
+            self.assertTrue(verified["ok"], verified)
+            epoch = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]
+            self.assertEqual("UNKNOWN", epoch["historical_hygiene"])
+            self.assertNotIn("reset_provenance", epoch)
+            self.assertEqual("FRESH_PUBLIC_CLONE_NO_PRIVATE_HISTORY", epoch["fresh_public_clone_provenance"]["status"])
+            self.assertEqual("MISSING", epoch["original_incident_identity"]["status"])
+            self.assertTrue(epoch["rollback"]["manifest_absent"])
+            self.assertFalse(epoch["fresh_public_clone_provenance"]["imports_or_reconstruction"])
+            with git_guard, missing_incident:
+                active_blocked = cleanup.activate_prospective_epoch(
+                    dry_run=True,
+                    epoch_id="epoch-fresh-public-conflict",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+            self.assertFalse(active_blocked["ok"])
+            self.assertIn("conflicting_active_epoch", active_blocked["reasons"])
+
+    def test_fresh_public_clone_preserves_current_manifest_and_refuses_unknown_paths(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            retained = work / "known-report.json"
+            retained.write_text("current retained evidence", encoding="utf-8")
+            self._register(retained, lifecycle="RETAINED")
+            before = manifest.read_bytes()
+            git_guard = patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": "test-sha", "dirty": False, "error": ""},
+            )
+            missing_incident = patch.object(
+                cleanup,
+                "_incident_identity",
+                return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"},
+            )
+            with git_guard, missing_incident:
+                applied = cleanup.activate_prospective_epoch(
+                    dry_run=False,
+                    epoch_id="epoch-fresh-manifest-present",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+                verified = cleanup.verify_prospective_epoch()
+            self.assertTrue(applied["ok"], applied)
+            self.assertTrue(verified["ok"], verified)
+            epoch = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]
+            self.assertEqual(before, Path(epoch["rollback"]["path"]).read_bytes())
+            self.assertEqual("PRESENT", epoch["fresh_public_clone_provenance"]["manifest_before"])
+
+        with self.isolated_workspace() as (_root, work, _game, _manifest):
+            (work / "unregistered-current-output.bin").write_bytes(b"unknown")
+            git_guard = patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": "test-sha", "dirty": False, "error": ""},
+            )
+            missing_incident = patch.object(
+                cleanup,
+                "_incident_identity",
+                return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"},
+            )
+            with git_guard, missing_incident:
+                blocked = cleanup.activate_prospective_epoch(
+                    dry_run=True,
+                    epoch_id="epoch-fresh-unknown-refused",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+            self.assertFalse(blocked["ok"])
+            self.assertIn("current_unknown_artifacts_present", blocked["reasons"])
+            self.assertFalse((work / "artifact-registry-epochs").exists())
+
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            manifest.write_text("{not-json", encoding="utf-8")
+            git_guard = patch.object(
+                cleanup,
+                "_git_repository_state",
+                return_value={"head": "test-sha", "dirty": False, "error": ""},
+            )
+            missing_incident = patch.object(
+                cleanup,
+                "_incident_identity",
+                return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"},
+            )
+            with git_guard, missing_incident:
+                malformed = cleanup.activate_prospective_epoch(
+                    dry_run=True,
+                    epoch_id="epoch-fresh-malformed-refused",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
+            self.assertFalse(malformed["ok"])
+            self.assertIn("registry_manifest_invalid", malformed["reasons"])
+            self.assertEqual("{not-json", manifest.read_text(encoding="utf-8"))
+            self.assertFalse((work / "artifact-registry-epochs").exists())
 
     def test_explicit_owner_reset_records_unverifiable_history_and_verifies_in_isolation(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
@@ -2246,8 +2390,16 @@ class CleanupLifecycleTests(unittest.TestCase):
                 result = cleanup.activate_prospective_epoch(
                     dry_run=True, epoch_id="epoch-next", source_sha="test-sha"
                 )
+                fresh_result = cleanup.activate_prospective_epoch(
+                    dry_run=True,
+                    epoch_id="epoch-fresh-next",
+                    source_sha="test-sha",
+                    fresh_public_clone=True,
+                )
             self.assertFalse(result["ok"])
             self.assertIn("unregistered_epoch_scope:epoch-pending", result["reasons"])
+            self.assertFalse(fresh_result["ok"])
+            self.assertIn("unregistered_epoch_scope:epoch-pending", fresh_result["reasons"])
 
     def test_unregistered_root_is_unknown_and_not_deleted(self):
         with self.isolated_workspace() as (_root, work, game, _manifest):
