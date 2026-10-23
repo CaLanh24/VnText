@@ -1930,6 +1930,11 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("MISSING", epoch["original_incident_identity"]["status"])
             self.assertTrue(epoch["rollback"]["manifest_absent"])
             self.assertFalse(epoch["fresh_public_clone_provenance"]["imports_or_reconstruction"])
+            reconciled = cleanup.reconcile_registry(persist=False)
+            self.assertFalse(
+                any(item.get("relative_path") == "artifact-registry-epochs" for item in reconciled.get("unknown", [])),
+                reconciled.get("unknown"),
+            )
             with git_guard, missing_incident:
                 active_blocked = cleanup.activate_prospective_epoch(
                     dry_run=True,

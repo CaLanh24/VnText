@@ -3658,6 +3658,35 @@ def activate_prospective_epoch(
         provenance["policy_sha256"] = _sha256_file(policy_path)
         next_manifest = dict(manifest)
         retained = []
+        epoch_container = _prospective_epoch_root()
+        epoch_container_key = _path_key(epoch_container)
+        if not any(
+            _path_key(Path(str(item.get("path") or ""))) == epoch_container_key
+            for item in next_manifest.get("artifacts", [])
+            if isinstance(item, dict) and item.get("path")
+        ):
+            retained.append({
+                "id": "artifact-registry-epoch-container",
+                "path": str(epoch_container),
+                "kind": "directory",
+                "created_by": "cleanup_work_artifacts.py",
+                "owner": "cleanup_work_artifacts.py",
+                "purpose": "retained root for prospective artifact registry epoch metadata",
+                "created_at": effective_at,
+                "bytes": dir_size_bytes(epoch_container),
+                "status": "ACTIVE",
+                "lifecycle": "RETAINED",
+                "scope_id": epoch_id,
+                "run_id": epoch_id,
+                "scope_root": str(epoch_container),
+                "provenance": {
+                    "scope_id": epoch_id,
+                    "run_id": epoch_id,
+                    "scope_root": str(epoch_container),
+                    "registered_by": "cleanup_work_artifacts.py",
+                    "source_sha": expected_sha,
+                },
+            })
         for name, path, kind, purpose in (
             ("scope", scope, "artifact_registry_epoch", "retained prospective artifact registry epoch scope"),
             ("rollback", rollback_path, "artifact_registry_rollback", "retained exact pre-transition manifest rollback snapshot"),
