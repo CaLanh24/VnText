@@ -1,6 +1,6 @@
 # Release 0.1.10 — candidate and acceptance record
 
-Status: stable release `v0.1.10` remains on the annotated tag that targets exact build commit `b9e2a661a58dd85979a6a10b9bb30f713107847b`. Live API and downloaded-byte readback passed for the original five assets plus the 0.1.10 Setup and its separate provenance record. The earlier public installed-update acceptance from 0.1.9 passed. Fresh Setup installation and worker health acceptance is pending Owner action-time confirmation. This bounded Setup repair does not claim whole-product `RELEASE_VERIFIED`.
+Status: stable release `v0.1.10` remains on the annotated tag that targets exact build commit `b9e2a661a58dd85979a6a10b9bb30f713107847b`. Live API and downloaded-byte readback passed for the original five assets plus the 0.1.10 Setup and its separate provenance record. The earlier public installed-update acceptance from 0.1.9 passed. Fresh Setup installation and worker health acceptance is PROVEN_BLOCKED for this attempt: Setup displayed its Intel terms window, then supported UI state capture timed out twice before any input. No terms were accepted and installation did not start; this is a capture blocker, not a product install-failure verdict. This bounded Setup repair does not claim whole-product `RELEASE_VERIFIED`.
 
 ## Scope and distribution
 
@@ -21,7 +21,7 @@ The original five-file set remains unchanged; the release now has seven assets. 
 | `SHA256SUMS.txt` | 415 | `433a74e36817f3443baf21ae3ce21596d35c7e48c18db8870dd731f2547ed90f` |
 | `THIRD_PARTY_NOTICES.md` | 21,080 | `00e6e9e6d5b9a1f5425f93e40feb874a582c57b8244d5b7a1e6a8676b5c51659` |
 | `VNTextStudio-0.1.10-Setup.exe` | 222,415,360 | `5233e604016c271efac7f8b000f3bf0a1123dfbf276f1730017cc07168d2ba10` |
-| `SETUP-PROVENANCE-0.1.10.json` | 1,105 | `7f458d757bab5f5c41333cbaaae228c600daaa93da3059e08532c12e2298e068` |
+| `SETUP-PROVENANCE-0.1.10.json` | 1,315 | `b66644c0793ededfee1440d7f9bbca435058ed67542d6878e3d3280f69760700` |
 
 The standalone candidate audit is `DEV_RUN/release-0.1.10/evidence/candidate-review-audit.json`. Both archives pass CRC and manifest equality checks, contain only the declared add/replace operations, and carry the exact `b9e2a66` source and tree hashes. Each route preserves all 24 protected model files without including a model file in add, replace or delete operations. The notices hash matches the source snapshot and the reconstructed 0.1.9 payload. The original `SHA256SUMS.txt` is preserved unchanged; the separate Setup provenance asset records the Setup digest.
 
@@ -51,7 +51,8 @@ The initial route cleanup was scoped too broadly and returned `REVIEW_REQUIRED`;
 
 The Setup asset was built from exact source SHA `b9e2a661a58dd85979a6a10b9bb30f713107847b` in a registered 0.1.10 candidate using the clean 24-file model input from the verified public baseline. The model revision is `c22547827b876e8ee939d6a9363965e5c9f769e1` under Apache-2.0. No shared model cache files or downloads were changed. The public Setup is 222,415,360 bytes with SHA-256 `5233e604016c271efac7f8b000f3bf0a1123dfbf276f1730017cc07168d2ba10`; its embedded payload contains 7,193 files and 514,616,223 bytes. `SETUP-PROVENANCE-0.1.10.json` is the companion receipt.
 
-Publisher, Release verification, Release WPF smoke, both local full-app route builds, and the public Setup download readback passed. A fresh install through the Setup UI has not yet run; this remains pending Owner action-time confirmation. The prior actual 0.1.9 public update acceptance remains separate evidence and does not prove this Setup install.
+Publisher, Release verification, Release WPF smoke, both local full-app route builds, and the public Setup download readback passed. The Setup UI displayed the Intel terms window, but supported `sky.get_window_state` timed out twice before any interaction. No terms were accepted, the target stayed empty, and no installation or worker smoke ran. The exact attempt is recorded as `PROVEN_BLOCKED` in `DEV_RUN/release-0.1.10-repair/setup-install-ui-blocked.json`; this is a capture/tool blocker and not an installer failure verdict. The prior actual 0.1.9 public update acceptance remains separate evidence.
 ## Terminal cleanup
 
 Publication and public installed-update acceptance are complete. `DEV_RUN/release-0.1.10/terminal-cleanup.json` records the final `TEST_RUN`/`RELEASE_RUN` absence and complete quota inventory. The exact epoch files, final registry and append-only cleanup history were copied byte-for-byte into `DEV_RUN/release-0.1.10/terminal-control-evidence`; the copy hashes and the canonical epoch verifier’s docs-only source-SHA mismatch are recorded separately. Native game visual acceptance remains explicitly deferred; this release does not claim whole-product `RELEASE_VERIFIED`.
+
