@@ -20,6 +20,9 @@ internal static partial class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
+            return RunAppDialogFixture();
+
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
             var result=1; var thread=new Thread(() => { try { result=PreferencesTests.Run(); } catch(Exception ex) { Console.Error.WriteLine(ex); } });
@@ -87,6 +90,7 @@ internal static partial class Program
         Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
         Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
+        Run("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", RenpySdkRecovery_StatusRequiresSuccessfulEvidence, failures);
         Run("AfterExtract_CurrentTranslate", AfterExtract_CurrentTranslate, failures);
         Run("AfterTranslate_CurrentPatch", AfterTranslate_CurrentPatch, failures);
         Run("AfterPatch_CurrentDone", AfterPatch_CurrentDone, failures);
@@ -522,6 +526,18 @@ internal static partial class Program
         {
             Directory.Delete(root, true);
         }
+    }
+
+    private static void RenpySdkRecovery_StatusRequiresSuccessfulEvidence()
+    {
+        AssertEqual("ready", RenpySdkRecovery.ResolveAction("download", sdkMissing: false, operationOk: true, cancelled: false));
+        AssertEqual("ready", RenpySdkRecovery.ResolveAction("existing", sdkMissing: false, operationOk: true, cancelled: false));
+        AssertEqual("error", RenpySdkRecovery.ResolveAction("download", sdkMissing: false, operationOk: false, cancelled: false));
+        AssertEqual("cancelled", RenpySdkRecovery.ResolveAction("existing", sdkMissing: false, operationOk: false, cancelled: true));
+        AssertEqual("missing", RenpySdkRecovery.ResolveAction("download", sdkMissing: true, operationOk: false, cancelled: false));
+        AssertEqual("auto", RenpySdkRecovery.ResolveAction("auto", sdkMissing: false, operationOk: false, cancelled: false));
+        AssertTrue(RenpySdkRecovery.FormatStatus("error", "download hash mismatch").Contains("thử tải lại", StringComparison.OrdinalIgnoreCase));
+        AssertTrue(RenpySdkRecovery.FormatStatus("error", new string('x', 500)).Length < 300);
     }
 
     private static void HumanReviewRequired_UpdatesStatus()

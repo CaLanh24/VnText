@@ -110,6 +110,7 @@ public sealed partial class MainViewModel
         {
             RenpySdkPath = path;
             RenpySdkAction = "existing";
+            RenpySdkError = "";
             AppendLog("Đã chọn Ren'Py SDK; sẽ kiểm tra khi extract.");
         }
     }

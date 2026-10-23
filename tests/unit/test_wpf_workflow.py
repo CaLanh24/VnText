@@ -81,15 +81,15 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     return env
 
 
-def _run_harness(env: dict[str, str], artifacts_root: Path) -> subprocess.CompletedProcess[str]:
+def _run_harness(env: dict[str, str], artifacts_root: Path, args: list[str] | None = None) -> subprocess.CompletedProcess[str]:
     apphost = artifacts_root / "bin" / "VNText.Studio.Workflow.Tests" / "release" / "VNText.Studio.Workflow.Tests.exe"
     if not apphost.is_file():
         raise AssertionError(f"workflow harness apphost missing: {apphost}")
     runtime_env = env.copy()
     runtime_env["DOTNET_ROOT"] = str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "dotnet")
-    args = ["--github-handoff-only"] if env.get("VNTEXT_WPF_GITHUB_HANDOFF_ONLY") == "1" else []
+    run_args = args if args is not None else (["--github-handoff-only"] if env.get("VNTEXT_WPF_GITHUB_HANDOFF_ONLY") == "1" else [])
     return subprocess.run(
-        [str(apphost), *args],
+        [str(apphost), *run_args],
         cwd=str(ROOT),
         env=runtime_env,
         capture_output=True,
@@ -182,6 +182,8 @@ class WpfWorkflowTests(unittest.TestCase):
     def test_renpy_tool_options_are_conditional_and_explain_partial_extraction(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
+        recovery = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "RenpySdkRecovery.cs").read_text(encoding="utf-8")
+        workflow_tests = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
         worker = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
         self.assertIn('Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn("RenpyGameDetector.IsLooseSourceGame", view_model)
@@ -189,9 +191,10 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("Tải công cụ rồi lấy text", xaml)
         self.assertIn("Tiếp tục, lời thoại cần xem lại", xaml)
         self.assertIn("không dùng parser thay thế", xaml)
-        self.assertIn('"missing" => "Chưa dùng được SDK Ren\'Py 8.5.3.', view_model)
-        self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', view_model)
-        self.assertIn('RenpySdkAction = "missing"', worker)
+        self.assertIn('"missing" => "Chưa dùng được SDK Ren\'Py 8.5.3.', recovery)
+        self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', recovery)
+        self.assertIn("RenpySdkRecovery.ResolveAction", worker)
+        self.assertIn("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", workflow_tests)
 
     def test_csv_editor_controls_expand_and_validation_stays_automatic(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
@@ -206,10 +209,12 @@ class WpfWorkflowTests(unittest.TestCase):
 
     def test_wpf_app_dialogs_use_the_themed_dialog_surface(self):
         dialog = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppDialogService.cs").read_text(encoding="utf-8")
+        dialog_fixture = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "AppDialogFixtureTests.cs").read_text(encoding="utf-8")
         self.assertIn('TryFindResource("SurfaceBrush")', dialog)
         self.assertIn('"PrimaryButton" : "OutlineButton"', dialog)
         self.assertIn('MessageBoxButton.YesNo => MessageBoxResult.No', dialog)
         self.assertIn('MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel', dialog)
+        self.assertIn("dark/light resources, long text, owner modal, affirmative click, Escape cancel", dialog_fixture)
         for path in (ROOT / "wpf_app" / "VNText.Studio.App").rglob("*.cs"):
             if path.name == "AppDialogService.cs":
                 continue
@@ -525,6 +530,9 @@ class WpfWorkflowTests(unittest.TestCase):
             proc = _run_harness(harness_env, artifacts_root)
             self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
             self.assertIn("PASS", proc.stdout)
+            dialog_proc = _run_harness(harness_env, artifacts_root, ["--app-dialog-fixture"])
+            self.assertEqual(0, dialog_proc.returncode, dialog_proc.stdout + dialog_proc.stderr)
+            self.assertIn("WPF app dialog interaction fixture: PASS", dialog_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:
                 import shutil

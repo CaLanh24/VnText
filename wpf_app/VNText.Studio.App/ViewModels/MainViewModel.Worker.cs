@@ -152,14 +152,16 @@ public sealed partial class MainViewModel
                 }
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
+                var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                 var renpySdkIncomplete = completedTask == "extract" && evt.RenpySdkMissing;
-                if (completedTask == "extract" && evt.RenpySdkMissing)
-                    RenpySdkAction = "missing";
-                else if (completedTask == "extract" && RenpySdkAction is "download" or "existing")
-                    RenpySdkAction = "ready";
+                if (completedTask == "extract")
+                {
+                    RenpySdkAction = RenpySdkRecovery.ResolveAction(
+                        RenpySdkAction, evt.RenpySdkMissing, evt.Ok, cancelled);
+                    RenpySdkError = RenpySdkAction is "missing" or "error" ? evt.Error ?? evt.Summary ?? "" : "";
+                }
                 var extractionIncomplete = completedTask == "extract"
                     && (evt.ExtractStatus is "PARTIAL" or "EMPTY" || (evt.Ok && evt.Complete == false));
-                var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                 if (completedTask == "patch" && (cancelled || !evt.Ok || evt.Complete == false))
                 {
                     PatchResultsAvailable = true;

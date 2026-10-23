@@ -222,6 +222,7 @@ public sealed partial class MainViewModel
     private void RunRenpySdkAction(string action)
     {
         RenpySdkAction = action;
+        RenpySdkError = "";
         RunExtract();
     }
 

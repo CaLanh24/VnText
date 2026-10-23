@@ -52,6 +52,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _extractLevel = ExtractLevels.Balanced;
     private string _renpySdkPath = "";
     private string _renpySdkAction = "auto";
+    private string _renpySdkError = "";
     private CancellationTokenSource? _renpyDetectionCancellation;
     private bool _renpySdkOptionsVisible;
     private string _translationModelDir = "";
@@ -575,21 +576,23 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
     }
 
+    public string RenpySdkError
+    {
+        get => _renpySdkError;
+        private set
+        {
+            if (Set(ref _renpySdkError, value ?? ""))
+                Raise(nameof(RenpySdkStatus));
+        }
+    }
+
     public bool RenpySdkOptionsVisible
     {
         get => _renpySdkOptionsVisible;
         private set => Set(ref _renpySdkOptionsVisible, value);
     }
 
-    public string RenpySdkStatus => RenpySdkAction switch
-    {
-        "download" => "Đang thử tải SDK Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn SDK đã cài.",
-        "existing" => "Sẽ dùng thư mục công cụ Ren'Py đã chọn.",
-        "none" => "Sẽ tiếp tục không có công cụ; một số lời thoại cần xem lại.",
-        "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK sẽ cho kết quả chưa đầy đủ.",
-        "ready" => "Đã sẵn sàng SDK Ren'Py 8.5.3.",
-        _ => "Khi lấy text, app tự dùng công cụ đã có; nếu chưa có, kết quả sẽ được báo là chưa đầy đủ.",
-    };
+    public string RenpySdkStatus => RenpySdkRecovery.FormatStatus(RenpySdkAction, RenpySdkError);
 
     private void RefreshRenpySdkOptionsVisibility(string inputPath)
     {
@@ -597,6 +600,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         previous?.Cancel();
         RenpySdkOptionsVisible = false;
         RenpySdkAction = "auto";
+        RenpySdkError = "";
         if (string.IsNullOrWhiteSpace(inputPath))
             return;
 
