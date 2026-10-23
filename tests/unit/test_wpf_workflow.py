@@ -239,6 +239,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('if (model != "ct2")', probe)
         self.assertIn("vm.Busy || outputStarted()", probe)
         self.assertIn("OutputIsReady(validateOutput)", probe)
+        self.assertIn('Path.Combine(outputPath, "Patch_Viet_Hoa")', probe)
         self.assertIn("WPF E2E output must be a fresh, empty generated package directory", probe)
         self.assertIn('model = "ct2"', workflow)
         self.assertIn('model = "ct2"', (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))

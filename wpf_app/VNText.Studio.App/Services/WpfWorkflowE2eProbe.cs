@@ -198,8 +198,9 @@ internal static class WpfWorkflowE2eProbe
 
     private static bool PatchOutputComplete(string outputPath)
     {
-        var reportPath = Path.Combine(outputPath, "import_report.txt");
-        if (!Directory.Exists(Path.Combine(outputPath, "COPY_TO_GAME_ROOT")) || !File.Exists(reportPath))
+        var patchRoot = Path.Combine(outputPath, "Patch_Viet_Hoa");
+        var reportPath = Path.Combine(patchRoot, "import_report.txt");
+        if (!Directory.Exists(Path.Combine(patchRoot, "COPY_TO_GAME_ROOT")) || !File.Exists(reportPath))
             return false;
         var report = File.ReadAllText(reportPath);
         return report.Contains("patch_verification_status: PASS", StringComparison.OrdinalIgnoreCase)
@@ -480,8 +481,9 @@ internal static class WpfWorkflowE2eProbe
 
     private static Dictionary<string, object?> ValidatePatch(string outputPath)
     {
-        var patchRoot = Path.Combine(outputPath, "COPY_TO_GAME_ROOT");
-        var reportPath = Path.Combine(outputPath, "import_report.txt");
+        var deliveryPath = Path.Combine(outputPath, "Patch_Viet_Hoa");
+        var patchRoot = Path.Combine(deliveryPath, "COPY_TO_GAME_ROOT");
+        var reportPath = Path.Combine(deliveryPath, "import_report.txt");
         if (!Directory.Exists(patchRoot) || !File.Exists(reportPath))
             throw new InvalidDataException("Patch did not produce COPY_TO_GAME_ROOT/import_report.txt");
         var report = File.ReadAllText(reportPath);
@@ -492,6 +494,7 @@ internal static class WpfWorkflowE2eProbe
         }
         return new Dictionary<string, object?>
         {
+            ["delivery_path"] = deliveryPath,
             ["patch_root"] = patchRoot,
             ["import_report"] = reportPath,
             ["readback"] = "PASS",
