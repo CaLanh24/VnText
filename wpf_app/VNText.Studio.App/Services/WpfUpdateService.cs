@@ -441,26 +441,29 @@ public static class WpfUpdateService
     }
 
     internal static int RunUpdaterForTest(string sourcePath, string root, bool restartApp = false,
-        Func<string, string, bool>? healthCheck = null)
+        Func<string, string, bool>? healthCheck = null, Action<string, string, int>? replaceAttemptHook = null)
     {
         return RunUpdaterCore(sourcePath, root, int.MaxValue, null, bindToRunningInstall: false,
-            waitForProcesses: false, restartApp: restartApp, healthCheck: healthCheck ?? ((_, _) => true));
+            waitForProcesses: false, restartApp: restartApp, healthCheck: healthCheck ?? ((_, _) => true),
+            replaceAttemptHook: replaceAttemptHook);
     }
 
     internal static int RunGitHubUpdaterForTest(string sourcePath, string root, string packagePath,
         string packageSha256, string version, bool restartApp = false,
-        Func<string, string, bool>? healthCheck = null, Action<string>? startApp = null)
+        Func<string, string, bool>? healthCheck = null, Action<string>? startApp = null,
+        Action<string, string, int>? replaceAttemptHook = null)
     {
         return RunUpdaterCore(sourcePath, root, int.MaxValue, null, bindToRunningInstall: false,
             waitForProcesses: false, restartApp: restartApp, healthCheck: healthCheck ?? ((_, _) => true),
             githubPackagePath: packagePath, githubPackageSha256: packageSha256, githubVersion: version,
-            startAppOverride: startApp);
+            startAppOverride: startApp, replaceAttemptHook: replaceAttemptHook);
     }
 
     private static int RunUpdaterCore(string sourcePath, string root, int appPid, int? workerPid,
         bool bindToRunningInstall, bool waitForProcesses, bool restartApp,
         Func<string, string, bool> healthCheck, string? githubPackagePath = null,
-        string githubPackageSha256 = "", string githubVersion = "", Action<string>? startAppOverride = null)
+        string githubPackageSha256 = "", string githubVersion = "", Action<string>? startAppOverride = null,
+        Action<string, string, int>? replaceAttemptHook = null)
     {
         sourcePath = Path.GetFullPath(sourcePath);
         root = Path.GetFullPath(root);
@@ -482,6 +485,7 @@ public static class WpfUpdateService
         var previousHashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var replaced = new List<string>();
         var appExited = false;
+        UpdateManifest? appliedManifest = null;
         var transactionId = "txn-" + Guid.NewGuid().ToString("N");
         var backupParent = source.BackupRoot;
         var stagingParent = source.StagingRoot;
@@ -515,6 +519,7 @@ public static class WpfUpdateService
                 ? ReadAndValidatePackage(root, source)
                 : ReadAndValidateGitHubPackage(root, source, githubPackagePath, githubPackageSha256, githubVersion);
             var manifest = update.Manifest;
+            appliedManifest = manifest;
             var staged = ExtractPackage(source, update);
             ValidateMetadata(root, manifest, staged);
             Directory.CreateDirectory(source.BackupRoot);
@@ -538,7 +543,8 @@ public static class WpfUpdateService
             {
                 var target = targets[relative];
                 var stagedFile = staged[relative];
-                File.Replace(stagedFile, target, null, ignoreMetadataErrors: true);
+                ReplaceExistingFile(stagedFile, target, root, source.LogPath, relative,
+                    manifest.Files[relative], manifest.BaseFiles[relative], replaceAttemptHook);
                 replaced.Add(relative);
                 Log(source.LogPath, "replaced " + relative);
                 if (source.FaultInjectAfterFirstReplace && replaced.Count == 1)
@@ -558,6 +564,7 @@ public static class WpfUpdateService
             {
                 try
                 {
+                    var manifest = appliedManifest ?? throw new InvalidOperationException("Update manifest was unavailable for rollback.");
                     foreach (var relative in replaced.AsEnumerable().Reverse())
                     {
                         var backup = SafeTarget(source.BackupRoot, relative);
@@ -565,7 +572,8 @@ public static class WpfUpdateService
                         var restore = Path.Combine(source.StagingRoot, "restore", relative.Replace('/', Path.DirectorySeparatorChar));
                         Directory.CreateDirectory(Path.GetDirectoryName(restore)!);
                         File.Copy(backup, restore, overwrite: true);
-                        File.Replace(restore, target, null, ignoreMetadataErrors: true);
+                        ReplaceExistingFile(restore, target, root, source.LogPath, relative,
+                            manifest.BaseFiles[relative], manifest.Files[relative]);
                     }
                     foreach (var relative in AllowedFiles)
                         if (!FixedEquals(HashFile(SafeTarget(root, relative)), previousHashes[relative]))
@@ -1268,6 +1276,59 @@ public static class WpfUpdateService
         using var stream = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
+
+    private static void ReplaceExistingFile(string stagedFile, string target, string root, string logPath,
+        string relativePath, FileRecord expectedStaged, FileRecord expectedTarget,
+        Action<string, string, int>? beforeAttempt = null)
+    {
+        var lockDelays = new[] { 50, 100, 200, 400, 800, 1_200, 1_600, 2_000 };
+        var unableToRemoveDelays = new[] { 100, 250, 500 };
+        var lockRetries = 0;
+        var unableToRemoveRetries = 0;
+        for (var attempt = 0; ; attempt++)
+        {
+            EnsureNoReparsePath(root, stagedFile, "replacement source");
+            EnsureNoReparsePath(root, target, "replacement target");
+            if (!MatchesRecord(stagedFile, expectedStaged))
+                throw new InvalidDataException("Replacement staged file changed from its planned hash or size: " + relativePath);
+            if (!MatchesRecord(target, expectedTarget))
+                throw new InvalidDataException("Replacement target file changed from its expected pre-state: " + relativePath);
+
+            try
+            {
+                beforeAttempt?.Invoke(stagedFile, target, attempt + 1);
+                File.Replace(stagedFile, target, null, ignoreMetadataErrors: true);
+                return;
+            }
+            catch (IOException ex) when (OperatingSystem.IsWindows())
+            {
+                var error = ex.HResult & 0xFFFF;
+                int retryIndex;
+                int[] delays;
+                switch (error)
+                {
+                    case 32:
+                    case 33:
+                        retryIndex = lockRetries++;
+                        delays = lockDelays;
+                        break;
+                    case 1175:
+                        retryIndex = unableToRemoveRetries++;
+                        delays = unableToRemoveDelays;
+                        break;
+                    default:
+                        throw;
+                }
+                Log(logPath, $"replace failed path={relativePath} hresult=0x{ex.HResult:X8} attempt={attempt + 1}");
+                if (retryIndex >= delays.Length) throw;
+                Thread.Sleep(delays[retryIndex]);
+            }
+        }
+    }
+
+    private static bool MatchesRecord(string path, FileRecord expected) =>
+        File.Exists(path) && new FileInfo(path).Length == expected.Size &&
+        FixedEquals(HashFile(path), expected.Sha256);
 
     private static bool FixedEquals(string left, string right) =>
         left.Length == right.Length && CryptographicOperations.FixedTimeEquals(Convert.FromHexString(left), Convert.FromHexString(right));

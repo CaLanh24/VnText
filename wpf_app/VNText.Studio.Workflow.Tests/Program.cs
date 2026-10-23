@@ -71,12 +71,14 @@ internal static partial class Program
         if (args.Contains("--github-handoff-only", StringComparer.Ordinal))
         {
             Run("WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose", WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose, failures);
+            Run("WpfUpdate_GitHubRetries1175AgainstExactPreState", WpfUpdate_GitHubRetries1175AgainstExactPreState, failures);
+            Run("WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175", WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175, failures);
             if (failures.Count == 0)
             {
-                Console.WriteLine("Focused GitHub handoff test: PASS (1)");
+                Console.WriteLine("Focused GitHub handoff/retry tests: PASS (3)");
                 return 0;
             }
-            Console.Error.WriteLine("Focused GitHub handoff test: FAIL (1)");
+            Console.Error.WriteLine($"Focused GitHub handoff/retry tests: FAIL ({failures.Count})");
             foreach (var failure in failures) Console.Error.WriteLine(" - " + failure);
             return 1;
         }
@@ -162,6 +164,8 @@ internal static partial class Program
         Run("WpfUpdate_GitHubCandidateIsReplacedOnRecheck", WpfUpdate_GitHubCandidateIsReplacedOnRecheck, failures);
         Run("WpfUpdate_GitHubCandidateIsDeletedOnClose", WpfUpdate_GitHubCandidateIsDeletedOnClose, failures);
         Run("WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose", WpfUpdate_GitHubHandedOffCandidateSurvivesOwnerDispose, failures);
+        Run("WpfUpdate_GitHubRetries1175AgainstExactPreState", WpfUpdate_GitHubRetries1175AgainstExactPreState, failures);
+        Run("WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175", WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175, failures);
         Run("WpfUpdate_GitHubRedirectsOnlyToTrustedCdn", WpfUpdate_GitHubRedirectsOnlyToTrustedCdn, failures);
 
         if (failures.Count == 0)
@@ -2491,6 +2495,111 @@ internal static partial class Program
             AssertEqual(dataHash, HashFile(dataPath));
         }
         finally { DeleteUpdateFixture(fixture); }
+    }
+
+    private static void WpfUpdate_GitHubRetries1175AgainstExactPreState()
+    {
+        var fixture = CreateUpdateFixture("1.0.1");
+        try
+        {
+            ConfigureGitHubSource(fixture, "test-owner", "test-repo");
+            var check = CheckGitHubPackage(fixture);
+            AssertEqual(GitHubUpdateState.UpdateAvailable, check.State);
+            var dataPath = Path.Combine(fixture.Root, "data", "keep.bin");
+            var dataHash = HashFile(dataPath);
+            var attempts = new Dictionary<string, int>(StringComparer.Ordinal);
+            var injected = new HashSet<string>(StringComparer.Ordinal);
+            void InjectOnce(string source, string destination, int attempt)
+            {
+                var relative = Path.GetRelativePath(fixture.Root, destination).Replace(Path.DirectorySeparatorChar, '/');
+                if (relative != "VNText Studio.exe") return;
+                attempts[relative] = attempt;
+                if (!injected.Add(relative)) return;
+                throw new IOException("injected 1175", unchecked((int)0x80070497));
+            }
+
+            var result = WpfUpdateService.RunGitHubUpdaterForTest(fixture.SourcePath, fixture.Root,
+                check.PackagePath, check.PackageSha256, check.Version, replaceAttemptHook: InjectOnce);
+
+            AssertEqual(0, result);
+            AssertEqual(2, attempts["VNText Studio.exe"]);
+            AssertEqual(fixture.CandidateExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
+            AssertEqual(dataHash, HashFile(dataPath));
+            AssertTrue(File.ReadAllText(Path.Combine(fixture.Root, ".update", "update.log"))
+                .Contains("replace failed path=VNText Studio.exe hresult=0x80070497 attempt=1", StringComparison.Ordinal));
+        }
+        finally { DeleteUpdateFixture(fixture); }
+    }
+
+    private static void WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175()
+    {
+        foreach (var mutate in new[] { "staged", "target" })
+        {
+            var fixture = CreateUpdateFixture("1.0.1");
+            try
+            {
+                ConfigureGitHubSource(fixture, "test-owner", "test-repo");
+                var check = CheckGitHubPackage(fixture);
+                AssertEqual(GitHubUpdateState.UpdateAvailable, check.State);
+                var dataPath = Path.Combine(fixture.Root, "data", "keep.bin");
+                var dataHash = HashFile(dataPath);
+                var targetPath = Path.Combine(fixture.Root, "VNText Studio.exe");
+                var attempts = 0;
+                void MutateThenInject(string source, string destination, int attempt)
+                {
+                    if (Path.GetRelativePath(fixture.Root, destination).Replace(Path.DirectorySeparatorChar, '/') != "VNText Studio.exe")
+                        return;
+                    attempts = attempt;
+                    if (attempt != 1) return;
+                    File.WriteAllText(mutate == "staged" ? source : destination,
+                        "changed after the injected 1175 failure");
+                    throw new IOException("injected 1175", unchecked((int)0x80070497));
+                }
+
+                var result = WpfUpdateService.RunGitHubUpdaterForTest(fixture.SourcePath, fixture.Root,
+                    check.PackagePath, check.PackageSha256, check.Version, replaceAttemptHook: MutateThenInject);
+
+                AssertEqual(5, result);
+                AssertEqual(1, attempts);
+                AssertEqual(dataHash, HashFile(dataPath));
+                if (mutate == "staged")
+                    AssertEqual(fixture.BaselineExeHash, HashFile(targetPath));
+                else
+                    AssertEqual("changed after the injected 1175 failure", File.ReadAllText(targetPath));
+                AssertTrue(File.ReadAllText(Path.Combine(fixture.Root, ".update", "update.log"))
+                    .Contains("Replacement " + mutate + " file changed", StringComparison.Ordinal));
+            }
+            finally { DeleteUpdateFixture(fixture); }
+        }
+
+        var persistent = CreateUpdateFixture("1.0.1");
+        try
+        {
+            ConfigureGitHubSource(persistent, "test-owner", "test-repo");
+            var check = CheckGitHubPackage(persistent);
+            AssertEqual(GitHubUpdateState.UpdateAvailable, check.State);
+            var dataPath = Path.Combine(persistent.Root, "data", "keep.bin");
+            var dataHash = HashFile(dataPath);
+            var attempts = 0;
+            void InjectPersistent(string _source, string destination, int attempt)
+            {
+                if (Path.GetRelativePath(persistent.Root, destination).Replace(Path.DirectorySeparatorChar, '/') != "VNText Studio.exe")
+                    return;
+                attempts = attempt;
+                throw new IOException("injected persistent 1175", unchecked((int)0x80070497));
+            }
+
+            var result = WpfUpdateService.RunGitHubUpdaterForTest(persistent.SourcePath, persistent.Root,
+                check.PackagePath, check.PackageSha256, check.Version, replaceAttemptHook: InjectPersistent);
+
+            AssertEqual(5, result);
+            AssertEqual(4, attempts);
+            AssertEqual(persistent.BaselineExeHash, HashFile(Path.Combine(persistent.Root, "VNText Studio.exe")));
+            AssertEqual(dataHash, HashFile(dataPath));
+            var log = File.ReadAllText(Path.Combine(persistent.Root, ".update", "update.log"));
+            AssertEqual(4, log.Split("replace failed path=VNText Studio.exe hresult=0x80070497", StringSplitOptions.None).Length - 1);
+        }
+        finally { DeleteUpdateFixture(persistent); }
     }
 
     private static void WpfUpdate_GitHubRedirectsOnlyToTrustedCdn()
