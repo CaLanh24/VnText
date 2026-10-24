@@ -744,9 +744,17 @@ def main() -> int:
     parser.add_argument("--report", type=Path, default=None)
     parser.add_argument(
         "--release-task-id",
-        choices=("release-0.1.5",),
+        choices=(
+            "release-0.1.5",
+            "release-0.1.6",
+            "release-0.1.7",
+            "release-0.1.8",
+            "release-0.1.9",
+            "release-0.1.10",
+            "release-0.1.11",
+        ),
         default=None,
-        help="Request the epoch-bound 0.1.5 temporary project cap; otherwise the default 1 GiB applies",
+        help="Request an epoch-bound temporary project cap for a registered Release task; otherwise the default 1 GiB applies",
     )
     parser.add_argument("--stdout-log", type=Path, default=None)
     parser.add_argument("--stderr-log", type=Path, default=None)

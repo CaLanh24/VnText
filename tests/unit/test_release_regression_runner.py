@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 RUNNER = ROOT / "release" / "run_regression.ps1"
+CANONICAL_RUNNER = ROOT / "tests" / "tools" / "run_with_cleanup.py"
 WORK = ROOT / "TEST_RUN"
 
 sys.path.insert(0, str(ROOT / "tests" / "lib"))
@@ -32,6 +33,18 @@ def _nested_runner_env() -> dict[str, str]:
 
 
 class ReleaseRegressionRunnerTests(unittest.TestCase):
+    def test_canonical_cleanup_runner_accepts_release_011_budget_profile(self):
+        result = subprocess.run(
+            [sys.executable, "-B", str(CANONICAL_RUNNER), "--release-task-id", "release-0.1.11", "--help"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("release-0.1.11", result.stdout)
+
     def _register_harness(self, harness: Path, *, name: str) -> None:
         ambient = ambient_scope()
         register_artifact(
