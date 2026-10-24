@@ -29,7 +29,7 @@ def _slow_readback(_patched_root, _game_root, _grouped_items):
 class PatchReadbackTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="vntext-readback-")
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         self.patch_root = self.root / "COPY_TO_GAME_ROOT"
 
     def tearDown(self) -> None:

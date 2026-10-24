@@ -41,6 +41,11 @@ def _environment(args: argparse.Namespace) -> dict[str, str]:
     python_path_entries = [str(work), *[str(path) for path in _site_package_roots(python_path, work)]]
     existing_pythonpath = [item for item in env.get("PYTHONPATH", "").split(os.pathsep) if item]
     env["PYTHONPATH"] = os.pathsep.join(python_path_entries + existing_pythonpath)
+    # Windows tempfile prefers TEMP/TMP over TMPDIR. Keep all three aligned
+    # so tests and subprocesses resolve temporary paths inside the registered
+    # TEST_RUN root rather than falling back to the user's profile temp path.
+    env["TEMP"] = str(temp_root)
+    env["TMP"] = str(temp_root)
     env["TMPDIR"] = str(temp_root)
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"

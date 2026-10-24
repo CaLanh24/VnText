@@ -385,7 +385,7 @@ class PatchabilityContractTests(unittest.TestCase):
 
     def test_source_resolution_fallback_is_generic_for_any_unity_data_root(self):
         with tempfile.TemporaryDirectory(prefix="vntext-generic-data-root-") as name:
-            root = Path(name)
+            root = Path(name).resolve()
             data = root / "SampleVN_Data"
             data.mkdir()
             resource = data / "resources.assets"

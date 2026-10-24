@@ -50,7 +50,7 @@ class WorkPathContractTests(unittest.TestCase):
 
     def test_registry_writer_refuses_malformed_manifest_without_rewriting_it(self):
         with tempfile.TemporaryDirectory(prefix="vntext-work-paths-") as name:
-            root = Path(name)
+            root = Path(name).resolve()
             work = root / "TEST_RUN"
             work.mkdir(parents=True)
             manifest = work / "artifacts_manifest.json"
@@ -104,7 +104,7 @@ class WorkPathContractTests(unittest.TestCase):
         live_manifest_before = MANIFEST_PATH.read_bytes() if MANIFEST_PATH.is_file() else None
         try:
             with tempfile.TemporaryDirectory(prefix="vntext-e2e-lifecycle-") as tmp:
-                isolated_root = Path(tmp)
+                isolated_root = Path(tmp).resolve()
                 work = isolated_root / "TEST_RUN"
                 game_copy = work / "game_copy"
                 manifest = work / "artifacts_manifest.json"
