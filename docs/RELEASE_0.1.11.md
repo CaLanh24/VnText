@@ -1,6 +1,28 @@
 # VNText Studio 0.1.11 — acceptance record
 
-**Disposition: MORE EVIDENCE REQUIRED.** The local technical gates below are recorded at their actual source SHA. Brain review, completion of native acceptance for the eight UX groups, and fresh Setup acceptance remain open. No public release or asset upload has occurred.
+**Disposition: PUBLISHED — bounded acceptance.** Release `v0.1.11` is public and latest at `https://github.com/CaLanh24/VnText/releases/tag/v0.1.11`; tag peels to source SHA `6bcfde4c6d8dd596832270968e0875a2abdc8bea`. Fresh Setup and the public GitHub 0.1.10-to-0.1.11 offer/download/apply/restart passed with full target-inventory, model and data-sentinel readback. Native UX results remain bounded as stated below; this is not a claim of whole-product acceptance.
+
+## Fresh Setup and final asset update — 2026-10-24
+
+Owner-authorized Intel terms acceptance was completed for Setup SHA-256 `150db5ea40c34345952dd57d3b4dc76b3fd53812786893b1faf22f588bf8fb24`. The exact Setup installed into disposable `C:\b\RELEASE_RUN\candidate-0.1.11\i11`. Installed inventory matched all 7,193 payload files / 514,637,662 bytes; missing, mismatched and unexpected files were all zero. The installed worker smoke and release verifier both returned `ok: true`. Receipts: `C:\b\DEV_RUN\release-0.1.11\setup-acceptance\installed-inventory.json`, `installed-worker-smoke.json`, and `installed-release-verify.json`. The verifier reports `TRACE_NOT_ENABLED`; it proves the isolated headless workflow only. Bundled model manifest is `app/MODEL_MANIFEST.json`; 24 model files total 77,490,500 bytes, revision `c22547827b876e8ee939d6a9363965e5c9f769e1`, Apache-2.0.
+
+Two final Vietnamese-notes updater packages were generated from the installed 0.1.11 candidate against clean 0.1.7 and 0.1.10 baselines. Both feeds and embedded manifests match package hashes, source SHA `6bcfde4c6d8dd596832270968e0875a2abdc8bea`, and source-tree SHA-256 `dd75b1cf217e3707601a2474367d4075e0b8001b964a4e23a07df9b5eb8c2f0b`; each contains 7,192 inventory entries and 24 model entries. The final notes omit the unverified manual-approval claim.
+
+| Route | Final ZIP SHA-256 |
+|---|---|
+| General | `9714fa0cb7d8e2552c8e794adac11af9544791554aaef7683342e2d4e33b1ff1` |
+| 0.1.10 baseline | `912f0e51ef7991fb817fba9fe116153316915cad9ac6cbc2e94e110d533bbaa0` |
+
+Brain accepted the candidate. Final staging and public download receipts are retained under `C:\Users\VNTextDev\Downloads\VNText-0.1.11-final-assets-review-6bcfde4` and `C:\Users\VNTextDev\Downloads\VNText-0.1.11-public-readback-20261024`. Release assets include Setup, both updater ZIPs and feeds, Apache and third-party notices, provenance, and checksums. Since release assets are immutable, `THIRD_PARTY_NOTICES.md` and the revised provenance/checksum were added as revision 2 assets. Public acceptance receipt: `PUBLIC_RELEASE_ACCEPTANCE.json` in the public-readback folder.
+
+## Post-publication public updater acceptance and cleanup — 2026-10-24
+
+The real 0.1.10 app found the published 0.1.11 offer, downloaded the public route package, verified it, applied it and restarted. The success dialog and normal 0.1.11 UI appeared. Readback verified all 7,192 target manifest files, all 24 protected model hashes, the 0.1.11 source SHA, the downloaded package SHA, and the synthetic user-data sentinel. Before/after receipts are `C:\Users\VNTextDev\Downloads\VNText-0.1.11-public-readback-20261024\public-update-before.json` and `public-update-after.json`; the public acceptance index is `PUBLIC_RELEASE_ACCEPTANCE.json` beside them.
+
+The test used the registered 0.1.10 baseline. Its payload was restored from the official 0.1.10 Setup archive and verified against all 7,193 archived payload entries, the old release metadata and executable hash. The test-only `.update`, `data`, sentinel and synthetic update-source file were removed with the artifact cleanup helper; the baseline is again 0.1.10. Registered disposable setup/staging/input trees were removed while both retained release baselines were preserved. Workspace non-exempt size remains about 1.45 GB, above the release task's 1 GiB terminal target; do not report terminal budget cleanup as PASS. Public release and update acceptance are complete independently of that storage target.
+
+The earlier pending Setup, unpublished release, unexercised public update, and unintegrated package paragraphs below are historical snapshots superseded by this section and the current-state summary at the top. Native UX scope and its PARTIAL/NOT_VERIFIED limits remain unchanged.
+
 
 ## Source and regression
 
@@ -66,6 +88,17 @@ The first registration/cleanup invocation omitted its saved `--before` snapshot 
 - Thông báo kết quả dùng giao diện đồng bộ với ứng dụng; các công tắc hiển thị rõ trạng thái bật bằng màu xanh dương.
 - Làm rõ nhận diện game Ren’Py và các lựa chọn khôi phục khi thiếu SDK.
 - Mặc định lấy text bằng chế độ quét sâu; lựa chọn mức lọc được ẩn khỏi màn hình thông thường.
+- Cách hiển thị thời gian ước tính dễ đọc hơn.
+- Khi CSV chưa có bản dịch, ứng dụng hướng dẫn chuyển sang Dịch local, hiển thị trạng thái sẵn sàng và nút bắt đầu phù hợp.
+- Sắp xếp lại vùng tìm và thay thế trong Sửa CSV để các trường và thao tác rõ ràng hơn.
+
+# VNText Studio 0.1.11
+
+## Cải thiện thao tác
+
+- Thông báo kết quả dùng giao diện đồng bộ với ứng dụng; công tắc bật hiển thị màu xanh dương.
+- Làm rõ nhận diện game Ren’Py và các lựa chọn khôi phục khi thiếu SDK.
+- Lấy text sử dụng quét sâu theo mặc định; tùy chọn mức quét được ẩn khỏi màn hình thông thường.
 - Cách hiển thị thời gian ước tính dễ đọc hơn.
 - Khi CSV chưa có bản dịch, ứng dụng hướng dẫn chuyển sang Dịch local, hiển thị trạng thái sẵn sàng và nút bắt đầu phù hợp.
 - Sắp xếp lại vùng tìm và thay thế trong Sửa CSV để các trường và thao tác rõ ràng hơn.
