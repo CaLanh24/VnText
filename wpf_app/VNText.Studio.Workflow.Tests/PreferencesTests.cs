@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using VNText.Studio.App;
 using VNText.Studio.App.Services;
@@ -90,6 +91,7 @@ internal static class PreferencesTests
             var vm=new MainViewModel(new Picker(),new PythonWorkerHost(),startWorker:false);vm.NavigateTabCommand.Execute("settings");
             var window=new MainWindow(vm,new Presentation());window.Show();window.UpdateLayout();
             vm.Language="en";vm.Theme="dark";vm.BackgroundStrength=60;window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
+            CaptureReview(window,"settings-dark-top");
             Check(AppSettingsStore.Load().Language=="en" && AppSettingsStore.Load().Theme=="dark" && vm.Theme=="dark","view-model settings persisted");
             Check(Find<TextBlock>(window,t=>t.Text=="Display language") is not null && Find<TextBlock>(window,t=>t.Text=="Appearance") is not null,"real Settings rows localized");
             vm.NavigateTabCommand.Execute("extract");window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
@@ -98,6 +100,17 @@ internal static class PreferencesTests
             var settingsScroll=(ScrollViewer)window.FindName("SettingsScrollViewer");
             window.UpdateLayout();settingsScroll.ScrollToEnd();window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
             Check(settingsScroll.ScrollableHeight>0 && settingsScroll.VerticalOffset>0,"Settings lower options remain scroll-accessible");
+            CaptureReview(window,"settings-dark-lower");
+            vm.RememberWindow=false;vm.StartMinimized=false;vm.AutoCheckUpdates=false;vm.NotifyUpdates=false;vm.BackgroundUpdateDownload=false;
+            window.UpdateLayout();Pump(100);AssertSettingsToggleTrack(window,false);CaptureReview(window,"settings-dark-toggles-off");
+            vm.RememberWindow=true;vm.StartMinimized=true;vm.AutoCheckUpdates=true;vm.NotifyUpdates=true;vm.BackgroundUpdateDownload=true;
+            window.UpdateLayout();Pump(100);AssertSettingsToggleTrack(window,true);CaptureReview(window,"settings-dark-toggles-on");
+            settingsScroll.ScrollToTop();vm.Theme="light";window.UpdateLayout();Pump(100);CaptureReview(window,"settings-light-top");
+            settingsScroll.ScrollToEnd();window.UpdateLayout();Pump(100);
+            vm.RememberWindow=false;vm.StartMinimized=false;vm.AutoCheckUpdates=false;vm.NotifyUpdates=false;vm.BackgroundUpdateDownload=false;
+            window.UpdateLayout();Pump(100);AssertSettingsToggleTrack(window,false);CaptureReview(window,"settings-light-toggles-off");
+            vm.RememberWindow=true;vm.StartMinimized=true;vm.AutoCheckUpdates=true;vm.NotifyUpdates=true;vm.BackgroundUpdateDownload=true;
+            window.UpdateLayout();Pump(100);AssertSettingsToggleTrack(window,true);CaptureReview(window,"settings-light-toggles-on");
             var tabs=Find<TabControl>(window,_=>true)!;tabs.SelectedIndex=2;
             window.WindowState=WindowState.Normal;window.Width=1050;window.UpdateLayout();Pump(100);
             var about=(Grid)window.FindName("AboutDestinationsGrid");var narrow=about.ActualWidth;
@@ -120,6 +133,27 @@ internal static class PreferencesTests
         var bitmap=new System.Windows.Media.Imaging.RenderTargetBitmap(256,256,96,96,PixelFormats.Pbgra32);bitmap.Render(visual);
         var pixel=new byte[4];bitmap.CopyPixels(new Int32Rect(x,y,1,1),pixel,4,0);
         return Color.FromArgb(pixel[3],pixel[2],pixel[1],pixel[0]);
+    }
+    private static void CaptureReview(Window window,string name)
+    {
+        var directory=Environment.GetEnvironmentVariable("VNTEXT_UI_REVIEW_OUT");if(string.IsNullOrWhiteSpace(directory))return;
+        Directory.CreateDirectory(directory);window.UpdateLayout();
+        var width=Math.Max(1,(int)Math.Ceiling(window.ActualWidth));var height=Math.Max(1,(int)Math.Ceiling(window.ActualHeight));
+        var bitmap=new RenderTargetBitmap(width,height,96,96,PixelFormats.Pbgra32);bitmap.Render(window);
+        using var stream=File.Create(Path.Combine(directory,name+".png"));var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(bitmap));encoder.Save(stream);
+        Console.WriteLine($"UI review render {name}: window={window.ActualWidth:0.0}x{window.ActualHeight:0.0}, dpi={VisualTreeHelper.GetDpi(window).PixelsPerInchX:0.0}x{VisualTreeHelper.GetDpi(window).PixelsPerInchY:0.0}");
+    }
+    private static void AssertSettingsToggleTrack(Window window,bool isOn)
+    {
+        var toggle=Find<CheckBox>(window,c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Tự động tải cập nhật nền");
+        Check(toggle is not null && toggle.IsChecked==isOn,"Settings toggle state bound to view model");
+        toggle!.ApplyTemplate();
+        var track=toggle.Template.FindName("Track",toggle) as Border;
+        var actual=track?.Background as SolidColorBrush;
+        Check(actual is not null,"Settings toggle track template instantiated");
+        var key=isOn?"BlueBrush":"SwitchOffBrush";
+        Check(window.TryFindResource(key) is SolidColorBrush expected && actual!.Color==expected.Color,
+            $"Settings {(isOn?"on":"off")} toggle track uses {key} resource");
     }
     private static void Pump(int milliseconds)
     {

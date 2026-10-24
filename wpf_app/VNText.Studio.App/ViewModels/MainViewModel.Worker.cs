@@ -159,6 +159,8 @@ public sealed partial class MainViewModel
                     RenpySdkAction = RenpySdkRecovery.ResolveAction(
                         RenpySdkAction, evt.RenpySdkMissing, evt.Ok, cancelled);
                     RenpySdkError = RenpySdkAction is "missing" or "error" ? evt.Error ?? evt.Summary ?? "" : "";
+                    if (evt.RenpySdkMissing)
+                        ExposeRenpySdkRecoveryOptions();
                 }
                 var extractionIncomplete = completedTask == "extract"
                     && (evt.ExtractStatus is "PARTIAL" or "EMPTY" || (evt.Ok && evt.Complete == false));

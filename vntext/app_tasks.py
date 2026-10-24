@@ -1085,6 +1085,7 @@ def run_extract_task(
 ) -> None:
     from vntext.unity_analyzer import UnityAnalysisCancelled
 
+    renpy_sdk_missing = False
     try:
         from vntext.renpy_adapter import detect_engine
         engine = detect_engine(src)
@@ -1118,7 +1119,6 @@ def run_extract_task(
             )
             if not supported:
                 raise ValueError("Chưa nhận diện input được hỗ trợ; hãy chọn game Unity, Ren'Py loose-source hoặc asset text có định dạng hỗ trợ.")
-        renpy_sdk_missing = False
         if engine.engine == "RENPY_COMPILED_ONLY":
             from vntext.renpy_compiled import extract_compiled_source
             main, review, stats = extract_compiled_source(src, is_cancelled=is_cancelled)
@@ -1151,10 +1151,12 @@ def run_extract_task(
                     sdk = validate_sdk(selected) if selected else managed_sdk()
             except RenPyToolchainError as exc:
                 if action in {"download", "existing"}:
+                    renpy_sdk_missing = True
                     raise RenPyToolchainError(f"Công cụ Ren'Py chưa hợp lệ; cần SDK 8.5.3. Chọn lại thư mục công cụ và output mới. Chi tiết: {exc}") from exc
                 log(f"Ren'Py SDK managed không hợp lệ; tiếp tục không native patch: {exc}")
             if sdk is None:
                 if engine.engine == "RENPY_ARCHIVE_SOURCE":
+                    renpy_sdk_missing = True
                     raise RenPyToolchainError("Source Ren'Py trong RPA cần SDK 8.5.3 để tạo native identity; không thể trả kết quả loose-parser một phần.")
                 renpy_sdk_missing = True
                 log("Thiếu công cụ Ren'Py: đã lấy text một phần; lời thoại cần mã định danh được giữ để xem lại. Kết quả chưa đầy đủ.")
@@ -1312,7 +1314,7 @@ def run_extract_task(
                     ),
                 )
             )
-        if engine.engine == "RENPY_LOOSE_SOURCE":
+        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
             payload["renpy_sdk_missing"] = renpy_sdk_missing
         # Image drafts are independent of CSV completion/patch eligibility.
         # An OCR/model failure must not discard a successfully extracted package.
@@ -1351,6 +1353,7 @@ def run_extract_task(
                 blocked=0,
             )
             return
+        recovery_fields = {"renpy_sdk_missing": True} if renpy_sdk_missing else {}
         _emit_complete(
             complete,
             ok=False,
@@ -1366,6 +1369,7 @@ def run_extract_task(
                 fallback_affected_count=1,
                 fallback_action="Inspect the extract error and diagnostic evidence before retrying.",
             ),
+            **recovery_fields,
         )
 
 

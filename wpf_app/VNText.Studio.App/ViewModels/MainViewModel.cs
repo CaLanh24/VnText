@@ -63,6 +63,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _translationCsvPath = "";
     private string _csvValidationMessage = "";
     private bool _csvValidationOk;
+    private bool _translatePackageReady;
+    private bool _translationModelUnavailable;
+    private string _translateReadinessPath = "";
+    private int _translateReadinessEpoch;
     private string _patchPreflightMessage = "";
     private bool _patchPreflightOk;
     private bool _patchPreflightEvaluated;
@@ -122,7 +126,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => !Busy);
-        RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => !Busy);
+        RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy);
         RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && ReadyForPatch);
@@ -221,6 +225,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             {
                 Raise(nameof(TranslationCsvDisplay));
                 LoadPackageGlossary();
+                RefreshTranslateReadiness();
             }
         }
     }
@@ -594,6 +599,14 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string RenpySdkStatus => RenpySdkRecovery.FormatStatus(RenpySdkAction, RenpySdkError);
 
+    private void ExposeRenpySdkRecoveryOptions()
+    {
+        var pending = Interlocked.Exchange(ref _renpyDetectionCancellation, null);
+        pending?.Cancel();
+        RenpySdkOptionsVisible = true;
+        pending?.Dispose();
+    }
+
     private void RefreshRenpySdkOptionsVisibility(string inputPath)
     {
         var previous = Interlocked.Exchange(ref _renpyDetectionCancellation, null);
@@ -614,7 +627,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         try
         {
             var detected = await Task.Run(
-                () => RenpyGameDetector.IsLooseSourceGame(inputPath, cancellation.Token),
+                () => RenpyGameDetector.HasSdkRecoveryEvidence(inputPath, cancellation.Token),
                 cancellation.Token);
             if (!cancellation.IsCancellationRequested
                 && ReferenceEquals(Volatile.Read(ref _renpyDetectionCancellation), cancellation))

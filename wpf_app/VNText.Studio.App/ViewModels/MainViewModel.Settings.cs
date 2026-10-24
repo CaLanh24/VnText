@@ -105,12 +105,19 @@ public sealed partial class MainViewModel
             if (process.ExitCode != 0) throw new InvalidOperationException($"Kiểm tra model exit {process.ExitCode}: {await error}");
             using var result = System.Text.Json.JsonDocument.Parse(await output);
             _modelFolder = result.RootElement.GetProperty("path").GetString() ?? "";
-            _modelStatus = result.RootElement.GetProperty("ready").GetBoolean()
+            var modelReady = result.RootElement.GetProperty("ready").GetBoolean();
+            _translationModelUnavailable = !modelReady;
+            _modelStatus = modelReady
                 ? "File model OPUS-MT INT8 có sẵn." : "Thiếu file model OPUS-MT INT8.";
         }
-        catch (Exception ex) { _modelStatus = "Không kiểm tra được model: " + ex.Message; }
+        catch (Exception ex)
+        {
+            _translationModelUnavailable = false;
+            _modelStatus = "Không kiểm tra được model: " + ex.Message;
+        }
         if (_disposed != 0) return;
         Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus));
+        RunTranslateCommand?.RaiseCanExecuteChanged();
     }
     private void OpenSettingsFolder(string path)
     {

@@ -21,12 +21,53 @@ internal static partial class Program
     private static int Main(string[] args)
     {
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
-            return RunAppDialogFixture();
+            return RunAppDialogFixture(args);
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
             var result=1; var thread=new Thread(() => { try { result=PreferencesTests.Run(); } catch(Exception ex) { Console.Error.WriteLine(ex); } });
             thread.SetApartmentState(ApartmentState.STA); thread.Start(); thread.Join(); return result;
+        }
+
+        if (args.Contains("--eta-only", StringComparer.Ordinal))
+        {
+            var etaFailures = new List<string>();
+            Run("WorkerEvent_FormatsNumericEta", WorkerEvent_FormatsNumericEta, etaFailures);
+            if (etaFailures.Count == 0)
+            {
+                Console.WriteLine("Focused ETA boundary checks: PASS (1)");
+                return 0;
+            }
+            foreach (var failure in etaFailures) Console.Error.WriteLine(" - " + failure);
+            return 1;
+        }
+
+        if (args.Contains("--renpy-sdk-only", StringComparer.Ordinal))
+        {
+            var sdkFailures = new List<string>();
+            Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, sdkFailures);
+            Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, sdkFailures);
+            Run("RenpySdkMissing_ReportsPartialExtraction", RenpySdkMissing_ReportsPartialExtraction, sdkFailures);
+            if (sdkFailures.Count == 0)
+            {
+                Console.WriteLine("Focused Ren'Py SDK recovery checks: PASS (3)");
+                return 0;
+            }
+            foreach (var failure in sdkFailures) Console.Error.WriteLine(" - " + failure);
+            return 1;
+        }
+
+        if (args.Contains("--translate-readiness-only", StringComparer.Ordinal))
+        {
+            var readinessFailures = new List<string>();
+            Run("TranslateCommand_RequiresValidatedPackageReadiness", TranslateCommand_RequiresValidatedPackageReadiness, readinessFailures);
+            if (readinessFailures.Count == 0)
+            {
+                Console.WriteLine("Focused translate readiness checks: PASS (1)");
+                return 0;
+            }
+            foreach (var failure in readinessFailures) Console.Error.WriteLine(" - " + failure);
+            return 1;
         }
 
         if (args.Contains("--updater-presentation-fixture", StringComparer.Ordinal))
@@ -88,7 +129,7 @@ internal static partial class Program
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
         Run("JournalStore_BoundsHistorySearchSeverityAndClear", JournalStore_BoundsHistorySearchSeverityAndClear, failures);
         Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
-        Run("RenpyGameDetector_OnlyShowsForLooseSource", RenpyGameDetector_OnlyShowsForLooseSource, failures);
+        Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
         Run("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", RenpySdkRecovery_StatusRequiresSuccessfulEvidence, failures);
         Run("AfterExtract_CurrentTranslate", AfterExtract_CurrentTranslate, failures);
@@ -393,7 +434,7 @@ internal static partial class Program
         AssertTrue(vm.StepStatusLine.Contains("review 262"));
     }
 
-    private static void RenpyGameDetector_OnlyShowsForLooseSource()
+    private static void RenpyGameDetector_RequiresCredibleRecoveryEvidence()
     {
         var configuredRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         var workRoot = string.IsNullOrWhiteSpace(configuredRoot)
@@ -411,7 +452,44 @@ internal static partial class Program
             AssertFalse(RenpyGameDetector.IsLooseSourceGame(root, CancellationToken.None));
             File.WriteAllText(Path.Combine(game, "scripts", "script.rpy"), "label start:\\n", Encoding.UTF8);
             Directory.CreateDirectory(Path.Combine(root, "Sample_Data"));
-            AssertFalse(RenpyGameDetector.IsLooseSourceGame(root, CancellationToken.None));
+            AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
+            Directory.Delete(Path.Combine(root, "Sample_Data"));
+            File.Delete(Path.Combine(game, "scripts", "script.rpy"));
+            File.WriteAllBytes(Path.Combine(game, "scripts", "unrelated.rpa"), Encoding.ASCII.GetBytes("RPA-3.0"));
+            AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
+            Directory.CreateDirectory(Path.Combine(root, "lib"));
+            Directory.CreateDirectory(Path.Combine(root, "renpy"));
+            File.WriteAllBytes(Path.Combine(root, "CustomGame.exe"), new byte[] { 0x4d, 0x5a });
+            AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
+            File.WriteAllText(Path.Combine(game, "scripts", "unrelated.rpa"), "RPA-3.0 0000000000000000 00000000\n", Encoding.ASCII);
+            AssertTrue(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void TranslateCommand_RequiresValidatedPackageReadiness()
+    {
+        var configuredRoot = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
+        var workRoot = string.IsNullOrWhiteSpace(configuredRoot)
+            ? Path.Combine(RepoRoot(), "TEST_RUN")
+            : configuredRoot;
+        var root = Path.Combine(workRoot, "wpf_translate_readiness_" + Guid.NewGuid().ToString("N"));
+        var empty = Path.Combine(root, "empty");
+        var valid = Path.Combine(root, "valid");
+        Directory.CreateDirectory(empty);
+        Directory.CreateDirectory(valid);
+        File.WriteAllText(Path.Combine(valid, "manifest.json"), "{}", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(valid, "translation.csv"), "key,source_text,translation\nrow-1,Hello,\n", Encoding.UTF8);
+        try
+        {
+            using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+            vm.OutputPath = empty;
+            AssertFalse(vm.RunTranslateCommand.CanExecute(null));
+            vm.OutputPath = valid;
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
         }
         finally
         {
@@ -510,14 +588,22 @@ internal static partial class Program
         var root = Path.Combine(workRoot, "wpf_renpy_visibility_" + Guid.NewGuid().ToString("N"));
         var game = Path.Combine(root, "Renpy", "game");
         var unity = Path.Combine(root, "Unity");
+        var archived = Path.Combine(root, "ArchiveRenpy");
         Directory.CreateDirectory(game);
         Directory.CreateDirectory(Path.Combine(unity, "Demo_Data"));
         File.WriteAllText(Path.Combine(game, "script.rpy"), "label start", Encoding.UTF8);
+        Directory.CreateDirectory(Path.Combine(archived, "game"));
+        Directory.CreateDirectory(Path.Combine(archived, "lib"));
+        Directory.CreateDirectory(Path.Combine(archived, "renpy"));
+        File.WriteAllBytes(Path.Combine(archived, "CustomGame.exe"), new byte[] { 0x4d, 0x5a });
+        File.WriteAllBytes(Path.Combine(archived, "game", "scripts.rpa"), Encoding.ASCII.GetBytes("RPA-3.0 0000000000000000 00000000\n"));
         try
         {
             var worker = new PythonWorkerHost();
             using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
             vm.InputPath = Path.Combine(root, "Renpy");
+            AssertTrue(SpinWait.SpinUntil(() => vm.RenpySdkOptionsVisible, TimeSpan.FromSeconds(5)));
+            vm.InputPath = archived;
             AssertTrue(SpinWait.SpinUntil(() => vm.RenpySdkOptionsVisible, TimeSpan.FromSeconds(5)));
             vm.InputPath = unity;
             AssertFalse(vm.RenpySdkOptionsVisible);
@@ -534,7 +620,8 @@ internal static partial class Program
         AssertEqual("ready", RenpySdkRecovery.ResolveAction("existing", sdkMissing: false, operationOk: true, cancelled: false));
         AssertEqual("error", RenpySdkRecovery.ResolveAction("download", sdkMissing: false, operationOk: false, cancelled: false));
         AssertEqual("cancelled", RenpySdkRecovery.ResolveAction("existing", sdkMissing: false, operationOk: false, cancelled: true));
-        AssertEqual("missing", RenpySdkRecovery.ResolveAction("download", sdkMissing: true, operationOk: false, cancelled: false));
+        AssertEqual("error", RenpySdkRecovery.ResolveAction("download", sdkMissing: true, operationOk: false, cancelled: false));
+        AssertEqual("error", RenpySdkRecovery.ResolveAction("existing", sdkMissing: true, operationOk: false, cancelled: false));
         AssertEqual("auto", RenpySdkRecovery.ResolveAction("auto", sdkMissing: false, operationOk: false, cancelled: false));
         AssertTrue(RenpySdkRecovery.FormatStatus("error", "download hash mismatch").Contains("thử tải lại", StringComparison.OrdinalIgnoreCase));
         AssertTrue(RenpySdkRecovery.FormatStatus("error", new string('x', 500)).Length < 300);
@@ -695,6 +782,10 @@ internal static partial class Program
         AssertTrue(vm.ProgressSubtitle.Contains("thiếu công cụ Ren'Py", StringComparison.Ordinal));
         AssertTrue(vm.StepStatusLine.Contains("2 lời thoại cần xem lại", StringComparison.Ordinal));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —", StringComparison.Ordinal));
+        AssertTrue(vm.RenpySdkOptionsVisible);
+        AssertEqual("missing", vm.RenpySdkAction);
+        AssertTrue(vm.DownloadRenpySdkCommand.CanExecute(null));
+        AssertTrue(vm.ChooseRenpySdkCommand.CanExecute(null));
         AssertTrue(vm.LogLines.Any(line => line.Contains("chưa có công cụ Ren'Py", StringComparison.Ordinal)));
         AssertFalse(vm.LogLines.Any(line => line.Contains("Lỗi: Lấy text chưa đầy đủ", StringComparison.Ordinal)));
     }
@@ -826,6 +917,19 @@ internal static partial class Program
         AssertEqual("1 giờ 1 phút", ProgressEtaFormatter.Format(evt.Eta));
         AssertEqual("45 giây", ProgressEtaFormatter.Format("45"));
         AssertEqual("", ProgressEtaFormatter.Format("NaN"));
+        AssertEqual("59 giây", ProgressEtaFormatter.Format("59"));
+        AssertEqual("1 phút", ProgressEtaFormatter.Format("60"));
+        AssertEqual("1 giờ", ProgressEtaFormatter.Format("3600"));
+        AssertEqual("1 ngày", ProgressEtaFormatter.Format("86400"));
+        AssertEqual("365 ngày", ProgressEtaFormatter.Format("31536000"));
+        AssertEqual("", ProgressEtaFormatter.Format("31536001"));
+        AssertEqual("", ProgressEtaFormatter.Format("1e308"));
+        AssertEqual("", ProgressEtaFormatter.Format("Infinity"));
+        AssertEqual("", ProgressEtaFormatter.Format("-1"));
+
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type = "progress", Done = 2, Total = 10, Eta = "1e308" });
+        AssertTrue(vm.ProgressSubtitle.Contains("Đang ước tính thời gian", StringComparison.Ordinal));
     }
 
     private static void PatchDelivery_RoutesRenPyInstructions()

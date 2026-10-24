@@ -4,7 +4,7 @@ internal static class RenpySdkRecovery
 {
     public static string ResolveAction(string currentAction, bool sdkMissing, bool operationOk, bool cancelled)
     {
-        if (sdkMissing)
+        if (sdkMissing && currentAction is not ("download" or "existing"))
             return "missing";
         if (currentAction is not ("download" or "existing"))
             return currentAction;

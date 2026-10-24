@@ -2,16 +2,24 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using System.IO;
 using VNText.Studio.App.Services;
 
 namespace VNText.Studio.Workflow.Tests;
 
 internal static partial class Program
 {
-    private static int RunAppDialogFixture()
+    private static int RunAppDialogFixture(string[] args)
     {
         var exitCode = 1;
+        var fixtureIndex = Array.IndexOf(args, "--app-dialog-fixture");
+        var outDir = fixtureIndex >= 0 && fixtureIndex + 1 < args.Length
+            ? args[fixtureIndex + 1]
+            : "";
+        if (!string.IsNullOrWhiteSpace(outDir))
+            Directory.CreateDirectory(outDir);
         var thread = new Thread(() =>
         {
             try
@@ -32,13 +40,15 @@ internal static partial class Program
                         app.Resources["InkBrush"] = new SolidColorBrush(Color.FromRgb(245, 246, 250));
                         var longMessage = string.Join("\n", Enumerable.Range(1, 48).Select(i => $"Fixture detail {i}: a long error message remains readable and scrollable."));
                         var confirmed = ShowDialogAndInspect(app, owner, "Dark long-message confirmation", longMessage,
-                            MessageBoxButton.YesNo, MessageBoxResult.Yes);
+                            MessageBoxButton.YesNo, MessageBoxResult.Yes,
+                            string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_dark_long_confirmation.png"));
                         AssertEqual(MessageBoxResult.Yes, confirmed);
 
                         app.Resources["SurfaceBrush"] = new SolidColorBrush(Color.FromRgb(250, 250, 252));
                         app.Resources["InkBrush"] = new SolidColorBrush(Color.FromRgb(22, 26, 34));
                         var cancelled = ShowDialogAndInspect(app, owner, "Light keyboard-cancel confirmation",
-                            "Pressing Escape must cancel this confirmation.", MessageBoxButton.YesNoCancel, MessageBoxResult.Cancel);
+                            "Pressing Escape must cancel this confirmation.", MessageBoxButton.YesNoCancel, MessageBoxResult.Cancel,
+                            string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_light_cancel_confirmation.png"));
                         AssertEqual(MessageBoxResult.Cancel, cancelled);
                         Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, owner modal, affirmative click, Escape cancel)");
                         exitCode = 0;
@@ -74,7 +84,8 @@ internal static partial class Program
         string caption,
         string message,
         MessageBoxButton buttons,
-        MessageBoxResult expected)
+        MessageBoxResult expected,
+        string? screenshotPath)
     {
         Exception? failure = null;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
@@ -94,9 +105,24 @@ internal static partial class Program
                 AssertEqual(message, body.Text);
                 AssertTrue(body.MaxHeight >= 300);
                 AssertTrue(dialog.ActualHeight <= dialog.MaxHeight);
+                if (!string.IsNullOrWhiteSpace(screenshotPath))
+                    CaptureDialog(dialog, screenshotPath);
 
                 if (expected == MessageBoxResult.Yes)
                 {
+                    var bodyScroll = FindVisualChildren<ScrollViewer>(body).FirstOrDefault();
+                    if (message.Count(character => character == '\n') > 10)
+                    {
+                        AssertTrue(bodyScroll is not null && bodyScroll.ScrollableHeight > 0);
+                        AssertEqual(Visibility.Visible, bodyScroll!.ComputedVerticalScrollBarVisibility);
+                        if (!string.IsNullOrWhiteSpace(screenshotPath))
+                        {
+                            bodyScroll.ScrollToVerticalOffset(bodyScroll.ScrollableHeight);
+                            dialog.UpdateLayout();
+                            CaptureDialog(dialog, Path.Combine(Path.GetDirectoryName(screenshotPath)!,
+                                Path.GetFileNameWithoutExtension(screenshotPath) + "_scrolled.png"));
+                        }
+                    }
                     var yes = FindButtons(dialog).Single(button => string.Equals(button.Content?.ToString(), "Có", StringComparison.Ordinal));
                     yes.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
@@ -124,6 +150,22 @@ internal static partial class Program
         return result;
     }
 
+    private static void CaptureDialog(Window dialog, string path)
+    {
+        dialog.UpdateLayout();
+        var bitmap = new RenderTargetBitmap(
+            Math.Max(1, (int)Math.Ceiling(dialog.ActualWidth)),
+            Math.Max(1, (int)Math.Ceiling(dialog.ActualHeight)),
+            96,
+            96,
+            PixelFormats.Pbgra32);
+        bitmap.Render(dialog);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
+    }
+
     private static IEnumerable<Button> FindButtons(DependencyObject parent)
     {
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
@@ -132,6 +174,18 @@ internal static partial class Program
             if (child is Button button)
                 yield return button;
             foreach (var nested in FindButtons(child))
+                yield return nested;
+        }
+    }
+
+    private static IEnumerable<T> FindVisualChildren<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match)
+                yield return match;
+            foreach (var nested in FindVisualChildren<T>(child))
                 yield return nested;
         }
     }

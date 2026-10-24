@@ -1513,7 +1513,7 @@
 
                         <Trigger Property="IsChecked" Value="True">
 
-                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource GreenBrush}" />
+                            <Setter TargetName="Track" Property="Background" Value="{DynamicResource BlueBrush}" />
 
                             <Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right" />
 

@@ -15,6 +15,25 @@ WORK = work_temp_dir("renpy-extract-task")
 
 
 class RenPyExtractTaskTests(unittest.TestCase):
+    def test_rpa_source_without_sdk_reports_recovery_without_loose_parser_fallback(self):
+        from tests.unit.test_renpy_archive import write_rpa
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp) / "game"
+            (root / "game").mkdir(parents=True)
+            write_rpa(root / "game/scripts.rpa", {"game/script.rpy": b'label start:\n    e "Archive line"\n'})
+            completed = []
+            with patch("vntext.renpy_toolchain.managed_sdk", return_value=None), \
+                 patch("vntext.renpy_extract.extract_loose_source") as fallback:
+                run_extract_task(str(root), str(Path(temp) / "out"), "safe", "balanced", True,
+                                 renpy_sdk_action="none", progress=lambda _: None, log=lambda _: None,
+                                 complete=completed.append)
+            fallback.assert_not_called()
+            self.assertEqual(len(completed), 1)
+            self.assertFalse(completed[0]["ok"])
+            self.assertFalse(completed[0]["complete"])
+            self.assertTrue(completed[0]["renpy_sdk_missing"])
+            self.assertIn("cần SDK 8.5.3", completed[0]["error"])
+
     def test_rpa_source_uses_native_sdk_route_and_records_archive_identity(self):
         from tests.unit.test_renpy_archive import write_rpa
         with tempfile.TemporaryDirectory(dir=WORK) as temp:
@@ -118,6 +137,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
                                  log=lambda _:None,complete=completed.append)
             fallback.assert_not_called()
             self.assertFalse(completed[-1]["ok"])
+            self.assertTrue(completed[-1]["renpy_sdk_missing"])
             self.assertIn("cần SDK 8.5.3",completed[-1]["error"])
 
     def test_result_counts_match_the_filtered_package_in_both_modes(self):

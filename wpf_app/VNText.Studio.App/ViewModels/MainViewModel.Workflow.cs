@@ -17,6 +17,7 @@ public sealed partial class MainViewModel
 {
     private void RefreshWorkflow()
     {
+        RefreshTranslateReadiness();
         var input = InputPath;
         var output = _csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath)
             ? Path.GetDirectoryName(TranslationCsvPath)! : OutputPath;
@@ -51,6 +52,66 @@ public sealed partial class MainViewModel
                 /* ignore evaluate I/O failures */
             }
         });
+    }
+
+    private bool CanStartTranslate()
+    {
+        if (Busy || _translationModelUnavailable || !_translatePackageReady)
+            return false;
+        try
+        {
+            return string.Equals(_translateReadinessPath, Path.GetFullPath(GetTranslateReadinessPath()), StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private string GetTranslateReadinessPath()
+    {
+        if (_csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath))
+            return TranslationCsvPath;
+        return Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+    }
+
+    private void RefreshTranslateReadiness()
+    {
+        var epoch = Interlocked.Increment(ref _translateReadinessEpoch);
+        string path;
+        try { path = Path.GetFullPath(GetTranslateReadinessPath()); }
+        catch
+        {
+            _translatePackageReady = false;
+            _translateReadinessPath = "";
+            RunTranslateCommand?.RaiseCanExecuteChanged();
+            return;
+        }
+        _translatePackageReady = false;
+        _translateReadinessPath = path;
+        RunTranslateCommand?.RaiseCanExecuteChanged();
+
+        var dispatcher = Application.Current?.Dispatcher;
+        void Apply(CsvValidationResult result)
+        {
+            if (epoch != Volatile.Read(ref _translateReadinessEpoch)) return;
+            _translatePackageReady = result.Ok;
+            RunTranslateCommand?.RaiseCanExecuteChanged();
+        }
+        if (dispatcher is null || !dispatcher.CheckAccess())
+        {
+            Apply(CsvPackageValidator.Validate(path, requireTranslations: false));
+            return;
+        }
+        _ = Task.Run(() => CsvPackageValidator.Validate(path, requireTranslations: false))
+            .ContinueWith(task =>
+            {
+                var result = task.Status == TaskStatus.RanToCompletion
+                    ? task.Result
+                    : new CsvValidationResult(false, "CSV chưa sẵn sàng", 0, 0, path, null);
+                if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+                    dispatcher.BeginInvoke(() => Apply(result));
+            }, TaskScheduler.Default);
     }
 
     private void ApplyWorkflowSnapshot(WorkflowSnapshot snap)

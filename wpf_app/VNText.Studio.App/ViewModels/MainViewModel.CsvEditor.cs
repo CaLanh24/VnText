@@ -35,6 +35,7 @@ public sealed partial class MainViewModel
     private int _csvEditorPatchEligible;
     private int _csvEditorPatchBlocked;
     private int _csvEditorBatchActionable;
+    private bool _csvEditorAllTranslationsEmpty;
     private readonly List<string> _csvEditorSelectedKeys = [];
     private bool _csvEditorRetranslatePending;
     private int _csvLoadGeneration;
@@ -169,7 +170,7 @@ public sealed partial class MainViewModel
     }
 
     public string CsvEditorGateStats =>
-        _csvEditorRows.Count == 0
+        _csvEditorRows.Count == 0 || _csvEditorAllTranslationsEmpty
             ? ""
             : $"Hợp lệ {CsvEditorPatchEligible:N0} · Bị chặn {CsvEditorPatchBlocked:N0} · Xử lý hàng loạt {CsvEditorBatchActionable:N0}";
 
@@ -342,6 +343,7 @@ public sealed partial class MainViewModel
         CsvEditorPatchEligible = 0;
         CsvEditorPatchBlocked = 0;
         CsvEditorBatchActionable = 0;
+        _csvEditorAllTranslationsEmpty = false;
         Raise(nameof(CsvEditorGateStats));
         _csvEditorRows.ClearSilentThenNotify();
         CsvEditorVisibleCount = 0;
@@ -794,8 +796,13 @@ public sealed partial class MainViewModel
         CsvEditorPatchEligible = result.PatchEligible;
         CsvEditorPatchBlocked = result.PatchBlocked;
         CsvEditorBatchActionable = result.BatchActionable;
+        _csvEditorAllTranslationsEmpty = _csvEditorRows.Count > 0
+            && result.ReasonCounts.TryGetValue("no_translation", out var emptyTranslations)
+            && emptyTranslations >= _csvEditorRows.Count;
         Raise(nameof(CsvEditorGateStats));
-        CsvEditorValidationMessage = result.Summary;
+        CsvEditorValidationMessage = _csvEditorAllTranslationsEmpty
+            ? "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
+            : result.Summary;
 
         var bindSw = Stopwatch.StartNew();
         if (_csvEditorView is null)
@@ -854,7 +861,9 @@ public sealed partial class MainViewModel
             label = "";
 
         string display;
-        if (result.IssuesDisplayByKey.TryGetValue(row.Key, out var d))
+        if (label == "no_translation")
+            display = "";
+        else if (result.IssuesDisplayByKey.TryGetValue(row.Key, out var d))
             display = d;
         else if (!string.IsNullOrWhiteSpace(label) && label != "no_translation")
             display = label;
@@ -1075,7 +1084,9 @@ public sealed partial class MainViewModel
                 row.IssueLabel = "";
             }
 
-            if (issuesDisplay.TryGetValue(row.Key, out var display))
+            if (row.IssueLabel == "no_translation")
+                row.IssueDisplay = "";
+            else if (issuesDisplay.TryGetValue(row.Key, out var display))
                 row.IssueDisplay = display;
             else if (!string.IsNullOrWhiteSpace(row.IssueLabel) && row.IssueLabel != "no_translation")
                 row.IssueDisplay = row.IssueLabel;
@@ -1085,8 +1096,12 @@ public sealed partial class MainViewModel
         CsvEditorPatchEligible = eligible;
         CsvEditorPatchBlocked = blocked;
         CsvEditorBatchActionable = actionable;
+        _csvEditorAllTranslationsEmpty = _csvEditorRows.Count > 0
+            && _csvEditorRows.All(row => string.IsNullOrWhiteSpace(row.Translation));
         Raise(nameof(CsvEditorGateStats));
-        CsvEditorValidationMessage = summary;
+        CsvEditorValidationMessage = _csvEditorAllTranslationsEmpty
+            ? "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
+            : summary;
         ApplyCsvEditorFilter();
     }
 }
