@@ -2312,7 +2312,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(second["idempotent"])
 
     def test_release_task_budget_is_epoch_bound_registered_and_reverts_after_teardown(self):
-        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID), ("0.1.10", cleanup.RELEASE_TASK_010_BUDGET_ID)]:
+        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID), ("0.1.10", cleanup.RELEASE_TASK_010_BUDGET_ID), ("0.1.11", cleanup.RELEASE_TASK_011_BUDGET_ID)]:
             with self.subTest(version=version), self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
                 (root / "VERSION.txt").write_text(version+"\n", encoding="utf-8")
                 git_guard, incident_guard = self._epoch_guards()

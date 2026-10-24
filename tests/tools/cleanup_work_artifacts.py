@@ -112,11 +112,20 @@ RELEASE_TASK_010_BUDGET_APPROVAL = (
     "returns to at most 1 GiB; shared .dev-env remains capped at 6 GiB; preserve "
     "history and user data; this approval is separate from release-0.1.9."
 )
+RELEASE_TASK_011_BUDGET_ID = "release-0.1.11"
+RELEASE_TASK_011_BUDGET_APPROVAL = (
+    "Owner 2026-10-24 replied 'Cho phép 3 GiB cho release 0.1.11' for the exact "
+    "registered RELEASE_RUN/candidate-0.1.11 candidate/test scope; terminal cleanup "
+    "returns to at most 1 GiB; shared .dev-env remains capped at 6 GiB; preserve "
+    "history and user data; this approval is separate from all prior release budgets."
+)
 
 def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     task_id = task_id or str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip() or RELEASE_TASK_BUDGET_ID
     if task_id == RELEASE_TASK_010_BUDGET_ID:
         return task_id, "0.1.10", RELEASE_TASK_010_BUDGET_APPROVAL
+    if task_id == RELEASE_TASK_011_BUDGET_ID:
+        return task_id, "0.1.11", RELEASE_TASK_011_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_019_BUDGET_ID:
         return task_id, "0.1.9", RELEASE_TASK_019_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_018_BUDGET_ID:
@@ -1966,7 +1975,7 @@ def _project_inventory_root() -> Path:
         nested = (
             relative[:1] == (".scratch",)
             or relative[:3] == ("tests", "golden", "_work")
-            or relative in (("RELEASE_RUN", "candidate-0.1.5", "source"), ("RELEASE_RUN", "candidate-0.1.6", "source"), ("RELEASE_RUN", "candidate-0.1.7", "source"), ("RELEASE_RUN", "candidate-0.1.8", "source"), ("RELEASE_RUN", "candidate-0.1.9", "source"), ("RELEASE_RUN", "candidate-0.1.10", "source"))
+            or relative in (("RELEASE_RUN", "candidate-0.1.5", "source"), ("RELEASE_RUN", "candidate-0.1.6", "source"), ("RELEASE_RUN", "candidate-0.1.7", "source"), ("RELEASE_RUN", "candidate-0.1.8", "source"), ("RELEASE_RUN", "candidate-0.1.9", "source"), ("RELEASE_RUN", "candidate-0.1.10", "source"), ("RELEASE_RUN", "candidate-0.1.11", "source"))
         )
         if nested and (parent / "tests/tools/cleanup_work_artifacts.py").is_file() and (parent / "tests/lib/work_paths.py").is_file():
             inventory_root = parent
@@ -3339,7 +3348,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID):
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -3348,7 +3357,7 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID):
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
@@ -5008,7 +5017,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",

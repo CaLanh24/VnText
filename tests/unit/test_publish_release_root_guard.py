@@ -47,6 +47,8 @@ class PublishReleaseRootGuardTests(unittest.TestCase):
         script = (ROOT / "release" / "publish.ps1").read_text(encoding="utf-8")
         self.assertIn("'candidate-0.1.10'", script)
         self.assertIn("'0.1.10'", script)
+        self.assertIn("'candidate-0.1.11'", script)
+        self.assertIn("'0.1.11'", script)
 
     def test_dev_smoke_build_is_registered_and_isolated_from_live_dev_exe(self):
         script = (ROOT / "release" / "publish.ps1").read_text(encoding="utf-8")
