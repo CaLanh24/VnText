@@ -9,6 +9,7 @@ from unittest.mock import patch
 from pathlib import Path
 
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from vntext.app_tasks import run_extract_task
 from vntext.package_io import read_csv_rows_file, write_csv_rows_file
 from vntext.patch_pipeline import apply_translation_package
@@ -16,7 +17,7 @@ from vntext.patch_renpy import RenPyPatchError, apply_renpy_translation_package
 from tests.unit import test_renpy_patch as patch_fixtures
 
 ROOT = Path(__file__).resolve().parents[2]
-SDK = ROOT / '.dev-env/tools/renpy-8.5.3'
+SDK = renpy_native_sdk()
 
 
 class RenPyRoundTripTests(unittest.TestCase):

@@ -43,12 +43,12 @@ from vntext.entry import Entry
 from vntext.package_io import CSV_FIELDS, read_csv_rows_file, write_csv_rows_file, write_package
 from cleanup_work_artifacts import cleanup_after_test
 from work_paths import ambient_scope, new_scope_id, register_artifact
+from tests.lib.dev_environment import worker_python
 from vntext_worker.task_runners import run_analyze_worker, run_extract_worker
 
 
 def _venv_python() -> Path:
-    override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
-    return Path(override) if override else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+    return worker_python()
 
 
 def _start_worker() -> subprocess.Popen:

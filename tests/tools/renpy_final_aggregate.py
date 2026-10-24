@@ -11,6 +11,7 @@ import tempfile
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from tests.unit.test_renpy_archive import write_rpa,write_rpa2
 from vntext.app_tasks import run_extract_task
 from vntext.package_io import read_csv_rows_file,write_csv_rows_file
@@ -33,7 +34,7 @@ def tree(game):return {p.relative_to(game).as_posix():digest(p.read_bytes())for 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,required=True);args=parser.parse_args()
     raw=GT.read_bytes();assert digest(raw)==LOCK
-    truth=json.loads(raw);sdk=validate_sdk(ROOT/'.dev-env/tools/renpy-8.5.3')
+    truth=json.loads(raw);sdk=validate_sdk(renpy_native_sdk())
     report={'source_sha':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'ground_truth_sha256':LOCK,'baseline':{'recall':[15,19],'precision':[15,16]},
         'precision_qualification':'Locked negative policy; visible path-shaped label disputed, not a confirmed classifier bug',

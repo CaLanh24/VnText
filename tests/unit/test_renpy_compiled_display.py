@@ -10,8 +10,9 @@ from tests.lib.work_paths import work_temp_dir
 from vntext.renpy_toolchain import validate_sdk
 from vntext.app_tasks import run_extract_task
 from tests.unit.test_renpy_archive import write_rpa
+from tests.lib.dev_environment import renpy_native_sdk
 
-SDK=Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3'
+SDK=renpy_native_sdk()
 
 
 class RenPyCompiledDisplayTests(unittest.TestCase):

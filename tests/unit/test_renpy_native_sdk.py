@@ -12,8 +12,9 @@ import unittest
 from vntext.renpy_toolchain import validate_sdk, copy_template_workspace, generate_empty_vietnamese_template
 from vntext.renpy_extract import extract_native_template_entries, parse_renpy_translation_templates
 from tests.lib.work_paths import WORK_ROOT, ambient_scope, make_deletion_provenance, register_artifact, set_artifact_status, work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 
-SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK',str(Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3')))
+SDK = renpy_native_sdk()
 
 class NativeRenPySdkTests(unittest.TestCase):
     @unittest.skipUnless((SDK/'renpy.py').is_file(),'Official pinned RenPy8.5.3 SDK absent; native acceptance not run')

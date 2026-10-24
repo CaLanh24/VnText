@@ -10,6 +10,7 @@ import tempfile
 import time
 
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from tests.tools.cleanup_work_artifacts import _project_size_snapshot
 from tests.tools.renpy_declared_sample import create_declared_sample
 from tests.tools.renpy_owner_rar_preflight import SOURCE,EVIDENCE
@@ -101,7 +102,7 @@ def main():
     if REPORT.exists():raise ValueError('refusing to overwrite prior run receipt')
     preflight=json.loads((EVIDENCE/'renpy-owner-rar-preflight.json').read_text(encoding='utf-8'))
     if preflight['preflight']!='PASS'or sha(SOURCE)!=preflight['source_sha256']:raise ValueError('original archive/preflight drift')
-    sdk=validate_sdk(ROOT/'.dev-env/tools/renpy-8.5.3')
+    sdk=validate_sdk(renpy_native_sdk())
     report={'outcome':'RUN_STARTED','source_sha':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         'preflight':preflight,'route':'PRODUCTION_NATIVE_TEXT_API_ONLY; IMAGE_BATCH_NOT_RUN_QUOTA',
         'selection_rule':'Before Patch: first2 proof-admitted dialogue by sourcefile/line/key; Start/Preferences/Save/Load strings, max6; neutral UI/dialogue only',

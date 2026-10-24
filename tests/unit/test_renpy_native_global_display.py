@@ -7,13 +7,14 @@ import tempfile
 import unittest
 
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from vntext.renpy_toolchain import validate_sdk
 from vntext.app_tasks import run_extract_task
 from vntext.package_io import read_csv_rows_file,write_csv_rows_file
 from vntext.patch_pipeline import apply_translation_package
 from tests.unit.test_renpy_archive import write_rpa
 
-SDK=Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3'
+SDK=renpy_native_sdk()
 
 
 class NativeGlobalDisplayTests(unittest.TestCase):

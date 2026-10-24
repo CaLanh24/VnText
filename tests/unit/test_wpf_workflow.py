@@ -31,9 +31,10 @@ from uuid import uuid4
 
 from cleanup_work_artifacts import cleanup_after_test
 from work_paths import ambient_scope, new_scope_id, register_artifacts
+from tests.lib.dev_environment import dotnet_executable, nuget_cache
 
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-DOTNET = Path(os.environ.get("VNTEXT_DOTNET", str(ROOT / ".dev-env" / "dotnet-sdk-10" / "dotnet.exe")))
+DOTNET = dotnet_executable()
 WORKFLOW_PROJECT = ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests"
 DOTNET_LAYOUT_VERSION = os.environ.get("VNTEXT_DOTNET_FRAMEWORK_VERSION", "8.0.30")
 APPHOST_PACK_VERSION = os.environ.get("VNTEXT_APPHOST_PACK_VERSION", "10.0.12")
@@ -51,7 +52,7 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     localappdata = runtime / "localappdata"
     dotnet_home = runtime / "dotnet"
     temp = runtime / "temp"
-    nuget_packages = ROOT / ".dev-env" / "cache" / "nuget"
+    nuget_packages = nuget_cache()
     nuget_http_cache = runtime / "nuget-http-cache"
     cache = runtime / "cache"
     nuget_packages.mkdir(parents=True, exist_ok=True)
@@ -130,7 +131,7 @@ def _build_versioned_exe_fixture(
             str(artifacts_root),
             "-p:RestoreConfigFile=" + str(nuget_config),
             "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
-            "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
+            "-p:RestorePackagesPath=" + str(nuget_cache()),
             "-p:NuGetAudit=false",
             "-p:UseSharedCompilation=false",
         ],
@@ -494,7 +495,7 @@ class WpfWorkflowTests(unittest.TestCase):
                     str(artifacts_root),
                     "-p:RestoreConfigFile=" + str(nuget_config),
                     "-p:DirectoryBuildTargetsPath=" + str(layout_targets),
-                    "-p:RestorePackagesPath=" + str(ROOT / ".dev-env" / "cache" / "nuget"),
+                    "-p:RestorePackagesPath=" + str(nuget_cache()),
                     "-p:NuGetAudit=false",
                     "-p:RestoreIgnoreFailedSources=true",
                     f"-p:TargetingPackVersion={DOTNET_LAYOUT_VERSION}",

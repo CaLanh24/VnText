@@ -20,6 +20,7 @@ RELEASE_EXE = Path(
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "tests" / "lib"))
 from work_paths import WORK_ROOT, ambient_scope, new_scope_id, register_artifact  # noqa: E402
+from tests.lib.dev_environment import worker_python  # noqa: E402
 
 
 def _runtime_root(executable: Path) -> Path:
@@ -80,9 +81,9 @@ class ReleaseGuiShutdownTests(unittest.TestCase):
             self.skipTest("Windows WPF only")
         if not RELEASE_EXE.is_file():
             self.skipTest(f"GUI executable missing: {RELEASE_EXE}")
-        worker_python = ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
-        if not worker_python.is_file():
-            self.skipTest(f"isolated worker Python is missing: {worker_python}")
+        worker_python_path = worker_python()
+        if not worker_python_path.is_file():
+            self.skipTest(f"isolated worker Python is missing: {worker_python_path}")
 
         run_token = new_scope_id("gui-shutdown")
         temp_root = WORK_ROOT / f"{run_token}-temp"
@@ -101,7 +102,7 @@ class ReleaseGuiShutdownTests(unittest.TestCase):
                 "DOTNET_ROOT_X64": str(runtime),
                 "VNTEXT_RELEASE_EXE": str(RELEASE_EXE),
                 "VNTEXT_WORKER_CWD": str(ROOT),
-                "VNTEXT_WORKER_PYTHON": str(worker_python),
+                "VNTEXT_WORKER_PYTHON": str(worker_python_path),
                 "VNTEXT_LOCALAPPDATA": str(localappdata),
                 "VNTEXT_DATA_ROOT": str(app_data),
                 "PYTHONDONTWRITEBYTECODE": "1",
@@ -132,7 +133,7 @@ class ReleaseGuiShutdownTests(unittest.TestCase):
                         "cwd": str(temp_root),
                         "dotnet_root": str(runtime),
                         "worker_cwd": str(ROOT),
-                        "worker_python": str(worker_python),
+                        "worker_python": str(worker_python_path),
                         "localappdata": str(localappdata),
                     },
                     sort_keys=True,

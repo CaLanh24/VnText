@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import argparse
+from tests.lib.dev_environment import dev_env_root, release_python
 
 ROOT=Path(__file__).resolve().parents[2]
 SOURCES=[r'Please keep <b>{mode}</b>\n.','Open the red door.',
@@ -24,8 +25,8 @@ def main():
     from vntext.mt_check import structural_problems
     work=work_temp_dir('translation-goal-workflow')
     for name in ('TEMP','TMP','TMPDIR'):os.environ[name]=str(work)
-    os.environ.update(VNTEXT_CT2_MODEL=str(ROOT/'.dev-env/cache/models/opus-mt-en-vi-int8'),
-        VNTEXT_WORKER_PYTHON=str(ROOT/'.dev-env/release-venv/Scripts/python.exe'),
+    os.environ.update(VNTEXT_CT2_MODEL=str(dev_env_root()/'cache/models/opus-mt-en-vi-int8'),
+        VNTEXT_WORKER_PYTHON=str(release_python()),
         VNTEXT_CT2_NO_DOWNLOAD='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
     from tests.unit.test_worker_translate import _start_worker,_read_ready,_run_task,_stop_worker
     target=ROOT/'DEV_RUN/translation-quality-goal'/(label+'.json')

@@ -3,7 +3,8 @@ import hashlib
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-FONT=ROOT/'.dev-env/tools/renpy-8.5.3/renpy/common/DejaVuSans.ttf'
+from tests.lib.dev_environment import renpy_native_sdk
+FONT=renpy_native_sdk()/'renpy/common/DejaVuSans.ttf'
 NOTICE=FONT.with_suffix('.txt')
 FONT_SHA='3fdf69cabf06049ea70a00b5919340e2ce1e6d02b0cc3c4b44fb6801bd1e0d22'
 NOTICE_SHA='d75938dec098f06f0ac3c00853065d94f020be1c3c62ef1dc2975ba15b4d9b0e'

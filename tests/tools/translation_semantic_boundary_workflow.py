@@ -3,6 +3,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from tests.lib.dev_environment import dev_env_root, release_python
 from tests.lib.work_paths import work_temp_dir
 from vntext.package_io import read_csv_rows_file
 from vntext.mt_check import structural_problems
@@ -15,7 +16,7 @@ def main():
     frozen=json.loads((root/'evaluation/translation_semantic_campaign_v1/boundary-frozen.json').read_text(encoding='utf-8'))
     work=work_temp_dir('semantic-boundary-workflow')
     for name in ['TEMP','TMP','TMPDIR']:os.environ[name]=str(work)
-    os.environ.update(VNTEXT_CT2_MODEL=str(root/'.dev-env/cache/models/opus-mt-en-vi-int8'),VNTEXT_CT2_NO_DOWNLOAD='1',VNTEXT_WORKER_PYTHON=str(root/'.dev-env/release-venv/Scripts/python.exe'))
+    os.environ.update(VNTEXT_CT2_MODEL=str(dev_env_root()/'cache/models/opus-mt-en-vi-int8'),VNTEXT_CT2_NO_DOWNLOAD='1',VNTEXT_WORKER_PYTHON=str(release_python()))
     source=work/'source';source.mkdir();input_file=source/'fixture.txt'
     lines=[x['source']for x in frozen['rows']]
     input_file.write_text('\n'.join(lines)+'\n',encoding='utf-8');original=hashlib.sha256(input_file.read_bytes()).hexdigest()

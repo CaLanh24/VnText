@@ -13,8 +13,9 @@ from tests.lib.work_paths import work_temp_dir
 from tests.unit.test_renpy_archive import write_rpa
 from vntext import image_delivery as delivery
 from vntext.renpy_toolchain import validate_sdk
+from tests.lib.dev_environment import renpy_native_sdk
 
-SDK = Path(os.environ.get('VNTEXT_RENPY_NATIVE_SDK', str(Path(__file__).resolve().parents[2] / '.dev-env/tools/renpy-8.5.3')))
+SDK = renpy_native_sdk()
 
 
 class ImageDeliveryTests(unittest.TestCase):

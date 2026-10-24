@@ -7,6 +7,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "tests/lib")]
 from work_paths import assert_artifact_under_work, work_temp_dir
+from tests.lib.dev_environment import dev_env_root
 
 assert_artifact_under_work(Path(sys.prefix), "QA GUI Python")
 os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -14,7 +15,7 @@ os.environ["TEMP"] = os.environ["TMP"] = str(work_temp_dir("gui"))
 import tempfile
 tempfile.tempdir = os.environ["TEMP"]
 # Read-only backend dependencies, AFTER the isolated runtime's complete Qt.
-sys.path.append(str(ROOT / ".dev-env/.venv/Lib/site-packages"))
+sys.path.append(str(dev_env_root() / ".venv/Lib/site-packages"))
 from PySide6.QtWidgets import QApplication
 import PySide6
 import tkinter

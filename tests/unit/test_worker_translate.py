@@ -30,6 +30,7 @@ from pathlib import Path
 
 from vntext_worker.protocol import PROTOCOL_VERSION
 from work_paths import work_temp_dir
+from tests.lib.dev_environment import worker_python
 
 
 WORK = work_temp_dir("worker_translate")
@@ -38,8 +39,7 @@ MODEL_DIR = Path(os.environ.get("VNTEXT_CT2_MODEL", str(DEV_RUN_ROOT / "cache" /
 
 
 def _venv_python() -> Path:
-    override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
-    return Path(override) if override else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+    return worker_python()
 
 
 def _start_worker(extra_env: dict | None = None) -> subprocess.Popen:

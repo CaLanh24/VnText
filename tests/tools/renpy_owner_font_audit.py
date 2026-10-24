@@ -8,6 +8,7 @@ import subprocess
 import zlib
 
 from tests.tools.renpy_owner_rar_preflight import SOURCE,EVIDENCE
+from tests.lib.dev_environment import renpy_native_sdk
 from vntext.renpy_archive import _HEADER,_safe_index,MAX_INDEX_BYTES
 from vntext.renpy_compiled import compiled_dialogues
 
@@ -139,7 +140,7 @@ def main():
         for number,line in enumerate(data.decode('utf-8-sig').splitlines(),1):
             if pattern.search(line):declarations.append({'member':name,'line':number,'text':line[:1200]})
     fonts={}
-    candidate=Path('.dev-env/tools/renpy-8.5.3/renpy/common/DejaVuSans.ttf')
+    candidate=renpy_native_sdk()/'renpy/common/DejaVuSans.ttf'
     all_fonts={name:data for name,data in payload.items()if name.endswith(('.ttf','.otf'))}
     all_fonts['existing SDK DejaVuSans.ttf']=candidate.read_bytes()
     for name,data in all_fonts.items():

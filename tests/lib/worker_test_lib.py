@@ -16,6 +16,7 @@ def _tests_lib_on_path() -> None:
 
 _tests_lib_on_path()
 from bootstrap import bootstrap
+from tests.lib.dev_environment import dev_env_root, worker_python
 TESTS, ROOT, LIB = bootstrap(__file__)
 
 import json
@@ -33,13 +34,10 @@ from vntext_worker.protocol import PROTOCOL_VERSION
 WORK_ROOT = ROOT / "TEST_RUN"
 GAME_COPY = WORK_ROOT / "game-copy"
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-DEV_ENV_ROOT = Path(os.environ.get("VNTEXT_DEV_ENV_ROOT", str(ROOT / ".dev-env"))).expanduser()
+DEV_ENV_ROOT = dev_env_root()
 MODEL_DIR = DEV_ENV_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"
 def venv_python() -> Path:
-    override = os.environ.get("VNTEXT_WORKER_PYTHON", "").strip()
-    if override:
-        return Path(override)
-    return ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+    return worker_python()
 
 
 def worker_cwd() -> Path:

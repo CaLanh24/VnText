@@ -10,6 +10,7 @@ from tests.lib.work_paths import work_temp_dir
 from tests.tools.renpy_owner_font_audit import original_members, EVIDENCE
 from tests.tools.renpy_declared_sample import create_declared_sample
 from tests.tools.renpy_real_game_gate import identity
+from tests.lib.dev_environment import renpy_native_sdk
 from vntext.renpy_compiled import extract_compiled_source
 from vntext.package_io import write_package
 from vntext.patch_pipeline import apply_translation_package
@@ -39,7 +40,7 @@ def main():
                             'distribution': 'Original RPA mixed source/compiled; unchanged member copied directly, no deletion/repack'}
         pairs = json.loads((EVIDENCE / 'renpy-owner-rar-run4-translations.json').read_text(encoding='utf-8-sig'))[:2]
         del members
-        sdk = validate_sdk(ROOT / '.dev-env/tools/renpy-8.5.3')
+        sdk = validate_sdk(renpy_native_sdk())
         with tempfile.TemporaryDirectory(dir=work_temp_dir('renpy-original-member')) as temp:
             work = Path(temp); game = work / 'member-derived'; (game / 'game').mkdir(parents=True)
             compiled = game / 'game/screens.rpyc'; compiled.write_bytes(raw)

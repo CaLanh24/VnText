@@ -17,6 +17,7 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT))
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from tests.tools.cleanup_work_artifacts import _project_size_snapshot
 from vntext.app_tasks import run_extract_task
 from vntext.package_io import read_csv_rows_file,write_csv_rows_file
@@ -50,7 +51,7 @@ def identity(manifest):return sorted((e['key'],e['source_text'],e['file_path'],e
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--candidate',choices=SPEC,required=True);ap.add_argument('--report',type=Path,required=True)
     ap.add_argument('--finish-signal',type=Path,required=True);ap.add_argument('--hold-seconds',type=int,default=180);args=ap.parse_args()
-    spec=SPEC[args.candidate];sdk=validate_sdk(ROOT/'.dev-env/tools/renpy-8.5.3')
+    spec=SPEC[args.candidate];sdk=validate_sdk(renpy_native_sdk())
     report={'candidate':args.candidate,'spec':spec,'source_sha':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'outcome':'PENDING','native_visual':'NOT_VERIFIED','sample_type':'COORDINATOR_REVIEWED_VIETNAMESE_SAMPLE; NOT_OWNER_HUMAN_GOLD_OR_MT_BENCHMARK',
         'frozen_selection_rule':'Before product outputs: first2 dialogue units by file/source_line/key, then visible Start/Preferences/Save/Load menu strings, max6; full provenance retained. Reachability sample, not a recall denominator; full unsupported ledger unchanged.'}

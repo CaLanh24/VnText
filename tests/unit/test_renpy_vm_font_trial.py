@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 from tests.tools import renpy_vm_font_trial as trial
 from vntext.renpy_toolchain import validate_sdk
 
@@ -29,7 +30,7 @@ class VmFontTrialTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(),b'foreign')
 
     def test_sdk_language_only_profile_compiles_and_resets(self):
-        sdk=validate_sdk(trial.ROOT/'.dev-env/tools/renpy-8.5.3')
+        sdk=validate_sdk(renpy_native_sdk())
         with tempfile.TemporaryDirectory(dir=work_temp_dir('font-trial-sdk'))as tmp:
             game=Path(tmp);(game/'game').mkdir()
             (game/'game/script.rpy').write_text('''init -2 python:

@@ -6,12 +6,13 @@ import tempfile
 import unittest
 
 from tests.lib.work_paths import work_temp_dir
+from tests.lib.dev_environment import renpy_native_sdk
 
 from vntext.renpy_extract import static_screen_candidates
 
 
 class RenPyUiInventoryTests(unittest.TestCase):
-    @unittest.skipUnless((Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3/renpy.py').is_file(),'Official SDK8.5.3 absent')
+    @unittest.skipUnless((renpy_native_sdk()/'renpy.py').is_file(),'Official SDK8.5.3 absent')
     def test_unproven_dynamic_or_disabled_ui_still_blocks_final_patch(self):
         from vntext.app_tasks import run_extract_task
         from vntext.patch_pipeline import apply_translation_package
@@ -21,7 +22,7 @@ class RenPyUiInventoryTests(unittest.TestCase):
             source=game/'game/script.rpy'
             source.write_text('label start:\n    "Supported dialogue"\n    return\nscreen ui():\n    text "Disabled label" substitute False\n    text dynamic_value\n',encoding='utf-8')
             events=[]
-            run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(repo/'.dev-env/tools/renpy-8.5.3'),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
+            run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(renpy_native_sdk()),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
             self.assertEqual(events[-1]['extract_status'],'PARTIAL')
             manifest=json.loads((root/'package/manifest.json').read_text(encoding='utf-8'))
             disabled=next(e for e in manifest['entries']if e['source_text']=='Disabled label')
@@ -30,7 +31,7 @@ class RenPyUiInventoryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'Extraction is incomplete'):
                 apply_translation_package(str(root/'package/translation.csv'),str(root/'package/manifest.json'),str(game),str(root/'patch'))
 
-    @unittest.skipUnless((Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3/renpy.py').is_file(),'Official SDK8.5.3 absent')
+    @unittest.skipUnless((renpy_native_sdk()/'renpy.py').is_file(),'Official SDK8.5.3 absent')
     def test_full_audit_static_ui_has_bound_native_global_contracts(self):
         from vntext.app_tasks import run_extract_task
         from vntext.patch_pipeline import apply_translation_package
@@ -39,7 +40,7 @@ class RenPyUiInventoryTests(unittest.TestCase):
             root=Path(tmp);game=root/'source';(game/'game').mkdir(parents=True)
             gt=json.loads((repo/'evaluation/renpy_completeness_audit_v1/ground_truth.json').read_text(encoding='utf-8'))
             source=game/'game/script.rpy';source.write_text(gt['basic']['script'],encoding='utf-8');before=source.read_bytes();events=[]
-            run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(repo/'.dev-env/tools/renpy-8.5.3'),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
+            run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(renpy_native_sdk()),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
             self.assertEqual(events[-1]['extract_status'],'COMPLETE',events[-1])
             self.assertTrue(events[-1]['native_accounting_complete'])
             manifest=json.loads((root/'package/manifest.json').read_text(encoding='utf-8'))

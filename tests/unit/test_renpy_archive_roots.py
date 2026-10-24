@@ -11,8 +11,9 @@ from tests.unit.test_renpy_archive import write_rpa,write_rpa2
 from vntext.renpy_toolchain import copy_template_workspace,RenPyToolchainError
 from vntext.app_tasks import run_extract_task
 from vntext.renpy_toolchain import validate_sdk
+from tests.lib.dev_environment import renpy_native_sdk
 
-SDK=Path(__file__).resolve().parents[2]/'.dev-env/tools/renpy-8.5.3'
+SDK=renpy_native_sdk()
 
 
 class RenPyArchiveRootTests(unittest.TestCase):

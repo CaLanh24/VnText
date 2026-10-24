@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import argparse
 from tests.tools.translation_goal_workflow import SOURCES,DONOR
+from tests.lib.dev_environment import dev_env_root, release_python
 
 ROOT=Path(__file__).resolve().parents[2]
 
@@ -23,8 +24,8 @@ def main():
     from tests.unit.test_worker_translate import _start_worker,_read_ready,_run_task,_stop_worker
     work=work_temp_dir('editor-memory-workflow')
     for name in ('TEMP','TMP','TMPDIR'):os.environ[name]=str(work)
-    os.environ.update(VNTEXT_CT2_MODEL=str(ROOT/'.dev-env/cache/models/opus-mt-en-vi-int8'),
-        VNTEXT_WORKER_PYTHON=str(ROOT/'.dev-env/release-venv/Scripts/python.exe'),
+    os.environ.update(VNTEXT_CT2_MODEL=str(dev_env_root()/'cache/models/opus-mt-en-vi-int8'),
+        VNTEXT_WORKER_PYTHON=str(release_python()),
         VNTEXT_CT2_NO_DOWNLOAD='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
     source=work/'source';source.mkdir();input_file=source/'fixture.txt'
     input_file.write_text('\n'.join(SOURCES)+'\n',encoding='utf-8');original=sha(input_file)
@@ -37,7 +38,7 @@ def main():
     def save():report_path.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     def cli(action,keys,token=None):
         keys_path=work/'keys.json';keys_path.write_text(json.dumps(keys),encoding='utf-8')
-        args=[str(ROOT/'.dev-env/release-venv/Scripts/python.exe'),'-B','-m','vntext.csv_editor_api',action,
+        args=[str(release_python()),'-B','-m','vntext.csv_editor_api',action,
               str(package/'translation.csv'),'--keys',str(keys_path)]
         if token:args+=['--preview-token',token]
         child=subprocess.run(args,cwd=ROOT,capture_output=True,text=True,encoding='utf-8',timeout=30)
@@ -69,7 +70,7 @@ def main():
         # Clearing only draft cells uses existing save CLI, never alters source/schema.
         fields,approved_rows=read_csv_rows_file(package/'translation.csv')
         payload=work/'cleared.json';payload.write_text(json.dumps(dict(fields=fields,rows=[{**r,'translation':''}for r in approved_rows])),encoding='utf-8')
-        clear=subprocess.run([str(ROOT/'.dev-env/release-venv/Scripts/python.exe'),'-B','-m','vntext.csv_editor_api','save',
+        clear=subprocess.run([str(release_python()),'-B','-m','vntext.csv_editor_api','save',
                               str(package/'translation.csv'),'--payload',str(payload)],cwd=ROOT,capture_output=True,text=True,encoding='utf-8',timeout=30)
         assert clear.returncode==0,clear.stdout
         translated=run('reuse','translate',dict(out=str(package)))

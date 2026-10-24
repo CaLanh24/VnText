@@ -30,6 +30,7 @@ from unittest.mock import patch
 from vntext_worker.protocol import PROTOCOL_VERSION, emit, read_commands
 from vntext_worker.task_runners import _make_callbacks
 import vntext_worker.worker_main as worker_main
+from tests.lib.dev_environment import worker_python
 
 
 class WorkerProtocolTests(unittest.TestCase):
@@ -160,7 +161,7 @@ class WorkerIntegrationTests(unittest.TestCase):
         self.assertIn("chỉ có CT2/OPUS-MT", emit_error.call_args.args[1])
 
     def test_worker_exits_cleanly_on_stdin_eof(self):
-        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+        py = worker_python()
         if not py.is_file():
             self.skipTest("venv python missing")
         env = os.environ.copy()
@@ -192,7 +193,7 @@ class WorkerIntegrationTests(unittest.TestCase):
                 proc.stderr.close()
 
     def test_sample_worker_progress_cancel(self):
-        py = Path(os.environ.get("VNTEXT_WORKER_PYTHON", "")) if os.environ.get("VNTEXT_WORKER_PYTHON") else ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+        py = worker_python()
         if not py.is_file():
             self.skipTest("venv python missing")
         proc = subprocess.Popen(
