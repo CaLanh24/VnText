@@ -41,8 +41,13 @@ internal static partial class Program
                         var longMessage = string.Join("\n", Enumerable.Range(1, 48).Select(i => $"Fixture detail {i}: a long error message remains readable and scrollable."));
                         var confirmed = ShowDialogAndInspect(app, owner, "Dark long-message confirmation", longMessage,
                             MessageBoxButton.YesNo, MessageBoxResult.Yes,
-                            string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_dark_long_confirmation.png"));
+                            string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_dark_long_confirmation.png"), useDefaultOwner: true);
                         AssertEqual(MessageBoxResult.Yes, confirmed);
+
+                        var safeDefault = ShowDialogAndInspect(app, owner, "Safe confirmation keyboard default",
+                            "Enter should choose No for this confirmation.", MessageBoxButton.YesNo, MessageBoxResult.No,
+                            null, useDefaultOwner: true);
+                        AssertEqual(MessageBoxResult.No, safeDefault);
 
                         app.Resources["SurfaceBrush"] = new SolidColorBrush(Color.FromRgb(250, 250, 252));
                         app.Resources["InkBrush"] = new SolidColorBrush(Color.FromRgb(22, 26, 34));
@@ -50,7 +55,7 @@ internal static partial class Program
                             "Pressing Escape must cancel this confirmation.", MessageBoxButton.YesNoCancel, MessageBoxResult.Cancel,
                             string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_light_cancel_confirmation.png"));
                         AssertEqual(MessageBoxResult.Cancel, cancelled);
-                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, owner modal, affirmative click, Escape cancel)");
+                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, affirmative click, safe No default, Escape cancel)");
                         exitCode = 0;
                     }
                     catch (Exception ex)
@@ -85,7 +90,8 @@ internal static partial class Program
         string message,
         MessageBoxButton buttons,
         MessageBoxResult expected,
-        string? screenshotPath)
+        string? screenshotPath,
+        bool useDefaultOwner = false)
     {
         Exception? failure = null;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
@@ -124,7 +130,18 @@ internal static partial class Program
                         }
                     }
                     var yes = FindButtons(dialog).Single(button => string.Equals(button.Content?.ToString(), "Có", StringComparison.Ordinal));
+                    var no = FindButtons(dialog).Single(button => string.Equals(button.Content?.ToString(), "Không", StringComparison.Ordinal));
+                    AssertFalse(yes.IsDefault);
+                    AssertTrue(no.IsDefault);
                     yes.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                else if (expected == MessageBoxResult.No)
+                {
+                    var yes = FindButtons(dialog).Single(button => string.Equals(button.Content?.ToString(), "Có", StringComparison.Ordinal));
+                    var no = FindButtons(dialog).Single(button => string.Equals(button.Content?.ToString(), "Không", StringComparison.Ordinal));
+                    AssertFalse(yes.IsDefault);
+                    AssertTrue(no.IsDefault);
+                    no.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
                 else
                 {
@@ -144,7 +161,9 @@ internal static partial class Program
             }
         };
         timer.Start();
-        var result = AppDialogService.Show(message, caption, buttons, MessageBoxImage.Question, owner);
+        var result = useDefaultOwner
+            ? AppDialogService.Show(message, caption, buttons, MessageBoxImage.Question)
+            : AppDialogService.Show(message, caption, buttons, MessageBoxImage.Question, owner);
         if (failure is not null)
             throw new InvalidOperationException($"Dialog fixture failed for {caption}", failure);
         return result;

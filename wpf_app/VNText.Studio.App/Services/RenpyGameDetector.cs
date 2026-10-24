@@ -12,34 +12,70 @@ internal static class RenpyGameDetector
 
     public static bool HasSdkRecoveryEvidence(string inputPath, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(inputPath))
-            return false;
+        var root = ResolveRoot(inputPath);
+        if (root is null || HasUnityMarkers(root)) return false;
+        return GetRenpyEvidenceKind(root, cancellationToken) != "none";
+    }
 
+    public static string GetRenpyEvidenceKind(string inputPath, CancellationToken cancellationToken)
+    {
+        var root = ResolveRoot(inputPath);
+        if (root is null) return "none";
+        if (HasLooseSourceFiles(root, cancellationToken)) return "loose_source";
+        if (HasCompiledSourceFiles(root, cancellationToken)) return "compiled_source";
+        if (HasArchiveSourceFiles(root, cancellationToken)) return "archive_source";
+        return "none";
+    }
+
+    private static string? ResolveRoot(string inputPath)
+    {
+        if (string.IsNullOrWhiteSpace(inputPath)) return null;
         var root = File.Exists(inputPath)
             ? Path.GetDirectoryName(Path.GetFullPath(inputPath))
             : Path.GetFullPath(inputPath);
-        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
-            return false;
+        return !string.IsNullOrWhiteSpace(root) && Directory.Exists(root) ? root : null;
+    }
 
-        var hasUnityEvidence = Directory.EnumerateFileSystemEntries(root).Any(path =>
+    private static bool HasUnityMarkers(string root) => Directory.EnumerateFileSystemEntries(root).Any(path =>
+    {
+        var name = Path.GetFileName(path);
+        return name.EndsWith("_Data", StringComparison.OrdinalIgnoreCase)
+            || Path.GetExtension(name).Equals(".unity", StringComparison.OrdinalIgnoreCase);
+    });
+
+    private static EnumerationOptions RenpyTreeOptions() => new()
+    {
+        RecurseSubdirectories = true,
+        IgnoreInaccessible = true,
+        AttributesToSkip = FileAttributes.ReparsePoint,
+    };
+
+    private static bool HasCompiledSourceFiles(string root, CancellationToken cancellationToken)
+    {
+        var gameRoot = Path.Combine(root, "game");
+        if (!Directory.Exists(gameRoot)) return false;
+        var header = new byte[10];
+        foreach (var extension in new[] { "*.rpyc", "*.rpymc" })
+        foreach (var path in Directory.EnumerateFiles(gameRoot, extension, RenpyTreeOptions()))
         {
-            var name = Path.GetFileName(path);
-            return name.EndsWith("_Data", StringComparison.OrdinalIgnoreCase)
-                || Path.GetExtension(name).Equals(".unity", StringComparison.OrdinalIgnoreCase);
-        });
-        if (hasUnityEvidence)
-            return false;
+            cancellationToken.ThrowIfCancellationRequested();
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            var read = stream.Read(header, 0, header.Length);
+            if (read == header.Length
+                && System.Text.Encoding.ASCII.GetString(header, 0, read) == "RENPY RPC2")
+                return true;
+        }
+        return false;
+    }
 
-        if (HasLooseSourceFiles(root, cancellationToken))
-            return true;
-
+    private static bool HasArchiveSourceFiles(string root, CancellationToken cancellationToken)
+    {
         var gameRoot = Path.Combine(root, "game");
         if (!Directory.Exists(gameRoot)
             || !Directory.Exists(Path.Combine(root, "renpy"))
             || !Directory.Exists(Path.Combine(root, "lib"))
             || !Directory.EnumerateFiles(root, "*.exe", SearchOption.TopDirectoryOnly).Any())
             return false;
-
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = true,
@@ -65,7 +101,6 @@ internal static class RenpyGameDetector
             if (HasSupportedRpaHeader(header, read))
                 return true;
         }
-
         return false;
     }
 
@@ -96,13 +131,7 @@ internal static class RenpyGameDetector
         if (!Directory.Exists(gameRoot))
             return false;
 
-        var options = new EnumerationOptions
-        {
-            RecurseSubdirectories = true,
-            IgnoreInaccessible = true,
-            AttributesToSkip = FileAttributes.ReparsePoint,
-        };
-        foreach (var path in Directory.EnumerateFiles(gameRoot, "*", options))
+        foreach (var path in Directory.EnumerateFiles(gameRoot, "*", RenpyTreeOptions()))
         {
             cancellationToken.ThrowIfCancellationRequested();
             var extension = Path.GetExtension(path);

@@ -186,7 +186,7 @@ class WpfWorkflowTests(unittest.TestCase):
         workflow_tests = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
         worker = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
         self.assertIn('Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn("RenpyGameDetector.IsLooseSourceGame", view_model)
+        self.assertIn("RenpyGameDetector.HasSdkRecoveryEvidence", view_model)
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
         self.assertIn("Tải công cụ rồi lấy text", xaml)
         self.assertIn("Tiếp tục, lời thoại cần xem lại", xaml)
@@ -214,7 +214,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('"PrimaryButton" : "OutlineButton"', dialog)
         self.assertIn('MessageBoxButton.YesNo => MessageBoxResult.No', dialog)
         self.assertIn('MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel', dialog)
-        self.assertIn("dark/light resources, long text, owner modal, affirmative click, Escape cancel", dialog_fixture)
+        self.assertIn("default/explicit owner modal, affirmative click, safe No default, Escape cancel", dialog_fixture)
+        self.assertIn('owner ??= app?.Windows.OfType<Window>()', dialog)
         for path in (ROOT / "wpf_app" / "VNText.Studio.App").rglob("*.cs"):
             if path.name == "AppDialogService.cs":
                 continue
@@ -259,6 +260,8 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         self.assertIn('IsExpanded="{Binding AnalyzeResultsExpanded, Mode=TwoWay}"', xaml)
         self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
+        self.assertIn('GetRenpyEvidenceKind(InputPath', analyze)
         self.assertIn('IsExpanded="{Binding PatchResultsExpanded, Mode=TwoWay}"', xaml)
         self.assertIn('Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding PatchPreflightEvaluated, Converter={StaticResource BoolToVis}}"', xaml)

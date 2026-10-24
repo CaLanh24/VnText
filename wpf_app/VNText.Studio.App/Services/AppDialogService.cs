@@ -14,6 +14,8 @@ internal static class AppDialogService
         Window? owner = null)
     {
         var app = Application.Current;
+        owner ??= app?.Windows.OfType<Window>().FirstOrDefault(window => window.IsVisible && window.IsActive)
+            ?? (app?.MainWindow is { IsVisible: true } mainWindow ? mainWindow : null);
         var ink = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black;
         var muted = app?.TryFindResource("MutedBrush") as Brush ?? Brushes.DimGray;
         var surface = app?.TryFindResource("SurfaceBrush") as Brush ?? Brushes.White;
@@ -56,7 +58,12 @@ internal static class AppDialogService
         {
             if (e.Key == System.Windows.Input.Key.Escape)
             {
-                setResult(MessageBoxResult.Cancel);
+                setResult(buttons switch
+                {
+                    MessageBoxButton.YesNo => MessageBoxResult.No,
+                    MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel,
+                    _ => MessageBoxResult.OK,
+                });
                 dialog.Close();
             }
         };
@@ -106,7 +113,7 @@ internal static class AppDialogService
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         root.Children.Add(actions);
 
-        void Add(string label, MessageBoxResult result, bool primary = false)
+        void Add(string label, MessageBoxResult result, bool primary = false, bool isDefault = false)
         {
             var button = new Button
             {
@@ -115,6 +122,7 @@ internal static class AppDialogService
                 Margin = new Thickness(8, 0, 0, 0),
                 Padding = new Thickness(14, 7, 14, 7),
                 Style = Application.Current?.TryFindResource(primary ? "PrimaryButton" : "OutlineButton") as Style,
+                IsDefault = isDefault,
             };
             button.Click += (_, _) =>
             {
@@ -126,23 +134,23 @@ internal static class AppDialogService
 
         if (buttons == MessageBoxButton.YesNo)
         {
-            Add("Không", MessageBoxResult.No);
+            Add("Không", MessageBoxResult.No, isDefault: true);
             Add("Có", MessageBoxResult.Yes, true);
         }
         else if (buttons == MessageBoxButton.YesNoCancel)
         {
-            Add("Hủy", MessageBoxResult.Cancel);
+            Add("Hủy", MessageBoxResult.Cancel, isDefault: true);
             Add("Bỏ thay đổi", MessageBoxResult.No);
             Add("Lưu", MessageBoxResult.Yes, true);
         }
         else if (buttons == MessageBoxButton.OKCancel)
         {
             Add("Hủy", MessageBoxResult.Cancel);
-            Add("OK", MessageBoxResult.OK, true);
+            Add("OK", MessageBoxResult.OK, true, isDefault: true);
         }
         else
         {
-            Add("Đóng", MessageBoxResult.OK, true);
+            Add("Đóng", MessageBoxResult.OK, true, isDefault: true);
         }
         return root;
     }

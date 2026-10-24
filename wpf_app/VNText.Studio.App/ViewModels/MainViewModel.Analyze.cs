@@ -13,6 +13,7 @@ public sealed partial class MainViewModel
     private bool _analyzeResultsExpanded;
     private string _analyzeUnityStatus = "NOT_DETECTED";
     private string _analyzeEngineSummary = "Chưa xác định engine";
+    private string _analyzeEngineDetails = "";
     private bool _analyzeInventoryComplete;
     private int _analyzeResourceCount;
     private int _analyzeTextCandidateCount;
@@ -62,6 +63,12 @@ public sealed partial class MainViewModel
     {
         get => _analyzeEngineSummary;
         private set => Set(ref _analyzeEngineSummary, value);
+    }
+
+    public string AnalyzeEngineDetails
+    {
+        get => UiText.Translate(_analyzeEngineDetails);
+        private set => Set(ref _analyzeEngineDetails, value);
     }
 
     public bool AnalyzeInventoryComplete
@@ -160,7 +167,8 @@ public sealed partial class MainViewModel
         {
             AnalyzeInventoryComplete = false;
             AnalyzeUnityStatus = "UNKNOWN";
-            AnalyzeEngineSummary = "Engine: chưa xác định — không đủ bằng chứng để phân loại.";
+            AnalyzeEngineSummary = "Engine: chưa xác định";
+            AnalyzeEngineDetails = "Không đọc được báo cáo Unity; chưa có đủ bằng chứng để phân loại engine.";
             AnalyzeStatusText = evt.Ok
                 ? "Đã chạy nhưng không đọc được report"
                 : "Phân tích thất bại";
@@ -173,17 +181,18 @@ public sealed partial class MainViewModel
 
         AnalyzeInventoryComplete = snapshot.InventoryComplete && evt.Ok;
         AnalyzeUnityStatus = snapshot.UnityStatus;
-        var renpySource = false;
-        try { renpySource = RenpyGameDetector.HasLooseSourceFiles(InputPath, CancellationToken.None); }
+        string renpyEvidence;
+        try { renpyEvidence = RenpyGameDetector.GetRenpyEvidenceKind(InputPath, CancellationToken.None); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
-        { /* Detection remains unknown when the filesystem cannot be inspected. */ }
-        AnalyzeEngineSummary = snapshot.UnityStatus == "DETECTED" && renpySource
-            ? "Engine: Unity + Ren’Py evidence detected — mixed engine; confidence score unavailable."
+        { renpyEvidence = "unknown"; }
+        AnalyzeEngineSummary = snapshot.UnityStatus == "DETECTED" && renpyEvidence is not "none"
+            ? "Engine: Unity + Ren’Py evidence"
             : snapshot.UnityStatus == "DETECTED"
-                ? "Engine: Unity detected by analyzer report; other engines not classified; confidence score unavailable."
-                : renpySource
-                    ? "Engine: Ren’Py loose source detected from .rpy/.rpym files; other engines not classified; confidence score unavailable."
-                    : "Engine: unknown — no supported engine signature was confirmed; mixed status unknown.";
+                ? "Engine: Unity"
+                : renpyEvidence is "loose_source" or "compiled_source" or "archive_source"
+                    ? "Engine: Ren’Py"
+                    : "Engine: chưa xác định";
+        AnalyzeEngineDetails = BuildAnalyzeEngineDetails(snapshot.UnityStatus, renpyEvidence);
         AnalyzeResourceCount = snapshot.ResourceCount;
         AnalyzeTextCandidateCount = snapshot.TextCandidateCount;
         AnalyzePatchableCount = snapshot.PatchableCount;
@@ -199,6 +208,25 @@ public sealed partial class MainViewModel
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
             ? "Không ghi nhận lỗi quét."
             : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
+    }
+
+    private static string BuildAnalyzeEngineDetails(string unityStatus, string renpyEvidence)
+    {
+        var unity = unityStatus == "DETECTED" ? "Unity: có bằng chứng trong báo cáo phân tích." : "Unity: báo cáo không xác nhận engine này.";
+        var renpy = renpyEvidence switch
+        {
+            "loose_source" => "Ren’Py: tìm thấy tệp .rpy/.rpym trong game/.",
+            "compiled_source" => "Ren’Py: tìm thấy bytecode .rpyc/.rpymc có header RPC2 trong game/.",
+            "archive_source" => "Ren’Py: tìm thấy archive RPA hợp lệ cùng cấu trúc runtime.",
+            "unknown" => "Ren’Py: chưa kiểm tra được nguồn tệp.",
+            _ => "Ren’Py: chưa xác nhận được bằng chứng hỗ trợ.",
+        };
+        return string.Join(" ", new[]
+        {
+            UiText.Translate(unity),
+            UiText.Translate(renpy),
+            UiText.Translate("Phân tích chỉ đọc; chưa xác minh patch/write-back."),
+        });
     }
 
     private string ResolveAnalyzeReportPath()

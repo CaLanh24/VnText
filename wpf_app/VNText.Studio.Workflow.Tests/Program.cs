@@ -447,14 +447,17 @@ internal static partial class Program
         try
         {
             AssertTrue(RenpyGameDetector.IsLooseSourceGame(root, CancellationToken.None));
+            AssertEqual("loose_source", RenpyGameDetector.GetRenpyEvidenceKind(root, CancellationToken.None));
             File.Delete(Path.Combine(game, "scripts", "script.rpy"));
-            File.WriteAllText(Path.Combine(game, "scripts", "script.rpyc"), "compiled", Encoding.UTF8);
-            AssertFalse(RenpyGameDetector.IsLooseSourceGame(root, CancellationToken.None));
+            File.WriteAllBytes(Path.Combine(game, "scripts", "script.rpyc"), Encoding.ASCII.GetBytes("RENPY RPC2"));
+            AssertTrue(RenpyGameDetector.IsLooseSourceGame(root, CancellationToken.None));
+            AssertEqual("compiled_source", RenpyGameDetector.GetRenpyEvidenceKind(root, CancellationToken.None));
             File.WriteAllText(Path.Combine(game, "scripts", "script.rpy"), "label start:\\n", Encoding.UTF8);
             Directory.CreateDirectory(Path.Combine(root, "Sample_Data"));
             AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
             Directory.Delete(Path.Combine(root, "Sample_Data"));
             File.Delete(Path.Combine(game, "scripts", "script.rpy"));
+            File.Delete(Path.Combine(game, "scripts", "script.rpyc"));
             File.WriteAllBytes(Path.Combine(game, "scripts", "unrelated.rpa"), Encoding.ASCII.GetBytes("RPA-3.0"));
             AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
             Directory.CreateDirectory(Path.Combine(root, "lib"));
@@ -463,6 +466,7 @@ internal static partial class Program
             AssertFalse(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
             File.WriteAllText(Path.Combine(game, "scripts", "unrelated.rpa"), "RPA-3.0 0000000000000000 00000000\n", Encoding.ASCII);
             AssertTrue(RenpyGameDetector.HasSdkRecoveryEvidence(root, CancellationToken.None));
+            AssertEqual("archive_source", RenpyGameDetector.GetRenpyEvidenceKind(root, CancellationToken.None));
         }
         finally
         {
@@ -1257,8 +1261,9 @@ internal static partial class Program
             AssertFalse(vm.Busy);
             AssertEqual(WorkflowTabs.Extract, vm.SelectedTab);
             AssertEqual("DETECTED", vm.AnalyzeUnityStatus);
-            if (!vm.AnalyzeEngineSummary.Contains("mixed engine", StringComparison.Ordinal))
-                throw new InvalidOperationException(vm.AnalyzeEngineSummary);
+            AssertEqual("Engine: Unity + Ren’Py evidence", vm.AnalyzeEngineSummary);
+            AssertTrue(vm.AnalyzeEngineDetails.Contains(".rpy/.rpym", StringComparison.Ordinal));
+            AssertTrue(vm.AnalyzeEngineDetails.Contains("chưa xác minh patch/write-back", StringComparison.Ordinal));
             AssertTrue(vm.AnalyzeInventoryComplete);
             AssertEqual(12, vm.AnalyzeResourceCount);
             AssertEqual(19, vm.AnalyzeTextCandidateCount);
@@ -3131,8 +3136,10 @@ internal static partial class Program
                 replaceAttemptHook: InjectOnce);
 
             AssertEqual(0, exit);
-            AssertEqual(2, attempts["app/worker/replace.txt"]);
-            AssertEqual(2, attempts[".update/pending-full-app-update.json"]);
+            // The injected 1175 must cause a retry; Windows may also report a
+            // native 1175 on the next Replace, so verify the bounded retry window.
+            AssertTrue(attempts["app/worker/replace.txt"] is >= 2 and <= 4);
+            AssertTrue(attempts[".update/pending-full-app-update.json"] is >= 2 and <= 4);
             AssertEqual(fixture.CandidateExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
             AssertEqual("candidate content", File.ReadAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt")));
             AssertTrue(ReadFullAppUpdateLog(fixture).Contains("replace failed path=app/worker/replace.txt hresult=0x80070497 attempt=1", StringComparison.Ordinal));

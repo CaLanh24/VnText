@@ -309,6 +309,7 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -318,31 +319,32 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <StackPanel>
+                                            <TextBlock Grid.Row="0" Grid.ColumnSpan="6" Text="{Binding AnalyzeEngineDetails}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                            <StackPanel Grid.Row="1">
                                                 <TextBlock Text="{Binding AnalyzeResourceCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="Tài nguyên" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="1">
+                                            <StackPanel Grid.Row="1" Grid.Column="1">
                                                 <TextBlock Text="{Binding AnalyzeTextCandidateCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="Có thể là văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="2">
+                                            <StackPanel Grid.Row="1" Grid.Column="2">
                                                 <TextBlock Text="{Binding AnalyzePatchableCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="Có đường ghi lại; chưa kiểm patch" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="3">
+                                            <StackPanel Grid.Row="1" Grid.Column="3">
                                                 <TextBlock Text="{Binding AnalyzeExtractOnlyCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="Chỉ lấy văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="4">
+                                            <StackPanel Grid.Row="1" Grid.Column="4">
                                                 <TextBlock Text="{Binding AnalyzeReviewRiskCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
                                                 <TextBlock Text="Cần xem lại / chưa hỗ trợ" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <StackPanel Grid.Column="5">
+                                            <StackPanel Grid.Row="1" Grid.Column="5">
                                                 <TextBlock Text="{Binding AnalyzeUnknownCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" />
                                                 <TextBlock Text="Chưa xác định" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
-                                            <TextBlock Grid.Row="1" Grid.ColumnSpan="6" Text="Phân tích chỉ đọc nguồn; kết quả này chưa kiểm tra việc ghi bản dịch vào game."
+                                            <TextBlock Grid.Row="2" Grid.ColumnSpan="6" Text="Phân tích chỉ đọc nguồn; kết quả này chưa kiểm tra việc ghi bản dịch vào game."
                                                        FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
                                                        Margin="0,16,0,0" TextWrapping="Wrap" />
                                         </Grid>
