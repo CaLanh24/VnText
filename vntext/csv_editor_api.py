@@ -241,8 +241,10 @@ def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> 
     review_before = review_path.read_bytes() if review_path.is_file() else None
     try:
         _atomic_write_csv(csv_path, fields, rows)
-        _fields, saved_rows = _read_editor_csv(csv_path)
-        review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
+        review_pruned = 0
+        if csv_path.name.casefold() == "translation.csv":
+            _fields, saved_rows = _read_editor_csv(csv_path)
+            review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
     except Exception as exc:
         try:
             _atomic_write_bytes(csv_path, backup_path.read_bytes())

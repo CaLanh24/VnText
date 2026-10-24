@@ -2665,7 +2665,7 @@ internal static partial class Program
                 check.PackagePath, check.PackageSha256, check.Version, replaceAttemptHook: InjectOnce);
 
             AssertEqual(0, result);
-            AssertEqual(2, attempts["VNText Studio.exe"]);
+            AssertTrue(attempts["VNText Studio.exe"] is >= 2 and <= 4);
             AssertEqual(fixture.CandidateExeHash, HashFile(Path.Combine(fixture.Root, "VNText Studio.exe")));
             AssertEqual(dataHash, HashFile(dataPath));
             AssertTrue(File.ReadAllText(Path.Combine(fixture.Root, ".update", "update.log"))

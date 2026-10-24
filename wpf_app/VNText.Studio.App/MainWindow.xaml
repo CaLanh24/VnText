@@ -587,7 +587,7 @@
                                         <StackPanel Grid.Row="1" Margin="0,13,0,0">
                                             <CheckBox Content="Ghi đè bản dịch cũ" IsChecked="{Binding OverwriteTranslation, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" />
                                             <CheckBox Content="Bắt buộc duyệt thủ công kết quả MT"
-                                                      ToolTip="Khi bật, kết quả MT được ghi vào review_only.csv và phải duyệt trước khi tạo patch."
+                                                      ToolTip="Khi bật, hãy mở review_only.csv ở tab Sửa CSV, chỉnh và lưu bản dịch; sau đó chọn file này tại Nhập bản dịch cũ để chuyển các dòng khớp vào translation.csv trước khi Patch."
                                                       IsChecked="{Binding HumanReviewRequired, Mode=TwoWay}"
                                                       Style="{StaticResource SwitchStyle}" Margin="0,10,0,0" />
                                         </StackPanel>

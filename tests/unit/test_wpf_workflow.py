@@ -249,7 +249,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("public bool HumanReviewRequired", view_model)
         self.assertIn("public bool HumanReviewRequired", settings)
         self.assertIn("Bắt buộc duyệt thủ công kết quả MT", xaml)
-        self.assertIn('ToolTip="Khi bật, kết quả MT được ghi vào review_only.csv và phải duyệt trước khi tạo patch."', xaml)
+        self.assertIn('ToolTip="Khi bật, hãy mở review_only.csv ở tab Sửa CSV, chỉnh và lưu bản dịch; sau đó chọn file này tại Nhập bản dịch cũ để chuyển các dòng khớp vào translation.csv trước khi Patch."', xaml)
         self.assertNotIn('Text="Thiết bị"', xaml)
         self.assertNotIn('DataTrigger Binding="{Binding StatusText}" Value="Sẵn sàng"', xaml)
         self.assertIn('DataTrigger Binding="{Binding GlossaryStatus}" Value="Danh sách từ được lưu cùng gói dịch."', xaml)

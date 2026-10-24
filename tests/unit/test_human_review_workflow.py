@@ -26,6 +26,7 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 
 from work_paths import work_temp_dir  # noqa: E402
 from vntext.csv_editor_api import save_document  # noqa: E402
+from vntext.external_translation_import import import_existing_translations  # noqa: E402
 from vntext.mt_ct2_pipeline import run_ct2_translate, run_ct2_translate_keys  # noqa: E402
 from vntext.mt_ct2_status import snapshot_translate_status  # noqa: E402
 from vntext.package_io import CSV_FIELDS, read_csv_rows_file, write_csv_rows_file  # noqa: E402
@@ -262,6 +263,35 @@ class HumanReviewWorkflowTests(unittest.TestCase):
         current[0]["translation"] = "Xin chào"
         final = save_document(csv_path, fields, current)
         self.assertEqual(final["review_pruned"], 1)
+        self.assertTrue(snapshot_translate_status(package, csv_path)["complete"])
+
+    def test_editing_review_only_csv_preserves_rows_until_explicit_import(self):
+        rows = [_row("model", "Hello")]
+        package, csv_path = _write_package("human_review_editor_import", rows)
+        _write_manifest(package, rows)
+        run_ct2_translate(
+            csv_path,
+            model_adapter=FakeReviewAdapter(),
+            human_review_required=True,
+        )
+
+        review_path = package / "review_only.csv"
+        review_fields, review_rows = read_csv_rows_file(review_path)
+        self.assertEqual({row["key"] for row in review_rows}, {"model"})
+        review_rows[0]["translation"] = "Xin chào"
+        saved = save_document(review_path, review_fields, review_rows)
+        self.assertTrue(saved["ok"], saved)
+        self.assertEqual(saved["review_pruned"], 0)
+        _fields, saved_review_rows = read_csv_rows_file(review_path)
+        self.assertEqual(saved_review_rows[0]["translation"], "Xin chào")
+
+        imported = import_existing_translations(csv_path, review_path)
+        self.assertEqual(imported["applied"], 1, imported)
+        self.assertTrue(imported["complete"], imported)
+        _fields, translated_rows = read_csv_rows_file(csv_path)
+        self.assertEqual(translated_rows[0]["translation"], "Xin chào")
+        _fields, remaining_review_rows = read_csv_rows_file(review_path)
+        self.assertEqual(remaining_review_rows, [])
         self.assertTrue(snapshot_translate_status(package, csv_path)["complete"])
 
     def test_existing_human_review_remains_incomplete_when_no_new_target_exists(self):
