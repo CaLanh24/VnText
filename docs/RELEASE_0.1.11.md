@@ -21,6 +21,27 @@ The real 0.1.10 app found the published 0.1.11 offer, downloaded the public rout
 
 The test used the registered 0.1.10 baseline. Its payload was restored from the official 0.1.10 Setup archive and verified against all 7,193 archived payload entries, the old release metadata and executable hash. The test-only `.update`, `data`, sentinel and synthetic update-source file were removed with the artifact cleanup helper; the baseline is again 0.1.10. Registered disposable setup/staging/input trees were removed while both retained release baselines were preserved. Workspace non-exempt size remains about 1.45 GB, above the release task's 1 GiB terminal target; do not report terminal budget cleanup as PASS. Public release and update acceptance are complete independently of that storage target.
 
+## Terminal cleanup reconciliation — 2026-10-24
+
+Cleanup status is **REVIEW_REQUIRED** for the terminal storage target. The exact cleanup receipt is `C:\Users\VNTextDev\Downloads\VNText-0.1.11-public-readback-20261024\release-terminal-cleanup-20261024.json`. The complete project inventory measured 1,126,016,977 non-exempt bytes against 1,073,741,824 (1 GiB), an excess of 52,275,153 bytes. The candidate scope alone is 1,066,109,779 bytes. Shared `C:\v\.dev-env` is 6,354,244,836 bytes against the 6,442,450,944-byte (6 GiB) cap, leaving 88,206,108 bytes.
+
+After removing the registered disposable baseline inputs, publisher scopes, Setup installation, test-only updater state, and local duplicate ZIP/feed folders, no remaining registered disposable child can be removed safely. A registered-only dry run completed its inventory and planned zero deletions; it blocked the disposable candidate root on the retained `release-baseline:baseline-0.1.7` record. The exact retained items are:
+
+| Path | Bytes | Lifecycle | Why retained |
+|---|---:|---|---|
+| `C:\b\RELEASE_RUN\candidate-0.1.11\baseline-0.1.10` | 514,616,223 | RETAINED | Clean 0.1.10 updater baseline; restored and verified after public update acceptance |
+| `C:\b\RELEASE_RUN\candidate-0.1.11\baseline-0.1.7` | 514,529,848 | RETAINED | Clean 0.1.7 updater baseline |
+
+The following are the largest additional non-disposable paths; each is unregistered at its exact root, so I left it unchanged:
+
+| Path | Bytes | Lifecycle | Why not eligible |
+|---|---:|---|---|
+| `C:\b\DEV_RUN\release-0.1.11` | 24,091,236 | UNREGISTERED | Setup/update acceptance receipts and release evidence |
+| `C:\b\RELEASE_RUN\candidate-0.1.11\verify-source` | 19,854,438 | UNREGISTERED | Clean source checkout plus regression receipts and test registry history |
+| `C:\b\RELEASE_RUN\candidate-0.1.11\source` | 16,913,540 | UNREGISTERED | Clean source checkout with an existing Git branch/history reference |
+
+`C:\b\DEV_RUN\obj` is also unregistered (16,022,371 bytes), so it was not deleted based on its apparent build-cache role alone. Exact public-download duplicates and the 0.1.10 Setup extraction remain in Downloads: the cleanup helper rejected external Downloads paths at its repository write boundary, and no direct deletion fallback was used. Their hashes and the 0.1.10 payload-to-baseline comparison are recorded in `PUBLIC_ASSET_DUPLICATE_CLEANUP.json` and `RESTORE_SOURCE_CLEANUP.json` beside the public-readback receipts. Thus the release scope is fully inventoried and its current disposable paths are cleaned, but the repository-wide 1 GiB terminal target remains unmet without changing retained evidence/history or the cleanup authorization boundary.
+
 The earlier pending Setup, unpublished release, unexercised public update, and unintegrated package paragraphs below are historical snapshots superseded by this section and the current-state summary at the top. Native UX scope and its PARTIAL/NOT_VERIFIED limits remain unchanged.
 
 
