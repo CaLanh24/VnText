@@ -283,6 +283,8 @@ Owner replaces mandatory in-app OCR review with automatic scan/OCR/en→vi trans
 
 ## 10a. Test artifact retention and cleanup lifecycle
 
+**Owner standing authorization (2026-10-24, temporary release allocation):** “từ sau build release mà có vượt dung lượng cho phép thì k cần xin duyệt nữa, tự duyệt luôn, vì dù sao cũng là đang workflow, sau khi xong dọn dẹp để giữ dung lượng đúng rule là dc.” In an already Owner-authorized release workflow, the Coordinator may raise the temporary task-scope allocation to measured build/package/acceptance needs without asking again solely because the current quota is insufficient. Before each allocation, measure the whole checkout and shared `.dev-env`, record exact scope/run/source SHA/epoch, current usage, temporary allocation, peak, reserve, and terminal cleanup target. A temporary increase to the shared environment cap is allowed only when a measured prerequisite of that active release requires it; it is not a permanent cap increase or permission to download/install dependencies or accept licenses. On terminal completion, return to the normal limits and cleanup lifecycle in this section. This standing storage authorization does not authorize deleting user data, history, or cache to make room, bypassing an automatic review rejection, weakening any validator/gate, or resuming a paused release. It supersedes separate per-release approval for future temporary release allocations; the prior 0.1.11 3 GiB approval is historical initial-allocation evidence, not an active 0.1.11 resume authorization.
+
 **Owner coordination decision (2026-10-21):** DEV records progress, candidate and terminal reports only in its own session. Brain actively reads that session and sends only necessary reviewed decisions/remediation; DEV does not message Brain back. This supersedes earlier report-back requests; no separate commit is needed solely for this rule.
 
 **Owner role clarification (2026-10-23, bounded RenPy acceptance):** Owner → Brain for coordination, progress/evidence review, acceptance and task assignment → DEV as sole implementation Coordinator/writer. Brain does not edit the repository concurrently. DEV reports in its own chat for direct Brain review; this adds no child, parallel writer or reverse-message authority. The role clarification does not authorize another native trial beyond the currently bounded run11.
@@ -435,6 +437,8 @@ Owner explicitly defers real-game E2E and defects found there to a later version
 
 
 ## 10c. DEV validation và chiến dịch game
+
+For validation inside an Owner-authorized release workflow, apply the standing temporary-allocation authorization in §10a: measure and persist scope, peak, reserve, and cleanup target before allocating. This storage permission does not itself authorize a release, test scope, dependency acquisition, license acceptance, or resumption of work Owner has paused.
 
 Owner: `release/dev_bootstrap.py`, `tests/lib/worker_test_lib.py`; validation gates ở `TEST_MATRIX.md`, cách khởi chạy DEV ở `docs/DEVELOPMENT.md`.
 
