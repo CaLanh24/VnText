@@ -28,21 +28,25 @@ class DevEnvironmentPathTests(unittest.TestCase):
             self.assertEqual(root / "cache" / "nuget", nuget_cache())
 
     def test_explicit_shared_root_and_executable_overrides_are_respected(self):
+        root = Path("C:/") / "shared" / "dev"
+        worker = root.parent / "python.exe"
+        release = root.parent / "release-python.exe"
+        sdk = root.parent / "renpy-8.5.3"
+        dotnet = root.parent / "dotnet.exe"
         with patch.dict(
             os.environ,
             {
-                "VNTEXT_DEV_ENV_ROOT": r"C:\shared\dev",
-                "VNTEXT_WORKER_PYTHON": r"C:\shared\python.exe",
-                "VNTEXT_RELEASE_PYTHON": r"C:\shared\release-python.exe",
-                "VNTEXT_RENPY_NATIVE_SDK": r"C:\shared\renpy-8.5.3",
-                "VNTEXT_DOTNET": r"C:\shared\dotnet.exe",
+                "VNTEXT_DEV_ENV_ROOT": str(root),
+                "VNTEXT_WORKER_PYTHON": str(worker),
+                "VNTEXT_RELEASE_PYTHON": str(release),
+                "VNTEXT_RENPY_NATIVE_SDK": str(sdk),
+                "VNTEXT_DOTNET": str(dotnet),
             },
             clear=True,
         ):
-            root = Path(r"C:\shared\dev")
             self.assertEqual(root, dev_env_root())
-            self.assertEqual(Path(r"C:\shared\python.exe"), worker_python())
-            self.assertEqual(Path(r"C:\shared\release-python.exe"), release_python())
-            self.assertEqual(Path(r"C:\shared\renpy-8.5.3"), renpy_native_sdk())
-            self.assertEqual(Path(r"C:\shared\dotnet.exe"), dotnet_executable())
+            self.assertEqual(worker, worker_python())
+            self.assertEqual(release, release_python())
+            self.assertEqual(sdk, renpy_native_sdk())
+            self.assertEqual(dotnet, dotnet_executable())
             self.assertEqual(root / "cache" / "nuget", nuget_cache())
