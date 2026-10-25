@@ -92,11 +92,9 @@ def typed_carrier_problems(src, new):
     free_order = bool(numbered) and all(numbered)
     if (sorted(spec_src) != sorted(spec_new)) if free_order else (spec_src != spec_new):
         out.append('printf specifier mismatch')
-    if _parens_balanced(str(src or '')) and (
-        str(new or '').count('(') != str(src or '').count('(')
-        or str(new or '').count(')') != str(src or '').count(')')
-        or not _parens_balanced(str(new or ''))
-    ):
+    # A balanced source must not become unbalanced ("(tax: 8%- ..."); removing a
+    # whole pair, as stylistic narration marks sometimes are, stays allowed.
+    if _parens_balanced(str(src or '')) and not _parens_balanced(str(new or '')):
         out.append('parenthesis clause damaged')
     if sorted(numeric_carriers(src)) != sorted(numeric_carriers(new)):
         out.append('money/percent mismatch')

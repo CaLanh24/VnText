@@ -203,6 +203,9 @@ class NumericCarrierTests(unittest.TestCase):
         row = _row(self.PRICE)
         damaged = "NPC: Giá là $5.00 (thuế: 8%- bạn chấp nhận không?"
         self.assertIn("parenthesis clause damaged", structural_problems(row, damaged))
+        # Dropping a whole pair (stylistic narration marks) is not clause damage.
+        self.assertEqual(
+            structural_problems(row, "NPC: Giá là $5.00 thuế: 8% - bạn chấp nhận không?"), [])
         # An unbalanced source (emoticon) is not held to balance.
         self.assertEqual(structural_problems(_row("NPC: Thanks :)"), "NPC: Cảm ơn"), [])
 
