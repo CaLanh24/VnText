@@ -57,6 +57,7 @@ from work_paths import (  # noqa: E402
     path_under_work,
     processes_using,
     register_artifact,
+    set_artifact_status,
     new_scope_id,
     RUN_OUTCOMES,
     ACTIVE_LIFECYCLE_STATES,
@@ -2225,6 +2226,40 @@ def register_release_task_scope() -> dict:
         except (KeyError, TypeError, ValueError, OSError):
             return {"ok": False, "reasons": ["release_task_registry_invalid"]}
     if matches:
+        if len(matches) == 1:
+            entry = matches[0]
+            provenance = entry.get("provenance") if isinstance(entry.get("provenance"), dict) else {}
+            reactivatable = (
+                str(entry.get("lifecycle") or "").upper() == "MISSING"
+                and not os.path.lexists(scope)
+                and _path_key(entry.get("path", "")) == _path_key(scope)
+                and str(entry.get("kind") or "") == "release_task_scope"
+                and str(entry.get("owner") or "") == task_id
+                and str(entry.get("scope_id") or "") == task_id
+                and str(entry.get("run_id") or "") == task_id
+                and str(entry.get("scope_root") or "") == str(scope)
+                and entry.get("bytes") == 0
+                and not entry.get("deletion_provenance")
+                and provenance.get("registered_by") == "cleanup_work_artifacts.py"
+                and str(provenance.get("scope_id") or "") == task_id
+                and str(provenance.get("run_id") or "") == task_id
+                and str(provenance.get("scope_root") or "") == str(scope)
+            )
+            if reactivatable:
+                set_artifact_status(task_id, "DISPOSABLE", lifecycle="DISPOSABLE")
+                refreshed, _raw, refresh_errors = _strict_registry_snapshot()
+                if refresh_errors:
+                    return {"ok": False, "reasons": refresh_errors}
+                limit, error, profile = _release_task_budget_profile_for_manifest(ROOT, refreshed, state)
+                if error or profile != task_id or limit != _release_task_budget_limit(task_id):
+                    return {"ok": False, "reasons": [error or "release_task_scope_reactivation_failed"]}
+                return {
+                    "ok": True,
+                    "registered": False,
+                    "reactivated": True,
+                    "path": str(scope),
+                    "lifecycle": "DISPOSABLE",
+                }
         limit, error, profile = _release_task_budget_profile_for_manifest(ROOT, manifest, state)
         if error or profile != task_id:
             return {"ok": False, "reasons": [error or "release_task_scope_registration_conflict"]}

@@ -2393,6 +2393,32 @@ class CleanupLifecycleTests(unittest.TestCase):
                     self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
                     self.assertIsNone(error)
                     self.assertEqual("terminal-default", profile)
+                    if task_id == cleanup.RELEASE_TASK_013_BUDGET_ID:
+                        missing_entry = next(item for item in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"] if item["id"] == task_id)
+                        old_provenance = dict(missing_entry["provenance"])
+                        reactivated = cleanup.register_release_task_scope()
+                        self.assertTrue(reactivated["ok"], reactivated)
+                        self.assertTrue(reactivated["reactivated"], reactivated)
+                        active_entry = next(item for item in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"] if item["id"] == task_id)
+                        self.assertEqual("DISPOSABLE", active_entry["lifecycle"])
+                        self.assertEqual(old_provenance, active_entry["provenance"])
+                        active_limit, active_error, active_profile = cleanup._release_task_budget_profile(root)
+                        self.assertEqual(cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, active_limit)
+                        self.assertIsNone(active_error)
+                        self.assertEqual(task_id, active_profile)
+
+                        paths.set_artifact_status(
+                            task_id,
+                            "MISSING",
+                            lifecycle="MISSING",
+                            purpose="test exact-scope refusal with deletion evidence",
+                            deletion_provenance={"result": "deleted", "reason": "fixture only"},
+                        )
+                        refused_reactivation = cleanup.register_release_task_scope()
+                        self.assertFalse(refused_reactivation["ok"], refused_reactivation)
+                        unchanged = next(item for item in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"] if item["id"] == task_id)
+                        self.assertEqual("MISSING", unchanged["lifecycle"])
+                        self.assertEqual({"result": "deleted", "reason": "fixture only"}, unchanged["deletion_provenance"])
 
     def test_release_012_expanded_budget_preserves_old_epoch_verifiability(self):
         task_id = cleanup.RELEASE_TASK_012_BUDGET_ID
