@@ -3,6 +3,8 @@
 
 Phiên bản mới nhất là [**VNText Studio 0.1.12**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.12); trang phát hành có Setup cho người cài mới và gói cập nhật cho người đang dùng app.
 
+Mã nguồn trên nhánh `main` đang chuẩn bị 0.1.13 (chưa phát hành); bản công khai mới nhất vẫn là 0.1.12.
+
 Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật** để cập nhật trực tiếp lên bản mới nhất. Người mới có thể tải Setup 0.1.12 từ trang Releases.
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
