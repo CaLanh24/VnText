@@ -174,6 +174,33 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     raise ValueError("unsupported temporary release task budget")
 
 
+def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
+    """Allow same-release continuation and the Owner-authorized 0.1.12 -> 0.1.13 handoff."""
+
+    return previous_task_id == target_task_id or (
+        previous_task_id == RELEASE_TASK_012_BUDGET_ID
+        and target_task_id == RELEASE_TASK_013_BUDGET_ID
+    )
+
+
+def _epoch_transition_versions_valid(
+    previous_task_id: str, target_task_id: str, previous_sha: str, target_sha: str
+) -> bool:
+    """Bind an epoch transition to each endpoint's independently authorized release version."""
+
+    if not _epoch_transition_tasks_compatible(previous_task_id, target_task_id):
+        return False
+    try:
+        previous_version = _release_budget_spec(previous_task_id)[1]
+        target_version = _release_budget_spec(target_task_id)[1]
+    except ValueError:
+        return False
+    return (
+        _git_version_at(previous_sha) == previous_version
+        and _git_version_at(target_sha) == target_version
+    )
+
+
 def _release_task_budget_limit(task_id: str) -> int:
     if task_id == RELEASE_TASK_012_BUDGET_ID:
         return RELEASE_TASK_012_BUDGET_LIMIT_BYTES
@@ -3168,10 +3195,10 @@ def _epoch_transition_provenance_failures(
     ):
         failures.append("epoch_transition_previous_identity_mismatch")
         return failures
+    previous_task_id = str((previous_epoch.get("release_task_budget") or {}).get("task_id") or "")
     if (
         not _git_is_ancestor(previous_sha, target_sha)
-        or _git_version_at(previous_sha) != version
-        or _git_version_at(target_sha) != version
+        or not _epoch_transition_versions_valid(previous_task_id, task_id, previous_sha, target_sha)
     ):
         failures.append("epoch_transition_source_lineage_invalid")
     old_failures = _epoch_verify_files(
@@ -3474,12 +3501,13 @@ def activate_prospective_epoch(
             ):
                 reasons.append("transition_active_epoch_integrity_failed")
             release_budget = active.get("release_task_budget")
-            if not isinstance(release_budget, dict) or release_budget.get("task_id") != release_task_id:
+            previous_task_id = str(release_budget.get("task_id") or "") if isinstance(release_budget, dict) else ""
+            if not _epoch_transition_tasks_compatible(previous_task_id, str(release_task_id or "")):
                 reasons.append("transition_active_epoch_release_task_mismatch")
             if not rebaseline_requested:
                 if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
                     reasons.append("transition_source_not_descendant")
-                if _git_version_at(active_sha) != _release_budget_spec(release_task_id)[1] or _git_version_at(expected_sha) != _release_budget_spec(release_task_id)[1]:
+                if not _epoch_transition_versions_valid(previous_task_id, str(release_task_id or ""), active_sha, expected_sha):
                     reasons.append("transition_source_version_mismatch")
             if incident != active.get("original_incident_identity"):
                 reasons.append("transition_incident_identity_changed")
