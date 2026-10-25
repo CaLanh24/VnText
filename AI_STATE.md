@@ -1,13 +1,13 @@
 # Current state pointer — 2026-10-25
 
-## Release 0.1.12 — active DEV acceptance and publication
+## Release 0.1.12 — public release accepted
 
-- Owner authorized completion, build, tests, Setup/full-app updater, commit/push/tag and public publication. Public 0.1.11 remains immutable; starting implementation baseline is `988780d3b6777599b91429417d43f3f8cd7b10ac`.
-- DEV is the sole source writer in session `01a16fb1-af4b-77b3-a4e7-c54665725b35`; Brain monitors and reviews exact evidence. Checkpoint: `DEV_RUN/r012/CHECKPOINT-0.1.12.md`.
-- Current source acceptance evidence: affected gate 219 tests PASS (0 failures/errors, 2 explained skips); WPF CSV native layout gate at 27,767 rows PASS across three window sizes with visible rows and usable scrollbar. Native app currently shows local model readiness with the configured release venv. Windows file-picker interaction is unavailable through the supported capture/input channel; this limitation is not represented as a workflow PASS.
-- Source commit, exact-SHA full regression, portable release candidate, Setup/updater installed acceptance, publication and live GitHub readback remain pending. Real-game E2E remains `NOT TESTED`.
-- Release budget: temporary measured allocation up to 3 GiB for exact registered `RELEASE_RUN/candidate-0.1.12`; terminal non-exempt target <=1 GiB and shared `.dev-env` <=6 GiB. Preserve historical and user data.
-- Acceptance ledger: [`docs/RELEASE_0.1.12.md`](docs/RELEASE_0.1.12.md); scope and remediation plan: [`docs/POST_0.1.11_UX_REMEDIATION.md`](docs/POST_0.1.11_UX_REMEDIATION.md).
+- Public stable release: [VNText 0.1.12](https://github.com/CaLanh24/VnText/releases/tag/v0.1.12). Setup and supported full-app update routes are published; all 15 remote assets match the exact local readback, including the directly downloaded Setup.
+- Release source/tag SHA: `7da2436014fa4b1d33185c997492b1a5dc9cf174` (`main` at build and publication). Tag `v0.1.12` peels to that exact commit. Implementation commits: `cfd17a2`, `fc95ef6`; release policy and budget records: `95d37ca`, `4d41c29`, `7da2436`.
+- Exact-source regression: 1,088 tests, 0 failures/errors, 9 explained skips. Setup payload verification, release verifier and worker smoke PASS. Public 0.1.9 → 0.1.12 installed-app update and restart PASS with matching 7,191-file app inventory and preserved data/model sentinels.
+- Candidate cleanup PASS: non-exempt checkout 1,065,083,684 / 1,073,741,824 bytes; shared `.dev-env` 6,354,778,208 / 6,442,450,944 bytes. Detailed evidence: [`docs/RELEASE_0.1.12.md`](docs/RELEASE_0.1.12.md) and `C:\v\DEV_RUN\r012\` receipts.
+- Boundaries: real-game E2E `NOT TESTED`; broad native UX and post-fix native full workflow `PARTIAL`. A contradictory update-success dialog sentence was found after publication and is a later-release copy fix. Do not change the immutable release tag.
+- The user-facing release-note policy is durable in `CONTRACTS.md` §10; GitHub release body stays Vietnamese and describes product/UI changes, while test evidence remains in technical records/assets.
 
 ## Release 0.1.11 — fresh Setup update — 2026-10-24
 

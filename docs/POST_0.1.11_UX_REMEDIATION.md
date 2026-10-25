@@ -250,3 +250,25 @@ This addendum supersedes the earlier cancellation UX gap above. It records curre
 - **Native verification boundary:** the screenshot above is from before the dependent-property notification fix. Post-fix native visual is **NOT TESTED**; the owner authorized exactly one final session, which has been used. No further app was launched. Translate or Patch was not run.
 - **Cleanup:** app PID `5180` disappeared after the normal close action; no VNText app/worker remains. Canonical cleanup removed only the registered fixture/build/profile scope (6,454,122 bytes, `ok=true`); receipt `native-postfix/final-session-cleanup.json`. No other app or retained artifact was touched.
 - **Release:** no commit or release action was taken. Release remains **NOT DONE**.
+
+
+### Final completion and release acceptance (2026-10-25)
+
+This section supersedes earlier `IN PROGRESS`, `NOT DONE` and “publication pending” statements in this append-only history. Release source and test evidence are tied to `7da2436014fa4b1d33185c997492b1a5dc9cf174`; docs-only reconciliation does not change the release binary or tag.
+
+| Plan area | Final status | Evidence boundary |
+|---|---|---|
+| Product changes and regression coverage | PASS | Implementation commits `cfd17a2` and `fc95ef6`; exact-source regression 1,088 tests, 0 failures/errors, 9 explained skips. |
+| Build and packaged runtime | PASS | Setup payload verify, release verifier and worker smoke passed at source `7da2436`. |
+| Native CSV layout | PASS, bounded | Native 27,767-row layout checked at three window sizes. |
+| Synthetic game workflow | PARTIAL | Synthetic Ren'Py Analyze/Extract/Translate/Patch passed before the final two readiness-property changes; post-fix source/WPF regression passed, but a second native full-flow run was not done. |
+| Native UX audit | PARTIAL | Not every modal/toast, DPI/focus/resize, image flow or production release-note view was exercised after final source changes. |
+| Setup | PASS | Fresh isolated Setup launch at 0.1.12; 7,191 app files, release executable hash matched, startup log records worker ready. |
+| Public updater | PASS for 0.1.9 route | Public 0.1.9 → 0.1.12 offer/download/apply/restart passed; 7,191/7,191 app files matched Setup and user-data/model sentinels survived. Other route packages were hash/inventory checked; UI E2E for each was not run. |
+| Public publication/readback | PASS | GitHub stable v0.1.12 is public; 15/15 assets match, including Setup and updater feeds/packages. Annotated tag peels to built source. |
+| Real-game workflow | NOT TESTED | No real game fixture was used. |
+| Candidate cleanup/quota | PASS | 4,217,712,570-byte registered candidate removed. Terminal checkout: 1,065,083,684 / 1,073,741,824 bytes; `.dev-env`: 6,354,778,208 / 6,442,450,944 bytes. |
+
+The Setup SHA-256 is `626e98d51beae8009b3076107d6a0e7fd9f9196f8a628d2f9e826a34a54a9782`; the 0.1.9 updater ZIP SHA-256 is `da3bdc3f09665656575a5d894e737c6217c3b3ac940807763a80d54b1e154cf1`. Receipts live under `C:\v\DEV_RUN\r012\`, notably `public-release-readback-final.json`, `setup-acceptance-public-0.1.12.json`, `public-update-acceptance-019.json` and `candidate-terminal-cleanup.json`.
+
+**Post-publication follow-up found:** after a successful update, the “Cập nhật thành công” dialog body incorrectly says a newer version is available, although About reports 0.1.12 and up to date. The update is accepted; the copy defect remains for a later release. The release tag was not rewritten. Broad native visual acceptance, post-fix CT2 cancellation completion and real-game behavior remain `PARTIAL` / `NOT TESTED` as stated above.
