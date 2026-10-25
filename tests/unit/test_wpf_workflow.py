@@ -188,6 +188,10 @@ class WpfWorkflowTests(unittest.TestCase):
         tooltip_style = styles.split('<Style TargetType="ToolTip">', 1)[1].split('</Style>', 1)[0]
         self.assertIn('Value="400"', tooltip_style)
         self.assertIn('CornerRadius="8"', tooltip_style)
+        self.assertIn("DropShadowEffect", tooltip_style)
+        self.assertIn('TextWrapping="Wrap"', tooltip_style)
+        fixture = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "TooltipFixtureTests.cs").read_text(encoding="utf-8")
+        self.assertIn("also via the real string ToolTipService path", fixture)
 
     def test_workflow_options_are_not_duplicated(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")

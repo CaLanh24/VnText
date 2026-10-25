@@ -23,6 +23,9 @@ internal static partial class Program
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
             return RunAppDialogFixture(args);
 
+        if (args.Contains("--tooltip-fixture", StringComparer.Ordinal))
+            return RunTooltipFixture(args);
+
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
             var result=1; var thread=new Thread(() => { try { result=PreferencesTests.Run(); } catch(Exception ex) { Console.Error.WriteLine(ex); } });

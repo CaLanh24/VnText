@@ -16,7 +16,9 @@
         </Setter>
         <Setter Property="Template">
             <Setter.Value><ControlTemplate TargetType="ToolTip">
-                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                <!-- Margin leaves room for the soft shadow inside the transparent popup. -->
+                <Border Margin="6" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                    <Border.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity=".18" /></Border.Effect>
                     <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
                 </Border>
             </ControlTemplate></Setter.Value>
