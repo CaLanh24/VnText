@@ -197,7 +197,7 @@ internal static class PreferencesTests
     private static T? Find<T>(DependencyObject root,Func<T,bool> test) where T:DependencyObject
     { if(root is T item && test(item))return item;for(var i=0;i<VisualTreeHelper.GetChildrenCount(root);i++){var found=Find(VisualTreeHelper.GetChild(root,i),test);if(found is not null)return found;}return null; }
     private sealed class Picker:IPathPickerService
-    { public string? PickInputPath()=>null;public string? PickOutputFolder()=>null;public string? PickTranslationCsvFile()=>null;public string? PickRenpySdkFolder()=>null;public string? PickImageFile(bool review=false)=>null;public bool OpenPath(string path)=>false; }
+    { public string? PickInputPath()=>null;public string? PickOutputFolder()=>null;public string? PickTranslationCsvFile(string? title=null)=>null;public string? PickRenpySdkFolder()=>null;public string? PickImageFile(bool review=false)=>null;public bool OpenPath(string path)=>false; }
     private sealed class Presentation:IUpdatePresentation
     {
         public string CurrentVersion=>"0.1.5";public string Version=>"";public string ReleaseDate=>"";public string Notes=>"";public string Status=>"";

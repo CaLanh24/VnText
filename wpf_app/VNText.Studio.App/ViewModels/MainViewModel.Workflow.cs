@@ -87,7 +87,8 @@ public sealed partial class MainViewModel
                     ? "Chọn gói dịch có translation.csv và manifest.json hợp lệ."
                     : _translatePackageMessage;
             var count = _translatePackageRowCount == 1 ? "1 dòng" : $"{_translatePackageRowCount:N0} dòng";
-            return $"Sẵn sàng dịch · {count} · đã có bản dịch {_translatePackageTranslatedCount:N0}";
+            var ready = $"Sẵn sàng dịch · {count} · đã có bản dịch {_translatePackageTranslatedCount:N0}";
+            return _translateLastRunCancelled ? $"{ready} · lần dịch trước đã hủy; chạy lại để dịch tiếp" : ready;
         }
     }
 
@@ -109,7 +110,7 @@ public sealed partial class MainViewModel
         return Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
     }
 
-    private void RefreshTranslateReadiness(bool syncCsvValidation = false)
+    private void RefreshTranslateReadiness(bool syncCsvValidation = false, bool cancelledSummary = false)
     {
         var epoch = Interlocked.Increment(ref _translateReadinessEpoch);
         string path;
@@ -143,6 +144,13 @@ public sealed partial class MainViewModel
                 // caption. Patch readiness remains governed by its stricter gate.
                 CsvValidationOk = result.Ok;
                 CsvValidationMessage = result.Message;
+            }
+            if (cancelledSummary)
+            {
+                CsvValidationOk = false;
+                CsvValidationMessage = result.Ok
+                    ? $"Đã hủy — đã dịch an toàn {result.TranslatedRows:N0}/{result.TotalRows:N0} dòng; chạy lại để dịch tiếp."
+                    : result.Message;
             }
             _translatePackageReady = result.Ok;
             _translatePackageChecking = false;
@@ -474,7 +482,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        var sourceCsv = _pathPicker.PickTranslationCsvFile();
+        var sourceCsv = _pathPicker.PickTranslationCsvFile(ImportTranslatedCsvPickerTitle);
         if (string.IsNullOrWhiteSpace(sourceCsv))
             return;
         if (string.Equals(Path.GetFullPath(targetCsv), Path.GetFullPath(sourceCsv), StringComparison.OrdinalIgnoreCase))
@@ -554,6 +562,7 @@ public sealed partial class MainViewModel
         _cancelWatchdog = null;
         _activeTaskId = $"task-{Guid.NewGuid():N}";
         _completionHandledKey = null;
+        _translateLastRunCancelled = false;
         _runningTask = task;
         BeginTaskLog(_activeTaskId, task, statusLabel);
         _lastCompletedTask = null;

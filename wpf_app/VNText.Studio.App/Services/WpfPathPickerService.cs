@@ -42,11 +42,11 @@ public sealed class WpfPathPickerService : IPathPickerService
         return dlg.ShowDialog() == true ? dlg.FolderName : null;
     }
 
-    public string? PickTranslationCsvFile()
+    public string? PickTranslationCsvFile(string? title = null)
     {
         var dlg = new OpenFileDialog
         {
-            Title = "Chọn translation.csv đã dịch",
+            Title = string.IsNullOrWhiteSpace(title) ? "Chọn tệp CSV" : title,
             Filter = "CSV (*.csv)|*.csv|Tất cả (*.*)|*.*",
             CheckFileExists = true,
         };

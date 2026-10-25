@@ -340,7 +340,7 @@ public sealed partial class MainViewModel
 
     private void ChooseCsvEditorFile()
     {
-        var path = _pathPicker.PickTranslationCsvFile();
+        var path = _pathPicker.PickTranslationCsvFile(CsvEditorPickerTitle);
         if (!string.IsNullOrWhiteSpace(path))
             LoadCsvEditor(path, reload: true);
     }

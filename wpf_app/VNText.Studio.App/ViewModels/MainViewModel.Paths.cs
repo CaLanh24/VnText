@@ -42,9 +42,15 @@ public sealed partial class MainViewModel
             OutputPath = path;
     }
 
+    // The same dialog serves different intents; a title that says "đã dịch" on the
+    // translate input made a blank CSV look invalid.
+    internal const string TranslateCsvPickerTitle = "Chọn CSV cần dịch";
+    internal const string CsvEditorPickerTitle = "Chọn CSV để sửa";
+    internal const string ImportTranslatedCsvPickerTitle = "Chọn translation.csv đã dịch để nhập";
+
     private void ChooseTranslationCsv()
     {
-        var path = _pathPicker.PickTranslationCsvFile();
+        var path = _pathPicker.PickTranslationCsvFile(TranslateCsvPickerTitle);
         if (string.IsNullOrWhiteSpace(path))
             return;
 

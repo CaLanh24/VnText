@@ -152,7 +152,9 @@ def _blocker_record(
         "source_features": {
             "word_count": len(mt_check.WORD.findall(source_visible)),
             "has_tags": bool(re.search(r"<[^>]+>|\[[^\]]+\]", source)),
-            "placeholder_count": len(re.findall(r"\{[^{}]*\}", source)),
+            "placeholder_count": len(re.findall(r"\{[^{}]*\}", source)) + len(mt_check.printf_specifiers(source)),
+            "printf_count": len(mt_check.printf_specifiers(source)),
+            "url_count": len(mt_check.inline_urls(source)),
             "randpick_count": source.count("[RandPick]"),
             "newline_count": source.count("\\n"),
             "special_symbols": re.findall(r"[^\w\s]", source, flags=re.UNICODE),

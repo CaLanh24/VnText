@@ -7,7 +7,7 @@ public interface IPathPickerService
 
     string? PickOutputFolder();
 
-    string? PickTranslationCsvFile();
+    string? PickTranslationCsvFile(string? title = null);
 
     string? PickRenpySdkFolder();
 

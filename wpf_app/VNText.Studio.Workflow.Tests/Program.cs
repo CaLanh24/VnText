@@ -53,10 +53,13 @@ internal static partial class Program
             Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, progressFailures);
             Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, progressFailures);
             Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, progressFailures);
+            Run("CancelAndExitCommand_FollowsBusyLifecycle", CancelAndExitCommand_FollowsBusyLifecycle, progressFailures);
+            Run("CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog", CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog, progressFailures);
+            Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, progressFailures);
             Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, progressFailures);
             if (progressFailures.Count == 0)
             {
-                Console.WriteLine("Focused task lifecycle checks: PASS (9)");
+                Console.WriteLine("Focused task lifecycle checks: PASS (12)");
                 return 0;
             }
             foreach (var failure in progressFailures) Console.Error.WriteLine(" - " + failure);
@@ -182,6 +185,9 @@ internal static partial class Program
         Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, failures);
         Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, failures);
         Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, failures);
+        Run("CancelAndExitCommand_FollowsBusyLifecycle", CancelAndExitCommand_FollowsBusyLifecycle, failures);
+        Run("CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog", CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog, failures);
+        Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, failures);
         Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -543,6 +549,97 @@ internal static partial class Program
         AssertEqual(1, exitRequests);
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="exit-cancelled", Ok=false, Complete=false, Error="cancelled" });
         AssertEqual(1, exitRequests);
+    }
+
+    private static void CancelAndExitCommand_FollowsBusyLifecycle()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        var cancelEvents = 0;
+        var exitEvents = 0;
+        vm.CancelCommand.CanExecuteChanged += (_, _) => cancelEvents++;
+        vm.CancelAndExitCommand.CanExecuteChanged += (_, _) => exitEvents++;
+        AssertFalse(vm.CancelCommand.CanExecute(null));
+        AssertFalse(vm.CancelAndExitCommand.CanExecute(null));
+
+        vm.TestSetActiveTask("busy-task", "translate");
+        AssertTrue(vm.CancelCommand.CanExecute(null));
+        AssertTrue(vm.CancelAndExitCommand.CanExecute(null));
+        AssertEqual(1, cancelEvents);
+        AssertEqual(1, exitEvents);
+
+        vm.TestMarkTaskTerminal("busy-task");
+        AssertFalse(vm.CancelCommand.CanExecute(null));
+        AssertFalse(vm.CancelAndExitCommand.CanExecute(null));
+        AssertEqual(2, cancelEvents);
+        AssertEqual(2, exitEvents);
+    }
+
+    private static void CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog()
+    {
+        const string payload = "{\"v\":1,\"type\":\"complete\",\"id\":\"measured-cancel\",\"ok\":false,\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":0,\"diagnostic_stage\":\"WORKFLOW\",\"diagnostic_root_cause\":\"UNKNOWN\",\"diagnostic_affected_count\":1,\"diagnostic_action\":\"A task was cancelled or interrupted; inspect its saved checkpoint before retrying.\",\"diagnostic_status\":\"FAILED\"}";
+        var terminal = WorkerEvent.FromJson(payload);
+        AssertTrue(terminal is not null);
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            File.WriteAllText(Path.Combine(package, "translation.csv"),
+                "key,source_text,translation\r\nk1,Hello,Xin chào\r\nk2,World,Thế giới\r\nk3,Gate,\r\nk4,Road,\r\n", Encoding.UTF8);
+            using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+            vm.TestSetTranslationModelReady(true);
+            vm.OutputPath = package;
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+
+            vm.TestBeginTaskLog("measured-cancel", "translate");
+            vm.TestSetActiveTask("measured-cancel", "translate");
+            vm.TestHandleWorkerEvent(terminal!);
+
+            AssertFalse(vm.Busy);
+            AssertEqual("Đã hủy", vm.StatusText);
+            // The worker's 0/1/1/1 are sentinels; the summary must come from the file on disk.
+            AssertTrue(SpinWait.SpinUntil(
+                () => vm.CsvValidationMessage.Contains("đã dịch an toàn 2/4", StringComparison.Ordinal),
+                TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đã hủy", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("chưa dịch 1", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("Đã dịch 0", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationOk);
+            // The prior cancelled run stays visible on the card instead of a bare "Sẵn sàng".
+            AssertTrue(SpinWait.SpinUntil(
+                () => vm.TranslateReadinessText.Contains("lần dịch trước đã hủy", StringComparison.Ordinal),
+                TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.TranslateReadinessText.Contains("đã có bản dịch 2", StringComparison.Ordinal));
+            // A cancellation is an INFO outcome, never an ERROR journal line.
+            AssertTrue(vm.LogLines.Any(line => line.Contains("Đã hủy tác vụ", StringComparison.Ordinal)));
+            AssertFalse(vm.LogLines.Any(line => AppJournalStore.Level(line) == "ERROR"
+                && line.Contains("cancelled", StringComparison.OrdinalIgnoreCase)));
+            AssertFalse(vm.LogLines.Any(line => line.Contains("Lỗi: cancelled", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
+    }
+
+    private static void CsvPickers_UseContextSpecificTitles()
+    {
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
+            using var vm = new MainViewModel(picker, new PythonWorkerHost(), startWorker:false);
+            vm.TestSetTranslationModelReady(true);
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("Chọn CSV cần dịch", picker.LastCsvTitle);
+            AssertFalse(picker.LastCsvTitle!.Contains("đã dịch", StringComparison.OrdinalIgnoreCase));
+
+            picker.LastCsvTitle = null;
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertEqual("Chọn CSV để sửa", picker.LastCsvTitle);
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
     }
 
     private static void OrdinaryFailureTerminal_IsNotPresentedAsCancellation()
@@ -4325,7 +4422,8 @@ internal static partial class Program
         public string? RenpySdkFolder { get; set; }
         public string? PickInputPath() => InputPath;
         public string? PickOutputFolder() => OutputFolder;
-        public string? PickTranslationCsvFile() => TranslationCsv;
+        public string? LastCsvTitle { get; set; }
+        public string? PickTranslationCsvFile(string? title = null) { LastCsvTitle = title; return TranslationCsv; }
         public string? PickRenpySdkFolder() => RenpySdkFolder;
         public string? ImageFile { get; set; }
         public string? PickImageFile(bool review = false) => ImageFile;

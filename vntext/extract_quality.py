@@ -384,7 +384,9 @@ def raw_text_quality(text: str, for_main: bool = False) -> bool:
         return False
     if re.search(r"[A-Za-z0-9]{1,3}[_/][A-Za-z0-9]{1,3}", cleaned) and " " not in cleaned:
         return False
-    if re.search(r"[A-Za-z][_$^~][A-Za-z]", cleaned):
+    # Brace placeholders such as {player_name} legitimately contain "_"; the
+    # code-identifier test applies to the text around them, not to them.
+    if re.search(r"[A-Za-z][_$^~][A-Za-z]", re.sub(r"\{[A-Za-z0-9_.]*\}", " ", cleaned)):
         return False
     if re.search(r"[.!?…][A-Za-z]$", cleaned):
         # VD: 'are you okay?d' = fragment bi dinh byte rac o cuoi.

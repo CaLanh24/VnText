@@ -779,7 +779,7 @@ def _classifier_source_shape(source: str) -> dict[str, Any]:
         "length": len(source),
         "line_count": source.count("\n") + 1,
         "word_count": len(re.findall(r"[A-Za-zÀ-ỹ]+", plain)),
-        "has_placeholder": bool(mt_check.PH.search(source)),
+        "has_placeholder": bool(mt_check.PH.search(source) or mt_check.PRINTF_RX.search(source)),
         "has_tag": bool(mt_check.TAG.search(source)),
         "has_escape": "\\" in source,
         "has_randpick": "{rand" in source.casefold(),

@@ -297,7 +297,9 @@ public sealed partial class MainViewModel
                             : $"Lỗi — {evt.Error ?? "worker báo lỗi"}";
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
-                    AppendLog(needsHumanReview || renpySdkIncomplete || extractionIncomplete ? evt.Error : $"Lỗi: {evt.Error}");
+                    AppendLog(cancelled
+                        ? "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp."
+                        : needsHumanReview || renpySdkIncomplete || extractionIncomplete ? evt.Error : $"Lỗi: {evt.Error}");
 
                 if (cancelled)
                 {
@@ -407,7 +409,14 @@ public sealed partial class MainViewModel
                     PatchResultsAvailable = true;
                     PatchResultsExpanded = true;
                     PatchPreflightEvaluated = false;
-                    CsvValidationMessage = $"Đã dịch {evt.Translated}; chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
+                    // A cancelled terminal carries sentinel counts, not measurements; the
+                    // on-disk readiness refresh below supplies the truthful safe count.
+                    CsvValidationMessage = cancelled
+                        ? "Đã hủy — đang đọc lại số dòng đã dịch an toàn…"
+                        : $"Đã dịch {evt.Translated}; chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
+                    if (cancelled) CsvValidationOk = false;
+                    _translateLastRunCancelled = cancelled;
+                    Raise(nameof(TranslateReadinessText));
                     PatchPreflightOk = false;
                     PatchEligibleCount = 0;
                     PatchBlockedCount = 0;
@@ -416,6 +425,8 @@ public sealed partial class MainViewModel
                         : "Dịch chưa hoàn tất — chưa thể tạo Patch.";
                 }
                 RefreshWorkflow();
+                if (completedTask == "translate" && cancelled)
+                    RefreshTranslateReadiness(cancelledSummary: true);
                 // The selected CSV can already point at this same path from a
                 // previous readiness check. Revalidate after Extract has closed
                 // and written its package so a stale "file missing" result cannot

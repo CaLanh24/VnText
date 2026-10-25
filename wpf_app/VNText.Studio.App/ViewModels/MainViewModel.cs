@@ -41,6 +41,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _progressSubtitle = "Chưa bắt đầu";
     private string _logSubtitle = "Nhật ký hoạt động sẽ hiển thị ở đây.";
     private string _statusText = "Sẵn sàng";
+    private bool _translateLastRunCancelled;
     private string _version = "vunknown";
     private bool _busy;
     private bool _exitAfterTask;
@@ -264,6 +265,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             if (Set(ref _translationCsvPath, value))
             {
+                _translateLastRunCancelled = false;
                 Raise(nameof(TranslationCsvDisplay));
                 LoadPackageGlossary();
                 RefreshTranslateReadiness();
@@ -752,6 +754,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 DownloadRenpySdkCommand.RaiseCanExecuteChanged();
                 ContinueWithoutRenpySdkCommand.RaiseCanExecuteChanged();
                 CancelCommand.RaiseCanExecuteChanged();
+                CancelAndExitCommand.RaiseCanExecuteChanged();
                 RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
                 RecheckUpdateCommand.RaiseCanExecuteChanged();
                 ApplyUpdateCommand.RaiseCanExecuteChanged();

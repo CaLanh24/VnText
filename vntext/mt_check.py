@@ -24,6 +24,48 @@ BRACKET_TOKEN = re.compile(r'\[[A-Za-z][A-Za-z0-9_:-]*\]')
 # Hashtags are protected display labels, not English prose tokens.
 HASHTAG = re.compile(r'#[A-Za-z0-9_À-ỹ]+')
 
+# ---------------------------------------------------------------- typed carriers
+
+# printf-style conversions are engine format carriers, not prose.  The leading
+# "%" must follow a non-digit and the conversion must not run into a letter, so
+# a literal percent in prose ("100% sure", "8%)", "50% off") is never taken for
+# one.  "%%" is the printf escape for a literal percent and is also preserved.
+PRINTF_RX = re.compile(
+    r'%%'
+    r'|(?<![\d%])%(?:\d+\$)?[-+#0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?'
+    r'(?:hh|h|ll|l|L|z|j|t)?[diuoxXeEfFgGaAcsp](?![^\W\d_])'
+)
+# Scheme URLs only; trailing sentence punctuation is not part of the URL.
+URL_RX = re.compile(
+    r'(?<![A-Za-z0-9])(?:https?|ftp)://[^\s<>"\'{}\[\]\x5c]*[^\s<>"\'{}\[\]\x5c.,;:!?)]'
+)
+
+
+def printf_specifiers(text):
+    return [m.group(0) for m in PRINTF_RX.finditer(str(text or ''))]
+
+
+def inline_urls(text):
+    return [m.group(0) for m in URL_RX.finditer(str(text or ''))]
+
+
+def typed_carrier_problems(src, new):
+    """Structural mismatches for printf specifiers and inline URLs.
+
+    Specifiers are compared in order (a reorder changes which argument is
+    printed) unless the source numbers its arguments (``%1$s``), where order is
+    explicit and only the multiset must match.  URLs must survive byte for byte.
+    """
+    out = []
+    spec_src, spec_new = printf_specifiers(src), printf_specifiers(new)
+    positional = any(re.match(r'%\d+\$', s) for s in spec_src)
+    if (sorted(spec_src) != sorted(spec_new)) if positional else (spec_src != spec_new):
+        out.append('printf specifier mismatch')
+    if inline_urls(src) != inline_urls(new):
+        out.append('url mismatch')
+    return out
+
+
 # ---------------------------------------------------------------- placeholders
 
 # A "lexical" placeholder is one that the _synonyms table expands into an actual
@@ -364,6 +406,8 @@ def identical_reason(src, ctx, whitelist=None):
 def strip_technical(text):
     """Remove placeholders, tags and escape sequences before language checks."""
     t = PH.sub(' ', text)
+    t = URL_RX.sub(' ', t)
+    t = PRINTF_RX.sub(' ', t)
     t = TAG.sub(' ', t)
     t = BRACKET_TOKEN.sub(' ', t)
     t = HASHTAG.sub(' ', t)
@@ -559,6 +603,7 @@ def structural_problems(row, new):
     if src.count('\\n') != new.count('\\n'):
         out.append('literal newline count %d -> %d'
                    % (src.count('\\n'), new.count('\\n')))
+    out.extend(typed_carrier_problems(src, new))
     if src.count(HEART) != new.count(HEART):
         out.append('heart glyph count %d -> %d'
                    % (src.count(HEART), new.count(HEART)))
