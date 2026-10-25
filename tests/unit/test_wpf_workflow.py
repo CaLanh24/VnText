@@ -252,19 +252,42 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn("!string.IsNullOrWhiteSpace(path)", method)
             self.assertIn("StringComparison.OrdinalIgnoreCase", method)
 
-    def test_wpf_app_dialogs_use_the_themed_dialog_surface(self):
-        dialog = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppDialogService.cs").read_text(encoding="utf-8")
+    def test_wpf_app_dialogs_use_the_shared_rounded_dialog_shell(self):
+        app_dir = ROOT / "wpf_app" / "VNText.Studio.App"
+        dialog = (app_dir / "Services" / "AppDialogService.cs").read_text(encoding="utf-8")
+        shell = (app_dir / "Services" / "AppDialogWindow.cs").read_text(encoding="utf-8")
+        styles = (app_dir / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        memory = (app_dir / "ViewModels" / "MainViewModel.ReviewedMemory.cs").read_text(encoding="utf-8")
+        xaml = (app_dir / "MainWindow.xaml").read_text(encoding="utf-8")
         dialog_fixture = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "AppDialogFixtureTests.cs").read_text(encoding="utf-8")
-        self.assertIn('TryFindResource("SurfaceBrush")', dialog)
-        self.assertIn('"PrimaryButton" : "OutlineButton"', dialog)
+        # Shared shell: borderless transparent window, rounded card, custom X, scrolling body, overlay.
+        for needle in ("WindowStyle = WindowStyle.None", "AllowsTransparency = true", "CornerRadius(18)",
+                       '"DialogCloseButton"', "VerticalScrollBarVisibility = ScrollBarVisibility.Auto",
+                       "Key.Escape", "BlurEffect", "Keyboard.Focus(_previousFocus)", '"PrimaryButton" : "OutlineButton"'):
+            self.assertIn(needle, shell, needle)
+        self.assertIn('x:Key="DialogCloseButton"', styles)
+        self.assertIn("IsMouseOver", styles.split('x:Key="DialogCloseButton"')[1].split("</Style>")[0])
+        self.assertIn("IsPressed", styles.split('x:Key="DialogCloseButton"')[1].split("</Style>")[0])
+        # Every AppDialogService prompt goes through the shell with safe dismiss defaults.
+        self.assertIn("new AppDialogWindow(", dialog)
         self.assertIn('MessageBoxButton.YesNo => MessageBoxResult.No', dialog)
         self.assertIn('MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel', dialog)
-        self.assertIn("default/explicit owner modal, affirmative click, safe No default, Escape cancel", dialog_fixture)
         self.assertIn('owner ??= app?.Windows.OfType<Window>()', dialog)
-        for path in (ROOT / "wpf_app" / "VNText.Studio.App").rglob("*.cs"):
-            if path.name == "AppDialogService.cs":
+        self.assertIn("shared rounded shell/custom X/scroll body", dialog_fixture)
+        self.assertIn("new AppDialogWindow(", memory)
+        self.assertNotIn("new Window", memory)
+        glossary = xaml.split('x:Name="GlossaryOverlay"')[1].split("GlossaryListBox")[0]
+        self.assertIn('CornerRadius="18"', glossary)
+        self.assertIn('DialogCloseButton', glossary)
+        for path in app_dir.rglob("*.cs"):
+            if "obj" in path.parts or "bin" in path.parts:
                 continue
-            self.assertNotIn("MessageBox.Show(", path.read_text(encoding="utf-8"), str(path))
+            text = path.read_text(encoding="utf-8")
+            if path.name != "AppDialogService.cs":
+                self.assertNotIn("MessageBox.Show(", text, str(path))
+            # No plain titled Window may be constructed for an app-owned dialog.
+            if path.name not in {"App.xaml.cs"} and "Probe" not in path.name:
+                self.assertNotIn("new Window", text, str(path))
 
     def test_workflow_probe_only_accepts_ct2_and_uses_the_selected_local_model(self):
         app = (ROOT / "wpf_app" / "VNText.Studio.App" / "App.xaml.cs").read_text(encoding="utf-8")
