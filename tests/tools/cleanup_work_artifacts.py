@@ -5173,7 +5173,22 @@ def cleanup_after_test(
     return doc
 
 
+def _escape_unencodable_console_output() -> None:
+    """Keep JSON reports printable on legacy code-page consoles.
+
+    Provenance may contain non-ASCII Owner statements; an unencodable
+    character must not turn a completed operation into a crash after it ran.
+    """
+
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="backslashreplace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main() -> int:
+    _escape_unencodable_console_output()
     ap = argparse.ArgumentParser(description="Safe cleanup of TEST_RUN")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--report-only", action="store_true")

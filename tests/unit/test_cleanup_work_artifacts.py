@@ -1796,6 +1796,19 @@ class CleanupLifecycleTests(unittest.TestCase):
                 self.assertEqual(before, manifest.read_bytes())
                 self.assertFalse((cleanup._prospective_epoch_root() / "epoch-013-refused").exists())
 
+    def test_epoch_cli_prints_non_ascii_provenance_on_legacy_code_page_console(self):
+        result = {"status": "PASS", "ok": True, "owner_authorization": cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL}
+        raw = io.BytesIO()
+        console = io.TextIOWrapper(raw, encoding="cp1252", errors="strict")
+        with patch.object(cleanup, "verify_prospective_epoch", return_value=result), \
+                patch.object(sys, "argv", ["cleanup_work_artifacts.py", "--verify-prospective-epoch"]), \
+                patch.object(sys, "stdout", console):
+            code = cleanup.main()
+            console.flush()
+        self.assertEqual(0, code)
+        printed = json.loads(raw.getvalue().decode("cp1252"))
+        self.assertEqual(cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL, printed["owner_authorization"])
+
     def test_consumed_015_approval_does_not_consume_013_but_013_record_does(self):
         with self.isolated_workspace() as (root, _work, _game, _manifest):
             origin = {"epoch_id": "epoch-origin", "source_sha": "a" * 40}
