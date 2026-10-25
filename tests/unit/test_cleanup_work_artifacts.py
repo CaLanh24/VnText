@@ -2325,13 +2325,13 @@ class CleanupLifecycleTests(unittest.TestCase):
                     )
                     self.assertTrue(applied["ok"], applied)
                     budget = json.loads(manifest.read_text(encoding="utf-8"))["prospective_epoch"]["release_task_budget"]
-                    self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, budget["limit_bytes"])
+                    self.assertEqual(cleanup._release_task_budget_limit(task_id), budget["limit_bytes"])
                     self.assertEqual(cleanup.RELEASE_TASK_010_BUDGET_APPROVAL if version == "0.1.10" else cleanup._release_budget_spec(task_id)[2], budget["owner_approval"])
                     registered = cleanup.register_release_task_scope()
                     self.assertTrue(registered["ok"], registered)
                     with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
                         limit, error, profile = cleanup._release_task_budget_profile(root)
-                    self.assertEqual(cleanup.RELEASE_TASK_BUDGET_LIMIT_BYTES, limit)
+                    self.assertEqual(cleanup._release_task_budget_limit(task_id), limit)
                     self.assertIsNone(error)
                     self.assertEqual(task_id, profile)
                     paths.set_artifact_status(
@@ -2345,6 +2345,30 @@ class CleanupLifecycleTests(unittest.TestCase):
                     self.assertEqual(cleanup.PROJECT_SIZE_LIMIT_BYTES, limit)
                     self.assertIsNone(error)
                     self.assertEqual("terminal-default", profile)
+
+    def test_release_012_expanded_budget_preserves_old_epoch_verifiability(self):
+        task_id = cleanup.RELEASE_TASK_012_BUDGET_ID
+        initial = {
+            "limit_bytes": cleanup.RELEASE_TASK_012_INITIAL_BUDGET_LIMIT_BYTES,
+            "owner_approval": cleanup.RELEASE_TASK_012_INITIAL_BUDGET_APPROVAL,
+        }
+        expanded = {
+            "limit_bytes": cleanup.RELEASE_TASK_012_BUDGET_LIMIT_BYTES,
+            "owner_approval": cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL,
+        }
+        tampered = {**expanded, "owner_approval": "unrecognized approval"}
+
+        self.assertEqual(5 * 1024 ** 3, cleanup._release_task_budget_limit(task_id))
+        self.assertEqual(3 * 1024 ** 3, cleanup._release_task_budget_limit(cleanup.RELEASE_TASK_011_BUDGET_ID))
+        self.assertTrue(cleanup._release_budget_record_is_valid(
+            initial, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
+        ))
+        self.assertTrue(cleanup._release_budget_record_is_valid(
+            expanded, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
+        ))
+        self.assertFalse(cleanup._release_budget_record_is_valid(
+            tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
+        ))
 
     def test_prospective_epoch_refuses_dirty_writer_incomplete_and_conflicting_state(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):

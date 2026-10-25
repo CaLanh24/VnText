@@ -128,6 +128,19 @@ RELEASE_TASK_012_BUDGET_APPROVAL = (
     "preserve all history, cache and user data."
 )
 
+RELEASE_TASK_012_INITIAL_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
+RELEASE_TASK_012_INITIAL_BUDGET_APPROVAL = RELEASE_TASK_012_BUDGET_APPROVAL
+RELEASE_TASK_012_BUDGET_LIMIT_BYTES = 5 * 1024 ** 3
+RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL = (
+    "Owner 2026-10-25 authorized completion and publication of release-0.1.12. "
+    "Under the standing 2026-10-24 measured release-allocation authorization, "
+    "the coordinator records a temporary 5 GiB non-exempt ceiling for the exact "
+    "registered candidate-0.1.12 after a complete 104598-entry inventory measured "
+    "3618657975 bytes with the four official updater baselines; the initial 3 GiB "
+    "ceiling was insufficient. Terminal cleanup returns to at most 1 GiB, shared "
+    ".dev-env stays at most 6 GiB, and all history, cache and user data are preserved."
+)
+
 def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     task_id = task_id or str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip() or RELEASE_TASK_BUDGET_ID
     if task_id == RELEASE_TASK_010_BUDGET_ID:
@@ -135,7 +148,7 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     if task_id == RELEASE_TASK_011_BUDGET_ID:
         return task_id, "0.1.11", RELEASE_TASK_011_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_012_BUDGET_ID:
-        return task_id, "0.1.12", RELEASE_TASK_012_BUDGET_APPROVAL
+        return task_id, "0.1.12", RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_019_BUDGET_ID:
         return task_id, "0.1.9", RELEASE_TASK_019_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_018_BUDGET_ID:
@@ -147,6 +160,29 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     if task_id == RELEASE_TASK_BUDGET_ID:
         return task_id, "0.1.5", RELEASE_TASK_BUDGET_APPROVAL
     raise ValueError("unsupported temporary release task budget")
+
+
+def _release_task_budget_limit(task_id: str) -> int:
+    if task_id == RELEASE_TASK_012_BUDGET_ID:
+        return RELEASE_TASK_012_BUDGET_LIMIT_BYTES
+    return RELEASE_TASK_BUDGET_LIMIT_BYTES
+
+
+def _release_budget_record_is_valid(
+    release_budget: dict,
+    task_id: str,
+    current_approval: str,
+) -> bool:
+    if (
+        release_budget.get("limit_bytes") == _release_task_budget_limit(task_id)
+        and release_budget.get("owner_approval") == current_approval
+    ):
+        return True
+    return (
+        task_id == RELEASE_TASK_012_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_012_INITIAL_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_012_INITIAL_BUDGET_APPROVAL
+    )
 
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
 RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID = "call_4a31e293dabe487a98c54c4cdf706a07"
@@ -207,7 +243,7 @@ EXTRA_DELETE_GLOBS = {
 # safety limits, not completeness shortcuts: exhausting either limit makes
 # the run REVIEW_REQUIRED and prevents deletion.
 DEFAULT_INVENTORY_TIMEOUT_SECONDS = 30.0
-DEFAULT_INVENTORY_MAX_ITEMS = 100_000
+DEFAULT_INVENTORY_MAX_ITEMS = 150_000
 # Hashing every small file in a retained Python/runtime tree can turn a
 # bounded inventory into a multi-gigabyte read.  Size/mtime remain the primary
 # modification signature; exact hashes are retained for genuinely small
@@ -2020,7 +2056,7 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
     state = _git_repository_state()
     if (
         budget.get("task_id") != task_id
-        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("limit_bytes") != _release_task_budget_limit(task_id)
         or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(expected_scope)
         or budget.get("source_sha") != epoch.get("source_sha")
@@ -2056,7 +2092,7 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
         or str(entry.get("scope_root") or "") != str(expected_scope)
     ):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
-    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, task_id
+    return _release_task_budget_limit(task_id), None, task_id
 
 
 def _nested_release_budget_profile(root: Path) -> tuple[int, str | None, str]:
@@ -2080,7 +2116,7 @@ print(json.dumps(c._parent_release_budget_readback(parent,source)))
         value = json.loads(result.stdout)
         if not isinstance(value, list) or len(value) != 3:
             raise ValueError("invalid parent budget response")
-        if value[0] not in (PROJECT_SIZE_LIMIT_BYTES, RELEASE_TASK_BUDGET_LIMIT_BYTES):
+        if value[0] not in (PROJECT_SIZE_LIMIT_BYTES, _release_task_budget_limit(task_id)):
             raise ValueError("invalid parent budget limit")
         return tuple(value)
     except (OSError, ValueError, subprocess.SubprocessError) as exc:
@@ -2129,7 +2165,7 @@ def register_release_task_scope() -> dict:
     if (
         not isinstance(budget, dict)
         or budget.get("task_id") != task_id
-        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("limit_bytes") != _release_task_budget_limit(task_id)
         or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(scope)
         or budget.get("source_sha") != state.get("head")
@@ -2179,7 +2215,7 @@ def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state:
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
     if (
         budget.get("task_id") != task_id
-        or budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or budget.get("limit_bytes") != _release_task_budget_limit(task_id)
         or budget.get("owner_approval") != approval
         or budget.get("scope_path") != str(expected_scope)
         or budget.get("source_sha") != epoch.get("source_sha")
@@ -2213,7 +2249,7 @@ def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state:
         or str(entry.get("scope_root") or "") != str(expected_scope)
     ):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_scope_not_registered_exactly", "default"
-    return RELEASE_TASK_BUDGET_LIMIT_BYTES, None, task_id
+    return _release_task_budget_limit(task_id), None, task_id
 
 
 def _project_size_snapshot(*, timeout_seconds: float = DEFAULT_INVENTORY_TIMEOUT_SECONDS,
@@ -2811,7 +2847,7 @@ def _epoch_provenance(
         task_id, version, approval = _release_budget_spec(release_task_id)
         provenance["release_task_budget"] = {
             "task_id": task_id,
-            "limit_bytes": RELEASE_TASK_BUDGET_LIMIT_BYTES,
+            "limit_bytes": _release_task_budget_limit(task_id),
             "scope_path": str((ROOT / "RELEASE_RUN" / f"candidate-{version}").resolve()),
             "source_sha": source_sha,
             "owner_approval": approval,
@@ -2933,9 +2969,8 @@ def _epoch_verify_files(
     if release_budget is not None and (
         not isinstance(release_budget, dict)
         or release_budget.get("task_id") != budget_task
-        or release_budget.get("limit_bytes") != RELEASE_TASK_BUDGET_LIMIT_BYTES
+        or not _release_budget_record_is_valid(release_budget, budget_task, budget_approval)
         or release_budget.get("terminal_limit_bytes") != PROJECT_SIZE_LIMIT_BYTES
-        or release_budget.get("owner_approval") != budget_approval
         or release_budget.get("source_sha") != epoch.get("source_sha")
         or release_budget.get("scope_path") != str((ROOT / "RELEASE_RUN" / f"candidate-{budget_version}").resolve())
     ):
