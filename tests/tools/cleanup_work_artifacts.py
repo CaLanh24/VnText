@@ -244,6 +244,17 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL = (
     "0.1.13 evidence rebaseline preserving the complete existing epoch history; the ordinary "
     "eight-hop transition limit remains unchanged."
 )
+# Second, independent single-use authority for release 0.1.13.  After the first
+# rebaseline another ordinary eight-hop chain was exhausted; the Owner answered a new
+# question with an exact phrase.  It does not reuse or reset the earlier approval.
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_2 = "call_29c7ca59cc1947f89b14f31a4c7d289e"
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_2 = (
+    "Owner 2026-10-26 answered question call_29c7ca59cc1947f89b14f31a4c7d289e "
+    "(request_user_input_async) with the exact reply 'Cho phép thêm một lần rebaseline 0.1.13', "
+    "authorizing one additional no-delete 0.1.13 epoch metadata rebaseline that preserves the complete "
+    "existing epoch history and relaxes no validator or protection. It is distinct from the consumed "
+    "call_6331409a3fcc4443b4b66fb4552c4254; the ordinary eight-hop transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -251,6 +262,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL
+    ),
+    RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_2: (
+        RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_2
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
