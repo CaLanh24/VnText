@@ -193,8 +193,17 @@ internal sealed class AppDialogWindow : Window
         if (panel is null) return;
         _ownerPanel = panel;
         _previousEffect = panel.Effect;
-        panel.Effect = new BlurEffect { Radius = 8 };
         _overlay = new Border { Background = new SolidColorBrush(Color.FromArgb(140, 24, 31, 45)), IsHitTestVisible = false };
+        if (_wrappedOriginal is Border ownerCard)
+        {
+            // Transparent shell owner: dim only the visible rounded card, not the whole transparent window.
+            _overlay.Margin = ownerCard.Margin;
+            _overlay.CornerRadius = ownerCard.CornerRadius;
+        }
+        else
+        {
+            panel.Effect = new BlurEffect { Radius = 8 };
+        }
         Grid.SetColumnSpan(_overlay, 2);
         Grid.SetRowSpan(_overlay, Math.Max(1, (panel as Grid)?.RowDefinitions.Count ?? 1));
         Panel.SetZIndex(_overlay, int.MaxValue);

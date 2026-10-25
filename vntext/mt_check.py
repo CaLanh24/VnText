@@ -76,6 +76,46 @@ def _parens_balanced(text):
     return depth == 0
 
 
+def _top_level_groups(text):
+    """Top-level ``(...)`` groups as (start, end) spans; unbalanced text yields none."""
+    spans, depth, start = [], 0, 0
+    for index, char in enumerate(text):
+        if char == '(':
+            if depth == 0:
+                start = index
+            depth += 1
+        elif char == ')':
+            depth -= 1
+            if depth < 0:
+                return []
+            if depth == 0:
+                spans.append((start, index + 1))
+    return spans if depth == 0 else []
+
+
+def interior_prose_groups(text):
+    """Parenthetical groups with words inside that do not wrap the whole line.
+
+    A group around the entire line is stylistic narration marking and may be dropped
+    in translation; an interior group such as ``(tax included)`` carries content
+    and must keep its pair.
+    """
+    text = str(text or '')
+    out = []
+    for start, end in _top_level_groups(text):
+        if not WORD.search(text[start:end]):
+            continue
+        before, after = text[:start], text[end:]
+        wraps_line = (not before.strip() or bool(KEY_PREFIX.fullmatch(before))) and not re.search(r'[^\W_]', after)
+        if not wraps_line:
+            out.append((start, end))
+    return out
+
+
+_INTERIOR_QUESTION = re.compile(r'[?？](?=\s+[^\s"\'”’)\]])')
+_ENDS_WITH_QUESTION = re.compile(r"[?\uff1f][\s\x22\x27\u2019\u201d)\]]*$")
+
+
 def typed_carrier_problems(src, new):
     """Structural mismatches for printf specifiers and inline URLs.
 
@@ -96,9 +136,14 @@ def typed_carrier_problems(src, new):
     # whole pair, as stylistic narration marks sometimes are, stays allowed.
     if _parens_balanced(str(src or '')) and not _parens_balanced(str(new or '')):
         out.append('parenthesis clause damaged')
+    if len(interior_prose_groups(src)) > len(_top_level_groups(str(new or ''))):
+        out.append('parenthetical clause omitted')
+    if (_ENDS_WITH_QUESTION.search(str(src or '').strip())
+            and len(_INTERIOR_QUESTION.findall(str(new or ''))) > len(_INTERIOR_QUESTION.findall(str(src or '')))):
+        out.append('question split into separate sentences')
     if sorted(numeric_carriers(src)) != sorted(numeric_carriers(new)):
         out.append('money/percent mismatch')
-    if re.search(r'[?？][\s"\'”’)\]]*$', str(src or '').strip()) and not re.search(r'[?？]', str(new or '')):
+    if _ENDS_WITH_QUESTION.search(str(src or '').strip()) and not re.search(r'[?？]', str(new or '')):
         out.append('question mark lost')
     if inline_urls(src) != inline_urls(new):
         out.append('url mismatch')
@@ -277,6 +322,41 @@ _INITIAL_TITLES = frozenset('professor doctor teacher captain officer commander 
 _DETERMINERS = frozenset('the a an your my this that these those'.split())
 
 
+_SPM_COMMON_WORD_SCORE = -11.5
+_spm_state = {}
+
+
+def is_common_english_word(token):
+    """True when the model's own source vocabulary holds the lowercase word as one
+    frequent piece (``tax``, ``buy``, ``price``) - evidence it is ordinary English,
+    not a name.  Rare/split pieces (``marcus``, ``aldric``) and rare whole pieces
+    stay name-eligible.  Without the model vocabulary this returns False, so the
+    caller keeps its previous behaviour.
+    """
+    low = str(token or '').casefold()
+    sp = _spm_state.get('sp')
+    if sp is None and 'failed' not in _spm_state:
+        try:
+            from vntext.mt_ct2_model import resolve_model_dir
+            path = resolve_model_dir() / 'source.spm'
+            import sentencepiece
+            _spm_state['sp'] = sp = sentencepiece.SentencePieceProcessor(model_file=str(path)) if path.is_file() else None
+            if sp is None:
+                _spm_state['failed'] = True
+        except Exception:
+            _spm_state['failed'] = True
+            sp = None
+    if sp is None:
+        return False
+    piece = sp.piece_to_id('▁' + low)
+    return piece != sp.unk_id() and sp.get_score(piece) > _SPM_COMMON_WORD_SCORE
+
+
+def _sentence_initial(body, start):
+    before = body[:start].rstrip()
+    return not before or before[-1] in '.!?…:;' or bool(KEY_PREFIX.fullmatch(body[:start]))
+
+
 def source_proper_name_tokens(src, whitelist=None):
     """Return conservative source name-like tokens safe to retain in MT output.
 
@@ -309,6 +389,14 @@ def source_proper_name_tokens(src, whitelist=None):
             )
             and token.casefold() not in known
             and generic_term_translation(token) is None
+            # A capital letter that only marks a sentence start is not name evidence
+            # when the model vocabulary knows the word as ordinary English.
+            and not (
+                _sentence_initial(body, match.start())
+                and index + 1 < len(matches)
+                and matches[index + 1].group(0)[:1].islower()
+                and is_common_english_word(token)
+            )
         ):
             out.add(token.casefold())
             continue

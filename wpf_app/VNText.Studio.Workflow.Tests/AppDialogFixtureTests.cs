@@ -82,7 +82,10 @@ internal static partial class Program
                                 AssertTrue(ReferenceEquals(outer, inner.Owner));
                                 var host = outer.Content as Grid ?? throw new InvalidOperationException("Outer shell not hosted for overlay");
                                 AssertTrue(host.Children.OfType<Border>().Count(b => b.Background is SolidColorBrush { Color.A: > 0 } && !b.IsHitTestVisible) == 1);
-                                AssertTrue(host.Effect is System.Windows.Media.Effects.BlurEffect);
+                                var dim = host.Children.OfType<Border>().Single(b => !b.IsHitTestVisible);
+                                // The dim layer follows the rounded owner card, not the transparent window rectangle.
+                                AssertEqual(AppDialogWindow.CardRadius, dim.CornerRadius.TopLeft);
+                                AssertEqual(AppDialogWindow.CardMargin, dim.Margin.Left);
                                 var innerCard = (Border)inner.Content;
                                 var footerBorder = FindVisualChildren<Border>(innerCard).Single(b => b.CornerRadius.BottomLeft == AppDialogWindow.CardRadius && b.CornerRadius.TopLeft == 0);
                                 AssertEqual(AppDialogWindow.CardRadius, footerBorder.CornerRadius.BottomRight);

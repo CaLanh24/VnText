@@ -203,9 +203,9 @@ class NumericCarrierTests(unittest.TestCase):
         row = _row(self.PRICE)
         damaged = "NPC: Giá là $5.00 (thuế: 8%- bạn chấp nhận không?"
         self.assertIn("parenthesis clause damaged", structural_problems(row, damaged))
-        # Dropping a whole pair (stylistic narration marks) is not clause damage.
-        self.assertEqual(
-            structural_problems(row, "NPC: Giá là $5.00 thuế: 8% - bạn chấp nhận không?"), [])
+        # Dropping an interior prose pair loses its clause; only whole-line narration marks may go.
+        self.assertIn("parenthetical clause omitted",
+            structural_problems(row, "NPC: Giá là $5.00 thuế: 8% - bạn chấp nhận không?"))
         # An unbalanced source (emoticon) is not held to balance.
         self.assertEqual(structural_problems(_row("NPC: Thanks :)"), "NPC: Cảm ơn"), [])
 
@@ -215,6 +215,58 @@ class NumericCarrierTests(unittest.TestCase):
         self.assertIn("8%", tokens)
         self.assertNotIn("$5.00", masked)
         self.assertNotIn("8%", masked)
+
+
+class SemanticStructureTests(unittest.TestCase):
+    PRICE = "NPC: Price: $5.00 (tax included). Do you accept?"
+
+    def test_interior_parenthetical_prose_must_keep_its_pair(self):
+        row = _row(self.PRICE)
+        self.assertIn("parenthetical clause omitted", structural_problems(row, "NPC: Giá: $5.00 Bạn có chấp nhận không?"))
+        self.assertEqual(structural_problems(row, "NPC: Giá: $5.00 (đã gồm thuế). Bạn có chấp nhận không?"), [])
+
+    def test_whole_line_narration_parentheses_may_still_be_dropped(self):
+        for source in ("(He {A}s deep inside me...)", "NPC: (She smiles at you.)", "(Sighs.)"):
+            with self.subTest(source=source):
+                self.assertEqual(structural_problems(_row(source), "Không có gì cả {A}".replace("{A}", "{A}" if "{A}" in source else "")), [])
+
+    def test_numeric_only_parentheses_are_not_prose_groups(self):
+        self.assertEqual(mt_check.interior_prose_groups("Pay $5 (8%) now"), [])
+        self.assertEqual(len(mt_check.interior_prose_groups("Pay $5 (tax: 8%) now")), 1)
+
+    def test_single_question_must_not_split_into_two_sentences(self):
+        row = _row("NPC: Do you accept 20% off today?")
+        self.assertIn("question split into separate sentences",
+                      structural_problems(row, "NPC: Anh có chấp nhận không? 20% Hôm nay nghỉ à?"))
+        self.assertEqual(structural_problems(row, "NPC: Hôm nay giảm 20%, bạn có nhận không?"), [])
+
+    def test_sources_with_several_questions_keep_their_structure_freedom(self):
+        row = _row("NPC: Really? You did it?")
+        self.assertEqual(structural_problems(row, "NPC: Thật sao? Bạn làm được ư?"), [])
+        self.assertEqual(structural_problems(row, "NPC: Thật sao? Bạn làm được ư?".replace("? ", "? ")), [])
+
+    def test_sentence_start_capital_is_not_name_evidence_when_vocabulary_knows_the_word(self):
+        from unittest import mock
+        text = "NPC: Tax is 8% and Marcus pays."
+        with mock.patch.object(mt_check, "is_common_english_word", side_effect=lambda token: token.casefold() in {"tax", "pay"}):
+            names = mt_check.source_proper_name_tokens(text)
+        self.assertNotIn("tax", names)
+        self.assertIn("marcus", names)
+        # Without vocabulary evidence the previous conservative behaviour is kept.
+        with mock.patch.object(mt_check, "is_common_english_word", return_value=False):
+            self.assertIn("tax", mt_check.source_proper_name_tokens(text))
+
+    def test_mid_sentence_capitalised_word_stays_name_eligible_even_if_common(self):
+        from unittest import mock
+        with mock.patch.object(mt_check, "is_common_english_word", return_value=True):
+            self.assertIn("grace", mt_check.source_proper_name_tokens("NPC: Please ask Grace about it."))
+
+    def test_ordinary_sentence_start_word_is_translated_not_protected(self):
+        from unittest import mock
+        with mock.patch.object(mt_check, "is_common_english_word", side_effect=lambda token: token.casefold() == "tax"):
+            _masked, tokens, _kinds, _prepared = mask_text("NPC: Tax is 8% and the tip is 15%.")
+        self.assertNotIn("Tax", tokens)
+        self.assertIn("8%", tokens)
 
 
 class PrintfOrderSemanticsTests(unittest.TestCase):
