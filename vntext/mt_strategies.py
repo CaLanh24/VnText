@@ -410,11 +410,13 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
     for match in re.finditer(r"\([^()]*\)", src):
         if match.start() > cursor:
             pieces.append(
-                translate_protected(src[cursor : match.start()], fn, always_attempt=True)
+                translate_protected(
+                    src[cursor : match.start()], fn, always_attempt=True, key_prefix=cursor == 0
+                )
             )
         original = match.group(0)
         inner = original[1:-1]
-        translated_inner = translate_protected(inner, fn, always_attempt=True)
+        translated_inner = translate_protected(inner, fn, always_attempt=True, key_prefix=False)
         # Keep the source aside when CT2 returns empty/garbage; the caller's
         # normal structural and quality validation will still decide whether
         # the complete row can be accepted.
@@ -423,7 +425,7 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
         pieces.append("(" + translated_inner + ")")
         cursor = match.end()
     if cursor < len(src):
-        pieces.append(translate_protected(src[cursor:], fn, always_attempt=True))
+        pieces.append(translate_protected(src[cursor:], fn, always_attempt=True, key_prefix=False))
     return postprocess(src, "".join(pieces))
 
 

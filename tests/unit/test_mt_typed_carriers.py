@@ -245,28 +245,37 @@ class SemanticStructureTests(unittest.TestCase):
         self.assertEqual(structural_problems(row, "NPC: Thật sao? Bạn làm được ư?"), [])
         self.assertEqual(structural_problems(row, "NPC: Thật sao? Bạn làm được ư?".replace("? ", "? ")), [])
 
-    def test_sentence_start_capital_is_not_name_evidence_when_vocabulary_knows_the_word(self):
-        from unittest import mock
-        text = "NPC: Tax is 8% and Marcus pays."
-        with mock.patch.object(mt_check, "is_common_english_word", side_effect=lambda token: token.casefold() in {"tax", "pay"}):
-            names = mt_check.source_proper_name_tokens(text)
-        self.assertNotIn("tax", names)
-        self.assertIn("marcus", names)
-        # Without vocabulary evidence the previous conservative behaviour is kept.
-        with mock.patch.object(mt_check, "is_common_english_word", return_value=False):
-            self.assertIn("tax", mt_check.source_proper_name_tokens(text))
+    def test_label_like_text_inside_a_parenthetical_is_prose_not_a_protected_key_prefix(self):
+        from vntext.mt_translation_safety import split_parts
+        self.assertEqual(split_parts("tax: 8%")[1][0], ("tech", "tax: "))  # line start keeps the label rule
+        self.assertEqual(split_parts("tax: 8%", key_prefix=False)[1][0], ("text", "tax: "))
+        self.assertEqual(split_parts("NPC: Hello", key_prefix=True)[1][0], ("tech", "NPC: "))
 
-    def test_mid_sentence_capitalised_word_stays_name_eligible_even_if_common(self):
-        from unittest import mock
-        with mock.patch.object(mt_check, "is_common_english_word", return_value=True):
-            self.assertIn("grace", mt_check.source_proper_name_tokens("NPC: Please ask Grace about it."))
+    def test_parenthetical_segments_send_inner_prose_to_the_model(self):
+        from vntext.mt_strategies import translate_parenthetical_segments_ct2
+        seen = []
 
-    def test_ordinary_sentence_start_word_is_translated_not_protected(self):
-        from unittest import mock
-        with mock.patch.object(mt_check, "is_common_english_word", side_effect=lambda token: token.casefold() == "tax"):
-            _masked, tokens, _kinds, _prepared = mask_text("NPC: Tax is 8% and the tip is 15%.")
-        self.assertNotIn("Tax", tokens)
-        self.assertIn("8%", tokens)
+        class Spy:
+            def translate(self, text):
+                seen.append(text)
+                return "dịch(" + text + ")"
+
+            def translate_many(self, texts):
+                return [self.translate(t) for t in texts]
+
+        out = translate_parenthetical_segments_ct2("NPC: The price is $5.00 (tax: 8%) - do you accept?", Spy())
+        self.assertIn("tax:", " ".join(seen))
+        self.assertIn("$5.00", out)
+        self.assertIn("8%", out)
+        self.assertEqual(out.count("("), out.count(")"))
+
+    def test_ambiguous_sentence_initial_names_stay_protected(self):
+        # Capital + vocabulary frequency cannot separate names from words (Rose, Grace, Mark,
+        # Bill, Dawn, Summer, Hunter; Will/May/Hope are already in the known-word lists):
+        # no frequency rule may release them. See DEV_RUN/gatec/spm-name-diagnostic.txt.
+        for name in ("Rose", "Grace", "Mark", "Bill", "Dawn", "Summer", "Hunter", "Marcus"):
+            with self.subTest(name=name):
+                self.assertIn(name.casefold(), mt_check.source_proper_name_tokens(f"NPC: {name} is here."))
 
 
 class PrintfOrderSemanticsTests(unittest.TestCase):

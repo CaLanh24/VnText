@@ -50,7 +50,7 @@ def apply_exact_labels(source, text):
 
 
 
-def collect_spans(text, *, protect_lexical=True):
+def collect_spans(text, *, protect_lexical=True, key_prefix=True):
     spans = []
     # File/path literals in help text are user-facing instructions.  Protect
     # the complete slash/backslash-delimited token before lexical fallbacks so
@@ -110,7 +110,7 @@ def collect_spans(text, *, protect_lexical=True):
             i = j + len(mt_check.HEART)
     for m in mt_check.COND_EXPR.finditer(text):
         spans.append((m.start(), m.end(), m.group(0), 'cond'))
-    m = mt_check.KEY_PREFIX.match(text)
+    m = mt_check.KEY_PREFIX.match(text) if key_prefix else None
     if m:
         spans.append((m.start(), m.end(), m.group(0), 'tech'))
     spans.sort(key=lambda x: (x[0], -(x[1] - x[0])))
@@ -152,10 +152,10 @@ def restore_text(masked, tokens, kinds):
     return SENTINEL_RX.sub(repl, masked)
 
 
-def split_parts(text, *, protect_lexical=True):
+def split_parts(text, *, protect_lexical=True, key_prefix=True):
     """Separate opaque spans from translatable text without altering either."""
     prepared = strip_lexical_suffixes(text)
-    spans = collect_spans(prepared, protect_lexical=protect_lexical)
+    spans = collect_spans(prepared, protect_lexical=protect_lexical, key_prefix=key_prefix)
     parts = []
     position = 0
     for start, end, original, kind in spans:
@@ -204,8 +204,10 @@ def translate_fragment(value, translate_fn, *, always_attempt=False):
     return lead + out + trail
 
 
-def translate_protected(source, translate_fn, *, always_attempt=False):
-    _prepared, parts = split_parts(source)
+def translate_protected(source, translate_fn, *, always_attempt=False, key_prefix=True):
+    # key_prefix=False for text that is not the start of a line (e.g. the inside of a
+    # parenthetical): "tax: 8%" there is prose, not a protected "Key: " label.
+    _prepared, parts = split_parts(source, key_prefix=key_prefix)
     out = []
     for kind, value in parts:
         if kind == "tech":

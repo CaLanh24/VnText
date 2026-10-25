@@ -322,41 +322,6 @@ _INITIAL_TITLES = frozenset('professor doctor teacher captain officer commander 
 _DETERMINERS = frozenset('the a an your my this that these those'.split())
 
 
-_SPM_COMMON_WORD_SCORE = -11.5
-_spm_state = {}
-
-
-def is_common_english_word(token):
-    """True when the model's own source vocabulary holds the lowercase word as one
-    frequent piece (``tax``, ``buy``, ``price``) - evidence it is ordinary English,
-    not a name.  Rare/split pieces (``marcus``, ``aldric``) and rare whole pieces
-    stay name-eligible.  Without the model vocabulary this returns False, so the
-    caller keeps its previous behaviour.
-    """
-    low = str(token or '').casefold()
-    sp = _spm_state.get('sp')
-    if sp is None and 'failed' not in _spm_state:
-        try:
-            from vntext.mt_ct2_model import resolve_model_dir
-            path = resolve_model_dir() / 'source.spm'
-            import sentencepiece
-            _spm_state['sp'] = sp = sentencepiece.SentencePieceProcessor(model_file=str(path)) if path.is_file() else None
-            if sp is None:
-                _spm_state['failed'] = True
-        except Exception:
-            _spm_state['failed'] = True
-            sp = None
-    if sp is None:
-        return False
-    piece = sp.piece_to_id('▁' + low)
-    return piece != sp.unk_id() and sp.get_score(piece) > _SPM_COMMON_WORD_SCORE
-
-
-def _sentence_initial(body, start):
-    before = body[:start].rstrip()
-    return not before or before[-1] in '.!?…:;' or bool(KEY_PREFIX.fullmatch(body[:start]))
-
-
 def source_proper_name_tokens(src, whitelist=None):
     """Return conservative source name-like tokens safe to retain in MT output.
 
@@ -389,14 +354,6 @@ def source_proper_name_tokens(src, whitelist=None):
             )
             and token.casefold() not in known
             and generic_term_translation(token) is None
-            # A capital letter that only marks a sentence start is not name evidence
-            # when the model vocabulary knows the word as ordinary English.
-            and not (
-                _sentence_initial(body, match.start())
-                and index + 1 < len(matches)
-                and matches[index + 1].group(0)[:1].islower()
-                and is_common_english_word(token)
-            )
         ):
             out.add(token.casefold())
             continue
