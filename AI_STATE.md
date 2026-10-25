@@ -7,6 +7,9 @@
 - Brain must record `ACCEPT` for implementation, regression, packaged/native integration, Setup and updater route matrix before any public push/tag/release/assets/latest-feed mutation. Continue implementation and local evidence gathering while that review is pending; do not claim release acceptance from fake tests or incomplete native evidence.
 - Real-game E2E remains separately `NOT TESTED` under Owner deferral; generated-fixture full workflow and installed-app acceptance remain required.
 - Task status: `IN PROGRESS`; candidate, build, full regression and publication have not started.
+- Coordination: Brain coordinates and reviews; the sole persistent DEV/source writer is Claude MCP DEV agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`; no Codex writer/worker, child or delegation (see the current-workflow decision in `CONTRACTS.md`). Launch cwd stays `C:\ctest` (bridge metadata unchanged); the effective workspace `C:\v` is entered explicitly in every command and verified with `pwd -W` and `git rev-parse --show-toplevel`.
+- Latest exact evidence: worker-process real-CT2 cancellation PASS 1/1 on `64fd0a059e1cd792b970c5865453699ad174fb53` (`DEV_RUN/runner-reports/canonical-run-e1c3bbfada874068bc426065dc700be9.md`); WPF/packaged cancel-and-exit and retry remain `PARTIAL`; wrapper cleanup disposition `REVIEW_REQUIRED`.
+- Next bounded gate (before any native build): audit (a) worker error classification, because the failed `33412e9` run reported a non-cancel `TypeError` with the cancelled/interrupted `diagnostic_action` and root cause `UNKNOWN` — whether this is a product defect is `UNKNOWN` until audited; (b) provenance and outcome of the 2026-10-24 native-cancel/UX-cancel roots retained under `TEST_RUN` (one launch log records `app_exit_code=-1`).
 
 ## Release 0.1.12 — public release accepted
 
