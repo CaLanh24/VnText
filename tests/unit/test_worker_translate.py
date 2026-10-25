@@ -21,6 +21,7 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 import csv
 import json
 import os
+import queue
 import subprocess
 import tempfile
 import threading
@@ -43,7 +44,7 @@ def _venv_python() -> Path:
     return worker_python()
 
 
-def _start_worker(extra_env: dict | None = None) -> subprocess.Popen:
+def _start_worker(extra_env: dict | None = None, *, startup_code: str | None = None) -> subprocess.Popen:
     py = _venv_python()
     if not py.is_file():
         raise unittest.SkipTest("venv python missing")
@@ -55,8 +56,9 @@ def _start_worker(extra_env: dict | None = None) -> subprocess.Popen:
     env.setdefault("VNTEXT_CT2_NO_DOWNLOAD", "1")
     if extra_env:
         env.update(extra_env)
+    command = [str(py), "-u", "-c", startup_code] if startup_code is not None else [str(py), "-u", "-m", "vntext_worker.worker_main"]
     return subprocess.Popen(
-        [str(py), "-u", "-m", "vntext_worker.worker_main"],
+        command,
         cwd=str(ROOT),
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -350,6 +352,7 @@ class WorkerTranslateTests(unittest.TestCase):
         self.assertFalse(Path(str(csv_path) + ".tmp").exists())
         print(json.dumps({
             "native_ct2_cancel": "PASS",
+            "evidence_scope": "in_process_translation_pipeline_with_real_model_and_instrumented_adapter",
             "model_dir": str(MODEL_DIR),
             "source_rows": len(rows),
             "synchronous_call_ms": round((timing["returned"] - timing["entered"]) * 1000),
@@ -360,6 +363,203 @@ class WorkerTranslateTests(unittest.TestCase):
             "persisted_translations": sum(bool(str(row.get("translation") or "").strip()) for row in persisted),
             "temporary_csv_exists": Path(str(csv_path) + ".tmp").exists(),
         }, ensure_ascii=False, sort_keys=True))
+
+    def test_worker_protocol_cancel_during_real_ct2_call_acknowledges_and_exits(self):
+        out = WORK / f"worker_real_cancel_{time.time_ns()}"
+        marker = out / "call-entry.json"
+        timing_path = out / "call-timing.json"
+        csv_path = out / "translation.csv"
+        rows = [
+            {
+                "key": f"worker-native-{i}",
+                "source_text": (
+                    f"Traveler {i}: I carried the silver lantern past the old stone bridge, "
+                    "left it beside the wooden gate, and promised to return before sunset."
+                ),
+                "translation": "",
+                "context": f"line:{i}",
+                "file_path": "worker_native_cancel.txt",
+                "import_method": "plain_text_line",
+                "safety": "safe",
+                "backend": "plain_text",
+            }
+            for i in range(256)
+        ]
+        _write_csv(csv_path, rows)
+        (out / "manifest.json").write_text('{"entries":[]}', encoding="utf-8")
+
+        # This disposable worker launcher wraps only the adapter boundary. The
+        # worker still receives NDJSON commands over stdin and performs real
+        # OPUS-MT/CT2 inference in its task thread; the timestamp files let the
+        # parent send cancel after the adapter call starts but before it returns.
+        startup_code = r'''
+import json, os, time
+from pathlib import Path
+import vntext.app_tasks as app_tasks
+original = app_tasks.run_ct2_translate
+marker = Path(os.environ["VNTEXT_TEST_CT2_CALL_MARKER"])
+timing_path = Path(os.environ["VNTEXT_TEST_CT2_CALL_TIMING"])
+def observed_run(csv_path, *args, **kwargs):
+    from vntext.mt_ct2_model import get_translator
+    from vntext.mt_model_adapter import adapt_ct2_translator
+    model_dir = kwargs.get("model_dir") or os.environ["VNTEXT_CT2_MODEL"]
+    real = adapt_ct2_translator(get_translator(model_dir), model_dir)
+    class ObservedAdapter:
+        config = real.config
+        def metadata(self):
+            return real.metadata()
+        def translate(self, text):
+            values = self.translate_many([text])
+            return values[0] if values else text
+        def translate_many(self, texts):
+            entered = time.monotonic()
+            if not marker.exists():
+                marker.write_text(json.dumps({"entered": entered}), encoding="utf-8")
+            try:
+                return real.translate_many(texts)
+            finally:
+                timing_path.write_text(json.dumps({"entered": entered, "returned": time.monotonic()}), encoding="utf-8")
+    kwargs["model_adapter"] = ObservedAdapter()
+    return original(csv_path, *args, **kwargs)
+app_tasks.run_ct2_translate = observed_run
+from vntext_worker.worker_main import main
+raise SystemExit(main())
+'''
+        proc = _start_worker(
+            {
+                "VNTEXT_TEST_CT2_CALL_MARKER": str(marker),
+                "VNTEXT_TEST_CT2_CALL_TIMING": str(timing_path),
+            },
+            startup_code=startup_code,
+        )
+        events: queue.Queue = queue.Queue()
+        reader = None
+        observed: list[dict] = []
+        cancel_sent_at = 0.0
+        try:
+            _read_ready(proc)
+
+            def read_events() -> None:
+                assert proc.stdout is not None
+                for line in proc.stdout:
+                    try:
+                        events.put(json.loads(line))
+                    except json.JSONDecodeError:
+                        events.put({"type": "invalid_json", "line": line[:300]})
+                events.put(None)
+
+            reader = threading.Thread(target=read_events, daemon=True)
+            reader.start()
+            assert proc.stdin is not None
+            task_id = "worker-real-ct2-cancel"
+            proc.stdin.write(json.dumps({
+                "v": PROTOCOL_VERSION,
+                "type": "run",
+                "id": task_id,
+                "task": "translate",
+                "params": {"out": str(out)},
+            }) + "\n")
+            proc.stdin.flush()
+
+            call_deadline = time.monotonic() + 120
+            while not marker.is_file() and time.monotonic() < call_deadline and proc.poll() is None:
+                try:
+                    event = events.get(timeout=0.05)
+                except queue.Empty:
+                    continue
+                if event is None:
+                    break
+                observed.append(event)
+                if event.get("type") == "complete" and event.get("id") == task_id:
+                    self.fail(f"worker completed before real CT2 call instrumentation: {event}")
+            self.assertTrue(marker.is_file(), f"worker did not enter the real CT2 adapter call; events={observed[-8:]}")
+            entered_at = float(json.loads(marker.read_text(encoding="utf-8"))["entered"])
+
+            cancel_sent_at = time.monotonic()
+            proc.stdin.write(json.dumps({"v": PROTOCOL_VERSION, "type": "cancel", "id": task_id}) + "\n")
+            proc.stdin.flush()
+            cancel_ack = None
+            completed = None
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline and (cancel_ack is None or completed is None):
+                try:
+                    event = events.get(timeout=0.1)
+                except queue.Empty:
+                    if proc.poll() is not None:
+                        break
+                    continue
+                if event is None:
+                    break
+                observed.append(event)
+                if event.get("type") == "cancel_ack" and event.get("id") == task_id:
+                    cancel_ack = event
+                elif event.get("type") == "complete" and event.get("id") == task_id:
+                    completed = event
+
+            self.assertIsNotNone(cancel_ack, f"worker did not acknowledge cancellation: {observed[-12:]}")
+            self.assertEqual("accepted", cancel_ack.get("state"), cancel_ack)
+            self.assertIsNotNone(completed, f"worker did not emit terminal completion: {observed[-12:]}")
+            self.assertFalse(completed.get("ok", True), completed)
+            self.assertEqual("cancelled", completed.get("error"), completed)
+
+            timing_deadline = time.monotonic() + 5
+            while not timing_path.is_file() and time.monotonic() < timing_deadline:
+                time.sleep(0.01)
+            self.assertTrue(timing_path.is_file(), "instrumented CT2 call did not record its terminal timestamp")
+            timing = json.loads(timing_path.read_text(encoding="utf-8"))
+            self.assertLess(entered_at, cancel_sent_at, "cancel must be sent after the real CT2 adapter call begins")
+            self.assertLess(cancel_sent_at, float(timing["returned"]), "cancel must arrive before the synchronous inference returns")
+
+            # Confirm the persistent worker remains responsive after a canceled
+            # task, then close stdin and require a normal process exit.
+            proc.stdin.write(json.dumps({"v": PROTOCOL_VERSION, "type": "ping"}) + "\n")
+            proc.stdin.flush()
+            ping_deadline = time.monotonic() + 5
+            saw_ready = False
+            while time.monotonic() < ping_deadline:
+                try:
+                    event = events.get(timeout=0.1)
+                except queue.Empty:
+                    continue
+                if event is None:
+                    break
+                observed.append(event)
+                if event.get("type") == "ready":
+                    saw_ready = True
+                    break
+            self.assertTrue(saw_ready, f"worker did not answer ping after cancellation: {observed[-12:]}")
+
+            proc.stdin.close()
+            exit_code = proc.wait(timeout=10)
+            self.assertEqual(0, exit_code)
+            with csv_path.open(encoding="utf-8-sig", newline="") as fh:
+                persisted = list(csv.DictReader(fh))
+            self.assertEqual([row["key"] for row in rows], [row["key"] for row in persisted])
+            self.assertTrue(all(not str(row.get("translation") or "").strip() for row in persisted))
+            self.assertFalse(Path(str(csv_path) + ".tmp").exists())
+            print(json.dumps({
+                "worker_protocol_real_ct2_cancel": "PASS",
+                "evidence_scope": "real_model_worker_process_stdin_cancel_ack_complete_exit",
+                "source_rows": len(rows),
+                "adapter_call_ms": round((float(timing["returned"]) - entered_at) * 1000),
+                "cancel_after_adapter_entry_ms": round((cancel_sent_at - entered_at) * 1000),
+                "cancel_before_call_return": True,
+                "cancel_ack": cancel_ack.get("state"),
+                "terminal": completed.get("error"),
+                "worker_ping_after_cancel": saw_ready,
+                "worker_exit_code": exit_code,
+                "persisted_translations": sum(bool(str(row.get("translation") or "").strip()) for row in persisted),
+                "temporary_csv_exists": Path(str(csv_path) + ".tmp").exists(),
+            }, ensure_ascii=False, sort_keys=True))
+        finally:
+            if proc.poll() is None:
+                _stop_worker(proc)
+            else:
+                for stream in (proc.stdin, proc.stdout, proc.stderr):
+                    if stream is not None:
+                        stream.close()
+            if reader is not None:
+                reader.join(timeout=2)
 
     def test_translate_model_error(self):
         out = WORK / "model_err_pkg"
