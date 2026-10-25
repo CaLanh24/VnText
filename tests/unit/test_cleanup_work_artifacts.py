@@ -267,6 +267,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         for label, inherited in (("missing", None), ("stale_one", "1"), ("malicious_true", "true")):
             with self.subTest(inherited=label), self.canonical_runner_harness() as (harness, runner_path, work):
                 report_path = work / "evidence" / "guard_report.json"
+                report_path.parent.mkdir(parents=True, exist_ok=True)
                 env = os.environ.copy()
                 env.pop("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH", None)
                 if inherited is not None:
@@ -278,7 +279,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                     cwd=harness, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180,
                 )
                 self.assertEqual(before, env)
-                self.assertIn("CHILDGUARD=0", result.stdout + result.stderr + report_path.read_text(encoding="utf-8"))
+                self.assertIn("CHILDGUARD=0", result.stdout + result.stderr)
                 self.assertNotIn("CHILDGUARD=1", result.stdout + result.stderr)
                 self.assertNotIn("CHILDGUARD=true", result.stdout + result.stderr)
 
