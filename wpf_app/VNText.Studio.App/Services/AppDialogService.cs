@@ -6,6 +6,76 @@ namespace VNText.Studio.App.Services;
 
 internal static class AppDialogService
 {
+    /// <summary>Result when a dialog is dismissed without an explicit button (X, Esc, Alt+F4).</summary>
+    internal static MessageBoxResult SafeDismissResult(MessageBoxButton buttons) => buttons switch
+    {
+        MessageBoxButton.YesNo => MessageBoxResult.No,
+        MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel,
+        _ => MessageBoxResult.OK,
+    };
+
+    /// <summary>Button labels with (label, result, primary, default), in footer order.</summary>
+    internal static IReadOnlyList<(string Label, MessageBoxResult Result, bool Primary, bool Default)> ButtonSpecs(MessageBoxButton buttons) => buttons switch
+    {
+        MessageBoxButton.YesNo => new[]
+        {
+            ("Không", MessageBoxResult.No, false, true),
+            ("Có", MessageBoxResult.Yes, true, false),
+        },
+        MessageBoxButton.YesNoCancel => new[]
+        {
+            ("Hủy", MessageBoxResult.Cancel, false, true),
+            ("Bỏ thay đổi", MessageBoxResult.No, false, false),
+            ("Lưu", MessageBoxResult.Yes, true, false),
+        },
+        MessageBoxButton.OKCancel => new[]
+        {
+            ("Hủy", MessageBoxResult.Cancel, false, false),
+            ("OK", MessageBoxResult.OK, true, true),
+        },
+        _ => new[] { ("Đóng", MessageBoxResult.OK, true, true) },
+    };
+
+    internal static AppDialogWindow Build(
+        string message,
+        string caption,
+        MessageBoxButton buttons,
+        MessageBoxImage image,
+        Window? owner,
+        Action<MessageBoxResult> setResult)
+    {
+        var app = Application.Current;
+        var ink = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black;
+        var muted = app?.TryFindResource("MutedBrush") as Brush ?? Brushes.DimGray;
+        var accentKey = image == MessageBoxImage.Error ? "ErrorBrush"
+            : image == MessageBoxImage.Warning ? "WarningBrush"
+            : "BlueBrush";
+        var accent = app?.TryFindResource(accentKey) as Brush ?? Brushes.SteelBlue;
+        var body = new StackPanel();
+        body.Children.Add(new Border { Height = 3, Width = 40, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(2), Background = accent, Margin = new Thickness(0, 0, 0, 12) });
+        body.Children.Add(new TextBox
+        {
+            Text = message,
+            IsReadOnly = true,
+            TextWrapping = TextWrapping.Wrap,
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
+            Foreground = ink,
+            FontSize = 14,
+            BorderBrush = Brushes.Transparent,
+            CaretBrush = muted,
+            IsTabStop = true,
+        });
+        var dialog = new AppDialogWindow(owner, caption, body);
+        dialog.OnDismiss = () => setResult(SafeDismissResult(buttons));
+        foreach (var (label, result, primary, isDefault) in ButtonSpecs(buttons))
+        {
+            var captured = result;
+            dialog.AddButton(label, () => setResult(captured), primary, isDefault);
+        }
+        return dialog;
+    }
+
     public static MessageBoxResult Show(
         string message,
         string caption,
@@ -16,142 +86,9 @@ internal static class AppDialogService
         var app = Application.Current;
         owner ??= app?.Windows.OfType<Window>().FirstOrDefault(window => window.IsVisible && window.IsActive)
             ?? (app?.MainWindow is { IsVisible: true } mainWindow ? mainWindow : null);
-        var ink = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black;
-        var muted = app?.TryFindResource("MutedBrush") as Brush ?? Brushes.DimGray;
-        var surface = app?.TryFindResource("SurfaceBrush") as Brush ?? Brushes.White;
-        var line = app?.TryFindResource("LineBrush") as Brush ?? Brushes.LightGray;
-        var accentKey = image == MessageBoxImage.Error ? "ErrorBrush"
-            : image == MessageBoxImage.Warning ? "WarningBrush"
-            : "BlueBrush";
-        var accent = app?.TryFindResource(accentKey) as Brush ?? Brushes.SteelBlue;
         var result = MessageBoxResult.None;
-        Action<MessageBoxResult> setResult = value => result = value;
-        var content = BuildContent(message, caption, buttons, ink, muted, line, accent, setResult);
-        var dialog = new Window
-        {
-            Title = caption,
-            Width = 480,
-            MinWidth = 360,
-            SizeToContent = SizeToContent.Height,
-            MaxHeight = 640,
-            WindowStartupLocation = owner is null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner,
-            ResizeMode = ResizeMode.NoResize,
-            ShowInTaskbar = false,
-            Background = surface,
-            Foreground = ink,
-            Content = content,
-        };
-        if (owner is not null)
-            dialog.Owner = owner;
-        dialog.Closing += (_, _) =>
-        {
-            if (result != MessageBoxResult.None)
-                return;
-            result = buttons switch
-            {
-                MessageBoxButton.YesNo => MessageBoxResult.No,
-                MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel,
-                _ => MessageBoxResult.OK,
-            };
-        };
-        dialog.KeyDown += (_, e) =>
-        {
-            if (e.Key == System.Windows.Input.Key.Escape)
-            {
-                setResult(buttons switch
-                {
-                    MessageBoxButton.YesNo => MessageBoxResult.No,
-                    MessageBoxButton.YesNoCancel or MessageBoxButton.OKCancel => MessageBoxResult.Cancel,
-                    _ => MessageBoxResult.OK,
-                });
-                dialog.Close();
-            }
-        };
+        var dialog = Build(message, caption, buttons, image, owner, value => result = value);
         dialog.ShowDialog();
-        return result;
-    }
-
-    private static UIElement BuildContent(
-        string message,
-        string caption,
-        MessageBoxButton buttons,
-        Brush ink,
-        Brush muted,
-        Brush line,
-        Brush accent,
-        Action<MessageBoxResult> setResult)
-    {
-        var root = new StackPanel { Margin = new Thickness(22) };
-        root.Children.Add(new Border { Height = 3, Background = accent, Margin = new Thickness(0, 0, 0, 16) });
-        var title = new TextBlock
-        {
-            Text = caption,
-            FontSize = 17,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = ink,
-            Margin = new Thickness(0, 0, 0, 12),
-        };
-        root.Children.Add(title);
-        var body = new TextBox
-        {
-            Text = message,
-            IsReadOnly = true,
-            TextWrapping = TextWrapping.Wrap,
-            AcceptsReturn = true,
-            BorderThickness = new Thickness(0),
-            Background = Brushes.Transparent,
-            Foreground = ink,
-            FontSize = 14,
-            BorderBrush = Brushes.Transparent,
-            CaretBrush = muted,
-            MaxHeight = 420,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            IsTabStop = true,
-        };
-        root.Children.Add(body);
-        root.Children.Add(new Border { Height = 1, Background = line, Margin = new Thickness(0, 18, 0, 12) });
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        root.Children.Add(actions);
-
-        void Add(string label, MessageBoxResult result, bool primary = false, bool isDefault = false)
-        {
-            var button = new Button
-            {
-                Content = label,
-                MinWidth = 84,
-                Margin = new Thickness(8, 0, 0, 0),
-                Padding = new Thickness(14, 7, 14, 7),
-                Style = Application.Current?.TryFindResource(primary ? "PrimaryButton" : "OutlineButton") as Style,
-                IsDefault = isDefault,
-            };
-            button.Click += (_, _) =>
-            {
-                setResult(result);
-                Window.GetWindow(button)?.Close();
-            };
-            actions.Children.Add(button);
-        }
-
-        if (buttons == MessageBoxButton.YesNo)
-        {
-            Add("Không", MessageBoxResult.No, isDefault: true);
-            Add("Có", MessageBoxResult.Yes, true);
-        }
-        else if (buttons == MessageBoxButton.YesNoCancel)
-        {
-            Add("Hủy", MessageBoxResult.Cancel, isDefault: true);
-            Add("Bỏ thay đổi", MessageBoxResult.No);
-            Add("Lưu", MessageBoxResult.Yes, true);
-        }
-        else if (buttons == MessageBoxButton.OKCancel)
-        {
-            Add("Hủy", MessageBoxResult.Cancel);
-            Add("OK", MessageBoxResult.OK, true, isDefault: true);
-        }
-        else
-        {
-            Add("Đóng", MessageBoxResult.OK, true, isDefault: true);
-        }
-        return root;
+        return result == MessageBoxResult.None ? SafeDismissResult(buttons) : result;
     }
 }

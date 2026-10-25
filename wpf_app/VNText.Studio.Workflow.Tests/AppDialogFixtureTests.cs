@@ -55,7 +55,14 @@ internal static partial class Program
                             "Pressing Escape must cancel this confirmation.", MessageBoxButton.YesNoCancel, MessageBoxResult.Cancel,
                             string.IsNullOrWhiteSpace(outDir) ? null : Path.Combine(outDir, "dialog_light_cancel_confirmation.png"));
                         AssertEqual(MessageBoxResult.Cancel, cancelled);
-                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, affirmative click, safe No default, Escape cancel)");
+
+                        // The custom X is a safe dismiss: confirmation resolves to No, owner focus returns.
+                        owner.Focus();
+                        var closedByX = ShowDialogAndInspect(app, owner, "Safe close-button dismiss",
+                            "The X must not confirm.", MessageBoxButton.YesNo, MessageBoxResult.None, null);
+                        AssertEqual(MessageBoxResult.No, closedByX);
+                        AssertTrue(owner.IsActive || owner.IsVisible);
+                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, shared rounded shell/custom X/scroll body, affirmative click, safe No default, Escape and X safe dismiss)");
                         exitCode = 0;
                     }
                     catch (Exception ex)
@@ -105,18 +112,27 @@ internal static partial class Program
             {
                 AssertTrue(ReferenceEquals(owner, dialog.Owner));
                 AssertTrue(dialog.IsVisible);
-                AssertTrue(ReferenceEquals(app.TryFindResource("SurfaceBrush"), dialog.Background));
                 AssertTrue(ReferenceEquals(app.TryFindResource("InkBrush"), dialog.Foreground));
+                // Shared rounded shell, not an ordinary titled Window.
+                var shell = dialog as AppDialogWindow ?? throw new InvalidOperationException("Dialog is not the shared shell");
+                AssertEqual(WindowStyle.None, dialog.WindowStyle);
+                AssertTrue(dialog.AllowsTransparency);
+                var card = dialog.Content as Border ?? throw new InvalidOperationException("Shell card missing");
+                AssertEqual(18d, card.CornerRadius.TopLeft);
+                AssertTrue(ReferenceEquals(app.TryFindResource("SurfaceBrush"), card.Background));
+                AssertTrue(ReferenceEquals(app.TryFindResource("DialogCloseButton"), shell.CloseButton.Style));
+                AssertEqual(32d, shell.CloseButton.Width);
+                foreach (var button in FindButtons(shell.ButtonPanel))
+                    AssertTrue(button.Style is not null && button.Style.TargetType == typeof(Button));
                 var body = FindVisual<TextBox>(dialog) ?? throw new InvalidOperationException("Dialog body TextBox missing");
                 AssertEqual(message, body.Text);
-                AssertTrue(body.MaxHeight >= 300);
                 AssertTrue(dialog.ActualHeight <= dialog.MaxHeight);
                 if (!string.IsNullOrWhiteSpace(screenshotPath))
                     CaptureDialog(dialog, screenshotPath);
 
                 if (expected == MessageBoxResult.Yes)
                 {
-                    var bodyScroll = FindVisualChildren<ScrollViewer>(body).FirstOrDefault();
+                    var bodyScroll = shell.BodyScroll;
                     if (message.Count(character => character == '\n') > 10)
                     {
                         AssertTrue(bodyScroll is not null && bodyScroll.ScrollableHeight > 0);
@@ -143,13 +159,17 @@ internal static partial class Program
                     AssertTrue(no.IsDefault);
                     no.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
+                else if (caption.Contains("close-button", StringComparison.Ordinal))
+                {
+                    shell.CloseButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
                 else
                 {
                     var source = PresentationSource.FromVisual(dialog) ?? PresentationSource.FromVisual(owner)
                         ?? throw new InvalidOperationException("Dialog has no presentation source");
                     var escape = new KeyEventArgs(Keyboard.PrimaryDevice, source, Environment.TickCount, Key.Escape)
                     {
-                        RoutedEvent = Keyboard.KeyDownEvent,
+                        RoutedEvent = Keyboard.PreviewKeyDownEvent,
                     };
                     dialog.RaiseEvent(escape);
                 }
@@ -157,6 +177,7 @@ internal static partial class Program
             catch (Exception ex)
             {
                 failure = ex;
+                Console.Error.WriteLine("DIALOG-TICK-FAIL " + caption + ": " + ex);
                 dialog.Close();
             }
         };

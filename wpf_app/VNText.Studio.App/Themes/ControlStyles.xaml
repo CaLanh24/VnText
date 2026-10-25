@@ -1405,6 +1405,38 @@
 
 
 
+    <!-- Shared dialog chrome: round custom close "X" used by every app-owned dialog shell. -->
+    <Style x:Key="DialogCloseButton" TargetType="{x:Type Button}">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="CloseSurface" CornerRadius="16" Background="{TemplateBinding Background}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="CloseSurface" Property="Background" Value="{DynamicResource SubtlePanelBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="CloseSurface" Property="Background" Value="{DynamicResource SubtlePanelBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="CloseSurface" Property="Opacity" Value=".7" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}" />
 
     <Style x:Key="SidebarUpdateButton" TargetType="Button" BasedOn="{StaticResource GuiPrimaryButtonStyle}">

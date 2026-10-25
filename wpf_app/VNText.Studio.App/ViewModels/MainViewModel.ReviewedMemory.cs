@@ -33,38 +33,28 @@ public partial class MainViewModel
 
     private static bool ShowReviewMemoryPreview(ReviewedMemoryResult preview)
     {
-        var dialog = new Window { Title = UiText.Translate("Duyệt bản dịch trong gói này"), Width = 760, Height = 580,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner, Owner = Application.Current?.MainWindow };
-        dialog.SetResourceReference(Control.FontFamilyProperty, "AppFont");
-        dialog.SetResourceReference(Control.FontSizeProperty, "UiBodySize");
-        dialog.SetResourceReference(Control.BackgroundProperty, "SurfaceBrush");
-        dialog.SetResourceReference(Control.ForegroundProperty, "InkBrush");
-        var panel = new DockPanel { Margin = new Thickness(16) };
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var cancel = new Button { Content = UiText.Translate("Hủy"), IsCancel = true, MinWidth = 90, Margin = new Thickness(8) };
-        var accept = new Button { Content = UiText.Translate("Xác nhận đã duyệt"), MinWidth = 150, Margin = new Thickness(8) };
-        cancel.SetResourceReference(FrameworkElement.StyleProperty, "GuiOutlineButtonStyle");
-        accept.SetResourceReference(FrameworkElement.StyleProperty, "GuiBluePrimaryButtonStyle");
-        cancel.MinHeight = accept.MinHeight = 40;
-        accept.Click += (_, _) => dialog.DialogResult = true;
-        buttons.Children.Add(cancel); buttons.Children.Add(accept);
-        DockPanel.SetDock(buttons, Dock.Bottom); panel.Children.Add(buttons);
         var explanation = string.Format(UiText.Translate("{0} dòng đã chọn."), preview.Count) + " "
             + UiText.Translate("Chỉ gói hiện tại và đúng nguồn, file, ngữ cảnh, cách nhập; không dùng cho gói khác.")
             + "\n" + UiText.Translate("Không dùng để huấn luyện hoặc làm bản dịch mặc định toàn app.")
             + (preview.ConvertsLegacy ? "\n" + UiText.Translate("Bộ nhớ cũ sẽ được giữ bản sao; chỉ các dòng xác nhận được đưa vào bộ nhớ đã duyệt.") : "");
-        var heading = new TextBlock { Text = explanation, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,0,0,12) };
-        heading.SetResourceReference(FrameworkElement.StyleProperty, "UiBodyTextStyle");
-        DockPanel.SetDock(heading, Dock.Top); panel.Children.Add(heading);
         var text = string.Join("\n\n", preview.Rows.Select(row =>
             $"{row.GetValueOrDefault("key")} — {row.GetValueOrDefault("file_path")} / {row.GetValueOrDefault("context")}\n{UiText.Translate("Nguồn:")} {row.GetValueOrDefault("source_text")}\n{UiText.Translate("Bản dịch:")} {row.GetValueOrDefault("translation")}"));
-        var previewText = new TextBox { Text = text, IsReadOnly = true, TextWrapping = TextWrapping.Wrap,
-            Height = double.NaN, VerticalContentAlignment = VerticalAlignment.Top,
+        var body = new StackPanel();
+        var heading = new TextBlock { Text = explanation, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+        heading.SetResourceReference(FrameworkElement.StyleProperty, "UiBodyTextStyle");
+        body.Children.Add(heading);
+        var previewText = new TextBox { Text = text, IsReadOnly = true, TextWrapping = TextWrapping.Wrap, Height = 320,
+            VerticalContentAlignment = VerticalAlignment.Top,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         previewText.SetResourceReference(FrameworkElement.StyleProperty, "FieldTextBoxStyle");
         previewText.SetResourceReference(Control.FontSizeProperty, "UiBodySize");
-        panel.Children.Add(previewText);
-        dialog.Content = panel;
-        return dialog.ShowDialog() == true;
+        body.Children.Add(previewText);
+        var accepted = false;
+        var dialog = new AppDialogWindow(Application.Current?.MainWindow, UiText.Translate("Duyệt bản dịch trong gói này"), body, 760);
+        // X / Esc dismiss keeps the safe default: nothing is approved.
+        dialog.AddButton(UiText.Translate("Hủy"), () => accepted = false);
+        dialog.AddButton(UiText.Translate("Xác nhận đã duyệt"), () => accepted = true, primary: true);
+        dialog.ShowDialog();
+        return accepted;
     }
 }
