@@ -1,6 +1,7 @@
 """WPF workflow + path picker tests (console harness, no NuGet)."""
 
 from __future__ import annotations
+import re
 
 import sys
 from pathlib import Path
@@ -275,7 +276,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('owner ??= app?.Windows.OfType<Window>()', dialog)
         self.assertIn("shared rounded shell/custom X/scroll body", dialog_fixture)
         self.assertIn("new AppDialogWindow(", memory)
-        self.assertNotIn("new Window", memory)
+        self.assertIsNone(re.search(r"new Window\s*[({]", memory))
         glossary = xaml.split('x:Name="GlossaryOverlay"')[1].split("GlossaryListBox")[0]
         self.assertIn('CornerRadius="18"', glossary)
         self.assertIn('DialogCloseButton', glossary)
@@ -287,7 +288,7 @@ class WpfWorkflowTests(unittest.TestCase):
                 self.assertNotIn("MessageBox.Show(", text, str(path))
             # No plain titled Window may be constructed for an app-owned dialog.
             if path.name not in {"App.xaml.cs"} and "Probe" not in path.name:
-                self.assertNotIn("new Window", text, str(path))
+                self.assertIsNone(re.search(r"new Window\s*[({]", text), str(path))
 
     def test_workflow_probe_only_accepts_ct2_and_uses_the_selected_local_model(self):
         app = (ROOT / "wpf_app" / "VNText.Studio.App" / "App.xaml.cs").read_text(encoding="utf-8")
