@@ -2727,6 +2727,31 @@ class CleanupLifecycleTests(unittest.TestCase):
             tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
         ))
 
+    def test_release_013_expanded_budget_preserves_old_epoch_verifiability(self):
+        task_id = cleanup.RELEASE_TASK_013_BUDGET_ID
+        initial = {
+            "limit_bytes": cleanup.RELEASE_TASK_013_INITIAL_BUDGET_LIMIT_BYTES,
+            "owner_approval": cleanup.RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL,
+        }
+        expanded = {
+            "limit_bytes": cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES,
+            "owner_approval": cleanup.RELEASE_TASK_013_BUDGET_APPROVAL,
+        }
+        self.assertEqual(3 * 1024 ** 3, cleanup.RELEASE_TASK_013_INITIAL_BUDGET_LIMIT_BYTES)
+        self.assertEqual(7 * 1024 ** 3, cleanup._release_task_budget_limit(task_id))
+        self.assertNotEqual(cleanup.RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL)
+        for record in (initial, expanded):
+            self.assertTrue(cleanup._release_budget_record_is_valid(record, task_id, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL))
+        for tampered in (
+            {**expanded, "owner_approval": "unrecognized approval"},
+            {**initial, "limit_bytes": 5 * 1024 ** 3},
+            {"limit_bytes": cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL},
+        ):
+            self.assertFalse(cleanup._release_budget_record_is_valid(tampered, task_id, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL))
+        # No other release task gains the 0.1.13 allowance.
+        self.assertFalse(cleanup._release_budget_record_is_valid(
+            initial, cleanup.RELEASE_TASK_011_BUDGET_ID, cleanup._release_budget_spec(cleanup.RELEASE_TASK_011_BUDGET_ID)[2]))
+
     def test_release_013_budget_is_exact_task_scoped_and_measured(self):
         task_id, version, approval = cleanup._release_budget_spec(cleanup.RELEASE_TASK_013_BUDGET_ID)
         self.assertEqual(cleanup.RELEASE_TASK_013_BUDGET_ID, task_id)
