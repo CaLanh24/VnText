@@ -22,6 +22,8 @@ sys.path.insert(0, str(ROOT / "tests" / "lib"))
 sys.path.insert(0, str(ROOT / "tests" / "tools"))
 from cleanup_work_artifacts import cleanup_after_test  # noqa: E402
 from work_paths import ambient_scope, register_artifact  # noqa: E402
+sys.path.insert(0, str(ROOT / "release"))
+from run_regression_child import _site_package_roots  # noqa: E402
 
 
 def _nested_runner_env() -> dict[str, str]:
@@ -33,6 +35,26 @@ def _nested_runner_env() -> dict[str, str]:
 
 
 class ReleaseRegressionRunnerTests(unittest.TestCase):
+    def test_selected_python_packages_precede_project_venv(self):
+        WORK.mkdir(parents=True, exist_ok=True)
+        harness = Path(tempfile.mkdtemp(prefix="release_runner_venv_order_", dir=WORK))
+        self._register_harness(harness, name="venv-order")
+        try:
+            selected = harness / ".dev-env" / "release-venv" / "Lib" / "site-packages"
+            fallback = harness / ".dev-env" / ".venv" / "Lib" / "site-packages"
+            selected.mkdir(parents=True)
+            fallback.mkdir(parents=True)
+            python_path = harness / ".dev-env" / "release-venv" / "Scripts" / "python.exe"
+            roots = _site_package_roots(python_path, harness)
+            self.assertEqual([selected.resolve(), fallback.resolve()], roots)
+        finally:
+            cleanup = cleanup_after_test(
+                [harness],
+                reason="release-runner-selected-python-precedence",
+                outcome="PASS",
+            )
+            self.assertTrue(cleanup["ok"], cleanup)
+
     def test_canonical_cleanup_runner_accepts_release_012_budget_profile(self):
         result = subprocess.run(
             [sys.executable, "-B", str(CANONICAL_RUNNER), "--release-task-id", "release-0.1.12", "--help"],

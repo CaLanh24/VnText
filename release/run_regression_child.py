@@ -11,7 +11,10 @@ import sys
 
 
 def _site_package_roots(python_path: Path, working_directory: Path) -> list[Path]:
-    candidates = [working_directory / ".dev-env" / ".venv" / "Lib" / "site-packages"]
+    # The interpreter passed to this runner owns the dependency set for this
+    # gate. Put its packages first so a stale project .venv cannot shadow the
+    # selected release runtime with incompatible native extensions.
+    candidates: list[Path] = []
     venv_root = python_path.parent.parent if python_path.parent.name.lower() in {"scripts", "bin"} else None
     if venv_root is not None:
         candidates.extend(
@@ -21,6 +24,7 @@ def _site_package_roots(python_path: Path, working_directory: Path) -> list[Path
                 *sorted((venv_root / "lib").glob("python*/site-packages")),
             ]
         )
+    candidates.append(working_directory / ".dev-env" / ".venv" / "Lib" / "site-packages")
     result: list[Path] = []
     seen: set[str] = set()
     for candidate in candidates:
