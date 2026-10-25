@@ -402,7 +402,7 @@ timing_path = Path(os.environ["VNTEXT_TEST_CT2_CALL_TIMING"])
 def observed_run(csv_path, *args, **kwargs):
     from vntext.mt_ct2_model import get_translator
     from vntext.mt_model_adapter import adapt_ct2_translator
-    model_dir = kwargs.get("model_dir") or os.environ["VNTEXT_CT2_MODEL"]
+    model_dir = Path(kwargs.get("model_dir") or os.environ["VNTEXT_CT2_MODEL"]).resolve()
     real = adapt_ct2_translator(get_translator(model_dir), model_dir)
     class ObservedAdapter:
         config = real.config
