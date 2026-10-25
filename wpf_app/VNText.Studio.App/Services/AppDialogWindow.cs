@@ -16,6 +16,8 @@ namespace VNText.Studio.App.Services;
 internal sealed class AppDialogWindow : Window
 {
     internal const double CardMargin = 18;
+    /// <summary>Shared modal card radius; Update/Journal/Glossary shells use the same value.</summary>
+    internal const double CardRadius = 18;
     private readonly StackPanel _buttons = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
     private readonly Button _close;
     private readonly ScrollViewer _bodyScroll;
@@ -25,6 +27,8 @@ internal sealed class AppDialogWindow : Window
     private Border? _overlay;
     private Effect? _previousEffect;
     private bool _dismissRaised;
+    private UIElement? _wrappedOriginal;
+    private Panel? _wrappedHost;
 
     /// <summary>Invoked once when the dialog is closed without an explicit button (X, Esc, Alt+F4).</summary>
     internal Action? OnDismiss { get; set; }
@@ -64,7 +68,7 @@ internal sealed class AppDialogWindow : Window
         var card = new Border
         {
             Margin = new Thickness(CardMargin),
-            CornerRadius = new CornerRadius(18),
+            CornerRadius = new CornerRadius(CardRadius),
             Background = Res("SurfaceBrush", Brushes.White),
             Effect = new DropShadowEffect { BlurRadius = 32, ShadowDepth = 9, Opacity = .25 },
         };
@@ -72,7 +76,7 @@ internal sealed class AppDialogWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        card.Child = new Border { CornerRadius = new CornerRadius(18), ClipToBounds = true, Child = grid };
+        card.Child = grid;
 
         var header = new Grid { Margin = new Thickness(24, 14, 18, 14) };
         header.ColumnDefinitions.Add(new ColumnDefinition());
@@ -115,6 +119,7 @@ internal sealed class AppDialogWindow : Window
             Background = Res("SubtlePanelBrush", Brushes.WhiteSmoke),
             BorderBrush = Res("LineBrush", Brushes.LightGray),
             BorderThickness = new Thickness(0, 1, 0, 0),
+            CornerRadius = new CornerRadius(0, 0, CardRadius, CardRadius),
             Padding = new Thickness(22, 12, 22, 12),
             Child = _buttons,
         };
@@ -172,7 +177,20 @@ internal sealed class AppDialogWindow : Window
 
     private void AttachOverlay()
     {
-        if (_shellOwner?.Content is not Panel panel) return;
+        if (_shellOwner is null) return;
+        var panel = _shellOwner.Content as Panel;
+        if (panel is null && _shellOwner.Content is UIElement original)
+        {
+            // Owner is itself a shell (Update/Journal/another dialog) whose root is a card Border:
+            // host the card and the dim layer in a Grid so nested popups dim their owner too.
+            _wrappedOriginal = original;
+            _shellOwner.Content = null;
+            panel = new Grid();
+            panel.Children.Add(original);
+            _wrappedHost = panel;
+            _shellOwner.Content = panel;
+        }
+        if (panel is null) return;
         _ownerPanel = panel;
         _previousEffect = panel.Effect;
         panel.Effect = new BlurEffect { Radius = 8 };
@@ -189,6 +207,11 @@ internal sealed class AppDialogWindow : Window
         {
             if (_overlay is not null) _ownerPanel.Children.Remove(_overlay);
             _ownerPanel.Effect = _previousEffect;
+            if (_wrappedOriginal is not null && ReferenceEquals(_ownerPanel, _wrappedHost) && _shellOwner is not null)
+            {
+                _wrappedHost.Children.Remove(_wrappedOriginal);
+                _shellOwner.Content = _wrappedOriginal;
+            }
         }
         _overlay = null;
         if (_shellOwner is { IsVisible: true })

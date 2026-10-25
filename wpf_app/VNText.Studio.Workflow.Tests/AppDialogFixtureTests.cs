@@ -62,7 +62,42 @@ internal static partial class Program
                             "The X must not confirm.", MessageBoxButton.YesNo, MessageBoxResult.None, null);
                         AssertEqual(MessageBoxResult.No, closedByX);
                         AssertTrue(owner.IsActive || owner.IsVisible);
-                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, shared rounded shell/custom X/scroll body, affirmative click, safe No default, Escape and X safe dismiss)");
+
+                        // Nested popup over another shell: the owner card is dimmed and restored afterwards.
+                        var outer = new AppDialogWindow(owner, "Nested outer", new TextBlock { Text = "outer" });
+                        outer.AddButton("Đóng", () => { }, true, true);
+                        outer.Show();
+                        outer.UpdateLayout();
+                        var outerCard = outer.Content;
+                        AssertTrue(outerCard is Border);
+                        var nestedTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+                        Exception? nestedFailure = null;
+                        nestedTimer.Tick += (_, _) =>
+                        {
+                            var inner = app.Windows.OfType<AppDialogWindow>().SingleOrDefault(w => w.Title == "Nested inner");
+                            if (inner is null) return;
+                            nestedTimer.Stop();
+                            try
+                            {
+                                AssertTrue(ReferenceEquals(outer, inner.Owner));
+                                var host = outer.Content as Grid ?? throw new InvalidOperationException("Outer shell not hosted for overlay");
+                                AssertTrue(host.Children.OfType<Border>().Count(b => b.Background is SolidColorBrush { Color.A: > 0 } && !b.IsHitTestVisible) == 1);
+                                AssertTrue(host.Effect is System.Windows.Media.Effects.BlurEffect);
+                                var innerCard = (Border)inner.Content;
+                                var footerBorder = FindVisualChildren<Border>(innerCard).Single(b => b.CornerRadius.BottomLeft == AppDialogWindow.CardRadius && b.CornerRadius.TopLeft == 0);
+                                AssertEqual(AppDialogWindow.CardRadius, footerBorder.CornerRadius.BottomRight);
+                                inner.CloseButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                            }
+                            catch (Exception ex) { nestedFailure = ex; inner.Close(); }
+                        };
+                        nestedTimer.Start();
+                        var nestedResult = AppDialogService.Show("inner", "Nested inner", MessageBoxButton.YesNo, MessageBoxImage.Question, outer);
+                        if (nestedFailure is not null) throw new InvalidOperationException("Nested dialog check failed", nestedFailure);
+                        AssertEqual(MessageBoxResult.No, nestedResult);
+                        AssertTrue(ReferenceEquals(outerCard, outer.Content));
+                        AssertTrue(outer.Effect is null);
+                        outer.Close();
+                        Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, shared rounded shell/custom X/scroll body, affirmative click, safe No default, Escape and X safe dismiss, rounded footer corners, nested owner overlay restored)");
                         exitCode = 0;
                     }
                     catch (Exception ex)

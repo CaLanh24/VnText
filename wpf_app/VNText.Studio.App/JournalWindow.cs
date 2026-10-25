@@ -65,15 +65,15 @@ internal sealed class JournalWindow : Window
         }
         Button Button(string label,Action action,bool primary=false)
         {
-            var button=new Button {Content=label,Style=actionStyle,Height=38,Margin=new Thickness(12,0,0,0),Padding=new Thickness(16,7,16,7)};
-            if(primary){button.Resources["JournalHoverBrush"]=new LinearGradientBrush(Color.FromRgb(29,74,209),Color.FromRgb(7,157,160),0);button.Background=new LinearGradientBrush(Color.FromRgb(37,83,221),Color.FromRgb(9,170,170),0);button.Foreground=Brushes.White;button.FontWeight=FontWeights.SemiBold;var labelRow=IconLabel("copy",label);((IconView)((StackPanel)labelRow).Children[0]).StrokeBrush=Brushes.White;button.Content=labelRow;}
+            var button=new Button {Content=label,Style=(Style)owner.FindResource(primary ? "PrimaryButton" : "OutlineButton"),Height=38,Margin=new Thickness(12,0,0,0),Padding=new Thickness(16,7,16,7)};
+            if(primary){var labelRow=IconLabel("copy",label);((IconView)((StackPanel)labelRow).Children[0]).StrokeBrush=Brushes.White;button.Content=labelRow;}
             button.Click+=(_,_)=>Safe(action);return button;
         }
-        var surface=new Border{Margin=new Thickness(18),CornerRadius=new CornerRadius(18),Background=B("SurfaceBrush"),Effect=new DropShadowEffect{BlurRadius=32,ShadowDepth=9,Opacity=.25}};
+        var surface=new Border{Margin=new Thickness(AppDialogWindow.CardMargin),CornerRadius=new CornerRadius(AppDialogWindow.CardRadius),Background=B("SurfaceBrush"),Effect=new DropShadowEffect{BlurRadius=32,ShadowDepth=9,Opacity=.25}};
         var grid=new Grid();surface.Child=grid;Content=surface;
         grid.RowDefinitions.Add(new(){Height=GridLength.Auto});grid.RowDefinitions.Add(new());grid.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var header=new DockPanel{Margin=new Thickness(28,24,28,24)};
-        var close=Button("×",Close);close.Style=(Style)owner.FindResource("GhostButton");close.Width=28;close.Height=28;close.MinWidth=28;close.Padding=new Thickness(0);close.BorderThickness=new Thickness(0);DockPanel.SetDock(close,Dock.Right);header.Children.Add(close);
+        var close=Button("×",Close);close.Content=new TextBlock{Text="×",FontSize=20,VerticalAlignment=VerticalAlignment.Center};close.Style=(Style)owner.FindResource("DialogCloseButton");close.Width=32;close.Height=32;close.ToolTip="Đóng (Esc)";System.Windows.Automation.AutomationProperties.SetName(close,"Đóng Nhật ký");DockPanel.SetDock(close,Dock.Right);header.Children.Add(close);
         header.Children.Add(new TextBlock{Text="khắc phục lỗi",FontSize=20,FontWeight=FontWeights.Bold,Foreground=B("InkBrush"),VerticalAlignment=VerticalAlignment.Center});
         grid.Children.Add(new Border{Child=header,BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,0,0,1)});
         var body=new Grid{Margin=new Thickness(28,28,28,28)};Grid.SetRow(body,1);grid.Children.Add(body);
@@ -101,7 +101,7 @@ internal sealed class JournalWindow : Window
         var reset=Button("Xóa",()=>_query.Clear());reset.IsEnabled=false;_query.TextChanged+=(_,_)=>reset.IsEnabled=_query.Text.Length>0;Grid.SetColumn(reset,2);search.Children.Add(reset);
         var terminal=new Border{Background=_content.Background,CornerRadius=new CornerRadius(9),ClipToBounds=true,Child=_content};Grid.SetRow(terminal,3);body.Children.Add(terminal);terminal.SizeChanged+=(_,_)=>terminal.Clip=new RectangleGeometry(new Rect(0,0,terminal.ActualWidth,terminal.ActualHeight),9,9);
         var footer=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(20,20,28,20)};
-        var footerSurface=new Border{Child=footer,Background=new SolidColorBrush(Color.FromRgb(238,242,247)),CornerRadius=new CornerRadius(0,0,18,18),BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,1,0,0)};Grid.SetRow(footerSurface,2);grid.Children.Add(footerSurface);
+        var footerSurface=new Border{Child=footer,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(0,0,AppDialogWindow.CardRadius,AppDialogWindow.CardRadius),BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,1,0,0)};Grid.SetRow(footerSurface,2);grid.Children.Add(footerSurface);
         footer.Children.Add(Button("Đóng",Close));footer.Children.Add(Button("Làm mới",Refresh));
         footer.Children.Add(Button("Xóa",()=>
         {

@@ -54,7 +54,7 @@ internal sealed class UpdateWindow : Window
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
         KeyboardNavigation.SetControlTabNavigation(this, KeyboardNavigationMode.Cycle);
         Brush Brush(string key) => (Brush)owner.FindResource(key);
-        var surface = new Border { Margin = new Thickness(18), CornerRadius = new CornerRadius(18),
+        var surface = new Border { Margin = new Thickness(AppDialogWindow.CardMargin), CornerRadius = new CornerRadius(AppDialogWindow.CardRadius),
             Background = Brush("SurfaceBrush"), Effect = new DropShadowEffect { BlurRadius = 32, ShadowDepth = 9, Opacity = .25 } };
         var grid = new Grid(); surface.Child = grid; Content = surface;
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -69,8 +69,8 @@ internal sealed class UpdateWindow : Window
         var heading = new TextBlock { Text = notesOnly ? "Ghi chú phát hành" : successVersion is null ? "Có bản cập nhật mới" : "Cập nhật thành công",
             FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         Grid.SetColumn(heading, 1); header.Children.Add(heading);
-        var close = MakeIconButton(owner, "×", 30); HoverMotion.SetKind(close, "Close");
-        close.Background = Brushes.Transparent; AutomationProperties.SetName(close, "Đóng " + Title); close.ToolTip = "Đóng (Esc)";
+        var close = new Button { Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center }, Style = (Style)owner.FindResource("DialogCloseButton") };
+        AutomationProperties.SetName(close, "Đóng " + Title); close.ToolTip = "Đóng (Esc)";
         close.Click += (_, _) => Close(); Grid.SetColumn(close, 2); header.Children.Add(close);
         grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
         var body = new Grid { Margin = new Thickness(26, 18, 26, 18) }; Grid.SetRow(body, 1); grid.Children.Add(body);
@@ -110,7 +110,7 @@ internal sealed class UpdateWindow : Window
         _later = MakeButton(owner, notesOnly ? "Đóng" : "Hủy", false); _skip = MakeButton(owner, "Bỏ qua phiên bản này", false); _primary = MakeButton(owner, "Cập nhật ngay", true);
         _later.Margin = _skip.Margin = _primary.Margin = new Thickness(4);
         buttons.Children.Add(_later); buttons.Children.Add(_skip); buttons.Children.Add(_primary);
-        var footerSurface = new Border { Background = Brush("SubtlePanelBrush"), CornerRadius = new CornerRadius(0, 0, 18, 18), BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(22, 10, 22, 10), Child = footer };
+        var footerSurface = new Border { Background = Brush("SubtlePanelBrush"), CornerRadius = new CornerRadius(0, 0, AppDialogWindow.CardRadius, AppDialogWindow.CardRadius), BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(22, 10, 22, 10), Child = footer };
         Grid.SetRow(footerSurface, 2); grid.Children.Add(footerSurface);
         _later.Click += (_, _) => Close(); _skip.Click += (_, _) => { source.Defer(true); Close(); };
         _primary.Click += async (_, _) =>
@@ -203,20 +203,9 @@ internal sealed class UpdateWindow : Window
     internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);
     private static Button MakeButton(FrameworkElement owner, string text, bool primary)
     {
-        var style = new Style(typeof(Button), (Style)owner.FindResource(primary ? "PrimaryButton" : "OutlineButton"));
-        style.Setters.Add(new Setter(Control.BackgroundProperty, primary ? Gradient(false) : owner.FindResource("SurfaceBrush")));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, primary ? Brushes.White : owner.FindResource("InkBrush")));
-        var border = new FrameworkElementFactory(typeof(Border)); border.Name = "ModalButtonSurface";
-        border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8)); border.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-        foreach (var pair in new[] { (Border.BackgroundProperty, "Background"), (Border.BorderBrushProperty, "BorderBrush"), (Border.PaddingProperty, "Padding") })
-            border.SetBinding(pair.Item1, new System.Windows.Data.Binding(pair.Item2) { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        var content = new FrameworkElementFactory(typeof(ContentPresenter)); content.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center); content.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        content.SetBinding(ContentPresenter.ContentProperty, new System.Windows.Data.Binding("Content") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent }); border.AppendChild(content);
-        var template = new ControlTemplate(typeof(Button)) { VisualTree = border };
-        var hover = new Trigger { Property = IsMouseOverProperty, Value = true }; hover.Setters.Add(new Setter(Border.BorderBrushProperty, owner.FindResource("LineBrush"), "ModalButtonSurface")); template.Triggers.Add(hover);
-        var disabled = new Trigger { Property = IsEnabledProperty, Value = false }; disabled.Setters.Add(new Setter(OpacityProperty, .65)); template.Triggers.Add(disabled);
-        style.Setters.Add(new Setter(Control.TemplateProperty, template));
-        var b = new Button { Content = text, Style = style, Padding = new Thickness(12, 6, 12, 6), FontSize = 13 }; AutomationProperties.SetName(b, text); return b;
+        // Same rounded PrimaryButton/OutlineButton styles as AppDialogWindow (hover, pressed, keyboard focus).
+        var b = new Button { Content = text, Style = (Style)owner.FindResource(primary ? "PrimaryButton" : "OutlineButton"), Padding = new Thickness(14, 7, 14, 7), FontSize = 13 };
+        AutomationProperties.SetName(b, text); return b;
     }
     private static Button MakeIconButton(MainWindow owner, string text, double size)
     {

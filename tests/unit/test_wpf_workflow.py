@@ -277,6 +277,15 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("shared rounded shell/custom X/scroll body", dialog_fixture)
         self.assertIn("new AppDialogWindow(", memory)
         self.assertIsNone(re.search(r"new Window\s*[({]", memory))
+        # Update and Journal shells share the same X style, card radius token and button styles.
+        for name in ("UpdateWindow.cs", "JournalWindow.cs"):
+            text = (app_dir / name).read_text(encoding="utf-8")
+            self.assertIn('"DialogCloseButton"', text, name)
+            self.assertIn("AppDialogWindow.CardRadius", text, name)
+            self.assertIn('"PrimaryButton" : "OutlineButton"', text, name)
+            self.assertNotIn('"GhostButton"', text, name)
+        self.assertIn("new CornerRadius(0, 0, CardRadius, CardRadius)", shell)
+        self.assertIn("_wrappedHost", shell)
         glossary = xaml.split('x:Name="GlossaryOverlay"')[1].split("GlossaryListBox")[0]
         self.assertIn('CornerRadius="18"', glossary)
         self.assertIn('DialogCloseButton', glossary)
