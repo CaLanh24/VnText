@@ -23,6 +23,7 @@ import json
 import os
 import subprocess
 import tempfile
+import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
@@ -219,6 +220,146 @@ class WorkerTranslateTests(unittest.TestCase):
             self.assertIn("cancel", (msg.get("error") or "").lower())
         finally:
             _stop_worker(proc)
+
+    def test_ct2_cancel_during_real_synchronous_call_flushes_unmodified_csv(self):
+        import vntext.app_tasks as app_tasks
+        from vntext.app_tasks import run_translate_ct2_task
+        from vntext.mt_ct2_model import get_translator
+        from vntext.mt_ct2_pipeline import _open_translation_cache
+        from vntext.mt_model_adapter import adapt_ct2_translator
+
+        out = WORK / f"ct2_sync_cancel_{time.time_ns()}"
+        rows = [
+            {
+                "key": f"native-{i}",
+                "source_text": (
+                    f"Traveler {i}: I carried the silver lantern past the old stone bridge, "
+                    "left it beside the wooden gate, and promised to return before sunset."
+                ),
+                "translation": "",
+                "context": f"line:{i}",
+                "file_path": "native_cancel.txt",
+                "import_method": "plain_text_line",
+                "safety": "safe",
+                "backend": "plain_text",
+            }
+            for i in range(256)
+        ]
+        csv_path = out / "translation.csv"
+        _write_csv(csv_path, rows)
+        (out / "manifest.json").write_text('{"entries":[]}', encoding="utf-8")
+
+        real = adapt_ct2_translator(get_translator(MODEL_DIR), MODEL_DIR)
+        entered = threading.Event()
+        returned = threading.Event()
+        cancel_sent = threading.Event()
+        cancelled = threading.Event()
+        timing: dict[str, float] = {}
+
+        class ObservedRealCt2:
+            config = real.config
+
+            def metadata(self):
+                return real.metadata()
+
+            def translate(self, text):
+                values = self.translate_many([text])
+                return values[0] if values else text
+
+            def translate_many(self, texts):
+                timing["entered"] = time.monotonic()
+                entered.set()
+                try:
+                    return real.translate_many(texts)
+                finally:
+                    timing["returned"] = time.monotonic()
+                    returned.set()
+
+        def cancel_while_native_call_runs():
+            if not entered.wait(120):
+                return
+            time.sleep(0.02)
+            timing["cancelled"] = time.monotonic()
+            cancelled.set()
+            cancel_sent.set()
+
+        cancel_thread = threading.Thread(target=cancel_while_native_call_runs, daemon=True)
+        cancel_thread.start()
+        opened_caches = []
+        original_open_cache = _open_translation_cache
+
+        class CloseObservedCache:
+            def __init__(self, cache):
+                self.cache = cache
+                self.closed = False
+
+            def __getattr__(self, name):
+                return getattr(self.cache, name)
+
+            def close(self):
+                self.closed = True
+                return self.cache.close()
+
+        def open_observed_cache(package_dir):
+            cache, error = original_open_cache(package_dir)
+            observed = CloseObservedCache(cache) if cache is not None else None
+            opened_caches.append(observed)
+            return observed, error
+
+        from unittest.mock import patch
+
+        completed = []
+        progress_events = []
+        original_translate = app_tasks.run_ct2_translate
+
+        def run_with_observed_real_ct2(path, *, model_dir=None, **kwargs):
+            return original_translate(
+                path,
+                model_dir=model_dir,
+                model_adapter=ObservedRealCt2(),
+                **kwargs,
+            )
+
+        with patch("vntext.mt_ct2_pipeline._open_translation_cache", side_effect=open_observed_cache), \
+            patch("vntext.app_tasks.run_ct2_translate", side_effect=run_with_observed_real_ct2):
+            run_translate_ct2_task(
+                csv_path,
+                out,
+                overwrite=False,
+                model_dir=str(MODEL_DIR),
+                progress=progress_events.append,
+                log=lambda _message: None,
+                complete=completed.append,
+                is_cancelled=cancelled.is_set,
+            )
+        cancel_thread.join(timeout=2)
+
+        self.assertEqual(1, len(completed))
+        self.assertFalse(completed[0].get("ok", True))
+        self.assertEqual("cancelled", completed[0].get("error"))
+        self.assertFalse(any(int(event.get("done") or 0) > 0 for event in progress_events))
+        self.assertTrue(cancel_sent.is_set(), "cancellation was not signalled during the real CT2 call")
+        self.assertTrue(returned.is_set(), "the synchronous CT2 call did not return within the test bound")
+        self.assertLess(timing["entered"], timing["cancelled"])
+        self.assertLess(timing["cancelled"], timing["returned"], "cancel must arrive before CT2 returns")
+        self.assertTrue(opened_caches and opened_caches[0] is not None and opened_caches[0].closed)
+        with csv_path.open(encoding="utf-8-sig", newline="") as fh:
+            persisted = list(csv.DictReader(fh))
+        self.assertEqual([row["key"] for row in rows], [row["key"] for row in persisted])
+        self.assertTrue(all(not str(row.get("translation") or "").strip() for row in persisted))
+        self.assertFalse(Path(str(csv_path) + ".tmp").exists())
+        print(json.dumps({
+            "native_ct2_cancel": "PASS",
+            "model_dir": str(MODEL_DIR),
+            "source_rows": len(rows),
+            "synchronous_call_ms": round((timing["returned"] - timing["entered"]) * 1000),
+            "cancel_after_call_entry_ms": round((timing["cancelled"] - timing["entered"]) * 1000),
+            "cancel_before_native_return": True,
+            "worker_terminal_error": completed[0]["error"],
+            "cache_closed": opened_caches[0].closed,
+            "persisted_translations": sum(bool(str(row.get("translation") or "").strip()) for row in persisted),
+            "temporary_csv_exists": Path(str(csv_path) + ".tmp").exists(),
+        }, ensure_ascii=False, sort_keys=True))
 
     def test_translate_model_error(self):
         out = WORK / "model_err_pkg"
