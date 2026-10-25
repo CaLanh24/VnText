@@ -160,6 +160,99 @@ class TypedCarrierStructuralTests(unittest.TestCase):
         self.assertTrue(any("residual short token: s" in issue for issue in issues), issues)
 
 
+class NumericCarrierTests(unittest.TestCase):
+    PRICE = "NPC: The price is $5.00 (tax: 8%) - do you accept?"
+
+    def test_money_and_percent_are_detected_without_touching_prose_percent(self):
+        self.assertEqual(mt_check.numeric_carriers(self.PRICE), ["$5.00", "8%"])
+        self.assertEqual(mt_check.numeric_carriers("Kostet 5,00 € oder 1.000,50 €"), ["5,00 €", "1.000,50 €"])
+        self.assertEqual(mt_check.numeric_carriers("100% sure, 7.5%."), ["100%", "7.5%"])
+        # printf conversion and escape are not percentages
+        self.assertEqual(mt_check.numeric_carriers("Loading 50%d and 50%% done"), [])
+        self.assertEqual(mt_check.numeric_carriers("Buy 3 potions for 120 gold"), [])
+
+    def test_native_bad_price_translation_is_rejected(self):
+        row = _row(self.PRICE)
+        bad = "NPC: Giá là 5 đô.00 đô-la."
+        problems = structural_problems(row, bad)
+        self.assertIn("money/percent mismatch", problems)
+        self.assertIn("question mark lost", problems)
+
+    def test_price_with_exact_carriers_and_question_passes(self):
+        row = _row(self.PRICE)
+        good = "NPC: Giá là $5.00 (thuế: 8%) - bạn có chấp nhận không?"
+        self.assertEqual(structural_problems(row, good), [])
+
+    def test_money_percent_lost_changed_or_extra_is_rejected(self):
+        row = _row(self.PRICE)
+        for label, draft in (
+            ("percent lost", "NPC: Giá là $5.00 - bạn chấp nhận không?"),
+            ("money changed", "NPC: Giá là $5.50 (thuế: 8%) - chấp nhận không?"),
+            ("percent changed", "NPC: Giá là $5.00 (thuế: 80%) - chấp nhận không?"),
+            ("extra", "NPC: Giá là $5.00 (thuế: 8% 9%) - chấp nhận không?"),
+        ):
+            with self.subTest(case=label):
+                self.assertIn("money/percent mismatch", structural_problems(row, draft))
+
+    def test_question_mark_only_required_when_source_asks(self):
+        self.assertEqual(structural_problems(_row("NPC: It is fine."), "NPC: Không sao."), [])
+        self.assertIn("question mark lost", structural_problems(_row('NPC: "Are you ready?"'), 'NPC: "Bạn sẵn sàng chưa."'))
+        self.assertEqual(structural_problems(_row('NPC: "Are you ready?"'), 'NPC: "Bạn sẵn sàng chưa?"'), [])
+
+    def test_dropped_closing_parenthesis_is_rejected_only_for_balanced_sources(self):
+        row = _row(self.PRICE)
+        damaged = "NPC: Giá là $5.00 (thuế: 8%- bạn chấp nhận không?"
+        self.assertIn("parenthesis clause damaged", structural_problems(row, damaged))
+        # An unbalanced source (emoticon) is not held to balance.
+        self.assertEqual(structural_problems(_row("NPC: Thanks :)"), "NPC: Cảm ơn"), [])
+
+    def test_masking_protects_money_and_percent(self):
+        masked, tokens, kinds, _ = mask_text(self.PRICE)
+        self.assertIn("$5.00", tokens)
+        self.assertIn("8%", tokens)
+        self.assertNotIn("$5.00", masked)
+        self.assertNotIn("8%", masked)
+
+
+class PrintfOrderSemanticsTests(unittest.TestCase):
+    def test_mixed_numbered_and_unnumbered_keep_exact_order(self):
+        row = _row("%s then %1$s then %d")
+        self.assertEqual(structural_problems(row, "%s rồi %1$s rồi %d"), [])
+        for draft in ("%1$s rồi %s rồi %d", "%d rồi %1$s rồi %s", "%s rồi %d rồi %1$s"):
+            with self.subTest(draft=draft):
+                self.assertIn("printf specifier mismatch", structural_problems(row, draft))
+
+    def test_multiple_unnumbered_around_numbered_cannot_swap(self):
+        row = _row("%s, %2$s, %d")
+        self.assertIn("printf specifier mismatch", structural_problems(row, "%d, %2$s, %s"))
+
+    def test_all_numbered_order_is_free_but_content_is_not(self):
+        row = _row("%1$s has %2$d")
+        self.assertEqual(structural_problems(row, "%2$d của %1$s"), [])
+        self.assertIn("printf specifier mismatch", structural_problems(row, "%1$s có %1$d"))
+        self.assertIn("printf specifier mismatch", structural_problems(row, "%1$s có"))
+
+    def test_percent_escape_carries_no_argument_but_must_survive(self):
+        row = _row("%1$s is %2$d%% done")
+        self.assertEqual(structural_problems(row, "%2$d%% xong cho %1$s"), [])
+        self.assertIn("printf specifier mismatch", structural_problems(row, "%2$d xong cho %1$s"))
+        self.assertIn("printf specifier mismatch", structural_problems(row, "%2$d%%%% xong cho %1$s"))
+        unnumbered = _row("%d%% then %s")
+        self.assertEqual(structural_problems(unnumbered, "%d%% rồi %s"), [])
+        self.assertIn("printf specifier mismatch", structural_problems(unnumbered, "%s rồi %d%%"))
+
+    def test_supported_grammar_bounds(self):
+        supported = ["%d", "%5d", "%-5d", "%05.2f", "%.3s", "%*d", "%.*f", "%ld", "%lld", "%hhd", "%zu", "%x", "%X", "%o",
+                     "%e", "%g", "%c", "%p", "%1$s", "%12$05d"]
+        for spec in supported:
+            with self.subTest(spec=spec):
+                self.assertEqual(mt_check.printf_specifiers(f"a {spec} b"), [spec])
+        # Outside the grammar: not carriers (no protection, no false rejection).
+        for text in ("a %n b", "a %q b", "a % d b", "a %1$*2$d b", "a %", "a %5 b", "50%off", "5%d"):
+            with self.subTest(text=text):
+                self.assertEqual(mt_check.printf_specifiers(text), [])
+
+
 class TypedCarrierInventoryTests(unittest.TestCase):
     def test_classifier_and_blocker_inventory_count_the_same_carriers(self):
         row = _row("NPC: %d messages at https://example.invalid/page?x=1&y=2 and {name}")

@@ -41,12 +41,39 @@ URL_RX = re.compile(
 )
 
 
+# Money and percent amounts are exact carriers too: the model must not turn
+# "$5.00" into "5 dollars.00" or drop "(tax: 8%)".  Prefix symbol or suffix symbol
+# only; spelled-out currencies are ordinary prose.  A percent sign directly
+# followed by a letter or another "%" belongs to a printf conversion/escape.
+CURRENCY_RX = re.compile(
+    r'[$€£¥]\s?\d(?:[\d.,]*\d)?|(?<![\d.,])\d(?:[\d.,]*\d)?\s?[€£¥]'
+)
+PERCENT_RX = re.compile(r'(?<![\w%.,])\d+(?:[.,]\d+)?\s?%(?![A-Za-z%])')
+
+
+def numeric_carriers(text):
+    s = str(text or '')
+    return [m.group(0) for rx in (CURRENCY_RX, PERCENT_RX) for m in rx.finditer(s)]
+
+
 def printf_specifiers(text):
     return [m.group(0) for m in PRINTF_RX.finditer(str(text or ''))]
 
 
 def inline_urls(text):
     return [m.group(0) for m in URL_RX.finditer(str(text or ''))]
+
+
+def _parens_balanced(text):
+    depth = 0
+    for char in text:
+        if char == '(':
+            depth += 1
+        elif char == ')':
+            depth -= 1
+            if depth < 0:
+                return False
+    return depth == 0
 
 
 def typed_carrier_problems(src, new):
@@ -58,9 +85,23 @@ def typed_carrier_problems(src, new):
     """
     out = []
     spec_src, spec_new = printf_specifiers(src), printf_specifiers(new)
-    positional = any(re.match(r'%\d+\$', s) for s in spec_src)
-    if (sorted(spec_src) != sorted(spec_new)) if positional else (spec_src != spec_new):
+    numbered = [bool(re.match(r'%\d+\$', s)) for s in spec_src if s != '%%']
+    # Order is free only when every argument is explicitly numbered; "%%" is a
+    # literal and carries no argument.  Any unnumbered or mixed source keeps the
+    # exact sequence, because an unnumbered conversion consumes the next argument.
+    free_order = bool(numbered) and all(numbered)
+    if (sorted(spec_src) != sorted(spec_new)) if free_order else (spec_src != spec_new):
         out.append('printf specifier mismatch')
+    if _parens_balanced(str(src or '')) and (
+        str(new or '').count('(') != str(src or '').count('(')
+        or str(new or '').count(')') != str(src or '').count(')')
+        or not _parens_balanced(str(new or ''))
+    ):
+        out.append('parenthesis clause damaged')
+    if sorted(numeric_carriers(src)) != sorted(numeric_carriers(new)):
+        out.append('money/percent mismatch')
+    if re.search(r'[?？][\s"\'”’)\]]*$', str(src or '').strip()) and not re.search(r'[?？]', str(new or '')):
+        out.append('question mark lost')
     if inline_urls(src) != inline_urls(new):
         out.append('url mismatch')
     return out

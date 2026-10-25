@@ -62,7 +62,7 @@ def collect_spans(text, *, protect_lexical=True):
         spans.append((m.start(), m.end(), m.group(0), 'tech'))
     protected_ranges = [
         (m.start(), m.end())
-        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
+        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
         for m in rx.finditer(text)
     ]
     protected_ranges.extend((m.start(), m.end()) for m in re.finditer(r'\\n', text))
@@ -95,7 +95,7 @@ def collect_spans(text, *, protect_lexical=True):
                 mt_check.ENG_STRONG | mt_check.ENG_WEAK
             ):
                 spans.append((m.start(), m.end(), translated, 'lexical'))
-    for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.PH, mt_check.TAG):
+    for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG):
         for m in rx.finditer(text):
             spans.append((m.start(), m.end(), m.group(0), 'tech'))
     for m in re.finditer(r'\\n', text):
@@ -479,7 +479,7 @@ def postprocess(src, text):
     source_scan = str(src or "").replace("\\n", " ")
     source_protected_ranges = [
         (m.start(), m.end())
-        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
+        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
         for m in rx.finditer(source_scan)
     ]
     source_protected_ranges.extend((m.start(), m.end()) for m in re.finditer(
@@ -498,7 +498,7 @@ def postprocess(src, text):
         """
         protected = [
             (m.start(), m.end())
-            for rx in (BRACKET, HASHTAG, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
+            for rx in (BRACKET, HASHTAG, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
             for m in rx.finditer(text)
         ]
         protected.extend((m.start(), m.end()) for m in re.finditer(
@@ -542,7 +542,7 @@ def postprocess(src, text):
     # named spans remain byte-for-byte untouched.
     output_protected_ranges = [
         (m.start(), m.end())
-        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
+        for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
         for m in rx.finditer(out)
     ]
     output_protected_ranges.extend((m.start(), m.end()) for m in re.finditer(

@@ -138,7 +138,12 @@ class RenPyExtractTaskTests(unittest.TestCase):
             fallback.assert_not_called()
             self.assertFalse(completed[-1]["ok"])
             self.assertTrue(completed[-1]["renpy_sdk_missing"])
-            self.assertIn("cần SDK 8.5.3",completed[-1]["error"])
+            error=completed[-1]["error"]
+            # Actionable copy: names the SDK, the required version, the next action and the cause.
+            self.assertIn("SDK Ren'Py",error)
+            self.assertIn("8.5.3",error)
+            self.assertIn("chọn lại SDK",error)
+            self.assertIn("wrong version",error)
 
     def test_result_counts_match_the_filtered_package_in_both_modes(self):
         import json
