@@ -3119,6 +3119,7 @@ def _epoch_transition_provenance_failures(
     previous_sha = str(transition.get("previous_source_sha") or "")
     target_sha = str(transition.get("target_source_sha") or "")
     previous_manifest_sha = str(transition.get("previous_manifest_sha256") or "").upper()
+    release_budget = epoch.get("release_task_budget")
     if (
         not _valid_epoch_id(previous_id)
         or not _valid_git_sha(previous_sha)
@@ -3127,10 +3128,14 @@ def _epoch_transition_provenance_failures(
         or previous_sha == target_sha
         or previous_manifest_sha != str(rollback.get("sha256") or "").upper()
         or rollback.get("manifest_absent") is not False
-        or transition.get("owner_authorization") != approval
+        # An epoch transition is immutable. Later measured allocation changes
+        # may update the current approval, so validate it against this exact
+        # epoch's independently validated current or retained legacy budget.
+        or not isinstance(release_budget, dict)
+        or not _release_budget_record_is_valid(release_budget, task_id, approval)
+        or transition.get("owner_authorization") != release_budget.get("owner_approval")
         or transition.get("historical_hygiene") != "NOT_RECOVERABLE/UNVERIFIABLE"
-        or not isinstance(epoch.get("release_task_budget"), dict)
-        or epoch.get("release_task_budget", {}).get("task_id") != task_id
+        or release_budget.get("task_id") != task_id
     ):
         failures.append("epoch_transition_provenance_invalid")
         return failures
