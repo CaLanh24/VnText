@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextvars
+import functools
 import json
 import hashlib
 import re
@@ -390,15 +392,51 @@ def _glossary_checked_candidate(row, candidate, reasons, glossary):
     return candidate, reasons
 
 
+_RUN_OPENED_CACHES: contextvars.ContextVar[list | None] = contextvars.ContextVar(
+    "vntext_run_opened_caches", default=None
+)
+
+
 def _open_translation_cache(package_dir: Path):
     from vntext.translation_cache import TranslationCache, TranslationCacheError
 
     try:
-        return TranslationCache(package_dir), ""
+        cache = TranslationCache(package_dir)
     except (OSError, sqlite3.Error, TranslationCacheError) as exc:
         # Cache is an optimization, never a reason to skip model translation.
         # The returned disabled status is surfaced in the task result/trace.
         return None, str(exc)
+    opened = _RUN_OPENED_CACHES.get()
+    if opened is not None:
+        opened.append(cache)
+    return cache, ""
+
+
+def _close_caches_on_error(run):
+    """Release the package cache lock when a translation run raises.
+
+    Success and cancellation close the cache in place and ``close`` is
+    idempotent, so this only covers ordinary failures.  It performs no CSV
+    flush and re-raises the original exception unchanged.
+    """
+
+    @functools.wraps(run)
+    def wrapper(*args, **kwargs):
+        opened: list = []
+        token = _RUN_OPENED_CACHES.set(opened)
+        try:
+            return run(*args, **kwargs)
+        except BaseException:
+            for cache in opened:
+                try:
+                    cache.close()
+                except Exception:
+                    pass
+            raise
+        finally:
+            _RUN_OPENED_CACHES.reset(token)
+
+    return wrapper
 
 
 def _cached_batch_translate_chunk(
@@ -536,6 +574,7 @@ def _cache_validated_candidate(
 
 
 
+@_close_caches_on_error
 def run_ct2_translate(
     csv_path: str | Path,
     *,
@@ -1214,6 +1253,7 @@ def run_ct2_translate(
     return result
 
 
+@_close_caches_on_error
 def run_ct2_translate_keys(
     csv_path: str | Path,
     keys: list[str],

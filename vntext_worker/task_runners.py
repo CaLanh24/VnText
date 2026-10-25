@@ -22,6 +22,9 @@ from vntext_worker.protocol import emit_complete, emit_error, emit_log, emit_pro
 class WorkerCancelled(Exception):
     """Raised when host requests cancel during a long task."""
 
+    # Lets the app layer classify host cancellation without importing the worker.
+    is_task_cancellation = True
+
 
 def _check_cancel(is_cancelled: Callable[[], bool]) -> None:
     if is_cancelled():

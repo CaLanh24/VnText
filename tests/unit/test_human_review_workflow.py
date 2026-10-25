@@ -498,10 +498,16 @@ class HumanReviewWorkflowTests(unittest.TestCase):
 class TranslateTerminalClassificationTests(unittest.TestCase):
     """Ordinary failures and cancellation must reach distinct, truthful terminals."""
 
-    def _run_worker(self, task_id: str, csv_path: Path, is_cancelled) -> list[tuple]:
+    SINGLE_ROW_BATCH = {"batch_size": 1, "inter_threads": 1, "max_src_tokens": 512}
+
+    def _rows(self) -> list[dict]:
+        return [_row("one", "Hello"), _row("two", "Hello again")]
+
+    def _run_worker(self, task_id: str, csv_path: Path, is_cancelled) -> dict:
         terminal_events: list[tuple] = []
         with (
             patch("vntext.mt_ct2_model.get_translator", return_value=FakeReviewAdapter()),
+            patch.object(FakeReviewAdapter, "config", self.SINGLE_ROW_BATCH),
             patch(
                 "vntext_worker.task_runners.emit_complete",
                 side_effect=lambda *args, **kwargs: terminal_events.append((args, kwargs)),
@@ -510,13 +516,24 @@ class TranslateTerminalClassificationTests(unittest.TestCase):
             patch("vntext_worker.task_runners.emit_log"),
         ):
             run_translate_worker(task_id, {"csv_path": str(csv_path)}, is_cancelled)
-        return terminal_events
+        self.assertEqual(len(terminal_events), 1, terminal_events)
+        return terminal_events[0][1]
+
+    def _assert_cache_released(self, package: Path) -> None:
+        from vntext.translation_cache import CACHE_DIR_NAME, CACHE_LOCK_NAME, TranslationCache
+
+        self.assertFalse((package / ".mt" / CACHE_DIR_NAME / CACHE_LOCK_NAME).exists())
+        TranslationCache(package).close()
 
     def _assert_identity_preserved(self, csv_path: Path, rows: list[dict], allowed: set[str]) -> None:
-        _fields, persisted = read_csv_rows_file(csv_path)
+        # Translation and the pipeline-owned patch_note may change; every
+        # identity/locator field and the column order must not.
+        fields, persisted = read_csv_rows_file(csv_path)
+        self.assertEqual(fields, CSV_FIELDS)
+        mutable = {"translation", "patch_note"}
         self.assertEqual(
-            [(row["key"], row["source_text"]) for row in persisted],
-            [(row["key"], row["source_text"]) for row in rows],
+            [{name: value for name, value in row.items() if name not in mutable} for row in persisted],
+            [{name: value for name, value in row.items() if name not in mutable} for row in rows],
         )
         for row in persisted:
             self.assertIn(row["translation"], allowed, persisted)
@@ -527,29 +544,64 @@ class TranslateTerminalClassificationTests(unittest.TestCase):
         return summary["run_status_counts"]
 
     def test_ordinary_failure_is_reported_as_failure_not_cancellation(self):
-        rows = [_row("one", "Hello"), _row("two", "Hello again")]
+        rows = self._rows()
         package, csv_path = _write_package("translate_ordinary_failure", rows)
         _write_manifest(package, rows)
         failure = TypeError("unsupported operand type(s) for /: 'str' and 'str'")
 
         with patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=failure):
-            events = self._run_worker("ordinary-failure", csv_path, lambda: False)
+            payload = self._run_worker("ordinary-failure", csv_path, lambda: False)
 
-        self.assertEqual(len(events), 1, events)
-        _args, payload = events[0]
         self.assertFalse(payload.get("ok", True), payload)
-        self.assertIn("unsupported operand", payload.get("error") or "", payload)
+        self.assertEqual(payload.get("error"), str(failure), payload)
         action = str(payload.get("diagnostic_action") or "").lower()
         self.assertNotIn("cancel", action, payload)
         self.assertNotIn("interrupt", action, payload)
         self.assertEqual(self._run_status_counts(package), {"FAILED": 1})
         self._assert_identity_preserved(csv_path, rows, {""})
+        # The ordinary failure must not leave this process holding the cache lock.
+        self._assert_cache_released(package)
 
-    def test_cancel_seen_by_progress_callback_flushes_closes_cache_and_allows_retry(self):
-        from vntext import mt_ct2_pipeline
+    def test_cache_close_failure_does_not_mask_the_original_error(self):
         from vntext.translation_cache import TranslationCache
 
-        rows = [_row("one", "Hello"), _row("two", "Hello again")]
+        rows = self._rows()
+        package, csv_path = _write_package("translate_close_failure", rows)
+        _write_manifest(package, rows)
+        failure = TypeError("original pipeline failure")
+        real_close = TranslationCache.close
+        close_calls: list[bool] = []
+
+        def failing_close(cache):
+            close_calls.append(True)
+            real_close(cache)
+            raise OSError("cache close failed")
+
+        with (
+            patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=failure),
+            patch.object(TranslationCache, "close", failing_close),
+        ):
+            payload = self._run_worker("close-failure", csv_path, lambda: False)
+
+        self.assertTrue(close_calls, "the error path must attempt to close the opened cache")
+        self.assertEqual(payload.get("error"), str(failure), payload)
+        self.assertEqual(self._run_status_counts(package), {"FAILED": 1})
+        self._assert_cache_released(package)
+
+    def test_cancel_seen_by_progress_callback_flushes_closes_cache_and_retry_matches_uninterrupted_run(self):
+        from vntext import mt_ct2_pipeline
+
+        rows = self._rows()
+        control_package, control_csv = _write_package("translate_cancel_control", rows)
+        _write_manifest(control_package, rows)
+        control = self._run_worker("uninterrupted-control", control_csv, lambda: False)
+        self.assertTrue(control.get("ok"), control)
+        self.assertTrue(control.get("complete"), control)
+        self.assertEqual(control.get("error"), "", control)
+        _fields, control_rows = read_csv_rows_file(control_csv)
+        self.assertEqual([row["translation"] for row in control_rows], ["Xin chào", "Xin chào"], control_rows)
+        expected_translations = {row["translation"] for row in control_rows} | {""}
+
         package, csv_path = _write_package("translate_cancel_at_progress", rows)
         _write_manifest(package, rows)
         cancelled = threading.Event()
@@ -561,29 +613,25 @@ class TranslateTerminalClassificationTests(unittest.TestCase):
             cancelled.set()
             return original(*args, **kwargs)
 
-        with (
-            patch.object(FakeReviewAdapter, "config", {"batch_size": 1, "inter_threads": 1, "max_src_tokens": 512}),
-            patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=cancel_after_validation),
-        ):
-            events = self._run_worker("cancel-at-progress", csv_path, cancelled.is_set)
+        with patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=cancel_after_validation):
+            payload = self._run_worker("cancel-at-progress", csv_path, cancelled.is_set)
 
-        self.assertEqual(len(events), 1, events)
-        _args, payload = events[0]
         self.assertFalse(payload.get("ok", True), payload)
         self.assertEqual(payload.get("error"), "cancelled", payload)
         self.assertFalse(payload.get("complete", True), payload)
         self.assertEqual(self._run_status_counts(package), {"ABORTED": 1})
-        self._assert_identity_preserved(csv_path, rows, {"", "Xin chào"})
-        # A cancelled run must release the package-local cache lock for retry.
-        TranslationCache(package).close()
+        self._assert_identity_preserved(csv_path, rows, expected_translations)
+        _fields, cancelled_rows = read_csv_rows_file(csv_path)
+        self.assertEqual(cancelled_rows[1], rows[1], "cancel must stop before the next chunk")
+        self._assert_cache_released(package)
 
         retry = self._run_worker("retry-after-cancel", csv_path, lambda: False)
-        self.assertEqual(len(retry), 1, retry)
-        _args, retry_payload = retry[0]
-        self.assertNotEqual(retry_payload.get("error"), "cancelled", retry_payload)
-        self._assert_identity_preserved(csv_path, rows, {"", "Xin chào"})
-        _fields, persisted = read_csv_rows_file(csv_path)
-        self.assertEqual(persisted[0]["translation"], "Xin chào", persisted)
+        for name in ("ok", "complete", "pending", "review_only", "blocked", "error"):
+            self.assertEqual(retry.get(name), control.get(name), (name, retry, control))
+        self._assert_identity_preserved(csv_path, rows, expected_translations)
+        _fields, retried_rows = read_csv_rows_file(csv_path)
+        self.assertEqual(retried_rows, control_rows)
+        self._assert_cache_released(package)
 
 
 if __name__ == "__main__":

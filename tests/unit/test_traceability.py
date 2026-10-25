@@ -984,6 +984,66 @@ class TraceStoreTests(unittest.TestCase):
         self.assertEqual(summary["run_status_counts"], {EVENT_FAILED: 1})
         self.assertEqual(summary["root_cause_counts"], {ROOT_CAUSE_PATCH_VERIFY_FAILED: 1})
 
+    def test_traced_patch_host_cancel_is_one_cancelled_terminal_not_failure(self):
+        from vntext_worker.task_runners import _make_callbacks
+
+        entry = _entry("patch-host-cancel")
+        entry.patch_proof = {
+            "reader": True,
+            "writer": True,
+            "preflight": True,
+            "reopen": True,
+            "semantic_verify": True,
+        }
+        package = self.root / "patch-cancel-package"
+        write_package(
+            str(package),
+            [entry],
+            [],
+            {"mode": "deep"},
+            separate_review=True,
+            enforce_symmetry=True,
+        )
+        fields, rows = read_csv_rows_file(package / "translation.csv")
+        rows[0]["translation"] = "Xin chào"
+        write_csv_rows_file(package / "translation.csv", fields, rows)
+        game = self.root / "game-cancel"
+        game.mkdir()
+        (game / "data.assets").write_text("Hello", encoding="utf-8")
+        patch_out = self.root / "patch-cancel-output"
+        completed: list[dict] = []
+        state = {"cancelled": False}
+
+        def cancel_during_apply(_csv, _manifest, _game, _output, progress):
+            # The host cancel is first observed by the worker progress callback.
+            state["cancelled"] = True
+            progress({"done": 1, "total": 2, "step": "Patch", "item": "1/2"})
+
+        with (
+            patch("vntext.app_tasks.apply_translation_package", side_effect=cancel_during_apply),
+            patch("vntext_worker.task_runners.emit_progress"),
+        ):
+            worker_progress, _log, _complete = _make_callbacks("patch-host-cancel", lambda: state["cancelled"])
+            run_patch_task(
+                package / "translation.csv",
+                package / "manifest.json",
+                str(game),
+                str(patch_out),
+                progress=worker_progress,
+                log=lambda _message: None,
+                complete=completed.append,
+                patch_out_override=patch_out,
+                include_installer=False,
+                write_manifest_file=False,
+                enable_trace=True,
+            )
+        self.assertTrue(state["cancelled"], "patch preflight must reach the apply/progress callback")
+        self.assertEqual(len(completed), 1, completed)
+        self.assertFalse(completed[0]["ok"])
+        self.assertEqual(completed[0]["error"], "cancelled", completed)
+        summary = json.loads((package / ".mt" / "trace_summary.json").read_text(encoding="utf-8"))
+        self.assertEqual(summary["run_status_counts"], {EVENT_ABORTED: 1})
+
 
 if __name__ == "__main__":
     unittest.main()

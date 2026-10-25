@@ -106,12 +106,18 @@ def _trace_finish_run(trace, *, status: str, root_cause: str | None = None) -> N
     trace.finish_run(status, root_cause)
 
 
+def _is_task_cancellation(exc: BaseException) -> bool:
+    """True for pipeline cancellation or a host callback's cancellation marker."""
+
+    return isinstance(exc, TranslateCancelled) or getattr(type(exc), "is_task_cancellation", False) is True
+
+
 def _trace_exception_status(exc: BaseException) -> str:
     """Record only a cancellation as ABORTED; any other exception is a failure."""
 
     from vntext.traceability import EVENT_ABORTED, EVENT_FAILED
 
-    return EVENT_ABORTED if isinstance(exc, TranslateCancelled) else EVENT_FAILED
+    return EVENT_ABORTED if _is_task_cancellation(exc) else EVENT_FAILED
 
 
 def _trace_abort_actions(
@@ -2468,7 +2474,10 @@ def run_patch_task(
                     "patch_install_instructions": patch_install_instructions,
                 }
             )
-        _emit_complete(complete, ok=False, error=str(exc), **extra)
+        # A host cancel observed through the progress callback is one cancelled
+        # terminal, not a failure with the cancellation's empty message.
+        error = "cancelled" if _is_task_cancellation(exc) else str(exc)
+        _emit_complete(complete, ok=False, error=error, **extra)
     finally:
         if trace is not None:
             trace.close()
