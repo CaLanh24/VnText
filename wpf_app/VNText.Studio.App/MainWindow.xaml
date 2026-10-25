@@ -505,8 +505,7 @@
                             <ColumnDefinition Width="0.94*" />
                         </Grid.ColumnDefinitions>
 
-                        <Border x:Name="TranslateConfigCard" Grid.Column="0" Margin="0,0,10,0"
-                                ToolTip="Dịch bằng mô hình đã có trên máy, không gửi nội dung lên mạng.">
+                        <Border x:Name="TranslateConfigCard" Grid.Column="0" Margin="0,0,10,0">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />

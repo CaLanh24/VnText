@@ -238,7 +238,55 @@ class SemanticStructureTests(unittest.TestCase):
         row = _row("NPC: Do you accept 20% off today?")
         self.assertIn("question split into separate sentences",
                       structural_problems(row, "NPC: Anh có chấp nhận không? 20% Hôm nay nghỉ à?"))
+        self.assertIn("discount meaning omitted",
+                      structural_problems(row, "NPC: Hôm nay anh có chấp nhận 20% không?"))
         self.assertEqual(structural_problems(row, "NPC: Hôm nay giảm 20%, bạn có nhận không?"), [])
+
+    def test_percent_off_and_discount_word_require_vietnamese_discount_meaning(self):
+        for source in ("NPC: Do you accept 20% off today?", "NPC: Discount 20% today!"):
+            with self.subTest(source=source):
+                row = _row(source)
+                self.assertIn("discount meaning omitted", structural_problems(row, "NPC: Hôm nay bạn có nhận 20% không?"))
+                self.assertEqual(structural_problems(row, "NPC: Hôm nay giảm 20%, bạn có nhận không?"), [])
+
+    def test_tax_concept_must_survive_translation(self):
+        row = _row("NPC: Price: $5.00 (tax included).")
+        self.assertIn("tax meaning omitted", structural_problems(row, "NPC: Giá: $5.00 (đã bao gồm)."))
+        self.assertEqual(structural_problems(row, "NPC: Giá: $5.00 (đã bao gồm thuế)."), [])
+
+    def test_commerce_guards_ignore_protected_spans_and_nonfinancial_uses(self):
+        cases = (
+            (
+                "NPC: %s; see https://x/tax?discount=1 for details.",
+                "NPC: %s; xem https://x/tax?discount=1 để biết thêm.",
+            ),
+            ("NPC: {tax} is a field.", "NPC: {tax} là một trường."),
+            (
+                'NPC: <tag tax="8% discount">Ready.</tag>',
+                'NPC: <tag tax="8% discount">Sẵn sàng.</tag>',
+            ),
+            ("NPC: Discount this possibility.", "NPC: Bỏ qua khả năng này."),
+            ("NPC: Don't tax your patience.", "NPC: Đừng thử thách lòng kiên nhẫn."),
+            (
+                "NPC: This discount is decorative.",
+                "NPC: Chi tiết giảm giá này chỉ để trang trí.",
+            ),
+        )
+        for source, target in cases:
+            with self.subTest(source=source):
+                self.assertEqual(structural_problems(_row(source), target), [])
+
+    def test_vietnamese_anchor_in_a_url_does_not_satisfy_commerce_guard(self):
+        discount = _row("NPC: Do you accept 20% off today?")
+        self.assertIn(
+            "discount meaning omitted",
+            structural_problems(discount, "NPC: Hôm nay bạn nhận 20%? https://x/thuế"),
+        )
+        tax = _row("NPC: Price: $5.00 (tax included).")
+        self.assertIn(
+            "tax meaning omitted",
+            structural_problems(tax, "NPC: Giá: $5.00 (đã bao gồm). https://x/thuế"),
+        )
 
     def test_sources_with_several_questions_keep_their_structure_freedom(self):
         row = _row("NPC: Really? You did it?")
@@ -276,6 +324,13 @@ class SemanticStructureTests(unittest.TestCase):
         for name in ("Rose", "Grace", "Mark", "Bill", "Dawn", "Summer", "Hunter", "Marcus"):
             with self.subTest(name=name):
                 self.assertIn(name.casefold(), mt_check.source_proper_name_tokens(f"NPC: {name} is here."))
+
+    def test_common_sentence_initial_words_tax_and_buy_are_not_proper_names(self):
+        for word, source in (("Tax", "Tax is included."), ("Buy", "Buy some bread.")):
+            with self.subTest(word=word):
+                self.assertNotIn(word.casefold(), mt_check.source_proper_name_tokens(source))
+                count, reasons = mt_check.english_report(source, f"{word} đã được dịch.", load_whitelist())
+                self.assertGreater(count, 0, reasons)
 
 
 class PrintfOrderSemanticsTests(unittest.TestCase):

@@ -180,6 +180,15 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("vm.ShowCompletionToast(notification)", window)
         self.assertNotIn("MessageBox.Show(", window[window.index("private void OnCompletionRequested"):window.index("private void MainWindow_SizeChanged")])
 
+    def test_translate_model_tooltip_is_scoped_to_its_description(self):
+        xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
+        styles = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        self.assertNotIn('ToolTip="Dịch bằng mô hình đã có trên máy, không gửi nội dung lên mạng."', xaml)
+        self.assertIn('Text="Dịch Anh sang Việt trên máy" ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2."', xaml)
+        tooltip_style = styles.split('<Style TargetType="ToolTip">', 1)[1].split('</Style>', 1)[0]
+        self.assertIn('Value="400"', tooltip_style)
+        self.assertIn('CornerRadius="8"', tooltip_style)
+
     def test_workflow_options_are_not_duplicated(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         glossary_probe = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "BulkGlossaryUiProbe.cs").read_text(encoding="utf-8")
@@ -262,7 +271,7 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (app_dir / "MainWindow.xaml").read_text(encoding="utf-8")
         dialog_fixture = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "AppDialogFixtureTests.cs").read_text(encoding="utf-8")
         # Shared shell: borderless transparent window, rounded card, custom X, scrolling body, overlay.
-        for needle in ("WindowStyle = WindowStyle.None", "AllowsTransparency = true", "CornerRadius(18)",
+        for needle in ("WindowStyle = WindowStyle.None", "AllowsTransparency = true", "CardRadius = 18",
                        '"DialogCloseButton"', "VerticalScrollBarVisibility = ScrollBarVisibility.Auto",
                        "Key.Escape", "BlurEffect", "Keyboard.Focus(_previousFocus)", '"PrimaryButton" : "OutlineButton"'):
             self.assertIn(needle, shell, needle)

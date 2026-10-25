@@ -264,6 +264,7 @@ have has had having been being does doesn dont didn wasn weren
 about above after again against almost alone along already also although
 always among another answer anyone anything around because before behind
 below beside between beyond both bring brought
+buy discount off
 came come coming could couldn
 even ever every everyone everything
 from front full
@@ -278,7 +279,7 @@ often once only other others ought outside over
 people perhaps please pretty
 really right
 same said saying seem seems since some something soon still such sure
-take taken talk tell than thank thing things think thought through time
+take taken talk tell than thank thing things think thought through time tax
 today together tonight took toward
 under until upon used using
 very
@@ -652,6 +653,27 @@ def is_synonym_row(row):
 
 
 TIGHT_COMMA = re.compile(r'(?<!\d),(?=\S)(?!\d)')
+PERCENT_OFF_SOURCE = re.compile(r'(?<![\w])\d+(?:[.,]\d+)?\s*%\s*off\b', re.I)
+DISCOUNT_AMOUNT_SOURCE = re.compile(
+    r'(?:\bdiscount(?:ed|ing|s)?\b.{0,24}(?:\d+(?:[.,]\d+)?\s*(?:%|percent)|[$€£¥]\s?\d)'
+    r'|(?:\d+(?:[.,]\d+)?\s*(?:%|percent)|[$€£¥]\s?\d).{0,24}\bdiscount(?:ed|ing|s)?\b)',
+    re.I,
+)
+DISCOUNT_MEANING_VI = re.compile(
+    r'\b(?:giảm(?:\s+giá)?|chiết\s+khấu|khuyến\s+mãi|khuyến\s+mại|ưu\s+đãi|bớt|rẻ\s+hơn)\b',
+    re.I,
+)
+TAX_COMMERCE_SOURCE = re.compile(
+    r'\btax(?:es)?\b.{0,20}\b(?:included|inclusive|rate|amount)\b'
+    r'|\btax(?:es)?\s*(?:[:=]\s*\d|\d+(?:[.,]\d+)?\s*%)'
+    r'|\b(?:included|includes|including)\s+(?:all\s+)?tax(?:es)?\b'
+    r'|\b(?:tax|taxes)\s+(?:is|are)\s+(?:already\s+)?included\b'
+    r'|\b(?:sales|value[- ]added|vat|gst)\s+tax(?:es)?\b'
+    r'|\b\d+(?:[.,]\d+)?\s*%\s+tax(?:es)?\b'
+    r'|\b(?:price|cost|total|subtotal|fee|bill|invoice|amount)\b.{0,48}\btax(?:es)?\b',
+    re.I,
+)
+TAX_MEANING_VI = re.compile(r'\bthuế\b', re.I)
 
 
 def tight_commas(text):
@@ -688,6 +710,22 @@ def structural_problems(row, new):
         out.append('literal newline count %d -> %d'
                    % (src.count('\\n'), new.count('\\n')))
     out.extend(typed_carrier_problems(src, new))
+    # Narrow semantic guards cover only explicit commerce surfaces observed in
+    # the real-model probe. Strip placeholders, tags, printf spans, hashtags and
+    # URLs first so code or a link cannot trigger or satisfy the guard. Identical
+    # source text is assessed by the separate untranslated-text quality check.
+    source_prose = KEY_PREFIX.sub(' ', strip_technical(src))
+    target_prose = KEY_PREFIX.sub(' ', strip_technical(new))
+    if new.strip() != src.strip():
+        discount_context = bool(
+            PERCENT_OFF_SOURCE.search(source_prose)
+            or DISCOUNT_AMOUNT_SOURCE.search(source_prose)
+        )
+        if discount_context and not DISCOUNT_MEANING_VI.search(target_prose):
+            out.append('discount meaning omitted')
+        if (TAX_COMMERCE_SOURCE.search(source_prose)
+                and not TAX_MEANING_VI.search(target_prose)):
+            out.append('tax meaning omitted')
     if src.count(HEART) != new.count(HEART):
         out.append('heart glyph count %d -> %d'
                    % (src.count(HEART), new.count(HEART)))
