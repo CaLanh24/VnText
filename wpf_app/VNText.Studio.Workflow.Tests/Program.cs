@@ -51,9 +51,12 @@ internal static partial class Program
             Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, progressFailures);
             Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, progressFailures);
             Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, progressFailures);
+            Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, progressFailures);
+            Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, progressFailures);
+            Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, progressFailures);
             if (progressFailures.Count == 0)
             {
-                Console.WriteLine("Focused task lifecycle checks: PASS (6)");
+                Console.WriteLine("Focused task lifecycle checks: PASS (9)");
                 return 0;
             }
             foreach (var failure in progressFailures) Console.Error.WriteLine(" - " + failure);
@@ -173,6 +176,13 @@ internal static partial class Program
         Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
         Run("Progress_StaleAndTerminalEventsCannotOverwriteOwnedState", Progress_StaleAndTerminalEventsCannotOverwriteOwnedState, failures);
         Run("WorkerEvent_ParsesCancelAcknowledgement", WorkerEvent_ParsesCancelAcknowledgement, failures);
+        Run("CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard", CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard, failures);
+        Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, failures);
+        Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, failures);
+        Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, failures);
+        Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, failures);
+        Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, failures);
+        Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
         Run("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", RenpySdkRecovery_StatusRequiresSuccessfulEvidence, failures);
@@ -513,6 +523,69 @@ internal static partial class Program
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="crashed-task", Error="Worker process exited" });
         AssertEqual(terminalStatus, vm.StatusText);
         AssertEqual(1, exitRequests);
+    }
+
+    private static void CancelAndExit_CancelledTerminalRequestsExitOnce()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestBeginTaskLog("exit-cancelled", "translate");
+        vm.TestSetActiveTask("exit-cancelled", "translate");
+        var exitRequests = 0;
+        vm.ExitAfterTaskRequested += (_, _) => exitRequests++;
+        vm.TestBeginCancelAndExit();
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="cancel_ack", Id="exit-cancelled", State="accepted" });
+        AssertTrue(vm.Busy);
+        AssertEqual(0, exitRequests);
+
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="exit-cancelled", Ok=false, Complete=false, Error="cancelled" });
+        AssertFalse(vm.Busy);
+        AssertEqual("Đã hủy", vm.StatusText);
+        AssertEqual(1, exitRequests);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="exit-cancelled", Ok=false, Complete=false, Error="cancelled" });
+        AssertEqual(1, exitRequests);
+    }
+
+    private static void OrdinaryFailureTerminal_IsNotPresentedAsCancellation()
+    {
+        const string payload = "{\"v\":1,\"type\":\"complete\",\"id\":\"translate-failed\",\"ok\":false,\"summary\":\"\",\"error\":\"unsupported operand type(s) for /: 'str' and 'str'\",\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":0,\"diagnostic_stage\":\"TRANSLATE\",\"diagnostic_root_cause\":\"UNKNOWN\",\"diagnostic_affected_count\":1,\"diagnostic_action\":\"Review the recorded task failure and its evidence before retrying.\",\"diagnostic_status\":\"FAILED\"}";
+        var terminal = WorkerEvent.FromJson(payload);
+        AssertTrue(terminal is not null);
+
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        var notifications = new List<CompletionNotification>();
+        vm.CompletionRequested += (_, notification) => notifications.Add(notification);
+        vm.TestBeginTaskLog("translate-failed", "translate");
+        vm.TestSetActiveTask("translate-failed", "translate");
+        vm.TestHandleWorkerEvent(terminal!);
+
+        AssertFalse(vm.Busy);
+        AssertEqual("Lỗi", vm.StatusText);
+        AssertFalse(vm.StepStatusLine.Contains("Đã hủy", StringComparison.Ordinal));
+        AssertFalse(vm.TranslateProgressStep == "Đã hủy");
+        AssertFalse(notifications.Any(notification => notification.Message == "Đã hủy tác vụ."));
+    }
+
+    private static void RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        var exitRequests = 0;
+        vm.ExitAfterTaskRequested += (_, _) => exitRequests++;
+        vm.TestBeginTaskLog("first-run", "translate");
+        vm.TestSetActiveTask("first-run", "translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="first-run", Ok=false, Complete=false, Error="cancelled" });
+        AssertFalse(vm.Busy);
+        AssertEqual("Đã hủy", vm.StatusText);
+
+        vm.TestBeginTaskLog("retry-run", "translate");
+        vm.TestSetActiveTask("retry-run", "translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="first-run", Ok=false, Complete=false, Error="cancelled" });
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="first-run", Error="Worker process exited" });
+        AssertTrue(vm.Busy);
+
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="retry-run", Ok=false, Complete=false, Error="retry fixture failure" });
+        AssertFalse(vm.Busy);
+        AssertEqual("Lỗi", vm.StatusText);
+        AssertEqual(0, exitRequests);
     }
 
     private static void WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit()

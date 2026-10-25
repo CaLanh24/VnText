@@ -427,7 +427,10 @@ class TraceStoreTests(unittest.TestCase):
             _run_traced_translation(csv_path, package, operation, overwrite=False)
         self.assertEqual(called, [])
         summary = json.loads((package / ".mt" / "trace_summary.json").read_text(encoding="utf-8"))
-        self.assertEqual(summary["run_status_counts"], {EVENT_ABORTED: 1})
+        # An ordinary precondition failure is a failure, not a cancellation.
+        self.assertEqual(summary["run_status_counts"], {EVENT_FAILED: 1})
+        diagnostic = json.loads((package / ".mt" / "diagnostic_summary.json").read_text(encoding="utf-8"))
+        self.assertNotIn("cancelled", diagnostic["actionable_next_step"])
 
     def test_result_fields_are_updated_through_sink_api(self):
         store = TraceStore(self.root, self.package_id)
@@ -978,7 +981,7 @@ class TraceStoreTests(unittest.TestCase):
         self.assertTrue(completed)
         self.assertFalse(completed[-1]["ok"])
         summary = json.loads((package / ".mt" / "trace_summary.json").read_text(encoding="utf-8"))
-        self.assertEqual(summary["run_status_counts"], {EVENT_ABORTED: 1})
+        self.assertEqual(summary["run_status_counts"], {EVENT_FAILED: 1})
         self.assertEqual(summary["root_cause_counts"], {ROOT_CAUSE_PATCH_VERIFY_FAILED: 1})
 
 

@@ -595,8 +595,16 @@ def run_ct2_translate(
             log(msg)
 
     def prog(**kwargs) -> None:
-        if progress:
+        if not progress:
+            return
+        try:
             progress(kwargs)
+        except Exception:
+            # A host progress callback may be the first observer of a cancel
+            # request; finish through the same flush/cache-close boundary.
+            if is_cancelled is not None and is_cancelled():
+                cancel_checkpoint()
+            raise
 
     from vntext.intentional_keep import apply_intentional_keep_batch
 
@@ -1265,8 +1273,16 @@ def run_ct2_translate_keys(
             log(msg)
 
     def prog(**kwargs) -> None:
-        if progress:
+        if not progress:
+            return
+        try:
             progress(kwargs)
+        except Exception:
+            # A host progress callback may be the first observer of a cancel
+            # request; finish through the same flush/cache-close boundary.
+            if is_cancelled is not None and is_cancelled():
+                cancel_checkpoint()
+            raise
 
     if backup:
         backup_translation_csv(csv_path)

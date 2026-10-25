@@ -106,25 +106,35 @@ def _trace_finish_run(trace, *, status: str, root_cause: str | None = None) -> N
     trace.finish_run(status, root_cause)
 
 
+def _trace_exception_status(exc: BaseException) -> str:
+    """Record only a cancellation as ABORTED; any other exception is a failure."""
+
+    from vntext.traceability import EVENT_ABORTED, EVENT_FAILED
+
+    return EVENT_ABORTED if isinstance(exc, TranslateCancelled) else EVENT_FAILED
+
+
 def _trace_abort_actions(
     trace,
     actions: dict[str, dict],
     *,
     error: str,
     root_cause: str | None = None,
+    status: str | None = None,
 ) -> None:
     from vntext.traceability import EVENT_ABORTED, ROOT_CAUSE_UNKNOWN
 
     terminal_root = root_cause or ROOT_CAUSE_UNKNOWN
+    terminal_status = status or EVENT_ABORTED
     for item in actions.values():
         if item.get("finished"):
             continue
         try:
             trace.finish_event(
                 item["action_id"],
-                EVENT_ABORTED,
+                terminal_status,
                 root_cause=terminal_root,
-                payload={"error": error, "aborted": True},
+                payload={"error": error, "aborted": terminal_status == EVENT_ABORTED},
             )
             item["finished"] = True
         except Exception:
@@ -595,7 +605,7 @@ def _run_traced_translation(
     human_review_required: bool = False,
     log: LogFn | None = None,
 ) -> dict:
-    from vntext.traceability import EVENT_ABORTED, EVENT_COMPLETED, ROOT_CAUSE_UNKNOWN
+    from vntext.traceability import EVENT_COMPLETED, ROOT_CAUSE_UNKNOWN
 
     # Preserve the existing EmptyCsvError contract for an empty/invalid CSV:
     # this is a read-only precondition failure and has no candidate/output
@@ -644,10 +654,11 @@ def _run_traced_translation(
         return result
     except Exception as exc:
         if trace is not None:
-            _trace_abort_actions(trace, actions, error=str(exc))
+            terminal_status = _trace_exception_status(exc)
+            _trace_abort_actions(trace, actions, error=str(exc), status=terminal_status)
             if trace.run_id is not None and not run_finished:
                 try:
-                    trace.finish_run(EVENT_ABORTED, ROOT_CAUSE_UNKNOWN)
+                    trace.finish_run(terminal_status, ROOT_CAUSE_UNKNOWN)
                 except Exception:
                     pass
             try:
@@ -2400,7 +2411,6 @@ def run_patch_task(
     except Exception as exc:
         if trace is not None:
             from vntext.traceability import (
-                EVENT_ABORTED,
                 ROOT_CAUSE_PATCH_VERIFY_FAILED,
                 ROOT_CAUSE_UNKNOWN,
             )
@@ -2410,15 +2420,17 @@ def run_patch_task(
                 if isinstance(exc, PatchReadbackError)
                 else ROOT_CAUSE_UNKNOWN
             )
+            terminal_status = _trace_exception_status(exc)
             _trace_abort_actions(
                 trace,
                 patch_actions,
                 error=str(exc),
                 root_cause=patch_root_cause,
+                status=terminal_status,
             )
             if trace.run_id is not None and not trace_run_finished:
                 try:
-                    trace.finish_run(EVENT_ABORTED, patch_root_cause)
+                    trace.finish_run(terminal_status, patch_root_cause)
                 except Exception:
                     pass
             try:

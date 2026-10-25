@@ -495,5 +495,96 @@ class HumanReviewWorkflowTests(unittest.TestCase):
         self.assertEqual(failed[0]["blocker"]["candidate"], "Xin chào")
 
 
+class TranslateTerminalClassificationTests(unittest.TestCase):
+    """Ordinary failures and cancellation must reach distinct, truthful terminals."""
+
+    def _run_worker(self, task_id: str, csv_path: Path, is_cancelled) -> list[tuple]:
+        terminal_events: list[tuple] = []
+        with (
+            patch("vntext.mt_ct2_model.get_translator", return_value=FakeReviewAdapter()),
+            patch(
+                "vntext_worker.task_runners.emit_complete",
+                side_effect=lambda *args, **kwargs: terminal_events.append((args, kwargs)),
+            ),
+            patch("vntext_worker.task_runners.emit_progress"),
+            patch("vntext_worker.task_runners.emit_log"),
+        ):
+            run_translate_worker(task_id, {"csv_path": str(csv_path)}, is_cancelled)
+        return terminal_events
+
+    def _assert_identity_preserved(self, csv_path: Path, rows: list[dict], allowed: set[str]) -> None:
+        _fields, persisted = read_csv_rows_file(csv_path)
+        self.assertEqual(
+            [(row["key"], row["source_text"]) for row in persisted],
+            [(row["key"], row["source_text"]) for row in rows],
+        )
+        for row in persisted:
+            self.assertIn(row["translation"], allowed, persisted)
+        self.assertEqual(sorted(csv_path.parent.glob("*.tmp")), [])
+
+    def _run_status_counts(self, package: Path) -> dict:
+        summary = json.loads((package / ".mt" / "trace_summary.json").read_text(encoding="utf-8"))
+        return summary["run_status_counts"]
+
+    def test_ordinary_failure_is_reported_as_failure_not_cancellation(self):
+        rows = [_row("one", "Hello"), _row("two", "Hello again")]
+        package, csv_path = _write_package("translate_ordinary_failure", rows)
+        _write_manifest(package, rows)
+        failure = TypeError("unsupported operand type(s) for /: 'str' and 'str'")
+
+        with patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=failure):
+            events = self._run_worker("ordinary-failure", csv_path, lambda: False)
+
+        self.assertEqual(len(events), 1, events)
+        _args, payload = events[0]
+        self.assertFalse(payload.get("ok", True), payload)
+        self.assertIn("unsupported operand", payload.get("error") or "", payload)
+        action = str(payload.get("diagnostic_action") or "").lower()
+        self.assertNotIn("cancel", action, payload)
+        self.assertNotIn("interrupt", action, payload)
+        self.assertEqual(self._run_status_counts(package), {"FAILED": 1})
+        self._assert_identity_preserved(csv_path, rows, {""})
+
+    def test_cancel_seen_by_progress_callback_flushes_closes_cache_and_allows_retry(self):
+        from vntext import mt_ct2_pipeline
+        from vntext.translation_cache import TranslationCache
+
+        rows = [_row("one", "Hello"), _row("two", "Hello again")]
+        package, csv_path = _write_package("translate_cancel_at_progress", rows)
+        _write_manifest(package, rows)
+        cancelled = threading.Event()
+        original = mt_ct2_pipeline._cache_validated_candidate
+
+        def cancel_after_validation(*args, **kwargs):
+            # The host cancel lands after the model call's own checkpoint has
+            # returned, so the next observer is the worker progress callback.
+            cancelled.set()
+            return original(*args, **kwargs)
+
+        with (
+            patch.object(FakeReviewAdapter, "config", {"batch_size": 1, "inter_threads": 1, "max_src_tokens": 512}),
+            patch("vntext.mt_ct2_pipeline._cache_validated_candidate", side_effect=cancel_after_validation),
+        ):
+            events = self._run_worker("cancel-at-progress", csv_path, cancelled.is_set)
+
+        self.assertEqual(len(events), 1, events)
+        _args, payload = events[0]
+        self.assertFalse(payload.get("ok", True), payload)
+        self.assertEqual(payload.get("error"), "cancelled", payload)
+        self.assertFalse(payload.get("complete", True), payload)
+        self.assertEqual(self._run_status_counts(package), {"ABORTED": 1})
+        self._assert_identity_preserved(csv_path, rows, {"", "Xin chào"})
+        # A cancelled run must release the package-local cache lock for retry.
+        TranslationCache(package).close()
+
+        retry = self._run_worker("retry-after-cancel", csv_path, lambda: False)
+        self.assertEqual(len(retry), 1, retry)
+        _args, retry_payload = retry[0]
+        self.assertNotEqual(retry_payload.get("error"), "cancelled", retry_payload)
+        self._assert_identity_preserved(csv_path, rows, {"", "Xin chào"})
+        _fields, persisted = read_csv_rows_file(csv_path)
+        self.assertEqual(persisted[0]["translation"], "Xin chào", persisted)
+
+
 if __name__ == "__main__":
     unittest.main()
