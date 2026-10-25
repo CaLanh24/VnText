@@ -2,6 +2,7 @@
 import contextlib
 import io
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 import unittest
@@ -15,6 +16,46 @@ def receipt(stdout="", exit_code=0):
 
 
 class DevBootstrapTests(unittest.TestCase):
+    def test_run_overrides_global_tools_guard_without_mutating_the_caller_mapping(self):
+        seen = []
+
+        def fake_run(command, **kwargs):
+            seen.append(kwargs["env"].get("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH", "<absent>"))
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+        # Inherited-environment boundary (preflight SDK probes): forced to 0 on a copy.
+        for label, inherited in (("missing", None), ("stale_one", "1"), ("malicious_true", "true")):
+            patched = {k: v for k, v in dev.os.environ.items() if k != "DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"}
+            if inherited is not None:
+                patched["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = inherited
+            with self.subTest(case=label), patch.dict(dev.os.environ, patched, clear=True), \
+                    patch.object(dev.subprocess, "run", side_effect=fake_run):
+                dev.run(["dotnet", "--list-runtimes"])
+                self.assertEqual(inherited, dev.os.environ.get("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"))  # caller env unchanged
+        self.assertEqual(["0"] * 3, seen)
+        # An explicit caller mapping is passed through untouched; its owner (main) sets the guard.
+        caller = {"PATH": "x", "DOTNET_ADD_GLOBAL_TOOLS_TO_PATH": "1"}
+        with patch.object(dev.subprocess, "run", side_effect=fake_run):
+            dev.run(["dotnet", "build"], env=caller)
+        self.assertEqual({"PATH": "x", "DOTNET_ADD_GLOBAL_TOOLS_TO_PATH": "1"}, caller)
+        source = (Path(__file__).resolve().parents[2] / "release" / "dev_bootstrap.py").read_text(encoding="utf-8")
+        self.assertIn('DOTNET_ADD_GLOBAL_TOOLS_TO_PATH="0"', source)  # the owned SDK build mapping
+
+    def test_publisher_sets_the_global_tools_guard_before_every_sdk_boundary(self):
+        text = (Path(__file__).resolve().parents[2] / "release" / "publish.ps1").read_text(encoding="utf-8")
+        guard = 'DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = "0"'
+        self.assertNotIn("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = $", text)
+        self.assertNotIn("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = '1'", text)
+        # Each place that assigns a fresh CLI home also assigns the guard in the same block.
+        positions = [m.start() for m in re.finditer(r"\$env:DOTNET_CLI_HOME\s*=", text)]
+        self.assertGreaterEqual(len(positions), 3)
+        for position in positions:
+            self.assertIn(guard, text[max(0, position - 900): position + 900])
+        # And the first guard assignment precedes the first SDK invocation.
+        first_guard = text.index(guard)
+        first_sdk = min(i for i in (text.find("& $dotnet "), text.find("(& $dotnet ")) if i >= 0)
+        self.assertLess(first_guard, first_sdk)
+
     def test_launcher_carries_runtime_worker_model_and_local_data(self):
         environment = {key: "C:/owner's/" + key for key in (
             "DOTNET_ROOT", "DOTNET_ROOT_X64", "VNTEXT_WORKER_CWD", "VNTEXT_WORKER_PYTHON",

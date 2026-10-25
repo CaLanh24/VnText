@@ -534,6 +534,8 @@ def run(
         env["VNTEXT_ARTIFACT_SCOPE_ID"] = scope_id
         env["VNTEXT_ARTIFACT_RUN_ID"] = run_id
         env["VNTEXT_ARTIFACT_SCOPE_ROOT"] = str(scope_root)
+        # .NET SDK first-use otherwise appends <DOTNET_CLI_HOME>/.dotnet/tools to the persistent User PATH; the process-only override below is explicit (never setdefault) so a missing, stale or malicious inherited value cannot reach the SDK.
+        env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
         if resolved_stdout is not None:
             env["VNTEXT_PARENT_STDOUT_LOG"] = str(resolved_stdout)
         if resolved_stderr is not None:

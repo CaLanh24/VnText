@@ -300,6 +300,8 @@ $env:APPDATA = $devAppData
 $env:DOTNET_CLI_HOME = $devCliHome
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1"
+# Process-only SDK guard (explicit overwrite, never a default): first-use must not add <CLI_HOME>\.dotnet\tools to the persistent User PATH.
+$env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = "0"
 $env:NUGET_PACKAGES = $devNugetRoot
 $env:PIP_CACHE_DIR = Join-Path $DevRunRoot "_pip_cache"
 $env:VNTEXT_DATA_ROOT = $devDataRoot
@@ -891,6 +893,7 @@ if (-not $SkipBuild) {
     $env:DOTNET_ROOT = $dotnetSdkRoot
     $env:DOTNET_ROOT_X64 = $dotnetSdkRoot
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1"
+    $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = "0"
     $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
     $env:NUGET_PACKAGES = $nugetPackages
     $selectedSdk = (& $dotnet --version).Trim()
@@ -957,6 +960,7 @@ if (-not $SkipBuild) {
     $env:APPDATA = $dotnetAppData
     $env:LOCALAPPDATA = $dotnetLocalAppData
     $env:DOTNET_CLI_HOME = $dotnetCliHome
+    $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = "0"
     $targets = @"
 <Project>
   <ItemGroup>

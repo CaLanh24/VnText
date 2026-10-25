@@ -27,6 +27,7 @@ import subprocess
 import os
 import xml.etree.ElementTree as ET
 import unittest
+import unittest.mock
 from pathlib import Path
 from uuid import uuid4
 
@@ -62,6 +63,8 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     env["DOTNET_CLI_HOME"] = str(dotnet_home)
     env["DOTNET_ROOT"] = str(DOTNET.parent)
     env["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1"
+    # Explicit process-only guard: first-use must never add the fresh CLI home's tools dir to the persistent User PATH.
+    env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
     env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
     env["DOTNET_MULTILEVEL_LOOKUP"] = "0"
     env["NUGET_PACKAGES"] = str(nuget_packages)
@@ -179,6 +182,92 @@ class WpfWorkflowTests(unittest.TestCase):
         window = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
         self.assertIn("vm.ShowCompletionToast(notification)", window)
         self.assertNotIn("MessageBox.Show(", window[window.index("private void OnCompletionRequested"):window.index("private void MainWindow_SizeChanged")])
+
+    def test_harness_env_forces_process_only_global_tools_guard_over_any_inherited_value(self):
+        for label, inherited in (("missing", None), ("stale_one", "1"), ("malicious_true", "true"), ("empty", "")):
+            with self.subTest(inherited=label):
+                before = dict(os.environ)
+                patched = {k: v for k, v in os.environ.items() if k != "DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"}
+                if inherited is not None:
+                    patched["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = inherited
+                with unittest.mock.patch.dict(os.environ, patched, clear=True):
+                    env = _harness_env(Path(r"C:\vntext-guard-probe-never-created"))
+                    caller_value = os.environ.get("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH")
+                self.assertEqual("0", env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"])
+                self.assertEqual(inherited, caller_value)  # the caller's own mapping is not rewritten
+                self.assertEqual(before, dict(os.environ))
+
+    def test_real_sdk_first_use_in_two_fresh_cli_homes_never_touches_persistent_path(self):
+        import hashlib
+        import json
+
+        if os.name != "nt":
+            self.skipTest("Windows registry PATH invariant")
+        if not DOTNET.is_file():
+            self.skipTest(f".NET SDK 10 is not installed at {DOTNET}")
+        import winreg
+
+        from release import dev_bootstrap
+        from work_paths import work_temp_dir
+
+        def raw_paths() -> dict[str, tuple[str, int]]:
+            out = {}
+            for name, hive, sub in (
+                ("user", winreg.HKEY_CURRENT_USER, "Environment"),
+                ("machine", winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"),
+            ):
+                with winreg.OpenKey(hive, sub) as key:
+                    value, kind = winreg.QueryValueEx(key, "Path")
+                out[name] = (value, kind)
+            return out
+
+        before = raw_paths()
+        homes = []
+        results = []
+        runs = []
+        # Home A: the real owned test-harness environment (SKIP_FIRST_TIME removed so first use genuinely runs).
+        # Home B: the bootstrap/runner boundary with an explicit stale inherited value.
+        for label, inherited in (("harness_stale_one", "1"), ("bootstrap_malicious_true", "true")):
+            work_root = work_temp_dir(f"dotnet-path-guard-{label}")
+            homes.append(work_root)
+            with unittest.mock.patch.dict(os.environ, {"DOTNET_ADD_GLOBAL_TOOLS_TO_PATH": inherited}):
+                if label.startswith("harness"):
+                    env = _harness_env(work_root)
+                    env.pop("DOTNET_SKIP_FIRST_TIME_EXPERIENCE", None)
+                    cli_home = Path(env["DOTNET_CLI_HOME"])
+                    self.assertEqual("0", env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"])
+                    receipt = dev_bootstrap.run([str(DOTNET), "new", "list"], env=env)
+                else:
+                    cli_home = work_root / "dotnet-home"
+                    os.environ.pop("DOTNET_SKIP_FIRST_TIME_EXPERIENCE", None)
+                    os.environ.update(
+                        DOTNET_CLI_HOME=str(cli_home), APPDATA=str(work_root / "appdata"),
+                        LOCALAPPDATA=str(work_root / "localappdata"), DOTNET_CLI_TELEMETRY_OPTOUT="1",
+                        DOTNET_MULTILEVEL_LOOKUP="0", DOTNET_ADD_GLOBAL_TOOLS_TO_PATH=inherited,
+                    )
+                    receipt = dev_bootstrap.run([str(DOTNET), "new", "list"])  # inherited-environment boundary
+                    self.assertEqual(inherited, os.environ["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"])  # caller env unchanged
+            self.assertEqual(0, receipt["exit_code"], receipt["stderr"][-400:])
+            sentinels = sorted(p.name for p in (cli_home / ".dotnet").glob("*dotnetFirstUseSentinel"))
+            self.assertTrue(sentinels, f"first-use did not run in {cli_home}")
+            self.assertFalse((cli_home / ".dotnet" / "tools").exists(), "global tools directory created")
+            runs.append({"home": str(cli_home), "inherited_guard": inherited, "exit_code": receipt["exit_code"], "first_use_sentinels": sentinels})
+        self.assertNotEqual(runs[0]["home"], runs[1]["home"])
+        after = raw_paths()
+        self.assertEqual(before, after)  # exact raw value and registry kind, User and Machine
+        for scope in before:
+            self.assertEqual(before[scope][0].count(".dotnet"), after[scope][0].count(".dotnet"))
+            for home in homes:
+                self.assertNotIn(str(home).lower(), after[scope][0].lower())
+        receipt_path = os.environ.get("VNTEXT_DOTNET_PATH_RECEIPT")
+        if receipt_path:
+            Path(receipt_path).write_text(json.dumps({
+                "command": "dotnet new list (SDK first use, SKIP_FIRST_TIME_EXPERIENCE removed)",
+                "sdk": str(DOTNET), "runs": runs,
+                "path_before": {k: {"length": len(v[0]), "kind": v[1], "sha256": hashlib.sha256(v[0].encode("utf-8")).hexdigest()} for k, v in before.items()},
+                "path_after": {k: {"length": len(v[0]), "kind": v[1], "sha256": hashlib.sha256(v[0].encode("utf-8")).hexdigest()} for k, v in after.items()},
+                "identical": before == after,
+            }, indent=2), encoding="utf-8")
 
     def test_translate_model_tooltip_is_scoped_to_its_description(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")

@@ -19,7 +19,15 @@ MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.js
 
 def run(command, *, cwd=ROOT, env=None):
     try:
-        effective_env = os.environ.copy() if env is None else env
+        # An explicit caller mapping is passed through untouched (its owner sets the guard, see main()).
+        # The inherited-environment path gets a process-only copy with the SDK guard forced: .NET SDK
+        # first-use otherwise appends <DOTNET_CLI_HOME>/.dotnet/tools to the persistent User PATH, so a
+        # missing, stale or malicious inherited value must never reach the SDK (never setdefault).
+        if env is None:
+            effective_env = os.environ.copy()
+            effective_env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
+        else:
+            effective_env = env
         child = subprocess.run([str(x) for x in command], cwd=cwd, env=effective_env,
                                capture_output=True, text=True, encoding="utf-8", errors="replace")
         return {"command": [str(x) for x in command], "cwd": str(cwd),
@@ -265,7 +273,8 @@ def main(argv=None):
             env.update(DOTNET_ROOT_X64=runtime_root, DOTNET_ROOT=runtime_root)
             env.update(NUGET_PACKAGES=str(cache / "nuget"), DOTNET_CLI_HOME=str(cache / "dotnet-home"),
                        APPDATA=str(cache / "appdata"), LOCALAPPDATA=str(cache / "localappdata"),
-                       DOTNET_GENERATE_ASPNET_CERTIFICATE="false", VNTEXT_WORKER_CWD=str(ROOT),
+                       DOTNET_GENERATE_ASPNET_CERTIFICATE="false", DOTNET_ADD_GLOBAL_TOOLS_TO_PATH="0",
+                       VNTEXT_WORKER_CWD=str(ROOT),
                        VNTEXT_WORKER_PYTHON=result["python"]["path"], VNTEXT_CT2_NO_DOWNLOAD="1",
                        VNTEXT_DATA_ROOT=str(output / "data"),
                        VNTEXT_LOCALAPPDATA=str(output / "localappdata"))
