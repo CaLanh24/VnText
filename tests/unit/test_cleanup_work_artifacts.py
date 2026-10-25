@@ -2312,7 +2312,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertTrue(second["idempotent"])
 
     def test_release_task_budget_is_epoch_bound_registered_and_reverts_after_teardown(self):
-        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID), ("0.1.10", cleanup.RELEASE_TASK_010_BUDGET_ID), ("0.1.11", cleanup.RELEASE_TASK_011_BUDGET_ID), ("0.1.12", cleanup.RELEASE_TASK_012_BUDGET_ID)]:
+        for version, task_id in [("0.1.5", cleanup.RELEASE_TASK_BUDGET_ID), ("0.1.6", cleanup.RELEASE_TASK_016_BUDGET_ID), ("0.1.7", cleanup.RELEASE_TASK_017_BUDGET_ID), ("0.1.8", cleanup.RELEASE_TASK_018_BUDGET_ID), ("0.1.9", cleanup.RELEASE_TASK_019_BUDGET_ID), ("0.1.10", cleanup.RELEASE_TASK_010_BUDGET_ID), ("0.1.11", cleanup.RELEASE_TASK_011_BUDGET_ID), ("0.1.12", cleanup.RELEASE_TASK_012_BUDGET_ID), ("0.1.13", cleanup.RELEASE_TASK_013_BUDGET_ID)]:
             with self.subTest(version=version), self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
                 (root / "VERSION.txt").write_text(version+"\n", encoding="utf-8")
                 git_guard, incident_guard = self._epoch_guards()
@@ -2368,6 +2368,17 @@ class CleanupLifecycleTests(unittest.TestCase):
         ))
         self.assertFalse(cleanup._release_budget_record_is_valid(
             tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
+        ))
+
+    def test_release_013_budget_is_exact_task_scoped_and_measured(self):
+        task_id, version, approval = cleanup._release_budget_spec(cleanup.RELEASE_TASK_013_BUDGET_ID)
+        self.assertEqual(cleanup.RELEASE_TASK_013_BUDGET_ID, task_id)
+        self.assertEqual("0.1.13", version)
+        self.assertEqual(cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, cleanup._release_task_budget_limit(task_id))
+        record = {"limit_bytes": cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, "owner_approval": approval}
+        self.assertTrue(cleanup._release_budget_record_is_valid(record, task_id, approval))
+        self.assertFalse(cleanup._release_budget_record_is_valid(
+            {**record, "owner_approval": "unrecognized approval"}, task_id, approval
         ))
 
     def test_prospective_epoch_refuses_dirty_writer_incomplete_and_conflicting_state(self):

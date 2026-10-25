@@ -165,7 +165,10 @@ internal sealed class UpdateWindow : Window
         _dateBadge.Visibility = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? Visibility.Collapsed : Visibility.Visible;
         _current.Visibility = _notesOnly ? Visibility.Collapsed : Visibility.Visible;
         _notesHeading.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
-        _current.Text = _notesOnly ? "Ghi chú phiên bản" : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới.");
+        var updateCompleted = !string.IsNullOrWhiteSpace(_successVersion);
+        _current.Text = _notesOnly ? "Ghi chú phiên bản"
+            : updateCompleted ? $"Đã cập nhật thành công lên phiên bản v{_successVersion}."
+            : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới.");
         var notesText = _successVersion is not null && Owner.DataContext is MainViewModel vm ? vm.VerifiedSuccessNotes : state.Notes;
         if (string.IsNullOrWhiteSpace(notesText)) notesText = "Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.";
         if (_notesOnly && Owner.DataContext is MainViewModel historyVm)
@@ -178,8 +181,10 @@ internal sealed class UpdateWindow : Window
         _progressArea.Visibility = state.Downloading && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
         _progress.IsIndeterminate = state.Indeterminate; _progress.Maximum = 100; _progress.Value = state.Percent;
         _progressText.Text = state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%";
-        _success.Visibility = state.Ready && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
-        _banner.Text = $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.";
+        _success.Visibility = (state.Ready || updateCompleted) && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
+        _banner.Text = updateCompleted
+            ? $"✓  VNText Studio đã cập nhật lên v{_successVersion} và sẵn sàng sử dụng."
+            : $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.";
         _status.Text = _notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status;
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.

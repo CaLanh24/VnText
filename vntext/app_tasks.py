@@ -1143,7 +1143,19 @@ def run_extract_task(
                         archive = Path(temp_file.name)
                     try:
                         log("Đang tải và xác minh Ren'Py SDK 8.5.3…")
-                        sdk = download_and_install_managed_sdk(archive)
+                        def sdk_download_progress(received: int, total: int) -> None:
+                            total_text = f"{total:,} byte" if total > 0 else "đang nhận dữ liệu"
+                            progress({
+                                "done": received,
+                                "total": total,
+                                "step": "Đang tải công cụ Ren'Py 8.5.3",
+                                "item": f"Đã tải {received:,} / {total_text}",
+                            })
+                        sdk = download_and_install_managed_sdk(
+                            archive,
+                            is_cancelled=is_cancelled,
+                            progress=sdk_download_progress,
+                        )
                     finally:
                         archive.unlink(missing_ok=True)
                 elif action == "none":
@@ -1157,7 +1169,14 @@ def run_extract_task(
             except RenPyToolchainError as exc:
                 if action in {"download", "existing"}:
                     renpy_sdk_missing = True
-                    raise RenPyToolchainError(f"Công cụ Ren'Py chưa hợp lệ; cần SDK 8.5.3. Chọn lại thư mục công cụ và output mới. Chi tiết: {exc}") from exc
+                    if action == "download":
+                        raise RenPyToolchainError(
+                            f"Tải SDK Ren'Py 8.5.3 chưa hoàn tất; chưa tạo CSV. "
+                            f"Hãy thử tải lại hoặc chọn SDK đã cài. Chi tiết: {exc}"
+                        ) from exc
+                    raise RenPyToolchainError(
+                        f"SDK Ren'Py đã chọn chưa hợp lệ; hãy chọn lại SDK hoặc thử tải SDK 8.5.3. Chi tiết: {exc}"
+                    ) from exc
                 log(f"Ren'Py SDK managed không hợp lệ; tiếp tục không native patch: {exc}")
             if sdk is None:
                 if engine.engine == "RENPY_ARCHIVE_SOURCE":

@@ -8,10 +8,13 @@ import os
 import shutil
 import subprocess
 import tempfile
+import http.client
+import urllib.error
 import urllib.request
 import zipfile
 import time
 import stat
+from typing import Callable
 from vntext.renpy_archive import RenPyArchive, RenPyArchiveError
 
 
@@ -19,6 +22,7 @@ SUPPORTED_VERSION = "8.5.3"
 SDK_ARCHIVE_NAME = "renpy-8.5.3-sdk.zip"
 SDK_URL = "https://www.renpy.org/dl/8.5.3/renpy-8.5.3-sdk.zip"
 SDK_SHA256 = "ff57648f9c04f27e381c48af6d8e3ee3cdec296bed4d3831f47f09b0a71b505e"
+SDK_DOWNLOAD_MAX_BYTES = 512 * 1024 * 1024
 
 
 class RenPyToolchainError(RuntimeError):
@@ -106,12 +110,72 @@ def install_managed_sdk(archive: str | Path) -> RenPySdk:
     return validate_sdk(destination)
 
 
-def download_and_install_managed_sdk(download: str | Path) -> RenPySdk:
-    """Explicit UI action only; never call while merely detecting a game."""
+def download_and_install_managed_sdk(
+    download: str | Path,
+    *,
+    is_cancelled: Callable[[], bool] | None = None,
+    progress: Callable[[int, int], None] | None = None,
+) -> RenPySdk:
+    """Download the pinned SDK only after an explicit UI action.
+
+    The transfer is bounded, cancellable between reads, hash-checked before it
+    replaces the caller-provided archive path, and leaves no partial file on
+    cancellation or failure so the user can safely retry.
+    """
     destination = Path(download).resolve()
     destination.parent.mkdir(parents=True, exist_ok=True)
-    urllib.request.urlretrieve(SDK_URL, destination)
-    return install_managed_sdk(destination)
+    partial: Path | None = None
+    try:
+        request = urllib.request.Request(SDK_URL, headers={"User-Agent": "VNText-Studio"})
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix=f".{destination.name}.", suffix=".part",
+            dir=destination.parent, delete=False,
+        ) as target:
+            partial = Path(target.name)
+            with urllib.request.urlopen(request, timeout=20) as response:
+                raw_total = response.headers.get("Content-Length", "")
+                try:
+                    total = max(0, int(raw_total))
+                except (TypeError, ValueError):
+                    total = 0
+                if total > SDK_DOWNLOAD_MAX_BYTES:
+                    raise RenPyToolchainError("Gói công cụ Ren'Py vượt giới hạn tải xuống 512 MiB")
+                received = 0
+                last_report = 0.0
+                while True:
+                    if is_cancelled is not None and is_cancelled():
+                        raise RenPyToolchainError("cancelled")
+                    chunk = response.read(256 * 1024)
+                    if not chunk:
+                        break
+                    received += len(chunk)
+                    if received > SDK_DOWNLOAD_MAX_BYTES:
+                        raise RenPyToolchainError("Gói công cụ Ren'Py vượt giới hạn tải xuống 512 MiB")
+                    target.write(chunk)
+                    now = time.monotonic()
+                    if progress is not None and (last_report == 0.0 or now - last_report >= 0.5 or (total and received >= total)):
+                        progress(received, total)
+                        last_report = now
+                target.flush()
+                os.fsync(target.fileno())
+        if is_cancelled is not None and is_cancelled():
+            raise RenPyToolchainError("cancelled")
+        if total and received != total:
+            raise RenPyToolchainError(
+                f"Tải SDK bị gián đoạn ({received} / {total} byte); hãy thử tải lại"
+            )
+        if _sha256(partial) != SDK_SHA256:
+            raise RenPyToolchainError("Hash gói SDK Ren'Py không khớp; hãy thử tải lại")
+        os.replace(partial, destination)
+        partial = None
+        return install_managed_sdk(destination)
+    except RenPyToolchainError:
+        raise
+    except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as exc:
+        raise RenPyToolchainError(f"Không tải được SDK Ren'Py 8.5.3: {exc}") from exc
+    finally:
+        if partial is not None:
+            partial.unlink(missing_ok=True)
 
 
 def validate_sdk(path: str | Path) -> RenPySdk:

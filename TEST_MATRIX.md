@@ -162,6 +162,7 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 
 ## Muc 1 continuation focused gates
 - `test_renpy_compiled.py`, generated `test_renpy_native_sdk.py`: inert reducers/cycles, malformed/trailing/version rejection; compiled native ID→package→overlay→SDK lookup readback. Unresolved AST nodes must keep worker PARTIAL. Affected: RenPy extraction, patch/delivery and worker protocol. Compiled dialogue coverage does not imply complete menu/Python-string/legacy-schema coverage.
+- `test_renpy_sdk_download.py`: pinned official URL and SHA-256, bounded streaming download, progress reporting, cancellation cleanup, incomplete-transfer rejection and retry-safe output. These fake-response cases do not establish public-network or installed-app behavior; release acceptance must separately show the user-visible progress, cancel and retry states on the packaged app.
 - `test_image_delivery.py`: loose/RPA baseline, tamper/path/source protection, no-overwrite, rollback after receipt failure/interruption, preserve user edits; SDK loader reads Vietnamese image then original after rollback. Lint initialization proves native loader bytes, not visual gameplay.
 - `test_image_text.py`, WPF workflow harness: clone donor bounds/non-overlap/original pixels and approval invalidation; actual WPF edit/render/package interaction plus output pixel comparison is a separate mandatory DEV acceptance.
 

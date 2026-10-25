@@ -1,5 +1,13 @@
 # Current state pointer — 2026-10-25
 
+## Release 0.1.13 — active implementation
+
+- Owner authorized completion of the remaining workflow/UI remediation, exact-source validation, Setup plus updater release, and publication without another user approval round. Use `docs/RELEASE_0.1.13.md` as the live acceptance ledger.
+- Starting SHA `a223aab86a151e72e57f5a95c319021a751ee4a3`, branch `main`, clean at task start. Public 0.1.12 remains immutable.
+- Brain must record `ACCEPT` for implementation, regression, packaged/native integration, Setup and updater route matrix before any public push/tag/release/assets/latest-feed mutation. Continue implementation and local evidence gathering while that review is pending; do not claim release acceptance from fake tests or incomplete native evidence.
+- Real-game E2E remains separately `NOT TESTED` under Owner deferral; generated-fixture full workflow and installed-app acceptance remain required.
+- Task status: `IN PROGRESS`; candidate, build, full regression and publication have not started.
+
 ## Release 0.1.12 — public release accepted
 
 - Public stable release: [VNText 0.1.12](https://github.com/CaLanh24/VnText/releases/tag/v0.1.12). Setup and supported full-app update routes are published; all 15 remote assets match the exact local readback, including the directly downloaded Setup.

@@ -4086,18 +4086,18 @@ internal static partial class Program
     {
         string Value(string flag, string fallback) { var i = Array.IndexOf(args, flag); return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback; }
         var state = Value("--presentation-state", "about");
-        if (!new[] { "about", "available", "downloading", "ready", "notes", "about-ready" }.Contains(state)) throw new ArgumentException("Unsupported TEST ONLY presentation state");
+        if (!new[] { "about", "available", "downloading", "ready", "notes", "about-ready", "success" }.Contains(state)) throw new ArgumentException("Unsupported TEST ONLY presentation state");
         var auto = args.Contains("--presentation-smoke", StringComparer.Ordinal);
         var app = new Application { ShutdownMode = auto ? ShutdownMode.OnExplicitShutdown : ShutdownMode.OnMainWindowClose };
         foreach (var dictionary in new[] { "DesignTokens", "IconGeometries", "ControlStyles" })
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/VNText.Studio.App;component/Themes/{dictionary}.xaml") });
-        var states = new Queue<string>(auto ? new[] { "about", "available", "downloading", "ready", "notes", "about-ready" } : new[] { state });
+        var states = new Queue<string>(auto ? new[] { "about", "available", "downloading", "ready", "notes", "about-ready", "success" } : new[] { state });
         var checkedStates = new List<string>(); Exception? failed = null;
         void Next()
         {
             if (states.Count == 0) { Console.WriteLine(JsonSerializer.Serialize(new { test_only = true, smoke_states = checkedStates, ok = failed is null })); app.Shutdown(failed is null ? 0 : 1); return; }
             var current = states.Dequeue();
-            var source = new FixturePresentation(); source.SetState(current);
+            var source = new FixturePresentation(); source.SetState(current == "success" ? "about" : current);
             var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false); vm.SelectedTab = WorkflowTabs.Settings;
             var window = new VNText.Studio.App.MainWindow(vm, source) { Title = "VNText Studio — TEST ONLY updater presentation" };
             var ticks = 0;
@@ -4129,10 +4129,17 @@ internal static partial class Program
                     }
                     AssertTrue(((UIElement)window.Content).Effect is System.Windows.Media.Effects.BlurEffect);
                     AssertEqual(1, window.OwnedWindows.Count);
-                    AssertTrue(FindText(modal, source.Version));
+                    AssertTrue(FindText(modal, current == "success" ? "0.1.13" : source.Version));
                     if (current == "downloading") AssertTrue(FindText(modal, "42%"));
                     if (current == "ready") AssertTrue(FindText(modal, "đã sẵn sàng"));
                     if (current == "notes") AssertTrue(FindText(modal, "Cải tiến giao diện"));
+                    if (current == "success")
+                    {
+                        AssertTrue(FindText(modal, "Đã cập nhật thành công lên phiên bản v0.1.13."));
+                        AssertTrue(FindText(modal, "đã cập nhật lên v0.1.13 và sẵn sàng sử dụng"));
+                        AssertFalse(FindText(modal, "đã có phiên bản mới"));
+                        AssertFalse(FindText(modal, "Hãy khởi động lại để áp dụng"));
+                    }
                     checkedStates.Add(current); timer.Stop(); modal.Close();
                     AssertTrue(((UIElement)window.Content).Effect is null);
                     window.Dispatcher.BeginInvoke(new Action(window.Close));
@@ -4149,7 +4156,11 @@ internal static partial class Program
                 var tabs = FindVisual<TabControl>((ScrollViewer)window.FindName("SettingsScrollViewer")); if (tabs is not null) tabs.SelectedIndex = 2;
                 Console.WriteLine(JsonSerializer.Serialize(new { test_only = true, state = current, no_network = true, no_settings_write = true, no_apply_restart = true, pid = Environment.ProcessId }));
                 if (auto) timer.Start();
-                window.Dispatcher.BeginInvoke(new Action(() => { if (current is "available" or "downloading" or "ready" or "notes") window.ShowUpdateDialog(current == "notes"); }));
+                window.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (current == "success") window.ShowUpdateDialog(false, "0.1.13");
+                    else if (current is "available" or "downloading" or "ready" or "notes") window.ShowUpdateDialog(current == "notes");
+                }));
             };
             window.Closed += (_, _) => { timer.Stop(); if (auto && failed is null) app.Dispatcher.BeginInvoke(new Action(Next)); };
             window.Show();
