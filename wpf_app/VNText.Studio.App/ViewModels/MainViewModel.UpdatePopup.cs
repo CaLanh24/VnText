@@ -13,12 +13,33 @@ public sealed partial class MainViewModel
     public string UpdateNotes => string.IsNullOrWhiteSpace(_githubUpdateResult.ReleaseNotes)
         ? "Phiên bản này chưa cung cấp ghi chú phát hành." : _githubUpdateResult.ReleaseNotes;
     public string OfferedVersion => _githubUpdateResult.Version;
+    public string OfferedReleaseDate => _githubUpdateResult.ReleaseDate;
     public string VerifiedSuccessNotes { get; private set; } = "";
     public bool DownloadingUpdate { get; private set; }
     private long _downloadReceived;
     private long _downloadTotal;
     public long DownloadReceived => _downloadReceived;
     public long DownloadTotal => _downloadTotal;
+    private void CacheReleaseNotes(GitHubUpdateCheckResult result)
+    {
+        if (string.IsNullOrWhiteSpace(result.Version) || string.IsNullOrWhiteSpace(result.ReleaseNotes)) return;
+        var existing = ReleaseNotesHistory.FirstOrDefault(entry => string.Equals(entry.Version, result.Version, StringComparison.Ordinal));
+        var entry = new ReleaseNotesCacheEntry
+        {
+            Version = result.Version,
+            ReleaseDate = result.ReleaseDate,
+            Notes = new string(result.ReleaseNotes.Take(16000).Where(c => !char.IsControl(c) || c is '\n' or '\r' or '\t').ToArray()),
+            CachedAtUtc = DateTime.UtcNow,
+        };
+        if (existing is not null) ReleaseNotesHistory.Remove(existing);
+        ReleaseNotesHistory.Insert(0, entry);
+        while (ReleaseNotesHistory.Count > 20) ReleaseNotesHistory.RemoveAt(ReleaseNotesHistory.Count - 1);
+        _settings.ReleaseNotesHistory = ReleaseNotesHistory.ToList();
+        _settings.DownloadedUpdateVersion = entry.Version;
+        _settings.DownloadedUpdateNotes = entry.Notes;
+        SelectedReleaseNotesEntry = entry;
+        SaveSettings();
+    }
     public async Task CheckUpdatesOnStartupAsync()
     {
         var modelStatus = LoadModelStatusAsync();
@@ -145,12 +166,10 @@ public sealed partial class MainViewModel
             DisposeGitHubUpdatePackageLease();
             _githubUpdateResult = result;
             _githubUpdateState = result.State;
+            CacheReleaseNotes(result);
             if (result.State == GitHubUpdateState.UpdateAvailable)
             {
                 _githubUpdatePackageLease = new GitHubUpdatePackageLease(root, result);
-                _settings.DownloadedUpdateVersion = result.Version;
-                _settings.DownloadedUpdateNotes = result.ReleaseNotes;
-                SaveSettings();
             }
             _githubUpdateStatus = GitHubStatusMessage(result.State, result.Version, result.Message);
             RaiseGitHubUpdateCard(); RaiseGitHubUpdateCommands();

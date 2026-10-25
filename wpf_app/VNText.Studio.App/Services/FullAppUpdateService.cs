@@ -83,7 +83,8 @@ internal static class FullAppUpdateService
     }
 
     internal static FullAppUpdateSelection ReadGitHubPackage(string root, string sourcePath,
-        string packagePath, string packageSha256, string version)
+        string packagePath, string packageSha256, string version,
+        Dictionary<string, FileRecord>? expectedBaseFiles = null, string baselineVersion = "")
     {
         var source = ReadSource(root, sourcePath);
         packagePath = Path.GetFullPath(packagePath);
@@ -103,7 +104,8 @@ internal static class FullAppUpdateService
         var manifest = DeserializeManifest(entry);
         if (!string.Equals(manifest.Version, version, StringComparison.Ordinal))
             throw new InvalidDataException("Full-app package version does not match its GitHub release tag.");
-        return ValidatePackage(root, source, packagePath, packageSha256, manifest, expectedVersion: version);
+        return ValidatePackage(root, source, packagePath, packageSha256, manifest, expectedVersion: version,
+            expectedBaseFiles, baselineVersion);
     }
 
     internal static bool TryGetAvailableVersion(string root, out string version, out string status)
@@ -298,6 +300,7 @@ internal static class FullAppUpdateService
             Log(source.LogPath, "full-app update completed");
             return 0;
         }
+
         catch (Exception ex)
         {
             try { Log(source.LogPath, $"full-app update failed ({ex.GetType().Name}, 0x{ex.HResult:X8}): {ex.Message}"); } catch { }
@@ -335,6 +338,111 @@ internal static class FullAppUpdateService
                 TryDeleteTree(stagingRoot, source.StagingRoot, root);
             }
         }
+    }
+
+    internal static int RunGitHubRouteUpdater(string sourcePath, string root, int appPid, int? workerPid,
+        string descriptorPath, string descriptorSha256, string targetVersion, bool bindToRunningInstall = true,
+        bool waitForProcesses = true, Action<string>? startAppOverride = null)
+    {
+        root = Path.GetFullPath(root);
+        sourcePath = Path.GetFullPath(sourcePath);
+        var code = 5;
+        List<string> ownedPackages = [];
+        var ownedDescriptor = false;
+        var shouldRestart = false;
+        var completedHops = 0;
+        var lastStableVersion = "";
+        try
+        {
+            if (!SamePath(sourcePath, Path.Combine(root, ".vntext-update-source.json")) ||
+                !IsSha256(descriptorSha256) || !TryParseVersion(targetVersion, out _)) return 3;
+            EnsureNoReparsePath(root, sourcePath, "Update source configuration");
+            var source = ReadSource(root, sourcePath);
+            ValidatePaths(root, source);
+            if (bindToRunningInstall && !SamePath(root, Path.GetDirectoryName(WorkerPaths.MainExePath())!)) return 3;
+            shouldRestart = true;
+            lastStableVersion = File.ReadAllText(SafeTarget(root, "app/VERSION.txt")).Trim();
+            descriptorPath = Path.GetFullPath(descriptorPath);
+            RequireUnderRoot(source.WorkRoot, descriptorPath, "GitHub route descriptor");
+            RequireOutsideData(root, descriptorPath);
+            EnsureNoReparsePath(root, descriptorPath, "GitHub route descriptor");
+            ownedDescriptor = true;
+            if (waitForProcesses && (!WaitForExit(appPid, TimeSpan.FromSeconds(90)) ||
+                (workerPid.HasValue && !WaitForExit(workerPid.Value, TimeSpan.FromSeconds(30)))))
+                return 4;
+            var descriptorInfo = new FileInfo(descriptorPath);
+            if (!descriptorInfo.Exists || descriptorInfo.Length <= 0 || descriptorInfo.Length > 256 * 1024 ||
+                !FixedEquals(HashFile(descriptorPath), descriptorSha256)) return 5;
+            using var document = JsonDocument.Parse(File.ReadAllText(descriptorPath));
+            EnsureUniqueProperties(document.RootElement);
+            var descriptor = JsonSerializer.Deserialize<GitHubFullAppRouteDescriptor>(document.RootElement.GetRawText(), JsonOptions)
+                ?? throw new InvalidDataException("GitHub route descriptor is invalid.");
+            if (descriptor.Schema != 1 || descriptor.TargetVersion != targetVersion || descriptor.Hops is null ||
+                descriptor.Hops.Count is < 2 or > 20 || descriptor.Hops[^1].Version != targetVersion)
+                return 5;
+            var previous = lastStableVersion;
+            var validatedHops = new List<(GitHubFullAppRouteHop Hop, string PackagePath)>();
+            for (var index = 0; index < descriptor.Hops.Count; index++)
+            {
+                var hop = descriptor.Hops[index];
+                if (hop.FromVersion != previous || !TryParseVersion(hop.Version, out _) ||
+                    !WpfUpdateService.IsStrictlyNewerVersion(previous, hop.Version) || !IsSha256(hop.PackageSha256))
+                    return 5;
+                var packagePath = Path.GetFullPath(hop.PackagePath);
+                RequireUnderRoot(source.WorkRoot, packagePath, "GitHub route package");
+                RequireOutsideData(root, packagePath);
+                EnsureNoReparsePath(root, packagePath, "GitHub route package");
+                ownedPackages.Add(packagePath);
+                validatedHops.Add((hop, packagePath));
+                previous = hop.Version;
+            }
+            if (previous != targetVersion) return 5;
+            foreach (var (hop, packagePath) in validatedHops)
+                if (!FixedEquals(HashFile(packagePath), hop.PackageSha256)) return 5;
+            foreach (var (hop, packagePath) in validatedHops)
+            {
+                code = RunUpdater(sourcePath, root, appPid, workerPid, fromGitHub: true,
+                    packagePath: packagePath, packageSha256: hop.PackageSha256, version: hop.Version,
+                    bindToRunningInstall: true, waitForProcesses: false, restartApp: false,
+                    healthCheck: RunHealthCheck);
+                if (code != 0) break;
+                completedHops++;
+                lastStableVersion = hop.Version;
+            }
+            if (code == 0 && lastStableVersion != targetVersion) code = 5;
+        }
+        catch { code = 5; }
+        finally
+        {
+            foreach (var package in ownedPackages)
+                try { if (File.Exists(package)) File.Delete(package); } catch { }
+            if (ownedDescriptor) try { if (File.Exists(descriptorPath)) File.Delete(descriptorPath); } catch { }
+            if (shouldRestart)
+            {
+                try { WriteGitHubRouteResult(root, targetVersion, lastStableVersion, code, completedHops); } catch { }
+                try { if (startAppOverride is null) StartApp(root); else startAppOverride(root); } catch { }
+            }
+        }
+        return code;
+    }
+
+    private static void WriteGitHubRouteResult(string root, string targetVersion, string completedVersion,
+        int exitCode, int completedHops)
+    {
+        var path = SafeTemporaryTarget(root, ".update/github-route-result.json");
+        EnsureNoReparsePath(root, path, "GitHub route result");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(temp, JsonSerializer.Serialize(new GitHubRouteResult
+            {
+                Schema = 1, TargetVersion = targetVersion, CompletedVersion = completedVersion,
+                ExitCode = exitCode, CompletedHops = completedHops, FinishedUtc = DateTime.UtcNow,
+            }));
+            File.Move(temp, path, overwrite: true);
+        }
+        finally { try { if (File.Exists(temp)) File.Delete(temp); } catch { } }
     }
 
     internal static bool RecoverInterruptedUpdate(string root)
@@ -425,7 +533,8 @@ internal static class FullAppUpdateService
         string tag, string assetName) => WpfUpdateService.IsExpectedGitHubAssetPath(actualPath, owner, repository, tag, assetName);
 
     private static FullAppUpdateSelection ValidatePackage(string root, UpdateSource source, string packagePath,
-        string packageSha256, FullAppUpdateManifest manifest, string expectedVersion)
+        string packageSha256, FullAppUpdateManifest manifest, string expectedVersion,
+        Dictionary<string, FileRecord>? expectedBaseFiles = null, string baselineVersion = "")
     {
         ValidatePaths(root, source);
         packagePath = Path.GetFullPath(packagePath);
@@ -450,8 +559,13 @@ internal static class FullAppUpdateService
             manifest.BaseFiles.Values.Sum(item => item.Size) > MaxExpandedBytes)
             throw new InvalidDataException("Full-app inventory exceeds the expanded size limit.");
         ValidateOperationManifest(manifest);
-        VerifyInstalledBaseline(root, manifest.BaseFiles);
-        if (!WpfUpdateService.IsStrictlyNewerVersion(File.ReadAllText(SafeTarget(root, "app/VERSION.txt")).Trim(), manifest.Version))
+        if (expectedBaseFiles is null)
+            VerifyInstalledBaseline(root, manifest.BaseFiles);
+        else if (!RecordsEqual(expectedBaseFiles, manifest.BaseFiles))
+            throw new FullAppBaselineMismatchException("The next route hop does not match the prior target inventory.");
+        var installedOrPriorVersion = string.IsNullOrWhiteSpace(baselineVersion)
+            ? File.ReadAllText(SafeTarget(root, "app/VERSION.txt")).Trim() : baselineVersion;
+        if (!WpfUpdateService.IsStrictlyNewerVersion(installedOrPriorVersion, manifest.Version))
             throw new InvalidDataException("Full-app update version is not newer than the installed version.");
         if (!FixedEquals(HashFile(packagePath), packageSha256))
             throw new InvalidDataException("Full-app package SHA-256 mismatch.");
@@ -1266,6 +1380,31 @@ internal static class FullAppUpdateService
         [JsonPropertyName("add_files")] public Dictionary<string, FileRecord> AddFiles { get; set; } = new(StringComparer.Ordinal);
         [JsonPropertyName("replace_files")] public Dictionary<string, FileRecord> ReplaceFiles { get; set; } = new(StringComparer.Ordinal);
         [JsonPropertyName("delete_files")] public List<string> DeleteFiles { get; set; } = [];
+    }
+
+    private sealed class GitHubFullAppRouteDescriptor
+    {
+        [JsonPropertyName("schema")] public int Schema { get; set; }
+        [JsonPropertyName("target_version")] public string TargetVersion { get; set; } = "";
+        [JsonPropertyName("hops")] public List<GitHubFullAppRouteHop> Hops { get; set; } = [];
+    }
+
+    private sealed class GitHubFullAppRouteHop
+    {
+        [JsonPropertyName("from_version")] public string FromVersion { get; set; } = "";
+        [JsonPropertyName("version")] public string Version { get; set; } = "";
+        [JsonPropertyName("package_path")] public string PackagePath { get; set; } = "";
+        [JsonPropertyName("package_sha256")] public string PackageSha256 { get; set; } = "";
+    }
+
+    private sealed class GitHubRouteResult
+    {
+        [JsonPropertyName("schema")] public int Schema { get; set; }
+        [JsonPropertyName("target_version")] public string TargetVersion { get; set; } = "";
+        [JsonPropertyName("completed_version")] public string CompletedVersion { get; set; } = "";
+        [JsonPropertyName("exit_code")] public int ExitCode { get; set; }
+        [JsonPropertyName("completed_hops")] public int CompletedHops { get; set; }
+        [JsonPropertyName("finished_utc")] public DateTime FinishedUtc { get; set; }
     }
 
     internal sealed class FileRecord

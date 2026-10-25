@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -16,17 +16,29 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private bool ConfirmCsvBeforeSourceChange()
+    {
+        if (!CsvEditorDirty) return true;
+        var choice = CsvEditorMessageBox("CSV có thay đổi chưa lưu. Lưu trước khi đổi nguồn hoặc thư mục xuất?", "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+        if (choice == MessageBoxResult.Cancel) return false;
+        if (choice == MessageBoxResult.Yes) return SaveCsvEditor();
+        CsvEditorDirty = false;
+        LoadCsvEditor(CsvEditorPath, reload: true);
+        return true;
+    }
     private void ChooseInput()
     {
+        if (Busy) return;
         var path = _pathPicker.PickInputPath();
-        if (!string.IsNullOrWhiteSpace(path))
+        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase) && ConfirmCsvBeforeSourceChange())
             InputPath = path;
     }
 
     private void ChooseOutput()
     {
+        if (Busy) return;
         var path = _pathPicker.PickOutputFolder();
-        if (!string.IsNullOrWhiteSpace(path))
+        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, OutputPath, StringComparison.OrdinalIgnoreCase) && ConfirmCsvBeforeSourceChange())
             OutputPath = path;
     }
 
@@ -55,7 +67,10 @@ public sealed partial class MainViewModel
 
         // Validate before mutating the current selection. Cancel or an invalid
         // candidate must never discard a previously valid external CSV.
-        var candidate = CsvPackageValidator.Validate(path);
+        // Fresh Extract packages intentionally start with blank translations. They
+        // are valid sources for Translate, while Patch still requires translated rows.
+        var requireTranslations = SelectedTab != WorkflowTabs.Translate;
+        var candidate = CsvPackageValidator.Validate(path, requireTranslations);
         if (!candidate.Ok)
         {
             AppendLog($"CSV: {candidate.Message}");
@@ -73,7 +88,7 @@ public sealed partial class MainViewModel
         var previousPreflightMessage = PatchPreflightMessage;
 
         TranslationCsvPath = path;
-        if (!ValidateTranslationCsv(silent: false))
+        if (!ValidateTranslationCsv(silent: false, requireTranslations: requireTranslations))
         {
             TranslationCsvPath = previousPath;
             CsvValidationMessage = previousMessage;
@@ -105,22 +120,23 @@ public sealed partial class MainViewModel
 
     private void ChooseRenpySdk()
     {
+        if (Busy) return;
         var path = _pathPicker.PickRenpySdkFolder();
         if (!string.IsNullOrWhiteSpace(path))
         {
             RenpySdkPath = path;
             RenpySdkAction = "existing";
             RenpySdkError = "";
-            AppendLog("Đã chọn Ren'Py SDK; sẽ kiểm tra khi extract.");
+            AppendLog("Đã chọn công cụ Ren'Py; ứng dụng sẽ kiểm tra khi lấy text.");
         }
     }
 
-    private bool ValidateTranslationCsv(bool silent)
+    private bool ValidateTranslationCsv(bool silent, bool requireTranslations = true)
     {
         var path = string.IsNullOrWhiteSpace(TranslationCsvPath)
             ? Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv")
             : TranslationCsvPath;
-        var result = CsvPackageValidator.Validate(path);
+        var result = CsvPackageValidator.Validate(path, requireTranslations);
         if (!silent)
         {
             PatchResultsAvailable = true;

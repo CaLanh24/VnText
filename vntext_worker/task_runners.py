@@ -34,13 +34,14 @@ def _make_callbacks(
 ):
     def progress(info: dict) -> None:
         _check_cancel(is_cancelled)
+        eta = info.get("eta")
         emit_progress(
             task_id,
             done=int(info.get("done") or 0),
             total=int(info.get("total") or 0),
             step=str(info.get("step") or ""),
             item=str(info.get("item") or ""),
-            eta=str(info.get("eta") or "") or None,
+            eta=str(eta).strip() or None if eta is not None else None,
         )
 
     def log(text: str) -> None:
@@ -214,6 +215,7 @@ def run_extract_worker(
         return
 
     progress, log, complete = _make_callbacks(task_id, is_cancelled)
+    log("Worker đã vào bước chuẩn bị tác vụ dịch.")
     try:
         run_extract_task(
             src,
@@ -283,6 +285,7 @@ def run_translate_worker(
                 is_cancelled=is_cancelled,
             )
         else:
+            log("Đang chuyển sang pipeline dịch và ghi trace tác vụ.")
             run_translate_ct2_task(
                 csv_path,
                 package_dir,

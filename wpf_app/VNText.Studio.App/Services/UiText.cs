@@ -13,6 +13,14 @@ public static class UiText
     private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["Chạy trên máy"] = "On-device processing",
+        ["Dịch Anh sang Việt trên máy"] = "Translate English to Vietnamese on this device",
+        ["Mô hình dịch trên máy"] = "On-device translation model",
+        ["Duyệt bản dịch trước khi đóng gói"] = "Review translations before packaging",
+        ["Tải xuống"] = "Download",
+        ["Hoàn tác"] = "Undo",
+        ["Xem trước"] = "Preview",
+        ["Áp dụng"] = "Apply",
         ["Duyệt dòng đã chọn để dùng trong gói"] = "Approve selected rows for this package",
         ["Duyệt bản dịch trong gói này"] = "Review translations for this package",
         ["Xác nhận đã duyệt"] = "Confirm reviewed translations",

@@ -1151,8 +1151,14 @@ class TraceStore:
             next_step = "Review discovery inventory and classify unhandled resources before translation."
         elif summary.get("classification_counts", {}).get(CLASSIFICATION_REVIEW, 0) or summary.get("classification_counts", {}).get(CLASSIFICATION_UNSUPPORTED, 0):
             next_step = "Review REVIEW/UNSUPPORTED entries; do not mark the package complete until routed."
-        elif runs and runs.get(EVENT_COMPLETED, 0) == 0:
+        elif runs.get("RUNNING", 0):
             next_step = "Resolve the non-terminal trace run before trusting downstream completion."
+        elif runs.get(EVENT_ABORTED, 0):
+            next_step = "A task was cancelled or interrupted; inspect its saved checkpoint before retrying."
+        elif runs.get(EVENT_FAILED, 0):
+            next_step = "Review the recorded task failure and its evidence before retrying."
+        elif runs and runs.get(EVENT_COMPLETED, 0) == 0:
+            next_step = "Review the trace status and evidence before trusting downstream completion."
         else:
             next_step = "No actionable failure recorded; continue to the next workflow stage with this evidence."
         payload = {

@@ -15,6 +15,22 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    private static string FormatUserProgressStep(string? step, string? task)
+    {
+        var value = step?.Trim() ?? "";
+        if (value.Length == 0)
+            return "Đang xử lý";
+
+        return value switch
+        {
+            "unity_enumerate" => "Đang quét danh mục tài nguyên",
+            "unity_classify" when task == "extract" => "Đang phân loại tài nguyên để lấy text",
+            "unity_classify" => "Đang phân loại tài nguyên",
+            "unity_hash" => "Đang kiểm tra tài nguyên",
+            _ => value,
+        };
+    }
+
     private void OnWorkerEvent(object? sender, WorkerEvent evt)
     {
         // Never block the worker stdout reader on UI work. Progress can arrive much
@@ -99,27 +115,75 @@ public sealed partial class MainViewModel
     {
         switch (evt.Type)
         {
+            case "cancel_ack":
+                if (Busy && string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal)
+                    && evt.State == "accepted")
+                {
+                    AppendLog("Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
+                    StatusText = "Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
+                    ProgressSubtitle = "Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
+                    SetOwnedProgress(_runningTask, text: ProgressSubtitle);
+                    AddTaskProgress(evt.Id, ProgressSubtitle);
+                }
+                break;
             case "log":
                 if (!string.IsNullOrWhiteSpace(evt.Text))
                     AppendLog(evt.Text);
                 break;
             case "progress":
+                if (!string.IsNullOrWhiteSpace(evt.Id) && _terminalTaskIds.Contains(evt.Id))
+                    break;
                 if (evt.Total > 0)
                 {
                     var pct = (int)Math.Round(evt.Done * 100.0 / evt.Total);
-                    ProgressPercent = Math.Clamp(pct, 0, 99);
-                    var parts = new List<string> { $"{ProgressPercent}%" };
-                    if (!string.IsNullOrWhiteSpace(evt.Step)) parts.Add(evt.Step);
-                    if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add(evt.Item);
+                    var boundedPercent = Math.Clamp(pct, 0, 99);
+                    var userStep = FormatUserProgressStep(evt.Step, _runningTask);
+                    var parts = new List<string> { $"{boundedPercent}%" };
+                    if (!string.IsNullOrWhiteSpace(evt.Step)) parts.Add($"Bước: {userStep}");
+                    if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add($"Mục: {evt.Item}");
                     var eta = ProgressEtaFormatter.Format(evt.Eta);
-                    parts.Add(string.IsNullOrWhiteSpace(eta) ? "Đang ước tính thời gian" : $"Còn khoảng {eta}");
-                    ProgressSubtitle = string.Join(" • ", parts);
-                    AddTaskProgress(evt.Id, ProgressSubtitle);
+                    if (!string.IsNullOrWhiteSpace(eta)) parts.Add($"ETA: {eta}");
+                    var eventSubtitle = string.Join(" • ", parts);
+                    AddTaskProgress(evt.Id, eventSubtitle);
+                    // A queued event from an older run may update its own journal,
+                    // but it cannot overwrite the active page or a terminal card.
+                    if (!Busy || string.IsNullOrWhiteSpace(_runningTask)
+                        || !string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal))
+                        break;
+                    if (OwnsTranslateProgressTask(_runningTask))
+                    {
+                        _translateProgressStep = userStep;
+                        _translateProgressItem = evt.Item;
+                        _translateProgressEta = eta;
+                        Raise(nameof(TranslateProgressStep)); Raise(nameof(TranslateProgressItem)); Raise(nameof(TranslateProgressEta)); Raise(nameof(TranslateProgressHasEta));
+                    }
+                    else if (_runningTask is "extract" or "analyze" or "image_inventory" or "image_extract")
+                    {
+                        _extractProgressStep = userStep;
+                        _extractProgressItem = evt.Item ?? "";
+                        _extractProgressEta = eta;
+                        Raise(nameof(ExtractProgressStep)); Raise(nameof(ExtractProgressItem)); Raise(nameof(ExtractProgressEta)); Raise(nameof(ExtractProgressHasEta));
+                    }
+                    else if (_runningTask is "patch" or "image_delivery" or "image_apply" or "image_rollback")
+                    {
+                        _patchProgressStep = userStep;
+                        _patchProgressItem = evt.Item ?? "";
+                        _patchProgressEta = eta;
+                        Raise(nameof(PatchProgressStep)); Raise(nameof(PatchProgressItem)); Raise(nameof(PatchProgressEta)); Raise(nameof(PatchProgressHasEta));
+                    }
+                    ProgressPercent = boundedPercent;
+                    ProgressSubtitle = eventSubtitle;
+                    SetOwnedProgress(_runningTask, ProgressPercent, ProgressSubtitle);
                 }
                 break;
             case "complete":
                 if (!TryClaimCompletion(evt))
                     break;
+                MarkTaskTerminal(evt.Id);
+
+                _cancelWatchdog?.Cancel();
+                _cancelWatchdog?.Dispose();
+                _cancelWatchdog = null;
 
                 var completedTask = _runningTask;
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
@@ -147,12 +211,24 @@ public sealed partial class MainViewModel
                 _runningTask = null;
                 if (completedTask is "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback")
                 {
+                    SetOwnedProgress(completedTask, evt.Ok ? 100 : null, evt.Ok ? "Hoàn tất" : "Đã dừng — xem Nhật ký");
                     CompleteImageTask(completedTask, evt);
+                    FinishCancelAndExit();
                     break;
                 }
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
+                if (completedTask == "translate" && cancelled)
+                {
+                    _translateProgressStep = "Đã hủy";
+                    _translateProgressItem = "";
+                    _translateProgressEta = "";
+                    Raise(nameof(TranslateProgressStep));
+                    Raise(nameof(TranslateProgressItem));
+                    Raise(nameof(TranslateProgressEta));
+                    Raise(nameof(TranslateProgressHasEta));
+                }
                 var renpySdkIncomplete = completedTask == "extract" && evt.RenpySdkMissing;
                 if (completedTask == "extract")
                 {
@@ -182,7 +258,7 @@ public sealed partial class MainViewModel
                     ? $"Đã nhập {evt.Applied} dòng an toàn; còn {externalRemaining} dòng cần sửa trong CSV"
                     : needsHumanReview
                     ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi Patch"
-                    : $"Dịch một phần — còn pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}";
+                    : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
                 var fullyComplete = isAnalyze
                     ? evt.Ok && !cancelled
                     : evt.Ok && (evt.Complete ?? evt.Ok)
@@ -196,6 +272,7 @@ public sealed partial class MainViewModel
                     : fullyComplete ? "Hoàn tất"
                     : partialOk ? manualReviewText
                     : "Lỗi";
+                SetOwnedProgress(completedTask, fullyComplete ? 100 : null, ProgressSubtitle);
                 StatusText = cancelled ? "Đã hủy"
                     : isAnalyze ? (fullyComplete ? "Đã phân tích" : "Phân tích lỗi")
                     : fullyComplete ? "Hoàn tất"
@@ -216,7 +293,7 @@ public sealed partial class MainViewModel
                                 ? manualReviewText
                                 : isExternalTranslationImport
                                     ? manualReviewText
-                                    : $"Dịch một phần — đã dịch {evt.Translated}, còn pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}"
+                                    : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}"
                             : $"Lỗi — {evt.Error ?? "worker báo lỗi"}";
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
@@ -281,7 +358,8 @@ public sealed partial class MainViewModel
                     _lastCompletedTask = completedTask;
                     if (completedTask == "extract" && fullyComplete)
                     {
-                        TranslationCsvPath = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+                        var extractedCsv = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+                        TranslationCsvPath = extractedCsv;
                         SelectedTab = WorkflowTabs.Translate;
                         AppendLog("Extract xong — chuyển sang tab Dịch tự động.");
                     }
@@ -329,7 +407,7 @@ public sealed partial class MainViewModel
                     PatchResultsAvailable = true;
                     PatchResultsExpanded = true;
                     PatchPreflightEvaluated = false;
-                    CsvValidationMessage = $"Đã dịch {evt.Translated}; pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}";
+                    CsvValidationMessage = $"Đã dịch {evt.Translated}; chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
                     PatchPreflightOk = false;
                     PatchEligibleCount = 0;
                     PatchBlockedCount = 0;
@@ -338,6 +416,15 @@ public sealed partial class MainViewModel
                         : "Dịch chưa hoàn tất — chưa thể tạo Patch.";
                 }
                 RefreshWorkflow();
+                // The selected CSV can already point at this same path from a
+                // previous readiness check. Revalidate after Extract has closed
+                // and written its package so a stale "file missing" result cannot
+                // survive the automatic navigation to Translate.
+                if (completedTask == "extract" && fullyComplete)
+                {
+                    TranslationCsvPath = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+                    RefreshTranslateReadiness(syncCsvValidation: true);
+                }
                 // Worker event counts may be ahead of on-disk translate_status; re-apply UI after refresh.
                 if (cancelled)
                 {
@@ -374,27 +461,28 @@ public sealed partial class MainViewModel
                             ? manualReviewText
                             : isExternalTranslationImport
                                 ? manualReviewText
-                                : $"Dịch một phần — đã dịch {evt.Translated}, còn pending {evt.Pending}, review {evt.ReviewOnly}, blocked {evt.Blocked}");
+                                : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}");
                 }
                 if (!string.IsNullOrWhiteSpace(DiagnosticStatusLine))
                     StepStatusLine = $"{StepStatusLine} — {DiagnosticStatusLine}";
                 if (completedTask == "patch" && fullyComplete)
                     ApplyPatchDelivery(evt);
+                FinishCancelAndExit();
                 break;
             case "error":
                 AppendLog($"Lỗi: {evt.Error}");
-                if (Busy && evt.Error.Contains("exited", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(evt.Id) && _terminalTaskIds.Contains(evt.Id))
+                    break;
+                if (Busy && !string.IsNullOrWhiteSpace(evt.Id)
+                    && !string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal))
+                    break;
+                if (Busy && (string.IsNullOrWhiteSpace(evt.Id)
+                    || string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal)))
                 {
-                    Busy = false;
-                    _runningTask = null;
-                    ProgressSubtitle = "Lỗi / Hủy";
                     StatusText = "Lỗi worker";
-                    StepStatusLine = "Lỗi worker — process Python thoát bất ngờ";
-                    RefreshWorkflow();
-                }
-                else if (!Busy)
-                {
-                    StatusText = "Lỗi";
+                    ProgressSubtitle = "Worker báo lỗi; đang chờ kết quả cuối để dừng an toàn…";
+                    SetOwnedProgress(_runningTask, text: ProgressSubtitle);
+                    AddTaskProgress(_activeTaskId, ProgressSubtitle);
                 }
                 break;
         }

@@ -13,6 +13,7 @@ public partial class App : Application
     {
         if (e.Args.Contains("--apply-wpf-update") || e.Args.Contains("--apply-github-wpf-update") ||
             e.Args.Contains("--apply-full-app-update") || e.Args.Contains("--apply-github-full-app-update") ||
+            e.Args.Contains("--apply-github-full-app-route") ||
             e.Args.Contains("--recover-full-app-update"))
         {
             Shutdown(WpfUpdateService.RunUpdater(e.Args));

@@ -26,8 +26,8 @@ public sealed partial class MainViewModel
 
     private static string LogOwner(string? task) => task switch
     {
-        "extract" or "analyze" or "image_batch" or "image_inventory" or "image_extract" or "image_render" => WorkflowTabs.Extract,
-        "translate" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
+        "extract" or "analyze" or "image_inventory" or "image_extract" => WorkflowTabs.Extract,
+        "translate" or "image_batch" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
         "patch" or "image_delivery" or "image_apply" or "image_rollback" => WorkflowTabs.Patch,
         _ => ""
     };

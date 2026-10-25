@@ -63,7 +63,12 @@ internal sealed class AppJournalStore
     }
     internal static string Level(string text)
     {
-        if(text.Contains("[error]",StringComparison.OrdinalIgnoreCase)||text.Contains("lỗi",StringComparison.OrdinalIgnoreCase)||text.Contains("exception",StringComparison.OrdinalIgnoreCase)||text.Contains("error",StringComparison.OrdinalIgnoreCase)||text.StartsWith("Không ",StringComparison.OrdinalIgnoreCase)) return "ERROR";
+        // Analyzer summaries include the field name `scan_errors=0`. Do not
+        // classify that machine-readable counter as an error by substring.
+        var scanErrors = Regex.Match(text, @"\bscan_errors=(?<count>\d+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (scanErrors.Success && int.TryParse(scanErrors.Groups["count"].Value, out var scanErrorCount) && scanErrorCount > 0)
+            return "ERROR";
+        if(text.Contains("[error]",StringComparison.OrdinalIgnoreCase)||text.Contains("lỗi",StringComparison.OrdinalIgnoreCase)||text.Contains("exception",StringComparison.OrdinalIgnoreCase)||Regex.IsMatch(text,@"\berrors?\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant)||text.StartsWith("Không ",StringComparison.OrdinalIgnoreCase)) return "ERROR";
         if(text.Contains("[warning]",StringComparison.OrdinalIgnoreCase)||text.Contains("cảnh báo",StringComparison.OrdinalIgnoreCase)||text.Contains("[stderr]",StringComparison.OrdinalIgnoreCase)) return "WARN";
         return text.StartsWith("[tab]",StringComparison.Ordinal) ? "DEBUG" : "INFO";
     }

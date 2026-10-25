@@ -129,6 +129,11 @@ def emit_error(task_id: str, message: str) -> None:
     emit({"type": "error", "id": task_id, "message": message})
 
 
+def emit_cancel_ack(task_id: str, state: str) -> None:
+    """Acknowledge receipt separately from the task's eventual terminal result."""
+    emit({"type": "cancel_ack", "id": task_id, "state": state})
+
+
 def parse_command_line(line: str) -> dict[str, Any] | None:
     """Parse one NDJSON command line; emit protocol errors instead of raising."""
     try:

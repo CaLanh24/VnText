@@ -40,7 +40,14 @@ internal sealed record GitHubUpdateCheckResult(
     bool FullAppPackage = false,
     string AssetUrl = "",
     long AssetSize = 0,
-    string ReleaseNotes = "");
+    string ReleaseNotes = "",
+    string ReleaseDate = "",
+    bool FullAppRoute = false,
+    IReadOnlyList<GitHubUpdateHop>? Route = null,
+    IReadOnlyList<string>? RoutePackagePaths = null);
+
+internal sealed record GitHubUpdateHop(string FromVersion, string Version, string AssetName,
+    string AssetUrl, long AssetSize, string PackageSha256, string PackagePath = "");
 
 internal sealed class GitHubUpdatePackageLease : IDisposable
 {
@@ -78,6 +85,33 @@ public static class WpfUpdateService
     internal const long MaxGitHubUpdatePackageBytes = 536_870_912;
     private const long MaxGitHubReleaseMetadataBytes = 10_485_760;
     private static readonly TimeSpan GitHubRequestTimeout = TimeSpan.FromSeconds(20);
+    internal static async Task<(IReadOnlyList<ReleaseNotesCacheEntry> Entries, string Error)> ReadReleaseNotesHistoryAsync(
+        HttpMessageHandler? httpHandler = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var client = httpHandler is null
+                ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }, true)
+                : new HttpClient(httpHandler, false);
+            client.Timeout = GitHubRequestTimeout;
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/CaLanh24/VnText/releases?per_page=100");
+            request.Headers.TryAddWithoutValidation("Accept", "application/vnd.github+json");
+            request.Headers.TryAddWithoutValidation("User-Agent", "VNText-Studio");
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+                return ([], "Chưa tải được lịch sử phát hành. Các ghi chú đã lưu vẫn xem được; hãy thử lại sau.");
+            var json = await ReadBoundedGitHubMetadataAsync(response.Content, cancellationToken).ConfigureAwait(false);
+            var entries = ParseStableReleases(json).OrderByDescending(release => release.Version)
+                .Where(release => !string.IsNullOrWhiteSpace(release.Notes)).Take(20)
+                .Select(release => new ReleaseNotesCacheEntry { Version = release.VersionText, ReleaseDate = release.PublishedDate,
+                    Notes = release.Notes, CachedAtUtc = DateTime.UtcNow }).ToArray();
+            return (entries, "");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or IOException or JsonException or InvalidOperationException or FormatException)
+        {
+            return ([], "Chưa tải được lịch sử phát hành. Các ghi chú đã lưu vẫn xem được; hãy thử lại sau.");
+        }
+    }
     private static readonly string[] AllowedFiles = ["VNText Studio.exe", "app/RELEASE.json", "app/VERSION.txt"];
     private static readonly HashSet<string> TrustedReleaseAssetHosts = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -158,27 +192,40 @@ public static class WpfUpdateService
                 .Where(release => IsStrictlyNewerVersion(installedVersion, release.VersionText))
                 .OrderByDescending(release => release.Version)
                 .ToArray();
+            var route = PlanFullAppRoute(installedVersion, newer);
+            if (route is { Count: > 1 })
+            {
+                var result = await DownloadFullAppRouteAsync(root, source, releasesUrl, route, newer[0], client,
+                    cancellationToken, metadataOnly, expectedOffer, progress).ConfigureAwait(false);
+                var resumeStatus = ReadGitHubRouteResumeStatus(root, newer[0].VersionText, installedVersion);
+                return string.IsNullOrWhiteSpace(resumeStatus) ? result : result with { Message = "ROUTE_STATUS:" + resumeStatus };
+            }
             foreach (var release in newer)
             {
-                // Keep the legacy asset for public0.1.7; newer clients prefer an exact baseline hop.
+                if (!string.Equals(release.VersionText, newer[0].VersionText, StringComparison.Ordinal))
+                    continue; // Never offer a historical release as the current stable update.
                 var baselinePrefix = $"full-app-update-from-{installedVersion}-to-{release.VersionText}-";
                 var baselineAssets = release.Assets.Where(asset => asset.Name.StartsWith(baselinePrefix, StringComparison.Ordinal) &&
                     asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
                 var hasBaselineRoutes = release.Assets.Any(asset => asset.Name.StartsWith("full-app-update-from-", StringComparison.Ordinal) &&
                     asset.Name.Contains($"-to-{release.VersionText}-", StringComparison.Ordinal) && asset.Name.EndsWith(".zip", StringComparison.Ordinal));
-                if (baselineAssets.Length == 0 && hasBaselineRoutes && installedVersion != "0.1.7")
+                if (baselineAssets.Length == 0 && hasBaselineRoutes)
                     continue; // Search older stable releases for the next verified hop, then recheck after restart.
-                var updateAssets = baselineAssets.Length > 0 ? baselineAssets : release.Assets.Where(asset =>
-                    (asset.Name.StartsWith("wpf-update-" + release.VersionText, StringComparison.Ordinal) ||
-                     asset.Name.StartsWith("full-app-update-" + release.VersionText, StringComparison.Ordinal)) &&
-                    asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
+                // A legacy WPF-only delta from an older release cannot be offered
+                // as though it were the current stable update. The user must not
+                // have to repeat the update action for each historical release.
+                var updateAssets = baselineAssets.Length > 0 ? baselineAssets :
+                    string.Equals(release.VersionText, newer[0].VersionText, StringComparison.Ordinal)
+                        ? release.Assets.Where(asset =>
+                            asset.Name.StartsWith("wpf-update-" + release.VersionText, StringComparison.Ordinal) &&
+                            asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray()
+                        : [];
                 if (updateAssets.Length > 1)
                     return new(GitHubUpdateState.InvalidMetadata, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: "The stable release contains ambiguous update assets.");
 
                 if (updateAssets.Length == 0)
-                    return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
-                        Message: "This stable release has no applicable in-app update package; install Setup from the official Releases page.");
+                    continue; // No exact route for this baseline; keep searching and fail closed at the latest release.
 
                 var asset = updateAssets[0];
                 var fullAppPackage = asset.Name.StartsWith("full-app-update-", StringComparison.Ordinal);
@@ -192,7 +239,7 @@ public static class WpfUpdateService
                 var offer = new GitHubUpdateCheckResult(GitHubUpdateState.OfferAvailable,
                     Version: release.VersionText, PackageSha256: packageDigest, ReleasesUrl: releasesUrl,
                     FullAppPackage: fullAppPackage, AssetUrl: asset.DownloadUrl, AssetSize: asset.Size,
-                    ReleaseNotes: release.Notes);
+                    ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate);
                 if (metadataOnly)
                     return offer;
                 if (expectedOffer is not null &&
@@ -273,10 +320,13 @@ public static class WpfUpdateService
             {
                 var latest = newer[0];
                 return new(GitHubUpdateState.SetupRequired, Version: latest.VersionText, ReleasesUrl: releasesUrl,
-                    Message: "A newer stable release requires Setup; open the official Releases page.");
+                    Message: "A newer stable release requires Setup; open the official Releases page.",
+                    ReleaseNotes: latest.Notes, ReleaseDate: latest.PublishedDate);
             }
-            return new(GitHubUpdateState.Current, ReleasesUrl: releasesUrl,
-                Message: "VNText Studio is up to date with stable GitHub releases.");
+            var currentRelease = releases.FirstOrDefault(release => string.Equals(release.VersionText, installedVersion, StringComparison.Ordinal));
+            return new(GitHubUpdateState.Current, Version: installedVersion, ReleasesUrl: releasesUrl,
+                Message: "VNText Studio is up to date with stable GitHub releases.",
+                ReleaseNotes: currentRelease?.Notes ?? "", ReleaseDate: currentRelease?.PublishedDate ?? "");
         }
         catch (TaskCanceledException)
         {
@@ -298,6 +348,160 @@ public static class WpfUpdateService
         }
     }
 
+    private static List<PlannedRouteHop>? PlanFullAppRoute(string installedVersion, IReadOnlyList<GitHubReleaseInfo> newer)
+    {
+        if (newer.Count == 0) return null;
+        var ascending = newer.OrderBy(release => release.Version).ToArray();
+        var target = ascending[^1];
+        var path = new List<PlannedRouteHop>();
+        var visiting = new HashSet<string>(StringComparer.Ordinal);
+        bool Find(string current)
+        {
+            if (string.Equals(current, target.VersionText, StringComparison.Ordinal)) return true;
+            if (!visiting.Add(current)) return false;
+            foreach (var release in ascending.Where(candidate => IsStrictlyNewerVersion(current, candidate.VersionText)))
+            {
+                var prefix = $"full-app-update-from-{current}-to-{release.VersionText}-";
+                var matches = release.Assets.Where(asset => asset.Name.StartsWith(prefix, StringComparison.Ordinal) &&
+                    asset.Name.EndsWith(".zip", StringComparison.Ordinal)).ToArray();
+                if (matches.Length != 1) continue;
+                path.Add(new PlannedRouteHop(current, release, matches[0]));
+                if (Find(release.VersionText)) return true;
+                path.RemoveAt(path.Count - 1);
+            }
+            visiting.Remove(current);
+            return false;
+        }
+        return Find(installedVersion) && path.Count <= 20 ? path : null;
+    }
+
+    private static async Task<GitHubUpdateCheckResult> DownloadFullAppRouteAsync(string root, UpdateSource source,
+        string releasesUrl, IReadOnlyList<PlannedRouteHop> planned, GitHubReleaseInfo latest, HttpClient client,
+        CancellationToken cancellationToken, bool metadataOnly, GitHubUpdateCheckResult? expectedOffer,
+        IProgress<(long Received, long Total)>? progress)
+    {
+        var hops = new List<GitHubUpdateHop>();
+        long totalBytes = 0;
+        foreach (var hop in planned)
+        {
+            if (!TryValidateUpdateAsset(source, hop.Release, hop.Asset, fullAppPackage: true,
+                    out var digest, out _, out var metadataError, hop.FromVersion))
+                return new(GitHubUpdateState.InvalidMetadata, Version: latest.VersionText, ReleasesUrl: releasesUrl, Message: metadataError);
+            if (hop.Asset.Size <= 0 || hop.Asset.Size > MaxGitHubUpdatePackageBytes ||
+                (totalBytes += hop.Asset.Size) > 1_073_741_824)
+                return new(GitHubUpdateState.InvalidPackage, Version: latest.VersionText, ReleasesUrl: releasesUrl,
+                    Message: "The full-app update route exceeds its declared package size limit.");
+            hops.Add(new GitHubUpdateHop(hop.FromVersion, hop.Release.VersionText, hop.Asset.Name,
+                hop.Asset.DownloadUrl, hop.Asset.Size, digest));
+        }
+
+        var offer = new GitHubUpdateCheckResult(GitHubUpdateState.OfferAvailable, Version: latest.VersionText,
+            PackageSha256: hops[^1].PackageSha256, ReleasesUrl: releasesUrl, FullAppPackage: true, FullAppRoute: true,
+            AssetUrl: hops[0].AssetUrl, AssetSize: totalBytes, ReleaseNotes: latest.Notes,
+            ReleaseDate: latest.PublishedDate, Route: hops);
+        if (metadataOnly) return offer;
+        if (expectedOffer is not null && !EquivalentGitHubRouteOffer(expectedOffer, offer))
+            return new(GitHubUpdateState.InvalidMetadata, Message: "The release route changed; check for updates again.");
+
+        var paths = new List<string>();
+        string? descriptorPath = null;
+        try
+        {
+            Directory.CreateDirectory(source.WorkRoot);
+            Dictionary<string, FullAppUpdateService.FileRecord>? expectedBase = null;
+            foreach (var hop in hops)
+            {
+                var packagePath = Path.Combine(source.WorkRoot, $"github-update-route-{Guid.NewGuid():N}.zip");
+                paths.Add(packagePath);
+                EnsureNoReparsePath(root, packagePath, "GitHub route package");
+                using var response = await SendReleaseAssetAsync(client, new Uri(hop.AssetUrl), cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    DeleteRoutePaths(paths, source, root);
+                    return new(IsRateLimited(response) ? GitHubUpdateState.RateLimited : GitHubUpdateState.Offline,
+                        Version: latest.VersionText, ReleasesUrl: releasesUrl,
+                        Message: IsRateLimited(response) ? "GitHub rate limit reached while downloading the update route." :
+                            $"A route package is unavailable (HTTP {(int)response.StatusCode}).");
+                }
+                var actualDigest = await DownloadAndHashAssetAsync(response.Content, packagePath, hop.AssetSize,
+                    cancellationToken, progress).ConfigureAwait(false);
+                if (!FixedEquals(actualDigest, hop.PackageSha256))
+                    throw new InvalidDataException("GitHub route asset SHA-256 digest mismatch.");
+                var selection = FullAppUpdateService.ReadGitHubPackage(root, Path.Combine(root, SourceName),
+                    packagePath, hop.PackageSha256, hop.Version, expectedBase, expectedBase is null ? "" : hop.FromVersion);
+                expectedBase = selection.Manifest.Files;
+                hops[hops.IndexOf(hop)] = hop with { PackagePath = packagePath };
+            }
+            descriptorPath = Path.Combine(source.WorkRoot, $"github-update-route-{Guid.NewGuid():N}.json");
+            EnsureNoReparsePath(root, descriptorPath, "GitHub route descriptor");
+            var descriptor = new
+            {
+                schema = 1,
+                target_version = latest.VersionText,
+                hops = hops.Select(hop => new { from_version = hop.FromVersion, version = hop.Version,
+                    package_path = hop.PackagePath, package_sha256 = hop.PackageSha256 }).ToArray(),
+            };
+            File.WriteAllText(descriptorPath, JsonSerializer.Serialize(descriptor));
+            var descriptorHash = HashFile(descriptorPath);
+            return new(GitHubUpdateState.UpdateAvailable, latest.VersionText, descriptorPath, descriptorHash,
+                releasesUrl, $"Stable full-app update route available: v{latest.VersionText}.", true,
+                hops[0].AssetUrl, totalBytes, latest.Notes, latest.PublishedDate, true, hops, paths);
+        }
+        catch (TaskCanceledException)
+        {
+            DeleteRoutePaths(paths, source, root);
+            if (descriptorPath is not null) TryDeleteGitHubPackage(descriptorPath, source, root);
+            return new(GitHubUpdateState.Timeout, Version: latest.VersionText, ReleasesUrl: releasesUrl, Message: "GitHub update route download timed out.");
+        }
+        catch (HttpRequestException ex)
+        {
+            DeleteRoutePaths(paths, source, root);
+            if (descriptorPath is not null) TryDeleteGitHubPackage(descriptorPath, source, root);
+            return new(GitHubUpdateState.Offline, Version: latest.VersionText, ReleasesUrl: releasesUrl, Message: "GitHub update route is unavailable: " + ex.Message);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or JsonException or InvalidOperationException or UnauthorizedAccessException)
+        {
+            DeleteRoutePaths(paths, source, root);
+            if (descriptorPath is not null) TryDeleteGitHubPackage(descriptorPath, source, root);
+            return new(GitHubUpdateState.InvalidPackage, Version: latest.VersionText, ReleasesUrl: releasesUrl, Message: "GitHub update route is invalid: " + ex.Message);
+        }
+    }
+
+    private static bool EquivalentGitHubRouteOffer(GitHubUpdateCheckResult expected, GitHubUpdateCheckResult actual) =>
+        expected.State == GitHubUpdateState.OfferAvailable && expected.Version == actual.Version &&
+        expected.Route is not null && actual.Route is not null && expected.Route.Count == actual.Route.Count &&
+        expected.Route.Zip(actual.Route).All(pair => pair.First.FromVersion == pair.Second.FromVersion &&
+            pair.First.Version == pair.Second.Version && pair.First.AssetUrl == pair.Second.AssetUrl &&
+            pair.First.AssetName == pair.Second.AssetName && pair.First.PackageSha256 == pair.Second.PackageSha256 &&
+            pair.First.AssetSize == pair.Second.AssetSize);
+
+    private static void DeleteRoutePaths(IEnumerable<string> paths, UpdateSource source, string root)
+    {
+        foreach (var path in paths) TryDeleteGitHubPackage(path, source, root);
+    }
+
+    private static string ReadGitHubRouteResumeStatus(string root, string latestVersion, string installedVersion)
+    {
+        try
+        {
+            var path = Path.Combine(Path.GetFullPath(root), ".update", "github-route-result.json");
+            EnsureNoReparsePath(root, path, "GitHub route result");
+            if (!File.Exists(path) || new FileInfo(path).Length is <= 0 or > 4096) return "";
+            using var json = JsonDocument.Parse(File.ReadAllText(path));
+            var propertyNames = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in json.RootElement.EnumerateObject())
+                if (!propertyNames.Add(property.Name)) return "";
+            var result = JsonSerializer.Deserialize<GitHubRouteResult>(json.RootElement.GetRawText(), JsonOptions);
+            if (result is null || result.Schema != 1 || result.TargetVersion != latestVersion ||
+                result.CompletedVersion != installedVersion || result.ExitCode == 0)
+                return "";
+            return $"Bản cập nhật trước dừng ở v{installedVersion} sau {result.CompletedHops} chặng; chưa lên tới v{latestVersion}. Hãy thử cập nhật lại.";
+        }
+        catch { return ""; }
+    }
+
+    private sealed record PlannedRouteHop(string FromVersion, GitHubReleaseInfo Release, GitHubAssetInfo Asset);
+
     internal static void StartGitHubUpdate(int? workerPid, GitHubUpdatePackageLease packageLease)
     {
         var update = packageLease.Update;
@@ -307,7 +511,7 @@ public static class WpfUpdateService
         var root = InstallRoot();
         StartUpdaterProcess(root, Path.Combine(root, SourceName), workerPid,
             update.PackagePath, update.PackageSha256, update.Version, packageLease.TransferToUpdater,
-            fullAppPackage: update.FullAppPackage);
+            fullAppPackage: update.FullAppPackage, fullAppRoute: update.FullAppRoute);
     }
 
     internal static bool TryGetAvailableUpdateVersion(string installRoot, out string version) =>
@@ -364,7 +568,7 @@ public static class WpfUpdateService
 
     private static void StartUpdaterProcess(string root, string sourcePath, int? workerPid,
         string? packagePath, string packageSha256, string version, Action? packageHandedOff = null,
-        bool fullAppPackage = false)
+        bool fullAppPackage = false, bool fullAppRoute = false)
     {
         EnsureNoReparsePath(root, sourcePath, "Update source configuration");
         var source = ReadSource(sourcePath);
@@ -391,7 +595,7 @@ public static class WpfUpdateService
         start.Environment["DOTNET_ROOT_X64"] = runtime;
         start.ArgumentList.Add(packagePath is null
             ? (fullAppPackage ? "--apply-full-app-update" : "--apply-wpf-update")
-            : (fullAppPackage ? "--apply-github-full-app-update" : "--apply-github-wpf-update"));
+            : (fullAppRoute ? "--apply-github-full-app-route" : fullAppPackage ? "--apply-github-full-app-update" : "--apply-github-wpf-update"));
         start.ArgumentList.Add(sourcePath);
         start.ArgumentList.Add(root);
         start.ArgumentList.Add(Environment.ProcessId.ToString());
@@ -415,6 +619,12 @@ public static class WpfUpdateService
         if (args.Length < 5 || !int.TryParse(args[3], out var appPid))
             return 2;
         int? workerPid = int.TryParse(args[4], out var parsedWorkerPid) ? parsedWorkerPid : null;
+        if (string.Equals(args[0], "--apply-github-full-app-route", StringComparison.Ordinal))
+        {
+            if (args.Length != 8 || !IsSha256(args[6]) || !TryParseStableVersion(args[7], out _)) return 2;
+            return FullAppUpdateService.RunGitHubRouteUpdater(args[1], args[2], appPid, workerPid,
+                args[5], args[6], args[7]);
+        }
         if (string.Equals(args[0], "--apply-github-full-app-update", StringComparison.Ordinal))
         {
             if (args.Length != 8 || !IsSha256(args[6]) || !TryParseStableVersion(args[7], out _)) return 2;
@@ -668,7 +878,12 @@ public static class WpfUpdateService
             var notes = element.TryGetProperty("body", out var body) && body.ValueKind == JsonValueKind.String
                 ? body.GetString() ?? "" : "";
             notes = new string(notes.Take(16000).Where(c => !char.IsControl(c) || c is '\n' or '\r' or '\t').ToArray());
-            releases.Add(new GitHubReleaseInfo(tag, versionText, version, assets, notes));
+            var releaseDate = "";
+            if (element.TryGetProperty("published_at", out var publishedAt) && publishedAt.ValueKind == JsonValueKind.String
+                && DateTimeOffset.TryParse(publishedAt.GetString(), System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var parsedDate))
+                releaseDate = parsedDate.ToLocalTime().ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture);
+            releases.Add(new GitHubReleaseInfo(tag, versionText, version, assets, notes, releaseDate));
         }
 
         if (releases.GroupBy(release => release.VersionText, StringComparer.Ordinal).Any(group => group.Count() > 1))
@@ -899,6 +1114,8 @@ public static class WpfUpdateService
             if (!File.Exists(sourcePath)) return;
             var source = ReadSource(sourcePath);
             ValidateUpdatePaths(root, source);
+            foreach (var path in candidate.RoutePackagePaths ?? [])
+                TryDeleteGitHubPackage(path, source, root);
             TryDeleteGitHubPackage(candidate.PackagePath, source, root);
         }
         catch { }
@@ -1359,7 +1576,16 @@ public static class WpfUpdateService
 
     private sealed record UpdateSelection(string PackagePath, UpdateManifest Manifest);
 
-    private sealed record GitHubReleaseInfo(string Tag, string VersionText, Version Version, List<GitHubAssetInfo> Assets, string Notes);
+    private sealed record GitHubReleaseInfo(string Tag, string VersionText, Version Version, List<GitHubAssetInfo> Assets, string Notes, string PublishedDate);
+
+    private sealed class GitHubRouteResult
+    {
+        [JsonPropertyName("schema")] public int Schema { get; set; }
+        [JsonPropertyName("target_version")] public string TargetVersion { get; set; } = "";
+        [JsonPropertyName("completed_version")] public string CompletedVersion { get; set; } = "";
+        [JsonPropertyName("exit_code")] public int ExitCode { get; set; }
+        [JsonPropertyName("completed_hops")] public int CompletedHops { get; set; }
+    }
 
     private sealed record GitHubAssetInfo(string Name, string Digest, long Size, string DownloadUrl);
 

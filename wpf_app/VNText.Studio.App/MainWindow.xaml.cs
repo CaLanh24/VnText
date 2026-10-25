@@ -12,6 +12,7 @@ public partial class MainWindow : Window
     private bool _layoutInitialized;
     private AppTray? _tray;
     private bool _explicitExit;
+    private bool _allowDirtyExitOnce;
     private bool _pendingUpdateOffer;
 
     public MainWindow() : this(null) { }
@@ -31,6 +32,7 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             vm.CompletionRequested += OnCompletionRequested;
+            vm.ExitAfterTaskRequested += OnExitAfterTaskRequested;
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
             vm.RestoreWindow(this);
             WindowState = !_presentationFixture && vm.StartMinimized ? WindowState.Minimized : WindowState.Maximized;
@@ -80,12 +82,33 @@ public partial class MainWindow : Window
                 {
                     e.Cancel=true; HideToTray(); return;
                 }
-                if (vm.CsvEditorDirty || vm.Busy)
+                if (vm.Busy)
                 {
-                    AppDialogService.Show("Hãy hoàn tất hoặc hủy tác vụ và lưu CSV trước khi đóng ứng dụng.", "Công việc chưa hoàn tất", owner: this);
                     e.Cancel = true;
+                    var cancelAndExit = AppDialogService.Show(
+                        "Tác vụ đang chạy. Bạn có muốn yêu cầu hủy an toàn rồi thoát sau khi worker báo kết thúc không? Ứng dụng sẽ tiếp tục chờ nếu worker chưa dừng.",
+                        "Tác vụ chưa hoàn tất", MessageBoxButton.YesNo, MessageBoxImage.Question, this);
+                    if (cancelAndExit == MessageBoxResult.Yes)
+                        vm.CancelAndExitCommand.Execute(null);
                     return;
                 }
+                if (vm.CsvEditorDirty && !_allowDirtyExitOnce)
+                {
+                    e.Cancel = true;
+                    var decision = AppDialogService.Show(
+                        "CSV có thay đổi chưa lưu. Chọn Có để kiểm tra và lưu trước khi thoát, Không để bỏ các thay đổi đang sửa, hoặc Hủy để tiếp tục làm việc.",
+                        "CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, this);
+                    if (decision == MessageBoxResult.Yes)
+                    {
+                        if (vm.TrySaveCsvEditorForExit()) CloseAfterCsvDecision();
+                    }
+                    else if (decision == MessageBoxResult.No)
+                    {
+                        CloseAfterCsvDecision();
+                    }
+                    return;
+                }
+                _allowDirtyExitOnce = false;
                 if (!_presentationFixture) vm.SaveWindow(this);
             };
         }
@@ -97,7 +120,10 @@ public partial class MainWindow : Window
             _tray?.Dispose();
             UpdatePresentation.Dispose();
             if (DataContext is MainViewModel closingVm)
+            {
+                closingVm.ExitAfterTaskRequested -= OnExitAfterTaskRequested;
                 closingVm.CompletionRequested -= OnCompletionRequested;
+            }
             if (DataContext is IDisposable disposable)
                 disposable.Dispose();
         };
@@ -105,6 +131,18 @@ public partial class MainWindow : Window
 
     private void OpenUpdateDialog() { if (IsVisible && WindowState != WindowState.Minimized) ShowUpdateDialog(false); else _pendingUpdateOffer=true; }
     private void OpenReleaseNotes() => ShowUpdateDialog(true);
+
+    private void CloseAfterCsvDecision()
+    {
+        _allowDirtyExitOnce = true;
+        Dispatcher.BeginInvoke(new Action(Close));
+    }
+
+    private void OnExitAfterTaskRequested(object? sender, EventArgs e)
+    {
+        _explicitExit = true;
+        Close();
+    }
     internal void ShowUpdateDialog(bool notes, string? successVersion = null)
     {
         if (_updateDialog is not null) { _updateDialog.Activate(); return; }
@@ -169,7 +207,7 @@ public partial class MainWindow : Window
     private void CsvEditorGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
         if (DataContext is MainViewModel vm)
-            vm.OnCsvEditorTranslationChanged();
+            vm.OnCsvEditorTranslationChanged(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow);
     }
 
     private void CsvEditorGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)

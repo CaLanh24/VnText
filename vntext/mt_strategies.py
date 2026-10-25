@@ -754,6 +754,8 @@ def retry_row_strategies(
 
     fast=True: bỏ mask/pipe (đắt) — dùng cho full pass đầu; vòng sau có thể full strategies.
     """
+    from vntext.mt_ct2_model import TranslateCancelled
+
     strategies: list[tuple[str, str]] = []
     src = row["source_text"]
     from vntext.glossary_v2 import candidate_term_issues
@@ -848,6 +850,8 @@ def retry_row_strategies(
         if not full_raw.strip():
             try:
                 full_raw = translator.translate(src)
+            except TranslateCancelled:
+                raise
             except Exception:
                 full_raw = ""
         if full_raw.strip():
@@ -881,6 +885,8 @@ def retry_row_strategies(
         if not full_raw.strip():
             try:
                 full_raw = translator.translate(src)
+            except TranslateCancelled:
+                raise
             except Exception:
                 full_raw = ""
         if full_raw.strip():

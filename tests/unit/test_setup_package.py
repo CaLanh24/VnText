@@ -129,6 +129,36 @@ class SetupPackageTests(unittest.TestCase):
             (work / "app/RELEASE.json").unlink()
             self.assertNotEqual(0, call().returncode)
 
+    def test_in_app_release_policy_accepts_distinct_direct_route_baselines(self):
+        work = WORK_ROOT / f"update-additional-baselines-{uuid4().hex}"
+        with artifact_scope(work, artifact_id=work.name, kind="test_fixture", owner="test_setup_package.py", purpose="Direct-to-latest candidate route admission"):
+            def make_root(name, version):
+                root = work / name
+                (root / "app").mkdir(parents=True)
+                (root / "VNText Studio.exe").write_bytes(b"fixture")
+                (root / "app/VERSION.txt").write_text(version)
+                (root / "app/RELEASE.json").write_text(json.dumps({"version": version}))
+                return root
+
+            primary = make_root("primary", "0.1.10")
+            legacy = make_root("legacy", "0.1.7")
+            old_a = make_root("old-a", "0.1.8")
+            old_b = make_root("old-b", "0.1.9")
+
+            def call(extras):
+                extra_args = "@(" + ",".join(f"'{root}'" for root in extras) + ")" if extras else "@()"
+                command = (f"Assert-InAppReleasePolicy '0.1.11' '{primary}' $true 'owner' 'repo' "
+                           f"'{legacy}' {extra_args}")
+                return self._publisher_call(["Assert-InAppReleasePolicy"], command)
+
+            accepted = call([old_a, old_b])
+            self.assertEqual(0, accepted.returncode, accepted.stdout + accepted.stderr)
+            self.assertNotEqual(0, call([old_a, old_a]).returncode)
+            self.assertNotEqual(0, call([make_root("future", "0.1.12")]).returncode)
+            mismatched = make_root("mismatch", "0.1.8")
+            (mismatched / "app/RELEASE.json").write_text('{"version":"0.1.9"}')
+            self.assertNotEqual(0, call([mismatched]).returncode)
+
     def test_baseline_route_copy_checks_identity_digest_and_immutable_collision(self):
         work = WORK_ROOT / f"route-copy-{uuid4().hex}"
         with artifact_scope(work, artifact_id=work.name, kind="test_fixture", owner="test_setup_package.py", purpose="Actual baseline route publication copy"):

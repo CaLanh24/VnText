@@ -6,6 +6,7 @@ public sealed class WorkerEvent
 {
     public string Type { get; set; } = "";
     public string Id { get; set; } = "";
+    public string State { get; set; } = "";
     public string Text { get; set; } = "";
     public int Done { get; set; }
     public int Total { get; set; }
@@ -46,6 +47,7 @@ public sealed class WorkerEvent
 
             var evt = new WorkerEvent { Type = typeEl.GetString() ?? "" };
             if (root.TryGetProperty("id", out var idEl)) evt.Id = idEl.GetString() ?? "";
+            if (root.TryGetProperty("state", out var stateEl)) evt.State = stateEl.GetString() ?? "";
             if (root.TryGetProperty("text", out var textEl)) evt.Text = textEl.GetString() ?? "";
             if (root.TryGetProperty("message", out var msgEl)) evt.Error = msgEl.GetString() ?? "";
             if (root.TryGetProperty("done", out var doneEl)) evt.Done = doneEl.GetInt32();

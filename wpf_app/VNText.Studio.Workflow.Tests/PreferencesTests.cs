@@ -1,5 +1,7 @@
 using System.IO;
 using System.ComponentModel;
+using System.Net;
+using System.Net.Http;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +17,14 @@ namespace VNText.Studio.Workflow.Tests;
 
 internal static class PreferencesTests
 {
+    private sealed class NotesHttpHandler(Func<HttpResponseMessage> response) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Check(request.RequestUri?.ToString()=="https://api.github.com/repos/CaLanh24/VnText/releases?per_page=100", "history uses the official release endpoint");
+            return Task.FromResult(response());
+        }
+    }
     private static void Check(bool value,string name) { if(!value)throw new InvalidOperationException(name); }
     public static int Run()
     {
@@ -23,9 +33,33 @@ internal static class PreferencesTests
         var app=new VNText.Studio.App.App(); app.InitializeComponent(); app.ShutdownMode=ShutdownMode.OnExplicitShutdown;
         try
         {
-            var settings=new AppSettings { Language="en",Theme="dark",CloseAction="tray",StartMinimized=true,BackgroundStrength=40,BackgroundUpdateDownload=true,UpdateReminderHours=4 };
+            var settings=new AppSettings { Language="en",Theme="dark",CloseAction="tray",StartMinimized=true,BackgroundStrength=40,BackgroundUpdateDownload=true,UpdateReminderHours=4,
+                ReleaseNotesHistory=[new ReleaseNotesCacheEntry { Version="0.1.11", ReleaseDate="2026-10-24", Notes="Ghi chú tiếng Việt", CachedAtUtc=DateTime.UtcNow }] };
             AppSettingsStore.Save(settings); var loaded=AppSettingsStore.Load();
             Check(loaded.Language=="en" && loaded.Theme=="dark" && loaded.CloseAction=="tray" && loaded.StartMinimized && loaded.BackgroundStrength==40 && loaded.BackgroundUpdateDownload && loaded.UpdateReminderHours==4,"preference round-trip");
+            Check(loaded.ReleaseNotesHistory.Count==1 && loaded.ReleaseNotesHistory[0].Version=="0.1.11" && loaded.ReleaseNotesHistory[0].ReleaseDate=="2026-10-24" && loaded.ReleaseNotesHistory[0].Notes=="Ghi chú tiếng Việt" && loaded.ReleaseNotesHistory[0].DisplayLabel.Contains("2026-10-24",StringComparison.Ordinal),"release notes history persistence / date label");
+            var historyCards = UpdateWindow.RenderHistory(new Border(), new[] {
+                loaded.ReleaseNotesHistory[0], new ReleaseNotesCacheEntry { Version="0.1.10", Notes="- Sửa giao diện" } });
+            Check(historyCards.Children.OfType<Border>().Count()==2, "each cached release has its own visible card");
+            Check(loaded.ReleaseNotesHistory[0].DownloadUrl=="https://github.com/CaLanh24/VnText/releases/tag/v0.1.11", "release download is version-matched");
+            Check(new ReleaseNotesCacheEntry { Version="0.1.11/../../evil" }.DownloadUrl=="", "invalid cached version cannot become a download link");
+            using (var historyHandler = new NotesHttpHandler(() => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(new[] {
+                new { tag_name="v0.1.11", draft=false, prerelease=false, body="- Giao diện", published_at="2026-10-24T08:00:00Z", assets=Array.Empty<object>() },
+                new { tag_name="v0.1.13", draft=true, prerelease=false, body="Nháp", published_at="2026-10-25T08:00:00Z", assets=Array.Empty<object>() },
+                new { tag_name="v0.1.12", draft=false, prerelease=false, body="- Tiến trình", published_at="2026-10-25T08:00:00Z", assets=Array.Empty<object>() }
+            })) }))
+            {
+                var history = WpfUpdateService.ReadReleaseNotesHistoryAsync(historyHandler).GetAwaiter().GetResult();
+                Check(history.Error=="" && history.Entries.Count==2 && history.Entries[0].Version=="0.1.12" && history.Entries[1].Version=="0.1.11", "history fetch is independent of installed updater baseline and excludes drafts");
+            }
+            using (var offlineHandler = new NotesHttpHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)))
+            {
+                var offline = WpfUpdateService.ReadReleaseNotesHistoryAsync(offlineHandler).GetAwaiter().GetResult();
+                Check(offline.Entries.Count==0 && offline.Error.Length>0, "offline history reports failure without replacing cached entries");
+            }
+            loaded.ReleaseNotesHistory=[.. Enumerable.Range(1,25).Select(i=>new ReleaseNotesCacheEntry { Version=$"1.0.{i}", Notes=new string('x',16001), CachedAtUtc=DateTime.UtcNow.AddSeconds(i) })];
+            AppSettingsStore.Save(loaded); loaded=AppSettingsStore.Load();
+            Check(loaded.ReleaseNotesHistory.Count==20 && loaded.ReleaseNotesHistory.All(entry=>entry.Notes.Length==16000),"release notes history bounds");
             settings.Language="bad";settings.Theme="bad";settings.CloseAction="bad";settings.BackgroundStrength=double.NaN;settings.UpdateReminderHours=1;
             AppSettingsStore.Save(settings);loaded=AppSettingsStore.Load();
             Check(loaded.Language=="vi" && loaded.Theme=="light" && loaded.CloseAction=="exit" && loaded.BackgroundStrength==100 && loaded.UpdateReminderHours==24,"normalization");
@@ -166,7 +200,7 @@ internal static class PreferencesTests
     { public string? PickInputPath()=>null;public string? PickOutputFolder()=>null;public string? PickTranslationCsvFile()=>null;public string? PickRenpySdkFolder()=>null;public string? PickImageFile(bool review=false)=>null;public bool OpenPath(string path)=>false; }
     private sealed class Presentation:IUpdatePresentation
     {
-        public string CurrentVersion=>"0.1.5";public string Version=>"";public string Notes=>"";public string Status=>"";
+        public string CurrentVersion=>"0.1.5";public string Version=>"";public string ReleaseDate=>"";public string Notes=>"";public string Status=>"";
         public bool Available=>false;public bool Downloading=>false;public bool Ready=>false;public long Received=>0;public long Total=>0;public bool CanStart=>false;public bool IsTestFixture=>true;
         public event PropertyChangedEventHandler? PropertyChanged { add{} remove{} } public event Action? OfferRequested { add{} remove{} }
         public Task CheckAsync()=>Task.CompletedTask;public Task DownloadAsync()=>Task.CompletedTask;public void Cancel(){}public void Defer(bool skip){}public void Restart(){}public void Dispose(){}

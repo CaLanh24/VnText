@@ -88,13 +88,26 @@ def _run_harness(env: dict[str, str], artifacts_root: Path, args: list[str] | No
         raise AssertionError(f"workflow harness apphost missing: {apphost}")
     runtime_env = env.copy()
     runtime_env["DOTNET_ROOT"] = str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "dotnet")
-    run_args = args if args is not None else (["--github-handoff-only"] if env.get("VNTEXT_WPF_GITHUB_HANDOFF_ONLY") == "1" else [])
+    if args is not None:
+        run_args = args
+    elif env.get("VNTEXT_WPF_GITHUB_HANDOFF_ONLY") == "1":
+        run_args = ["--github-handoff-only"]
+    elif env.get("VNTEXT_WPF_FULL_APP_UPDATE_ONLY") == "1":
+        run_args = ["--full-app-update-only"]
+    elif env.get("VNTEXT_WPF_PREFERENCES_ONLY") == "1":
+        run_args = ["--preferences-only"]
+    elif env.get("VNTEXT_WPF_PROGRESS_ONLY") == "1":
+        run_args = ["--progress-only"]
+    else:
+        run_args = []
     return subprocess.run(
         [str(apphost), *run_args],
         cwd=str(ROOT),
         env=runtime_env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=300,
     )
 
@@ -139,6 +152,8 @@ def _build_versioned_exe_fixture(
         env=_harness_env(project_root),
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=180,
     )
     if build.returncode:
@@ -170,7 +185,7 @@ class WpfWorkflowTests(unittest.TestCase):
         for option in (
             'Content="Tách dòng cần duyệt"',
             'Content="Ghi đè bản dịch cũ"',
-            'Content="Bắt buộc duyệt thủ công kết quả MT"',
+            'Content="Duyệt bản dịch trước khi đóng gói"',
         ):
             with self.subTest(option=option):
                 self.assertEqual(xaml.count(option), 1)
@@ -197,16 +212,45 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("RenpySdkRecovery.ResolveAction", worker)
         self.assertIn("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", workflow_tests)
 
-    def test_csv_editor_controls_expand_and_validation_stays_automatic(self):
+    def test_csv_editor_controls_stay_visible_and_validation_stays_automatic(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
         self.assertNotIn('x:Name="CsvControlsScrollViewer"', xaml)
         self.assertNotIn('MaxHeight="220"', xaml)
-        self.assertIn('Header="Tìm và thay thế bản dịch"', xaml)
+        self.assertIn('Text="Tìm và thay thế bản dịch"', xaml)
+        self.assertIn('x:Name="CsvEditorCard"', xaml)
+        self.assertIn('x:Name="CsvEditorSearchBox"', xaml)
+        self.assertIn('<UniformGrid Grid.Column="1" Columns="3"', xaml)
+        self.assertIn('x:Name="CsvBulkFindTextBox"', xaml)
+        self.assertIn('x:Name="CsvBulkReplaceTextBox"', xaml)
+        self.assertIn('Text="Tìm trong bản dịch"', xaml)
+        self.assertIn('Content="Xem trước"', xaml)
+        self.assertIn('Content="Áp dụng"', xaml)
+        self.assertIn('Command="{Binding ApplyBulkReplaceCsvCommand}"', xaml)
+        self.assertIn('Header="MÃ DÒNG" Binding="{Binding Key}" IsReadOnly="True" Width="0" MinWidth="0" Visibility="Collapsed"', xaml)
+        self.assertIn('ToolTip="{Binding CsvEditorPathToolTip}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorSelectionDetails}"', xaml)
+        self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
+        self.assertIn('Text="{Binding PatchProgressStep, StringFormat=\'Bước: {0}\'}"', xaml)
+        self.assertIn('Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn('Style="{StaticResource BlueProgressBarStyle}"', xaml)
+        styles = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        self.assertIn('<Setter Property="GridLinesVisibility" Value="All" />', styles)
         for command in ("ClearBlockedCsvCommand", "ValidateCsvEditorCommand", "RetranslateBlockedCsvCommand", "ApproveCsvMemoryCommand"):
             self.assertNotIn(f'Command="{{Binding {command}}}"', xaml)
         self.assertIn("ValidateCsvEditor(showLog: false)", editor)
-        self.assertIn('Text="{Binding CsvEditorValidationMessage}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorUserValidationMessage}"', xaml)
+        self.assertIn('ToolTip="{Binding CsvEditorValidationMessage}"', xaml)
+
+    def test_path_picker_cancellation_does_not_prompt_about_or_discard_csv_edits(self):
+        paths = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
+        input_method = paths.split("private void ChooseInput()", 1)[1].split("private void ChooseOutput()", 1)[0]
+        output_method = paths.split("private void ChooseOutput()", 1)[1].split("private void ChooseTranslationCsv()", 1)[0]
+        for method, picker in ((input_method, "PickInputPath"), (output_method, "PickOutputFolder")):
+            self.assertLess(method.index(picker), method.index("ConfirmCsvBeforeSourceChange"))
+            self.assertIn("!string.IsNullOrWhiteSpace(path)", method)
+            self.assertIn("StringComparison.OrdinalIgnoreCase", method)
 
     def test_wpf_app_dialogs_use_the_themed_dialog_surface(self):
         dialog = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppDialogService.cs").read_text(encoding="utf-8")
@@ -249,8 +293,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("human_review_required = HumanReviewRequired", (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("public bool HumanReviewRequired", view_model)
         self.assertIn("public bool HumanReviewRequired", settings)
-        self.assertIn("Bắt buộc duyệt thủ công kết quả MT", xaml)
-        self.assertIn('ToolTip="Khi bật, hãy mở review_only.csv ở tab Sửa CSV, chỉnh và lưu bản dịch; sau đó chọn file này tại Nhập bản dịch cũ để chuyển các dòng khớp vào translation.csv trước khi Patch."', xaml)
+        self.assertIn("Duyệt bản dịch trước khi đóng gói", xaml)
+        self.assertIn('Content="Duyệt bản dịch trước khi đóng gói"', xaml)
         self.assertNotIn('Text="Thiết bị"', xaml)
         self.assertNotIn('DataTrigger Binding="{Binding StatusText}" Value="Sẵn sàng"', xaml)
         self.assertIn('DataTrigger Binding="{Binding GlossaryStatus}" Value="Danh sách từ được lưu cùng gói dịch."', xaml)
@@ -276,8 +320,19 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertEqual("Top", patch_card.attrib.get("VerticalAlignment"))
         row_definitions = next(element for element in patch_card.iter() if element.tag.endswith("Grid.RowDefinitions"))
         self.assertTrue(all(row.attrib.get("Height") == "Auto" for row in row_definitions))
-        self.assertIn('Text="{Binding ExtractProgressSubtitle}"', xaml)
+        self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
+        self.assertIn('Value="{Binding ExtractProgressPercent, Mode=OneWay}"', xaml)
+        self.assertIn('Value="{Binding TranslateProgressPercent, Mode=OneWay}"', xaml)
+        self.assertIn('Value="{Binding PatchProgressPercent, Mode=OneWay}"', xaml)
+        self.assertIn('Text="{Binding TranslateWorkflowStatusText}" FontSize="{StaticResource UiCaptionSize}"', xaml)
+        self.assertIn('RefreshWorkflow();\n                RefreshTranslateReadiness();', view_model)
+        self.assertIn('Content="Dịch ảnh…"', xaml)
+        self.assertIn('Command="{Binding CancelAndExitCommand}"', xaml)
         self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
+        window_code = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        self.assertIn("vm.CancelAndExitCommand.Execute(null)", window_code)
+        self.assertIn("vm.TrySaveCsvEditorForExit()", window_code)
+        self.assertIn("MessageBoxButton.YesNoCancel", window_code)
         delivery_panel = named["PatchDeliveryInstructionsPanel"]
         extract_options = named["ExtractOptionsPanel"]
         renpy_options = named["RenpySdkOptionsPanel"]
@@ -294,11 +349,35 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIs(parents.get(parents.get(renpy_options)), extract_options)
         self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', xaml)
         self.assertIn('ToolTip="Chỉ nhập dòng khớp mã và câu gốc; dòng khác được giữ để sửa."', xaml)
-        self.assertIn('ToolTip="CTranslate2 · dịch Anh sang Việt · chạy offline."', xaml)
+        self.assertIn('ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2."', xaml)
         self.assertNotIn("Chưa kiểm tra translation.csv", view_model)
         self.assertNotIn("Chưa kiểm tra chất lượng patch", view_model)
         self.assertNotIn("Chưa có lỗi quét được ghi nhận.", analyze)
         self.assertNotIn("Báo cáo sẽ được ghi ngoài thư mục game.", analyze)
+
+    def test_extract_completion_revalidates_the_generated_csv_after_workflow_refresh(self):
+        worker = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
+        refresh = worker.index("RefreshWorkflow();")
+        extract_refresh = worker.index('if (completedTask == "extract" && fullyComplete)', refresh)
+        csv_path = worker.index('TranslationCsvPath = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");', extract_refresh)
+        readiness = worker.index("RefreshTranslateReadiness(syncCsvValidation: true);", csv_path)
+        self.assertLess(refresh, extract_refresh)
+        self.assertLess(csv_path, readiness)
+        workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
+        readiness_apply = workflow.index("void Apply(CsvValidationResult result)")
+        self.assertIn("if (syncCsvValidation)", workflow[readiness_apply:])
+        self.assertIn("CsvValidationOk = result.Ok;", workflow[readiness_apply:])
+        self.assertIn("CsvValidationMessage = result.Message;", workflow[readiness_apply:])
+        self.assertIn("Raise(nameof(TranslateWorkflowStatusText));", workflow[readiness_apply:])
+        paths = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
+        strict_patch_validation = paths[paths.index("private bool ValidateTranslationCsv"):paths.index("private bool ValidateTranslationCsv") + 900]
+        self.assertIn("CsvPackageValidator.Validate(path, requireTranslations);", strict_patch_validation)
+
+    def test_non_applicable_unity_scan_summary_is_not_an_error_log(self):
+        journal = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppJournalStore.cs").read_text(encoding="utf-8")
+        self.assertIn(r"scan_errors=(?<count>\d+)", journal)
+        self.assertIn("scanErrorCount > 0", journal)
+        self.assertIn(r"\berrors?\b", journal)
 
     def test_cloud_repair_controls_route_and_preserve_active_csv_on_failure(self):
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
@@ -506,6 +585,8 @@ class WpfWorkflowTests(unittest.TestCase):
                 env=harness_env,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=180,
             )
             self.assertEqual(0, build.returncode, build.stdout + build.stderr)
@@ -533,10 +614,10 @@ class WpfWorkflowTests(unittest.TestCase):
                     )
                 )
             proc = _run_harness(harness_env, artifacts_root)
-            self.assertEqual(0, proc.returncode, proc.stdout + proc.stderr)
+            self.assertEqual(0, proc.returncode, (proc.stdout or "") + (proc.stderr or ""))
             self.assertIn("PASS", proc.stdout)
             dialog_proc = _run_harness(harness_env, artifacts_root, ["--app-dialog-fixture"])
-            self.assertEqual(0, dialog_proc.returncode, dialog_proc.stdout + dialog_proc.stderr)
+            self.assertEqual(0, dialog_proc.returncode, (dialog_proc.stdout or "") + (dialog_proc.stderr or ""))
             self.assertIn("WPF app dialog interaction fixture: PASS", dialog_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:

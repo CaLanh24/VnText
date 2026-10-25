@@ -13,6 +13,7 @@ param(
     [string]$WpfUpdateVersion = "",
     [string]$FullAppUpdateBaselineRoot = "",
     [string]$FullAppUpdateLegacyBaselineRoot = "",
+    [string[]]$FullAppUpdateAdditionalBaselineRoots = @(),
     [string]$GitHubOwner = "",
     [string]$GitHubRepository = "",
     [string]$ArtifactScopeId = "",
@@ -75,7 +76,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
@@ -103,7 +104,7 @@ if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLeg
 if ($SkipBuild) {
     throw "Standard Setup publishing requires a fresh WPF app build; -SkipBuild is not supported."
 }
-function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [bool]$SkipLegacyWpf, [string]$Owner, [string]$Repository, [string]$LegacyBaselineRoot = "") {
+function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [bool]$SkipLegacyWpf, [string]$Owner, [string]$Repository, [string]$LegacyBaselineRoot = "", [string[]]$AdditionalBaselineRoots = @()) {
     if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Source release version must be a stable semantic version." }
     if ([version]$Version -lt [version]'0.1.8') { return }
     if ([string]::IsNullOrWhiteSpace($BaselineRoot)) { throw "Release 0.1.8 and later require FullAppUpdateBaselineRoot; Setup-only release is forbidden." }
@@ -125,6 +126,21 @@ function Assert-InAppReleasePolicy([string]$Version, [string]$BaselineRoot, [boo
         $legacyVersion = (Get-Content -LiteralPath (Join-Path $LegacyBaselineRoot 'app/VERSION.txt') -Raw).Trim()
         $legacyMetadata = Get-Content -LiteralPath (Join-Path $LegacyBaselineRoot 'app/RELEASE.json') -Raw | ConvertFrom-Json -ErrorAction Stop
         if ($legacyVersion -ne '0.1.7' -or $legacyMetadata.version -ne '0.1.7') { throw "Legacy baseline must be exactly0.1.7." }
+    }
+    $seenBaselineVersions = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    [void]$seenBaselineVersions.Add($baselineVersion)
+    if ($LegacyBaselineRoot) { [void]$seenBaselineVersions.Add('0.1.7') }
+    foreach ($additionalRoot in $AdditionalBaselineRoots) {
+        if ([string]::IsNullOrWhiteSpace($additionalRoot) -or -not (Test-Path -LiteralPath $additionalRoot -PathType Container)) { throw "Each additional baseline root must be an existing installed payload." }
+        $additionalItem = Get-Item -LiteralPath $additionalRoot -Force
+        if (($additionalItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { throw "Additional baseline roots cannot be junctions or symbolic links." }
+        foreach ($name in @('VNText Studio.exe', 'app/VERSION.txt', 'app/RELEASE.json')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $additionalRoot $name) -PathType Leaf)) { throw "Additional full-app baseline is missing $name." }
+        }
+        $additionalVersion = (Get-Content -LiteralPath (Join-Path $additionalRoot 'app/VERSION.txt') -Raw).Trim()
+        $additionalMetadata = Get-Content -LiteralPath (Join-Path $additionalRoot 'app/RELEASE.json') -Raw | ConvertFrom-Json -ErrorAction Stop
+        if ($additionalVersion -notmatch '^\d+\.\d+\.\d+$' -or [version]$additionalVersion -lt [version]'0.1.8' -or [version]$additionalVersion -ge [version]$Version -or $additionalMetadata.version -ne $additionalVersion) { throw "Additional updater baselines must be supported 0.1.8+ installs older than the candidate, with matching metadata." }
+        if (-not $seenBaselineVersions.Add($additionalVersion)) { throw "Duplicate full-app route baseline version: $additionalVersion" }
     }
     # Full inventory, executable hashes, provenance and model checks remain with publish_full_app_update.py.
 }
@@ -205,6 +221,7 @@ if ([string]::IsNullOrWhiteSpace($ReleaseRoot)) {
     $ReleaseRoot = [System.IO.Path]::GetFullPath($ReleaseRoot)
 }
 $FullAppUpdateBaselineRoot = if ([string]::IsNullOrWhiteSpace($FullAppUpdateBaselineRoot)) { "" } else { [System.IO.Path]::GetFullPath($FullAppUpdateBaselineRoot) }
+$FullAppUpdateAdditionalBaselineRoots = @($FullAppUpdateAdditionalBaselineRoots | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { [System.IO.Path]::GetFullPath($_) })
 if ($FullAppUpdateBaselineRoot) {
     if (-not (Test-Path -LiteralPath $FullAppUpdateBaselineRoot -PathType Container)) {
         throw "FullAppUpdateBaselineRoot must be an existing install from the intended update baseline: $FullAppUpdateBaselineRoot"
@@ -232,7 +249,7 @@ if ($isUnsafeRepoPath) {
     throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
 Assert-ReleaseRootLayout -Path $ReleaseRoot
-Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository $FullAppUpdateLegacyBaselineRoot
+Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository $FullAppUpdateLegacyBaselineRoot $FullAppUpdateAdditionalBaselineRoots
 Set-Location $DevRoot
 $SourceSha = if (-not [string]::IsNullOrWhiteSpace($SourceRevision)) { $SourceRevision.Trim() } else { (& git -C $DevRoot rev-parse HEAD).Trim() }
 if ($SourceSha -notmatch '^[0-9a-f]{40}$') {
@@ -247,7 +264,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
@@ -1363,6 +1380,14 @@ if ($FullAppUpdateBaselineRoot) {
             --version $version --source-sha $SourceSha --source-tree-sha256 $SourceTreeSha256 `
             --notes "VNText Studio $version (baseline-specific full-app update)" --baseline-named
         if ($LASTEXITCODE -ne 0) { throw "Baseline-specific full-app package generation failed" }
+    }
+    foreach ($additionalBaselineRoot in $FullAppUpdateAdditionalBaselineRoots) {
+        Write-Host "Build direct-to-latest full-app route from baseline $additionalBaselineRoot..." -ForegroundColor Yellow
+        & $Python -B (Join-Path $DevRoot "release\publish_full_app_update.py") `
+            --baseline-root $additionalBaselineRoot --candidate-root $staging --updates-root $updatesStaging `
+            --version $version --source-sha $SourceSha --source-tree-sha256 $SourceTreeSha256 `
+            --notes "VNText Studio $version (direct baseline route)" --baseline-named
+        if ($LASTEXITCODE -ne 0) { throw "Additional baseline route generation failed for $additionalBaselineRoot" }
     }
 } else {
     Write-Host "Full-app Updates package not built: no installed baseline supplied; releases without this feed require Setup for full-app changes." -ForegroundColor DarkYellow

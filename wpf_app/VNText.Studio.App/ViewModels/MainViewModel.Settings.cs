@@ -62,7 +62,7 @@ public sealed partial class MainViewModel
     }
     public string DataFolder => WorkerPaths.AppDataRoot();
     private string _modelFolder = "";
-    private string _modelStatus = "Chưa kiểm tra model.";
+    private string _modelStatus = "Đang kiểm tra mô hình dịch…";
     public string ModelFolder => _modelFolder;
     public string ModelStatus => UiText.Translate(_modelStatus);
     public string WorkerStatus
@@ -75,7 +75,41 @@ public sealed partial class MainViewModel
     public RelayCommand OpenRepositoryCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText"));
     public RelayCommand OpenFeedbackCommand => new(_ => OpenSettingsLink("https://github.com/CaLanh24/VnText/issues"));
     public event Action? ReleaseNotesRequested;
-    public RelayCommand OpenReleaseNotesCommand => new(_ => ReleaseNotesRequested?.Invoke());
+    public RelayCommand OpenReleaseNotesCommand => new(parameter => { _ = RefreshReleaseHistoryAsync(); ReleaseNotesRequested?.Invoke(); });
+    private bool _releaseHistoryLoading;
+    private string _releaseNotesStatus = "";
+    public string ReleaseNotesStatus { get => _releaseNotesStatus; private set => Set(ref _releaseNotesStatus, value); }
+    private async Task RefreshReleaseHistoryAsync()
+    {
+        if (_releaseHistoryLoading) return;
+        _releaseHistoryLoading = true; ReleaseNotesStatus = "Đang tải lịch sử phát hành…";
+        try
+        {
+            var result = await WpfUpdateService.ReadReleaseNotesHistoryAsync(_githubHttpHandler);
+            if (_disposed != 0) return;
+            foreach (var entry in result.Entries)
+            {
+                var existing = ReleaseNotesHistory.FirstOrDefault(old => old.Version == entry.Version);
+                if (existing is not null) ReleaseNotesHistory.Remove(existing);
+                ReleaseNotesHistory.Add(entry);
+            }
+            var ordered = ReleaseNotesHistory.OrderByDescending(entry => System.Version.TryParse(entry.Version, out var v) ? v : new System.Version()).Take(20).ToArray();
+            ReleaseNotesHistory.Clear(); foreach (var entry in ordered) ReleaseNotesHistory.Add(entry);
+            _settings.ReleaseNotesHistory = ordered.ToList();
+            if (result.Entries.Count > 0) SaveSettings();
+            ReleaseNotesStatus = result.Error;
+        }
+        finally { _releaseHistoryLoading = false; }
+    }
+    public ReleaseNotesCacheEntry? SelectedReleaseNotesEntry
+    {
+        get => _selectedReleaseNotesEntry;
+        set { if (Set(ref _selectedReleaseNotesEntry, value)) { Raise(nameof(SelectedReleaseNotesTitle)); Raise(nameof(SelectedReleaseNotesBody)); } }
+    }
+    public string SelectedReleaseNotesTitle => SelectedReleaseNotesEntry is null
+        ? "Chưa có ghi chú được lưu. Hãy kết nối mạng và kiểm tra cập nhật để lưu ghi chú phát hành."
+        : $"v{SelectedReleaseNotesEntry.Version}" + (string.IsNullOrWhiteSpace(SelectedReleaseNotesEntry.ReleaseDate) ? "" : $" · {SelectedReleaseNotesEntry.ReleaseDate}");
+    public string SelectedReleaseNotesBody => SelectedReleaseNotesEntry?.Notes ?? "";
     private void OpenSettingsLink(string url)
     {
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
@@ -106,17 +140,23 @@ public sealed partial class MainViewModel
             using var result = System.Text.Json.JsonDocument.Parse(await output);
             _modelFolder = result.RootElement.GetProperty("path").GetString() ?? "";
             var modelReady = result.RootElement.GetProperty("ready").GetBoolean();
+            var modelMessage = result.RootElement.TryGetProperty("message", out var messageElement)
+                ? messageElement.GetString()
+                : null;
+            _translationModelChecked = true;
             _translationModelUnavailable = !modelReady;
-            _modelStatus = modelReady
-                ? "File model OPUS-MT INT8 có sẵn." : "Thiếu file model OPUS-MT INT8.";
+            _modelStatus = string.IsNullOrWhiteSpace(modelMessage)
+                ? modelReady ? "Mô hình dịch đã sẵn sàng." : "Chưa có mô hình dịch trên máy."
+                : modelMessage;
         }
         catch (Exception ex)
         {
-            _translationModelUnavailable = false;
-            _modelStatus = "Không kiểm tra được model: " + ex.Message;
+            _translationModelChecked = true;
+            _translationModelUnavailable = true;
+            _modelStatus = "Không kiểm tra được mô hình dịch: " + ex.Message;
         }
         if (_disposed != 0) return;
-        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus));
+        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText));
         RunTranslateCommand?.RaiseCanExecuteChanged();
     }
     private void OpenSettingsFolder(string path)
@@ -126,7 +166,7 @@ public sealed partial class MainViewModel
     }
     private void SaveSettings()
     {
-        try { AppSettingsStore.Save(_settings); SettingsStatus = "Đã lưu cài đặt."; }
+        try { AppSettingsStore.Save(_settings); SettingsStatus = ""; }
         catch (Exception ex) { SettingsStatus = "Không lưu được cài đặt; file hiện có được giữ nguyên: " + ex.Message; }
     }
     internal void RestoreWindow(Window window)

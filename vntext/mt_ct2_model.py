@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
+
 from vntext.mt_ct2_constants import (
     CT2_MAX_SRC_TOKENS,
     MODEL_REPO,
@@ -439,17 +442,67 @@ class Ct2Translator:
         return out
 
 
-def model_status(model_dir: str | Path | None = None) -> dict:
+def model_status(
+    model_dir: str | Path | None = None,
+    *,
+    progress_callback: Callable[[str], None] | None = None,
+) -> dict:
+    def report(message: str) -> None:
+        if progress_callback is None:
+            return
+        try:
+            progress_callback(message)
+        except Exception:
+            # Diagnostics must never change model readiness behavior.
+            pass
+
+    started = time.monotonic()
+    report("resolve_model_dir: start")
     path = Path(model_dir) if model_dir else resolve_model_dir()
-    ready = (path / "model.bin").is_file()
-    if ready:
+    report(f"resolve_model_dir: done elapsed_ms={round((time.monotonic() - started) * 1000)} path={path}")
+    file_check_started = time.monotonic()
+    report(f"model.bin check: start path={path / 'model.bin'}")
+    model_ready = (path / "model.bin").is_file()
+    report(
+        "model.bin check: done "
+        f"elapsed_ms={round((time.monotonic() - file_check_started) * 1000)} exists={model_ready}"
+    )
+    runtime_version = ""
+    runtime_error = ""
+    runtime_started = time.monotonic()
+    report("import ctranslate2: start")
+    try:
+        import ctranslate2
+
+        runtime_version = str(getattr(ctranslate2, "__version__", ""))
+        report(
+            "import ctranslate2: done "
+            f"elapsed_ms={round((time.monotonic() - runtime_started) * 1000)} version={runtime_version}"
+        )
+    except Exception as exc:
+        runtime_error = f"{type(exc).__name__}: {exc}"
+        report(
+            "import ctranslate2: error "
+            f"elapsed_ms={round((time.monotonic() - runtime_started) * 1000)} {runtime_error}"
+        )
+
+    ready = model_ready and not runtime_error
+    if runtime_error:
+        message = f"Không nạp được runtime CTranslate2 ({runtime_error}); Dịch tự động đang bị khóa."
+    elif ready:
         message = f"Model OPUS-MT INT8 sẵn sàng: {path}"
     else:
         message = (
             f"Model CTranslate2 chưa có tại {path}. "
             "Cần tải model OPUS-MT en→vi INT8 trước khi dịch."
         )
-    return {"ready": ready, "path": str(path), "message": message}
+    return {
+        "ready": ready,
+        "runtime_ready": not runtime_error,
+        "runtime_version": runtime_version,
+        "path": str(path),
+        "message": message,
+    }
 
 
 def get_translator(model_dir: Path | None = None) -> Ct2Translator:

@@ -43,6 +43,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _statusText = "Sẵn sàng";
     private string _version = "vunknown";
     private bool _busy;
+    private bool _exitAfterTask;
     private bool _progressExpanded;
     private bool _logExpanded;
     private bool _advancedToolsExpanded = true;
@@ -65,6 +66,11 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private bool _csvValidationOk;
     private bool _translatePackageReady;
     private bool _translationModelUnavailable;
+    private bool _translationModelChecked;
+    private bool _translatePackageChecking;
+    private string _translatePackageMessage = "";
+    private int _translatePackageRowCount;
+    private int _translatePackageTranslatedCount;
     private string _translateReadinessPath = "";
     private int _translateReadinessEpoch;
     private string _patchPreflightMessage = "";
@@ -76,6 +82,27 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private int _patchEligibleCount;
     private int _patchBlockedCount;
     private int _progressPercent;
+    private int _extractProgressPercent;
+    private int _translateProgressPercent;
+    private string _translateProgressStep = "Chưa bắt đầu";
+    private string _translateProgressItem = "";
+    private string _translateProgressEta = "";
+    private readonly Stopwatch _translateTaskStopwatch = new();
+    private readonly Stopwatch _extractTaskStopwatch = new();
+    private readonly Stopwatch _patchTaskStopwatch = new();
+    private DispatcherTimer? _translateElapsedTimer;
+    private DispatcherTimer? _workflowElapsedTimer;
+    private bool _translateProgressRunning;
+    private int _patchProgressPercent;
+    private string _extractProgressText = "";
+    private string _translateProgressText = "";
+    private string _patchProgressText = "";
+    private string _extractProgressStep = "Chưa bắt đầu";
+    private string _extractProgressItem = "";
+    private string _extractProgressEta = "";
+    private string _patchProgressStep = "Chưa bắt đầu";
+    private string _patchProgressItem = "";
+    private string _patchProgressEta = "";
     private string _cloudRepairPackagePath = "";
     private bool _cloudRepairPackageReady;
     private string _pendingCloudRepairImportOutputPath = "";
@@ -94,12 +121,17 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private bool _githubUpdateChecking;
     private string? _runningTask;
     private string? _lastCompletedTask;
+    private CancellationTokenSource? _cancelWatchdog;
     private int _refreshEpoch;
     private WorkerEvent? _pendingProgressEvent;
     private int _progressDispatchPosted;
     private readonly ConcurrentQueue<WorkerEvent> _pendingLogEvents = new();
+    private readonly HashSet<string> _terminalTaskIds = new(StringComparer.Ordinal);
+    private readonly Queue<string> _terminalTaskIdOrder = new();
     private int _logDispatchPosted;
     private int _disposed;
+    private ReleaseNotesCacheEntry? _selectedReleaseNotesEntry;
+    public ObservableCollection<ReleaseNotesCacheEntry> ReleaseNotesHistory { get; } = [];
 
     public MainViewModel()
         : this(new WpfPathPickerService(), new PythonWorkerHost(), startWorker: true)
@@ -114,6 +146,13 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         _githubHttpHandler = githubHttpHandler;
         _updateInstallRoot = updateInstallRoot;
         _settings = AppSettingsStore.Load(out var settingsError);
+        foreach (var entry in _settings.ReleaseNotesHistory)
+            ReleaseNotesHistory.Add(entry);
+        if (!string.IsNullOrWhiteSpace(_settings.DownloadedUpdateVersion) && !string.IsNullOrWhiteSpace(_settings.DownloadedUpdateNotes)
+            && ReleaseNotesHistory.All(entry => entry.Version != _settings.DownloadedUpdateVersion))
+            ReleaseNotesHistory.Insert(0, new ReleaseNotesCacheEntry { Version = _settings.DownloadedUpdateVersion,
+                Notes = _settings.DownloadedUpdateNotes[..Math.Min(16000, _settings.DownloadedUpdateNotes.Length)] });
+        _selectedReleaseNotesEntry = ReleaseNotesHistory.FirstOrDefault();
         _settingsStatus = settingsError;
         _separateReview = _settings.SeparateReview;
         _overwriteTranslation = _settings.OverwriteTranslation;
@@ -131,12 +170,13 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy);
         RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && ReadyForPatch);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
-        ChooseInputCommand = new RelayCommand(_ => ChooseInput());
-        ChooseOutputCommand = new RelayCommand(_ => ChooseOutput());
+        CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);
+        ChooseInputCommand = new RelayCommand(_ => ChooseInput(), _ => !Busy && !CsvEditorLoading);
+        ChooseOutputCommand = new RelayCommand(_ => ChooseOutput(), _ => !Busy && !CsvEditorLoading);
         OpenInputCommand = new RelayCommand(_ => OpenInput(), _ => CanOpenInput());
         OpenOutputCommand = new RelayCommand(_ => OpenOutput(), _ => CanOpenOutput());
         ChooseTranslationCsvCommand = new RelayCommand(_ => ChooseTranslationCsv());
-        ChooseRenpySdkCommand = new RelayCommand(_ => ChooseRenpySdk());
+        ChooseRenpySdkCommand = new RelayCommand(_ => ChooseRenpySdk(), _ => !Busy);
         DownloadRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("download"), _ => !Busy);
         ContinueWithoutRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("none"), _ => !Busy);
         RecheckUpdateCommand = new RelayCommand(_ => StartGitHubUpdateCheck(metadataOnly: true, manual: true), _ => !Busy && !CsvEditorDirty && !_githubUpdateChecking && !DownloadingUpdate);
@@ -209,6 +249,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             {
                 Raise(nameof(OutputDisplay));
                 RefreshWorkflow();
+                RefreshTranslateReadiness();
                 OpenOutputCommand?.RaiseCanExecuteChanged();
                 AnalyzeCommand?.RaiseCanExecuteChanged();
                 RefreshImageCommands();
@@ -456,12 +497,39 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
     }
 
-    // Extract-only presentation leaves shared progress/status values intact.
-    public string ExtractProgressSubtitle => ProgressSubtitle == "Chưa bắt đầu" ? "" : ProgressSubtitle;
+    public string ExtractProgressSubtitle => _extractProgressText;
+    public string ExtractProgressStep => _extractProgressStep;
+    public string ExtractProgressItem => string.IsNullOrWhiteSpace(_extractProgressItem) ? "—" : _extractProgressItem;
+    public string ExtractProgressEta => _extractProgressEta;
+    public bool ExtractProgressHasEta => !string.IsNullOrWhiteSpace(_extractProgressEta);
+    public bool ExtractProgressActive => Busy && _runningTask is "extract" or "analyze" or "image_inventory" or "image_extract";
+    public string ExtractProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_extractTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public string TranslateProgressSubtitle => _translateProgressText;
+    public string TranslateWorkflowStatusText => Busy && OwnsTranslateProgressTask(_runningTask)
+        ? (string.IsNullOrWhiteSpace(_translateProgressText) ? "Đang xử lý…" : _translateProgressText)
+        : TranslateReadinessText;
+    public string TranslateProgressStep => _translateProgressStep;
+    public string TranslateProgressItem => string.IsNullOrWhiteSpace(_translateProgressItem) ? "—" : _translateProgressItem;
+    public string TranslateProgressEta => _translateProgressEta;
+    public bool TranslateProgressHasEta => !string.IsNullOrWhiteSpace(_translateProgressEta);
+    public bool TranslateProgressActive => Busy && OwnsTranslateProgressTask(_runningTask);
+    public string TranslateProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_translateTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public string PatchProgressSubtitle => _patchProgressText;
+    public string PatchProgressStep => _patchProgressStep;
+    public string PatchProgressItem => string.IsNullOrWhiteSpace(_patchProgressItem) ? "—" : _patchProgressItem;
+    public string PatchProgressEta => _patchProgressEta;
+    public bool PatchProgressHasEta => !string.IsNullOrWhiteSpace(_patchProgressEta);
+    public bool PatchProgressActive => Busy && _runningTask is "patch" or "image_delivery" or "image_apply" or "image_rollback";
+    public string PatchProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_patchTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public int ExtractProgressPercent { get => _extractProgressPercent; private set => Set(ref _extractProgressPercent, value); }
+    public int TranslateProgressPercent { get => _translateProgressPercent; private set => Set(ref _translateProgressPercent, value); }
+    public int PatchProgressPercent { get => _patchProgressPercent; private set => Set(ref _patchProgressPercent, value); }
 
-    public string ExtractStatusText => StatusText == "Sẵn sàng"
-        ? (string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text")
-        : StatusText;
+    public string ExtractStatusText => Busy && _runningTask is not ("extract" or "analyze" or "image_inventory" or "image_extract")
+        ? ""
+        : StatusText == "Sẵn sàng"
+            ? (string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text")
+            : StatusText;
 
     public string LogSubtitle
     {
@@ -475,7 +543,11 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         set
         {
             if (Set(ref _statusText, value))
+            {
                 Raise(nameof(ExtractStatusText));
+                Raise(nameof(TranslateReadinessText));
+                Raise(nameof(TranslateWorkflowStatusText));
+            }
         }
     }
 
@@ -663,7 +735,15 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             if (Set(ref _busy, value))
             {
+                Raise(nameof(ExtractProgressActive));
+                Raise(nameof(TranslateProgressActive));
+                Raise(nameof(PatchProgressActive));
+                Raise(nameof(TranslateReadinessText));
+                Raise(nameof(TranslateWorkflowStatusText));
                 RunExtractCommand.RaiseCanExecuteChanged();
+                ChooseInputCommand.RaiseCanExecuteChanged();
+                ChooseOutputCommand.RaiseCanExecuteChanged();
+                ChooseRenpySdkCommand.RaiseCanExecuteChanged();
                 AnalyzeCommand.RaiseCanExecuteChanged();
                 RunTranslateCommand.RaiseCanExecuteChanged();
                 ExportCloudRepairPackageCommand.RaiseCanExecuteChanged();
@@ -680,6 +760,16 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 RefreshImageCommands();
                 if (!value)
                 {
+                    if (_translateProgressRunning)
+                    {
+                        _translateElapsedTimer?.Stop();
+                        _translateTaskStopwatch.Stop();
+                        _translateProgressRunning = false;
+                        Raise(nameof(TranslateProgressElapsed));
+                    }
+                    _workflowElapsedTimer?.Stop();
+                    if (_extractTaskStopwatch.IsRunning) { _extractTaskStopwatch.Stop(); Raise(nameof(ExtractProgressElapsed)); }
+                    if (_patchTaskStopwatch.IsRunning) { _patchTaskStopwatch.Stop(); Raise(nameof(PatchProgressElapsed)); }
                     ResumeDeferredOffer();
                     _runningTask = null;
                     RefreshWorkflow();
@@ -713,6 +803,25 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         set => Set(ref _progressPercent, value);
     }
 
+    private void SetOwnedProgress(string? task, int? percent = null, string? text = null)
+    {
+        switch (task)
+        {
+            case "extract": case "analyze": case "image_inventory": case "image_extract":
+                if (percent.HasValue) ExtractProgressPercent = percent.Value;
+                if (text is not null) { _extractProgressText = text; Raise(nameof(ExtractProgressSubtitle)); }
+                break;
+            case "translate": case "image_batch": case "image_render": case "cloud_export": case "cloud_import": case "external_translation_import":
+                if (percent.HasValue) TranslateProgressPercent = percent.Value;
+                if (text is not null) { _translateProgressText = text; Raise(nameof(TranslateProgressSubtitle)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText)); }
+                break;
+            case "patch": case "image_delivery": case "image_apply": case "image_rollback":
+                if (percent.HasValue) PatchProgressPercent = percent.Value;
+                if (text is not null) { _patchProgressText = text; Raise(nameof(PatchProgressSubtitle)); }
+                break;
+        }
+    }
+
     public RelayCommand NavigateTabCommand { get; }
     public RelayCommand AnalyzeCommand { get; }
     public RelayCommand RunExtractCommand { get; }
@@ -721,6 +830,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public RelayCommand ImportExistingTranslationCommand { get; }
     public RelayCommand RunPatchCommand { get; }
     public RelayCommand CancelCommand { get; }
+    public RelayCommand CancelAndExitCommand { get; }
+    public event EventHandler? ExitAfterTaskRequested;
     public RelayCommand ChooseInputCommand { get; }
     public RelayCommand ChooseOutputCommand { get; }
     public RelayCommand OpenInputCommand { get; }
@@ -742,7 +853,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public void SetInputPathFromDrop(string path)
     {
-        if (!string.IsNullOrWhiteSpace(path))
+        if (!Busy && !string.IsNullOrWhiteSpace(path) && ConfirmCsvBeforeSourceChange())
             InputPath = path.Trim().Trim('"');
     }
 
@@ -859,6 +970,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (result.State == GitHubUpdateState.UpdateAvailable && installRoot is not null)
                 _githubUpdatePackageLease = new GitHubUpdatePackageLease(installRoot, result);
             _githubUpdateResult = result;
+            CacheReleaseNotes(result);
             if (Set(ref _githubUpdateState, result.State))
                 Raise(nameof(GitHubUpdateState));
             _githubUpdateStatus = GitHubStatusMessage(result.State, result.Version, result.Message);
@@ -899,6 +1011,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     private static string GitHubStatusMessage(GitHubUpdateState state, string version, string message = "")
     {
+        if (state == GitHubUpdateState.UpdateAvailable && message.StartsWith("ROUTE_STATUS:", StringComparison.Ordinal))
+            return message["ROUTE_STATUS:".Length..];
         if (state is GitHubUpdateState.Offline or GitHubUpdateState.Timeout or GitHubUpdateState.RateLimited)
             return string.IsNullOrWhiteSpace(message) ? "Chưa thể kiểm tra. Hãy thử lại sau." : message;
         if (state is GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage)
@@ -1030,6 +1144,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal void TestReportCancelTimeout(string id) => ReportCancelTimeout(id, CancellationToken.None);
+    internal void TestBeginCancelAndExit() => CancelAndExit();
+    internal void TestSetActiveTask(string id, string task) { _activeTaskId = id; _runningTask = task; Busy = true; }
+    internal void TestMarkTaskTerminal(string id) { MarkTaskTerminal(id); Busy = false; _runningTask = null; }
     internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}");
 
     internal void TestSetCloudRepairPackagePath(string path) => CloudRepairPackagePath = path;
@@ -1053,7 +1171,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
+        _translateElapsedTimer?.Stop();
         _updateReminderTimer?.Stop(); _updateCheckTimer?.Stop();
+        _cancelWatchdog?.Cancel(); _cancelWatchdog?.Dispose(); _cancelWatchdog = null;
         var githubCancellation = Interlocked.Exchange(ref _githubUpdateCancellation, null);
         githubCancellation?.Cancel();
         githubCancellation?.Dispose();

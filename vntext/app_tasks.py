@@ -593,6 +593,7 @@ def _run_traced_translation(
     model_engine: str = "CTranslate2/OPUS-MT",
     only_keys: set[str] | None = None,
     human_review_required: bool = False,
+    log: LogFn | None = None,
 ) -> dict:
     from vntext.traceability import EVENT_ABORTED, EVENT_COMPLETED, ROOT_CAUSE_UNKNOWN
 
@@ -612,6 +613,8 @@ def _run_traced_translation(
     run_finished = False
     metadata: dict[str, object] = {}
     try:
+        if log:
+            log("Đã vào pipeline; đang mở nhật ký dịch của package.")
         trace, manifest = _open_package_trace(
             package_dir,
             "translate",
@@ -630,6 +633,8 @@ def _run_traced_translation(
             overwrite=overwrite,
         )
         metadata["human_review_required"] = bool(human_review_required)
+        if log:
+            log("Đã mở nhật ký package; bắt đầu xử lý các dòng cần dịch.")
         result = operation()
         metrics = _trace_translation_finish(trace, actions, initial, csv_path, result, metadata)
         trace.finish_run(EVENT_COMPLETED)
@@ -1316,18 +1321,18 @@ def run_extract_task(
             )
         if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
             payload["renpy_sdk_missing"] = renpy_sdk_missing
-        # Image drafts are independent of CSV completion/patch eligibility.
-        # An OCR/model failure must not discard a successfully extracted package.
+        # Extract retains image discovery/OCR, but image machine translation
+        # and rendering stay behind the explicit Translate action.
         try:
             from vntext.image_batch import run_image_batch
-            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress)
+            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=False)
             if images['total']:
-                note = f"Ảnh: {images['translated']} bản dịch nháp, {images['untranslated']} chưa dịch; xem {images['output']}."
+                note = f"Ảnh: OCR được {images['ocr_ready']}/{images['total']} ảnh; dịch ảnh ở bước Dịch."
                 log(note)
                 payload['summary'] += " " + note
         except Exception as image_error:
-            log("CSV đã được giữ; xử lý ảnh chưa hoàn tất: " + str(image_error))
-            payload['summary'] += " Xử lý ảnh chưa hoàn tất; xem nhật ký."
+            log("CSV đã được giữ; OCR ảnh chưa hoàn tất: " + str(image_error))
+            payload['summary'] += " OCR ảnh chưa hoàn tất; xem nhật ký."
         if is_cancelled is not None and is_cancelled():
             raise UnityAnalysisCancelled()
         complete(payload)
@@ -1453,6 +1458,7 @@ def run_translate_ct2_task(
 ) -> None:
     try:
         log("Đang dịch offline CTranslate2 + OPUS-MT en→vi (INT8). Lần đầu có thể tải model.")
+        log("Đang kiểm tra cấu hình runtime và phiên bản model để ghi vào nhật ký.")
         trace_model_revision = _ct2_trace_model_revision(model_dir)
         translate_kwargs = {
             "allow_overwrite": overwrite,
@@ -1470,6 +1476,7 @@ def run_translate_ct2_task(
             model_revision=trace_model_revision,
             model_engine="CTranslate2/OPUS-MT",
             human_review_required=human_review_required,
+            log=log,
         )
         summary = result.get("summary") or (
             f"Xong dịch: {result.get('translated', '?')}/{result.get('total', '?')} dòng có translation."
@@ -1667,6 +1674,7 @@ def run_translate_keys_ct2_task(
             model_engine="CTranslate2/OPUS-MT",
             only_keys=set(keys),
             human_review_required=human_review_required,
+            log=log,
         )
         summary = result.get("summary") or f"Dịch lại {result.get('applied', 0)} dòng."
         log(summary)

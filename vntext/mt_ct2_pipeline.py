@@ -28,6 +28,29 @@ from vntext.package_io import read_csv_rows_file
 HUMAN_REVIEW_REQUIRED = "HUMAN_REVIEW_REQUIRED"
 
 
+class _CancellationAwareTranslator:
+    """Raise only after a synchronous model call returns to a safe boundary."""
+
+    def __init__(self, translator: Any, checkpoint) -> None:
+        self._translator = translator
+        self._checkpoint = checkpoint
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._translator, name)
+
+    def translate(self, text: str) -> str:
+        self._checkpoint()
+        result = self._translator.translate(text)
+        self._checkpoint()
+        return result
+
+    def translate_many(self, texts: list[str]) -> list[str]:
+        self._checkpoint()
+        result = self._translator.translate_many(texts)
+        self._checkpoint()
+        return result
+
+
 def _blocker_groups(
     row: dict,
     strategy: str,
@@ -784,6 +807,17 @@ def run_ct2_translate(
     blocked = 0
     human_review_count = 0
     review_sink = _ReviewSink(emit)
+
+    def cancel_checkpoint() -> None:
+        if not is_cancelled or not is_cancelled():
+            return
+        _flush_csv_atomic(csv_path, fields, rows)
+        review_sink.flush(package_dir)
+        if cache is not None:
+            cache.close()
+        raise TranslateCancelled()
+
+    translator = _CancellationAwareTranslator(translator, cancel_checkpoint)
     total = len(targets)
     delay_ms = int(os.environ.get("VNTEXT_CT2_TEST_DELAY_MS", "0") or "0")
     pending_flush = 0
@@ -905,10 +939,7 @@ def run_ct2_translate(
         )
 
     for start in range(0, len(mt_targets), batch_size):
-        if is_cancelled and is_cancelled():
-            _flush_csv_atomic(csv_path, fields, rows)
-            review_sink.flush(package_dir)
-            raise TranslateCancelled()
+        cancel_checkpoint()
         chunk = mt_targets[start : start + batch_size]
         if delay_ms > 0:
             time.sleep(delay_ms * len(chunk) / 1000.0)
@@ -928,6 +959,8 @@ def run_ct2_translate(
                 glossary_conflicts=glossary_conflicts,
                 cache_fingerprints=cache_fingerprints,
             )
+        except TranslateCancelled:
+            raise
         except Exception as exc:
             emit(f"Lỗi dịch batch chunk {start + 1}-{start + len(chunk)}: {exc}")
             raw_by_key = {}
@@ -980,6 +1013,8 @@ def run_ct2_translate(
                     row["key"]: output
                     for (row, _, _), output in zip(retry_rows, full_outputs)
                 }
+            except TranslateCancelled:
+                raise
             except Exception as exc:
                 emit(f"Lỗi retry full-sentence chunk {start + 1}-{start + len(chunk)}: {exc}")
         for row, raw, initial_reasons in retry_rows:
@@ -1295,6 +1330,17 @@ def run_ct2_translate_keys(
     retry_attempts_by_key: dict[str, list[dict]] = {}
     by_key = {r["key"]: r for r in rows}
     review_sink = _ReviewSink(emit)
+
+    def cancel_checkpoint() -> None:
+        if not is_cancelled or not is_cancelled():
+            return
+        _flush_csv_atomic(csv_path, fields, rows)
+        review_sink.flush(package_dir)
+        if cache is not None:
+            cache.close()
+        raise TranslateCancelled()
+
+    translator = _CancellationAwareTranslator(translator, cancel_checkpoint)
     blocker_records: list[dict] = []
     paths = paths_for_csv(csv_path)
     ensure_mt_dir(paths)
@@ -1336,10 +1382,7 @@ def run_ct2_translate_keys(
         human_review_count += 1
 
     for start in range(0, len(mt_targets), batch_size):
-        if is_cancelled and is_cancelled():
-            _flush_csv_atomic(csv_path, fields, rows)
-            review_sink.flush(package_dir)
-            raise TranslateCancelled()
+        cancel_checkpoint()
         chunk = mt_targets[start : start + batch_size]
         if delay_ms > 0:
             time.sleep(delay_ms * len(chunk) / 1000.0)
@@ -1359,6 +1402,8 @@ def run_ct2_translate_keys(
                 glossary_conflicts=glossary_conflicts,
                 cache_fingerprints=cache_fingerprints,
             )
+        except TranslateCancelled:
+            raise
         except Exception as exc:
             emit(f"Lỗi dịch batch chunk {start + 1}-{start + len(chunk)}: {exc}")
             raw_by_key = {}
@@ -1402,6 +1447,8 @@ def run_ct2_translate_keys(
                     row["key"]: output
                     for (row, _, _), output in zip(retry_rows, full_outputs)
                 }
+            except TranslateCancelled:
+                raise
             except Exception as exc:
                 emit(f"Lỗi retry full-sentence chunk {start + 1}-{start + len(chunk)}: {exc}")
         for row, raw, reasons in retry_rows:

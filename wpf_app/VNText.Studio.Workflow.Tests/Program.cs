@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
@@ -42,6 +42,45 @@ internal static partial class Program
             return 1;
         }
 
+        if (args.Contains("--progress-only", StringComparer.Ordinal))
+        {
+            var progressFailures = new List<string>();
+            Run("Progress_StaleAndTerminalEventsCannotOverwriteOwnedState", Progress_StaleAndTerminalEventsCannotOverwriteOwnedState, progressFailures);
+            Run("WorkerEvent_ParsesCancelAcknowledgement", WorkerEvent_ParsesCancelAcknowledgement, progressFailures);
+            Run("CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard", CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard, progressFailures);
+            Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, progressFailures);
+            Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, progressFailures);
+            Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, progressFailures);
+            if (progressFailures.Count == 0)
+            {
+                Console.WriteLine("Focused task lifecycle checks: PASS (6)");
+                return 0;
+            }
+            foreach (var failure in progressFailures) Console.Error.WriteLine(" - " + failure);
+            return 1;
+        }
+
+        if (args.Contains("--csv-editor-only", StringComparer.Ordinal))
+        {
+            var csvFailures = new List<string>();
+            Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
+            Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
+            Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, csvFailures);
+            Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, csvFailures);
+            Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, csvFailures);
+            Run("CsvEditor_RetranslateNoContinuesWithoutSaving", CsvEditor_RetranslateNoContinuesWithoutSaving, csvFailures);
+            Run("CsvEditor_RetranslateCancelStopsWithoutSaving", CsvEditor_RetranslateCancelStopsWithoutSaving, csvFailures);
+            Run("CsvEditor_DuplicateKeysReported", CsvEditor_DuplicateKeysReported, csvFailures);
+            Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
+            if (csvFailures.Count == 0)
+            {
+                Console.WriteLine("Focused CSV editor protection checks: PASS (9)");
+                return 0;
+            }
+            foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);
+            return 1;
+        }
+
         if (args.Contains("--renpy-sdk-only", StringComparer.Ordinal))
         {
             var sdkFailures = new List<string>();
@@ -61,9 +100,11 @@ internal static partial class Program
         {
             var readinessFailures = new List<string>();
             Run("TranslateCommand_RequiresValidatedPackageReadiness", TranslateCommand_RequiresValidatedPackageReadiness, readinessFailures);
+            Run("TranslateCsvSelection_AllBlankExtractPackageIsReadyForTranslation", TranslateCsvSelection_AllBlankExtractPackageIsReadyForTranslation, readinessFailures);
+            Run("ExtractComplete_NavigatesToTranslate", ExtractComplete_NavigatesToTranslate, readinessFailures);
             if (readinessFailures.Count == 0)
             {
-                Console.WriteLine("Focused translate readiness checks: PASS (1)");
+                Console.WriteLine("Focused translate readiness checks: PASS (2)");
                 return 0;
             }
             foreach (var failure in readinessFailures) Console.Error.WriteLine(" - " + failure);
@@ -103,6 +144,7 @@ internal static partial class Program
             Run("FullAppUpdate_1175RefusesChangedStagedAndTarget", FullAppUpdate_1175RefusesChangedStagedAndTarget, failures);
             Run("FullAppUpdate_GitHubAssetPathSizeAndHashAreBound", FullAppUpdate_GitHubAssetPathSizeAndHashAreBound, failures);
         Run("FullAppUpdate_BaselineRoutesChooseVerifiedHop", FullAppUpdate_BaselineRoutesChooseVerifiedHop, failures);
+            Run("FullAppUpdate_RouteUpdaterCleansEveryOwnedPackageOnHashFailure", FullAppUpdate_RouteUpdaterCleansEveryOwnedPackageOnHashFailure, failures);
             if (failures.Count == 0)
             {
                 Console.WriteLine("Focused full-app updater tests: PASS (9)");
@@ -129,6 +171,8 @@ internal static partial class Program
         Run("NoGame_CurrentIsExtract", NoGame_CurrentIsExtract, failures);
         Run("JournalStore_BoundsHistorySearchSeverityAndClear", JournalStore_BoundsHistorySearchSeverityAndClear, failures);
         Run("Journal_RoutesProgressAndErrorsWithoutCrossTabLeak", Journal_RoutesProgressAndErrorsWithoutCrossTabLeak, failures);
+        Run("Progress_StaleAndTerminalEventsCannotOverwriteOwnedState", Progress_StaleAndTerminalEventsCannotOverwriteOwnedState, failures);
+        Run("WorkerEvent_ParsesCancelAcknowledgement", WorkerEvent_ParsesCancelAcknowledgement, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
         Run("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", RenpySdkRecovery_StatusRequiresSuccessfulEvidence, failures);
@@ -255,6 +299,9 @@ internal static partial class Program
         {
             var store=new AppJournalStore(Path.Combine(root,"logs"));
             store.Append("Started fixture");store.Append("[warning] caution fixture");store.Append("Lỗi fixture [a.b]");
+            AssertEqual("INFO", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; resources=2; unknown=0; scan_errors=0"));
+            AssertEqual("ERROR", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; resources=2; unknown=0; scan_errors=1"));
+            AssertEqual("ERROR", AppJournalStore.Level("Lỗi quét fixture"));
             var file=store.Files().Single();var text=store.Read(file);
             AssertEqual(3,AppJournalStore.Filter(text,"","ALL",false).Length);
             AssertEqual(1,AppJournalStore.Filter(text,"","ERROR",false).Length);
@@ -304,6 +351,189 @@ internal static partial class Program
         for(var i=0;i<1010;i++) vm.TestHandleWorkerEvent(new WorkerEvent {Type="log",Text=$"bounded-{i}"});
         AssertEqual(1000,vm.LogLines.Count);
         AssertFalse(vm.TranslateLogLines.Any(s=>s.Contains("item-")));
+    }
+
+    private static void Progress_StaleAndTerminalEventsCannotOverwriteOwnedState()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestBeginTaskLog("old-extract", "extract");
+        vm.TestSetActiveTask("current-translate", "translate");
+        AssertTrue(vm.TranslateProgressActive);
+        AssertFalse(vm.ExtractProgressActive);
+        AssertFalse(vm.PatchProgressActive);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="old-extract", Done=9, Total=10, Step="stale" });
+        AssertEqual(0, vm.TranslateProgressPercent);
+        AssertEqual(0, vm.ExtractProgressPercent);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="current-translate", Done=3, Total=4, Step="current" });
+        AssertEqual(75, vm.TranslateProgressPercent);
+        AssertFalse(vm.TranslateProgressHasEta);
+        AssertEqual("", vm.TranslateProgressEta);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="current-translate", Done=3, Total=4, Step="current", Eta="3661" });
+        AssertTrue(vm.TranslateProgressHasEta);
+        AssertEqual("1 giờ 1 phút", vm.TranslateProgressEta);
+        vm.TestReportCancelTimeout("old-extract");
+        AssertEqual("Sẵn sàng", vm.StatusText);
+        vm.TestReportCancelTimeout("current-translate");
+        AssertTrue(vm.StatusText.Contains("chờ tác vụ dừng an toàn", StringComparison.Ordinal));
+        AssertTrue(vm.ProgressSubtitle.Contains("30 giây", StringComparison.Ordinal));
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("30 giây", StringComparison.Ordinal));
+        var terminalText = vm.TranslateProgressSubtitle;
+        vm.TestMarkTaskTerminal("current-translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="current-translate", Done=4, Total=4, Step="late" });
+        AssertEqual(75, vm.TranslateProgressPercent);
+        AssertEqual(terminalText, vm.TranslateProgressSubtitle);
+
+        // Translate fields are a retained snapshot. Extract and Patch events must not
+        // rewrite that snapshot after the Translate task has finished.
+        var translateStep = vm.TranslateProgressStep;
+        var translateItem = vm.TranslateProgressItem;
+        var translateEta = vm.TranslateProgressEta;
+        vm.TestSetActiveTask("next-extract", "extract");
+        AssertTrue(vm.ExtractProgressActive);
+        AssertFalse(vm.TranslateProgressActive);
+        AssertFalse(vm.PatchProgressActive);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="next-extract", Done=8, Total=10, Step="Extract next", Item="file.rpy", Eta="12" });
+        AssertEqual("Extract next", vm.ExtractProgressStep);
+        AssertEqual("file.rpy", vm.ExtractProgressItem);
+        AssertEqual("12 giây", vm.ExtractProgressEta);
+        AssertTrue(vm.ExtractProgressHasEta);
+        AssertEqual(translateStep, vm.TranslateProgressStep);
+        AssertEqual(translateItem, vm.TranslateProgressItem);
+        AssertEqual(translateEta, vm.TranslateProgressEta);
+        vm.TestMarkTaskTerminal("next-extract");
+        vm.TestSetActiveTask("next-patch", "patch");
+        AssertTrue(vm.PatchProgressActive);
+        AssertFalse(vm.ExtractProgressActive);
+        AssertFalse(vm.TranslateProgressActive);
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="next-patch", Done=9, Total=10, Step="Patch next", Item="game.rpy" });
+        AssertEqual("Patch next", vm.PatchProgressStep);
+        AssertEqual("game.rpy", vm.PatchProgressItem);
+        AssertFalse(vm.PatchProgressHasEta);
+        AssertEqual(translateStep, vm.TranslateProgressStep);
+        AssertEqual(translateItem, vm.TranslateProgressItem);
+        AssertEqual(translateEta, vm.TranslateProgressEta);
+
+        vm.TestSetActiveTask("renpy-extract", "extract");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="renpy-extract", Done=99, Total=100, Step="unity_classify", Item="game/script.rpy" });
+        AssertEqual("Đang phân loại tài nguyên để lấy text", vm.ExtractProgressStep);
+        AssertTrue(vm.ProgressSubtitle.Contains("Đang phân loại tài nguyên để lấy text", StringComparison.Ordinal));
+        AssertFalse(vm.ProgressSubtitle.Contains("unity_classify", StringComparison.Ordinal));
+
+        // A subsequent Translate owns and resets its own progress fields.
+        vm.TestMarkTaskTerminal("next-patch");
+        AssertFalse(vm.PatchProgressActive);
+        vm.TestSetActiveTask("next-translate", "translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="next-translate", Done=1, Total=2, Step="Translate again", Item="row 1" });
+        AssertEqual("Translate again", vm.TranslateProgressStep);
+        AssertEqual("row 1", vm.TranslateProgressItem);
+        AssertFalse(vm.TranslateProgressHasEta);
+        AssertEqual("", vm.TranslateProgressEta);
+    }
+
+    private static void WorkerEvent_ParsesCancelAcknowledgement()
+    {
+        var evt = WorkerEvent.FromJson("{\"v\":1,\"type\":\"cancel_ack\",\"id\":\"task-cancel-fixture\",\"state\":\"accepted\"}");
+        AssertTrue(evt is not null);
+        AssertEqual("cancel_ack", evt!.Type);
+        AssertEqual("task-cancel-fixture", evt.Id);
+        AssertEqual("accepted", evt.State);
+    }
+
+    private static void CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestBeginTaskLog("cancel-visible", "translate");
+        vm.TestSetActiveTask("cancel-visible", "translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="cancel_ack", Id="cancel-visible", State="accepted" });
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("đã nhận yêu cầu hủy", StringComparison.OrdinalIgnoreCase));
+        AssertTrue(vm.LogLines.Any(line => line.Contains("Worker đã nhận yêu cầu hủy", StringComparison.Ordinal)));
+        vm.TestReportCancelTimeout("cancel-visible");
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("30 giây", StringComparison.Ordinal));
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("không đóng ứng dụng cưỡng bức", StringComparison.Ordinal));
+    }
+
+    private static void TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress()
+    {
+        const string payload = "{\"v\":1,\"type\":\"complete\",\"id\":\"translate-cancelled\",\"ok\":false,\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":0,\"diagnostic_stage\":\"WORKFLOW\",\"diagnostic_root_cause\":\"UNKNOWN\",\"diagnostic_affected_count\":1,\"diagnostic_action\":\"A task was cancelled or interrupted; inspect its saved checkpoint before retrying.\",\"diagnostic_status\":\"FAILED\"}";
+        var terminal = WorkerEvent.FromJson(payload);
+        AssertTrue(terminal is not null);
+        AssertEqual("cancelled", terminal!.Error);
+
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+        var notifications = new List<CompletionNotification>();
+        vm.CompletionRequested += (_, notification) => notifications.Add(notification);
+        vm.TestBeginTaskLog("translate-cancelled", "translate");
+        vm.TestSetActiveTask("translate-cancelled", "translate");
+        vm.TestHandleWorkerEvent(new WorkerEvent
+        {
+            Type = "progress", Id = "translate-cancelled", Done = 1, Total = 2,
+            Step = "Đang dịch offline", Item = "2/2", Eta = "00:30",
+        });
+        vm.TestHandleWorkerEvent(new WorkerEvent
+        {
+            Type = "cancel_ack", Id = "translate-cancelled", State = "accepted",
+        });
+        vm.TestHandleWorkerEvent(new WorkerEvent
+        {
+            Type = "error", Id = "translate-cancelled", Error = "Tác vụ thất bại",
+        });
+        vm.TestHandleWorkerEvent(terminal);
+
+        AssertFalse(vm.Busy);
+        AssertEqual("Đã hủy", vm.StatusText);
+        AssertTrue(vm.StepStatusLine.Contains("Đã hủy tác vụ", StringComparison.Ordinal));
+        AssertEqual("Đã hủy", vm.TranslateProgressStep);
+        AssertEqual("—", vm.TranslateProgressItem);
+        AssertEqual("", vm.TranslateProgressEta);
+        AssertEqual(1, notifications.Count);
+        AssertEqual("info", notifications[0].Kind);
+        AssertEqual("Đã hủy tác vụ.", notifications[0].Message);
+    }
+
+    private static void WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestSetActiveTask("crashed-task", "translate");
+        var exitRequests = 0;
+        vm.ExitAfterTaskRequested += (_, _) => exitRequests++;
+        vm.TestBeginCancelAndExit();
+        AssertTrue(vm.Busy);
+        AssertEqual(0, exitRequests);
+
+        var activeStatus = vm.StatusText;
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="old-task", Error="Worker process exited" });
+        AssertTrue(vm.Busy);
+        AssertEqual(activeStatus, vm.StatusText);
+        AssertEqual(0, exitRequests);
+
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="complete", Id="crashed-task", Ok=false, Complete=false, Error="Worker process exited unexpectedly" });
+        AssertFalse(vm.Busy);
+        AssertEqual(1, exitRequests);
+        var terminalStatus = vm.StatusText;
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="crashed-task", Error="Worker process exited" });
+        AssertEqual(terminalStatus, vm.StatusText);
+        AssertEqual(1, exitRequests);
+    }
+
+    private static void WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit()
+    {
+        using var worker = new PythonWorkerHost();
+        var events = new List<WorkerEvent>();
+        worker.EventReceived += (_, evt) => events.Add(evt);
+        worker.TestSetActiveTaskId("host-error-race");
+        worker.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="host-error-race", Error="task failed before process exit" });
+        AssertTrue(worker.IsBusy);
+        worker.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="older-task", Error="stale error" });
+        AssertTrue(worker.IsBusy);
+        AssertFalse(events.Any(evt => evt.Type == "complete"));
+
+        worker.TestReportProcessExited();
+        AssertFalse(worker.IsBusy);
+        AssertEqual(4, events.Count(evt => evt.Type is "complete" or "error"));
+        AssertEqual("complete", events[^2].Type);
+        AssertEqual("host-error-race", events[^2].Id);
+        AssertEqual("error", events[^1].Type);
+        AssertEqual("host-error-race", events[^1].Id);
     }
 
     private static void AfterExtract_CurrentTranslate()
@@ -490,14 +720,56 @@ internal static partial class Program
         try
         {
             using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
             vm.OutputPath = empty;
             AssertFalse(vm.RunTranslateCommand.CanExecute(null));
+            AssertTrue(vm.TranslateReadinessText.Contains("không tồn tại", StringComparison.OrdinalIgnoreCase));
             vm.OutputPath = valid;
             AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.TranslateReadinessText.Contains("1 dòng", StringComparison.Ordinal));
+            vm.TestSetTranslationModelReady(false);
+            AssertFalse(vm.RunTranslateCommand.CanExecute(null));
+            AssertTrue(vm.TranslateReadinessText.Contains("Thiếu model OPUS-MT INT8", StringComparison.Ordinal));
+            vm.TestSetTranslationModelReady(false, "Không nạp được runtime CTranslate2 (ModuleNotFoundError: No module named 'ctranslate2').");
+            AssertFalse(vm.RunTranslateCommand.CanExecute(null));
+            AssertTrue(vm.TranslateReadinessText.Contains("CTranslate2", StringComparison.Ordinal));
+            AssertFalse(vm.TranslateReadinessText.Contains("Sẵn sàng dịch", StringComparison.Ordinal));
         }
         finally
         {
             Directory.Delete(root, true);
+        }
+    }
+
+    private static void TranslateCsvSelection_AllBlankExtractPackageIsReadyForTranslation()
+    {
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            var csv = Path.Combine(package, "translation.csv");
+            var picker = new FakePathPicker { TranslationCsv = csv };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false)
+            {
+                InputPath = @"C:\game",
+                OutputPath = Path.Combine(package, "other-output"),
+            };
+            vm.TestSetTranslationModelReady(true);
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+
+            vm.ChooseTranslationCsvCommand.Execute(null);
+
+            AssertEqual(csv, vm.TranslationCsvPath);
+            AssertTrue(vm.CsvValidationOk);
+            AssertTrue(vm.CsvValidationMessage.Contains("0/1", StringComparison.Ordinal));
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.TranslateReadinessText.Contains("1 dòng", StringComparison.Ordinal));
+            AssertTrue(vm.TranslateReadinessText.Contains("đã có bản dịch 0", StringComparison.Ordinal));
+            AssertFalse(vm.ReadyForPatch);
+        }
+        finally
+        {
+            Directory.Delete(package, true);
         }
     }
 
@@ -932,8 +1204,9 @@ internal static partial class Program
         AssertEqual("", ProgressEtaFormatter.Format("-1"));
 
         using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
-        vm.TestHandleWorkerEvent(new WorkerEvent { Type = "progress", Done = 2, Total = 10, Eta = "1e308" });
-        AssertTrue(vm.ProgressSubtitle.Contains("Đang ước tính thời gian", StringComparison.Ordinal));
+        vm.TestSetActiveTask("eta-task", "extract");
+        vm.TestHandleWorkerEvent(new WorkerEvent { Type = "progress", Id = "eta-task", Done = 2, Total = 10, Eta = "1e308" });
+        AssertFalse(vm.ExtractProgressSubtitle.Contains("ước tính thời gian", StringComparison.OrdinalIgnoreCase));
     }
 
     private static void PatchDelivery_RoutesRenPyInstructions()
@@ -995,7 +1268,7 @@ internal static partial class Program
             });
             AssertEqual(WorkflowTabs.Translate, vm.SelectedTab);
             AssertEqual("Dịch một phần", vm.StatusText);
-            AssertTrue(vm.StepStatusLine.Contains("blocked 1"));
+            AssertTrue(vm.StepStatusLine.Contains("chưa thể dùng 1"));
         }
         finally
         {
@@ -1028,6 +1301,8 @@ internal static partial class Program
                 OutputPath = root,
                 SelectedTab = WorkflowTabs.Extract,
             };
+            var changed = new List<string?>();
+            vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
             vm.TestSimulateTaskComplete("extract", new WorkerEvent
             {
                 Type = "complete",
@@ -1037,6 +1312,18 @@ internal static partial class Program
             });
             AssertEqual(WorkflowTabs.Translate, vm.SelectedTab);
             AssertFalse(vm.Busy);
+            AssertEqual(Path.Combine(root, "translation.csv"), vm.TranslationCsvPath);
+            vm.TestSetTranslationModelReady(true);
+            if (!vm.TranslateReadinessText.Contains("0/1", StringComparison.Ordinal)
+                && !vm.TranslateReadinessText.Contains("đã có bản dịch 0", StringComparison.Ordinal))
+                throw new InvalidOperationException("Translate readiness after Extract: " + vm.TranslateReadinessText);
+            AssertTrue(vm.CsvValidationOk);
+            AssertTrue(vm.CsvValidationMessage.Contains("0/1", StringComparison.Ordinal));
+            AssertTrue(vm.TranslateWorkflowStatusText.Contains("đã có bản dịch 0", StringComparison.Ordinal));
+            AssertTrue(changed.Contains(nameof(vm.TranslateWorkflowStatusText)));
+            AssertFalse(vm.ReadyForPatch);
+            if (!vm.RunTranslateCommand.CanExecute(null))
+                throw new InvalidOperationException("Translate command stayed disabled after Extract: " + vm.TranslateReadinessText);
         }
         finally
         {
@@ -1307,12 +1594,15 @@ internal static partial class Program
             foreach (var message in new[] { "Đang quét", "Hoàn tất", "Đã hủy", "Lỗi worker" })
             {
                 changed.Clear();
-                vm.ProgressSubtitle = message;
+                var taskId = "disclosure-" + message;
+                vm.TestSetActiveTask(taskId, "extract");
+                vm.TestHandleWorkerEvent(new WorkerEvent { Type = "progress", Id = taskId, Done = 1, Total = 2, Step = message });
                 vm.StatusText = message;
-                AssertEqual(message, vm.ExtractProgressSubtitle);
+                AssertTrue(vm.ExtractProgressSubtitle.Contains(message, StringComparison.Ordinal));
                 AssertEqual(message, vm.ExtractStatusText);
                 AssertTrue(changed.Contains(nameof(vm.ExtractProgressSubtitle)));
                 AssertTrue(changed.Contains(nameof(vm.ExtractStatusText)));
+                vm.TestMarkTaskTerminal(taskId);
             }
             vm.ProgressSubtitle = "Chưa bắt đầu";
             vm.StatusText = "Sẵn sàng";
@@ -1858,7 +2148,7 @@ internal static partial class Program
         AssertEqual("warning", notifications[1].Kind);
         AssertEqual("error", notifications[2].Kind);
         AssertTrue(notifications[0].Message.Contains("Lấy text"));
-        AssertTrue(notifications[1].Message.Contains("pending 2"));
+        AssertTrue(notifications[1].Message.Contains("chưa dịch 2"));
         AssertEqual("CSV lỗi", notifications[2].Message);
     }
 
@@ -2135,7 +2425,7 @@ internal static partial class Program
                 GitHubRelease("v99.0.0", true, false),
                 GitHubRelease("v50.0.0-rc.1", false, true),
                 GitHubRelease("v1.0.0", false, false, GitHubAsset("Setup.exe", "sha256:" + digest, package.LongLength, setupUrl)),
-                GitHubRelease("v1.0.1", false, false,
+                GitHubReleaseWithDate("v1.0.1", false, false, "2026-10-24T08:43:24Z",
                     GitHubAsset(assetName, "sha256:" + digest, package.LongLength, downloadUrl),
                     GitHubAsset("Setup.exe", "sha256:" + digest, package.LongLength, setupUrl)),
             });
@@ -2158,6 +2448,7 @@ internal static partial class Program
             var offer = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler,
                 metadataOnly: true).GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.OfferAvailable, offer.State);
+            AssertEqual("24/10/2026", offer.ReleaseDate);
             AssertEqual(1, handler.Requests.Count);
             AssertEqual("", offer.PackagePath);
             AssertEqual(digest, offer.PackageSha256);
@@ -2852,6 +3143,9 @@ internal static partial class Program
     private static object GitHubRelease(string tag, bool draft, bool prerelease, params object[] assets) =>
         new { tag_name = tag, draft, prerelease, assets };
 
+    private static object GitHubReleaseWithDate(string tag, bool draft, bool prerelease, string publishedAt, params object[] assets) =>
+        new { tag_name = tag, draft, prerelease, published_at = publishedAt, assets };
+
     private static object GitHubAsset(string name, string digest, long size, string url) =>
         new { name, digest, size, browser_download_url = url };
 
@@ -3241,7 +3535,7 @@ internal static partial class Program
             AssertEqual(digest, HashFile(result.PackagePath));
             AssertTrue(FullAppUpdateService.IsExpectedFullAppAssetPath(
                 new Uri(url).AbsolutePath, "test-owner", "test-repo", "v" + ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!),
-                $"full-app-update-{ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!)}-{digest[..16]}.zip"));
+                $"full-app-update-from-{ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!)}-to-{ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!)}-{digest[..16]}.zip"));
             WpfUpdateService.DeleteGitHubUpdateCandidate(valid.Root, result);
         }
         finally { DeleteFullAppUpdateFixture(valid); }
@@ -3310,12 +3604,11 @@ internal static partial class Program
                 AssertEqual(new Uri(url), request.RequestUri!); return Task.FromResult(BinaryResponse(bytes));
             });
             var offer = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler, metadataOnly: true).GetAwaiter().GetResult();
-            AssertEqual(GitHubUpdateState.OfferAvailable, offer.State); AssertEqual(target, offer.Version);
+            AssertEqual(GitHubUpdateState.OfferAvailable, offer.State); AssertEqual(future, offer.Version);
+            AssertTrue(offer.FullAppRoute); AssertEqual(2, offer.Route?.Count);
+            AssertEqual(current, offer.Route![0].FromVersion); AssertEqual(target, offer.Route[0].Version);
+            AssertEqual(target, offer.Route[1].FromVersion); AssertEqual(future, offer.Route[1].Version);
             AssertEqual(url, offer.AssetUrl); AssertEqual(1, handler.Requests.Count);
-            var result = WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, handler, expectedOffer: offer).GetAwaiter().GetResult();
-            AssertEqual(GitHubUpdateState.UpdateAvailable, result.State); AssertTrue(result.FullAppPackage);
-            AssertEqual(digest, HashFile(result.PackagePath));
-            WpfUpdateService.DeleteGitHubUpdateCandidate(fixture.Root, result);
             var invalid = releases.Replace(name, name.Replace(digest[..16], new string('0', 16)));
             var invalidHandler = new TestHttpMessageHandler((_, _) => Task.FromResult(JsonResponse(invalid)));
             AssertEqual(GitHubUpdateState.InvalidMetadata, WpfUpdateService.CheckGitHubUpdateAsync(fixture.Root, invalidHandler, metadataOnly:true).GetAwaiter().GetResult().State);
@@ -3324,10 +3617,56 @@ internal static partial class Program
         finally { DeleteFullAppUpdateFixture(fixture); }
     }
 
+    private static void FullAppUpdate_RouteUpdaterCleansEveryOwnedPackageOnHashFailure()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        try
+        {
+            var current = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!)!;
+            var target = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!)!;
+            var futureCore = Version.Parse(target);
+            var future = new Version(futureCore.Major, futureCore.Minor, futureCore.Build + 1).ToString();
+            var fixtureBytes = File.ReadAllBytes(fixture.PackagePath);
+            _ = CreateFullAppGitHubHandler(fixture, HashBytes(fixtureBytes), fixtureBytes.LongLength,
+                FullAppAssetUrl(fixture, HashBytes(fixtureBytes)), fixtureBytes);
+            var work = Path.Combine(fixture.Root, ".update", "work");
+            Directory.CreateDirectory(work);
+            var first = Path.Combine(work, "route-first.zip");
+            var second = Path.Combine(work, "route-second.zip");
+            File.WriteAllText(first, "tampered first package");
+            File.WriteAllText(second, "valid downloaded second package");
+            var descriptor = Path.Combine(work, "route.json");
+            File.WriteAllText(descriptor, JsonSerializer.Serialize(new
+            {
+                schema = 1, target_version = future,
+                hops = new[]
+                {
+                    new { from_version = current, version = target, package_path = first, package_sha256 = new string('0', 64) },
+                    new { from_version = target, version = future, package_path = second, package_sha256 = HashFile(second) },
+                },
+            }));
+            var starts = 0;
+            var code = FullAppUpdateService.RunGitHubRouteUpdater(fixture.SourcePath, fixture.Root, int.MaxValue, null,
+                descriptor, HashFile(descriptor), future, bindToRunningInstall: false, waitForProcesses: false,
+                startAppOverride: _ => starts++);
+            AssertEqual(5, code);
+            AssertEqual(1, starts);
+            AssertFalse(File.Exists(first));
+            AssertFalse(File.Exists(second));
+            AssertFalse(File.Exists(descriptor));
+            AssertEqual(current, File.ReadAllText(Path.Combine(fixture.Root, "app", "VERSION.txt")).Trim());
+            using var result = JsonDocument.Parse(File.ReadAllText(Path.Combine(fixture.Root, ".update", "github-route-result.json")));
+            AssertEqual(current, result.RootElement.GetProperty("completed_version").GetString());
+            AssertEqual(0, result.RootElement.GetProperty("completed_hops").GetInt32());
+        }
+        finally { DeleteFullAppUpdateFixture(fixture); }
+    }
+
     private static string FullAppAssetUrl(FullAppUpdateFixture fixture, string digest)
     {
         var version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!);
-        var name = $"full-app-update-{version}-{digest[..16]}.zip";
+        var baseline = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!);
+        var name = $"full-app-update-from-{baseline}-to-{version}-{digest[..16]}.zip";
         return $"https://github.com/test-owner/test-repo/releases/download/v{version}/{name}";
     }
 
@@ -3339,7 +3678,8 @@ internal static partial class Program
         source["github_repository"] = "test-repo";
         File.WriteAllText(fixture.SourcePath, JsonSerializer.Serialize(source));
         var version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!);
-        var assetName = $"full-app-update-{version}-{digest[..16]}.zip";
+        var baseline = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!);
+        var assetName = $"full-app-update-from-{baseline}-to-{version}-{digest[..16]}.zip";
         var releases = JsonSerializer.Serialize(new[]
         {
             GitHubRelease("v" + version, false, false,
@@ -3690,6 +4030,7 @@ internal static partial class Program
     {
         public string CurrentVersion { get; set; } = "TEST-0.1.5";
         public string Version { get; set; } = "TEST-0.1.6";
+        public string ReleaseDate { get; set; } = "24/10/2026";
         public string Notes { get; set; } = "# Cải tiến giao diện\n- Cửa sổ cập nhật gọn hơn.\n- Ghi chú phát hành hiển thị trong ứng dụng.\n\n## Chi tiết thay đổi\n" + string.Join("\n", Enumerable.Range(1, 30).Select(i => "- Dòng ghi chú fixture " + i));
         public string Status { get; private set; } = "TEST ONLY";
         public bool Available { get; private set; }

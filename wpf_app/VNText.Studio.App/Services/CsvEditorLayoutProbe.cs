@@ -52,7 +52,6 @@ internal static class CsvEditorLayoutProbe
 
         var deadline = DateTime.UtcNow + LoadTimeout;
         var ready = false;
-        var validationStarted = false;
         while (DateTime.UtcNow < deadline)
         {
             var snapshot = await window.Dispatcher.InvokeAsync(() => new
@@ -64,10 +63,7 @@ internal static class CsvEditorLayoutProbe
                 visible = vm.CsvEditorVisibleCount,
                 validationMessage = vm.CsvEditorValidationMessage,
             });
-            if (snapshot.validating)
-                validationStarted = true;
-            if (validationStarted
-                && !snapshot.loading
+            if (!snapshot.loading
                 && !snapshot.validating
                 && snapshot.rows > 0
                 && snapshot.viewBound
@@ -98,9 +94,9 @@ internal static class CsvEditorLayoutProbe
 
         var screenshots = new List<object>();
         var metrics = new List<LayoutMetrics>();
-        foreach (var (width, height, expandBulkEditor) in new[] { (1440d, 920d, false), (1200d, 800d, false), (1040d, 720d, true) })
+        foreach (var (width, height, label) in new[] { (1440d, 920d, "wide"), (1200d, 800d, "medium"), (1040d, 720d, "narrow") })
         {
-            var stem = $"editcsv_{(int)width}x{(int)height}_{(expandBulkEditor ? "expanded" : "default")}";
+            var stem = $"editcsv_{(int)width}x{(int)height}_{label}";
             var defaultShot = Path.Combine(outDir, stem + "_layout.png");
             var resizedShot = Path.Combine(outDir, stem + "_resized.png");
             await window.Dispatcher.InvokeAsync(() =>
@@ -109,23 +105,18 @@ internal static class CsvEditorLayoutProbe
                 window.Width = width;
                 window.Height = height;
                 vm.NavigateTab(WorkflowTabs.EditCsv);
-                var expander = FindVisualChildren<Expander>(window)
-                    .FirstOrDefault(item => Equals(item.Header, "Tìm và thay thế bản dịch"));
-                if (expander is not null)
-                    expander.IsExpanded = expandBulkEditor;
                 window.UpdateLayout();
             }, DispatcherPriority.Loaded);
             await Task.Delay(80);
             var item = await window.Dispatcher.InvokeAsync<LayoutMetrics>(() =>
             {
                 window.UpdateLayout();
-                var bulkExpander = FindVisualChildren<Expander>(window)
-                    .FirstOrDefault(item => Equals(item.Header, "Tìm và thay thế bản dịch"));
                 var grid = window.FindName("CsvEditorGrid") as DataGrid;
                 if (grid is null)
-                    return new LayoutMetrics(width, height, 0, 0, 0, 0, 0, 0, expandBulkEditor, false, false, false, false, false, false, 0, 0, false, 0, "", "", "", 0, defaultShot, resizedShot);
+                    return new LayoutMetrics(width, height, 0, 0, 0, 0, 0, 0, false, false, false, false, false, false, 0, 0, false, 0, "", "", "", 0, defaultShot, resizedShot);
 
                 var bulkPanel = window.FindName("CsvBulkReplacePanel") as Border;
+                var csvCard = window.FindName("CsvEditorCard") as Border;
                 bool BulkControlFits(string name)
                 {
                     var control = window.FindName(name) as FrameworkElement;
@@ -165,6 +156,21 @@ internal static class CsvEditorLayoutProbe
                     : FindVisualChildren<Thumb>(sourceHeader).FirstOrDefault(t => t.Name == "PART_RightHeaderGripper");
 
                 var firstRow = FindVisualChildren<DataGridRow>(grid).FirstOrDefault();
+                var cardBounds = csvCard is null
+                    ? Rect.Empty
+                    : csvCard.TransformToAncestor(window).TransformBounds(new Rect(new Point(), csvCard.RenderSize));
+                var gridBounds = grid.TransformToAncestor(window).TransformBounds(new Rect(new Point(), grid.RenderSize));
+                var gridFitsCard = !cardBounds.IsEmpty
+                    && cardBounds.Contains(gridBounds.TopLeft)
+                    && gridBounds.Right <= cardBounds.Right + 2
+                    && gridBounds.Bottom <= cardBounds.Bottom + 2;
+                var visibleDataRows = FindVisualChildren<DataGridRow>(grid).Count(row =>
+                {
+                    return row.IsVisible && row.ActualHeight >= 24;
+                });
+                var firstRowBounds = firstRow is null
+                    ? Rect.Empty
+                    : firstRow.TransformToAncestor(window).TransformBounds(new Rect(new Point(), firstRow.RenderSize));
                 var sourceCell = sourceColumn is null || firstRow is null
                     ? null
                     : FindVisualChildren<DataGridCell>(firstRow).FirstOrDefault(c => ReferenceEquals(c.Column, sourceColumn));
@@ -183,7 +189,9 @@ internal static class CsvEditorLayoutProbe
                 }
                 CaptureWindow(window, resizedShot);
 
-                var searchText = "Escort";
+                var searchText = vm.CsvEditorRows.FirstOrDefault()?.SourceText ?? "";
+                if (searchText.Length > 80)
+                    searchText = searchText[..80];
                 if (search is not null)
                 {
                     search.Text = searchText;
@@ -212,7 +220,6 @@ internal static class CsvEditorLayoutProbe
                     grid.ActualHeight,
                     dpi.PixelsPerInchX,
                     dpi.PixelsPerInchY,
-                    expandBulkEditor,
                     bulkControlsVisible,
                     grid.IsVisible,
                     grid.CanUserResizeColumns,
@@ -228,12 +235,15 @@ internal static class CsvEditorLayoutProbe
                     search?.Foreground?.ToString() ?? "",
                     searchContentHeight,
                     defaultShot,
-                    resizedShot);
+                    resizedShot,
+                    visibleDataRows,
+                    gridFitsCard,
+                    $"card={cardBounds};grid={gridBounds};row={firstRowBounds}");
             }, DispatcherPriority.Render);
             metrics.Add(item);
             screenshots.Add(item.DefaultScreenshot);
             screenshots.Add(item.ResizedScreenshot);
-            Log($"requested={item.RequestedWidth:F0}x{item.RequestedHeight:F0} actual={item.ActualWindowWidth:F1}x{item.ActualWindowHeight:F1} viewport={item.ContentViewportWidth:F1}x{item.GridHeight:F1} dpi={item.DpiX:F0}x{item.DpiY:F0} expanded={item.ExpanderExpanded} bulk_controls_fit={item.BulkControlsVisible} columns={item.InitialSourceWidth:F1}->{item.ResizedSourceWidth:F1} default={item.DefaultScreenshot} resized={item.ResizedScreenshot}");
+            Log($"requested={item.RequestedWidth:F0}x{item.RequestedHeight:F0} actual={item.ActualWindowWidth:F1}x{item.ActualWindowHeight:F1} viewport={item.ContentViewportWidth:F1}x{item.GridHeight:F1} dpi={item.DpiX:F0}x{item.DpiY:F0} bulk_controls_fit={item.BulkControlsVisible} rows={item.VisibleDataRows} grid_fits_card={item.GridFitsCard} columns={item.InitialSourceWidth:F1}->{item.ResizedSourceWidth:F1} default={item.DefaultScreenshot} resized={item.ResizedScreenshot}");
         }
 
         var validationMessage = await window.Dispatcher.InvokeAsync(() => vm.CsvEditorValidationMessage);
@@ -241,13 +251,17 @@ internal static class CsvEditorLayoutProbe
         var blankDraftRowStatusesClear = await window.Dispatcher.InvokeAsync(() =>
             vm.CsvEditorRows.Count > 0
             && vm.CsvEditorRows.All(row => row.IssueLabel == "no_translation" && string.IsNullOrEmpty(row.IssueDisplay)));
+        var loadedRowCount = await window.Dispatcher.InvokeAsync(() => vm.CsvEditorRows.Count);
+        var gateStatsReflectsDraft = gateStats.Contains($"Chưa dịch {loadedRowCount:N0}", StringComparison.Ordinal)
+            && gateStats.Contains("Cần xem lại 0", StringComparison.Ordinal);
         var blankDraftMessageOk = validationMessage == "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
-            && string.IsNullOrEmpty(gateStats) && blankDraftRowStatusesClear;
+            && gateStatsReflectsDraft && blankDraftRowStatusesClear;
         var ok = blankDraftMessageOk && metrics.Count == 3 && metrics.All(m =>
             m.ActualWindowWidth > 0 && m.ActualWindowHeight > 0 && m.ContentViewportWidth > 0
             && m.GridVisible && m.GridHeight > 100 && m.CanResize && m.HasResizeGripper && m.SourceWrap && m.SourceTooltip && m.SearchBound
+            && m.VisibleDataRows >= Math.Min(3, loadedRowCount) && m.GridFitsCard
             && (m.ActualWindowWidth <= 1040 || m.ResizedSourceWidth > m.InitialSourceWidth))
-            && metrics[^1].ExpanderExpanded && metrics[^1].BulkControlsVisible;
+            && metrics.All(m => m.BulkControlsVisible);
         var payload = new
         {
             ok,
@@ -259,7 +273,7 @@ internal static class CsvEditorLayoutProbe
             gate_stats = gateStats,
             blank_draft_row_statuses_clear = blankDraftRowStatusesClear,
             blank_draft_message_ok = blankDraftMessageOk,
-            note = "Probe render UI WPF thật; sau mỗi lần resize chờ layout/render, ghi kích thước actual và DPI; PNG layout mặc định tách khỏi PNG sau resize cột.",
+            note = "Probe render UI WPF thật; các ô tìm/thay luôn hiện; sau mỗi lần resize chờ layout/render, ghi kích thước actual và DPI; PNG layout mặc định tách khỏi PNG sau resize cột.",
         };
         await File.WriteAllTextAsync(resultPath, JsonSerializer.Serialize(payload, Indented));
         Log($"probe done ok={ok}");
@@ -275,7 +289,6 @@ internal static class CsvEditorLayoutProbe
         double GridHeight,
         double DpiX,
         double DpiY,
-        bool ExpanderExpanded,
         bool BulkControlsVisible,
         bool GridVisible,
         bool CanResize,
@@ -291,7 +304,10 @@ internal static class CsvEditorLayoutProbe
         string SearchForeground,
         double SearchContentHeight,
         string DefaultScreenshot,
-        string ResizedScreenshot);
+        string ResizedScreenshot,
+        int VisibleDataRows = 0,
+        bool GridFitsCard = false,
+        string Bounds = "");
 
     private static IEnumerable<T> FindVisualChildren<T>(DependencyObject root) where T : DependencyObject
     {

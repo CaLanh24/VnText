@@ -1,4 +1,4 @@
-namespace VNText.Studio.App.Services;
+﻿namespace VNText.Studio.App.Services;
 
 internal static class RenpySdkRecovery
 {
@@ -22,7 +22,7 @@ internal static class RenpySdkRecovery
         return action switch
         {
             "download" => "Đang thử tải SDK Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn SDK đã cài.",
-            "existing" => "Sẽ dùng thư mục công cụ Ren'Py đã chọn.",
+            "existing" => "Đã chọn thư mục công cụ; sẽ kiểm tra khi lấy text.",
             "none" => "Sẽ tiếp tục không có công cụ; một số lời thoại cần xem lại.",
             "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK sẽ cho kết quả chưa đầy đủ." + suffix,
             "cancelled" => "Đã hủy bước lấy text/SDK. Chọn SDK đã cài hoặc thử tải lại khi sẵn sàng.",

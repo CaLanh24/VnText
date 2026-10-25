@@ -44,6 +44,54 @@ class AutomaticImageTests(unittest.TestCase):
             self.assertEqual(output.crop((0,80,400,120)).tobytes(),original.crop((0,80,400,120)).tobytes())
             self.assertNotEqual(output.crop((10,10,310,70)).tobytes(),original.crop((10,10,310,70)).tobytes())
 
+    def test_ocr_only_writes_review_without_model_or_render(self):
+        with patch('vntext.image_batch.recognize_image',side_effect=self.ocr),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')),patch('vntext.image_batch._render_draft',side_effect=AssertionError('render must not run')):
+            result=run_image_batch(self.source,self.package,sources=[str(self.source)],translate=False)
+        report=self.report(result);item=report['items'][0]
+        self.assertEqual(result['ocr_ready'],1)
+        self.assertEqual(report['status'],'OCR_COMPLETE')
+        self.assertEqual(item['status'],'OCR_READY')
+        self.assertTrue((Path(result['output'])/item['ocr_result']).is_file())
+        self.assertFalse(any((Path(result['output'])/'translated').iterdir()))
+        self.assertEqual(self.source.read_bytes(),self.data)
+
+    def test_ocr_only_reports_progress_once_per_successful_image(self):
+        second=self.root/'second.png';second.write_bytes(self.data)
+        third=self.root/'third.png';third.write_bytes(self.data)
+        events=[]
+        with patch('vntext.image_batch.recognize_image',side_effect=self.ocr),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')),patch('vntext.image_batch._render_draft',side_effect=AssertionError('render must not run')):
+            result=run_image_batch(self.source,self.package,sources=[str(self.source),str(second),str(third)],translate=False,progress=events.append)
+        report=self.report(result)
+        self.assertEqual([(event['done'],event['total']) for event in events],[(1,3),(2,3),(3,3)])
+        self.assertEqual(report['status'],'OCR_COMPLETE')
+        self.assertEqual(result['ocr_ready'],3)
+        self.assertEqual(result['ocr_failed'],0)
+        self.assertEqual(result['untranslated'],0)
+
+    def test_ocr_failure_emits_progress_and_partial_result(self):
+        events=[]
+        with patch('vntext.image_batch.recognize_image',side_effect=ValueError('OCR unavailable')),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')):
+            result=run_image_batch(self.source,self.package,sources=[str(self.source)],translate=False,progress=events.append)
+        report=self.report(result)
+        self.assertEqual([(event['done'],event['total']) for event in events],[(1,1)])
+        self.assertEqual(report['status'],'OCR_PARTIAL')
+        self.assertEqual(result['ocr_ready'],0)
+        self.assertEqual(result['ocr_failed'],1)
+        self.assertEqual(result['untranslated'],1)
+
+    def test_ocr_cancellation_reports_only_completed_attempts(self):
+        second=self.root/'second.png';second.write_bytes(self.data)
+        events=[]
+        with patch('vntext.image_batch.recognize_image',side_effect=self.ocr),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')):
+            result=run_image_batch(self.source,self.package,sources=[str(self.source),str(second)],translate=False,
+                is_cancelled=lambda:bool(events),progress=events.append)
+        report=self.report(result)
+        self.assertTrue(result['cancelled'])
+        self.assertEqual(report['status'],'CANCELLED')
+        self.assertEqual([(event['done'],event['total']) for event in events],[(1,2)])
+        self.assertEqual(result['ocr_ready'],1)
+        self.assertEqual(result['ocr_failed'],0)
+
     def test_retry_preserves_previous_bytes_and_does_not_touch_csv(self):
         self.package.mkdir();csv=self.package/'translation.csv';csv.write_bytes(b'owner CSV')
         one=self.run_batch();before={str(p):p.read_bytes() for p in Path(one['output']).rglob('*') if p.is_file()}
@@ -137,20 +185,15 @@ class AutomaticImageTests(unittest.TestCase):
             run_extract_task(str(game),str(self.package),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=completed.append)
         return completed
 
-    def test_image_failure_cannot_invalidate_extracted_csv(self):
-        completed=self._extract(patch('vntext.image_batch.run_image_batch',side_effect=ValueError('OCR unavailable')))
+    def test_extract_does_not_translate_or_render_images(self):
+        image_batch=Mock(return_value={'total':1,'ocr_ready':1,'translated':0,'untranslated':0,'output':'image-ocr'})
+        batch=patch('vntext.image_batch.run_image_batch', image_batch)
+        completed=self._extract(batch)
         self.assertTrue(completed[0]['ok'],completed)
         self.assertTrue((self.package/'translation.csv').exists())
-        self.assertIn('Xử lý ảnh chưa hoàn tất',completed[0]['summary'])
-
-    def test_actual_extraction_automatically_creates_paired_images(self):
-        if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')
-        from contextlib import nullcontext
-        completed=self._extract(nullcontext())
-        self.assertTrue(completed[0]['ok'],completed)
-        report=json.loads((self.package/'images/report.json').read_text(encoding='utf-8'))
-        self.assertEqual(report['translated'],1,report)
-        self.assertTrue((self.package/'translation.csv').exists())
+        image_batch.assert_called_once()
+        self.assertFalse(image_batch.call_args.kwargs['translate'])
+        self.assertIn('dịch ảnh ở bước Dịch',completed[0]['summary'])
 
     def test_real_worker_image_retry_protocol_twice(self):
         if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')

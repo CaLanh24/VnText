@@ -304,6 +304,22 @@ class TraceStoreTests(unittest.TestCase):
         finally:
             store.close()
 
+    def test_aborted_run_diagnostic_reports_cancellation_not_nonterminal_run(self):
+        store = TraceStore(self.root, self.package_id)
+        try:
+            store.register_entry(_entry())
+            store.start_run(metadata={"fixture": "cancelled translation"})
+            store.finish_run(EVENT_ABORTED, ROOT_CAUSE_UNKNOWN)
+
+            diagnostic = json.loads(
+                store.write_diagnostic_summary().read_text(encoding="utf-8")
+            )
+
+            self.assertIn("cancelled or interrupted", diagnostic["actionable_next_step"])
+            self.assertNotIn("non-terminal trace run", diagnostic["actionable_next_step"])
+        finally:
+            store.close()
+
     def test_completed_run_rejects_inflight_action(self):
         store = TraceStore(self.root, self.package_id)
         try:

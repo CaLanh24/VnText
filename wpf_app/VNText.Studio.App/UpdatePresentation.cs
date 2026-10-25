@@ -10,6 +10,7 @@ public interface IUpdatePresentation : INotifyPropertyChanged, IDisposable
 {
     string CurrentVersion { get; }
     string Version { get; }
+    string ReleaseDate { get; }
     string Notes { get; }
     string Status { get; }
     bool Available { get; }
@@ -36,6 +37,7 @@ internal sealed class ViewModelUpdatePresentation : IUpdatePresentation
     }
     public string CurrentVersion => _vm.CurrentVersionDisplay;
     public string Version => _vm.OfferedVersion;
+    public string ReleaseDate => _vm.OfferedReleaseDate;
     public string Notes => _vm.UpdateNotes;
     public string Status => _vm.GitHubUpdateStatus;
     public bool Available => _vm.GitHubUpdateState == GitHubUpdateState.OfferAvailable || Ready;

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import sys
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -106,6 +107,76 @@ def _write_manifest(package: Path, rows: list[dict]) -> None:
 
 
 class HumanReviewWorkflowTests(unittest.TestCase):
+    def test_cancel_after_blocking_batch_emits_terminal_without_starting_next_chunk(self):
+        rows = [_row("one", "A longer dialogue line"), _row("two", "Another dialogue line")]
+        package, csv_path = _write_package("cancel_after_blocking_batch", rows)
+        _write_manifest(package, rows)
+        cancelled = threading.Event()
+        batch_entered = threading.Event()
+        release_batch = threading.Event()
+
+        class BlockingAdapter:
+            config = {"batch_size": 1, "inter_threads": 1, "max_src_tokens": 512}
+            calls = 0
+
+            def metadata(self) -> dict:
+                return {"adapter_id": "blocking-test", "model_engine": "Fake/Blocking"}
+
+            def translate_many(self, texts: list[str]) -> list[str]:
+                self.calls += 1
+                batch_entered.set()
+                if not release_batch.wait(5):
+                    raise TimeoutError("test batch was not released")
+                return ["Bản dịch an toàn" for _ in texts]
+
+            def translate(self, text: str) -> str:
+                return self.translate_many([text])[0]
+
+        adapter = BlockingAdapter()
+        terminal_events: list[tuple] = []
+        errors: list[BaseException] = []
+
+        def run_worker() -> None:
+            try:
+                run_translate_worker(
+                    "cancel-after-batch",
+                    {"csv_path": str(csv_path)},
+                    cancelled.is_set,
+                )
+            except BaseException as exc:  # surfaced to the test thread
+                errors.append(exc)
+
+        with (
+            patch("vntext.mt_ct2_model.get_translator", return_value=adapter),
+            patch(
+                "vntext_worker.task_runners.emit_complete",
+                side_effect=lambda *args, **kwargs: terminal_events.append((args, kwargs)),
+            ),
+            patch("vntext_worker.task_runners.emit_progress"),
+            patch("vntext_worker.task_runners.emit_log"),
+        ):
+            thread = threading.Thread(target=run_worker)
+            thread.start()
+            self.assertTrue(
+                batch_entered.wait(5),
+                f"blocking translator was not entered; terminal={terminal_events!r}, errors={errors!r}",
+            )
+            cancelled.set()
+            self.assertTrue(thread.is_alive(), "cancel must wait for the active synchronous call")
+            release_batch.set()
+            thread.join(10)
+
+        self.assertFalse(thread.is_alive(), "cancel did not reach a terminal result after batch return")
+        self.assertEqual(errors, [])
+        self.assertEqual(adapter.calls, 1, "cancellation must prevent starting the next chunk")
+        self.assertEqual(len(terminal_events), 1, terminal_events)
+        _args, payload = terminal_events[0]
+        self.assertFalse(payload.get("ok", True), payload)
+        self.assertEqual(payload.get("error"), "cancelled", payload)
+        self.assertFalse(payload.get("complete", True), payload)
+        _fields, persisted_rows = read_csv_rows_file(csv_path)
+        self.assertTrue(all(not row["translation"] for row in persisted_rows), persisted_rows)
+
     def test_off_keeps_existing_promotion_behavior(self):
         _package, csv_path = _write_package("human_review_off", [_row("model", "Hello")])
 

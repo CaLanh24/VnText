@@ -29,6 +29,19 @@ public sealed class AppSettings
     public string AcknowledgedUpdateTransaction { get; set; } = "";
     public string DownloadedUpdateVersion { get; set; } = "";
     public string DownloadedUpdateNotes { get; set; } = "";
+    public List<ReleaseNotesCacheEntry> ReleaseNotesHistory { get; set; } = [];
+}
+
+public sealed class ReleaseNotesCacheEntry
+{
+    public string Version { get; set; } = "";
+    public string ReleaseDate { get; set; } = "";
+    public string Notes { get; set; } = "";
+    public DateTime CachedAtUtc { get; set; }
+    public string DisplayLabel => string.IsNullOrWhiteSpace(ReleaseDate) ? $"v{Version}" : $"v{Version} · {ReleaseDate}";
+    public string DownloadUrl => System.Version.TryParse(Version, out var parsed) && parsed.Build >= 0
+        && Version == parsed.ToString(3)
+        ? $"https://github.com/CaLanh24/VnText/releases/tag/{(Version == "0.1.0" ? "v0.1" : "v" + Version)}" : "";
 }
 
 public static class AppSettingsStore
@@ -61,6 +74,15 @@ public static class AppSettingsStore
             loaded.CloseAction = loaded.CloseAction is "exit" or "tray" ? loaded.CloseAction : "exit";
             loaded.BackgroundStrength = double.IsFinite(loaded.BackgroundStrength) ? Math.Clamp(loaded.BackgroundStrength, 0, 100) : 100;
             loaded.UpdateReminderHours = loaded.UpdateReminderHours is 4 or 24 or 168 ? loaded.UpdateReminderHours : 24;
+            loaded.ReleaseNotesHistory ??= [];
+            loaded.ReleaseNotesHistory = loaded.ReleaseNotesHistory
+                .Where(entry => entry is not null && !string.IsNullOrWhiteSpace(entry.Version) && !string.IsNullOrWhiteSpace(entry.Notes))
+                .GroupBy(entry => entry.Version, StringComparer.Ordinal)
+                .Select(group => group.OrderByDescending(entry => entry.CachedAtUtc).First())
+                .OrderByDescending(entry => Version.TryParse(entry.Version, out var version) ? version : new Version(0, 0))
+                .Take(20).ToList();
+            foreach (var entry in loaded.ReleaseNotesHistory)
+                entry.Notes = new string((entry.Notes ?? "").Take(16000).Where(c => !char.IsControl(c) || c is '\n' or '\r' or '\t').ToArray());
             return loaded;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)

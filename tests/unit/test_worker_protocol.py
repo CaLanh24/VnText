@@ -21,19 +21,27 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 import json
 import os
 import subprocess
+import threading
 import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 
-from vntext_worker.protocol import PROTOCOL_VERSION, emit, read_commands
+from vntext_worker.protocol import PROTOCOL_VERSION, emit, emit_cancel_ack, read_commands
 from vntext_worker.task_runners import _make_callbacks
 import vntext_worker.worker_main as worker_main
 from tests.lib.dev_environment import worker_python
 
 
 class WorkerProtocolTests(unittest.TestCase):
+    def test_progress_bridge_preserves_zero_eta_and_omits_missing_eta(self):
+        progress, _, _ = _make_callbacks("eta-task", lambda: False)
+        for value, expected in [(0, "0"), (0.0, "0.0"), (None, None), ("", None)]:
+            with self.subTest(value=value), patch("vntext_worker.task_runners.emit_progress") as emit_progress:
+                progress({"done": 1, "total": 1, "eta": value})
+                self.assertEqual(emit_progress.call_args.kwargs["eta"], expected)
+
     def test_emit_includes_version(self):
         import io
 
@@ -47,6 +55,13 @@ class WorkerProtocolTests(unittest.TestCase):
         data = json.loads(buf.getvalue().strip())
         self.assertEqual(data["v"], PROTOCOL_VERSION)
         self.assertEqual(data["type"], "ready")
+
+    def test_cancel_ack_is_separate_from_terminal_completion(self):
+        with patch("vntext_worker.protocol.emit") as emit_message:
+            emit_cancel_ack("cancel-fixture", "accepted")
+        emit_message.assert_called_once_with({
+            "type": "cancel_ack", "id": "cancel-fixture", "state": "accepted"
+        })
 
     def test_emit_complete_preserves_optional_diagnostic_contract(self):
         import io
@@ -135,6 +150,170 @@ class WorkerProtocolTests(unittest.TestCase):
 
 
 class WorkerIntegrationTests(unittest.TestCase):
+    def test_ct2_preload_runs_on_main_thread_and_failure_is_recorded(self):
+        prior_error = worker_main._CT2_PRELOAD_ERROR
+        try:
+            def import_on_main_thread(module_name):
+                self.assertEqual("ctranslate2", module_name)
+                self.assertIs(threading.current_thread(), threading.main_thread())
+                return object()
+
+            with patch.object(worker_main.importlib, "import_module", side_effect=import_on_main_thread):
+                worker_main._preload_ct2_runtime()
+            self.assertEqual("", worker_main._CT2_PRELOAD_ERROR)
+
+            with patch.object(
+                worker_main.importlib,
+                "import_module",
+                side_effect=ModuleNotFoundError("No module named 'ctranslate2'"),
+            ):
+                worker_main._preload_ct2_runtime()
+            self.assertIn("ModuleNotFoundError", worker_main._CT2_PRELOAD_ERROR)
+            self.assertIn("No module named", worker_main._CT2_PRELOAD_ERROR)
+        finally:
+            worker_main._CT2_PRELOAD_ERROR = prior_error
+
+    def test_extract_does_not_initialize_ct2_before_ocr(self):
+        command = {"type": "run", "id": "ocr-only", "task": "extract", "params": {}}
+        dispatched = threading.Event()
+        with patch.object(worker_main, "_preload_ct2_runtime"), patch.object(worker_main, "emit_ready"), patch.object(
+            worker_main, "read_commands", return_value=iter([command])
+        ), patch.object(worker_main, "_ensure_ct2_ready") as initialize_ct2, patch.object(
+            worker_main, "_dispatch", side_effect=lambda *_args: dispatched.set()
+        ):
+            self.assertEqual(0, worker_main.main())
+            self.assertTrue(dispatched.wait(2), "extract task dispatch did not complete in the test")
+        initialize_ct2.assert_not_called()
+
+    def test_cancel_is_read_while_ct2_initialization_is_slow(self):
+        entered = threading.Event()
+        release = threading.Event()
+        acknowledged = threading.Event()
+        completed = threading.Event()
+        logs: list[str] = []
+        progress: list[dict] = []
+        lifecycle: list[str] = []
+
+        def preload():
+            lifecycle.append("preload")
+
+        def ready():
+            lifecycle.append("ready")
+
+        def commands():
+            yield {"type": "run", "id": "slow-translate", "task": "translate", "params": {"model": "ct2"}}
+            self.assertTrue(entered.wait(3), "model initialization did not start")
+            yield {"type": "cancel", "id": "slow-translate"}
+            release.set()
+
+        def initialize(*_args):
+            entered.set()
+            self.assertTrue(release.wait(3), "command loop did not read cancel while model initialization was blocked")
+
+        with patch.object(worker_main, "_preload_ct2_runtime", side_effect=preload), patch.object(
+            worker_main, "emit_ready", side_effect=ready
+        ), patch.object(
+            worker_main, "read_commands", side_effect=commands
+        ), patch.object(worker_main, "_ensure_ct2_ready", side_effect=initialize), patch.object(
+            worker_main, "_dispatch"
+        ) as dispatch, patch.object(
+            worker_main, "emit_cancel_ack", side_effect=lambda *_args: acknowledged.set()
+        ), patch.object(
+            worker_main, "emit_error"
+        ) as emit_error, patch.object(
+            worker_main, "emit_complete", side_effect=lambda *_args, **_kwargs: completed.set()
+        ) as emit_complete, patch.object(
+            worker_main, "emit_log", side_effect=lambda _task_id, text: logs.append(text)
+        ), patch.object(
+            worker_main, "emit_progress", side_effect=lambda _task_id, **fields: progress.append(fields)
+        ):
+            self.assertEqual(0, worker_main.main())
+            self.assertTrue(acknowledged.wait(2), "cancel acknowledgement was not emitted promptly")
+            self.assertTrue(completed.wait(2), "cancel during initialization did not reach a terminal outcome")
+
+        dispatch.assert_not_called()
+        emit_error.assert_not_called()
+        emit_complete.assert_called_once_with("slow-translate", ok=False, error="cancelled during model initialization")
+        self.assertTrue(any("Đang kiểm tra trạng thái mô hình" in line for line in logs))
+        self.assertTrue(any(item["step"] == "Đang kiểm tra mô hình dịch offline…" for item in progress))
+        self.assertEqual(["preload", "ready"], lifecycle)
+
+    def test_ct2_preload_failure_keeps_worker_ready_and_reports_clear_translation_error(self):
+        dispatched = threading.Event()
+        lifecycle: list[str] = []
+
+        def preload_failure():
+            lifecycle.append("preload")
+            worker_main._CT2_PRELOAD_ERROR = "ImportError: missing runtime"
+
+        def ready():
+            lifecycle.append("ready")
+
+        try:
+            for task in ("extract", "patch"):
+                dispatched.clear()
+                command = {"type": "run", "id": f"{task}-after-ct2-error", "task": task, "params": {}}
+                with patch.object(worker_main, "_preload_ct2_runtime", side_effect=preload_failure), patch.object(
+                    worker_main, "emit_ready", side_effect=ready
+                ), patch.object(worker_main, "read_commands", return_value=iter([command])), patch.object(
+                    worker_main, "_dispatch", side_effect=lambda *_args: dispatched.set()
+                ):
+                    self.assertEqual(0, worker_main.main())
+                    self.assertTrue(dispatched.wait(2), f"{task} must still dispatch when optional CT2 runtime is absent")
+
+            logs: list[str] = []
+            with patch("vntext_worker.worker_main.emit_log", side_effect=lambda _task, message: logs.append(message)), patch(
+                "vntext.mt_ct2.model_status"
+            ) as model_status:
+                with self.assertRaisesRegex(RuntimeError, "ImportError: missing runtime"):
+                    worker_main._ensure_ct2_ready("missing-ct2")
+            model_status.assert_not_called()
+            self.assertTrue(any("CT2_PRELOAD_ERROR" in line for line in logs))
+            self.assertEqual(["preload", "ready", "preload", "ready"], lifecycle)
+        finally:
+            worker_main._CT2_PRELOAD_ERROR = ""
+
+    def test_ct2_initialization_reports_model_load_boundaries(self):
+        logs: list[str] = []
+        progress: list[dict] = []
+        with patch("vntext.mt_ct2.model_status", return_value={"ready": True}), patch(
+            "vntext.mt_ct2.get_translator"
+        ) as get_translator, patch.object(
+            worker_main, "emit_log", side_effect=lambda _task_id, text: logs.append(text)
+        ), patch.object(
+            worker_main, "emit_progress", side_effect=lambda _task_id, **fields: progress.append(fields)
+        ):
+            worker_main._ensure_ct2_ready("model-boundaries")
+
+        get_translator.assert_called_once_with()
+        self.assertEqual(1, len(progress))
+        self.assertEqual("Đang nạp mô hình dịch offline…", progress[0]["step"])
+        before = next(line for line in logs if line.startswith("CT2_INIT_BEFORE model_status:"))
+        after = next(line for line in logs if line.startswith("CT2_INIT_AFTER model_status:"))
+        self.assertIn("executable", before)
+        self.assertIn("sys_path", before)
+        self.assertIn("worker_module", before)
+        self.assertIn("model_status_module", before)
+        self.assertIn("vntext_localappdata", before)
+        self.assertIn("elapsed_ms=", after)
+        self.assertTrue(any("đang nạp bộ dịch offline" in line for line in logs))
+        self.assertTrue(any("Đã nạp xong bộ dịch offline." in line for line in logs))
+
+    def test_cancel_after_model_status_skips_translator_load(self):
+        logs: list[str] = []
+        with patch("vntext.mt_ct2.model_status", return_value={"ready": True}), patch(
+            "vntext.mt_ct2.get_translator"
+        ) as get_translator, patch.object(
+            worker_main, "emit_log", side_effect=lambda _task_id, text: logs.append(text)
+        ), patch.object(
+            worker_main, "emit_progress"
+        ):
+            initialized = worker_main._ensure_ct2_ready("cancel-after-status", lambda: True)
+
+        self.assertFalse(initialized)
+        get_translator.assert_not_called()
+        self.assertTrue(any("hủy sau khi kiểm tra model" in line for line in logs))
+
     def test_removed_model_is_rejected_before_model_initialization(self):
         calls: list[str] = []
         command = {
@@ -147,7 +326,7 @@ class WorkerIntegrationTests(unittest.TestCase):
         with patch.object(worker_main, "emit_ready"), patch.object(
             worker_main, "read_commands", return_value=iter([command])
         ), patch.object(
-            worker_main, "_ensure_ct2_on_main_thread", side_effect=lambda: calls.append("ct2-init")
+            worker_main, "_ensure_ct2_ready", side_effect=lambda *_args: calls.append("ct2-init")
         ), patch.object(
             worker_main, "_dispatch", side_effect=lambda *args: calls.append("dispatch")
         ), patch.object(worker_main, "emit_error") as emit_error, patch.object(

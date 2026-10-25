@@ -5,6 +5,24 @@
                     xmlns:ctrl="clr-namespace:VNText.Studio.App.Controls"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime">
 
+    <Style TargetType="ToolTip">
+        <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="MaxWidth" Value="400" />
+        <Setter Property="ContentTemplate">
+            <Setter.Value><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" /></DataTemplate></Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value><ControlTemplate TargetType="ToolTip">
+                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                </Border>
+            </ControlTemplate></Setter.Value>
+        </Setter>
+    </Style>
+
 
 
     <!-- Shared outer card: bounded neutral edge and soft elevation approximation. -->
@@ -1356,7 +1374,7 @@
 
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource LineBrush}" />
 
-        <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="GridLinesVisibility" Value="All" />
 
         <Setter Property="HeadersVisibility" Value="Column" />
 

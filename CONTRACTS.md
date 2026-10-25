@@ -57,6 +57,8 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 
 **Tests/evidence:** `tests/unit/test_golden_artifacts.py`, `test_naninovel_script_extract.py`, `test_unity_capability_microfixtures.py`, `test_textasset_key_value_prefix.py`, `test_characterization_package_split.py`, `test_extensionless_roundtrip.py`, `test_sqlite_review_extract.py`, `test_yaml_review_extract.py`.
 
+**Owner product decision (2026-10-24):** Extract performs image discovery/inventory and OCR only. It must not machine-translate or render image text. Image translation and rendering belong to Translate and remain supported capabilities with their existing provenance, image delivery, approval invalidation, output receipt, and rollback protections. This is a backend route change as well as a UI change; changing labels alone does not satisfy the decision.
+
 ## 2a. Unity analyzer và resource inventory
 
 **Owner:** `vntext/unity_analyzer.py`; regression `tests/unit/test_unity_analyzer.py`.
@@ -150,6 +152,7 @@ authorization covers accepted source/test/docs only, not model integration or Re
 - Host gửi object `{"v":1,"type":"run","id":...,"task":...,"params":...}` hoặc `cancel`; worker phát `ready`, `log`, `progress`, `complete`, `error`.
 - Task hiện có: `sample`, `extract`, `translate`, `patch`; `translate` chỉ nhận `model=ct2` (mặc định), từ chối model đã gỡ và giữ process sống theo protocol.
 - `progress` giữ `id`, `done`, `total`, `step`, `item`, optional `eta`; `complete` giữ `ok`, `summary`, `error` và các count state khi có. Patch completion có thể thêm `patch_engine`, `patch_delivery`, `patch_payload_path` và `patch_install_instructions` để WPF hiển thị đúng cách cài theo engine.
+- `cancel` receives task-ID-scoped `cancel_ack` with state `accepted` or `stale`; this acknowledges command receipt only and never replaces that task's terminal `complete` event.
 - Worker busy/cancel/unexpected exit phải tạo state mà WPF hiểu được; stdout là NDJSON, log stderr không làm hỏng stdout contract.
 
 **Tests/evidence:** `tests/unit/test_worker_protocol.py`, `test_worker_tasks.py`, `test_worker_translate.py`, `test_worker_qa_m3.py`; WPF `wpf_app/VNText.Studio.Workflow.Tests/Program.cs` và `test_wpf_workflow.py`.
@@ -172,6 +175,8 @@ authorization covers accepted source/test/docs only, not model integration or Re
 **Tests/evidence:** `tests/unit/test_wpf_workflow.py`, `test_ui_app_workflow.py`, `test_qt_app_workflow.py`, `test_legacy_ui_task_contract.py`, `test_ui_progress.py`; WPF workflow harness trong `wpf_app/VNText.Studio.Workflow.Tests/Program.cs`.
 
 **Owner UX decision for update 0.1.11 (2026-10-24):** Text extraction defaults to exhaustive/deep mode; prior persisted Clean/Balanced values do not override this default and the normal extraction page does not expose a mode chooser. This does not change eligibility, review classification, locator, or patch validation. A structurally valid generated `translation.csv` with blank translation cells is ready to start local CT2 translation; Patch readiness still requires actual translations and all existing gates. Progress ETA is advisory seconds/minutes/hours and malformed/unknown values are omitted in favor of an estimating status. Engine analysis must report only evidence-backed detection and explicitly retain unknown/mixed states; Unity analyzer output alone does not classify other engines. Application confirmations/errors use themed WPF dialogs with cancel-safe results; native pickers/consent prompts stay native. CSV controls remain expandable and unclipped, and SDK failure status offers a clear retry/choose path without parser fallback.
+
+**Owner workflow decision for post-0.1.11 remediation (2026-10-24):** Each Extract, Translate, image-translation, and Patch run owns an independent task identity and terminal state; delayed progress cannot overwrite a newer or completed run. Extract is text/OCR only; Translate owns image MT/render. Cancel and cancel-and-exit must expose request, acknowledgement/acceptance, terminal result, timeout, and recovery while preserving safe write/rollback boundaries. UI progress is task-owned, and completion is determined by the terminal protocol event. See `docs/POST_0.1.11_UX_REMEDIATION.md` for the ordered acceptance gates and evidence limits.
 
 ## 7. Patch, UnityFS và Addressables
 
@@ -491,3 +496,6 @@ Future baseline routing (same Owner requirement,2026-10-19): retain the legacy `
 
 ### Owner release distribution and notes decision — 2026-10-24
 Every public release must provide both a version-matched Setup executable for new installations and the supported in-app updater package for existing installations. The release body is Vietnamese and describes only user-visible feature, interface, and bug-fix changes; test counts, source hashes, internal gates/reports, and workarounds for older Setup versions stay in canonical repository evidence. Required notices, checksums, and provenance remain in their appropriate release assets and evidence. Owner authorized completion and publication of update 0.1.11 with both Setup and full-app updater; release acceptance still requires exact-source gates and live readback. The earlier queued 0.1.10 release-body/Setup follow-up is deferred while 0.1.11 is active and is not part of this release authorization.
+
+
+**Owner release decision (2026-10-25):** Complete all post-0.1.11 UX remediation, tests and build through public release 0.1.12, including Setup, full-app updater, commit/push/tag/assets and live readback after acceptance. Use one persistent DEV session for the entire implementation; Brain coordinates and reviews. The earlier stop-before-release plan boundary is superseded; no acceptance gate is waived. Public 0.1.11 remains immutable. The initial measured temporary allocation for registered candidate-0.1.12 is 3 GiB non-exempt under the standing release-allocation authorization; terminal <=1 GiB and shared .dev-env <=6 GiB.

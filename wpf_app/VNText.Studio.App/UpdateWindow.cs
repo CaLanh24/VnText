@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -8,6 +10,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Automation;
 using VNText.Studio.App.ViewModels;
 using VNText.Studio.App.Controls;
+using VNText.Studio.App.Services;
 
 namespace VNText.Studio.App;
 
@@ -26,9 +29,9 @@ internal sealed class UpdateWindow : Window
     private readonly bool _notesOnly;
     private readonly string? _successVersion;
     private readonly Button _primary, _skip, _later, _cancel;
-    private readonly TextBlock _version, _current, _status, _banner, _progressText;
+    private readonly TextBlock _version, _date, _current, _status, _banner, _progressText;
     private readonly ProgressBar _progress;
-    private readonly Border _success, _versionBadge, _notesHeading;
+    private readonly Border _success, _versionBadge, _dateBadge, _notesHeading;
     private readonly Grid _progressArea;
     private readonly ScrollViewer _notes;
     private bool _starting;
@@ -42,7 +45,8 @@ internal sealed class UpdateWindow : Window
     {
         _source = source; _notesOnly = notesOnly; _successVersion = successVersion;
         Owner = owner; Title = notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio";
-        Width = notesOnly ? 720 : 620; SizeToContent = SizeToContent.Height;
+        Width = notesOnly ? 880 : 620; SizeToContent = SizeToContent.Height;
+        if (notesOnly) { Height = Math.Max(280, Math.Min(720, owner.ActualHeight - 24)); SizeToContent = SizeToContent.Manual; }
         MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = Math.Max(300, owner.ActualHeight - 24);
         WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent;
@@ -55,6 +59,7 @@ internal sealed class UpdateWindow : Window
         var grid = new Grid(); surface.Child = grid; Content = surface;
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        if (notesOnly) grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
         var header = new Grid { Margin = new Thickness(24, 17, 24, 17) };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -70,8 +75,13 @@ internal sealed class UpdateWindow : Window
         grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
         var body = new Grid { Margin = new Thickness(26, 18, 26, 18) }; Grid.SetRow(body, 1); grid.Children.Add(body);
         for (var n = 0; n < 4; n++) body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        if (notesOnly) body.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
         _version = new TextBlock { Foreground = notesOnly ? Brush("MutedBrush") : Brush("BlueBrush"), FontSize = 13, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
-        body.Children.Add(_versionBadge = new Border { Child = _version, Background = notesOnly ? new SolidColorBrush(Color.FromRgb(241, 243, 246)) : Brushes.Transparent, CornerRadius = new CornerRadius(8), Padding = notesOnly ? new Thickness(8, 4, 8, 4) : new Thickness(0), HorizontalAlignment = HorizontalAlignment.Left });
+        var releaseBadges = new StackPanel { Orientation = Orientation.Horizontal };
+        body.Children.Add(releaseBadges);
+        releaseBadges.Children.Add(_versionBadge = new Border { Child = _version, Background = notesOnly ? new SolidColorBrush(Color.FromRgb(241, 243, 246)) : Brushes.Transparent, CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 4, 8, 4), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 8, 0) });
+        _date = new TextBlock { Foreground = Brush("MutedBrush"), FontSize = 12, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+        releaseBadges.Children.Add(_dateBadge = new Border { Child = _date, Background = notesOnly ? new SolidColorBrush(Color.FromRgb(241, 243, 246)) : Brushes.Transparent, CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 4, 8, 4), HorizontalAlignment = HorizontalAlignment.Left });
         _current = new TextBlock { Foreground = Brush("MutedBrush"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 12) };
         Grid.SetRow(_current, 1); body.Children.Add(_current);
         var stateArea = new StackPanel(); Grid.SetRow(stateArea, 2); body.Children.Add(stateArea);
@@ -88,6 +98,7 @@ internal sealed class UpdateWindow : Window
         stateArea.Children.Add(_success);
         var notesArea = new Grid(); Grid.SetRow(notesArea, 3); body.Children.Add(notesArea);
         notesArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); notesArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        if (notesOnly) notesArea.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
         _notesHeading = new Border { BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 12, 0, 8),
             Child = new TextBlock { Text = notesOnly ? "Có gì mới" : "Tính năng mới", FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Foreground = Brush("InkBrush") } };
         notesArea.Children.Add(_notesHeading);
@@ -124,7 +135,12 @@ internal sealed class UpdateWindow : Window
             close.Focus();
         };
         Closing += (_, _) => { if (!notesOnly && successVersion is null) { source.Defer(false); if (source.Downloading) source.Cancel(); } };
-        Closed += (_, _) => { source.PropertyChanged -= Changed; if (_overlay is not null) _ownerPanel?.Children.Remove(_overlay); if (owner.Content is UIElement element) element.Effect = _previousEffect; };
+        if (notesOnly && owner.DataContext is MainViewModel historyVm)
+        {
+            historyVm.ReleaseNotesHistory.CollectionChanged += HistoryChanged;
+            historyVm.PropertyChanged += Changed;
+        }
+        Closed += (_, _) => { source.PropertyChanged -= Changed; if (owner.DataContext is MainViewModel closingHistoryVm) { closingHistoryVm.ReleaseNotesHistory.CollectionChanged -= HistoryChanged; closingHistoryVm.PropertyChanged -= Changed; } if (_overlay is not null) _ownerPanel?.Children.Remove(_overlay); if (owner.Content is UIElement element) element.Effect = _previousEffect; };
         // Content-driven state rows change height after opening; keep the dialog centered.
         SizeChanged += (_, _) =>
         {
@@ -138,28 +154,37 @@ internal sealed class UpdateWindow : Window
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(Refresh)); return; } Refresh();
     }
+    private void HistoryChanged(object? sender, NotifyCollectionChangedEventArgs e) { _renderedNotes = null; Changed(sender, new PropertyChangedEventArgs("ReleaseNotesHistory")); }
     private void Refresh()
     {
         var state = UpdateViewState.From(_source);
         var releaseVersion = _successVersion ?? state.Version;
         _version.Text = string.IsNullOrWhiteSpace(releaseVersion) ? "" : "v" + releaseVersion;
         _versionBadge.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
+        _date.Text = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? "" : "Phát hành " + _source.ReleaseDate;
+        _dateBadge.Visibility = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? Visibility.Collapsed : Visibility.Visible;
         _current.Visibility = _notesOnly ? Visibility.Collapsed : Visibility.Visible;
         _notesHeading.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
         _current.Text = _notesOnly ? "Ghi chú phiên bản" : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới.");
         var notesText = _successVersion is not null && Owner.DataContext is MainViewModel vm ? vm.VerifiedSuccessNotes : state.Notes;
         if (string.IsNullOrWhiteSpace(notesText)) notesText = "Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.";
-        if (_renderedNotes != notesText) { _renderedNotes = notesText; var rendered = RenderNotes(notesText); _notes.Content = _notesOnly ? new Border { Child = rendered, Background = (Brush)FindResource("SurfaceBrush"), BorderBrush = new SolidColorBrush(Color.FromRgb(228, 234, 242)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12) } : rendered; }
+        if (_notesOnly && Owner.DataContext is MainViewModel historyVm)
+        {
+            var signature = string.Join("\u001f", historyVm.ReleaseNotesHistory.Select(entry => entry.Version + "\u001e" + entry.ReleaseDate + "\u001e" + entry.Notes));
+            if (_renderedNotes != signature) { _renderedNotes = signature; _notes.Content = RenderHistory(Owner, historyVm.ReleaseNotesHistory); }
+            _versionBadge.Visibility = _dateBadge.Visibility = _notesHeading.Visibility = Visibility.Collapsed;
+        }
+        else if (_renderedNotes != notesText) { _renderedNotes = notesText; _notes.Content = RenderNotes(notesText); }
         _progressArea.Visibility = state.Downloading && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
         _progress.IsIndeterminate = state.Indeterminate; _progress.Maximum = 100; _progress.Value = state.Percent;
         _progressText.Text = state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%";
         _success.Visibility = state.Ready && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
         _banner.Text = $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.";
-        _status.Text = _source.IsTestFixture || _notesOnly ? "" : state.Status;
+        _status.Text = _notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status;
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.
-        _notes.MaxHeight = Math.Min(_notesOnly ? 300 : 145, Math.Max(90, Owner.ActualHeight * (_notesOnly ? .43 : .22)));
-        MaxHeight = Math.Max(300, Owner.ActualHeight * (_notesOnly ? .86 : .80));
+        _notes.MaxHeight = _notesOnly ? double.PositiveInfinity : Math.Min(145, Math.Max(90, Owner.ActualHeight * .22));
+        MaxHeight = _notesOnly ? Math.Max(280, Owner.ActualHeight - 24) : Math.Max(300, Owner.ActualHeight * .80);
         var primaryContents = new StackPanel { Orientation = Orientation.Horizontal };
         var glyph = new TextBlock { Text = state.Downloading ? "◌" : state.Ready ? "↻" : "↓", Margin = new Thickness(0, 0, 8, 0), RenderTransformOrigin = new Point(.5, .5) };
         if (state.Downloading) { var rotation = new RotateTransform(); glyph.RenderTransform = rotation; rotation.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromSeconds(1.2)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever }); }
@@ -171,7 +196,7 @@ internal sealed class UpdateWindow : Window
         _later.Content = _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy";
     }
     internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);
-    private static Button MakeButton(MainWindow owner, string text, bool primary)
+    private static Button MakeButton(FrameworkElement owner, string text, bool primary)
     {
         var style = new Style(typeof(Button), (Style)owner.FindResource(primary ? "PrimaryButton" : "OutlineButton"));
         style.Setters.Add(new Setter(Control.BackgroundProperty, primary ? Gradient(false) : owner.FindResource("SurfaceBrush")));
@@ -207,6 +232,44 @@ internal sealed class UpdateWindow : Window
         button.MouseLeave += (_, _) => button.Foreground = (Brush)owner.FindResource("MutedBrush");
         return button;
     }
+    internal static StackPanel RenderHistory(FrameworkElement owner, IEnumerable<ReleaseNotesCacheEntry> history)
+    {
+        var panel = new StackPanel();
+        foreach (var entry in history)
+        {
+            var content = new StackPanel();
+            var header = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            header.ColumnDefinitions.Add(new ColumnDefinition());
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var label = new StackPanel();
+            label.Children.Add(new TextBlock { Text = "v" + entry.Version, FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)owner.FindResource("InkBrush"), FontSize = 14 });
+            if (!string.IsNullOrWhiteSpace(entry.ReleaseDate))
+                label.Children.Add(new TextBlock { Text = entry.ReleaseDate, Foreground = (Brush)owner.FindResource("MutedBrush"), Margin = new Thickness(0, 4, 0, 0) });
+            header.Children.Add(label);
+            if (!string.IsNullOrWhiteSpace(entry.DownloadUrl))
+            {
+                var download = MakeButton(owner, "Tải xuống", false);
+                download.VerticalAlignment = VerticalAlignment.Top;
+                AutomationProperties.SetName(download, "Tải phiên bản " + entry.Version);
+                download.Click += (_, _) =>
+                {
+                    try { Process.Start(new ProcessStartInfo(entry.DownloadUrl) { UseShellExecute = true }); }
+                    catch { AppDialogService.Show("Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng.", "Mở trang tải", MessageBoxButton.OK, MessageBoxImage.Information); }
+                };
+                Grid.SetColumn(download, 1); header.Children.Add(download);
+            }
+            content.Children.Add(header); content.Children.Add(RenderNotes(entry.Notes));
+            panel.Children.Add(new Border { Child = content, Background = (Brush)owner.FindResource("SurfaceBrush"),
+                BorderBrush = (Brush)owner.FindResource("LineBrush"), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14), Padding = new Thickness(18), Margin = new Thickness(0, 0, 0, 12) });
+        }
+        if (panel.Children.Count == 0)
+            panel.Children.Add(new TextBlock { Text = "Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến.",
+                TextWrapping = TextWrapping.Wrap, Foreground = (Brush)owner.FindResource("MutedBrush"), Margin = new Thickness(0, 8, 0, 8) });
+        return panel;
+    }
+
     private static StackPanel RenderNotes(string text)
     {
         var panel = new StackPanel();
@@ -217,6 +280,7 @@ internal sealed class UpdateWindow : Window
             var visible = heading ? line.TrimStart('#', ' ') : bullet ? "• " + line[2..] : line;
             var block = new TextBlock { TextWrapping = TextWrapping.Wrap,
                 FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal, FontSize = 13, Margin = new Thickness(bullet ? 7 : 0, heading ? 8 : 2, 0, 3), LineHeight = 20 };
+            block.SetResourceReference(TextBlock.ForegroundProperty, "InkBrush");
             var chunks = visible.Split("**", StringSplitOptions.None);
             for (var i = 0; i < chunks.Length; i++)
                 block.Inlines.Add(new Run(chunks[i]) { FontWeight = i % 2 == 1 ? FontWeights.SemiBold : heading ? FontWeights.SemiBold : FontWeights.Normal });

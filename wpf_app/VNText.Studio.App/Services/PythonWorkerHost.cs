@@ -56,24 +56,7 @@ public sealed class PythonWorkerHost : IDisposable
             if (!string.IsNullOrWhiteSpace(e.Data))
                 Publish(new WorkerEvent { Type = "log", Text = $"[stderr] {e.Data}" });
         };
-        _process.Exited += (_, _) =>
-        {
-            _ready = false;
-            var taskId = _activeTaskId ?? "";
-            var wasBusy = !string.IsNullOrEmpty(_activeTaskId);
-            _activeTaskId = null;
-            if (wasBusy)
-            {
-                Publish(new WorkerEvent
-                {
-                    Type = "complete",
-                    Id = taskId,
-                    Ok = false,
-                    Error = "Worker process exited unexpectedly",
-                });
-            }
-            Publish(new WorkerEvent { Type = "error", Error = "Worker process exited" });
-        };
+        _process.Exited += (_, _) => HandleProcessExited();
 
         if (!_process.Start())
             throw new InvalidOperationException("Failed to start Python worker");
@@ -158,16 +141,7 @@ public sealed class PythonWorkerHost : IDisposable
                 if (evt is null)
                     continue;
 
-                if (evt.Type == "ready")
-                    _ready = true;
-
-                if (evt.Type is "complete" or "error")
-                {
-                    if (string.IsNullOrEmpty(evt.Id) || evt.Id == _activeTaskId)
-                        _activeTaskId = null;
-                }
-
-                Publish(evt);
+                HandleWorkerEvent(evt);
             }
         }
         catch (OperationCanceledException)
@@ -181,6 +155,41 @@ public sealed class PythonWorkerHost : IDisposable
     }
 
     private void Publish(WorkerEvent evt) => EventReceived?.Invoke(this, evt);
+
+    private void HandleWorkerEvent(WorkerEvent evt)
+    {
+        if (evt.Type == "ready")
+            _ready = true;
+
+        // An error is diagnostic; the worker may still be unwinding or writing
+        // a terminal event. Only complete or actual process exit releases task ownership.
+        if (evt.Type == "complete"
+            && (string.IsNullOrEmpty(evt.Id) || string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal)))
+            _activeTaskId = null;
+
+        Publish(evt);
+    }
+
+    private void HandleProcessExited()
+    {
+        _ready = false;
+        var taskId = _activeTaskId ?? "";
+        var wasBusy = !string.IsNullOrEmpty(taskId);
+        _activeTaskId = null;
+        if (wasBusy)
+            Publish(new WorkerEvent
+            {
+                Type = "complete",
+                Id = taskId,
+                Ok = false,
+                Error = "Worker process exited unexpectedly",
+            });
+        Publish(new WorkerEvent { Type = "error", Id = taskId, Error = "Worker process exited" });
+    }
+
+    internal void TestSetActiveTaskId(string taskId) => _activeTaskId = taskId;
+    internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal void TestReportProcessExited() => HandleProcessExited();
 
     public void Dispose()
     {

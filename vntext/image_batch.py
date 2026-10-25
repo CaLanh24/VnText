@@ -83,8 +83,8 @@ def _render_draft(document, output, font_path, is_cancelled):
         image.save(stream,format='PNG')
 
 
-def run_image_batch(source, package, *, sources=None, is_cancelled=None, progress=None):
-    """Output originals and either a draft PNG or an unchanged failed copy."""
+def run_image_batch(source, package, *, sources=None, is_cancelled=None, progress=None, translate=True):
+    """OCR images, optionally translating and rendering drafts for Translate."""
     cancelled=is_cancelled or (lambda:False)
     source=_regular(source); package=_regular(package)
     package.mkdir(parents=True,exist_ok=True)
@@ -96,7 +96,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
     base=_regular(package/'images')
     root=base if not base.exists() else _regular(base/('retry-'+uuid.uuid4().hex))
     root.mkdir(parents=True,exist_ok=False)
-    for name in ('original','translated','untranslated'): (root/name).mkdir()
+    for name in ('original','ocr','translated','untranslated'): (root/name).mkdir()
     report={'schema':1,'status':'RUNNING','review_required':True,'inventory_complete':inventory['complete'],
             'inventory_errors':inventory['errors'],'items':[]}
     report_path=root/'report.json'
@@ -138,23 +138,29 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                 regions=document['regions']
                 if not regions: raise ValueError('Không nhận diện được chữ tiếng Anh trong ảnh.')
                 if len(regions)>500: raise ValueError('Ảnh có quá 500 vùng chữ.')
-                if translator is None and not model_error:
-                    try: translator=_translator()
-                    except Exception as exc: model_error=str(exc)
-                if model_error: raise ValueError(model_error)
-                if cancelled(): raise InterruptedError('cancelled')
-                translations=translator.translate_many([r['source_text'] for r in regions])
-                if len(translations)!=len(regions): raise ValueError('Số dòng bản dịch không khớp OCR.')
-                for region,text in zip(regions,translations):
-                    if not isinstance(text,str) or not text.strip() or text.strip().casefold()==region['source_text'].strip().casefold():
-                        raise ValueError('Model chưa dịch được đầy đủ chữ trong ảnh.')
-                    region['translation']=text
-                target=(root/'translated'/key).with_suffix('.png')
-                _render_draft(document,target,_font_path(),cancelled)
-                if used_bytes+target.stat().st_size>MAX_BATCH_BYTES:
-                    target.unlink(); raise ValueError('Output ảnh vượt giới hạn 512 MiB.')
-                used_bytes+=target.stat().st_size
-                item.update(status='TRANSLATED_DRAFT',translated=str(target.relative_to(root)),translated_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),regions=[{'box':r['box'],'text':r['source_text'],'translation':r['translation']} for r in regions])
+                if not translate:
+                    ocr_path=(root/'ocr'/key).with_suffix('.json')
+                    with ocr_path.open('x',encoding='utf-8') as stream:
+                        json.dump(document,stream,ensure_ascii=False,indent=2)
+                    item.update(status='OCR_READY',ocr_result=str(ocr_path.relative_to(root)),regions=[{'box':r['box'],'text':r['source_text']} for r in regions])
+                else:
+                    if translator is None and not model_error:
+                        try: translator=_translator()
+                        except Exception as exc: model_error=str(exc)
+                    if model_error: raise ValueError(model_error)
+                    if cancelled(): raise InterruptedError('cancelled')
+                    translations=translator.translate_many([r['source_text'] for r in regions])
+                    if len(translations)!=len(regions): raise ValueError('Số dòng bản dịch không khớp OCR.')
+                    for region,text in zip(regions,translations):
+                        if not isinstance(text,str) or not text.strip() or text.strip().casefold()==region['source_text'].strip().casefold():
+                            raise ValueError('Model chưa dịch được đầy đủ chữ trong ảnh.')
+                        region['translation']=text
+                    target=(root/'translated'/key).with_suffix('.png')
+                    _render_draft(document,target,_font_path(),cancelled)
+                    if used_bytes+target.stat().st_size>MAX_BATCH_BYTES:
+                        target.unlink(); raise ValueError('Output ảnh vượt giới hạn 512 MiB.')
+                    used_bytes+=target.stat().st_size
+                    item.update(status='TRANSLATED_DRAFT',translated=str(target.relative_to(root)),translated_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),regions=[{'box':r['box'],'text':r['source_text'],'translation':r['translation']} for r in regions])
             except Exception as exc:
                 item['reason']=str(exc)[:1000]
                 if original is not None and original.exists():
@@ -163,20 +169,32 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     used_bytes+=unchanged.stat().st_size; item['untranslated']=str(unchanged.relative_to(root))
                 if cancelled(): report['status']='CANCELLED'
             finally: save()
-            if progress: progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh','item':Path(reference).name})
-        if report['status']=='RUNNING': report['status']='COMPLETE' if inventory['complete'] else 'PARTIAL'
+            if progress: progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'OCR ảnh','item':Path(reference).name})
+        if report['status']=='RUNNING':
+            failed=any(item['status']=='UNTRANSLATED' for item in report['items'])
+            complete=inventory['complete'] and not failed
+            report['status']=('OCR_COMPLETE' if complete else 'OCR_PARTIAL') if not translate else ('COMPLETE' if complete else 'PARTIAL')
     except Exception:
         report['status']='CANCELLED' if cancelled() else 'PARTIAL'
         raise
     finally:
         report['translated']=sum(i['status']=='TRANSLATED_DRAFT' for i in report['items'])
-        report['untranslated']=len(report['items'])-report['translated']
+        report['ocr_ready']=sum(i['status']=='OCR_READY' for i in report['items'])
+        report['ocr_failed']=sum(i['status']=='UNTRANSLATED' for i in report['items']) if not translate else 0
+        report['untranslated']=report['ocr_failed'] if not translate else sum(i['status']=='UNTRANSLATED' for i in report['items'])
         report['total']=len(inventory['image_paths']); save()
-        lines=['KẾT QUẢ DỊCH ẢNH',
-               f"Đã tạo {report['translated']} ảnh dịch nháp; {report['untranslated']} ảnh chưa dịch.",
-               'original: ảnh gốc. translated: ảnh dịch tự động, cần tự xem lại. untranslated: ảnh chưa dịch, giữ nguyên nội dung.',
-               'Ảnh nguồn và game không bị sửa. Để thử lại, chọn ảnh gốc bằng nút Dịch lại ảnh… trong app.',
-               f"Trạng thái: {report['status']}. Chưa xử lý: {report['total']-len(report['items'])}.",'']
-        lines.extend(f"{Path(item['source']).name}: {'Đã dịch nháp' if item['status']=='TRANSLATED_DRAFT' else 'Chưa dịch — '+item['reason']}" for item in report['items'])
+        if translate:
+            lines=['KẾT QUẢ DỊCH ẢNH',
+                   f"Đã tạo {report['translated']} ảnh dịch nháp; {report['untranslated']} ảnh chưa dịch.",
+                   'original: ảnh gốc. translated: ảnh dịch tự động, cần tự xem lại. untranslated: ảnh chưa dịch, giữ nguyên nội dung.',
+                   'Ảnh nguồn và game không bị sửa. Để thử lại, chọn ảnh gốc bằng nút Dịch ảnh… trong bước Dịch.',
+                   f"Trạng thái: {report['status']}. Chưa xử lý: {report['total']-len(report['items'])}.",'']
+            lines.extend(f"{Path(item['source']).name}: {'Đã dịch nháp' if item['status']=='TRANSLATED_DRAFT' else 'Chưa dịch — '+item['reason']}" for item in report['items'])
+        else:
+            lines=['KẾT QUẢ OCR ẢNH',
+                   f"Đã OCR {report['ocr_ready']} ảnh; OCR lỗi/chưa nhận diện được chữ ở {report['ocr_failed']} ảnh.",
+                   'Ảnh gốc được giữ nguyên. Không chạy dịch máy hoặc render trong bước Lấy text.',
+                   f"Trạng thái: {report['status']}. Chưa xử lý: {report['total']-len(report['items'])}.",'']
+            lines.extend(f"{Path(item['source']).name}: {'OCR sẵn sàng' if item['status']=='OCR_READY' else 'OCR chưa xong — '+item['reason']}" for item in report['items'])
         (root/'ket-qua.txt').write_text('\n'.join(lines),encoding='utf-8')
-    return {k:report[k] for k in ('translated','untranslated','total')}|{'output':str(root),'cancelled':report['status']=='CANCELLED'}
+    return {k:report[k] for k in ('translated','untranslated','total','ocr_ready','ocr_failed')}|{'output':str(root),'cancelled':report['status']=='CANCELLED'}

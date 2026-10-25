@@ -56,7 +56,7 @@ public sealed partial class MainViewModel
 
     private bool CanStartTranslate()
     {
-        if (Busy || _translationModelUnavailable || !_translatePackageReady)
+        if (Busy || !_translationModelChecked || _translationModelUnavailable || !_translatePackageReady)
             return false;
         try
         {
@@ -68,6 +68,40 @@ public sealed partial class MainViewModel
         }
     }
 
+    public string TranslateReadinessText
+    {
+        get
+        {
+            if (Busy && (_runningTask is "translate" or "image_batch" or "image_render"))
+                return "Đang xử lý — xem bước, mục, thời gian và ETA bên dưới.";
+            if (!_translationModelChecked)
+                return "Đang kiểm tra mô hình dịch…";
+            if (_translationModelUnavailable)
+                return string.IsNullOrWhiteSpace(_modelStatus)
+                    ? "Không xác minh được runtime dịch; Dịch tự động đang bị khóa. Xem Cài đặt để biết chi tiết."
+                    : $"Dịch tự động đang bị khóa — {_modelStatus}";
+            if (_translatePackageChecking)
+                return "Đang kiểm tra translation.csv và manifest…";
+            if (!_translatePackageReady)
+                return string.IsNullOrWhiteSpace(_translatePackageMessage)
+                    ? "Chọn gói dịch có translation.csv và manifest.json hợp lệ."
+                    : _translatePackageMessage;
+            var count = _translatePackageRowCount == 1 ? "1 dòng" : $"{_translatePackageRowCount:N0} dòng";
+            return $"Sẵn sàng dịch · {count} · đã có bản dịch {_translatePackageTranslatedCount:N0}";
+        }
+    }
+
+    internal void TestSetTranslationModelReady(bool ready, string? message = null)
+    {
+        _translationModelChecked = true;
+        _translationModelUnavailable = !ready;
+        _modelStatus = ready ? "Mô hình dịch đã sẵn sàng." : message ?? "Chưa có mô hình dịch trên máy.";
+        Raise(nameof(ModelStatus));
+        Raise(nameof(TranslateReadinessText));
+        Raise(nameof(TranslateWorkflowStatusText));
+        RunTranslateCommand?.RaiseCanExecuteChanged();
+    }
+
     private string GetTranslateReadinessPath()
     {
         if (_csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath))
@@ -75,7 +109,7 @@ public sealed partial class MainViewModel
         return Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
     }
 
-    private void RefreshTranslateReadiness()
+    private void RefreshTranslateReadiness(bool syncCsvValidation = false)
     {
         var epoch = Interlocked.Increment(ref _translateReadinessEpoch);
         string path;
@@ -83,19 +117,40 @@ public sealed partial class MainViewModel
         catch
         {
             _translatePackageReady = false;
+            _translatePackageChecking = false;
+            _translatePackageMessage = "Không đọc được đường dẫn gói dịch.";
             _translateReadinessPath = "";
+            Raise(nameof(TranslateReadinessText));
+            Raise(nameof(TranslateWorkflowStatusText));
             RunTranslateCommand?.RaiseCanExecuteChanged();
             return;
         }
         _translatePackageReady = false;
+        _translatePackageChecking = true;
+        _translatePackageMessage = "Đang kiểm tra translation.csv và manifest…";
         _translateReadinessPath = path;
+        Raise(nameof(TranslateReadinessText));
+        Raise(nameof(TranslateWorkflowStatusText));
         RunTranslateCommand?.RaiseCanExecuteChanged();
 
         var dispatcher = Application.Current?.Dispatcher;
         void Apply(CsvValidationResult result)
         {
             if (epoch != Volatile.Read(ref _translateReadinessEpoch)) return;
+            if (syncCsvValidation)
+            {
+                // Extract created this package, so replace any earlier missing-file
+                // caption. Patch readiness remains governed by its stricter gate.
+                CsvValidationOk = result.Ok;
+                CsvValidationMessage = result.Message;
+            }
             _translatePackageReady = result.Ok;
+            _translatePackageChecking = false;
+            _translatePackageMessage = result.Message;
+            _translatePackageRowCount = result.TotalRows;
+            _translatePackageTranslatedCount = result.TranslatedRows;
+            Raise(nameof(TranslateReadinessText));
+            Raise(nameof(TranslateWorkflowStatusText));
             RunTranslateCommand?.RaiseCanExecuteChanged();
         }
         if (dispatcher is null || !dispatcher.CheckAccess())
@@ -494,7 +549,10 @@ public sealed partial class MainViewModel
     private void BeginTask(string task, object parameters, string statusLabel, string? workerTask = null)
     {
         if (Busy) return;
-        _activeTaskId = $"task-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        _cancelWatchdog?.Cancel();
+        _cancelWatchdog?.Dispose();
+        _cancelWatchdog = null;
+        _activeTaskId = $"task-{Guid.NewGuid():N}";
         _completionHandledKey = null;
         _runningTask = task;
         BeginTaskLog(_activeTaskId, task, statusLabel);
@@ -511,6 +569,35 @@ public sealed partial class MainViewModel
         ApplyRunningNav(task);
         ProgressSubtitle = "Đang bắt đầu…";
         ProgressPercent = 0;
+        if (task is "extract" or "analyze")
+        {
+            _extractProgressStep = statusLabel; _extractProgressItem = ""; _extractProgressEta = "";
+            Raise(nameof(ExtractProgressStep)); Raise(nameof(ExtractProgressItem)); Raise(nameof(ExtractProgressEta)); Raise(nameof(ExtractProgressHasEta));
+            _extractTaskStopwatch.Restart(); Raise(nameof(ExtractProgressElapsed));
+            StartWorkflowElapsedTimer();
+        }
+        else if (task == "patch")
+        {
+            _patchProgressStep = statusLabel; _patchProgressItem = ""; _patchProgressEta = "";
+            Raise(nameof(PatchProgressStep)); Raise(nameof(PatchProgressItem)); Raise(nameof(PatchProgressEta)); Raise(nameof(PatchProgressHasEta));
+            _patchTaskStopwatch.Restart(); Raise(nameof(PatchProgressElapsed));
+            StartWorkflowElapsedTimer();
+        }
+        if (OwnsTranslateProgressTask(task))
+        {
+            _translateProgressStep = statusLabel;
+            _translateProgressItem = "";
+            _translateProgressEta = "";
+            Raise(nameof(TranslateProgressStep)); Raise(nameof(TranslateProgressItem)); Raise(nameof(TranslateProgressEta)); Raise(nameof(TranslateProgressHasEta));
+            _translateTaskStopwatch.Restart();
+            _translateElapsedTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            _translateElapsedTimer.Tick -= OnTranslateElapsedTick;
+            _translateElapsedTimer.Tick += OnTranslateElapsedTick;
+            _translateElapsedTimer.Start();
+            _translateProgressRunning = true;
+            Raise(nameof(TranslateProgressElapsed));
+        }
+        SetOwnedProgress(task, 0, statusLabel);
         AppendLog($"Gửi lệnh worker: {task}");
         try
         {
@@ -527,12 +614,97 @@ public sealed partial class MainViewModel
         }
     }
 
+    private void OnTranslateElapsedTick(object? sender, EventArgs e) => Raise(nameof(TranslateProgressElapsed));
+
+    private void StartWorkflowElapsedTimer()
+    {
+        _workflowElapsedTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        _workflowElapsedTimer.Tick -= OnWorkflowElapsedTick;
+        _workflowElapsedTimer.Tick += OnWorkflowElapsedTick;
+        _workflowElapsedTimer.Start();
+    }
+
+    private void OnWorkflowElapsedTick(object? sender, EventArgs e)
+    {
+        if (_extractTaskStopwatch.IsRunning) Raise(nameof(ExtractProgressElapsed));
+        if (_patchTaskStopwatch.IsRunning) Raise(nameof(PatchProgressElapsed));
+    }
+
+    private static bool OwnsTranslateProgressTask(string? task) => task is
+        "translate" or "image_batch" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import";
+
     private void CancelTask()
     {
         if (!Busy) return;
         AppendLog("Yêu cầu hủy tác vụ…");
         StatusText = "Đang hủy…";
-        _worker.Cancel(_activeTaskId);
+        ProgressSubtitle = "Đã yêu cầu hủy; đang chờ worker xác nhận…";
+        var taskId = _activeTaskId;
+        SetOwnedProgress(_runningTask, text: ProgressSubtitle);
+        try
+        {
+            _worker.Cancel(taskId);
+            _cancelWatchdog?.Cancel();
+            _cancelWatchdog?.Dispose();
+            _cancelWatchdog = new CancellationTokenSource();
+            _ = WatchCancelTimeoutAsync(taskId, _cancelWatchdog.Token);
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Chưa gửi được yêu cầu hủy";
+            AppendLog($"Không gửi được yêu cầu hủy: {ex.Message}");
+        }
+    }
+
+    private void CancelAndExit()
+    {
+        if (!Busy) return;
+        _exitAfterTask = true;
+        CancelTask();
+    }
+
+    private void FinishCancelAndExit()
+    {
+        if (!_exitAfterTask) return;
+        _exitAfterTask = false;
+        ExitAfterTaskRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void MarkTaskTerminal(string taskId)
+    {
+        if (string.IsNullOrWhiteSpace(taskId) || !_terminalTaskIds.Add(taskId)) return;
+        _terminalTaskIdOrder.Enqueue(taskId);
+        while (_terminalTaskIdOrder.Count > 512)
+            _terminalTaskIds.Remove(_terminalTaskIdOrder.Dequeue());
+    }
+
+    private async Task WatchCancelTimeoutAsync(string taskId, CancellationToken token)
+    {
+        try { await Task.Delay(TimeSpan.FromSeconds(30), token).ConfigureAwait(false); }
+        catch (OperationCanceledException) { return; }
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            ReportCancelTimeout(taskId, token);
+            return;
+        }
+        if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished) return;
+        _ = dispatcher.BeginInvoke(new Action(() =>
+        {
+            ReportCancelTimeout(taskId, token);
+        }));
+    }
+
+    private void ReportCancelTimeout(string taskId, CancellationToken token)
+    {
+        if (!token.IsCancellationRequested && Busy
+            && string.Equals(taskId, _activeTaskId, StringComparison.Ordinal))
+        {
+            StatusText = "Hủy vẫn đang chờ tác vụ dừng an toàn";
+            ProgressSubtitle = "Chưa có kết quả cuối sau 30 giây; hãy tiếp tục chờ và không đóng ứng dụng cưỡng bức.";
+            SetOwnedProgress(_runningTask, text: ProgressSubtitle);
+            AddTaskProgress(taskId, ProgressSubtitle);
+        }
     }
 
 }

@@ -1,4 +1,13 @@
-# Current state pointer — 2026-10-24
+# Current state pointer — 2026-10-25
+
+## Release 0.1.12 — active DEV acceptance and publication
+
+- Owner authorized completion, build, tests, Setup/full-app updater, commit/push/tag and public publication. Public 0.1.11 remains immutable; starting implementation baseline is `988780d3b6777599b91429417d43f3f8cd7b10ac`.
+- DEV is the sole source writer in session `01a16fb1-af4b-77b3-a4e7-c54665725b35`; Brain monitors and reviews exact evidence. Checkpoint: `DEV_RUN/r012/CHECKPOINT-0.1.12.md`.
+- Current source acceptance evidence: affected gate 219 tests PASS (0 failures/errors, 2 explained skips); WPF CSV native layout gate at 27,767 rows PASS across three window sizes with visible rows and usable scrollbar. Native app currently shows local model readiness with the configured release venv. Windows file-picker interaction is unavailable through the supported capture/input channel; this limitation is not represented as a workflow PASS.
+- Source commit, exact-SHA full regression, portable release candidate, Setup/updater installed acceptance, publication and live GitHub readback remain pending. Real-game E2E remains `NOT TESTED`.
+- Release budget: temporary measured allocation up to 3 GiB for exact registered `RELEASE_RUN/candidate-0.1.12`; terminal non-exempt target <=1 GiB and shared `.dev-env` <=6 GiB. Preserve historical and user data.
+- Acceptance ledger: [`docs/RELEASE_0.1.12.md`](docs/RELEASE_0.1.12.md); scope and remediation plan: [`docs/POST_0.1.11_UX_REMEDIATION.md`](docs/POST_0.1.11_UX_REMEDIATION.md).
 
 ## Release 0.1.11 — fresh Setup update — 2026-10-24
 

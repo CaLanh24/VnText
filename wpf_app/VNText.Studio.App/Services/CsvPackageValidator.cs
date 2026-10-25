@@ -65,7 +65,7 @@ public static class CsvPackageValidator
 
             return new CsvValidationResult(
                 true,
-                $"Hợp lệ — {translated}/{total} dòng có translation",
+                $"Hợp lệ — {translated}/{total} câu đã có bản dịch",
                 total,
                 translated,
                 path,

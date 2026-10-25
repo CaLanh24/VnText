@@ -1,11 +1,21 @@
 """Python worker entry — JSON stdin/stdout, long-lived process."""
 from __future__ import annotations
 
+import importlib
 import sys
 import threading
+import time
 from typing import Any
 
-from vntext_worker.protocol import emit_complete, emit_error, emit_ready, read_commands
+from vntext_worker.protocol import (
+    emit_cancel_ack,
+    emit_complete,
+    emit_error,
+    emit_log,
+    emit_progress,
+    emit_ready,
+    read_commands,
+)
 from vntext_worker.sample_worker import run_sample_task
 from vntext_worker.task_runners import (
     run_analyze_worker,
@@ -13,6 +23,26 @@ from vntext_worker.task_runners import (
     run_patch_worker,
     run_translate_worker,
 )
+
+
+_CT2_PRELOAD_ERROR = ""
+
+
+def _preload_ct2_runtime() -> None:
+    """Load CT2 on the worker's main thread before tasks use the Python API.
+
+    CT2's native runtime can stall when the first import happens inside the
+    background task thread on some Windows setups. Keep the dependency optional
+    for extract/patch tasks: store a clear readiness error and still start the
+    JSON worker if import fails.
+    """
+    global _CT2_PRELOAD_ERROR
+    try:
+        importlib.import_module("ctranslate2")
+    except Exception as exc:
+        _CT2_PRELOAD_ERROR = f"{type(exc).__name__}: {exc}"
+    else:
+        _CT2_PRELOAD_ERROR = ""
 
 
 def _normalize_params(raw: Any, task_id: str) -> dict[str, Any] | None:
@@ -55,14 +85,100 @@ def _dispatch(task_id: str, task: str, params: dict[str, Any], cancel_event: thr
         emit_complete(task_id, ok=False, error=str(exc))
 
 
-def _ensure_ct2_on_main_thread() -> None:
-    """Init CT2 on the command thread before translate runs in a worker thread."""
+def _prepare_and_dispatch(task_id: str, task: str, params: dict[str, Any], cancel_event: threading.Event) -> None:
+    # Model loading can be slow. The CT2 Python module is preloaded on the main
+    # thread at startup; keep model/file initialization inside this single-flight
+    # task thread so the command loop can still accept cancel/ping.
+    if task in {"translate", "image_batch"}:
+        try:
+            emit_log(task_id, "Đang kiểm tra trạng thái mô hình CTranslate2…")
+            emit_progress(task_id, done=0, total=0, step="Đang kiểm tra mô hình dịch offline…")
+            ct2_initialized = _ensure_ct2_ready(task_id, cancel_event.is_set)
+        except Exception as exc:
+            if task != "image_batch":
+                message = str(exc)
+                emit_error(task_id, message)
+                emit_complete(task_id, ok=False, error=message)
+                return
+            # Image OCR remains useful without CT2; the image runner records the
+            # concrete model failure only if translation was explicitly asked.
+    if task == "translate" and (cancel_event.is_set() or ct2_initialized is False):
+        emit_complete(task_id, ok=False, error="cancelled during model initialization")
+        return
+    emit_log(task_id, f"Đã sẵn sàng chạy tác vụ {task}.")
+    if task == "translate":
+        emit_progress(task_id, done=0, total=0, step="Đang chuẩn bị dịch…")
+    _dispatch(task_id, task, params, cancel_event)
+
+
+def _ensure_ct2_ready(task_id: str = "", is_cancelled=None) -> bool:
+    """Initialize CT2 in the serialized task thread before its workflow starts."""
+    import os
+
+    if _CT2_PRELOAD_ERROR:
+        message = (
+            "Không nạp được runtime CTranslate2 "
+            f"({_CT2_PRELOAD_ERROR}); Dịch tự động đang bị khóa."
+        )
+        if task_id:
+            emit_log(task_id, f"CT2_PRELOAD_ERROR {message}")
+        raise RuntimeError(message)
+
     from vntext.mt_ct2 import get_translator, model_status
 
-    status = model_status()
+    if task_id:
+        runtime = {
+            "pid": os.getpid(),
+            "argv": sys.argv,
+            "executable": sys.executable,
+            "prefix": sys.prefix,
+            "base_prefix": sys.base_prefix,
+            "sys_path": sys.path,
+            "worker_module": __file__,
+            "model_status_module": getattr(model_status, "__module__", ""),
+            "cwd": os.getcwd(),
+            "pythonhome": os.environ.get("PYTHONHOME", ""),
+            "pythonpath": os.environ.get("PYTHONPATH", ""),
+            "localappdata": os.environ.get("LOCALAPPDATA", ""),
+            "vntext_localappdata": os.environ.get("VNTEXT_LOCALAPPDATA", ""),
+            "worker_cwd": os.environ.get("VNTEXT_WORKER_CWD", ""),
+            "worker_python": os.environ.get("VNTEXT_WORKER_PYTHON", ""),
+            "model_dir_env": os.environ.get("VNTEXT_MODEL_DIR", "") or os.environ.get("VNTEXT_CT2_MODEL", ""),
+        }
+        emit_log(task_id, f"CT2_INIT_BEFORE model_status: {runtime}")
+    started = time.monotonic()
+    try:
+        if task_id:
+            status = model_status(progress_callback=lambda message: emit_log(task_id, f"CT2_INIT_MODEL_STATUS {message}"))
+        else:
+            status = model_status()
+    except Exception as exc:
+        elapsed_ms = round((time.monotonic() - started) * 1000)
+        if task_id:
+            emit_log(task_id, f"CT2_INIT_MODEL_STATUS_ERROR elapsed_ms={elapsed_ms} {type(exc).__name__}: {exc}")
+        raise
+    elapsed_ms = round((time.monotonic() - started) * 1000)
+    if task_id:
+        emit_log(
+            task_id,
+            "CT2_INIT_AFTER model_status: "
+            f"elapsed_ms={elapsed_ms} ready={status.get('ready')} "
+            f"runtime_ready={status.get('runtime_ready')} version={status.get('runtime_version')} "
+            f"path={status.get('path')} message={status.get('message')}",
+        )
     if not status.get("ready"):
         raise RuntimeError(status.get("message") or "Model CTranslate2 chưa sẵn sàng")
+    if is_cancelled is not None and is_cancelled():
+        if task_id:
+            emit_log(task_id, "Đã nhận yêu cầu hủy sau khi kiểm tra model; bỏ qua nạp bộ dịch.")
+        return False
+    if task_id:
+        emit_log(task_id, "Mô hình đã có; đang nạp bộ dịch offline…")
+        emit_progress(task_id, done=0, total=0, step="Đang nạp mô hình dịch offline…")
     get_translator()
+    if task_id:
+        emit_log(task_id, "Đã nạp xong bộ dịch offline.")
+    return True
 
 
 def _configure_stdio_utf8() -> None:
@@ -77,11 +193,8 @@ def _configure_stdio_utf8() -> None:
 
 def main() -> int:
     _configure_stdio_utf8()
+    _preload_ct2_runtime()
     emit_ready()
-    # Initialize CT2 synchronously on translate and optional image paths. Loading
-    # the native runtime in a background thread races file I/O in patch/extract
-    # tasks on Windows; _ensure_ct2_on_main_thread() still preserves translate
-    # readiness semantics.
     active_cancel: threading.Event | None = None
     active_thread: threading.Thread | None = None
     active_id = ""
@@ -95,6 +208,9 @@ def main() -> int:
             cid = str(cmd.get("id") or "")
             if active_cancel is not None and (not cid or cid == active_id):
                 active_cancel.set()
+                emit_cancel_ack(cid or active_id, "accepted")
+            else:
+                emit_cancel_ack(cid, "stale")
             continue
         if ctype != "run":
             emit_error(str(cmd.get("id") or ""), f"Unknown command type: {ctype}")
@@ -120,13 +236,6 @@ def main() -> int:
             emit_complete(task_id, ok=False, error="Worker busy")
             continue
 
-        # Keep native CT2 initialization on the command thread. Optional image
-        # drafts cannot make text extraction fail when the model is missing.
-        if task in {"extract", "image_batch"}:
-            try:
-                _ensure_ct2_on_main_thread()
-            except Exception:
-                pass  # The image report records the concrete missing-model error.
         if task == "translate":
             model = str(params.get("model") or "ct2").strip().lower()
             if model != "ct2":
@@ -134,18 +243,11 @@ def main() -> int:
                 emit_error(task_id, msg)
                 emit_complete(task_id, ok=False, error=msg)
                 continue
-            try:
-                _ensure_ct2_on_main_thread()
-            except Exception as exc:
-                msg = str(exc)
-                emit_error(task_id, msg)
-                emit_complete(task_id, ok=False, error=msg)
-                continue
-
+        emit_log(task_id, f"Đã nhận tác vụ {task}.")
         active_id = task_id
         active_cancel = threading.Event()
         active_thread = threading.Thread(
-            target=_dispatch,
+            target=_prepare_and_dispatch,
             args=(task_id, task, params, active_cancel),
             daemon=True,
         )
