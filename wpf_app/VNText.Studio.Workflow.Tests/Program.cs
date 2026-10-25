@@ -4099,6 +4099,10 @@ internal static partial class Program
             var current = states.Dequeue();
             var source = new FixturePresentation(); source.SetState(current == "success" ? "about" : current);
             var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false); vm.SelectedTab = WorkflowTabs.Settings;
+            if (current == "notes") vm.ReleaseNotesHistory.Add(new ReleaseNotesCacheEntry
+            {
+                Version = source.Version, ReleaseDate = source.ReleaseDate, Notes = source.Notes
+            });
             var window = new VNText.Studio.App.MainWindow(vm, source) { Title = "VNText Studio — TEST ONLY updater presentation" };
             var ticks = 0;
             var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(200) };
@@ -4118,8 +4122,16 @@ internal static partial class Program
                     }
                     if (modal is null) return;
                     AssertTrue(modal.Owner == window); AssertTrue(modal.IsVisible);
-                    if (modal.SizeToContent != SizeToContent.Height) throw new InvalidOperationException("fixture: content sizing disabled");
-                    if (modal.ActualHeight >= window.ActualHeight * .9) throw new InvalidOperationException($"fixture: modal too tall {modal.ActualHeight}/{window.ActualHeight}");
+                    if (current == "notes")
+                    {
+                        if (modal.SizeToContent != SizeToContent.Manual) throw new InvalidOperationException("fixture: release notes should use bounded manual sizing");
+                        if (modal.ActualHeight > 720 || modal.ActualHeight >= window.ActualHeight * .9) throw new InvalidOperationException($"fixture: release-notes modal too tall {modal.ActualHeight}/{window.ActualHeight}");
+                    }
+                    else
+                    {
+                        if (modal.SizeToContent != SizeToContent.Height) throw new InvalidOperationException("fixture: status modal should size to content");
+                        if (modal.ActualHeight >= window.ActualHeight * .9) throw new InvalidOperationException($"fixture: modal too tall {modal.ActualHeight}/{window.ActualHeight}");
+                    }
                     AssertTrue(System.Windows.Input.KeyboardNavigation.GetTabNavigation(modal) == System.Windows.Input.KeyboardNavigationMode.Cycle);
                     for (var focusStep = 0; focusStep < 10; focusStep++)
                     {
