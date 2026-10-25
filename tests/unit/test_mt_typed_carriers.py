@@ -317,6 +317,31 @@ class SemanticStructureTests(unittest.TestCase):
         self.assertIn("8%", out)
         self.assertEqual(out.count("("), out.count(")"))
 
+    def test_parenthetical_segments_keep_the_source_boundaries_between_pieces(self):
+        from vntext.mt_strategies import translate_parenthetical_segments_ct2
+
+        class StripTranslator:
+            """Returns translated prose without any leading/trailing punctuation or whitespace."""
+
+            def translate(self, text):
+                return "T[" + text.strip().strip(".,;:!?-\u2013\u2014 ").strip() + "]"
+
+            def translate_many(self, texts):
+                return [self.translate(t) for t in texts]
+
+        out = translate_parenthetical_segments_ct2("Price: $5.00 (tax included). Do you accept?", StripTranslator())
+        self.assertIn("(T[tax included]). T[", out)
+        self.assertNotIn("(T[tax included])T[", out)
+        out = translate_parenthetical_segments_ct2("NPC: The price (tax: 8%) - do you accept?", StripTranslator())
+        self.assertIn(") - T[", out)
+        # No boundary run to preserve: pieces are not glued with invented separators.
+        out = translate_parenthetical_segments_ct2("Hello (zorp quux) there", StripTranslator())
+        self.assertIn("(T[zorp quux])", out)
+        # Carriers outside the parenthetical are untouched by the boundary handling.
+        out = translate_parenthetical_segments_ct2("Cost $5 (tax). Visit https://example.invalid/a?b=1", StripTranslator())
+        self.assertIn("https://example.invalid/a?b=1", out)
+        self.assertIn("$5", out)
+
     def test_ambiguous_sentence_initial_names_stay_protected(self):
         # Capital + vocabulary frequency cannot separate names from words (Rose, Grace, Mark,
         # Bill, Dawn, Summer, Hunter; Will/May/Hope are already in the known-word lists):

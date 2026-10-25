@@ -394,6 +394,24 @@ def translate_sentence_segments_ct2(src: str, translator: Any) -> str:
     ))
 
 
+_BOUNDARY_LEAD = re.compile(r"^[\s.,;:!?\u2026\-\u2013\u2014]+")
+
+
+def _translate_exterior_piece(piece: str, fn: Any, *, key_prefix: bool) -> str:
+    """Translate text outside a parenthetical while keeping its leading boundary.
+
+    Separators such as ``). `` or `` - `` belong to the source structure; the model
+    tends to drop them, which glues ``(...)`` straight onto the next clause.  The
+    boundary run is copied verbatim and only the remaining prose is translated.
+    """
+    lead = _BOUNDARY_LEAD.match(piece)
+    boundary = lead.group(0) if lead else ""
+    rest = piece[len(boundary):]
+    if not rest.strip():
+        return piece
+    return boundary + translate_protected(rest, fn, always_attempt=True, key_prefix=key_prefix)
+
+
 def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
     """Translate balanced parenthetical asides independently.
 
@@ -410,9 +428,7 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
     for match in re.finditer(r"\([^()]*\)", src):
         if match.start() > cursor:
             pieces.append(
-                translate_protected(
-                    src[cursor : match.start()], fn, always_attempt=True, key_prefix=cursor == 0
-                )
+                _translate_exterior_piece(src[cursor : match.start()], fn, key_prefix=cursor == 0)
             )
         original = match.group(0)
         inner = original[1:-1]
@@ -425,7 +441,7 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
         pieces.append("(" + translated_inner + ")")
         cursor = match.end()
     if cursor < len(src):
-        pieces.append(translate_protected(src[cursor:], fn, always_attempt=True, key_prefix=False))
+        pieces.append(_translate_exterior_piece(src[cursor:], fn, key_prefix=False))
     return postprocess(src, "".join(pieces))
 
 
