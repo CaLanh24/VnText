@@ -1649,6 +1649,178 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertIn("epoch_rebaseline_approval_already_consumed", refused["reasons"])
             self.assertEqual(after_ordinary, manifest.read_bytes())
 
+    def _release_013_guards(self, head_sha: str, *, version: str = "0.1.13", descendant: bool = True):
+        return (
+            patch.object(cleanup, "_git_repository_state", return_value={"head": head_sha, "dirty": False, "error": ""}),
+            patch.object(cleanup, "_git_is_ancestor", return_value=descendant),
+            patch.object(cleanup, "_git_version_at", return_value=version),
+            patch.object(cleanup, "_incident_identity", return_value={"scope_id": cleanup.INCIDENT_SCOPE_ID, "status": "PASS", "sha256": cleanup.INCIDENT_REGISTRY_SHA256, "artifact_count": 6}),
+        )
+
+    def _release_013_rebaseline(self, manifest: Path, target_sha: str, epoch_id: str, **overrides):
+        before = manifest.read_bytes()
+        kwargs = {
+            "dry_run": False,
+            "epoch_id": epoch_id,
+            "source_sha": target_sha,
+            "release_task_id": cleanup.RELEASE_TASK_013_BUDGET_ID,
+            "rebaseline_from_epoch_id": json.loads(before)["prospective_epoch"]["epoch_id"],
+            "expected_manifest_sha256": cleanup.hashlib.sha256(before).hexdigest(),
+            "owner_rebaseline_authorization_id": cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID,
+            "owner_rebaseline_authorization": cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL,
+        }
+        kwargs.update(overrides)
+        return cleanup.activate_prospective_epoch(**kwargs)
+
+    def test_release_013_rebaseline_after_exhausted_chain_preserves_history_and_is_single_use(self):
+        task_id = cleanup.RELEASE_TASK_013_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.13", task_id=task_id)
+            for hop in range(1, 10):
+                before = manifest.read_bytes()
+                old = json.loads(before)["prospective_epoch"]
+                target_sha = f"{hop + 60:040x}"
+                git_guard, ancestry, version, incident = self._release_013_guards(target_sha)
+                with git_guard, ancestry, version, incident:
+                    result = cleanup.activate_prospective_epoch(
+                        dry_run=False, epoch_id=f"epoch-013-chain-{hop}", source_sha=target_sha,
+                        release_task_id=task_id, transition_from_epoch_id=old["epoch_id"],
+                        expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                        owner_transition_authorization=cleanup.RELEASE_TASK_013_BUDGET_APPROVAL,
+                    )
+                if hop <= 8:
+                    self.assertTrue(result["ok"], result)
+                else:
+                    # The ordinary eight-hop limit is unchanged.
+                    self.assertIn("transition_active_epoch_integrity_failed", result["reasons"])
+                    self.assertEqual(before, manifest.read_bytes())
+
+            old_bytes = manifest.read_bytes()
+            old_document = json.loads(old_bytes)
+            old_epoch = old_document["prospective_epoch"]
+            old_files = {path: path.read_bytes() for path in cleanup._prospective_epoch_root().rglob("*") if path.is_file()}
+            target_sha = f"{80:040x}"
+            git_guard, ancestry, version, incident = self._release_013_guards(target_sha)
+            with git_guard, ancestry, version, incident:
+                borrowed = self._release_013_rebaseline(
+                    manifest, target_sha, "epoch-013-borrowed-015",
+                    owner_rebaseline_authorization_id=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID,
+                    owner_rebaseline_authorization=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL,
+                )
+                self.assertFalse(borrowed["ok"], borrowed)
+                self.assertIn("epoch_rebaseline_release_task_required", borrowed["reasons"])
+                self.assertEqual(old_bytes, manifest.read_bytes())
+
+                planned = self._release_013_rebaseline(manifest, target_sha, "epoch-013-rebaseline", dry_run=True)
+                self.assertTrue(planned["ok"], planned)
+                self.assertEqual(old_bytes, manifest.read_bytes())
+                applied = self._release_013_rebaseline(manifest, target_sha, "epoch-013-rebaseline")
+                self.assertTrue(applied["ok"], applied)
+                self.assertEqual([], applied["deletions"])
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+            current_document = json.loads(manifest.read_bytes())
+            current = current_document["prospective_epoch"]
+            record = current["rebaseline_provenance"]
+            self.assertEqual(cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID, record["authorization_id"])
+            self.assertEqual(cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL, record["owner_authorization"])
+            self.assertEqual(old_epoch["epoch_id"], record["previous_epoch_id"])
+            self.assertEqual(task_id, current["release_task_budget"]["task_id"])
+            self.assertEqual(old_bytes, Path(current["rollback"]["path"]).read_bytes())
+            self.assertEqual(old_document["artifacts"], current_document["artifacts"][: len(old_document["artifacts"])])
+            self.assertEqual(old_files, {path: path.read_bytes() for path in old_files})
+
+            ancestor_policy = next(path for path in old_files if path.name == "epoch_policy.json")
+            ancestor_policy.write_bytes(b"tampered ancestor policy")
+            git_guard, ancestry, version, incident = self._release_013_guards(target_sha)
+            with git_guard, ancestry, version, incident:
+                self.assertFalse(cleanup.verify_prospective_epoch()["ok"])
+                ancestor_policy.write_bytes(old_files[ancestor_policy])
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+            before_hop = manifest.read_bytes()
+            next_sha = f"{81:040x}"
+            git_guard, ancestry, version, incident = self._release_013_guards(next_sha)
+            with git_guard, ancestry, version, incident:
+                ordinary = cleanup.activate_prospective_epoch(
+                    dry_run=False, epoch_id="epoch-013-after-rebaseline", source_sha=next_sha,
+                    release_task_id=task_id, transition_from_epoch_id=current["epoch_id"],
+                    expected_manifest_sha256=cleanup.hashlib.sha256(before_hop).hexdigest(),
+                    owner_transition_authorization=cleanup.RELEASE_TASK_013_BUDGET_APPROVAL,
+                )
+                self.assertTrue(ordinary["ok"], ordinary)
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+
+            after_hop = manifest.read_bytes()
+            git_guard, ancestry, version, incident = self._release_013_guards(f"{82:040x}")
+            with git_guard, ancestry, version, incident:
+                second = self._release_013_rebaseline(manifest, f"{82:040x}", "epoch-013-second-use")
+            self.assertFalse(second["ok"], second)
+            self.assertIn("epoch_rebaseline_approval_already_consumed", second["reasons"])
+            self.assertEqual(after_hop, manifest.read_bytes())
+            self.assertFalse((cleanup._prospective_epoch_root() / "epoch-013-second-use").exists())
+
+    def test_release_013_rebaseline_refuses_wrong_task_version_text_lineage_and_active_task(self):
+        cases = ("wrong_task", "wrong_version", "bad_text", "non_descendant", "active_012")
+        for failure_case in cases:
+            with self.subTest(failure_case=failure_case), self.isolated_workspace() as (root, _work, _game, manifest):
+                active_task = cleanup.RELEASE_TASK_012_BUDGET_ID if failure_case == "active_012" else cleanup.RELEASE_TASK_013_BUDGET_ID
+                with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": active_task}):
+                    self._active_release_epoch_for_transition(
+                        root, manifest, version="0.1.12" if failure_case == "active_012" else "0.1.13", task_id=active_task
+                    )
+                (root / "VERSION.txt").write_text("0.1.13\n", encoding="utf-8")
+                target_sha = "c" * 40
+                overrides = {}
+                if failure_case == "wrong_task":
+                    overrides["release_task_id"] = cleanup.RELEASE_TASK_012_BUDGET_ID
+                if failure_case == "bad_text":
+                    overrides["owner_rebaseline_authorization"] = "Owner approved something else"
+                before = manifest.read_bytes()
+                git_guard, ancestry, version, incident = self._release_013_guards(
+                    target_sha,
+                    version="0.1.12" if failure_case == "wrong_version" else "0.1.13",
+                    descendant=failure_case != "non_descendant",
+                )
+                with git_guard, ancestry, version, incident, patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_013_BUDGET_ID}):
+                    result = self._release_013_rebaseline(manifest, target_sha, "epoch-013-refused", **overrides)
+                self.assertFalse(result["ok"], result)
+                expected = {
+                    "wrong_task": "epoch_rebaseline_release_task_required",
+                    "wrong_version": "epoch_rebaseline_source_version_mismatch",
+                    "bad_text": "epoch_rebaseline_owner_authorization_invalid",
+                    "non_descendant": "epoch_rebaseline_source_not_descendant",
+                    "active_012": "epoch_rebaseline_active_task_mismatch",
+                }[failure_case]
+                self.assertIn(expected, result["reasons"])
+                self.assertEqual(before, manifest.read_bytes())
+                self.assertFalse((cleanup._prospective_epoch_root() / "epoch-013-refused").exists())
+
+    def test_consumed_015_approval_does_not_consume_013_but_013_record_does(self):
+        with self.isolated_workspace() as (root, _work, _game, _manifest):
+            origin = {"epoch_id": "epoch-origin", "source_sha": "a" * 40}
+            rollback = root / "origin-rollback.json"
+            rollback.write_text(json.dumps({"prospective_epoch": origin}), encoding="utf-8")
+
+            def rebaseline_epoch(authorization_id: str) -> dict:
+                return {
+                    "epoch_id": f"epoch-after-{authorization_id[-6:]}",
+                    "rebaseline_provenance": {"previous_epoch_id": "epoch-origin", "authorization_id": authorization_id},
+                    "rollback": {"manifest_absent": False, "path": str(rollback)},
+                }
+
+            after_015 = rebaseline_epoch(cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID)
+            self.assertTrue(cleanup._rebaseline_approval_consumed(
+                after_015, manifest={}, authorization_id=cleanup.RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID))
+            self.assertFalse(cleanup._rebaseline_approval_consumed(
+                after_015, manifest={}, authorization_id=cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID))
+            after_013 = rebaseline_epoch(cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID)
+            self.assertTrue(cleanup._rebaseline_approval_consumed(
+                after_013, manifest={}, authorization_id=cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID))
+            unreadable = dict(after_015, rollback={"manifest_absent": False, "path": str(root / "missing.json")})
+            self.assertTrue(cleanup._rebaseline_approval_consumed(
+                unreadable, manifest={}, authorization_id=cleanup.RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID))
+
     def test_owner_rebaseline_refuses_writer_incomplete_inventory_and_rolls_back_verification_failure(self):
         for failure_case in ("writer", "incomplete_inventory", "verify_failure", "manifest_conflict"):
             with self.subTest(failure_case=failure_case), self.isolated_workspace() as (_root, work, _game, manifest):
