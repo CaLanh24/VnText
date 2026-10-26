@@ -734,6 +734,14 @@ public sealed partial class MainViewModel
     /// package took seconds, freezing the window and leaving the confirm overlay on screen).  The
     /// editor stays locked (same lock as a save) so nothing edits the rows underneath the call.
     /// </summary>
+    // Everything a bulk preview/apply result depends on.  Captured BEFORE the off-thread call and
+    // compared after it: the find/replace boxes, filter, scope, selection and the load/edit
+    // generations can change while the Python engine runs, and a result computed for the old
+    // inputs must never be stored as the pending preview of the new ones.
+    private (string Signature, string Selection, int LoadGeneration, long EditGeneration) CsvBulkStamp() =>
+        (CsvBulkSignature(), string.Join("\u001e", _csvEditorSelectedKeys),
+         Volatile.Read(ref _csvLoadGeneration), Volatile.Read(ref _csvEditorEditGeneration));
+
     internal Func<Func<object?>, Task<object?>> CsvEditorBackgroundExecutor { get; set; } = work => Task.Run(work);
 
     private async Task<T> RunCsvEditorBackgroundAsync<T>(Func<T> work)
@@ -758,9 +766,15 @@ public sealed partial class MainViewModel
 
         var rows = BuildCsvSaveRows();
         var keys = ResolveCsvBulkKeys();
+        var stamp = CsvBulkStamp();
         var (previewPath, previewFields, previewFind, previewReplace) = (CsvEditorPath, _csvEditorFields.ToList(), CsvBulkFind, CsvBulkReplace);
         var preview = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.PreviewReplace(
             previewPath, previewFields, rows, previewFind, previewReplace, keys));
+        if (stamp != CsvBulkStamp() || !string.Equals(previewPath, CsvEditorPath, StringComparison.OrdinalIgnoreCase))
+        {
+            InvalidateCsvBulkPreview("Chuỗi tìm/thay, bộ lọc hoặc dữ liệu đã đổi trong lúc xem trước — hãy xem trước lại.");
+            return;
+        }
         if (!preview.Ok)
         {
             CsvBulkPreview = preview.Error ?? "Không xem trước được thao tác thay thế.";
@@ -768,7 +782,7 @@ public sealed partial class MainViewModel
             return;
         }
         _csvBulkPendingPreview = preview.Count == 0 ? null : preview;
-        _csvBulkPendingSignature = preview.Count == 0 ? "" : CsvBulkSignature();
+        _csvBulkPendingSignature = preview.Count == 0 ? "" : stamp.Signature;
         Raise(nameof(CsvBulkCanApply));
         ApplyBulkReplaceCsvCommand?.RaiseCanExecuteChanged();
         CsvBulkPreview = preview.Count == 0
@@ -802,9 +816,15 @@ public sealed partial class MainViewModel
         var expectedPreview = _csvBulkPendingPreview!;
         var rows = BuildCsvSaveRows();
         var keys = ResolveCsvBulkKeys();
+        var stamp = CsvBulkStamp();
         var (applyPath, applyFields, applyFind, applyReplace) = (CsvEditorPath, _csvEditorFields.ToList(), CsvBulkFind, CsvBulkReplace);
         var preview = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.PreviewReplace(
             applyPath, applyFields, rows, applyFind, applyReplace, keys));
+        if (stamp != CsvBulkStamp() || !string.Equals(applyPath, CsvEditorPath, StringComparison.OrdinalIgnoreCase))
+        {
+            InvalidateCsvBulkPreview("Chuỗi tìm/thay, bộ lọc hoặc dữ liệu đã đổi trong lúc kiểm tra — hãy xem trước lại.");
+            return;
+        }
         if (!preview.Ok || preview.Count != expectedPreview.Count || preview.ReplacementCount != expectedPreview.ReplacementCount ||
             !preview.Keys.SequenceEqual(expectedPreview.Keys, StringComparer.OrdinalIgnoreCase))
         {
@@ -813,11 +833,13 @@ public sealed partial class MainViewModel
         }
         var confirm =
             $"Thay thế {preview.ReplacementCount:N0} lần trong {preview.Count:N0} dòng?\n\n" +
-            $"Tìm: {CsvBulkFind}\nThay bằng: {CsvBulkReplace}\n" +
+            $"Tìm: {applyFind}\nThay bằng: {applyReplace}\n" +
             "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.\n" +
             "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu.";
         if (AppDialogService.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
+        // The confirm dialog is modal but the boxes were editable before it opened; the exact
+        // values the user confirmed (applyFind/applyReplace/keys) are the ones written below.
 
         var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.ReplaceTranslation(
             applyPath, applyFields, rows, applyFind, applyReplace, keys));
@@ -846,7 +868,7 @@ public sealed partial class MainViewModel
         CsvBulkPreview = $"Đã thay {result.ReplacementCount:N0} lần trong {result.Count:N0} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục.";
         AppendLog($"Bulk replace translation: {CsvBulkPreview} Backup={result.BackupPath}");
         ShowToast(CsvBulkPreview, result.PatchBlocked > 0 ? "warning" : "success");
-        LoadCsvEditor(CsvEditorPath, reload: true);
+        LoadCsvEditor(applyPath, reload: true);
     }
 
     private string CsvBulkSignature() => string.Join("\u001f", CsvEditorPath, CsvBulkFind, CsvBulkReplace, CsvBulkScope,

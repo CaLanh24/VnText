@@ -351,6 +351,13 @@ def source_proper_name_tokens(src, whitelist=None):
             and _SENTENCE_END_BEFORE.search(body[: match.start()])
             and not body[match.end():matches[index + 1].start()].strip()
             and matches[index + 1].group(0).casefold() in (_DETERMINERS | _FRAME_PREPOSITIONS)
+            # "Aria the Bold": a capitalised word after the determiner is an epithet, so the
+            # first word is a name and stays protected (conservative side of the boundary).
+            and not (
+                matches[index + 1].group(0).casefold() in _DETERMINERS
+                and index + 2 < len(matches)
+                and matches[index + 2].group(0)[:1].isupper()
+            )
         ):
             continue
         if index == 0 and len(matches) > 1:

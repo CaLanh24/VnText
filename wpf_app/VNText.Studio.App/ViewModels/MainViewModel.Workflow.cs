@@ -82,6 +82,15 @@ public sealed partial class MainViewModel
                     : $"Dịch tự động đang bị khóa — {_modelStatus}";
             if (_translatePackageChecking)
                 return "Đang kiểm tra translation.csv và manifest…";
+            if (!_translatePackageReady && _translatePackageMessage == CsvPackageValidator.NoDataRowsMessage)
+            {
+                // Text-less container (for example OCR-only images): the CSV is legitimately empty.
+                var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
+                if (images.OcrReady + images.TranslatedDrafts > 0)
+                    return $"Không có dòng text để dịch • {images.OcrReady:N0} ảnh đã OCR" +
+                           (images.TranslatedDrafts > 0 ? $", {images.TranslatedDrafts:N0} bản dịch nháp" : "") +
+                           " — bấm “Dịch ảnh…”, rồi duyệt, dựng và cài ảnh trong mục Text trong ảnh.";
+            }
             if (!_translatePackageReady)
                 return string.IsNullOrWhiteSpace(_translatePackageMessage)
                     ? "Chọn gói dịch có translation.csv và manifest.json hợp lệ."

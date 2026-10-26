@@ -259,6 +259,8 @@ internal static partial class Program
         Run("CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate", CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate, failures);
         Run("Copy_NoCsvChosenIsActionableAndSdkDownloadIsLabelled", Copy_NoCsvChosenIsActionableAndSdkDownloadIsLabelled, failures);
         Run("CsvEditor_BulkOperationsRunOffTheUiThread", CsvEditor_BulkOperationsRunOffTheUiThread, failures);
+        Run("CsvEditor_BulkPreviewForOldInputsIsDiscarded", CsvEditor_BulkPreviewForOldInputsIsDiscarded, failures);
+        Run("OcrOnlyPackage_TranslateCardPointsToTheImageStep", OcrOnlyPackage_TranslateCardPointsToTheImageStep, failures);
         Run("ContentDisclosure_InitialIsQuietAndFailuresExpand", ContentDisclosure_InitialIsQuietAndFailuresExpand, failures);
         Run("CloudRepairPackage_IsShownOnlyAfterSuccessfulExport", CloudRepairPackage_IsShownOnlyAfterSuccessfulExport, failures);
         Run("ReleaseManagedPaths_StayUnderInstallRoot", ReleaseManagedPaths_StayUnderInstallRoot, failures);
@@ -2045,6 +2047,106 @@ internal static partial class Program
         thread.Start();
         thread.Join();
         if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
+    }
+
+    private static void CsvEditor_BulkPreviewForOldInputsIsDiscarded()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var root = Path.Combine(TestTempRoot(), "vntext_wpf_bulk_stamp_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            var previousContext = SynchronizationContext.Current;
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+            try
+            {
+                var csv = Path.Combine(root, "translation.csv");
+                File.WriteAllText(csv,
+                    "key,source_text,translation,context,file_path,import_method\r\n" +
+                    "k1,Hello,Chào cậu,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+                File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+                using var worker = new PythonWorkerHost();
+                using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                vm.CsvBulkFind = "cậu";
+                vm.CsvBulkReplace = "bạn";
+                var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                vm.CsvEditorBackgroundExecutor = async work =>
+                {
+                    started.TrySetResult(true);
+                    await release.Task;
+                    return await Task.Run(work);
+                };
+                vm.BulkReplaceCsvCommand.Execute(null);
+                AssertTrue(started.Task.IsCompleted);
+                // The find box changes while the engine call for the OLD text is still pending.
+                vm.CsvBulkFind = "khác";
+                release.TrySetResult(true);
+                var deadline = DateTime.UtcNow.AddSeconds(60);
+                while (vm.CsvEditorSaving && DateTime.UtcNow < deadline)
+                {
+                    var tick = new DispatcherFrame();
+                    dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => tick.Continue = false));
+                    Dispatcher.PushFrame(tick);
+                    Thread.Sleep(20);
+                }
+                AssertFalse(vm.CsvEditorSaving);
+                // The result for "cậu" must not become the pending preview of "khác".
+                AssertFalse(vm.CsvBulkCanApply);
+                AssertTrue(vm.CsvBulkPreview.Contains("đã đổi", StringComparison.Ordinal));
+                AssertTrue(File.ReadAllText(csv).Contains("Chào cậu", StringComparison.Ordinal));
+            }
+            catch (Exception ex) { failure = ex; }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+                try { Directory.Delete(root, true); } catch (IOException) { }
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
+    }
+
+    private static void OcrOnlyPackage_TranslateCardPointsToTheImageStep()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_ocr_only_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "images"));
+        try
+        {
+            // The package Extract leaves for a supported container whose only text is inside images.
+            File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation,context,file_path,import_method\r\n", new UTF8Encoding(true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[]}""", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(root, "images", "report.json"), """
+                {"schema":1,"status":"OCR_PARTIAL","items":[
+                  {"source":"a.png","status":"OCR_READY"},{"source":"b.png","status":"OCR_READY"},
+                  {"source":"c.png","status":"UNTRANSLATED","reason":"tilt gate"}]}
+                """, Encoding.UTF8);
+            var probe = ImagePackageProbe.Read(root);
+            AssertEqual(3, probe.Total);
+            AssertEqual(2, probe.OcrReady);
+            using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.OutputPath = root;
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.TranslateReadinessText.Contains("2 ảnh đã OCR", StringComparison.Ordinal));
+            AssertTrue(vm.TranslateReadinessText.Contains("Dịch ảnh…", StringComparison.Ordinal));
+            AssertFalse(vm.RunTranslateCommand.CanExecute(null));   // there are no text rows to translate
+            // No image report: the plain validator text stays (nothing invented).
+            File.Delete(Path.Combine(root, "images", "report.json"));
+            vm.OutputPath = root + Path.DirectorySeparatorChar;
+            vm.OutputPath = root;
+            AssertTrue(SpinWait.SpinUntil(() => vm.TranslateReadinessText == CsvPackageValidator.NoDataRowsMessage, TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
     }
 
     private static void ContentDisclosure_InitialIsQuietAndFailuresExpand()

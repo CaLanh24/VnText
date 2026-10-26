@@ -445,6 +445,12 @@ public sealed partial class MainViewModel
                     TranslationCsvPath = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
                     RefreshTranslateReadiness(syncCsvValidation: true);
                 }
+                else if (completedTask == "extract" && !cancelled)
+                {
+                    // A text-less package (EMPTY/PARTIAL) can still hold OCR'd images: refresh the
+                    // Translate card so it says so instead of keeping a stale readiness line.
+                    RefreshTranslateReadiness();
+                }
                 // Worker event counts may be ahead of on-disk translate_status; re-apply UI after refresh.
                 if (cancelled)
                 {

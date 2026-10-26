@@ -366,6 +366,19 @@ class SemanticStructureTests(unittest.TestCase):
 
         _prepared, parts = split_parts("Welcome to the village, traveler.")
         self.assertEqual(parts, [("text", "Welcome to the village, traveler.")])
+        # Conservative boundary: an epithet ("Aria the Bold") or a name with an apposition keeps the
+        # name protected; only lower-case continuations free the word.
+        for name, source in (("Aria", "Aria the Bold arrives."), ("Mark", "Mark the Elder speaks."), ("Rose", "Hello. Rose the Brave smiles.")):
+            with self.subTest(source=source):
+                self.assertIn(name.casefold(), mt_check.source_proper_name_tokens(source))
+        for word, source in (("Mark", "Mark the spot on the map."), ("Welcome", "Hello. Welcome to the village.")):
+            with self.subTest(source=source):
+                self.assertNotIn(word.casefold(), mt_check.source_proper_name_tokens(source))
+        # Known cost of the frame rule, pinned so it stays fail-safe: a real name in "<Name> in the ..."
+        # is not protected, but if the model keeps it verbatim the English check flags the row for
+        # review instead of accepting or silently rewriting it.
+        count, reasons = mt_check.english_report("Sakura in the garden.", "Sakura ở trong vườn.", set())
+        self.assertGreater(count, 0, reasons)
         # A name followed by a verb stays protected, also after a sentence boundary.
         for source in ("Rose is here.", "Hello. Mark is here.", "Rose, the baker, waves."):
             with self.subTest(source=source):

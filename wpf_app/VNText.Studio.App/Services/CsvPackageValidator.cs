@@ -14,6 +14,7 @@ public sealed record CsvValidationResult(
 public static class CsvPackageValidator
 {
     public const string MissingFileMessage = "File không tồn tại";
+    public const string NoDataRowsMessage = "CSV không có dòng dữ liệu";
     // Shown instead of the bare missing-file text when the user has not picked any CSV yet.
     public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn CSV” để chọn file cần dịch, hoặc Lấy text trước để tạo gói.";
 
@@ -62,7 +63,7 @@ public static class CsvPackageValidator
             }
 
             if (total == 0)
-                return Fail(path, "CSV không có dòng dữ liệu");
+                return Fail(path, NoDataRowsMessage);
 
             if (translated == 0 && requireTranslations)
                 return Fail(path, $"CSV hợp lệ nhưng chưa có bản dịch (0/{total} dòng)");
