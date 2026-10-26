@@ -135,12 +135,11 @@ public sealed partial class MainViewModel
         RunTranslateCommand?.RaiseCanExecuteChanged();
 
         var dispatcher = Application.Current?.Dispatcher;
-        void Apply(CsvValidationResult raw)
+        void Apply(CsvValidationResult result)
         {
             if (epoch != Volatile.Read(ref _translateReadinessEpoch)) return;
-            var result = raw;
-            if (!raw.Ok && raw.Message == CsvPackageValidator.MissingFileMessage && string.IsNullOrWhiteSpace(TranslationCsvPath))
-                result = raw with { Message = CsvPackageValidator.NoCsvChosenMessage };
+            if (!result.Ok && result.Message == CsvPackageValidator.MissingFileMessage && string.IsNullOrWhiteSpace(TranslationCsvPath))
+                result = result with { Message = CsvPackageValidator.NoCsvChosenMessage };
             if (syncCsvValidation)
             {
                 // Extract created this package, so replace any earlier missing-file
