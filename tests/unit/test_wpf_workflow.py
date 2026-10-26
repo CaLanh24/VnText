@@ -523,7 +523,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertLess(refresh, extract_refresh)
         self.assertLess(csv_path, readiness)
         workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
-        readiness_apply = workflow.index("void Apply(CsvValidationResult result)")
+        readiness_apply = workflow.index("void Apply(CsvValidationResult result, ImagePackageProbe.Summary images)")
         self.assertIn("if (syncCsvValidation)", workflow[readiness_apply:])
         self.assertIn("CsvValidationOk = result.Ok;", workflow[readiness_apply:])
         self.assertIn("CsvValidationMessage = result.Message;", workflow[readiness_apply:])
