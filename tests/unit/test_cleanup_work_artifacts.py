@@ -235,6 +235,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             for relative in (
                 Path("tests/lib/bootstrap.py"),
                 Path("tests/lib/work_paths.py"),
+                Path("tests/lib/path_hygiene.py"),
                 Path("tests/tools/cleanup_work_artifacts.py"),
                 Path("tests/tools/run_with_cleanup.py"),
             ):
