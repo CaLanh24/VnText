@@ -2849,14 +2849,22 @@ class CleanupLifecycleTests(unittest.TestCase):
             "owner_approval": cleanup.RELEASE_TASK_013_BUDGET_APPROVAL,
         }
         self.assertEqual(3 * 1024 ** 3, cleanup.RELEASE_TASK_013_INITIAL_BUDGET_LIMIT_BYTES)
-        self.assertEqual(7 * 1024 ** 3, cleanup._release_task_budget_limit(task_id))
+        previous = {
+            "limit_bytes": cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES,
+            "owner_approval": cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL,
+        }
+        self.assertEqual(7 * 1024 ** 3, cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES)
+        self.assertEqual(8704 * 1024 ** 2, cleanup._release_task_budget_limit(task_id))
         self.assertNotEqual(cleanup.RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL)
-        for record in (initial, expanded):
+        self.assertNotEqual(cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL)
+        for record in (initial, previous, expanded):
             self.assertTrue(cleanup._release_budget_record_is_valid(record, task_id, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL))
         for tampered in (
             {**expanded, "owner_approval": "unrecognized approval"},
             {**initial, "limit_bytes": 5 * 1024 ** 3},
             {"limit_bytes": cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL},
+            {"limit_bytes": cleanup.RELEASE_TASK_013_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL},
+            {"limit_bytes": cleanup.RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_013_BUDGET_APPROVAL},
         ):
             self.assertFalse(cleanup._release_budget_record_is_valid(tampered, task_id, cleanup.RELEASE_TASK_013_BUDGET_APPROVAL))
         # No other release task gains the 0.1.13 allowance.

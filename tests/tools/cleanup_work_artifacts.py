@@ -138,8 +138,8 @@ RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL = (
     "6 GiB; preserve all history, cache and user data."
 )
 RELEASE_TASK_013_INITIAL_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
-RELEASE_TASK_013_BUDGET_LIMIT_BYTES = 7 * 1024 ** 3
-RELEASE_TASK_013_BUDGET_APPROVAL = (
+RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES = 7 * 1024 ** 3
+RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL = (
     "Owner 2026-10-25 authorized completion and publication of release-0.1.13, and the "
     "2026-10-26 Owner instruction asks for Setup plus every supported direct updater route "
     "(0.1.8-0.1.12 and generic 0.1.7). Under the standing 2026-10-24 measured release-allocation "
@@ -149,6 +149,17 @@ RELEASE_TASK_013_BUDGET_APPROVAL = (
     "initial 3 GiB ceiling was insufficient and the projected build/package peak is about 6.6 GiB. "
     "Terminal cleanup returns to at most 1 GiB, shared .dev-env stays at most 6 GiB, and all "
     "history, cache and user data are preserved."
+)
+RELEASE_TASK_013_BUDGET_LIMIT_BYTES = 8704 * 1024 ** 2  # 8.5 GiB
+RELEASE_TASK_013_BUDGET_APPROVAL = (
+    "Owner 2026-10-25 authorized completion and publication of release-0.1.13, and the "
+    "2026-10-26 Owner instruction asks for Setup plus every supported direct updater route "
+    "(0.1.8-0.1.12 and generic 0.1.7). Under the standing 2026-10-24 measured release-allocation "
+    "authorization, the coordinator records a temporary 8.5 GiB non-exempt ceiling for the exact "
+    "registered candidate-0.1.13 after the whole checkout measured 6.91 GiB of the previous 7 GiB "
+    "ceiling (five verified baseline trees, retained candidate and Setup evidence) and the final "
+    "candidate build/package peak needs about 1.35 GiB more. Terminal cleanup returns to at most "
+    "1 GiB, shared .dev-env stays at most 6 GiB, and all history, cache and user data are preserved."
 )
 
 RELEASE_TASK_012_INITIAL_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
@@ -240,6 +251,10 @@ def _release_budget_record_is_valid(
         task_id == RELEASE_TASK_013_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_013_INITIAL_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_013_INITIAL_BUDGET_APPROVAL
+    ) or (
+        task_id == RELEASE_TASK_013_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL
     )
 
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
