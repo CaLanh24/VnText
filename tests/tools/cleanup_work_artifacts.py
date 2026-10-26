@@ -297,6 +297,21 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_3 = (
     "validator or protection. It is distinct from the consumed call_6331409a3fcc4443b4b66fb4552c4254 and "
     "call_29c7ca59cc1947f89b14f31a4c7d289e; the ordinary eight-hop transition limit remains unchanged."
 )
+# Fourth, independent single-use authority for release 0.1.13 (after the third ordinary eight-hop chain, which began at the
+# third rebaseline epoch-20261026T090000Z-c065344, ended at epoch-20261026T170000Z-835f940).  The Owner answered question
+# call_5fc7951df0eb4d5b845dd932e2818b7d with the exact phrase; the duplicate question call_7a14d22334674db79a585c81d2293c81
+# was answered identically and refers to the SAME requested action, so it is ONE grant, never two.  Never a reuse.
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_4 = "call_5fc7951df0eb4d5b845dd932e2818b7d"
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_4 = (
+    "Owner 2026-10-26 answered question call_5fc7951df0eb4d5b845dd932e2818b7d "
+    "(request_user_input_async) with the exact reply 'Cho phép thêm một lần rebaseline 0.1.13' "
+    "(the duplicate question call_7a14d22334674db79a585c81d2293c81 was answered identically and refers to the same "
+    "requested action: one grant), authorizing one further no-delete 0.1.13 epoch metadata rebaseline after the ordinary "
+    "eight-hop chain ended at epoch-20261026T170000Z-835f940; it preserves the complete existing epoch history and "
+    "relaxes no validator or protection. It is distinct from the consumed call_6331409a3fcc4443b4b66fb4552c4254, "
+    "call_29c7ca59cc1947f89b14f31a4c7d289e and call_5c6b05faa7a54881a1c491eebbebc8a6; the ordinary eight-hop "
+    "transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -310,6 +325,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_3: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_3
+    ),
+    RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_4: (
+        RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_4
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {

@@ -17,6 +17,35 @@ BUILD_RESERVE = 128 * 1024 ** 2
 MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.json", "tokenizer_config.json")
 
 
+def _sanitize_inherited_path(env):
+    """Process-only: drop stale repo-owned `.dotnet\\tools` homes (retained User PATH pollution) from a child environment copy."""
+    lib = str(ROOT / "tests" / "lib")
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+    import path_hygiene
+    return path_hygiene.sanitize_env_path(env, ROOT)
+
+
+def owned_build_env(result, output, cache, runtime_root):
+    """The explicit environment of the OWNED SDK build/smoke children (this tool is its owner, so it sanitises it).
+
+    An external caller's own mapping passed to ``run(env=...)`` keeps its contract and is never altered.
+    """
+    env = os.environ.copy()
+    env.update(DOTNET_ROOT_X64=runtime_root, DOTNET_ROOT=runtime_root)
+    env.update(NUGET_PACKAGES=str(cache / "nuget"), DOTNET_CLI_HOME=str(cache / "dotnet-home"),
+               APPDATA=str(cache / "appdata"), LOCALAPPDATA=str(cache / "localappdata"),
+               DOTNET_GENERATE_ASPNET_CERTIFICATE="false", DOTNET_ADD_GLOBAL_TOOLS_TO_PATH="0",
+               VNTEXT_WORKER_CWD=str(ROOT),
+               VNTEXT_WORKER_PYTHON=result["python"]["path"], VNTEXT_CT2_NO_DOWNLOAD="1",
+               VNTEXT_DATA_ROOT=str(output / "data"),
+               VNTEXT_LOCALAPPDATA=str(output / "localappdata"))
+    if result["model"]["path"]:
+        env["VNTEXT_CT2_MODEL"] = result["model"]["path"]
+    _sanitize_inherited_path(env)  # process-only: stale repo-owned `.dotnet\\tools` homes are not passed to the SDK
+    return env
+
+
 def run(command, *, cwd=ROOT, env=None):
     try:
         # An explicit caller mapping is passed through untouched (its owner sets the guard, see main()).
@@ -26,6 +55,7 @@ def run(command, *, cwd=ROOT, env=None):
         if env is None:
             effective_env = os.environ.copy()
             effective_env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
+            _sanitize_inherited_path(effective_env)
         else:
             effective_env = env
         child = subprocess.run([str(x) for x in command], cwd=cwd, env=effective_env,
@@ -268,18 +298,8 @@ def main(argv=None):
                 nuget.write_text(config, encoding="utf-8")
             elif nuget.read_text(encoding="utf-8") != config:
                 raise ValueError("owned NuGet.Config changed; refuse overwrite")
-            env = os.environ.copy()
             runtime_root = str(Path(shutil.which(result["dotnet"]) or result["dotnet"]).resolve().parent)
-            env.update(DOTNET_ROOT_X64=runtime_root, DOTNET_ROOT=runtime_root)
-            env.update(NUGET_PACKAGES=str(cache / "nuget"), DOTNET_CLI_HOME=str(cache / "dotnet-home"),
-                       APPDATA=str(cache / "appdata"), LOCALAPPDATA=str(cache / "localappdata"),
-                       DOTNET_GENERATE_ASPNET_CERTIFICATE="false", DOTNET_ADD_GLOBAL_TOOLS_TO_PATH="0",
-                       VNTEXT_WORKER_CWD=str(ROOT),
-                       VNTEXT_WORKER_PYTHON=result["python"]["path"], VNTEXT_CT2_NO_DOWNLOAD="1",
-                       VNTEXT_DATA_ROOT=str(output / "data"),
-                       VNTEXT_LOCALAPPDATA=str(output / "localappdata"))
-            if result["model"]["path"]:
-                env["VNTEXT_CT2_MODEL"] = result["model"]["path"]
+            env = owned_build_env(result, output, cache, runtime_root)
             build = run([result["dotnet"], "build", ROOT / "wpf_app/VNText.Studio.App/VNText.Studio.App.csproj",
                          "-c", "Debug", "-o", output, f"-p:RestoreConfigFile={nuget}"], env=env)
             result["receipts"].append(build)

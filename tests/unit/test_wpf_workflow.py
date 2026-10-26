@@ -33,6 +33,7 @@ from uuid import uuid4
 
 from cleanup_work_artifacts import cleanup_after_test
 from work_paths import ambient_scope, new_scope_id, register_artifacts
+from tests.lib import path_hygiene
 from tests.lib.dev_environment import dotnet_executable, nuget_cache
 
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
@@ -40,6 +41,21 @@ DOTNET = dotnet_executable()
 WORKFLOW_PROJECT = ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests"
 DOTNET_LAYOUT_VERSION = os.environ.get("VNTEXT_DOTNET_FRAMEWORK_VERSION", "8.0.30")
 APPHOST_PACK_VERSION = os.environ.get("VNTEXT_APPHOST_PACK_VERSION", "10.0.12")
+
+
+def _raw_registry_paths() -> dict[str, tuple[str, int]]:
+    """Raw persistent PATH values and registry kinds (User and Machine); read-only."""
+    import winreg
+
+    out = {}
+    for name, hive, sub in (
+        ("user", winreg.HKEY_CURRENT_USER, "Environment"),
+        ("machine", winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"),
+    ):
+        with winreg.OpenKey(hive, sub) as key:
+            value, kind = winreg.QueryValueEx(key, "Path")
+        out[name] = (value, kind)
+    return out
 
 
 def _harness_env(work_root: Path) -> dict[str, str]:
@@ -65,6 +81,8 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     env["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1"
     # Explicit process-only guard: first-use must never add the fresh CLI home's tools dir to the persistent User PATH.
     env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
+    # Process-only: retained stale `.dotnet\tools` homes in the persistent User PATH are not passed to the harness.
+    path_hygiene.sanitize_env_path(env, ROOT)
     env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
     env["DOTNET_MULTILEVEL_LOOKUP"] = "0"
     env["NUGET_PACKAGES"] = str(nuget_packages)
@@ -210,29 +228,29 @@ class WpfWorkflowTests(unittest.TestCase):
         from release import dev_bootstrap
         from work_paths import work_temp_dir
 
-        def raw_paths() -> dict[str, tuple[str, int]]:
-            out = {}
-            for name, hive, sub in (
-                ("user", winreg.HKEY_CURRENT_USER, "Environment"),
-                ("machine", winreg.HKEY_LOCAL_MACHINE, r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment"),
-            ):
-                with winreg.OpenKey(hive, sub) as key:
-                    value, kind = winreg.QueryValueEx(key, "Path")
-                out[name] = (value, kind)
-            return out
-
-        before = raw_paths()
+        before = _raw_registry_paths()
+        process_path_before = os.environ.get("PATH", "")
         homes = []
         results = []
         runs = []
         # Home A: the real owned test-harness environment (SKIP_FIRST_TIME removed so first use genuinely runs).
         # Home B: the bootstrap/runner boundary with an explicit stale inherited value.
-        for label, inherited in (("harness_stale_one", "1"), ("bootstrap_malicious_true", "true")):
+        # Home C: the harness boundary again, while the inherited PATH carries a stale repo-owned `.dotnet\\tools` entry (as the
+        # persistent User PATH did before the repair): the SDK child must never receive it, and first use must still add nothing.
+        stale_entry = str(ROOT / "TEST_RUN" / ("wpf_workflow_" + "0" * 32) / "runtime" / "dotnet" / ".dotnet" / "tools")
+        for label, inherited in (("harness_stale_one", "1"), ("bootstrap_malicious_true", "true"), ("harness_polluted_inherited_path", "false")):
             work_root = work_temp_dir(f"dotnet-path-guard-{label}")
             homes.append(work_root)
-            with unittest.mock.patch.dict(os.environ, {"DOTNET_ADD_GLOBAL_TOOLS_TO_PATH": inherited}):
+            inherited_env = {"DOTNET_ADD_GLOBAL_TOOLS_TO_PATH": inherited}
+            if label == "harness_polluted_inherited_path":
+                inherited_env["PATH"] = os.environ.get("PATH", "") + ";" + stale_entry
+            with unittest.mock.patch.dict(os.environ, inherited_env):
                 if label.startswith("harness"):
                     env = _harness_env(work_root)
+                    if label == "harness_polluted_inherited_path":
+                        child_path = env.get("PATH", env.get("Path", ""))
+                        self.assertNotIn(stale_entry.lower(), [e.lower() for e in child_path.split(";")])
+                        self.assertGreater(len(child_path.split(";")), 3)
                     env.pop("DOTNET_SKIP_FIRST_TIME_EXPERIENCE", None)
                     cli_home = Path(env["DOTNET_CLI_HOME"])
                     self.assertEqual("0", env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"])
@@ -252,9 +270,10 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertTrue(sentinels, f"first-use did not run in {cli_home}")
             self.assertFalse((cli_home / ".dotnet" / "tools").exists(), "global tools directory created")
             runs.append({"home": str(cli_home), "inherited_guard": inherited, "exit_code": receipt["exit_code"], "first_use_sentinels": sentinels})
-        self.assertNotEqual(runs[0]["home"], runs[1]["home"])
-        after = raw_paths()
+        self.assertEqual(3, len({r["home"] for r in runs}))               # three distinct fresh homes, three real first uses
+        after = _raw_registry_paths()
         self.assertEqual(before, after)  # exact raw value and registry kind, User and Machine
+        self.assertEqual(process_path_before, os.environ.get("PATH", ""))  # this process's PATH is unchanged too
         for scope in before:
             self.assertEqual(before[scope][0].count(".dotnet"), after[scope][0].count(".dotnet"))
             for home in homes:
@@ -727,6 +746,8 @@ class WpfWorkflowTests(unittest.TestCase):
     def test_wpf_workflow_harness_passes(self):
         if not DOTNET.is_file():
             self.skipTest(f".NET SDK 10 is not installed at {DOTNET}")
+        registry_before = _raw_registry_paths() if os.name == "nt" else None
+        process_path_before = os.environ.get("PATH", "")
         owned_root = ROOT / "TEST_RUN" / f"wpf_workflow_{uuid4().hex}"
         ambient = ambient_scope()
         scope_id = ambient["scope_id"]
@@ -869,6 +890,12 @@ class WpfWorkflowTests(unittest.TestCase):
                     destination.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(candidates[0], destination / filename)
             outcome = "PASS"
+            # Real SDK boundary: the baseline/candidate fixture builds (fresh CLI homes), `dotnet build`/`run` and the
+            # harness all ran above; none may leave a `<home>\\.dotnet\\tools` entry (or any change) in the persistent
+            # User/Machine PATH, and this process's PATH is unchanged (no growth between task boundaries).
+            if registry_before is not None:
+                self.assertEqual(registry_before, _raw_registry_paths())
+                self.assertEqual(process_path_before, os.environ.get("PATH", ""))
         finally:
             subprocess.run(
                 [str(DOTNET), "build-server", "shutdown"],

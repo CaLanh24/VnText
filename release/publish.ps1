@@ -302,6 +302,9 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
 $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = "1"
 # Process-only SDK guard (explicit overwrite, never a default): first-use must not add <CLI_HOME>\.dotnet\tools to the persistent User PATH.
 $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = "0"
+# Process-only: drop stale repo-owned `.dotnet\tools` homes (retained User PATH pollution; exact families, see tests/lib/path_hygiene.py).
+$stalePathPattern = '(?i)^' + [regex]::Escape($canonicalRepoRoot.TrimEnd('\')) + '\\(?:TEST_RUN\\wpf_workflow_[0-9a-f]{32}\\(?:runtime|update-version-fixtures\\(?:baseline|candidate)\\runtime)\\dotnet|RELEASE_RUN\\candidate-[0-9]+(?:\.[0-9]+)*\\[a-z0-9][a-z0-9_.-]*\\_dotnet\\cli_home)\\\.dotnet\\tools\\?$'
+$env:PATH = (($env:PATH -split ';') | Where-Object { -not ($_ -and $_ -match $stalePathPattern) }) -join ';'
 $env:NUGET_PACKAGES = $devNugetRoot
 $env:PIP_CACHE_DIR = Join-Path $DevRunRoot "_pip_cache"
 $env:VNTEXT_DATA_ROOT = $devDataRoot

@@ -35,6 +35,7 @@ from cleanup_work_artifacts import (  # noqa: E402
     snapshot_tree,
 )
 import cleanup_work_artifacts  # quota resolution stays with the inventory owner
+import path_hygiene  # noqa: E402  (tests/lib)
 from work_paths import (  # noqa: E402
     E2E_GAME_COPY,
     WORK_ROOT,
@@ -536,6 +537,8 @@ def run(
         env["VNTEXT_ARTIFACT_SCOPE_ROOT"] = str(scope_root)
         # .NET SDK first-use otherwise appends <DOTNET_CLI_HOME>/.dotnet/tools to the persistent User PATH; the process-only override below is explicit (never setdefault) so a missing, stale or malicious inherited value cannot reach the SDK.
         env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0"
+        # Process-only: stale repo-owned `.dotnet\tools` homes retained in the persistent User PATH are not inherited by the child.
+        path_hygiene.sanitize_env_path(env, ROOT)
         if resolved_stdout is not None:
             env["VNTEXT_PARENT_STDOUT_LOG"] = str(resolved_stdout)
         if resolved_stderr is not None:
