@@ -57,10 +57,11 @@ internal static partial class Program
             Run("CancelAndExitCommand_FollowsBusyLifecycle", CancelAndExitCommand_FollowsBusyLifecycle, progressFailures);
             Run("CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog", CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog, progressFailures);
             Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, progressFailures);
+            Run("CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness", CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness, progressFailures);
             Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, progressFailures);
             if (progressFailures.Count == 0)
             {
-                Console.WriteLine("Focused task lifecycle checks: PASS (12)");
+                Console.WriteLine("Focused task lifecycle checks: PASS (13)");
                 return 0;
             }
             foreach (var failure in progressFailures) Console.Error.WriteLine(" - " + failure);
@@ -75,6 +76,7 @@ internal static partial class Program
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
             Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, csvFailures);
             Run("CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave", CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave, csvFailures);
+            Run("CsvEditor_ValidationTextReturnsToFriendlySummaryAfterSave", CsvEditor_ValidationTextReturnsToFriendlySummaryAfterSave, csvFailures);
             Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, csvFailures);
             Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, csvFailures);
             Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, csvFailures);
@@ -84,7 +86,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (12)");
+                Console.WriteLine("Focused CSV editor protection checks: PASS (13)");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);
@@ -192,6 +194,7 @@ internal static partial class Program
         Run("CancelAndExitCommand_FollowsBusyLifecycle", CancelAndExitCommand_FollowsBusyLifecycle, failures);
         Run("CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog", CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog, failures);
         Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, failures);
+        Run("CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness", CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness, failures);
         Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -232,6 +235,7 @@ internal static partial class Program
         Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
         Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, failures);
         Run("CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave", CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave, failures);
+        Run("CsvEditor_ValidationTextReturnsToFriendlySummaryAfterSave", CsvEditor_ValidationTextReturnsToFriendlySummaryAfterSave, failures);
         Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, failures);
         Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, failures);
         Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, failures);
@@ -620,6 +624,45 @@ internal static partial class Program
             AssertFalse(vm.LogLines.Any(line => AppJournalStore.Level(line) == "ERROR"
                 && line.Contains("cancelled", StringComparison.OrdinalIgnoreCase)));
             AssertFalse(vm.LogLines.Any(line => line.Contains("Lỗi: cancelled", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
+    }
+
+    private static void CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness()
+    {
+        const string payload = "{\"v\":1,\"type\":\"complete\",\"id\":\"picked-cancel\",\"ok\":false,\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":1,\"blocked\":1,\"translated\":0,\"diagnostic_stage\":\"WORKFLOW\",\"diagnostic_root_cause\":\"UNKNOWN\",\"diagnostic_affected_count\":1,\"diagnostic_action\":\"cancelled\",\"diagnostic_status\":\"FAILED\"}";
+        var terminal = WorkerEvent.FromJson(payload);
+        AssertTrue(terminal is not null);
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            var csv = Path.Combine(package, "translation.csv");
+            // The CSV is picked directly (no extracted output folder), exactly like the native 3000-row run.
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual(csv, vm.TranslationCsvPath);
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.CsvValidationOk);
+
+            vm.TestBeginTaskLog("picked-cancel", "translate");
+            vm.TestSetActiveTask("picked-cancel", "translate");
+            vm.TestHandleWorkerEvent(terminal!);
+
+            AssertFalse(vm.Busy);
+            AssertTrue(SpinWait.SpinUntil(
+                () => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal)
+                      && vm.CsvValidationMessage.StartsWith("Đã hủy", StringComparison.Ordinal),
+                TimeSpan.FromSeconds(5)));
+            AssertFalse(vm.TranslateReadinessText.Contains("không tồn tại", StringComparison.OrdinalIgnoreCase));
+            AssertFalse(vm.CsvValidationMessage.Contains("không tồn tại", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(vm.CsvValidationOk);                      // still the file the user picked
+            AssertEqual(csv, vm.TranslationCsvPath);
+            AssertTrue(vm.RunTranslateCommand.CanExecute(null)); // Start is available again without reselecting
         }
         finally
         {
@@ -2124,6 +2167,70 @@ internal static partial class Program
         thread.Join();
         if (failure is not null)
             throw new InvalidOperationException("Busy lock check failed", failure);
+    }
+
+    private static void CsvEditor_ValidationTextReturnsToFriendlySummaryAfterSave()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var root = Path.Combine(TestTempRoot(), "vntext_wpf_friendly_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            var previousContext = SynchronizationContext.Current;
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+            try
+            {
+                var csv = Path.Combine(root, "translation.csv");
+                File.WriteAllText(csv,
+                    "key,source_text,translation,context,file_path,import_method\r\n" +
+                    "k1,Hello,Hi,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+                File.WriteAllText(Path.Combine(root, "manifest.json"),
+                    """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+                using var worker = new PythonWorkerHost();
+                using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                vm.CsvEditorRows[0].Translation = "Bản dịch đã sửa";
+                vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+                var changed = new List<string>();
+                vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
+                var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                vm.CsvEditorSaveExecutor = async work => { await release.Task; return await Task.Run(work); };
+                var save = vm.SaveCsvEditorAsync();
+                AssertTrue(vm.CsvEditorSaving);
+                AssertTrue(vm.CsvEditorUserValidationMessage.Contains("kiểm tra", StringComparison.OrdinalIgnoreCase));
+                release.TrySetResult(true);
+                var frame = new DispatcherFrame();
+                _ = save.ContinueWith(_ => dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(() => frame.Continue = false)), TaskScheduler.Default);
+                Dispatcher.PushFrame(frame);
+                AssertTrue(save.GetAwaiter().GetResult());
+                AssertFalse(vm.CsvEditorSaving);
+                // The saving->false transition must notify the bound user text...
+                AssertTrue(changed.Contains(nameof(MainViewModel.CsvEditorUserValidationMessage)));
+                // ...and that text is the friendly summary, never the technical validator output.
+                var friendly = new[]
+                {
+                    "Chưa có bản dịch — chuyển sang Dịch tự động để bắt đầu.",
+                    "Một số câu cần xem lại trước khi tạo gói. Chọn câu để xem lý do và chỉnh bản dịch.",
+                    "Bản dịch được kiểm tra tự động. Bạn có thể chỉnh ngữ cảnh, xưng hô và cách diễn đạt.",
+                };
+                AssertTrue(friendly.Contains(vm.CsvEditorUserValidationMessage));
+                AssertFalse(vm.CsvEditorUserValidationMessage.Contains("Hợp lệ", StringComparison.Ordinal));
+                AssertFalse(vm.CsvEditorUserValidationMessage.Contains("placeholder", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex) { failure = ex; }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+                if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null)
+            throw new InvalidOperationException("Friendly validation text check failed", failure);
     }
 
     private static void CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty()

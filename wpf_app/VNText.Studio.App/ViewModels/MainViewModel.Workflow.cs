@@ -147,7 +147,8 @@ public sealed partial class MainViewModel
             }
             if (cancelledSummary)
             {
-                CsvValidationOk = false;
+                // CsvValidationOk stays as it was: GetTranslateReadinessPath() falls back to
+                // <output>/translation.csv when it is false, which is not the file the user picked.
                 CsvValidationMessage = result.Ok
                     ? $"Đã hủy — đã dịch an toàn {result.TranslatedRows:N0}/{result.TotalRows:N0} dòng; chạy lại để dịch tiếp."
                     : result.Message;

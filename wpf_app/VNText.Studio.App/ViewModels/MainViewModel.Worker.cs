@@ -414,7 +414,6 @@ public sealed partial class MainViewModel
                     CsvValidationMessage = cancelled
                         ? "Đã hủy — đang đọc lại số dòng đã dịch an toàn…"
                         : $"Đã dịch {evt.Translated}; chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
-                    if (cancelled) CsvValidationOk = false;
                     _translateLastRunCancelled = cancelled;
                     Raise(nameof(TranslateReadinessText));
                     PatchPreflightOk = false;

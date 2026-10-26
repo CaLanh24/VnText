@@ -277,12 +277,13 @@ def save_document(
     review_path = csv_path.parent / "review_only.csv"
     review_before = review_path.read_bytes() if review_path.is_file() else None
     saved_sha256: str | None = None
+    review_writer = _StagedReviewWriter(review_path, review_before)
     try:
         saved_sha256 = _atomic_write_csv(csv_path, fields, rows, expected_sha256=expected_sha256)
         review_pruned = 0
         if csv_path.name.casefold() == "translation.csv":
             _fields, saved_rows = _read_editor_csv(csv_path)
-            review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
+            review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows, write_rows=review_writer)
     except Exception as exc:
         if isinstance(exc, CsvEditorExternalChange):
             return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
@@ -290,24 +291,37 @@ def save_document(
         if saved_sha256 is None:
             # The source file was never replaced by this save: nothing of ours to undo.
             return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": False}
+        review_foreign = False
+        # Ownership of every file is proven by write-site provenance (the SHA-256 of the bytes this
+        # save replaced); anything else is kept untouched and the backup is retained.
         try:
-            current = csv_path.read_bytes()
-        except OSError as read_error:
-            return {"ok": False, "error": f"{exc}; rollback thất bại: {read_error}",
-                    "backup_path": str(backup_path), "rolled_back": False}
-        if hashlib.sha256(current).hexdigest() != saved_sha256:
-            # Someone else changed the file after our replace: restoring the backup would
-            # destroy their edit. Roll back only bytes this save wrote.
-            return {"ok": False, "error": f"{exc}; CSV đã bị thay đổi bên ngoài sau khi lưu nên không rollback",
-                    "backup_path": str(backup_path), "rolled_back": False, "foreign_change_preserved": True}
-        try:
-            _atomic_write_bytes(csv_path, backup_path.read_bytes())
-            if review_before is not None:
-                _atomic_write_bytes(review_path, review_before)
+            csv_restored = _replace_bytes_if_unchanged(csv_path, saved_sha256, backup_path.read_bytes())
         except OSError as rollback_error:
             return {"ok": False, "error": f"{exc}; rollback thất bại: {rollback_error}",
-                    "backup_path": str(backup_path), "rolled_back": False}
-        return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
+                    "backup_path": str(backup_path), "rolled_back": False, "rollback_failed": True}
+        if not csv_restored:
+            return {"ok": False, "error": f"{exc}; CSV đã bị thay đổi bên ngoài sau khi lưu nên không rollback",
+                    "backup_path": str(backup_path), "rolled_back": False, "foreign_change_preserved": True}
+        if review_before is not None:
+            try:
+                current_review = review_path.read_bytes() if review_path.is_file() else None
+                if current_review == review_before:
+                    pass  # never written by this save
+                elif current_review is not None and review_writer.written \
+                        and _replace_bytes_if_unchanged(review_path, review_writer.written[-1], review_before):
+                    pass  # bytes this save wrote were restored
+                else:
+                    review_foreign = True  # unknown owner: fail closed, keep it
+            except OSError as rollback_error:
+                # translation.csv is already back to its original bytes; the review ledger could not be
+                # restored and is left as it is, with the backup retained.
+                return {"ok": False, "error": f"{exc}; rollback review thất bại: {rollback_error}",
+                        "backup_path": str(backup_path), "rolled_back": True, "rollback_failed": True,
+                        "review_rollback_failed": True}
+        result = {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
+        if review_foreign:
+            result["review_foreign_change_preserved"] = True
+        return result
     return {
         "ok": True,
         "csv_path": str(csv_path),
@@ -318,8 +332,11 @@ def save_document(
     }
 
 
-def _reconcile_saved_review_rows(csv_path: Path, rows: list[dict]) -> int:
-    """Remove only gate-valid manual translations from the existing review ledger."""
+def _reconcile_saved_review_rows(csv_path: Path, rows: list[dict], write_rows=None) -> int:
+    """Remove only gate-valid manual translations from the existing review ledger.
+
+    ``write_rows`` is an explicit writer callback for review_only.csv (default: write in place).
+    """
 
     from vntext.mt_ct2_status import _prune_resolved_review_only
 
@@ -327,11 +344,67 @@ def _reconcile_saved_review_rows(csv_path: Path, rows: list[dict]) -> int:
         csv_path.parent,
         rows,
         allow_human_review_resolution=True,
+        write_rows=write_rows,
     )
 
 
 class CsvEditorExternalChange(RuntimeError):
     pass
+
+
+class CsvEditorReviewExternalChange(RuntimeError):
+    """review_only.csv changed under us after the CSV replace: handled by the rollback path."""
+
+
+class _StagedReviewWriter:
+    """Explicit writer callback for the review-ledger reconcile (no global state is touched).
+
+    The reconcile code used to write review_only.csv in place; a failure mid-write would leave a
+    partial file whose owner cannot be proven.  Every write through this callable is staged to a
+    temp file, refused (CsvEditorReviewExternalChange, nothing written) if review_only.csv no longer
+    holds the bytes this save started from, and otherwise replaced atomically.  The SHA-256 of each
+    replaced file is recorded in ``written``: the write-site ownership proof used by rollback.
+    """
+
+    def __init__(self, review_path: Path, expected_before: bytes | None) -> None:
+        self.review_path = review_path
+        self.expected_before = expected_before
+        self.written: list[str] = []
+
+    def __call__(self, path, fields, rows) -> None:
+        if Path(path) != self.review_path:
+            raise ValueError("the staged review writer only writes review_only.csv")
+        staging = self.review_path.with_name(f".{self.review_path.name}.{os.getpid()}.staged")
+        try:
+            write_csv_rows_file(staging, fields, rows)
+            data = staging.read_bytes()
+            current = self.review_path.read_bytes() if self.review_path.is_file() else None
+            if current != self.expected_before:
+                raise CsvEditorReviewExternalChange("review_only.csv đã thay đổi bên ngoài trong lúc lưu")
+            os.replace(staging, self.review_path)
+            self.written.append(hashlib.sha256(data).hexdigest())
+        finally:
+            try:
+                staging.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def _replace_bytes_if_unchanged(path: Path, expected_sha256: str, data: bytes) -> bool:
+    """Replace ``path`` with ``data`` only while it still holds the bytes with ``expected_sha256``.
+
+    Check-then-replace without an OS lock: a foreign write landing in the microseconds between the
+    check and the replace is not detectable here (documented limit); the bytes are never replaced on
+    a mismatch that is visible at check time.
+    """
+    try:
+        current = path.read_bytes()
+    except OSError:
+        return False
+    if hashlib.sha256(current).hexdigest() != expected_sha256:
+        return False
+    _atomic_write_bytes(path, data)
+    return True
 
 
 def _atomic_write_csv(

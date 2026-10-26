@@ -276,6 +276,7 @@ public sealed partial class MainViewModel
             UndoBulkReplaceCsvCommand.RaiseCanExecuteChanged();
             Raise(nameof(CsvEditorSavingText));
             Raise(nameof(CsvEditorGridReadOnly));
+            Raise(nameof(CsvEditorUserValidationMessage));
             Raise(nameof(CsvEditorBusy));
         }
     }

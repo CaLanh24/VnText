@@ -143,8 +143,12 @@ def _prune_resolved_review_only(
     protected_review_keys: set[str] | None = None,
     allow_human_review_resolution: bool = False,
     allow_ct2_junk: bool = False,
+    write_rows: Callable[[Path, list[str], list[dict]], None] | None = None,
 ) -> int:
     """Drop translated rows and rows reclassified as intentionally technical.
+
+    ``write_rows`` is an explicit writer for review_only.csv (the CSV editor stages and records it);
+    the default writes in place exactly as before.
 
     A previous classifier can have recorded a runtime token in review_only.csv.
     Once the classifier knows that token is technical, leaving it there makes a
@@ -190,7 +194,7 @@ def _prune_resolved_review_only(
     kept = [r for r in existing if str(r.get("key") or "") not in resolved_keys]
     removed = len(existing) - len(kept)
     if removed:
-        write_csv_rows_file(review_path, fields or CSV_FIELDS, kept)
+        (write_rows or write_csv_rows_file)(review_path, fields or CSV_FIELDS, kept)
         if emit:
             emit(f"review_only: gỡ {removed} key đã dịch hoặc được xác định là technical")
     return removed

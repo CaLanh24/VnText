@@ -271,6 +271,17 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_2 = (
     "existing epoch history and relaxes no validator or protection. It is distinct from the consumed "
     "call_6331409a3fcc4443b4b66fb4552c4254; the ordinary eight-hop transition limit remains unchanged."
 )
+# Third, independent single-use authority for release 0.1.13 (after the second ordinary eight-hop chain
+# ended at epoch-20261026T080000Z-a445928).  Same exact Owner phrase, a fresh question, never a reuse.
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_3 = "call_5c6b05faa7a54881a1c491eebbebc8a6"
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_3 = (
+    "Owner 2026-10-26 answered question call_5c6b05faa7a54881a1c491eebbebc8a6 "
+    "(request_user_input_async) with the exact reply 'Cho phép thêm một lần rebaseline 0.1.13', "
+    "authorizing one further no-delete 0.1.13 epoch metadata rebaseline after the ordinary eight-hop chain "
+    "ended at epoch-20261026T080000Z-a445928; it preserves the complete existing epoch history and relaxes no "
+    "validator or protection. It is distinct from the consumed call_6331409a3fcc4443b4b66fb4552c4254 and "
+    "call_29c7ca59cc1947f89b14f31a4c7d289e; the ordinary eight-hop transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -281,6 +292,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_2: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_2
+    ),
+    RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_3: (
+        RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_3
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
