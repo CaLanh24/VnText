@@ -16,8 +16,13 @@ import path_hygiene  # noqa: E402
 import user_path_repair as repair  # noqa: E402
 
 REPO = r"C:\v"
-LEGIT = r"C:\Users\VNTextDev\.dotnet\tools"
-BASE = [r"C:\Users\VNTextDev\AppData\Local\Microsoft\WindowsApps", LEGIT, r"C:\Users\VNTextDev\.local\bin"]
+PROFILE = Path.home()
+LEGIT = str(PROFILE / ".dotnet" / "tools")
+BASE = [
+    str(PROFILE / "AppData" / "Local" / "Microsoft" / "WindowsApps"),
+    LEGIT,
+    str(PROFILE / ".local" / "bin"),
+]
 HEX = "e5eb63142c554f8c97d55316fb863ebd"
 
 
