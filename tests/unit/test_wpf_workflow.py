@@ -330,7 +330,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Command="{Binding ApplyBulkReplaceCsvCommand}"', xaml)
         self.assertIn('Header="MÃ DÒNG" Binding="{Binding Key}" IsReadOnly="True" Width="0" MinWidth="0" Visibility="Collapsed"', xaml)
         self.assertIn('ToolTip="{Binding CsvEditorPathToolTip}"', xaml)
-        self.assertIn('IsReadOnly="{Binding CsvEditorSaving}"', xaml)
+        self.assertIn('IsReadOnly="{Binding CsvEditorGridReadOnly}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorLockText}"', xaml)
+        self.assertIn("if (Busy)", editor)  # direct-entry save guard
         self.assertIn('ToolTipService.IsEnabled', xaml)
         self.assertIn('Text="{Binding CsvEditorSelectionDetails}"', xaml)
         self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
