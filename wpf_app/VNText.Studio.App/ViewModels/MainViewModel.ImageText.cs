@@ -17,9 +17,22 @@ public sealed partial class MainViewModel
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
-    public ImageSource? ImagePreview { get => _imagePreview; private set => Set(ref _imagePreview, value); }
+    public ImageSource? ImagePreview
+    {
+        get => _imagePreview;
+        private set
+        {
+            if (!Set(ref _imagePreview, value)) return;
+            Raise(nameof(ImagePreviewPixelWidth));
+            Raise(nameof(ImagePreviewPixelHeight));
+        }
+    }
+    /// <summary>Preview size in source PIXELS.  Region boxes are source pixels, while BitmapSource.Width/Height are DPI-scaled
+    /// DIPs (a 600x200 px image at 300 DPI is 192x64 DIP), so the overlay canvas must use these, not Width/Height.</summary>
+    public double ImagePreviewPixelWidth => (_imagePreview as BitmapSource)?.PixelWidth ?? 0;
+    public double ImagePreviewPixelHeight => (_imagePreview as BitmapSource)?.PixelHeight ?? 0;
     public ObservableCollection<string> ImageCandidates { get; } = new();
     public ObservableCollection<ImageTextRegion> ImageRegions { get; } = new();
     public RelayCommand ChooseOcrImageCommand { get; private set; } = null!;
@@ -100,8 +113,58 @@ public sealed partial class MainViewModel
             RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand, RetryImageCommand })
             command?.RaiseCanExecuteChanged();
     }
+    // ---- ownership of the rendered snapshot ------------------------------------------------------------------
+    // Every relevant change of the current review (any region property, add, remove, clear) bumps a version.  A render result and a
+    // delivery package are valid only for the version they were made from; a change drops them from the commands (the files stay on
+    // disk as history) and the user must render again.  A task result that arrives for an older version is dropped.
+    private int _imageReviewVersion, _renderedReviewVersion = -1, _packageReviewVersion = -1;
+    private int? _imageTaskReviewVersion;
+    private readonly HashSet<ImageTextRegion> _trackedImageRegions = new();
+    internal string ImageTaskRootForTest => _imageTaskRoot;
+
+    private void OnImageRegionsChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+        {
+            foreach (var tracked in _trackedImageRegions) tracked.PropertyChanged -= OnImageRegionPropertyChanged;
+            _trackedImageRegions.Clear();
+        }
+        if (e.OldItems is not null)
+            foreach (ImageTextRegion region in e.OldItems) { region.PropertyChanged -= OnImageRegionPropertyChanged; _trackedImageRegions.Remove(region); }
+        if (e.NewItems is not null)
+            foreach (ImageTextRegion region in e.NewItems) if (_trackedImageRegions.Add(region)) region.PropertyChanged += OnImageRegionPropertyChanged;
+        OnImageReviewChanged();
+    }
+    private bool CanCreateImageDelivery() =>
+        !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot)
+        && _renderedReviewVersion == _imageReviewVersion;
+    private bool CanInstallImageDelivery() =>
+        !Busy && !string.IsNullOrWhiteSpace(OutputPath) && Directory.Exists(_imagePackage) && _packageReviewVersion == _imageReviewVersion;
+    private void RefuseStaleImageAction(string action)
+    {
+        ImageStatus = Busy
+            ? $"Đang có tác vụ chạy; chưa thể {action}."
+            : $"Chưa thể {action}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước.";
+        StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+    }
+    private void OnImageRegionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnImageReviewChanged();
+
+    private void OnImageReviewChanged()
+    {
+        _imageReviewVersion++;
+        if (_renderedImage.Length > 0 || _imagePackage.Length > 0 || _renderedDocument.ValueKind != JsonValueKind.Undefined)
+        {
+            // Old render/package files are kept as history; only their use is revoked.
+            _renderedImage = ""; _imagePackage = ""; _renderedDocument = default;
+            if (_imageSourcePreview is not null) ImagePreview = _imageSourcePreview;
+            ImageStatus = "Review đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các file đã dựng trước đó vẫn được giữ trong thư mục xuất.";
+        }
+        RefreshImageCommands();
+    }
+
     private void InitImageTextCommands()
     {
+        ImageRegions.CollectionChanged += OnImageRegionsChanged;
         OpenImageWorkspaceCommand = new RelayCommand(_ => { RefreshImageWorkspace(); ImageWorkspaceRequested?.Invoke(); }, _ => !Busy);
         RetryImageCommand = new RelayCommand(_ =>
         {
@@ -111,17 +174,21 @@ public sealed partial class MainViewModel
         }, _ => !Busy && Directory.Exists(OutputPath));
         CreateImageDeliveryCommand = new RelayCommand(_ =>
         {
+            // RelayCommand.Execute does not consult CanExecute, so the readiness is re-checked here, before any root/task exists.
+            if (!CanCreateImageDelivery()) { RefuseStaleImageAction("tạo gói ảnh"); return; }
             _imageTaskRoot = NewImageRoot();
             MarkImageTaskIdentity();
             BeginTask("image_delivery", new { document = _renderedDocument, rendered = _renderedImage,
                 game_root = _renderGameRoot, @out = _imageTaskRoot }, "Đang tạo gói ảnh locale…");
-        }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot));
+        }, _ => CanCreateImageDelivery());
         InstallImageDeliveryCommand = new RelayCommand(_ =>
         {
+            // Before the folder picker: a stale or missing package must not even ask for a game copy.
+            if (!CanInstallImageDelivery()) { RefuseStaleImageAction("cài gói vào bản sao game"); return; }
             var copy = _pathPicker.PickInputPath(); if (copy is null) return;
             _imageTaskRoot = NewImageRoot();
             BeginTask("image_apply", new { package = _imagePackage, game_copy = copy, @out = _imageTaskRoot }, "Đang cài vào bản sao game…");
-        }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath) && Directory.Exists(_imagePackage));
+        }, _ => CanInstallImageDelivery());
         RecoverImageDeliveryCommand = new RelayCommand(_ =>
         {
             var transaction = _pathPicker.PickOutputFolder(); if (transaction is null) return;
@@ -152,7 +219,7 @@ public sealed partial class MainViewModel
     /// </summary>
     internal void PrepareImageExtractState()
     {
-        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null;
+        _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null;
         ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null;
         RefreshImageCommands();
     }
@@ -160,7 +227,7 @@ public sealed partial class MainViewModel
     // Identity of the image a running image task was started for.  The combo is locked while busy, but a result must
     // never attach to a different image even if the selection changes some other way.
     private string _imageTaskImagePath = "";
-    private void MarkImageTaskIdentity() => _imageTaskImagePath = ImagePath;
+    private void MarkImageTaskIdentity() { _imageTaskImagePath = ImagePath; _imageTaskReviewVersion = _imageReviewVersion; }
     internal void MarkImageTaskIdentityForTest() => MarkImageTaskIdentity();
     /// <summary>Fixture helper: puts a loaded review back so cancel tests can prove it is kept.</summary>
     internal void MarkReviewForTest()
@@ -202,7 +269,7 @@ public sealed partial class MainViewModel
     }
     private void ClearImageReviewState()
     {
-        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; ImagePath = "";
+        _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; ImagePath = "";
         RefreshImageCommands();
     }
     private static BitmapSource LoadImagePreview(string path)
@@ -265,6 +332,13 @@ public sealed partial class MainViewModel
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
         }
+        if (evt.Ok && task is "image_render" or "image_delivery"
+            && _imageTaskReviewVersion is int startedAt && startedAt != _imageReviewVersion)
+        {
+            ImageStatus = "Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong thư mục xuất), hãy dựng lại cho review hiện tại.";
+            StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+            return;
+        }
         if (evt.Ok && task is "image_extract" or "image_render" or "image_delivery"
             && !string.Equals(_imageTaskImagePath, ImagePath, StringComparison.Ordinal))
         {
@@ -290,10 +364,10 @@ public sealed partial class MainViewModel
             else if (task == "image_extract") TryLoadImageReview(Path.Combine(_imageTaskRoot, "image_text.json"));
             else if (task is "image_delivery" or "image_apply" or "image_rollback")
             {
-                if (task == "image_delivery") _imagePackage = _imageTaskRoot;
+                if (task == "image_delivery") { _imagePackage = _imageTaskRoot; _packageReviewVersion = _renderedReviewVersion; }
                 ImageStatus = (evt.Summary ?? "Đã xử lý gói ảnh") + " " + _imageTaskRoot;
             }
-            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
+            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
         }
         catch (Exception e) { ImageStatus = "Không đọc được kết quả ảnh: " + e.Message; }
         finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; RefreshImageCommands(); }

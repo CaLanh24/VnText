@@ -5254,7 +5254,8 @@ internal static partial class Program
         public string? OutputFolder { get; set; }
         public string? TranslationCsv { get; set; }
         public string? RenpySdkFolder { get; set; }
-        public string? PickInputPath() => InputPath;
+        public int InputPicks { get; private set; }
+        public string? PickInputPath() { InputPicks++; return InputPath; }
         public string? PickOutputFolder() => OutputFolder;
         public string? LastCsvTitle { get; set; }
         public string? PickTranslationCsvFile(string? title = null) { LastCsvTitle = title; return TranslationCsv; }

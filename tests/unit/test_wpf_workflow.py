@@ -578,6 +578,22 @@ class WpfWorkflowTests(unittest.TestCase):
         prepare = image_vm[image_vm.index("internal void PrepareImageExtractState"):image_vm.index("private string _imageTaskImagePath")]
         self.assertNotIn('ImagePath = ""', prepare)
         self.assertIn("PrepareImageExtractState();", image_vm[image_vm.index("private void StartImageTask"):image_vm.index("internal void PrepareImageExtractState")])
+        # Region boxes are source PIXELS: the preview canvas must use PixelWidth/PixelHeight, never the DPI-scaled Width/Height.
+        self.assertIn('x:Name="PreviewCanvas" Width="{Binding ImagePreviewPixelWidth}" Height="{Binding ImagePreviewPixelHeight}"', panel)
+        self.assertIn('Stretch="Fill"', panel)
+        self.assertNotIn("ImagePreview.Width", panel)
+        self.assertNotIn("ImagePreview.Height", panel)
+        self.assertIn("PixelWidth", image_vm)
+        # A rendered snapshot / delivery package belongs to the review it was made from.
+        self.assertIn("_renderedReviewVersion == _imageReviewVersion", image_vm)
+        self.assertIn("_packageReviewVersion == _imageReviewVersion", image_vm)
+        self.assertIn("ImageRegions.CollectionChanged += OnImageRegionsChanged", image_vm)
+        self.assertIn("Review đã đổi trong lúc xử lý", image_vm)
+        # RelayCommand.Execute does not consult CanExecute: the delegates re-check before the picker / root / task.
+        delivery = image_vm[image_vm.index("CreateImageDeliveryCommand = new RelayCommand"):image_vm.index("InstallImageDeliveryCommand = new RelayCommand")]
+        self.assertLess(delivery.index("CanCreateImageDelivery()"), delivery.index("NewImageRoot()"))
+        install = image_vm[image_vm.index("InstallImageDeliveryCommand = new RelayCommand"):image_vm.index("RecoverImageDeliveryCommand = new RelayCommand")]
+        self.assertLess(install.index("CanInstallImageDelivery()"), install.index("PickInputPath()"))
         # Honest wording: only the install step writes, and only into a separate copy.
         self.assertNotIn("game không bị sửa", panel)
         self.assertIn("BẢN SAO", panel)

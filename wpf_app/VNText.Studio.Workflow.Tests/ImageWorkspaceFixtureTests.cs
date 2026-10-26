@@ -60,7 +60,8 @@ internal static partial class Program
                 File.WriteAllText(Path.Combine(package, "images", "report.json"), """{"schema":1,"items":[{"status":"OCR_READY"},{"status":"OCR_READY"},{"status":"UNTRANSLATED"}]}""", Encoding.UTF8);
 
                 using var worker = new PythonWorkerHost();
-                using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false) { InputPath = container, OutputPath = package };
+                var picker = new FakePathPicker();
+                using var vm = new MainViewModel(picker, worker, startWorker: false) { InputPath = container, OutputPath = package };
                 vm.TestSetTranslationModelReady(true);
                 var owner = new Window { Title = "Workspace fixture owner", Width = 1200, Height = 800 };
                 owner.Show();
@@ -267,6 +268,131 @@ internal static partial class Program
                 // a selected region is dropped whenever the source changes
                 vm.ImagePath = other;
                 AssertTrue(vm.SelectedImageRegion is null);
+
+                // ---- (A) preview overlay is in SOURCE PIXELS whatever the file's DPI metadata says ----
+                foreach (var (dpiX, dpiY) in new[] { (96d, 96d), (300d, 300d), (96d, 300d) })
+                {
+                    var dpiPng = Path.Combine(container, "game", "images", $"dpi_{dpiX:0}_{dpiY:0}.png");
+                    var dpiPixels = Enumerable.Repeat((byte)255, 600 * 200 * 4).ToArray();
+                    var dpiSource = System.Windows.Media.Imaging.BitmapSource.Create(600, 200, dpiX, dpiY, PixelFormats.Bgra32, null, dpiPixels, 600 * 4);
+                    var dpiEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                    dpiEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(dpiSource));
+                    using (var dpiStream = File.Create(dpiPng)) dpiEncoder.Save(dpiStream);
+                    var dpiHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(dpiPng))).ToLowerInvariant();
+                    var dpiReview = Path.Combine(root, $"review_{dpiX:0}_{dpiY:0}.json");
+                    File.WriteAllText(dpiReview, JsonSerializer.Serialize(new ImageTextDocument
+                    {
+                        SourcePath = dpiPng, SourceSha256 = dpiHash, Width = 600, Height = 200, Status = "REVIEW_REQUIRED",
+                        Regions = new List<ImageTextRegion> { new() { Id = "r1", Box = new[] { 10, 20, 200, 40 }, SourceText = "Hello" } },
+                    }, MainViewModel.ImageJson), Encoding.UTF8);
+                    AssertTrue(vm.TryLoadImageReview(dpiReview));
+                    panel.UpdateLayout();
+                    var loadedBitmap = (System.Windows.Media.Imaging.BitmapSource)vm.ImagePreview!;
+                    AssertEqual(600, loadedBitmap.PixelWidth);
+                    if (dpiX != 96d || dpiY != 96d) AssertTrue(Math.Abs(loadedBitmap.Width - 600) > 1 || Math.Abs(loadedBitmap.Height - 200) > 1);   // the DIP size really differs
+                    AssertEqual(600d, vm.ImagePreviewPixelWidth);
+                    AssertEqual(200d, vm.ImagePreviewPixelHeight);
+                    var canvas = (Grid)panel.FindName("PreviewCanvas");
+                    var image = (Image)panel.FindName("PreviewImage");
+                    AssertEqual(600d, canvas.ActualWidth); AssertEqual(200d, canvas.ActualHeight);
+                    AssertEqual(600d, image.ActualWidth); AssertEqual(200d, image.ActualHeight);
+                    var box = FindVisual<System.Windows.Shapes.Rectangle>(canvas) ?? throw new InvalidOperationException("no region rectangle drawn");
+                    var origin = box.TransformToAncestor(canvas).Transform(new Point(0, 0));
+                    AssertEqual(10d, origin.X); AssertEqual(20d, origin.Y);                // the box sits on the same source pixels as the artwork
+                    AssertEqual(200d, box.ActualWidth); AssertEqual(40d, box.ActualHeight);
+                }
+
+                // ---- (B) the rendered snapshot belongs to the review it was made from (real loaded review, real commands) ----
+                AssertTrue(vm.TryLoadImageReview(review));
+                var live = vm.ImageRegions[0];
+                void Approve(ImageTextRegion r, string text) { r.Translation = text; r.FlatBackgroundApproved = true; r.Approved = true; }
+                void RenderOk(string id)
+                {
+                    vm.RenderImageCommand.Execute(null);
+                    AssertFalse(vm.ImageStatus.StartsWith("Duyệt", StringComparison.Ordinal));     // not refused
+                    Directory.CreateDirectory(vm.ImageTaskRootForTest);
+                    File.Copy(png, Path.Combine(vm.ImageTaskRootForTest, "translated.png"), overwrite: true);
+                    vm.TestSetActiveTask(id, "image_render");
+                    Terminal(id, true, "");
+                    AssertFalse(vm.Busy);
+                }
+                void DeliverOk(string id)
+                {
+                    vm.CreateImageDeliveryCommand.Execute(null);
+                    Directory.CreateDirectory(vm.ImageTaskRootForTest);
+                    vm.TestSetActiveTask(id, "image_delivery");
+                    Terminal(id, true, "");
+                    AssertFalse(vm.Busy);
+                }
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));          // nothing rendered yet
+                Approve(live, "Trò chơi mới");
+                RenderOk("render-1");
+                var firstRender = Path.Combine(vm.ImageTaskRootForTest, "translated.png");
+                AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
+                DeliverOk("deliver-1");
+                var firstPackage = vm.ImageTaskRootForTest;
+                AssertTrue(vm.InstallImageDeliveryCommand.CanExecute(null));
+                // Edit the translation after render + package: both are revoked, the files stay as history, the preview returns to the source.
+                live.Translation = "Bản dịch khác";
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                AssertFalse(vm.InstallImageDeliveryCommand.CanExecute(null));
+                AssertTrue(vm.ImageStatus.StartsWith("Review đã đổi sau khi dựng ảnh", StringComparison.Ordinal));
+                AssertTrue(File.Exists(firstRender) && Directory.Exists(firstPackage));
+                // Direct Execute (it does not consult CanExecute) must be refused BEFORE the picker, a new root or a worker task.
+                var picksBefore = picker.InputPicks; var rootBefore = vm.ImageTaskRootForTest; var logBefore = vm.LogLines.Count;
+                vm.InstallImageDeliveryCommand.Execute(null);
+                AssertEqual(picksBefore, picker.InputPicks);                         // no folder picker opened
+                AssertEqual(rootBefore, vm.ImageTaskRootForTest);                    // no new task root
+                AssertFalse(vm.Busy);                                                // no worker task started
+                AssertTrue(vm.ImageStatus.Contains("Dựng lại ảnh", StringComparison.Ordinal));
+                vm.CreateImageDeliveryCommand.Execute(null);
+                AssertEqual(rootBefore, vm.ImageTaskRootForTest);
+                AssertFalse(vm.Busy);
+                AssertTrue(vm.ImageStatus.StartsWith("Chưa thể tạo gói ảnh", StringComparison.Ordinal));
+                AssertFalse(vm.LogLines.Skip(logBefore).Any(l => l.Contains("Gửi lệnh worker", StringComparison.Ordinal)));
+                AssertTrue(ReferenceEquals(vm.ImagePreview, vm.ImagePreview) && vm.ImagePreviewPixelWidth == 300);
+                // Re-render with the current review restores readiness.
+                Approve(live, "Bản dịch khác");
+                RenderOk("render-2");
+                AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
+                AssertFalse(vm.InstallImageDeliveryCommand.CanExecute(null));          // the old package belongs to the old review
+                // Revoking approval, changing the mode, geometry or the collection each revoke the render; re-approving alone does not restore it.
+                live.Approved = false;
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                var revokeRoot = vm.ImageTaskRootForTest; var revokePicks = picker.InputPicks;
+                vm.CreateImageDeliveryCommand.Execute(null); vm.InstallImageDeliveryCommand.Execute(null);
+                AssertEqual(revokeRoot, vm.ImageTaskRootForTest); AssertEqual(revokePicks, picker.InputPicks); AssertFalse(vm.Busy);
+                live.Approved = true;
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                RenderOk("render-3");
+                AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
+                live.TransparentTextApproved = true;                                    // background mode change
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                live.TransparentTextApproved = false;
+                RenderOk("render-4");
+                live.X = 11;                                                            // crop change (also clears approval and modes)
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                Approve(live, "Bản dịch khác");
+                RenderOk("render-5");
+                vm.AddImageRegionCommand.Execute(null);                                 // collection change: add
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                vm.RemoveImageRegionCommand.Execute(vm.ImageRegions[^1]);               // collection change: remove
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                RenderOk("render-6");
+                AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
+                // A result that arrives after the review changed under it (same path) is dropped, never attached.
+                vm.RenderImageCommand.Execute(null);                                    // task started for this review version
+                Directory.CreateDirectory(vm.ImageTaskRootForTest);
+                File.Copy(png, Path.Combine(vm.ImageTaskRootForTest, "translated.png"), overwrite: true);
+                live.Translation = "Đổi trong lúc dựng";                                 // review changes while the task is in flight
+                vm.TestSetActiveTask("render-late", "image_render");
+                Terminal("render-late", true, "");
+                AssertTrue(vm.ImageStatus.Contains("Review đã đổi trong lúc xử lý", StringComparison.Ordinal));
+                AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
+                AssertFalse(vm.InstallImageDeliveryCommand.CanExecute(null));
+                Approve(live, "Đổi trong lúc dựng");
+                RenderOk("render-7");                                                   // a fresh render restores readiness
+                AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
 
                 // Both entry points reach the same dialog through one command.
                 var requested = 0;

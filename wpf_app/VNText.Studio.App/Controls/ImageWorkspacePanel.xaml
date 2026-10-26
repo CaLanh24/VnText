@@ -54,8 +54,11 @@
         <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <Border Style="{StaticResource SubtlePanelBorder}" Padding="8" Margin="0,0,0,8">
             <Viewbox Height="150" Stretch="Uniform" HorizontalAlignment="Left">
-                <Grid Width="{Binding ImagePreview.Width}" Height="{Binding ImagePreview.Height}">
-                    <Image Source="{Binding ImagePreview}" />
+                <!-- 1 DIP == 1 source pixel here: boxes are source pixels, so the canvas uses PixelWidth/PixelHeight and the image is
+                     stretched to exactly that size regardless of the file's DPI metadata. -->
+                <Grid x:Name="PreviewCanvas" Width="{Binding ImagePreviewPixelWidth}" Height="{Binding ImagePreviewPixelHeight}">
+                    <Image x:Name="PreviewImage" Source="{Binding ImagePreview}" Stretch="Fill"
+                           Width="{Binding ImagePreviewPixelWidth}" Height="{Binding ImagePreviewPixelHeight}" />
                     <ItemsControl ItemsSource="{Binding ImageRegions}">
                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                         <ItemsControl.ItemContainerStyle>
