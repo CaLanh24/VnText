@@ -1,0 +1,156 @@
+<UserControl x:Class="VNText.Studio.App.Controls.ImageWorkspacePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Text trong ảnh: OCR -> review/approve -> render -> delivery -> install.  Every control is bound to the existing
+         MainViewModel image commands; nothing here approves, renders or writes on its own. -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="PanelBoolToVis" />
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+        </Style>
+        <Style x:Key="FormField" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,14,10" />
+        </Style>
+    </UserControl.Resources>
+    <StackPanel>
+        <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,0,0,12"
+                   Text="Ảnh tĩnh PNG/JPEG/WebP. OCR tiếng Anh luôn cần bạn xem lại: sửa text, nhập bản dịch, chọn đúng một chế độ nền rồi tick Duyệt. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+
+        <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->
+        <Border x:Name="TaskBanner" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12"
+                Visibility="{Binding Busy, Converter={StaticResource PanelBoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock x:Name="TaskText" Text="{Binding ImageWorkspaceTaskText}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}"
+                               AutomationProperties.Name="Tác vụ đang chạy" />
+                    <TextBlock x:Name="ProgressText" Text="{Binding ImageWorkspaceProgressText}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0"
+                               AutomationProperties.Name="Tiến trình và xác nhận hủy" />
+                    <ProgressBar x:Name="TaskSpinner" Height="6" IsIndeterminate="True" Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,12,0" />
+                </StackPanel>
+                <Button x:Name="CancelButton" Grid.Column="1" Content="Hủy tác vụ" Command="{Binding CancelCommand}" Style="{StaticResource OutlineButton}"
+                        VerticalAlignment="Center" Padding="14,7" AutomationProperties.Name="Hủy tác vụ đang chạy" />
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
+            <TextBlock x:Name="WorkspaceSummary" Text="{Binding ImageWorkspaceSummary}" TextWrapping="Wrap" Style="{StaticResource UiBodyTextStyle}"
+                       AutomationProperties.Name="Tình trạng ảnh trong gói" />
+        </Border>
+
+        <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <WrapPanel Margin="0,0,0,8">
+            <Button x:Name="DiscoverButton" Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+        </WrapPanel>
+        <ComboBox x:Name="CandidateCombo" ItemsSource="{Binding ImageCandidates}" SelectedItem="{Binding ImagePath, Mode=TwoWay}" IsEnabled="{Binding ImageGridEnabled}"
+                  Style="{StaticResource SettingsPreferenceCombo}" MinHeight="32" AutomationProperties.Name="Ảnh ứng viên" />
+        <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" />
+
+        <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <Border Style="{StaticResource SubtlePanelBorder}" Padding="8" Margin="0,0,0,8">
+            <Viewbox Height="150" Stretch="Uniform" HorizontalAlignment="Left">
+                <Grid Width="{Binding ImagePreview.Width}" Height="{Binding ImagePreview.Height}">
+                    <Image Source="{Binding ImagePreview}" />
+                    <ItemsControl ItemsSource="{Binding ImageRegions}">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}" />
+                                <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate><Rectangle Width="{Binding Width}" Height="{Binding Height}" Stroke="#E0554D" StrokeThickness="2" /></DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Viewbox>
+        </Border>
+
+        <!-- Compact main grid: only what is reviewed line by line.  Crop, font, colours and background options are in the detail form. -->
+        <DataGrid x:Name="RegionGrid" ItemsSource="{Binding ImageRegions}" SelectedItem="{Binding SelectedImageRegion, Mode=TwoWay}"
+                  Style="{StaticResource CsvDataGridStyle}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
+                  Height="170" MinRowHeight="32" IsEnabled="{Binding ImageGridEnabled}"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  AutomationProperties.Name="Vùng chữ trong ảnh">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="TEXT OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="140" />
+                <DataGridTemplateColumn Header="BẢN DỊCH" Width="1.5*" MinWidth="180">
+                    <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Translation}" TextWrapping="Wrap" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" /></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="CHẾ ĐỘ NỀN" Binding="{Binding ModeSummary, Mode=OneWay}" IsReadOnly="True" Width="*" MinWidth="130" />
+                <DataGridCheckBoxColumn Header="DUYỆT" Binding="{Binding Approved}" Width="80" />
+                <DataGridTemplateColumn Header="XÓA" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="Xóa" Style="{StaticResource OutlineButton}" Padding="8,2" AutomationProperties.Name="Xóa vùng"
+                                    Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Selected region details.  Editing any value clears the approval (model rule); the four background modes stay independent
+             explicit choices, none is ticked by default, and render still requires exactly one plus Approved. -->
+        <Border x:Name="RegionDetails" Style="{StaticResource SubtlePanelBorder}" Padding="14,12" Margin="0,8,0,8" IsEnabled="{Binding ImageGridEnabled}">
+            <StackPanel>
+                <TextBlock x:Name="RegionDetailsHint" Text="Chọn một dòng trong bảng để sửa crop, cỡ chữ, màu và chế độ nền của vùng đó." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasSelectedImageRegion}" Value="True"><Setter Property="Visibility" Value="Collapsed" /></DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <StackPanel x:Name="RegionDetailsForm" DataContext="{Binding SelectedImageRegion}"
+                            Visibility="{Binding DataContext.HasSelectedImageRegion, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PanelBoolToVis}}">
+                    <TextBlock Text="Chi tiết vùng đang chọn" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,8" />
+                    <WrapPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionXBox" Width="80" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="X của vùng, pixel gốc" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionYBox" Width="80" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Y của vùng, pixel gốc" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Rộng" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionWidthBox" Width="80" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Chiều rộng của vùng" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Cao" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionHeightBox" Width="80" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Chiều cao của vùng" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Cỡ chữ" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionFontBox" Width="80" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding FontSize, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Cỡ chữ" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Màu nền (RGB)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionBackgroundBox" Width="110" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Background, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Màu nền RGB" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Màu chữ (RGB)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionForegroundBox" Width="110" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Màu chữ RGB" /></StackPanel>
+                    </WrapPanel>
+                    <TextBlock Text="Chế độ nền — chọn đúng một" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,2,0,6" />
+                    <WrapPanel>
+                        <CheckBox x:Name="FlatModeBox" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
+                        <CheckBox x:Name="TransparentModeBox" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
+                        <CheckBox x:Name="SolidModeBox" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
+                        <CheckBox x:Name="CloneModeBox" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
+                    </WrapPanel>
+                    <WrapPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding DonorX, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="X nền mẫu" /></StackPanel>
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorYBox" Width="90" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding DonorY, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Y nền mẫu" /></StackPanel>
+                        <CheckBox x:Name="ApproveBox" Content="Duyệt text/crop của vùng này" IsChecked="{Binding Approved}" VerticalAlignment="Bottom" Margin="8,0,0,14" FontWeight="SemiBold" AutomationProperties.Name="Duyệt text và crop của vùng" />
+                    </WrapPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        <WrapPanel Margin="0,2,0,12">
+            <Button x:Name="AddRegionButton" Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="SaveReviewButton" Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+        </WrapPanel>
+
+        <TextBlock Text="3 · Dựng ảnh và gói cài" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <WrapPanel Margin="0,0,0,8">
+            <Button x:Name="RenderButton" Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="DeliveryButton" Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="InstallButton" Content="Cài gói vào bản sao game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+        </WrapPanel>
+        <TextBlock x:Name="StatusLine" Text="{Binding ImageStatus}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
+                   AutomationProperties.Name="Trạng thái xử lý ảnh" />
+    </StackPanel>
+</UserControl>

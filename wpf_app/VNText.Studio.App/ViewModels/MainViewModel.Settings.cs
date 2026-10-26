@@ -171,16 +171,21 @@ public sealed partial class MainViewModel
     }
     internal void RestoreWindow(Window window)
     {
-        if (!_settings.RememberWindow) return;
-        var area = SystemParameters.WorkArea;
-        window.Width = Math.Clamp(double.IsFinite(_settings.WindowWidth) ? _settings.WindowWidth : 1440, 1040, Math.Max(1040, area.Width));
-        window.Height = Math.Clamp(double.IsFinite(_settings.WindowHeight) ? _settings.WindowHeight : 920, 720, Math.Max(720, area.Height));
-        if (double.IsFinite(_settings.WindowLeft) && double.IsFinite(_settings.WindowTop))
-        {
-            window.WindowStartupLocation = WindowStartupLocation.Manual;
-            window.Left = Math.Clamp(_settings.WindowLeft, area.Left, Math.Max(area.Left, area.Right - window.Width));
-            window.Top = Math.Clamp(_settings.WindowTop, area.Top, Math.Max(area.Top, area.Bottom - window.Height));
-        }
+        // Always fitted to the logical work area, also when saved geometry is off or unused: the XAML design size
+        // (1440x920, min 1040x720) used to extend past small or high-DPI work areas on restore.
+        var saved = _settings.RememberWindow;
+        double? left = saved && double.IsFinite(_settings.WindowLeft) ? _settings.WindowLeft : null;
+        double? top = saved && double.IsFinite(_settings.WindowTop) ? _settings.WindowTop : null;
+        WindowGeometry.Apply(window, WindowGeometry.Compute(
+            saved ? _settings.WindowWidth : WindowGeometry.DesignWidth,
+            saved ? _settings.WindowHeight : WindowGeometry.DesignHeight,
+            left, top, SystemParameters.WorkArea));
+    }
+    /// <summary>Re-fits the restored window (for example when leaving maximized after the work area changed).</summary>
+    internal void RefitWindow(Window window)
+    {
+        if (window.WindowState != WindowState.Normal) return;
+        WindowGeometry.Apply(window, WindowGeometry.Compute(window.Width, window.Height, window.Left, window.Top, SystemParameters.WorkArea));
     }
     internal void SaveWindow(Window window)
     {

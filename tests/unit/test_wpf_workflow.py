@@ -523,7 +523,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertLess(refresh, extract_refresh)
         self.assertLess(csv_path, readiness)
         workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
-        readiness_apply = workflow.index("void Apply(CsvValidationResult result, ImagePackageProbe.Summary images)")
+        readiness_apply = re.search(r"void Apply\(CsvValidationResult result\b[^)]*\)", workflow).start()
         self.assertIn("if (syncCsvValidation)", workflow[readiness_apply:])
         self.assertIn("CsvValidationOk = result.Ok;", workflow[readiness_apply:])
         self.assertIn("CsvValidationMessage = result.Message;", workflow[readiness_apply:])
@@ -531,6 +531,67 @@ class WpfWorkflowTests(unittest.TestCase):
         paths = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
         strict_patch_validation = paths[paths.index("private bool ValidateTranslationCsv"):paths.index("private bool ValidateTranslationCsv") + 900]
         self.assertIn("CsvPackageValidator.Validate(path, requireTranslations);", strict_patch_validation)
+
+    def test_image_workspace_is_reachable_and_every_command_is_bound(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        window = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        window_code = (app / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        image_vm = (app / "ViewModels" / "MainViewModel.ImageText.cs").read_text(encoding="utf-8")
+        # Every stage of the OCR -> review -> render -> delivery -> install workflow has a real binding in the XAML.
+        for command in (
+            "DiscoverImagesCommand", "ChooseOcrImageCommand", "RunImageOcrCommand", "OpenImageReviewCommand",
+            "SaveImageReviewCommand", "RenderImageCommand", "CreateImageDeliveryCommand", "InstallImageDeliveryCommand",
+            "RecoverImageDeliveryCommand", "AddImageRegionCommand", "RemoveImageRegionCommand", "OpenOutputCommand",
+        ):
+            with self.subTest(command=command):
+                self.assertRegex(panel, r"Command=\"\{Binding (DataContext\.)?" + command + r"\b")
+                if command != "OpenOutputCommand":
+                    self.assertIn(f"public RelayCommand {command}", image_vm)
+        for binding in ("ImageCandidates", "ImagePath", "ImagePreview", "ImageRegions", "ImageStatus", "ImageWorkspaceSummary", "ImageGridEnabled"):
+            with self.subTest(binding=binding):
+                self.assertIn("{Binding " + binding, panel)
+        for approval in ("FlatBackgroundApproved", "ReplacementBackgroundApproved", "TransparentTextApproved", "CloneBackgroundApproved", "Approved"):
+            self.assertIn("IsChecked=\"{Binding " + approval + "}\"", panel)
+        # The workspace is opened through the shared themed dialog shell from both entry points.
+        self.assertGreaterEqual(len(re.findall(r"Command=\"\{Binding OpenImageWorkspaceCommand\}\"", window)), 2)
+        self.assertIn("new AppDialogWindow(this", window_code)
+        self.assertIn("ImageWorkspacePanel", window_code)
+        self.assertIn("ImageWorkspaceRequested", window_code)
+        # The modal has its own Cancel (the owner window, with its Cancel button, is disabled while a modal is open),
+        # shows the owning task and the progress/cancel-acknowledgement line, and offers a spinner only while Busy.
+        self.assertRegex(panel, r'Command="\{Binding CancelCommand\}"')
+        self.assertIn("{Binding ImageWorkspaceTaskText}", panel)
+        self.assertIn("{Binding ImageWorkspaceProgressText}", panel)
+        self.assertRegex(panel, r'x:Name="TaskBanner"[^>]*\n?[^>]*Visibility="\{Binding Busy')
+        # Compact main grid; crop/font/colour/background options are in a labelled detail form bound to the selection.
+        self.assertIn("SelectedItem=\"{Binding SelectedImageRegion", panel)
+        grid_xaml = panel[panel.index('x:Name="RegionGrid"'):panel.index("</DataGrid>")]
+        self.assertLessEqual(grid_xaml.count("<DataGridTextColumn") + grid_xaml.count("<DataGridCheckBoxColumn") + grid_xaml.count("<DataGridTemplateColumn "), 5)
+        for field in ("X", "Y", "Width", "Height", "FontSize", "Background", "Foreground", "DonorX", "DonorY"):
+            self.assertIn("Text=\"{Binding " + field + ",", panel)
+        # The candidate source cannot change while a task runs, cancellation is its own state, and a cancelled/failed OCR keeps the source.
+        self.assertRegex(panel, r'x:Name="CandidateCombo"[^>]*IsEnabled="\{Binding ImageGridEnabled\}"')
+        complete = image_vm[image_vm.index("private void CompleteImageTask"):]
+        self.assertIn("Đã hủy {ImageTaskLabel(task)}", complete)
+        self.assertIn("kết quả cũ bị bỏ", complete)
+        prepare = image_vm[image_vm.index("internal void PrepareImageExtractState"):image_vm.index("private string _imageTaskImagePath")]
+        self.assertNotIn('ImagePath = ""', prepare)
+        self.assertIn("PrepareImageExtractState();", image_vm[image_vm.index("private void StartImageTask"):image_vm.index("internal void PrepareImageExtractState")])
+        # Honest wording: only the install step writes, and only into a separate copy.
+        self.assertNotIn("game không bị sửa", panel)
+        self.assertIn("BẢN SAO", panel)
+        # Restore geometry is fitted to the logical work area, always (also when window memory is off).
+        settings = (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8")
+        restore = settings[settings.index("internal void RestoreWindow"):settings.index("internal void SaveWindow")]
+        self.assertIn("WindowGeometry.Compute", restore)
+        self.assertIn("SystemParameters.WorkArea", restore)
+        self.assertNotIn("if (!_settings.RememberWindow) return;", restore)
+        self.assertIn("RefitWindow", window_code)
+        # The empty-text-CSV path never feeds the image commands: they depend on Busy/paths/review state only.
+        for line in re.findall(r"new RelayCommand\([^\n]*", image_vm):
+            self.assertNotIn("CsvValidationOk", line)
+            self.assertNotIn("PatchPreflightOk", line)
 
     def test_non_applicable_unity_scan_summary_is_not_an_error_log(self):
         journal = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppJournalStore.cs").read_text(encoding="utf-8")
@@ -778,6 +839,9 @@ class WpfWorkflowTests(unittest.TestCase):
             dialog_proc = _run_harness(harness_env, artifacts_root, ["--app-dialog-fixture"])
             self.assertEqual(0, dialog_proc.returncode, (dialog_proc.stdout or "") + (dialog_proc.stderr or ""))
             self.assertIn("WPF app dialog interaction fixture: PASS", dialog_proc.stdout)
+            workspace_proc = _run_harness(harness_env, artifacts_root, ["--image-workspace-fixture"])
+            self.assertEqual(0, workspace_proc.returncode, (workspace_proc.stdout or "") + (workspace_proc.stderr or ""))
+            self.assertIn("WPF image workspace fixture: PASS", workspace_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:
                 import shutil

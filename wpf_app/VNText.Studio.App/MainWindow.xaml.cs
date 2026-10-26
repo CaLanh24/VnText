@@ -35,7 +35,14 @@ public partial class MainWindow : Window
             vm.CompletionRequested += OnCompletionRequested;
             vm.ExitAfterTaskRequested += OnExitAfterTaskRequested;
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
+            vm.ImageWorkspaceRequested += () =>
+            {
+                var dialog = new AppDialogWindow(this, UiText.Translate("Text trong ảnh"), new VNText.Studio.App.Controls.ImageWorkspacePanel { DataContext = vm }, 1040);
+                dialog.AddButton(UiText.Translate("Đóng"), () => { });
+                dialog.ShowDialog();
+            };
             vm.RestoreWindow(this);
+            StateChanged += (_, _) => { if (WindowState == WindowState.Normal) vm.RefitWindow(this); };
             WindowState = !_presentationFixture && vm.StartMinimized ? WindowState.Minimized : WindowState.Maximized;
             UpdatePresentation.OfferRequested += OpenUpdateDialog;
             vm.ReleaseNotesRequested += OpenReleaseNotes;

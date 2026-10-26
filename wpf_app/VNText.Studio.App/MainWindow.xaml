@@ -471,6 +471,8 @@
                                     <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding ExtractProgressStep}" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Visibility="{Binding ExtractProgressActive, Converter={StaticResource BoolToVis}}" />
                                         <TextBlock Text="{Binding ExtractStatusText}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" Margin="0,3,0,0" />
+                                        <Button Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh trong game." AutomationProperties.Name="Mở Text trong ảnh"
+                                                Style="{StaticResource OutlineButton}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="14,6" Command="{Binding OpenImageWorkspaceCommand}" />
                                         <StackPanel Margin="0,5,0,0" Visibility="{Binding ExtractProgressActive, Converter={StaticResource BoolToVis}}">
                                                                                         <TextBlock Text="{Binding ExtractProgressItem, StringFormat='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding ExtractProgressItem}" />
                                             <TextBlock Text="{Binding ExtractProgressElapsed}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
@@ -609,6 +611,8 @@
                                                 <TextBlock Text="{Binding TranslateWorkflowStatusText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,12,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh (không cần dòng text trong CSV)." AutomationProperties.Name="Mở Text trong ảnh"
+                                                        Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding OpenImageWorkspaceCommand}" />
                                                 <Button Content="Dịch ảnh…" ToolTip="Chọn ảnh để tạo bản dịch nháp; việc này chỉ chạy khi bạn yêu cầu trong bước Dịch."
                                                         Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding RetryImageCommand}" />
                                                 <Button Content="Bắt đầu dịch" Style="{StaticResource PrimaryButton}" Command="{Binding RunTranslateCommand}" />

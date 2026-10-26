@@ -499,7 +499,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         set
         {
             if (Set(ref _progressSubtitle, value))
+            {
                 Raise(nameof(ExtractProgressSubtitle));
+                Raise(nameof(ImageWorkspaceProgressText));
+            }
         }
     }
 
@@ -747,6 +750,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _busy, value))
             {
                 Raise(nameof(ExtractProgressActive));
+                Raise(nameof(ImageGridEnabled));
+                RaiseImageWorkspaceTaskState();
+                RefreshImageCommands();
                 Raise(nameof(ExtractProgressHeading));
                 Raise(nameof(TranslateProgressActive));
                 Raise(nameof(PatchProgressActive));

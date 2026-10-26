@@ -17,7 +17,7 @@ public sealed partial class MainViewModel
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; RefreshImageCommands(); } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
     public ImageSource? ImagePreview { get => _imagePreview; private set => Set(ref _imagePreview, value); }
     public ObservableCollection<string> ImageCandidates { get; } = new();
@@ -34,16 +34,75 @@ public sealed partial class MainViewModel
     public RelayCommand InstallImageDeliveryCommand { get; private set; } = null!;
     public RelayCommand RecoverImageDeliveryCommand { get; private set; } = null!;
     public RelayCommand RetryImageCommand { get; private set; } = null!;
+    public RelayCommand OpenImageWorkspaceCommand { get; private set; } = null!;
+    internal event Action? ImageWorkspaceRequested;
+    private string _imageWorkspaceSummary = "";
+    public string ImageWorkspaceSummary { get => _imageWorkspaceSummary; private set => Set(ref _imageWorkspaceSummary, value); }
+    /// <summary>The region grid is editable only while no worker task owns the package.</summary>
+    public bool ImageGridEnabled => !Busy;
+
+    private ImageTextRegion? _selectedImageRegion;
+    /// <summary>The region whose crop/font/colour/background options are shown in the detail form.</summary>
+    public ImageTextRegion? SelectedImageRegion
+    {
+        get => _selectedImageRegion;
+        set { if (Set(ref _selectedImageRegion, value)) Raise(nameof(HasSelectedImageRegion)); }
+    }
+    public bool HasSelectedImageRegion => _selectedImageRegion is not null;
+
+    private static string ImageTaskLabel(string? task) => task switch
+    {
+        "image_inventory" => "tìm ảnh trong thư mục game",
+        "image_extract" => "OCR ảnh",
+        "image_batch" => "dịch nháp ảnh",
+        "image_render" => "dựng ảnh từ bản dịch đã duyệt",
+        "image_delivery" => "tạo gói ảnh",
+        "image_apply" => "cài gói vào bản sao game",
+        "image_rollback" => "phục hồi giao dịch ảnh",
+        "translate" => "dịch text trong CSV",
+        "extract" => "lấy text",
+        "analyze" => "phân tích game",
+        "patch" => "tạo patch",
+        null or "" => "tác vụ",
+        _ => task,
+    };
+    /// <summary>Which task owns the worker right now; empty when idle so the panel never implies phantom work.</summary>
+    public string ImageWorkspaceTaskText => !Busy ? ""
+        : _runningTask?.StartsWith("image_", StringComparison.Ordinal) == true
+            ? $"Đang chạy: {ImageTaskLabel(_runningTask)}."
+            : $"Một tác vụ khác đang chạy ({ImageTaskLabel(_runningTask)}) — chờ xong hoặc bấm Hủy trước khi dùng ảnh.";
+    /// <summary>Latest progress / cancel-acknowledgement line of the running task; empty when idle.</summary>
+    public string ImageWorkspaceProgressText => Busy ? ProgressSubtitle : "";
+    internal void RaiseImageWorkspaceTaskState()
+    {
+        Raise(nameof(ImageWorkspaceTaskText));
+        Raise(nameof(ImageWorkspaceProgressText));
+    }
+
+    /// <summary>Explicit (not getter-driven) refresh of the package image summary shown in the workspace.</summary>
+    internal void RefreshImageWorkspace()
+    {
+        if (string.IsNullOrWhiteSpace(InputPath)) { ImageWorkspaceSummary = "Chưa chọn game / thư mục chứa ảnh."; return; }
+        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageWorkspaceSummary = "Chưa chọn thư mục xuất."; return; }
+        var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
+        ImageWorkspaceSummary = images.Total == 0
+            ? "Chưa có báo cáo OCR trong gói. Bấm “Tìm ảnh từ thư mục game”, chọn ảnh rồi OCR."
+            : $"Gói có {images.Total:N0} ảnh: {images.OcrReady:N0} đã OCR, {images.TranslatedDrafts:N0} bản dịch nháp, " +
+              $"{images.Total - images.OcrReady - images.TranslatedDrafts:N0} chưa OCR được (cần xem tay). " +
+              "Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói).";
+    }
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
     {
-        foreach (var command in new[] { ChooseOcrImageCommand, DiscoverImagesCommand, RunImageOcrCommand,
+        Raise(nameof(ImageGridEnabled));
+        foreach (var command in new[] { OpenImageWorkspaceCommand, ChooseOcrImageCommand, DiscoverImagesCommand, RunImageOcrCommand,
             OpenImageReviewCommand, SaveImageReviewCommand, RenderImageCommand, AddImageRegionCommand,
             RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand, RetryImageCommand })
             command?.RaiseCanExecuteChanged();
     }
     private void InitImageTextCommands()
     {
+        OpenImageWorkspaceCommand = new RelayCommand(_ => { RefreshImageWorkspace(); ImageWorkspaceRequested?.Invoke(); }, _ => !Busy);
         RetryImageCommand = new RelayCommand(_ =>
         {
             var image = _pathPicker.PickImageFile();
@@ -53,6 +112,7 @@ public sealed partial class MainViewModel
         CreateImageDeliveryCommand = new RelayCommand(_ =>
         {
             _imageTaskRoot = NewImageRoot();
+            MarkImageTaskIdentity();
             BeginTask("image_delivery", new { document = _renderedDocument, rendered = _renderedImage,
                 game_root = _renderGameRoot, @out = _imageTaskRoot }, "Đang tạo gói ảnh locale…");
         }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot));
@@ -81,8 +141,32 @@ public sealed partial class MainViewModel
     {
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
         _imageTaskRoot = NewImageRoot();
-        if (task == "image_extract") ClearImageReviewState();
+        if (task == "image_extract") PrepareImageExtractState();
+        MarkImageTaskIdentity();
         BeginTask(task, new { src = source, @out = _imageTaskRoot }, "Đang xử lý text trong ảnh…");
+    }
+
+    /// <summary>
+    /// A new OCR run drops the OLD review/render state but keeps the chosen source, so a cancelled or failed OCR
+    /// can be retried on the same image without going through the picker again.
+    /// </summary>
+    internal void PrepareImageExtractState()
+    {
+        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null;
+        ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null;
+        RefreshImageCommands();
+    }
+
+    // Identity of the image a running image task was started for.  The combo is locked while busy, but a result must
+    // never attach to a different image even if the selection changes some other way.
+    private string _imageTaskImagePath = "";
+    private void MarkImageTaskIdentity() => _imageTaskImagePath = ImagePath;
+    internal void MarkImageTaskIdentityForTest() => MarkImageTaskIdentity();
+    /// <summary>Fixture helper: puts a loaded review back so cancel tests can prove it is kept.</summary>
+    internal void MarkReviewForTest()
+    {
+        if (ImageRegions.Count == 0 && !string.IsNullOrWhiteSpace(ImagePath))
+            ImageRegions.Add(new ImageTextRegion { Id = "restored", Box = new[] { 10, 10, 200, 40 }, SourceText = "Hello" });
     }
     internal bool TryLoadImageReview(string path)
     {
@@ -118,7 +202,7 @@ public sealed partial class MainViewModel
     }
     private void ClearImageReviewState()
     {
-        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); ImagePreview = null; ImagePath = "";
+        _renderedImage = ""; _imagePackage = ""; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; ImagePath = "";
         RefreshImageCommands();
     }
     private static BitmapSource LoadImagePreview(string path)
@@ -166,11 +250,28 @@ public sealed partial class MainViewModel
         _imageTaskRoot = NewImageRoot();
         var document = JsonSerializer.SerializeToElement(CurrentImageReview(), ImageJson);
         _renderedImage = ""; _imagePackage = ""; _renderedDocument = document; _renderGameRoot = InputPath;
+        MarkImageTaskIdentity();
         BeginTask("image_render", new { document, @out = _imageTaskRoot,
             font_path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf") }, "Đang dựng ảnh từ bản dịch duyệt…");
     }
     private void CompleteImageTask(string task, WorkerEvent evt)
     {
+        if (!evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            // Cancellation is its own state: nothing returned by the cancelled task is applied to this screen, the review and the
+            // chosen source are kept, and ordinary failures below still read as errors.  No rollback is promised: files a
+            // task already wrote safely (for example earlier image_batch drafts) may remain in the output folder.
+            ImageStatus = $"Đã hủy {ImageTaskLabel(task)}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất.";
+            StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+            return;
+        }
+        if (evt.Ok && task is "image_extract" or "image_render" or "image_delivery"
+            && !string.Equals(_imageTaskImagePath, ImagePath, StringComparison.Ordinal))
+        {
+            ImageStatus = "Ảnh đang chọn đã đổi trong lúc xử lý; kết quả cũ bị bỏ, hãy chạy lại cho ảnh hiện tại.";
+            StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+            return;
+        }
         if (task == "image_batch")
         {
             ImageStatus = evt.Ok ? evt.Summary ?? "Đã xử lý ảnh; xem thư mục images cạnh CSV." : evt.Error ?? "Chưa dịch được ảnh.";

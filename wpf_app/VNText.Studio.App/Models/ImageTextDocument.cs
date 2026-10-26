@@ -30,16 +30,30 @@ public sealed class ImageTextRegion : NotifyBase
     private bool _cloneBackgroundApproved;
     public int DonorX { get => _donorX; set { if (Set(ref _donorX, value)) { Approved = false; CloneBackgroundApproved = false; } } }
     public int DonorY { get => _donorY; set { if (Set(ref _donorY, value)) { Approved = false; CloneBackgroundApproved = false; } } }
-    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set => Set(ref _cloneBackgroundApproved, value); }
+    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set { if (Set(ref _cloneBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
     public string SourceText { get => _sourceText; set { if (Set(ref _sourceText, value)) Approved = false; } }
     public string Translation { get => _translation; set { if (Set(ref _translation, value)) Approved = false; } }
     public string Background { get => _background; set { if (Set(ref _background, value)) { Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; CloneBackgroundApproved = false; } } }
     public string Foreground { get => _foreground; set { if (Set(ref _foreground, value)) Approved = false; } }
     public int FontSize { get => _fontSize; set { if (Set(ref _fontSize, value)) Approved = false; } }
     public bool Approved { get => _approved; set => Set(ref _approved, value); }
-    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set => Set(ref _flatBackgroundApproved, value); }
-    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set => Set(ref _replacementBackgroundApproved, value); }
-    public bool TransparentTextApproved { get => _transparentTextApproved; set => Set(ref _transparentTextApproved, value); }
+    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
+    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
+    public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) Raise(nameof(ModeSummary)); } }
+    /// <summary>One-line state of the four background modes for the compact grid; nothing is chosen by default.</summary>
+    [JsonIgnore]
+    public string ModeSummary
+    {
+        get
+        {
+            var chosen = new List<string>(4);
+            if (_flatBackgroundApproved) chosen.Add("Nền phẳng");
+            if (_transparentTextApproved) chosen.Add("Chữ trong suốt");
+            if (_replacementBackgroundApproved) chosen.Add("Màu đặc");
+            if (_cloneBackgroundApproved) chosen.Add("Clone nền mẫu");
+            return chosen.Count switch { 0 => "Chưa chọn chế độ nền", 1 => chosen[0], _ => "Chọn nhiều chế độ — cần đúng một" };
+        }
+    }
     private void ChangeBox(int index, int value, string property)
     {
         if (Box.Length != 4) Box = new[] { 0, 0, 100, 40 };

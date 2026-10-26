@@ -23,6 +23,8 @@ internal static partial class Program
     {
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
             return RunAppDialogFixture(args);
+        if (args.Contains("--image-workspace-fixture", StringComparer.Ordinal))
+            return RunImageWorkspaceFixture();
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
@@ -261,6 +263,7 @@ internal static partial class Program
         Run("CsvEditor_BulkOperationsRunOffTheUiThread", CsvEditor_BulkOperationsRunOffTheUiThread, failures);
         Run("CsvEditor_BulkPreviewForOldInputsIsDiscarded", CsvEditor_BulkPreviewForOldInputsIsDiscarded, failures);
         Run("OcrOnlyPackage_TranslateCardPointsToTheImageStep", OcrOnlyPackage_TranslateCardPointsToTheImageStep, failures);
+        Run("WindowGeometry_FitsNarrowShortAndHighDpiWorkAreas", WindowGeometry_FitsNarrowShortAndHighDpiWorkAreas, failures);
         Run("ImagePackageProbe_ToleratesMalformedReportsWithoutThrowing", ImagePackageProbe_ToleratesMalformedReportsWithoutThrowing, failures);
         Run("ImagePackageProbe_SelectionIsDeterministicAndBounded", ImagePackageProbe_SelectionIsDeterministicAndBounded, failures);
         Run("OcrOnlyPackage_MalformedReportNeverReachesTheGetterAsAnException", OcrOnlyPackage_MalformedReportNeverReachesTheGetterAsAnException, failures);
@@ -2263,6 +2266,79 @@ internal static partial class Program
         {
             Directory.Delete(root, true);
         }
+    }
+
+    private static void WindowGeometry_FitsNarrowShortAndHighDpiWorkAreas()
+    {
+        void Inside(WindowGeometry.Fit fit, Rect area)
+        {
+            AssertTrue(fit.Width <= area.Width + 0.001 && fit.Height <= area.Height + 0.001);
+            AssertTrue(fit.Left >= area.Left - 0.001 && fit.Top >= area.Top - 0.001);
+            AssertTrue(fit.Left + fit.Width <= area.Right + 0.001);      // right edge (close button) stays visible
+            AssertTrue(fit.Top + fit.Height <= area.Bottom + 0.001);     // bottom edge stays above the taskbar
+            AssertTrue(fit.MinWidth <= area.Width && fit.MinHeight <= area.Height);   // the minimum never forces overflow
+            AssertTrue(fit.Width >= fit.MinWidth && fit.Height >= fit.MinHeight);
+        }
+        // Roomy 1080p work area: the design size is kept and centred.
+        var roomy = new Rect(0, 0, 1920, 1040);
+        var fit = WindowGeometry.Compute(1440, 920, null, null, roomy);
+        AssertEqual(1440d, fit.Width); AssertEqual(920d, fit.Height); AssertEqual(1040d, fit.MinWidth); AssertEqual(720d, fit.MinHeight);
+        AssertEqual(240d, fit.Left); AssertEqual(60d, fit.Top);
+        Inside(fit, roomy);
+        // Small laptop 1366x728 work area (design 920 is taller than the area).
+        var laptop = new Rect(0, 0, 1366, 728);
+        fit = WindowGeometry.Compute(1440, 920, null, null, laptop);
+        AssertEqual(1366d, fit.Width); AssertEqual(728d, fit.Height); AssertEqual(1040d, fit.MinWidth); AssertEqual(720d, fit.MinHeight);
+        Inside(fit, laptop);
+        // 1920x1080 at 125% and 150% DPI: fewer logical pixels (1536x824 / 1280x680 after the taskbar).
+        foreach (var dpi in new[] { new Rect(0, 0, 1536, 824), new Rect(0, 0, 1280, 680) })
+        {
+            fit = WindowGeometry.Compute(1440, 920, null, null, dpi);
+            Inside(fit, dpi);
+            AssertEqual(Math.Min(1440d, dpi.Width), fit.Width);
+            AssertEqual(dpi.Height, fit.Height);
+        }
+        // Narrow/short area below the minimum (800x600): the minimum shrinks to the area, nothing overflows.
+        var narrow = new Rect(0, 0, 800, 600);
+        fit = WindowGeometry.Compute(1440, 920, null, null, narrow);
+        AssertEqual(800d, fit.MinWidth); AssertEqual(600d, fit.MinHeight);
+        Inside(fit, narrow);
+        // Taskbar on the left/top: the work area does not start at 0,0.
+        var offset = new Rect(60, 40, 1300, 700);
+        fit = WindowGeometry.Compute(1440, 920, null, null, offset);
+        Inside(fit, offset);
+        // Saved geometry that is off-screen, huge, tiny, non-finite or negative is pulled back inside.
+        foreach (var (w, h, l, t) in new (double, double, double?, double?)[]
+        {
+            (1440, 920, -3000, -3000), (1440, 920, 9000, 9000), (99999, 99999, 0, 0), (10, 10, 0, 0),
+            (double.NaN, double.NaN, double.NaN, double.NaN), (-5, -5, 5, 5), (double.PositiveInfinity, 700, 1, 1),
+        })
+        {
+            fit = WindowGeometry.Compute(w, h, l, t, laptop);
+            Inside(fit, laptop);
+        }
+        // An unusable work area falls back to the design values instead of throwing.
+        fit = WindowGeometry.Compute(1440, 920, null, null, new Rect(0, 0, 0, 0));
+        AssertEqual(1440d, fit.Width); AssertEqual(720d, fit.MinHeight);
+        // A real Window receives the fit, including the minimum (the XAML 1040x720 must not survive on a small area).
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var window = new Window { Width = 1440, Height = 920, MinWidth = 1040, MinHeight = 720 };
+                WindowGeometry.Apply(window, WindowGeometry.Compute(1440, 920, null, null, narrow));
+                AssertEqual(800d, window.Width); AssertEqual(600d, window.Height);
+                AssertEqual(800d, window.MinWidth); AssertEqual(600d, window.MinHeight);
+                AssertTrue(window.Left >= 0 && window.Left + window.Width <= 800 && window.Top + window.Height <= 600);
+                AssertEqual(WindowStartupLocation.Manual, window.WindowStartupLocation);
+            }
+            catch (Exception ex) { failure = ex; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
     }
 
     private static void ContentDisclosure_InitialIsQuietAndFailuresExpand()

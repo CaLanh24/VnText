@@ -612,6 +612,7 @@ public sealed partial class MainViewModel
             PatchInstallInstructions = "";
         }
         Busy = true;
+        RaiseImageWorkspaceTaskState();
         StatusText = statusLabel;
         ApplyRunningNav(task);
         ProgressSubtitle = "Đang bắt đầu…";

@@ -211,7 +211,8 @@ public sealed partial class MainViewModel
                 _runningTask = null;
                 if (completedTask is "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback")
                 {
-                    SetOwnedProgress(completedTask, evt.Ok ? 100 : null, evt.Ok ? "Hoàn tất" : "Đã dừng — xem Nhật ký");
+                    var imageCancelled = !evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
+                    SetOwnedProgress(completedTask, evt.Ok ? 100 : null, evt.Ok ? "Hoàn tất" : imageCancelled ? "Đã hủy" : "Đã dừng — xem Nhật ký");
                     CompleteImageTask(completedTask, evt);
                     FinishCancelAndExit();
                     break;
