@@ -491,6 +491,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         private set => Set(ref _hasExtract, value);
     }
 
+    private ImagePackageProbe.Summary _translatePackageImages;
+
     public string ProgressSubtitle
     {
         get => _progressSubtitle;

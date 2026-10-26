@@ -261,6 +261,9 @@ internal static partial class Program
         Run("CsvEditor_BulkOperationsRunOffTheUiThread", CsvEditor_BulkOperationsRunOffTheUiThread, failures);
         Run("CsvEditor_BulkPreviewForOldInputsIsDiscarded", CsvEditor_BulkPreviewForOldInputsIsDiscarded, failures);
         Run("OcrOnlyPackage_TranslateCardPointsToTheImageStep", OcrOnlyPackage_TranslateCardPointsToTheImageStep, failures);
+        Run("ImagePackageProbe_ToleratesMalformedReportsWithoutThrowing", ImagePackageProbe_ToleratesMalformedReportsWithoutThrowing, failures);
+        Run("ImagePackageProbe_SelectionIsDeterministicAndBounded", ImagePackageProbe_SelectionIsDeterministicAndBounded, failures);
+        Run("OcrOnlyPackage_MalformedReportNeverReachesTheGetterAsAnException", OcrOnlyPackage_MalformedReportNeverReachesTheGetterAsAnException, failures);
         Run("ContentDisclosure_InitialIsQuietAndFailuresExpand", ContentDisclosure_InitialIsQuietAndFailuresExpand, failures);
         Run("CloudRepairPackage_IsShownOnlyAfterSuccessfulExport", CloudRepairPackage_IsShownOnlyAfterSuccessfulExport, failures);
         Run("ReleaseManagedPaths_StayUnderInstallRoot", ReleaseManagedPaths_StayUnderInstallRoot, failures);
@@ -2142,6 +2145,119 @@ internal static partial class Program
             vm.OutputPath = root + Path.DirectorySeparatorChar;
             vm.OutputPath = root;
             AssertTrue(SpinWait.SpinUntil(() => vm.TranslateReadinessText == CsvPackageValidator.NoDataRowsMessage, TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void ImagePackageProbe_ToleratesMalformedReportsWithoutThrowing()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_probe_" + Guid.NewGuid().ToString("N"));
+        var images = Path.Combine(root, "images");
+        Directory.CreateDirectory(images);
+        try
+        {
+            var report = Path.Combine(images, "report.json");
+            void Put(string json) => File.WriteAllText(report, json, Encoding.UTF8);
+            // Valid report.
+            Put("""{"items":[{"status":"OCR_READY"},{"status":"OCR_READY"},{"status":"TRANSLATED_DRAFT"},{"status":"UNTRANSLATED"}]}""");
+            AssertEqual(new ImagePackageProbe.Summary(4, 2, 1), ImagePackageProbe.Read(root));
+            // Valid JSON of the wrong shape: none of these may throw, none counts as ready.
+            foreach (var json in new[]
+            {
+                "[]", "null", "42", "\"text\"", "true", "{}", """{"items":null}""", """{"items":{}}""", """{"items":"x"}""", """{"items":7}""",
+            })
+            {
+                Put(json);
+                AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            }
+            // Malformed entries are counted as items but never as ready; well-formed neighbours still count.
+            Put("""{"items":[1,null,"s",[],{"status":7},{"status":null},{"status":{}},{"status":["OCR_READY"]},{"status":"OCR_READY"}]}""");
+            AssertEqual(new ImagePackageProbe.Summary(9, 1, 0), ImagePackageProbe.Read(root));
+            // Invalid JSON and an empty file.
+            Put("{not json");
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            Put("");
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            // Oversized report is ignored without being parsed.
+            File.WriteAllText(report, "{\"items\":[],\"pad\":\"" + new string('x', (int)ImagePackageProbe.MaxReportBytes) + "\"}", Encoding.UTF8);
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            // Unreadable report (exclusively locked): bounded failure, no exception.
+            Put("""{"items":[{"status":"OCR_READY"}]}""");
+            using (new FileStream(report, FileMode.Open, FileAccess.Read, FileShare.None))
+                AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            AssertEqual(new ImagePackageProbe.Summary(1, 1, 0), ImagePackageProbe.Read(root));
+            // Missing / blank package directory.
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(Path.Combine(root, "nope")));
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(""));
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(null));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void ImagePackageProbe_SelectionIsDeterministicAndBounded()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_probe_sel_" + Guid.NewGuid().ToString("N"));
+        var images = Path.Combine(root, "images");
+        Directory.CreateDirectory(images);
+        try
+        {
+            void Put(string path, string json, DateTime utc)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, json, Encoding.UTF8);
+                File.SetLastWriteTimeUtc(path, utc);
+            }
+            var t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            Put(Path.Combine(images, "report.json"), """{"items":[{"status":"OCR_READY"}]}""", t0);
+            // A newer retry report wins over the first report.
+            Put(Path.Combine(images, "retry-a", "report.json"), """{"items":[{"status":"TRANSLATED_DRAFT"},{"status":"TRANSLATED_DRAFT"}]}""", t0.AddHours(1));
+            AssertEqual(new ImagePackageProbe.Summary(2, 0, 2), ImagePackageProbe.Read(root));
+            // Equal write times: the path order decides, so the answer never depends on enumeration order.
+            Put(Path.Combine(images, "retry-b", "report.json"), """{"items":[{"status":"OCR_READY"},{"status":"OCR_READY"},{"status":"OCR_READY"}]}""", t0.AddHours(1));
+            AssertEqual(new ImagePackageProbe.Summary(2, 0, 2), ImagePackageProbe.Read(root));
+            // The retry scan is capped: a report that only exists beyond the cap is not found.
+            Directory.Delete(Path.Combine(images, "retry-a"), true);
+            Directory.Delete(Path.Combine(images, "retry-b"), true);
+            File.Delete(Path.Combine(images, "report.json"));
+            for (var i = 0; i < ImagePackageProbe.MaxRetryDirectories + 6; i++)
+                Directory.CreateDirectory(Path.Combine(images, $"retry-{i:D3}"));
+            Put(Path.Combine(images, $"retry-{ImagePackageProbe.MaxRetryDirectories + 5:D3}", "report.json"), """{"items":[{"status":"OCR_READY"}]}""", t0);
+            AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
+            // A report inside the cap is found.
+            Put(Path.Combine(images, "retry-000", "report.json"), """{"items":[{"status":"OCR_READY"}]}""", t0);
+            AssertEqual(new ImagePackageProbe.Summary(1, 1, 0), ImagePackageProbe.Read(root));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void OcrOnlyPackage_MalformedReportNeverReachesTheGetterAsAnException()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_ocr_bad_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "images"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation,context,file_path,import_method\r\n", new UTF8Encoding(true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[]}""", Encoding.UTF8);
+            using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            foreach (var json in new[] { "[]", "null", """{"items":[1,null,{"status":3}]}""", "{oops" })
+            {
+                File.WriteAllText(Path.Combine(root, "images", "report.json"), json, Encoding.UTF8);
+                vm.OutputPath = root + Path.DirectorySeparatorChar;
+                vm.OutputPath = root;
+                AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
+                // Reading the getter many times is cheap and never throws; no image claim without a valid report.
+                for (var i = 0; i < 20; i++) AssertEqual(CsvPackageValidator.NoDataRowsMessage, vm.TranslateReadinessText);
+            }
         }
         finally
         {

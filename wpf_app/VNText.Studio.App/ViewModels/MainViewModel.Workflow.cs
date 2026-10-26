@@ -85,7 +85,8 @@ public sealed partial class MainViewModel
             if (!_translatePackageReady && _translatePackageMessage == CsvPackageValidator.NoDataRowsMessage)
             {
                 // Text-less container (for example OCR-only images): the CSV is legitimately empty.
-                var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
+                // The image report is read by the async readiness refresh, never in this getter.
+                var images = _translatePackageImages;
                 if (images.OcrReady + images.TranslatedDrafts > 0)
                     return $"Không có dòng text để dịch • {images.OcrReady:N0} ảnh đã OCR" +
                            (images.TranslatedDrafts > 0 ? $", {images.TranslatedDrafts:N0} bản dịch nháp" : "") +
@@ -137,6 +138,7 @@ public sealed partial class MainViewModel
         }
         _translatePackageReady = false;
         _translatePackageChecking = true;
+        _translatePackageImages = default;
         _translatePackageMessage = "Đang kiểm tra translation.csv và manifest…";
         _translateReadinessPath = path;
         Raise(nameof(TranslateReadinessText));
@@ -144,9 +146,20 @@ public sealed partial class MainViewModel
         RunTranslateCommand?.RaiseCanExecuteChanged();
 
         var dispatcher = Application.Current?.Dispatcher;
-        void Apply(CsvValidationResult result)
+        // The CSV validation and (only for a CSV with no data rows) the image report probe run together
+        // on the background side, owned by the same readiness epoch.
+        static (CsvValidationResult Result, ImagePackageProbe.Summary Images) Evaluate(string csvPath)
+        {
+            var validation = CsvPackageValidator.Validate(csvPath, requireTranslations: false);
+            var images = !validation.Ok && validation.Message == CsvPackageValidator.NoDataRowsMessage
+                ? ImagePackageProbe.Read(Path.GetDirectoryName(csvPath))
+                : default;
+            return (validation, images);
+        }
+        void Apply(CsvValidationResult result, ImagePackageProbe.Summary images)
         {
             if (epoch != Volatile.Read(ref _translateReadinessEpoch)) return;
+            _translatePackageImages = images;
             if (!result.Ok && result.Message == CsvPackageValidator.MissingFileMessage && string.IsNullOrWhiteSpace(TranslationCsvPath))
                 result = result with { Message = CsvPackageValidator.NoCsvChosenMessage };
             if (syncCsvValidation)
@@ -175,17 +188,18 @@ public sealed partial class MainViewModel
         }
         if (dispatcher is null || !dispatcher.CheckAccess())
         {
-            Apply(CsvPackageValidator.Validate(path, requireTranslations: false));
+            var (syncResult, syncImages) = Evaluate(path);
+            Apply(syncResult, syncImages);
             return;
         }
-        _ = Task.Run(() => CsvPackageValidator.Validate(path, requireTranslations: false))
+        _ = Task.Run(() => Evaluate(path))
             .ContinueWith(task =>
             {
-                var result = task.Status == TaskStatus.RanToCompletion
+                var (result, images) = task.Status == TaskStatus.RanToCompletion
                     ? task.Result
-                    : new CsvValidationResult(false, "CSV chưa sẵn sàng", 0, 0, path, null);
+                    : (new CsvValidationResult(false, "CSV chưa sẵn sàng", 0, 0, path, null), default(ImagePackageProbe.Summary));
                 if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
-                    dispatcher.BeginInvoke(() => Apply(result));
+                    dispatcher.BeginInvoke(() => Apply(result, images));
             }, TaskScheduler.Default);
     }
 
