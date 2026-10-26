@@ -191,7 +191,7 @@ class WpfWorkflowTests(unittest.TestCase):
                 if inherited is not None:
                     patched["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = inherited
                 with unittest.mock.patch.dict(os.environ, patched, clear=True):
-                    env = _harness_env(Path(r"C:\vntext-guard-probe-never-created"))
+                    env = _harness_env(ROOT / "TEST_RUN" / "vntext-guard-probe-never-created")
                     caller_value = os.environ.get("DOTNET_ADD_GLOBAL_TOOLS_TO_PATH")
                 self.assertEqual("0", env["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"])
                 self.assertEqual(inherited, caller_value)  # the caller's own mapping is not rewritten
