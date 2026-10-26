@@ -255,6 +255,10 @@ internal static partial class Program
         Run("SmokeWorker_IgnoresLegacyWorkPath", SmokeWorker_IgnoresLegacyWorkPath, failures);
         Run("AnalyzeReportReader_ParsesCoverage", AnalyzeReportReader_ParsesCoverage, failures);
         Run("AnalyzeComplete_StaysOnExtractAndShowsEvidence", AnalyzeComplete_StaysOnExtractAndShowsEvidence, failures);
+        Run("Analyze_InputChangeMarksResultStaleAndRejectsLateEvent", Analyze_InputChangeMarksResultStaleAndRejectsLateEvent, failures);
+        Run("CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate", CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate, failures);
+        Run("Copy_NoCsvChosenIsActionableAndSdkDownloadIsLabelled", Copy_NoCsvChosenIsActionableAndSdkDownloadIsLabelled, failures);
+        Run("CsvEditor_BulkOperationsRunOffTheUiThread", CsvEditor_BulkOperationsRunOffTheUiThread, failures);
         Run("ContentDisclosure_InitialIsQuietAndFailuresExpand", ContentDisclosure_InitialIsQuietAndFailuresExpand, failures);
         Run("CloudRepairPackage_IsShownOnlyAfterSuccessfulExport", CloudRepairPackage_IsShownOnlyAfterSuccessfulExport, failures);
         Run("ReleaseManagedPaths_StayUnderInstallRoot", ReleaseManagedPaths_StayUnderInstallRoot, failures);
@@ -1787,6 +1791,260 @@ internal static partial class Program
         {
             Directory.Delete(root, true);
         }
+    }
+
+    private static void Analyze_InputChangeMarksResultStaleAndRejectsLateEvent()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_analyze_stale_" + Guid.NewGuid().ToString("N"));
+        var first = Path.Combine(root, "analyzed");
+        var second = Path.Combine(root, "other");
+        Directory.CreateDirectory(Path.Combine(first, "game"));
+        Directory.CreateDirectory(Path.Combine(second, "game"));
+        try
+        {
+            File.WriteAllText(Path.Combine(first, "game", "a.rpy"), "label start:\n    return\n", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(second, "game", "b.rpy"), "label start:\n    return\n", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(first, "unity_analysis.json"), """
+                {"inventory_complete": true, "unity": {"status": "DETECTED"},
+                 "summary": {"resource_count": 30, "unknown_resources": 0, "scan_error_count": 0},
+                 "coverage": {"text_candidates": 30, "patchable_text": 0, "extract_only_text": 0, "review_required": 0, "unsupported": 0},
+                 "scan_errors": []}
+                """, Encoding.UTF8);
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false) { InputPath = first, OutputPath = first };
+            vm.TestMarkAnalyzeStarted();
+            vm.TestSimulateTaskComplete("analyze", new WorkerEvent { Type = "complete", Id = "analyze-A", Ok = true, Complete = true });
+            AssertEqual(30, vm.AnalyzeResourceCount);
+            AssertTrue(vm.AnalyzeHasReport);
+            AssertTrue(vm.AnalyzeStatusText.Contains("Đã phân tích", StringComparison.Ordinal));
+
+            // A -> B: the shown analysis described A, so it must not stay attributed to B.
+            vm.TestMarkTaskTerminal("analyze-A");
+            vm.InputPath = second;
+            vm.OutputPath = second;
+            AssertEqual("Đầu vào đã đổi • cần phân tích lại", vm.AnalyzeStatusText);
+            AssertEqual(0, vm.AnalyzeResourceCount);
+            AssertEqual(0, vm.AnalyzeTextCandidateCount);
+            AssertEqual("Chưa xác định engine", vm.AnalyzeEngineSummary);
+            AssertEqual("NOT_DETECTED", vm.AnalyzeUnityStatus);
+            AssertFalse(vm.AnalyzeHasReport);
+            AssertFalse(vm.AnalyzeResultsExpanded);
+            AssertFalse(vm.AnalyzeInventoryComplete);
+
+            // Late event: an analysis started for A completes after the input moved to B.
+            vm.InputPath = first;
+            vm.OutputPath = first;
+            vm.TestMarkAnalyzeStarted();
+            vm.TestSetActiveTask("analyze-late", "analyze");
+            vm.InputPath = second;
+            vm.OutputPath = second;
+            vm.TestHandleWorkerEvent(new WorkerEvent { Type = "complete", Id = "analyze-late", Ok = true, Complete = true });
+            AssertFalse(vm.Busy);
+            AssertEqual(0, vm.AnalyzeResourceCount);
+            AssertFalse(vm.AnalyzeHasReport);
+            AssertEqual("Đầu vào đã đổi • cần phân tích lại", vm.AnalyzeStatusText);
+            AssertEqual("Đầu vào đã đổi", vm.StatusText);
+
+            // Same identity (a trailing separator is the same path) keeps the result.
+            vm.InputPath = first;
+            vm.OutputPath = first;
+            vm.TestMarkAnalyzeStarted();
+            vm.TestSimulateTaskComplete("analyze", new WorkerEvent { Type = "complete", Id = "analyze-A2", Ok = true, Complete = true });
+            AssertEqual(30, vm.AnalyzeResourceCount);
+            vm.TestMarkTaskTerminal("analyze-A2");
+            vm.InputPath = first + Path.DirectorySeparatorChar;
+            AssertEqual(30, vm.AnalyzeResourceCount);
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void PumpUntilDone(Task task, Dispatcher dispatcher)
+    {
+        var frame = new DispatcherFrame();
+        _ = task.ContinueWith(_ => dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(() => frame.Continue = false)), TaskScheduler.Default);
+        if (!task.IsCompleted)
+            Dispatcher.PushFrame(frame);
+        task.GetAwaiter().GetResult();
+    }
+
+    private static void CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var previousContext = SynchronizationContext.Current;
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+            try { CsvEditorRefreshBody(dispatcher); }
+            catch (Exception ex) { failure = ex; }
+            finally { SynchronizationContext.SetSynchronizationContext(previousContext); }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
+    }
+
+    private static void CsvEditorRefreshBody(Dispatcher dispatcher)
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_csv_refresh_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            string Csv(string translation) =>
+                "key,source_text,translation,context,file_path,import_method\r\n" +
+                $"k1,Hello,{translation},UI:Text,game/data.unity3d,unity_textasset_line\r\n";
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+            var utf8Bom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true);
+            File.WriteAllText(csv, Csv("Mid-run"), utf8Bom);
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertEqual("Mid-run", vm.CsvEditorRows[0].Translation);
+
+            // MT finishes and rewrites the file: the clean editor showing exactly that file follows it.
+            File.WriteAllText(csv, Csv("Final"), utf8Bom);
+            PumpUntilDone(vm.RefreshCsvEditorAfterTranslateAsync(csv), dispatcher);
+            AssertEqual("Final", vm.CsvEditorRows[0].Translation);
+            AssertFalse(vm.CsvEditorStaleOnDisk);
+
+            // Nothing changed on disk: no reload and no stale marker.
+            PumpUntilDone(vm.RefreshCsvEditorAfterTranslateAsync(csv), dispatcher);
+            AssertFalse(vm.CsvEditorStaleOnDisk);
+
+            // A different file than the one the editor shows is never touched.
+            var other = Path.Combine(root, "other.csv");
+            File.WriteAllText(other, Csv("Other"), utf8Bom);
+            File.WriteAllText(csv, Csv("Newer"), utf8Bom);
+            PumpUntilDone(vm.RefreshCsvEditorAfterTranslateAsync(other), dispatcher);
+            AssertEqual("Final", vm.CsvEditorRows[0].Translation);
+            AssertFalse(vm.CsvEditorStaleOnDisk);
+
+            // Dirty editor: the user's unsaved edit survives, the file on disk is not overwritten, the view is marked stale.
+            vm.CsvEditorRows[0].Translation = "Bản sửa tay chưa lưu";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            AssertTrue(vm.CsvEditorDirty);
+            var diskBefore = File.ReadAllBytes(csv);
+            PumpUntilDone(vm.RefreshCsvEditorAfterTranslateAsync(csv), dispatcher);
+            AssertEqual("Bản sửa tay chưa lưu", vm.CsvEditorRows[0].Translation);
+            AssertTrue(vm.CsvEditorDirty);
+            AssertTrue(vm.CsvEditorStaleOnDisk);
+            AssertTrue(vm.CsvEditorStatus.Contains("Tải lại", StringComparison.Ordinal));
+            AssertTrue(diskBefore.AsSpan().SequenceEqual(File.ReadAllBytes(csv)));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void Copy_NoCsvChosenIsActionableAndSdkDownloadIsLabelled()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_copy_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.OutputPath = root;   // no translation.csv in it and none picked
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
+            AssertEqual(CsvPackageValidator.NoCsvChosenMessage, vm.TranslateReadinessText);
+            AssertFalse(vm.TranslateReadinessText.Contains("File không tồn tại", StringComparison.Ordinal));
+
+            AssertEqual("Tiến trình quét", vm.ExtractProgressHeading);
+            vm.TestSetRenpySdkAction("download");
+            vm.TestSetActiveTask("sdk-download", "extract");
+            AssertEqual("Tiến trình tải SDK và lấy text", vm.ExtractProgressHeading);
+            vm.TestMarkTaskTerminal("sdk-download");
+            AssertEqual("Tiến trình quét", vm.ExtractProgressHeading);
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
+    private static void CsvEditor_BulkOperationsRunOffTheUiThread()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var root = Path.Combine(TestTempRoot(), "vntext_wpf_bulk_ui_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            var previousContext = SynchronizationContext.Current;
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+            try
+            {
+                var csv = Path.Combine(root, "translation.csv");
+                File.WriteAllText(csv,
+                    "key,source_text,translation,context,file_path,import_method\r\n" +
+                    "k1,Hello,Chào cậu,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+                File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+                using var worker = new PythonWorkerHost();
+                using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                vm.CsvBulkFind = "cậu";
+                vm.CsvBulkReplace = "bạn";
+
+                var uiThread = Environment.CurrentManagedThreadId;
+                var workThread = -1;
+                var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                vm.CsvEditorBackgroundExecutor = async work =>
+                {
+                    started.TrySetResult(true);
+                    await release.Task;
+                    return await Task.Run(() => { workThread = Environment.CurrentManagedThreadId; return work(); });
+                };
+
+                vm.BulkReplaceCsvCommand.Execute(null);   // must return while the work is still pending
+                AssertTrue(started.Task.IsCompleted);
+                AssertTrue(vm.CsvEditorSaving);
+                AssertTrue(vm.CsvEditorGridReadOnly);
+                AssertFalse(vm.BulkReplaceCsvCommand.CanExecute(null));
+                AssertFalse(vm.UndoBulkReplaceCsvCommand.CanExecute(null));
+
+                // The UI thread keeps pumping messages while the Python engine call is outstanding.
+                var pumped = false;
+                var probe = new DispatcherFrame();
+                dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => { pumped = true; probe.Continue = false; }));
+                Dispatcher.PushFrame(probe);
+                AssertTrue(pumped);
+
+                release.TrySetResult(true);
+                var deadline = DateTime.UtcNow.AddSeconds(60);
+                while (vm.CsvEditorSaving && DateTime.UtcNow < deadline)
+                {
+                    var tick = new DispatcherFrame();
+                    dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => tick.Continue = false));
+                    Dispatcher.PushFrame(tick);
+                    Thread.Sleep(20);
+                }
+                AssertFalse(vm.CsvEditorSaving);
+                AssertTrue(workThread > 0 && workThread != uiThread);
+                AssertTrue(vm.CsvBulkPreview.Contains("Sẽ thay", StringComparison.Ordinal));
+                AssertTrue(vm.CsvBulkCanApply);
+                // The preview never writes the CSV.
+                AssertTrue(File.ReadAllText(csv).Contains("Chào cậu", StringComparison.Ordinal));
+            }
+            catch (Exception ex) { failure = ex; }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(previousContext);
+                try { Directory.Delete(root, true); } catch (IOException) { }
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
     }
 
     private static void ContentDisclosure_InitialIsQuietAndFailuresExpand()

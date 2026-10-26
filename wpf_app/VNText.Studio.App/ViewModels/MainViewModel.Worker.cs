@@ -218,6 +218,7 @@ public sealed partial class MainViewModel
                 }
                 ApplyDiagnostic(evt);
                 var isAnalyze = completedTask == "analyze";
+                var retranslateOwnsEditorReload = _csvEditorRetranslatePending;
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                 if (completedTask == "translate" && cancelled)
                 {
@@ -347,7 +348,14 @@ public sealed partial class MainViewModel
                     LogExpanded = true;
                 }
 
-                if (!cancelled && completedTask == "analyze")
+                if (!cancelled && completedTask == "analyze" && _analyzeRejectLate)
+                {
+                    // The inputs changed while this analysis ran: its report describes the OLD input.
+                    StatusText = "Đầu vào đã đổi";
+                    StepStatusLine = "Kết quả phân tích của đầu vào cũ đã bị bỏ — hãy phân tích lại";
+                    AppendLog("Bỏ kết quả phân tích cũ vì đầu vào đã đổi trong lúc chạy.");
+                }
+                else if (!cancelled && completedTask == "analyze")
                 {
                     ApplyAnalyzeResult(evt);
                     SelectedTab = WorkflowTabs.Extract;
@@ -406,6 +414,8 @@ public sealed partial class MainViewModel
 
                 if (completedTask == "translate")
                 {
+                    if (!retranslateOwnsEditorReload)
+                        _ = RefreshCsvEditorAfterTranslateAsync(TranslationCsvPath);
                     PatchResultsAvailable = true;
                     PatchResultsExpanded = true;
                     PatchPreflightEvaluated = false;
@@ -451,9 +461,12 @@ public sealed partial class MainViewModel
                 else if (fullyComplete)
                 {
                     ProgressPercent = 100;
-                    ProgressSubtitle = isAnalyze ? "Phân tích hoàn tất" : "Hoàn tất";
-                    StatusText = isAnalyze ? "Đã phân tích" : "Hoàn tất";
-                    StepStatusLine = isAnalyze
+                    var lateAnalyze = isAnalyze && _analyzeRejectLate;
+                    ProgressSubtitle = lateAnalyze ? "Đầu vào đã đổi" : isAnalyze ? "Phân tích hoàn tất" : "Hoàn tất";
+                    StatusText = lateAnalyze ? "Đầu vào đã đổi" : isAnalyze ? "Đã phân tích" : "Hoàn tất";
+                    StepStatusLine = lateAnalyze
+                        ? "Kết quả phân tích của đầu vào cũ đã bị bỏ — hãy phân tích lại"
+                        : isAnalyze
                         ? "Phân tích game hoàn tất — xem coverage trước khi Lấy text"
                         : "Hoàn tất bước — cập nhật quy trình";
                 }

@@ -13,6 +13,10 @@ public sealed record CsvValidationResult(
 
 public static class CsvPackageValidator
 {
+    public const string MissingFileMessage = "File không tồn tại";
+    // Shown instead of the bare missing-file text when the user has not picked any CSV yet.
+    public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn CSV” để chọn file cần dịch, hoặc Lấy text trước để tạo gói.";
+
     public static CsvValidationResult Validate(string? csvPath, bool requireTranslations = true)
     {
         var path = (csvPath ?? "").Trim().Trim('"');
@@ -20,7 +24,7 @@ public static class CsvPackageValidator
             return Fail("", "Chưa chọn translation.csv");
 
         if (!File.Exists(path))
-            return Fail(path, "File không tồn tại");
+            return Fail(path, MissingFileMessage);
 
         if (!string.Equals(Path.GetExtension(path), ".csv", StringComparison.OrdinalIgnoreCase))
             return Fail(path, "Phải là file .csv");

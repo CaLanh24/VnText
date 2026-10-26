@@ -449,6 +449,7 @@ public sealed partial class MainViewModel
         var pathCopy = path;
 
         CsvEditorLoading = true;
+        CsvEditorStaleOnDisk = false;
         _csvEditorSourceSha256 = null;
         CsvEditorStatus = "Đang tải CSV…";
         CsvEditorValidationMessage = "";
@@ -728,7 +729,21 @@ public sealed partial class MainViewModel
             .ToList();
     }
 
-    private void PreviewBulkReplaceTranslation()
+    /// <summary>
+    /// Bulk preview/apply/undo spawn the Python CSV engine; run them off the UI thread (a 27k-row
+    /// package took seconds, freezing the window and leaving the confirm overlay on screen).  The
+    /// editor stays locked (same lock as a save) so nothing edits the rows underneath the call.
+    /// </summary>
+    internal Func<Func<object?>, Task<object?>> CsvEditorBackgroundExecutor { get; set; } = work => Task.Run(work);
+
+    private async Task<T> RunCsvEditorBackgroundAsync<T>(Func<T> work)
+    {
+        CsvEditorSaving = true;
+        try { return (T)(await CsvEditorBackgroundExecutor(() => work()).ConfigureAwait(true))!; }
+        finally { CsvEditorSaving = false; }
+    }
+
+    private async void PreviewBulkReplaceTranslation()
     {
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
         {
@@ -743,8 +758,9 @@ public sealed partial class MainViewModel
 
         var rows = BuildCsvSaveRows();
         var keys = ResolveCsvBulkKeys();
-        var preview = TranslationCsvEditorService.PreviewReplace(
-            CsvEditorPath, _csvEditorFields, rows, CsvBulkFind, CsvBulkReplace, keys);
+        var (previewPath, previewFields, previewFind, previewReplace) = (CsvEditorPath, _csvEditorFields.ToList(), CsvBulkFind, CsvBulkReplace);
+        var preview = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.PreviewReplace(
+            previewPath, previewFields, rows, previewFind, previewReplace, keys));
         if (!preview.Ok)
         {
             CsvBulkPreview = preview.Error ?? "Không xem trước được thao tác thay thế.";
@@ -762,7 +778,7 @@ public sealed partial class MainViewModel
         {
             var samples = rows.Where(row => row.TryGetValue("key", out var key) && preview.Keys.Contains(key))
                 .Take(3).Select(row => row.TryGetValue("translation", out var text) ? text : "")
-                .Select(text => $"Trước: {text}\nSau: {text.Replace(CsvBulkFind, CsvBulkReplace, StringComparison.Ordinal)}");
+                .Select(text => $"Trước: {text}\nSau: {text.Replace(previewFind, previewReplace, StringComparison.Ordinal)}");
             CsvBulkPreview += "\n" + string.Join("\n", samples);
         }
         if (preview.Count == 0)
@@ -786,8 +802,9 @@ public sealed partial class MainViewModel
         var expectedPreview = _csvBulkPendingPreview!;
         var rows = BuildCsvSaveRows();
         var keys = ResolveCsvBulkKeys();
-        var preview = TranslationCsvEditorService.PreviewReplace(
-            CsvEditorPath, _csvEditorFields, rows, CsvBulkFind, CsvBulkReplace, keys);
+        var (applyPath, applyFields, applyFind, applyReplace) = (CsvEditorPath, _csvEditorFields.ToList(), CsvBulkFind, CsvBulkReplace);
+        var preview = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.PreviewReplace(
+            applyPath, applyFields, rows, applyFind, applyReplace, keys));
         if (!preview.Ok || preview.Count != expectedPreview.Count || preview.ReplacementCount != expectedPreview.ReplacementCount ||
             !preview.Keys.SequenceEqual(expectedPreview.Keys, StringComparer.OrdinalIgnoreCase))
         {
@@ -802,8 +819,8 @@ public sealed partial class MainViewModel
         if (AppDialogService.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
-        var result = TranslationCsvEditorService.ReplaceTranslation(
-            CsvEditorPath, _csvEditorFields, rows, CsvBulkFind, CsvBulkReplace, keys);
+        var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.ReplaceTranslation(
+            applyPath, applyFields, rows, applyFind, applyReplace, keys));
         if (!result.Ok)
         {
             CsvBulkPreview = result.Error ?? "Thay thế hàng loạt thất bại.";
@@ -821,7 +838,7 @@ public sealed partial class MainViewModel
         {
             if (!keySet.Contains(row.Key))
                 continue;
-            row.Translation = Regex.Replace(row.Translation, Regex.Escape(CsvBulkFind), _ => CsvBulkReplace, RegexOptions.IgnoreCase);
+            row.Translation = Regex.Replace(row.Translation, Regex.Escape(applyFind), _ => applyReplace, RegexOptions.IgnoreCase);
         }
         CsvEditorDirty = false;
         ApplyValidationFromBatch(result.IssuesByKey, result.IssuesDisplayByKey, result.Summary,
@@ -856,7 +873,8 @@ public sealed partial class MainViewModel
         }
         if (AppDialogService.Show("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
-        var result = TranslationCsvEditorService.Undo(CsvEditorPath, _csvBulkLastBackup);
+        var (undoPath, undoBackup) = (CsvEditorPath, _csvBulkLastBackup);
+        var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.Undo(undoPath, undoBackup));
         if (!result.Ok)
         {
             ShowToast(result.Error ?? "Hoàn tác thất bại.", "error");
@@ -1321,6 +1339,68 @@ public sealed partial class MainViewModel
             model = "ct2",
             model_dir = TranslationModelDir,
         }, $"Đang dịch lại {preview.Count:N0} dòng lỗi…");
+    }
+
+    private bool _csvEditorStaleOnDisk;
+
+    /// <summary>True when the file changed on disk (for example MT finished) while the editor kept unsaved/different state.</summary>
+    public bool CsvEditorStaleOnDisk
+    {
+        get => _csvEditorStaleOnDisk;
+        private set => Set(ref _csvEditorStaleOnDisk, value);
+    }
+
+    private static string? TryHashFile(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)).ToLowerInvariant();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// After a translate task ends, a CSV opened in the editor DURING the run holds the rows it
+    /// read mid-run (for example 2560/3000) and would stay stale until a manual Reload.  Refresh
+    /// the editor only when it is clean, idle, shows exactly the translated file and no newer
+    /// load/edit generation exists; otherwise keep the user's view and mark it stale.
+    /// </summary>
+    internal async Task RefreshCsvEditorAfterTranslateAsync(string translatedCsvPath)
+    {
+        var editorPath = CsvEditorPath;
+        if (string.IsNullOrWhiteSpace(editorPath) || string.IsNullOrWhiteSpace(translatedCsvPath)
+            || _csvEditorRows.Count == 0 || string.IsNullOrEmpty(_csvEditorSourceSha256))
+            return;
+        string a, b;
+        try { a = Path.GetFullPath(editorPath); b = Path.GetFullPath(translatedCsvPath); }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return; }
+        if (!string.Equals(a, b, StringComparison.OrdinalIgnoreCase))
+            return;
+        var loadGeneration = Volatile.Read(ref _csvLoadGeneration);
+        var editGeneration = Volatile.Read(ref _csvEditorEditGeneration);
+        var openedSha = _csvEditorSourceSha256;
+        var diskSha = await Task.Run(() => TryHashFile(a)).ConfigureAwait(true);
+        if (diskSha is null || string.Equals(diskSha, openedSha, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(diskSha, _csvEditorSourceSha256, StringComparison.OrdinalIgnoreCase))
+            return; // already showing exactly what is on disk (nothing to refresh, nothing stale)
+        var unchangedSinceCompletion =
+            loadGeneration == Volatile.Read(ref _csvLoadGeneration)
+            && editGeneration == Volatile.Read(ref _csvEditorEditGeneration)
+            && string.Equals(openedSha, _csvEditorSourceSha256, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(a, Path.GetFullPath(CsvEditorPath), StringComparison.OrdinalIgnoreCase);
+        if (!unchangedSinceCompletion || CsvEditorDirty || CsvEditorLoading || CsvEditorSaving)
+        {
+            CsvEditorStaleOnDisk = true;
+            CsvEditorStatus = "File CSV đã đổi sau khi dịch xong — bấm Tải lại để xem bản mới (thay đổi chưa lưu được giữ nguyên).";
+            AppendLog("[csv] Editor giữ nguyên vì có thay đổi/lần tải mới; đã đánh dấu cũ so với file trên đĩa.");
+            return;
+        }
+        AppendLog("[csv] Dịch xong — tải lại editor vì file trên đĩa đã đổi và editor chưa có thay đổi.");
+        LoadCsvEditor(a, reload: true);
     }
 
     internal void OnCsvEditorRetranslateComplete(bool ok)

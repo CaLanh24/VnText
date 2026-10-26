@@ -22,6 +22,47 @@ public sealed partial class MainViewModel
     private int _analyzeReviewRiskCount;
     private int _analyzeUnknownCount;
     private int _analyzeScanErrorCount;
+    // Identity (input + output package) of the analysis that is running or shown.  Null means
+    // nothing is attributed to the current inputs.  A change of either path clears the shown
+    // result and makes the still-running analysis of the OLD input ignorable (late event).
+    private string? _analyzeIdentity;
+    private bool _analyzeRejectLate;
+
+    internal static string AnalyzeIdentityOf(string? input, string? output)
+    {
+        static string Norm(string? p)
+        {
+            if (string.IsNullOrWhiteSpace(p)) return "";
+            try { return Path.GetFullPath(p.Trim().Trim('"')).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).ToUpperInvariant(); }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            { return p.Trim().ToUpperInvariant(); }
+        }
+        return Norm(input) + "|" + Norm(output);
+    }
+
+    private void InvalidateAnalyzeIfInputsChanged()
+    {
+        if (_analyzeIdentity is null || _analyzeIdentity == AnalyzeIdentityOf(InputPath, OutputPath))
+            return;
+        _analyzeIdentity = null;
+        _analyzeRejectLate = true;
+        AnalyzeInventoryComplete = false;
+        AnalyzeUnityStatus = "NOT_DETECTED";
+        AnalyzeEngineSummary = "Chưa xác định engine";
+        AnalyzeEngineDetails = "";
+        AnalyzeResourceCount = 0;
+        AnalyzeTextCandidateCount = 0;
+        AnalyzePatchableCount = 0;
+        AnalyzeExtractOnlyCount = 0;
+        AnalyzeReviewRiskCount = 0;
+        AnalyzeUnknownCount = 0;
+        AnalyzeScanErrorCount = 0;
+        AnalyzeReportPath = "";
+        AnalyzeHasReport = false;
+        AnalyzeResultsExpanded = false;
+        AnalyzeScanErrorText = "";
+        AnalyzeStatusText = "Đầu vào đã đổi • cần phân tích lại";
+    }
 
     public string AnalyzeStatusText
     {
@@ -144,6 +185,8 @@ public sealed partial class MainViewModel
         }
 
         var reportDirectory = WorkflowStatus.ResolvePackageDir(OutputPath);
+        _analyzeIdentity = AnalyzeIdentityOf(InputPath, OutputPath);
+        _analyzeRejectLate = false;
         AnalyzeStatusText = "Đang phân tích game…";
         AnalyzeReportPath = "";
         AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của danh mục tài nguyên…";

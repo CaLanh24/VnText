@@ -135,9 +135,12 @@ public sealed partial class MainViewModel
         RunTranslateCommand?.RaiseCanExecuteChanged();
 
         var dispatcher = Application.Current?.Dispatcher;
-        void Apply(CsvValidationResult result)
+        void Apply(CsvValidationResult raw)
         {
             if (epoch != Volatile.Read(ref _translateReadinessEpoch)) return;
+            var result = raw;
+            if (!raw.Ok && raw.Message == CsvPackageValidator.MissingFileMessage && string.IsNullOrWhiteSpace(TranslationCsvPath))
+                result = raw with { Message = CsvPackageValidator.NoCsvChosenMessage };
             if (syncCsvValidation)
             {
                 // Extract created this package, so replace any earlier missing-file
@@ -344,7 +347,7 @@ public sealed partial class MainViewModel
             separate_review = SeparateReview,
             renpy_sdk_path = RenpySdkPath,
             renpy_sdk_action = RenpySdkAction,
-        }, "Đang extract text…");
+        }, RenpySdkAction == "download" ? "Đang tải Ren'Py SDK rồi lấy text…" : "Đang extract text…");
     }
 
     private void RunRenpySdkAction(string action)

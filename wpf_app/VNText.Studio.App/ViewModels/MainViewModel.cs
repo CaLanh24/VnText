@@ -232,6 +232,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             {
                 Raise(nameof(InputDisplay));
                 Raise(nameof(ExtractStatusText));
+                InvalidateAnalyzeIfInputsChanged();
                 RefreshWorkflow();
                 RefreshRenpySdkOptionsVisibility(value);
                 OpenInputCommand?.RaiseCanExecuteChanged();
@@ -249,6 +250,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _outputPath, value))
             {
                 Raise(nameof(OutputDisplay));
+                InvalidateAnalyzeIfInputsChanged();
                 RefreshWorkflow();
                 RefreshTranslateReadiness();
                 OpenOutputCommand?.RaiseCanExecuteChanged();
@@ -500,6 +502,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     public string ExtractProgressSubtitle => _extractProgressText;
+    public string ExtractProgressHeading => UiText.Translate(
+        Busy && _runningTask == "extract" && RenpySdkAction == "download" ? "Tiến trình tải SDK và lấy text" : "Tiến trình quét");
     public string ExtractProgressStep => _extractProgressStep;
     public string ExtractProgressItem => string.IsNullOrWhiteSpace(_extractProgressItem) ? "—" : _extractProgressItem;
     public string ExtractProgressEta => _extractProgressEta;
@@ -651,7 +655,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         private set
         {
             if (Set(ref _renpySdkAction, value ?? "auto"))
+            {
                 Raise(nameof(RenpySdkStatus));
+                Raise(nameof(ExtractProgressHeading));
+            }
         }
     }
 
@@ -738,6 +745,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _busy, value))
             {
                 Raise(nameof(ExtractProgressActive));
+                Raise(nameof(ExtractProgressHeading));
                 Raise(nameof(TranslateProgressActive));
                 Raise(nameof(PatchProgressActive));
                 Raise(nameof(TranslateReadinessText));
@@ -1153,6 +1161,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
     internal void TestReportCancelTimeout(string id) => ReportCancelTimeout(id, CancellationToken.None);
     internal void TestBeginCancelAndExit() => CancelAndExit();
+    internal void TestMarkAnalyzeStarted() { _analyzeIdentity = AnalyzeIdentityOf(InputPath, OutputPath); _analyzeRejectLate = false; }
+    internal void TestSetRenpySdkAction(string action) => RenpySdkAction = action;
     internal void TestSetActiveTask(string id, string task) { _activeTaskId = id; _runningTask = task; Busy = true; }
     internal void TestMarkTaskTerminal(string id) { MarkTaskTerminal(id); Busy = false; _runningTask = null; }
     internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}");

@@ -455,7 +455,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Tiến trình quét" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                        <TextBlock Text="{Binding ExtractProgressHeading}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
                                         <TextBlock Grid.Column="1" Text="{Binding ExtractProgressPercent, Converter={StaticResource Pct}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource MutedBrush}" />
                                     </Grid>

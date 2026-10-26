@@ -195,6 +195,36 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertFalse(image_batch.call_args.kwargs['translate'])
         self.assertIn('dịch ảnh ở bước Dịch',completed[0]['summary'])
 
+    def _extract_raw(self, game, batch=None):
+        from vntext.app_tasks import run_extract_task
+        completed=[]
+        with patch('vntext.image_batch.run_image_batch', batch or Mock(return_value={'total':0,'ocr_ready':0,'translated':0,'untranslated':0,'output':''})):
+            run_extract_task(str(game),str(self.package),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=completed.append)
+        return completed
+
+    def test_image_only_folder_is_not_a_supported_extract_input(self):
+        # Image OCR is a stage of Extract for a supported container (Unity / Ren'Py / text asset);
+        # a bare folder of PNGs is refused up front instead of producing an empty package.
+        game=self.root/'only-images';game.mkdir();(game/'menu.png').write_bytes(self.data)
+        completed=self._extract_raw(game)
+        self.assertFalse(completed[0]['ok'])
+        self.assertIn('Chưa nhận diện input được hỗ trợ',completed[0]['error'])
+        self.assertFalse((self.package/'translation.csv').exists())
+
+    def test_empty_text_container_keeps_the_ocr_note_in_the_error(self):
+        # Supported container whose only player-visible text is inside images: no text rows (EMPTY),
+        # but the OCR result must be visible in the user-facing error, not hidden in the summary.
+        game=self.root/'container';(game/'data').mkdir(parents=True);(game/'images').mkdir()
+        (game/'data/build_info.json').write_text(json.dumps({'schema':1,'build':1}),encoding='utf-8')
+        (game/'images/menu.png').write_bytes(self.data)
+        batch=Mock(return_value={'total':3,'ocr_ready':2,'translated':0,'untranslated':1,'output':'image-ocr'})
+        completed=self._extract_raw(game,batch)
+        self.assertFalse(completed[0]['ok'])
+        self.assertEqual(completed[0]['extract_status'],'EMPTY')
+        self.assertIn('Không có text sử dụng được',completed[0]['error'])
+        self.assertIn('OCR được 2/3 ảnh',completed[0]['error'])
+        self.assertFalse(batch.call_args.kwargs['translate'])
+
     def test_real_worker_image_retry_protocol_twice(self):
         if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')
         from tests.lib.worker_test_lib import start_worker,read_ready,run_task,complete_for,stop_worker

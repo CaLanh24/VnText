@@ -1366,6 +1366,9 @@ def run_extract_task(
                 note = f"Ảnh: OCR được {images['ocr_ready']}/{images['total']} ảnh; dịch ảnh ở bước Dịch."
                 log(note)
                 payload['summary'] += " " + note
+                # A text-less container whose images were OCR'd must not read as "nothing happened".
+                if payload.get('extract_status') == 'EMPTY' and images.get('ocr_ready'):
+                    payload['error'] = f"{payload.get('error') or ''} {note}".strip()
         except Exception as image_error:
             log("CSV đã được giữ; OCR ảnh chưa hoàn tất: " + str(image_error))
             payload['summary'] += " OCR ảnh chưa hoàn tất; xem nhật ký."

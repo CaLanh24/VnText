@@ -350,6 +350,28 @@ class SemanticStructureTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn(name.casefold(), mt_check.source_proper_name_tokens(f"NPC: {name} is here."))
 
+    def test_sentence_initial_word_before_determiner_or_preposition_is_not_a_name(self):
+        # "Welcome to the village" / "Rest at the inn" were split as <name> + remainder, so the
+        # model never saw the sentence (native output "Welcome Tới ngôi làng", "Rest tại quán trọ").
+        # The frame (determiner/preposition next) is syntactic; no vocabulary or frequency is used.
+        for word, source in (
+            ("Welcome", "Welcome to the village, traveler."),
+            ("Rest", "Rest at the inn"),
+            ("Mark", "Mark the spot."),
+            ("Zorbwick", "Hello. Zorbwick to the rescue."),
+        ):
+            with self.subTest(source=source):
+                self.assertNotIn(word.casefold(), mt_check.source_proper_name_tokens(source))
+        from vntext.mt_translation_safety import split_parts
+
+        _prepared, parts = split_parts("Welcome to the village, traveler.")
+        self.assertEqual(parts, [("text", "Welcome to the village, traveler.")])
+        # A name followed by a verb stays protected, also after a sentence boundary.
+        for source in ("Rose is here.", "Hello. Mark is here.", "Rose, the baker, waves."):
+            with self.subTest(source=source):
+                token = source.replace("Hello. ", "").split()[0].strip(",.").casefold()
+                self.assertIn(token, mt_check.source_proper_name_tokens(source))
+
     def test_common_sentence_initial_words_tax_and_buy_are_not_proper_names(self):
         for word, source in (("Tax", "Tax is included."), ("Buy", "Buy some bread.")):
             with self.subTest(word=word):

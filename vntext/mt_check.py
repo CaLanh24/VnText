@@ -321,6 +321,13 @@ DEFAULT_SOURCE_LITERALS = frozenset({'bar', 'cocktail', 'karaoke', 'sushi'})
 _INITIAL_COMMANDS = frozenset('open close select choose press click enter apply continue resume retry return confirm copy paste cut delete restore import export start stop remove keep save load read write'.split())
 _INITIAL_TITLES = frozenset('professor doctor teacher captain officer commander chief nurse manager president sir madam lord lady'.split())
 _DETERMINERS = frozenset('the a an your my this that these those'.split())
+# A sentence-initial capitalised word that is directly followed by a determiner or a
+# preposition is an imperative/ordinary word ("Welcome to the village", "Rest at the inn",
+# "Mark the spot"), not a name; a name takes a verb ("Rose is here").  This is a syntactic
+# frame, not a vocabulary or frequency rule, so ambiguous names like Rose/Mark stay protected
+# in "Rose is here".
+_FRAME_PREPOSITIONS = frozenset('to at in on for with from into onto up down out off over under around near by about through toward towards'.split())
+_SENTENCE_END_BEFORE = re.compile(r"(?:^|[.!?…])[\s\"'“‘(\[]*$")
 
 
 def source_proper_name_tokens(src, whitelist=None):
@@ -339,6 +346,13 @@ def source_proper_name_tokens(src, whitelist=None):
     matches = list(re.finditer(r"[A-Za-z]+", body))
     for index, match in enumerate(matches):
         token = match.group(0)
+        if (
+            index + 1 < len(matches)
+            and _SENTENCE_END_BEFORE.search(body[: match.start()])
+            and not body[match.end():matches[index + 1].start()].strip()
+            and matches[index + 1].group(0).casefold() in (_DETERMINERS | _FRAME_PREPOSITIONS)
+        ):
+            continue
         if index == 0 and len(matches) > 1:
             next_match = matches[1]
             following = next_match.group(0)
