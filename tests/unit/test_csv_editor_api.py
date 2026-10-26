@@ -130,6 +130,50 @@ class CsvEditorApiTests(unittest.TestCase):
         self.assertIn("thay đổi bên ngoài", result["error"])
         self.assertEqual(csv_path.read_bytes(), external_bytes)
 
+    def test_rollback_after_replace_preserves_a_foreign_edit_and_only_undoes_owned_bytes(self):
+        for label, foreign in (("owned_bytes_rolled_back", False), ("foreign_edit_preserved", True)):
+            with self.subTest(case=label):
+                root = self._make_package()
+                csv_path = root / "translation.csv"
+                original = csv_path.read_bytes()
+                document = load_document(csv_path)
+                edited_rows = document["rows"]
+                edited_rows[0]["translation"] = "Bản dịch trong editor"
+                foreign_bytes = original.replace("Xin chào".encode("utf-8"), b"Ban dich ben ngoai")
+
+                def failing_reconcile(path, rows):
+                    if foreign:
+                        Path(path).write_bytes(foreign_bytes)  # arrives after our replace, before the error
+                    raise RuntimeError("reconcile fault injected")
+
+                with patch("vntext.csv_editor_api._reconcile_saved_review_rows", side_effect=failing_reconcile):
+                    result = save_document(csv_path, document["fields"], edited_rows, expected_sha256=document["source_sha256"])
+                self.assertFalse(result["ok"])
+                self.assertIn("reconcile fault injected", result["error"])
+                self.assertTrue(Path(result["backup_path"]).is_file())
+                if foreign:
+                    self.assertFalse(result["rolled_back"])
+                    self.assertTrue(result["foreign_change_preserved"])
+                    self.assertEqual(foreign_bytes, csv_path.read_bytes())
+                else:
+                    self.assertTrue(result["rolled_back"])
+                    self.assertEqual(original, csv_path.read_bytes())
+
+    def test_failure_before_replace_never_rewrites_the_source_file(self):
+        root = self._make_package()
+        csv_path = root / "translation.csv"
+        document = load_document(csv_path)
+        edited_rows = document["rows"]
+        edited_rows[0]["translation"] = "Bản dịch trong editor"
+        # An external edit lands right after the backup; the failing write must not "restore" over it.
+        external = csv_path.read_bytes().replace("Xin chào".encode("utf-8"), b"Ban dich ben ngoai")
+        with patch("vntext.csv_editor_api._atomic_write_csv", side_effect=OSError("disk full injected")):
+            csv_path.write_bytes(external)
+            result = save_document(csv_path, document["fields"], edited_rows)
+        self.assertFalse(result["ok"])
+        self.assertFalse(result["rolled_back"])
+        self.assertEqual(external, csv_path.read_bytes())
+
     def test_validate_flags_garbage(self):
         root = self._make_package()
         garbage = (

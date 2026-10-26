@@ -275,9 +275,18 @@ public sealed partial class MainViewModel
             ApplyBulkReplaceCsvCommand.RaiseCanExecuteChanged();
             UndoBulkReplaceCsvCommand.RaiseCanExecuteChanged();
             Raise(nameof(CsvEditorSavingText));
+            Raise(nameof(CsvEditorGridReadOnly));
             Raise(nameof(CsvEditorBusy));
         }
     }
+
+    /// <summary>The grid is read-only while a save runs or any worker task is busy: a running task
+    /// (translate/patch/extract) rewrites the same CSV package and would overwrite edits made meanwhile.</summary>
+    public bool CsvEditorGridReadOnly => CsvEditorSaving || Busy;
+
+    public string CsvEditorLockText => Busy && _csvEditorRows.Count > 0
+        ? "Đang chạy tác vụ — tạm khóa chỉnh sửa CSV để tác vụ không ghi đè thay đổi của bạn."
+        : "";
 
     public string CsvEditorSavingText => $"Đang kiểm tra và lưu {_csvEditorRows.Count:N0} dòng…";
 
@@ -326,7 +335,7 @@ public sealed partial class MainViewModel
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),
             _ => !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);
-        SaveCsvEditorCommand = new RelayCommand(_ => _ = SaveCsvEditorAsync(), _ => CsvEditorDirty && !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);
+        SaveCsvEditorCommand = new RelayCommand(_ => _ = SaveCsvEditorAsync(), _ => CsvEditorDirty && !Busy && !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);
         ValidateCsvEditorCommand = new RelayCommand(
             _ => ValidateCsvEditor(showLog: true),
             _ => !CsvEditorLoading && !_csvEditorValidating && !CsvEditorSaving && _csvEditorRows.Count > 0);
@@ -1045,6 +1054,15 @@ public sealed partial class MainViewModel
 
     internal Task<bool> SaveCsvEditorAsync()
     {
+        // Direct-entry guard (the command's CanExecute is not the only caller): never write the CSV
+        // while a worker task owns the package, or its later write would silently replace the edit.
+        if (Busy)
+        {
+            CsvEditorStatus = "Chưa lưu — đang có tác vụ chạy trên gói này; hãy đợi tác vụ kết thúc hoặc hủy tác vụ rồi lưu lại.";
+            CsvEditorValidationMessage = CsvEditorStatus;
+            ShowToast(CsvEditorStatus, "warning");
+            return Task.FromResult(false);
+        }
         if (_csvEditorSaveTask is { IsCompleted: false } inFlight)
             return inFlight;
         if (CsvEditorSaving)

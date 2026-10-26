@@ -1287,6 +1287,8 @@
                                         <TextBlock Text="{Binding CsvEditorPathDisplay}" ToolTip="{Binding CsvEditorPathToolTip}" Style="{StaticResource UiRowTitleTextStyle}" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Text="{Binding CsvEditorSavingText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource BlueBrush}"
                                                    Visibility="{Binding CsvEditorSaving, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Text="{Binding CsvEditorLockText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
+                                                   TextWrapping="Wrap" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
                                     <Button Grid.Column="2" Content="Chọn file" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}" />
                                     <Border Grid.Column="3" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="9,5"
@@ -1362,7 +1364,7 @@
                                           AutoGenerateColumns="False"
                                           CanUserAddRows="False"
                                           CanUserDeleteRows="False"
-                                          IsReadOnly="{Binding CsvEditorSaving}"
+                                          IsReadOnly="{Binding CsvEditorGridReadOnly}"
                                           SelectionMode="Extended"
                                           EnableRowVirtualization="True"
                                           EnableColumnVirtualization="True"

@@ -276,6 +276,7 @@ def save_document(
     backup_path = backup_translation_csv(csv_path)
     review_path = csv_path.parent / "review_only.csv"
     review_before = review_path.read_bytes() if review_path.is_file() else None
+    saved_sha256: str | None = None
     try:
         saved_sha256 = _atomic_write_csv(csv_path, fields, rows, expected_sha256=expected_sha256)
         review_pruned = 0
@@ -286,6 +287,19 @@ def save_document(
         if isinstance(exc, CsvEditorExternalChange):
             return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
                     "backup_path": str(backup_path)}
+        if saved_sha256 is None:
+            # The source file was never replaced by this save: nothing of ours to undo.
+            return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": False}
+        try:
+            current = csv_path.read_bytes()
+        except OSError as read_error:
+            return {"ok": False, "error": f"{exc}; rollback thất bại: {read_error}",
+                    "backup_path": str(backup_path), "rolled_back": False}
+        if hashlib.sha256(current).hexdigest() != saved_sha256:
+            # Someone else changed the file after our replace: restoring the backup would
+            # destroy their edit. Roll back only bytes this save wrote.
+            return {"ok": False, "error": f"{exc}; CSV đã bị thay đổi bên ngoài sau khi lưu nên không rollback",
+                    "backup_path": str(backup_path), "rolled_back": False, "foreign_change_preserved": True}
         try:
             _atomic_write_bytes(csv_path, backup_path.read_bytes())
             if review_before is not None:

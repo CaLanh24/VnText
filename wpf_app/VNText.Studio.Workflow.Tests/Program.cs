@@ -74,6 +74,7 @@ internal static partial class Program
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
             Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, csvFailures);
+            Run("CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave", CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave, csvFailures);
             Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, csvFailures);
             Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, csvFailures);
             Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, csvFailures);
@@ -83,7 +84,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (11)");
+                Console.WriteLine("Focused CSV editor protection checks: PASS (12)");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);
@@ -230,6 +231,7 @@ internal static partial class Program
         Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, failures);
         Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
         Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, failures);
+        Run("CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave", CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave, failures);
         Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, failures);
         Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, failures);
         Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, failures);
@@ -2070,6 +2072,58 @@ internal static partial class Program
             if (Directory.Exists(root))
                 Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static void CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            var root = Path.Combine(TestTempRoot(), "vntext_wpf_busy_lock_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                var csv = Path.Combine(root, "translation.csv");
+                File.WriteAllText(csv,
+                    "key,source_text,translation,context,file_path,import_method\r\n" +
+                    "k1,Hello,Hi,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+                File.WriteAllText(Path.Combine(root, "manifest.json"),
+                    """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+                var before = File.ReadAllBytes(csv);
+                using var worker = new PythonWorkerHost();
+                using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                AssertFalse(vm.CsvEditorGridReadOnly);
+                AssertEqual("", vm.CsvEditorLockText);
+
+                vm.TestSetActiveTask("translate-running", "translate");   // a real task owns the package
+                AssertTrue(vm.CsvEditorGridReadOnly);
+                AssertTrue(vm.CsvEditorLockText.Contains("tác vụ", StringComparison.Ordinal));
+                // Even if an edit slipped through (programmatic path), saving is refused at the entry point.
+                vm.CsvEditorRows[0].Translation = "Sửa trong lúc dịch";
+                vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+                AssertFalse(vm.SaveCsvEditorCommand.CanExecute(null));
+                AssertFalse(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+                AssertFalse(vm.TrySaveCsvEditorForExitAsync().GetAwaiter().GetResult());
+                AssertTrue(vm.CsvEditorStatus.Contains("tác vụ", StringComparison.Ordinal));
+                AssertEqual(Convert.ToHexString(before), Convert.ToHexString(File.ReadAllBytes(csv)));
+                AssertFalse(vm.CsvEditorSaving);
+
+                vm.TestMarkTaskTerminal("translate-running");
+                AssertFalse(vm.CsvEditorGridReadOnly);
+                AssertTrue(vm.SaveCsvEditorCommand.CanExecute(null));
+                AssertTrue(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+                AssertEqual("Sửa trong lúc dịch", TranslationCsvEditorService.Load(csv).Rows[0]["translation"]);
+            }
+            catch (Exception ex) { failure = ex; }
+            finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null)
+            throw new InvalidOperationException("Busy lock check failed", failure);
     }
 
     private static void CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty()
