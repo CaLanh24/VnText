@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -12,9 +13,10 @@ public sealed record CsvEditorDocument(
     IReadOnlyList<string> Fields,
     IReadOnlyList<Dictionary<string, string>> Rows,
     IReadOnlySet<string> ReviewKeys,
-    string? Error = null);
+    string? Error = null,
+    string? SourceSha256 = null);
 
-public sealed record CsvEditorSaveResult(bool Ok, string? Error = null, int RowCount = 0);
+public sealed record CsvEditorSaveResult(bool Ok, string? Error = null, int RowCount = 0, string? SourceSha256 = null);
 public sealed record ReviewedMemoryResult(bool Ok, string? Error, int Count, string PreviewToken,
     bool ConvertsLegacy, string ScopeSummary, IReadOnlyList<Dictionary<string,string>> Rows);
 
@@ -123,9 +125,12 @@ public static class TranslationCsvEditorService
         if (!File.Exists(path))
             return new CsvEditorDocument(false, path, [], [], new HashSet<string>(), "File không tồn tại");
 
+        var sourceBytes = File.ReadAllBytes(path);
+        var sourceSha256 = Convert.ToHexString(SHA256.HashData(sourceBytes));
         var review = LoadReviewKeys(Path.GetDirectoryName(path) ?? "");
         var rows = new List<Dictionary<string, string>>(capacity: 8192);
-        using var reader = new StreamReader(path, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
+        using var stream = new MemoryStream(sourceBytes, writable: false);
+        using var reader = new StreamReader(stream, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
         using var records = CsvFieldReader.ReadRecords(reader).GetEnumerator();
         if (!records.MoveNext())
             return new CsvEditorDocument(false, path, [], [], review, "CSV trống");
@@ -143,7 +148,7 @@ public static class TranslationCsvEditorService
             || rows.Select(row => row["key"]).Distinct(StringComparer.Ordinal).Count() != rows.Count)
             throw new InvalidDataException("CSV có key trống hoặc trùng");
 
-        return new CsvEditorDocument(true, path, fields, rows, review);
+        return new CsvEditorDocument(true, path, fields, rows, review, SourceSha256: sourceSha256);
     }
 
     private static void AppendCsvDataRow(
@@ -207,12 +212,18 @@ public static class TranslationCsvEditorService
         return keys;
     }
 
-    public static CsvEditorSaveResult Save(string csvPath, IReadOnlyList<string> fields, IReadOnlyList<Dictionary<string, string>> rows)
+    public static CsvEditorSaveResult Save(
+        string csvPath,
+        IReadOnlyList<string> fields,
+        IReadOnlyList<Dictionary<string, string>> rows,
+        string? expectedSha256 = null)
     {
         var payloadPath = WriteTempPayload(fields, rows);
         try
         {
-            var json = RunPython("save", csvPath, payloadPath, null);
+            var json = RunPython("save", csvPath, payloadPath, null, extraArgs: string.IsNullOrWhiteSpace(expectedSha256)
+                ? null
+                : new[] { "--expected-sha256", expectedSha256 });
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
             if (!root.TryGetProperty("ok", out var okEl) || !okEl.GetBoolean())
@@ -221,7 +232,8 @@ public static class TranslationCsvEditorService
                 return new CsvEditorSaveResult(false, err);
             }
             var count = root.TryGetProperty("row_count", out var cEl) ? cEl.GetInt32() : rows.Count;
-            return new CsvEditorSaveResult(true, null, count);
+            var sha256 = root.TryGetProperty("source_sha256", out var hashEl) ? hashEl.GetString() : null;
+            return new CsvEditorSaveResult(true, null, count, sha256);
         }
         catch (Exception ex)
         {
@@ -575,7 +587,8 @@ public static class TranslationCsvEditorService
                     review.Add(key);
             }
         }
-        return new CsvEditorDocument(true, path, fields, rows, review);
+        var sourceSha256 = root.TryGetProperty("source_sha256", out var hashEl) ? hashEl.GetString() : null;
+        return new CsvEditorDocument(true, path, fields, rows, review, SourceSha256: sourceSha256);
     }
 
     private static string WriteTempPayload(IReadOnlyList<string> fields, IReadOnlyList<Dictionary<string, string>> rows)

@@ -56,7 +56,7 @@ public sealed partial class MainViewModel
 
     private bool CanStartTranslate()
     {
-        if (Busy || !_translationModelChecked || _translationModelUnavailable || !_translatePackageReady)
+        if (Busy || CsvEditorSaving || CsvEditorDirty || !_translationModelChecked || _translationModelUnavailable || !_translatePackageReady)
             return false;
         try
         {
@@ -308,8 +308,11 @@ public sealed partial class MainViewModel
         TranslateButtonGreen = false;
     }
 
-    private void RunExtract()
+    private async void RunExtract()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
+        if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
+        if (Busy) return;
         if (string.IsNullOrWhiteSpace(InputPath))
         {
             AppendLog("Chọn game / asset trước khi extract.");
@@ -352,6 +355,9 @@ public sealed partial class MainViewModel
 
     private async void RunTranslate()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
+        if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
+        if (Busy) return;
         SelectedTab = WorkflowTabs.Translate;
         var csv = ResolveActiveCsvPath();
         if (string.IsNullOrWhiteSpace(csv))
@@ -468,8 +474,11 @@ public sealed partial class MainViewModel
             workerTask: "patch");
     }
 
-    private void ImportExistingTranslation()
+    private async void ImportExistingTranslation()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
+        if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
+        if (Busy) return;
         SelectedTab = WorkflowTabs.Translate;
         var packageDir = WorkflowStatus.ResolvePackageDir(OutputPath);
         var targetCsv = Path.Combine(packageDir, "translation.csv");
@@ -507,8 +516,11 @@ public sealed partial class MainViewModel
             workerTask: "patch");
     }
 
-    private void RunPatch()
+    private async void RunPatch()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
+        if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
+        if (Busy) return;
         SelectedTab = WorkflowTabs.Patch;
         if (string.IsNullOrWhiteSpace(InputPath))
         {

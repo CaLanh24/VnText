@@ -330,6 +330,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Command="{Binding ApplyBulkReplaceCsvCommand}"', xaml)
         self.assertIn('Header="MÃ DÒNG" Binding="{Binding Key}" IsReadOnly="True" Width="0" MinWidth="0" Visibility="Collapsed"', xaml)
         self.assertIn('ToolTip="{Binding CsvEditorPathToolTip}"', xaml)
+        self.assertIn('IsReadOnly="{Binding CsvEditorSaving}"', xaml)
+        self.assertIn('ToolTipService.IsEnabled', xaml)
         self.assertIn('Text="{Binding CsvEditorSelectionDetails}"', xaml)
         self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
         self.assertIn('Text="{Binding PatchProgressStep, StringFormat=\'Bước: {0}\'}"', xaml)
@@ -344,10 +346,32 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Text="{Binding CsvEditorUserValidationMessage}"', xaml)
         self.assertIn('ToolTip="{Binding CsvEditorValidationMessage}"', xaml)
 
+    def test_csv_editor_save_is_async_and_protects_exit_and_external_edits(self):
+        editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        window = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        api = (ROOT / "vntext" / "csv_editor_api.py").read_text(encoding="utf-8")
+        self.assertIn("private async Task<bool> SaveCsvEditorCoreAsync()", editor)
+        self.assertIn("await CsvEditorSaveExecutor(() => RunCsvEditorSave", editor)
+        self.assertIn("static work => Task.Run(work)", editor)
+        self.assertNotIn("Application.Current?.Dispatcher is null", editor)
+        self.assertIn("expectedSha256", editor)
+        self.assertIn("WaitForCsvEditorSaveAsync()", window)
+        self.assertIn("await vm.TrySaveCsvEditorForExitAsync()", window)
+        self.assertIn("Chọn Lưu", window)
+        self.assertIn("Bỏ thay đổi", window)
+        self.assertIn("CsvEditorDirty = false", editor)
+        self.assertIn("editGeneration == Volatile.Read(ref _csvEditorEditGeneration)", editor)
+        self.assertIn("CsvEditorExternalChange", api)
+        self.assertIn("written_sha256", api)
+        workflow_tests = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
+        self.assertIn("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", workflow_tests)
+        self.assertIn("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", workflow_tests)
+        self.assertIn("test_save_compare_and_swap_rechecks_after_backup", (ROOT / "tests" / "unit" / "test_csv_editor_api.py").read_text(encoding="utf-8"))
+
     def test_path_picker_cancellation_does_not_prompt_about_or_discard_csv_edits(self):
         paths = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
-        input_method = paths.split("private void ChooseInput()", 1)[1].split("private void ChooseOutput()", 1)[0]
-        output_method = paths.split("private void ChooseOutput()", 1)[1].split("private void ChooseTranslationCsv()", 1)[0]
+        input_method = paths.split("private async void ChooseInput()", 1)[1].split("private async void ChooseOutput()", 1)[0]
+        output_method = paths.split("private async void ChooseOutput()", 1)[1].split("private void ChooseTranslationCsv()", 1)[0]
         for method, picker in ((input_method, "PickInputPath"), (output_method, "PickOutputFolder")):
             self.assertLess(method.index(picker), method.index("ConfirmCsvBeforeSourceChange"))
             self.assertIn("!string.IsNullOrWhiteSpace(path)", method)
@@ -464,7 +488,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
         window_code = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
         self.assertIn("vm.CancelAndExitCommand.Execute(null)", window_code)
-        self.assertIn("vm.TrySaveCsvEditorForExit()", window_code)
+        self.assertIn("await vm.TrySaveCsvEditorForExitAsync()", window_code)
         self.assertIn("MessageBoxButton.YesNoCancel", window_code)
         delivery_panel = named["PatchDeliveryInstructionsPanel"]
         extract_options = named["ExtractOptionsPanel"]

@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private AppTray? _tray;
     private bool _explicitExit;
     private bool _allowDirtyExitOnce;
+    private bool _closeDecisionPending;
     private bool _pendingUpdateOffer;
 
     public MainWindow() : this(null) { }
@@ -76,8 +77,13 @@ public partial class MainWindow : Window
                 if (e.PropertyName is nameof(vm.Language) or nameof(vm.Theme) or nameof(vm.BackgroundStrength)) ApplyPreferences();
                 if (e.PropertyName == nameof(vm.SelectedTab)) { PageScrollViewer.ScrollToTop(); Dispatcher.BeginInvoke(new Action(() => UiText.Apply(this)), System.Windows.Threading.DispatcherPriority.ContextIdle); }
             };
-            Closing += (_, e) =>
+            Closing += async (_, e) =>
             {
+                if (_closeDecisionPending)
+                {
+                    e.Cancel = true;
+                    return;
+                }
                 if (!_presentationFixture && !_explicitExit && vm.CloseAction == "tray")
                 {
                     e.Cancel=true; HideToTray(); return;
@@ -92,18 +98,33 @@ public partial class MainWindow : Window
                         vm.CancelAndExitCommand.Execute(null);
                     return;
                 }
+                if (vm.CsvEditorSaving)
+                {
+                    e.Cancel = true;
+                    _closeDecisionPending = true;
+                    try { await vm.WaitForCsvEditorSaveAsync(); }
+                    finally { _closeDecisionPending = false; }
+                    _ = Dispatcher.BeginInvoke(new Action(Close));
+                    return;
+                }
                 if (vm.CsvEditorDirty && !_allowDirtyExitOnce)
                 {
                     e.Cancel = true;
                     var decision = AppDialogService.Show(
-                        "CSV có thay đổi chưa lưu. Chọn Có để kiểm tra và lưu trước khi thoát, Không để bỏ các thay đổi đang sửa, hoặc Hủy để tiếp tục làm việc.",
+                        "CSV có thay đổi chưa lưu. Chọn Lưu để kiểm tra và lưu trước khi thoát, Bỏ thay đổi để thoát và bỏ phần đang sửa, hoặc Hủy để tiếp tục làm việc.",
                         "CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, this);
                     if (decision == MessageBoxResult.Yes)
                     {
-                        if (vm.TrySaveCsvEditorForExit()) CloseAfterCsvDecision();
+                        _closeDecisionPending = true;
+                        try
+                        {
+                            if (await vm.TrySaveCsvEditorForExitAsync()) CloseAfterCsvDecision();
+                        }
+                        finally { _closeDecisionPending = false; }
                     }
                     else if (decision == MessageBoxResult.No)
                     {
+                        vm.DiscardCsvEditorChanges();
                         CloseAfterCsvDecision();
                     }
                     return;

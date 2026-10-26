@@ -20,9 +20,11 @@ TESTS, ROOT, LIB = bootstrap(__file__)
 
 import tempfile
 import unittest
+import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
+import vntext.csv_editor_api as csv_editor_api
 from vntext.csv_editor_api import (
     backup_document,
     build_issues_by_key,
@@ -65,6 +67,7 @@ class CsvEditorApiTests(unittest.TestCase):
         doc = load_document(root / "translation.csv")
         self.assertTrue(doc["ok"])
         self.assertEqual(doc["row_count"], 3)
+        self.assertEqual(doc["source_sha256"], hashlib.sha256((root / "translation.csv").read_bytes()).hexdigest())
         self.assertIn("key", doc["fields"])
         self.assertIn("k2", doc["review_keys"])
 
@@ -80,6 +83,52 @@ class CsvEditorApiTests(unittest.TestCase):
         self.assertEqual(reloaded["rows"][0]["translation"], "Chào bạn")
         raw = csv_path.read_bytes()
         self.assertTrue(raw.startswith(b"\xef\xbb\xbf"))
+
+    def test_save_compare_and_swap_preserves_external_edit(self):
+        root = self._make_package()
+        csv_path = root / "translation.csv"
+        document = load_document(csv_path)
+        edited_rows = document["rows"]
+        edited_rows[0]["translation"] = "Bản dịch trong editor"
+
+        external_bytes = csv_path.read_bytes().replace(b"Xin ch\xc3\xa0o", b"Ban dich ben ngoai")
+        csv_path.write_bytes(external_bytes)
+        result = save_document(
+            csv_path,
+            document["fields"],
+            edited_rows,
+            expected_sha256=document["source_sha256"],
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertIn("thay đổi bên ngoài", result["error"])
+        self.assertEqual(csv_path.read_bytes(), external_bytes)
+
+    def test_save_compare_and_swap_rechecks_after_backup(self):
+        root = self._make_package()
+        csv_path = root / "translation.csv"
+        document = load_document(csv_path)
+        edited_rows = document["rows"]
+        edited_rows[0]["translation"] = "Bản dịch trong editor"
+        external_bytes = csv_path.read_bytes().replace("Xin chào".encode("utf-8"), b"Ban dich ben ngoai")
+        backup = csv_editor_api.backup_translation_csv
+
+        def external_edit_after_backup(path):
+            result = backup(path)
+            Path(path).write_bytes(external_bytes)
+            return result
+
+        with patch("vntext.csv_editor_api.backup_translation_csv", side_effect=external_edit_after_backup):
+            result = save_document(
+                csv_path,
+                document["fields"],
+                edited_rows,
+                expected_sha256=document["source_sha256"],
+            )
+
+        self.assertFalse(result["ok"])
+        self.assertIn("thay đổi bên ngoài", result["error"])
+        self.assertEqual(csv_path.read_bytes(), external_bytes)
 
     def test_validate_flags_garbage(self):
         root = self._make_package()

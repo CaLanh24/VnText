@@ -16,29 +16,32 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    private bool ConfirmCsvBeforeSourceChange()
+    private async Task<bool> ConfirmCsvBeforeSourceChangeAsync()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return false;
         if (!CsvEditorDirty) return true;
         var choice = CsvEditorMessageBox("CSV có thay đổi chưa lưu. Lưu trước khi đổi nguồn hoặc thư mục xuất?", "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
         if (choice == MessageBoxResult.Cancel) return false;
-        if (choice == MessageBoxResult.Yes) return SaveCsvEditor();
-        CsvEditorDirty = false;
+        if (choice == MessageBoxResult.Yes) return await SaveCsvEditorAsync();
+        DiscardCsvEditorChanges();
         LoadCsvEditor(CsvEditorPath, reload: true);
         return true;
     }
-    private void ChooseInput()
+    private async void ChooseInput()
     {
         if (Busy) return;
         var path = _pathPicker.PickInputPath();
-        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase) && ConfirmCsvBeforeSourceChange())
+        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase)
+            && await ConfirmCsvBeforeSourceChangeAsync())
             InputPath = path;
     }
 
-    private void ChooseOutput()
+    private async void ChooseOutput()
     {
         if (Busy) return;
         var path = _pathPicker.PickOutputFolder();
-        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, OutputPath, StringComparison.OrdinalIgnoreCase) && ConfirmCsvBeforeSourceChange())
+        if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, OutputPath, StringComparison.OrdinalIgnoreCase)
+            && await ConfirmCsvBeforeSourceChangeAsync())
             OutputPath = path;
     }
 
@@ -48,8 +51,10 @@ public sealed partial class MainViewModel
     internal const string CsvEditorPickerTitle = "Chọn CSV để sửa";
     internal const string ImportTranslatedCsvPickerTitle = "Chọn translation.csv đã dịch để nhập";
 
-    private void ChooseTranslationCsv()
+    private async void ChooseTranslationCsv()
     {
+        if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
+        if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
         var path = _pathPicker.PickTranslationCsvFile(TranslateCsvPickerTitle);
         if (string.IsNullOrWhiteSpace(path))
             return;
@@ -174,6 +179,44 @@ public sealed partial class MainViewModel
                 AppendLog("Có thể chuyển sang tab «Tạo patch».");
         }
         return result.Ok;
+    }
+
+    private async Task ValidateTranslationCsvAfterEditorSaveAsync(string path)
+    {
+        CsvValidationResult result;
+        TranslateProgress progress;
+        try
+        {
+            (result, progress) = await Task.Run(() =>
+            {
+                var validation = CsvPackageValidator.Validate(path);
+                var state = validation.Ok
+                    ? WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(path)!)
+                    : new TranslateProgress(false, false, 0, 0, 0, false);
+                return (validation, state);
+            });
+        }
+        catch (Exception ex)
+        {
+            CsvValidationOk = false;
+            CsvValidationMessage = $"Không thể cập nhật trạng thái CSV: {ex.Message}";
+            ReadyForPatch = false;
+            return;
+        }
+
+        if (!string.Equals(path, TranslationCsvPath, StringComparison.OrdinalIgnoreCase))
+            return;
+        CsvValidationOk = result.Ok;
+        CsvValidationMessage = result.Message;
+        ReadyForPatch = result.Ok && progress.IsComplete;
+        if (!result.Ok)
+        {
+            PatchPreflightOk = false;
+            PatchPreflightEvaluated = false;
+            PatchEligibleCount = 0;
+            PatchBlockedCount = 0;
+            PatchPreflightMessage = "Cần CSV hợp lệ trước khi kiểm tra chất lượng patch.";
+        }
     }
 
     private bool RunPatchPreflight(bool silent)

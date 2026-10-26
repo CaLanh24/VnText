@@ -165,18 +165,18 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         LoadVersion();
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
-        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => !Busy);
+        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
-        ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy);
-        ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy);
-        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && ReadyForPatch);
+        ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
+        ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
+        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && ReadyForPatch);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);
-        ChooseInputCommand = new RelayCommand(_ => ChooseInput(), _ => !Busy && !CsvEditorLoading);
-        ChooseOutputCommand = new RelayCommand(_ => ChooseOutput(), _ => !Busy && !CsvEditorLoading);
+        ChooseInputCommand = new RelayCommand(_ => ChooseInput(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
+        ChooseOutputCommand = new RelayCommand(_ => ChooseOutput(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
         OpenInputCommand = new RelayCommand(_ => OpenInput(), _ => CanOpenInput());
         OpenOutputCommand = new RelayCommand(_ => OpenOutput(), _ => CanOpenOutput());
-        ChooseTranslationCsvCommand = new RelayCommand(_ => ChooseTranslationCsv());
+        ChooseTranslationCsvCommand = new RelayCommand(_ => ChooseTranslationCsv(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ChooseRenpySdkCommand = new RelayCommand(_ => ChooseRenpySdk(), _ => !Busy);
         DownloadRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("download"), _ => !Busy);
         ContinueWithoutRenpySdkCommand = new RelayCommand(_ => RunRenpySdkAction("none"), _ => !Busy);
@@ -854,9 +854,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public RelayCommand AddGlossaryEntryCommand { get; private set; } = null!;
     public RelayCommand RemoveGlossaryEntryCommand { get; private set; } = null!;
 
-    public void SetInputPathFromDrop(string path)
+    public async void SetInputPathFromDrop(string path)
     {
-        if (!Busy && !string.IsNullOrWhiteSpace(path) && ConfirmCsvBeforeSourceChange())
+        if (Busy || string.IsNullOrWhiteSpace(path)) return;
+        if (await ConfirmCsvBeforeSourceChangeAsync())
             InputPath = path.Trim().Trim('"');
     }
 

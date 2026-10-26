@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import hashlib
 import csv
+import io
 import os
 import re
 import sys
@@ -45,32 +46,50 @@ BATCH_STRUCTURAL_BUCKETS = frozenset(
 )
 
 
-def _read_editor_csv(csv_path: Path) -> tuple[list[str], list[dict]]:
+def _read_editor_csv_bytes(raw: bytes) -> tuple[list[str], list[dict]]:
     try:
-        with csv_path.open(encoding="utf-8-sig", newline="") as handle:
+        with io.TextIOWrapper(io.BytesIO(raw), encoding="utf-8-sig", newline="") as handle:
             records = csv.reader(handle, strict=True)
-            fields = next(records, [])
-            if (not {"key", "source_text", "translation"}.issubset(fields)
-                    or any(not field or field != field.strip() for field in fields)
-                    or len({field.casefold() for field in fields}) != len(fields)):
+            source_fields = next(records, [])
+            if (not {"key", "source_text", "translation"}.issubset(source_fields)
+                    or any(not field or field != field.strip() for field in source_fields)
+                    or len({field.casefold() for field in source_fields}) != len(source_fields)):
                 raise ValueError("Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ")
+            rows = []
             for number, record in enumerate(records, 2):
-                if record and len(record) != len(fields):
+                if not record:
+                    continue
+                if len(record) != len(source_fields):
                     raise ValueError(f"Dòng CSV {number} có số cột không khớp header")
+                rows.append(dict(zip(source_fields, record)))
     except csv.Error as exc:
         raise ValueError(f"CSV không hợp lệ: {exc}") from exc
-    fields, rows = read_csv_rows_file(csv_path)
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV không dùng UTF-8 hợp lệ") from exc
+    fields = list(source_fields)
+    for field in CSV_FIELDS:
+        if field not in fields:
+            fields.append(field)
+    for row in rows:
+        for field in fields:
+            row.setdefault(field, "")
     keys = [row["key"] for row in rows]
     if any(not key.strip() for key in keys) or len(set(keys)) != len(keys):
         raise ValueError("CSV có key trống hoặc trùng")
     return fields, rows
 
 
+def _read_editor_csv(csv_path: Path) -> tuple[list[str], list[dict]]:
+    return _read_editor_csv_bytes(csv_path.read_bytes())
+
+
 def load_document(csv_path: str | Path) -> dict[str, Any]:
     csv_path = Path(csv_path).resolve()
     if not csv_path.is_file():
         raise FileNotFoundError(str(csv_path))
-    fields, rows = _read_editor_csv(csv_path)
+    raw = csv_path.read_bytes()
+    fields, rows = _read_editor_csv_bytes(raw)
+    source_sha256 = hashlib.sha256(raw).hexdigest()
     package_dir = csv_path.parent
     review_keys = sorted(load_review_only_keys(package_dir))
     return {
@@ -80,6 +99,7 @@ def load_document(csv_path: str | Path) -> dict[str, Any]:
         "rows": rows,
         "review_keys": review_keys,
         "row_count": len(rows),
+        "source_sha256": source_sha256,
     }
 
 
@@ -211,8 +231,19 @@ def confirm_reviewed_memory(csv_path: str | Path, keys: list[str], preview_token
             lock.unlink()
 
 
-def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> dict[str, Any]:
+def save_document(
+    csv_path: str | Path,
+    fields: list[str],
+    rows: list[dict],
+    expected_sha256: str | None = None,
+) -> dict[str, Any]:
     csv_path = Path(csv_path).resolve()
+    try:
+        baseline_bytes = csv_path.read_bytes()
+    except OSError as exc:
+        return {"ok": False, "error": str(exc)}
+    if expected_sha256 and hashlib.sha256(baseline_bytes).hexdigest().casefold() != expected_sha256.casefold():
+        return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
     required = {"key", "source_text", "translation"}
     field_set = set(fields or [])
     if not required.issubset(field_set):
@@ -226,7 +257,7 @@ def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> 
     if len(set(keys)) != len(keys):
         return {"ok": False, "error": "Trùng key trong CSV"}
     try:
-        baseline_fields, baseline_rows = _read_editor_csv(csv_path)
+        baseline_fields, baseline_rows = _read_editor_csv_bytes(baseline_bytes)
     except (ValueError, OSError) as exc:
         return {"ok": False, "error": str(exc)}
     normalized_fields = fields + [field for field in CSV_FIELDS if field not in fields]
@@ -236,16 +267,25 @@ def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> 
         if any(updated.get(field, "") != original.get(field, "")
                for field in baseline_fields if field != "translation"):
             return {"ok": False, "error": "Không được đổi key, thứ tự, source hoặc metadata của CSV gốc"}
+    # Recheck before creating the backup. The atomic writer checks again after
+    # serialization, immediately before replacing the source file.
+    if expected_sha256:
+        current_sha256 = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+        if current_sha256.casefold() != expected_sha256.casefold():
+            return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
     backup_path = backup_translation_csv(csv_path)
     review_path = csv_path.parent / "review_only.csv"
     review_before = review_path.read_bytes() if review_path.is_file() else None
     try:
-        _atomic_write_csv(csv_path, fields, rows)
+        saved_sha256 = _atomic_write_csv(csv_path, fields, rows, expected_sha256=expected_sha256)
         review_pruned = 0
         if csv_path.name.casefold() == "translation.csv":
             _fields, saved_rows = _read_editor_csv(csv_path)
             review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
     except Exception as exc:
+        if isinstance(exc, CsvEditorExternalChange):
+            return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
+                    "backup_path": str(backup_path)}
         try:
             _atomic_write_bytes(csv_path, backup_path.read_bytes())
             if review_before is not None:
@@ -258,6 +298,7 @@ def save_document(csv_path: str | Path, fields: list[str], rows: list[dict]) -> 
         "ok": True,
         "csv_path": str(csv_path),
         "row_count": len(rows),
+        "source_sha256": saved_sha256,
         "backup_path": str(backup_path),
         "review_pruned": review_pruned,
     }
@@ -275,12 +316,27 @@ def _reconcile_saved_review_rows(csv_path: Path, rows: list[dict]) -> int:
     )
 
 
-def _atomic_write_csv(csv_path: Path, fields: list[str], rows: list[dict]) -> None:
+class CsvEditorExternalChange(RuntimeError):
+    pass
+
+
+def _atomic_write_csv(
+    csv_path: Path,
+    fields: list[str],
+    rows: list[dict],
+    expected_sha256: str | None = None,
+) -> str:
     """Write a CSV without leaving a partially-written user file behind."""
     tmp = csv_path.with_name(f".{csv_path.name}.{os.getpid()}.tmp")
     try:
         write_csv_rows_file(tmp, fields, rows)
+        written_sha256 = hashlib.sha256(tmp.read_bytes()).hexdigest()
+        if expected_sha256:
+            current_sha256 = hashlib.sha256(csv_path.read_bytes()).hexdigest()
+            if current_sha256.casefold() != expected_sha256.casefold():
+                raise CsvEditorExternalChange("CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu")
         os.replace(tmp, csv_path)
+        return written_sha256
     finally:
         try:
             tmp.unlink()
@@ -731,6 +787,7 @@ def main() -> int:
     p_save = sub.add_parser("save")
     p_save.add_argument("csv_path", type=Path)
     p_save.add_argument("--payload", type=Path, help="JSON file with fields+rows")
+    p_save.add_argument("--expected-sha256", help="fail if the opened CSV changed before save")
 
     p_val = sub.add_parser("validate")
     p_val.add_argument("csv_path", type=Path)
@@ -793,7 +850,7 @@ def main() -> int:
             if not args.payload or not args.payload.is_file():
                 raise ValueError("save requires --payload JSON file")
             payload = json.loads(args.payload.read_text(encoding="utf-8"))
-            result = save_document(args.csv_path, payload.get("fields") or [], payload.get("rows") or [])
+            result = save_document(args.csv_path, payload.get("fields") or [], payload.get("rows") or [], args.expected_sha256)
         elif args.cmd == "backup":
             result = backup_document(args.csv_path)
         elif args.cmd in {"preview-clear", "clear-blocked", "preview-retranslate", "retranslate"}:

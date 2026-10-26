@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using VNText.Studio.App.Models;
 using VNText.Studio.App.Services;
 using VNText.Studio.App.ViewModels;
@@ -71,6 +72,8 @@ internal static partial class Program
             var csvFailures = new List<string>();
             Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
+            Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
+            Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, csvFailures);
             Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, csvFailures);
             Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, csvFailures);
             Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, csvFailures);
@@ -80,7 +83,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (9)");
+                Console.WriteLine("Focused CSV editor protection checks: PASS (11)");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);
@@ -225,6 +228,8 @@ internal static partial class Program
         Run("NavigateTab_EditCsv", NavigateTab_EditCsv, failures);
         Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, failures);
         Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, failures);
+        Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
+        Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, failures);
         Run("CsvEditor_MultilineRecordsRoundtrip", CsvEditor_MultilineRecordsRoundtrip, failures);
         Run("CsvEditor_RetranslateSaveFailureKeepsEditsAndStops", CsvEditor_RetranslateSaveFailureKeepsEditsAndStops, failures);
         Run("CsvEditor_RetranslateSaveSuccessContinues", CsvEditor_RetranslateSaveSuccessContinues, failures);
@@ -1988,6 +1993,122 @@ internal static partial class Program
         }
     }
 
+    private static void CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try { CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalescesOnSta(); }
+            catch (Exception ex) { failure = ex; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null)
+            throw new InvalidOperationException("STA async save check failed", failure);
+    }
+
+    private static void CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalescesOnSta()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_save_async_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var previousContext = SynchronizationContext.Current;
+        var dispatcher = Dispatcher.CurrentDispatcher;
+        SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(csv,
+                "key,source_text,translation,context,file_path,import_method\r\n" +
+                "k1,Hello,Hi,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"),
+                """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            vm.CsvEditorRows[0].Translation = "Bản dịch đã sửa";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+
+            var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            vm.CsvEditorSaveExecutor = async work =>
+            {
+                started.TrySetResult(true);
+                await release.Task;
+                return await Task.Run(work);
+            };
+
+            var saveTask = vm.SaveCsvEditorAsync();
+            started.Task.GetAwaiter().GetResult();
+            AssertTrue(vm.CsvEditorSaving);
+            AssertFalse(vm.SaveCsvEditorCommand.CanExecute(null));
+            AssertTrue(ReferenceEquals(saveTask, vm.TrySaveCsvEditorForExitAsync()));
+
+            var actionRanDuringSave = false;
+            var frame = new DispatcherFrame();
+            dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            {
+                actionRanDuringSave = !saveTask.IsCompleted;
+                release.TrySetResult(true);
+            }));
+            _ = saveTask.ContinueWith(
+                _ => dispatcher.BeginInvoke(DispatcherPriority.Send, new Action(() => frame.Continue = false)),
+                TaskScheduler.Default);
+            Dispatcher.PushFrame(frame);
+
+            AssertTrue(actionRanDuringSave);
+            AssertTrue(saveTask.GetAwaiter().GetResult());
+            AssertFalse(vm.CsvEditorSaving);
+            AssertFalse(vm.CsvEditorDirty);
+            AssertEqual("Bản dịch đã sửa", TranslationCsvEditorService.Load(csv).Rows[0]["translation"]);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previousContext);
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static void CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_save_cas_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(csv,
+                "key,source_text,translation,context,file_path,import_method\r\n" +
+                "k1,Hello,Original,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"),
+                """{"entries":[{"key":"k1","source_text":"Hello"}]}""", Encoding.UTF8);
+
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            vm.CsvEditorRows[0].Translation = "Bản dịch trong editor";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            AssertTrue(vm.CsvEditorDirty);
+
+            File.WriteAllText(csv,
+                "key,source_text,translation,context,file_path,import_method\r\n" +
+                "k1,Hello,Chỉnh sửa bên ngoài,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            var externalBytes = File.ReadAllBytes(csv);
+
+            AssertFalse(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+            AssertTrue(vm.CsvEditorDirty);
+            AssertTrue(externalBytes.SequenceEqual(File.ReadAllBytes(csv)));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static void CsvEditor_DuplicateKeysReported()
     {
         var rows = new List<CsvEditorRow>
@@ -2145,7 +2266,7 @@ internal static partial class Program
                 throw new InvalidOperationException($"Unexpected prompt: {caption}");
             };
 
-            vm.RetranslateBlockedCsvCommand.Execute(null);
+            vm.RetranslateBlockedCsvRowsAsync().GetAwaiter().GetResult();
 
             AssertEqual(2, promptCount);
             var taskStarted = vm.LogLines.Any(line => line.Contains("Gửi lệnh worker: translate", StringComparison.Ordinal));
