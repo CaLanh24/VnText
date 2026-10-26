@@ -169,8 +169,10 @@ public sealed partial class MainViewModel
                 CsvValidationOk = result.Ok;
                 CsvValidationMessage = result.Message;
             }
-            if (cancelledSummary)
+            if (cancelledSummary && !Busy)
             {
+                // `!Busy`: this refresh was started by the cancelled run's terminal and can complete after the user already
+                // started a retry; the running text must not be overwritten by the finished run's history.
                 // CsvValidationOk stays as it was: GetTranslateReadinessPath() falls back to
                 // <output>/translation.csv when it is false, which is not the file the user picked.
                 CsvValidationMessage = result.Ok
@@ -592,6 +594,19 @@ public sealed partial class MainViewModel
         model_dir = TranslationModelDir,
     };
 
+    /// <summary>
+    /// The line under the CSV describes the CURRENT run while a translate task is running.  The terminal text of the previous
+    /// (cancelled) run is history: its safe-row count stays visible as a fact about the file, but never as the current status.
+    /// </summary>
+    internal void ShowTranslateRunningState()
+    {
+        CsvValidationMessage = _translatePackageRowCount > 0
+            ? $"Đang dịch — {_translatePackageTranslatedCount:N0}/{_translatePackageRowCount:N0} dòng đã có bản dịch an toàn từ trước; kết quả mới hiện khi tác vụ xong."
+            : "Đang dịch…";
+    }
+
+    internal void TestRefreshTranslateReadiness(bool cancelledSummary) => RefreshTranslateReadiness(cancelledSummary: cancelledSummary);
+
     private void BeginTask(string task, object parameters, string statusLabel, string? workerTask = null)
     {
         if (Busy) return;
@@ -650,6 +665,7 @@ public sealed partial class MainViewModel
         try
         {
             _worker.RunTask(_activeTaskId, workerTask ?? task, parameters);
+            if (task == "translate") ShowTranslateRunningState();
         }
         catch (Exception ex)
         {

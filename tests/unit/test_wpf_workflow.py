@@ -551,6 +551,14 @@ class WpfWorkflowTests(unittest.TestCase):
         strict_patch_validation = paths[paths.index("private bool ValidateTranslationCsv"):paths.index("private bool ValidateTranslationCsv") + 900]
         self.assertIn("CsvPackageValidator.Validate(path, requireTranslations);", strict_patch_validation)
 
+    def test_retry_running_text_is_not_the_cancelled_summary(self):
+        workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
+        begin = workflow[workflow.index("private void BeginTask("):]
+        # shown only after the worker accepted the task (a failed send keeps the honest last state)
+        self.assertLess(begin.index("_worker.RunTask(_activeTaskId"), begin.index("ShowTranslateRunningState()"))
+        # the late readiness completion of a cancelled run cannot overwrite the running text of a retry
+        self.assertIn("if (cancelledSummary && !Busy)", workflow)
+
     def test_image_workspace_is_reachable_and_every_command_is_bound(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")

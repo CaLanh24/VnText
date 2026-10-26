@@ -197,6 +197,7 @@ internal static partial class Program
         Run("CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog", CancelledTranslate_ReportsMeasuredSafeCountsWithoutErrorLog, failures);
         Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, failures);
         Run("CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness", CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness, failures);
+        Run("RetryAfterCancel_RunningTextIsNotTheCancelledSummary", RetryAfterCancel_RunningTextIsNotTheCancelledSummary, failures);
         Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -636,6 +637,74 @@ internal static partial class Program
             AssertFalse(vm.LogLines.Any(line => AppJournalStore.Level(line) == "ERROR"
                 && line.Contains("cancelled", StringComparison.OrdinalIgnoreCase)));
             AssertFalse(vm.LogLines.Any(line => line.Contains("Lỗi: cancelled", StringComparison.Ordinal)));
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
+    }
+
+    private static void RetryAfterCancel_RunningTextIsNotTheCancelledSummary()
+    {
+        static WorkerEvent Terminal(string id, bool ok, string tail) => WorkerEvent.FromJson(
+            "{\"v\":1,\"type\":\"complete\",\"id\":\"" + id + "\",\"ok\":" + (ok ? "true" : "false") + "," + tail + "}")!;
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            var csv = Path.Combine(package, "translation.csv");
+            // 1 of 2 rows already has a safe translation (the native case was 512 of 3000).
+            File.WriteAllText(csv, "key,source_text,translation\r\nk1,Hello,Xin chào\r\nk2,World,\r\n", Encoding.UTF8);
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+
+            // run 1 is cancelled: the terminal text with the measured safe count is shown (history of that run)
+            vm.TestBeginTaskLog("run-1", "translate");
+            vm.TestSetActiveTask("run-1", "translate");
+            vm.TestHandleWorkerEvent(Terminal("run-1", false, "\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":0,\"blocked\":0,\"translated\":0"));
+            AssertTrue(SpinWait.SpinUntil(() => vm.CsvValidationMessage.StartsWith("Đã hủy — đã dịch an toàn 1/2", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
+
+            // a send failure (no worker) starts nothing: the honest last state stays, no phantom "running" text
+            vm.RunTranslateCommand.Execute(null);
+            AssertTrue(SpinWait.SpinUntil(() => vm.StatusText == "Lỗi", TimeSpan.FromSeconds(5)));
+            AssertFalse(vm.Busy);
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đã hủy — đã dịch an toàn 1/2", StringComparison.Ordinal));
+
+            // retry accepted by the worker: the line describes the CURRENT run and keeps the safe count as a fact about the file
+            vm.TestBeginTaskLog("run-2", "translate");
+            vm.TestSetActiveTask("run-2", "translate");
+            vm.ShowTranslateRunningState();
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đang dịch", StringComparison.Ordinal));
+            AssertTrue(vm.CsvValidationMessage.Contains("1/2", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("Đã hủy", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("chạy lại", StringComparison.Ordinal));
+
+            // the late readiness completion of the CANCELLED run (race) must not bring the old text back while the retry runs
+            vm.TestRefreshTranslateReadiness(cancelledSummary: true);
+            AssertTrue(vm.Busy);
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đang dịch", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("Đã hủy", StringComparison.Ordinal));
+            // a stale terminal of the cancelled run arriving now does not end the retry or rewrite its text
+            vm.TestHandleWorkerEvent(Terminal("run-1", false, "\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":0,\"blocked\":0,\"translated\":0"));
+            AssertTrue(vm.Busy);
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đang dịch", StringComparison.Ordinal));
+
+            // the retry finishes: the terminal statistics replace the running text and the old cancellation note is gone
+            File.WriteAllText(csv, "key,source_text,translation\r\nk1,Hello,Xin chào\r\nk2,World,Thế giới\r\n", Encoding.UTF8);
+            vm.TestHandleWorkerEvent(Terminal("run-2", true, "\"summary\":\"\",\"error\":\"\",\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":2"));
+            AssertFalse(vm.Busy);
+            AssertTrue(vm.CsvValidationMessage.StartsWith("Đã dịch 2", StringComparison.Ordinal));
+            AssertFalse(vm.TranslateReadinessText.Contains("lần dịch trước đã hủy", StringComparison.Ordinal));
+
+            // a second cancel after the retry reports ITS OWN fresh measurement
+            File.WriteAllText(csv, "key,source_text,translation\r\nk1,Hello,Xin chào\r\nk2,World,\r\n", Encoding.UTF8);
+            vm.TestBeginTaskLog("run-3", "translate");
+            vm.TestSetActiveTask("run-3", "translate");
+            vm.ShowTranslateRunningState();
+            vm.TestHandleWorkerEvent(Terminal("run-3", false, "\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":0,\"blocked\":0,\"translated\":0"));
+            AssertTrue(SpinWait.SpinUntil(() => vm.CsvValidationMessage.StartsWith("Đã hủy — đã dịch an toàn 1/2", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
         }
         finally
         {
