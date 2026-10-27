@@ -14,6 +14,7 @@ import json
 import multiprocessing
 import os
 import subprocess
+import time
 import sys
 import sqlite3
 import traceback
@@ -964,8 +965,13 @@ def _run_readback_subprocess(
     game_root: Path,
     grouped_items: dict[str, list[tuple[dict[str, Any], str]]],
     timeout_seconds: float,
+    cancel_check: Any | None = None,
 ) -> dict[str, Any]:
     """Run the verifier through a standalone Python process.
+
+    ``cancel_check`` (optional) is polled about twice a second while the child
+    runs.  If it raises, the child is terminated and reaped before the exception
+    propagates, so a host cancel never waits for the whole verification.
 
     The worker dispatches patch tasks from a background thread.  Windows
     ``multiprocessing.spawn`` can inherit that thread's import lock, so the
@@ -997,10 +1003,23 @@ def _run_readback_subprocess(
             cwd=str(Path.cwd()),
             creationflags=launch["creationflags"],
         )
-        stdout, stderr = process.communicate(
-            payload,
-            timeout=max(1.0, float(timeout_seconds)),
-        )
+        deadline = time.monotonic() + max(1.0, float(timeout_seconds))
+        pending_input: str | None = payload
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(process.args, max(1.0, float(timeout_seconds)))
+            try:
+                stdout, stderr = process.communicate(
+                    pending_input,
+                    timeout=min(0.5, remaining) if cancel_check is not None else remaining,
+                )
+                break
+            except subprocess.TimeoutExpired:
+                pending_input = None
+                if cancel_check is None:
+                    raise
+                cancel_check()
         if process.returncode == 0:
             try:
                 report = json.loads(stdout)
@@ -1076,6 +1095,7 @@ def verify_patch_targets(
     *,
     timeout_seconds: float | None = None,
     _runner: Any | None = None,
+    cancel_check: Any | None = None,
 ) -> dict[str, Any]:
     """Reopen every target, optionally inside a bounded disposable process.
 
@@ -1092,6 +1112,7 @@ def verify_patch_targets(
             Path(game_root),
             grouped_items,
             max(1.0, float(timeout_seconds)),
+            cancel_check,
         )
     return _run_readback_process(
         Path(patched_root),

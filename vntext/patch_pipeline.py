@@ -994,12 +994,16 @@ Cach copy tay:
     (out / "HUONG_DAN_CAI_PATCH.txt").write_text(guide, "utf-8")
     write_patch_manifest(out, game_base, "unknown")
     report_backend_coverage(report, backend_counts)
+    # Cancellation points of the verification phase: before it starts and every
+    # ~0.5 s while the read-back child runs (the child is terminated on a cancel).
+    emit("Dang kiem tra patch...", bump=False)
     verify_patched_translations(patched_root, by_file, report)
     verification = verify_patch_targets(
         patched_root,
         game_base,
         by_file,
         timeout_seconds=readback_timeout_seconds(),
+        cancel_check=lambda: emit("Dang kiem tra patch...", bump=False),
     )
     verification_counts = verification.get("counts") or {}
     if verification.get("status") == READBACK_TIMEOUT or verification_counts.get(READBACK_TIMEOUT):
@@ -1035,7 +1039,11 @@ Cach copy tay:
     report.insert(2, f"duplicate_locations_patched_or_attempted: {duplicate_patch_locations}")
     report.insert(3, "Installer: VNTextPatchInstaller.exe; patch_manifest and original-hash backup are required.")
     (out / "import_report.txt").write_text("\n".join(report), "utf-8")
-    emit("Xong tao patch", done=total_steps)
+    emit(PATCH_FINAL_PROGRESS_LABEL, done=total_steps)
     return report
 
-__all__ = ['apply_translation_package', 'detect_patch_engine']
+# The last progress event is sent after every artifact (verification report, import
+# report) is on disk, so the caller treats a cancel observed there as "too late".
+PATCH_FINAL_PROGRESS_LABEL = "Xong tao patch"
+
+__all__ = ['apply_translation_package', 'detect_patch_engine', 'PATCH_FINAL_PROGRESS_LABEL']

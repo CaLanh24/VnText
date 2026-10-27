@@ -300,7 +300,7 @@ public sealed partial class MainViewModel
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
                     AppendLog(cancelled
-                        ? "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp."
+                        ? CancelledTerminalText(completedTask, evt)
                         : needsHumanReview || renpySdkIncomplete || extractionIncomplete ? evt.Error : $"Lỗi: {evt.Error}");
 
                 if (cancelled)
@@ -612,6 +612,20 @@ public sealed partial class MainViewModel
         AppendLog(DiagnosticStatusLine);
         if (!string.IsNullOrWhiteSpace(DiagnosticPath))
             AppendLog($"Diagnostic evidence: {DiagnosticPath}");
+    }
+
+    /// <summary>
+    /// The cancelled-terminal line is task specific: the "keep the safe part, run again to continue translating" copy
+    /// belongs to translation only.  A cancelled Patch states what happened to its output directory (the worker settles
+    /// only the output it can prove it created) and never invites a re-run that would hit a non-empty output.
+    /// </summary>
+    internal static string CancelledTerminalText(string? task, WorkerEvent evt)
+    {
+        if (string.Equals(task, "patch", StringComparison.Ordinal))
+            return !string.IsNullOrWhiteSpace(evt.PatchInstallInstructions)
+                ? evt.PatchInstallInstructions!
+                : "Đã hủy tạo patch — thư mục xuất chưa được xác nhận là patch hoàn chỉnh; kiểm tra hoặc chọn thư mục xuất trống rồi tạo lại. Game gốc không bị thay đổi.";
+        return "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp.";
     }
 
     private void ApplyPatchDelivery(WorkerEvent evt)

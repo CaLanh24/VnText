@@ -199,6 +199,7 @@ internal static partial class Program
         Run("CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness", CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness, failures);
         Run("RetryAfterCancel_RunningTextIsNotTheCancelledSummary", RetryAfterCancel_RunningTextIsNotTheCancelledSummary, failures);
         Run("RetryAfterCancel_DelayedSummaryCallbackCannotOverwriteRetryOrItsTerminal", RetryAfterCancel_DelayedSummaryCallbackCannotOverwriteRetryOrItsTerminal, failures);
+        Run("PatchCancel_StatesTheOutputAndNeverUsesTheTranslateCopy", PatchCancel_StatesTheOutputAndNeverUsesTheTranslateCopy, failures);
         Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -768,6 +769,37 @@ internal static partial class Program
         {
             Directory.Delete(package, true);
         }
+    }
+
+    private static void PatchCancel_StatesTheOutputAndNeverUsesTheTranslateCopy()
+    {
+        const string TranslateCopy = "chạy lại để dịch tiếp";
+        static WorkerEvent Cancelled(string id, string extra) => WorkerEvent.FromJson(
+            "{\"v\":1,\"type\":\"complete\",\"id\":\"" + id + "\",\"ok\":false,\"error\":\"cancelled\",\"summary\":\"\"" + extra + "}")!;
+        // 1. the worker settled its own output and says so: that statement is the cancelled line
+        using (var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false))
+        {
+            vm.TestBeginTaskLog("patch-1", "patch");
+            vm.TestSetActiveTask("patch-1", "patch");
+            vm.TestHandleWorkerEvent(Cancelled("patch-1",
+                ",\"patch_engine\":\"unity\",\"patch_install_instructions\":\"Đã hủy tạo patch. Phần do lần chạy này tạo trong X đã được dọn; không có patch dở nào còn lại.\""));
+            AssertFalse(vm.Busy);
+            AssertEqual("Đã hủy", vm.StatusText);
+            AssertTrue(vm.LogLines.Any(l => l.Contains("đã được dọn", StringComparison.Ordinal)));
+            AssertFalse(vm.LogLines.Any(l => l.Contains(TranslateCopy, StringComparison.Ordinal)));
+            AssertFalse(vm.PatchDeliveryReady);
+        }
+        // 2. no statement from the worker: a patch specific fallback, still never the translate copy
+        using (var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false))
+        {
+            vm.TestBeginTaskLog("patch-2", "patch");
+            vm.TestSetActiveTask("patch-2", "patch");
+            vm.TestHandleWorkerEvent(Cancelled("patch-2", ""));
+            AssertTrue(vm.LogLines.Any(l => l.Contains("Đã hủy tạo patch", StringComparison.Ordinal)));
+            AssertFalse(vm.LogLines.Any(l => l.Contains(TranslateCopy, StringComparison.Ordinal)));
+        }
+        // 3. a translate cancel keeps its own copy
+        AssertTrue(MainViewModel.CancelledTerminalText("translate", Cancelled("t", "")).Contains(TranslateCopy, StringComparison.Ordinal));
     }
 
     private static void CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness()

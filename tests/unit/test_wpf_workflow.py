@@ -560,6 +560,15 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("if (cancelledSummary && !Busy && taskGeneration == Volatile.Read(ref _taskStartGeneration))", workflow)
         self.assertIn("Interlocked.Increment(ref _taskStartGeneration);", workflow)
 
+    def test_patch_cancel_copy_is_patch_specific(self):
+        worker = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
+        self.assertIn("CancelledTerminalText(completedTask, evt)", worker)
+        helper = worker[worker.index("internal static string CancelledTerminalText"):]
+        helper = helper[:helper.index("private void ApplyPatchDelivery")]
+        patch_branch = helper[:helper.index("return \"Đã hủy tác vụ")]
+        self.assertIn("PatchInstallInstructions", patch_branch)
+        self.assertNotIn("dịch tiếp", patch_branch)
+
     def test_image_workspace_is_reachable_and_every_command_is_bound(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")

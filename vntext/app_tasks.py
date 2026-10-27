@@ -30,6 +30,7 @@ from vntext.app_backend import (
     write_package,
 )
 from vntext.patch import detect_patch_engine, write_patch_manifest
+from vntext.patch_pipeline import PATCH_FINAL_PROGRESS_LABEL
 
 ProgressFn = Callable[[dict], None]
 LogFn = Callable[[str], None]
@@ -2271,6 +2272,73 @@ def run_external_translation_import_task(
         )
 
 
+# Top-level names the patch writer creates inside its output directory.  Only these may ever be
+# removed when a cancelled run settles its own output; any other entry proves the directory is
+# not exclusively this run's, so nothing is deleted.
+_PATCH_OUTPUT_ARTIFACTS = frozenset({
+    "COPY_TO_GAME_ROOT",
+    "backup_original",
+    "HUONG_DAN_CAI_PATCH.txt",
+    "patch_manifest.json",
+    "import_report.txt",
+    "patch_verification.json",
+    ".patch_verification.json.tmp",
+    "VNTextPatchInstaller.exe",
+})
+
+
+def _settle_cancelled_patch_output(patch_out: Path, *, owned: bool, created: bool) -> str:
+    """Leave a cancelled patch output in a state that cannot be mistaken for a finished patch.
+
+    ``owned`` is only true for engines whose output directory was proven new or empty before this
+    run wrote anything (``validate_patch_output``).  Ren'Py keeps its own transactional overlay
+    contract and is never touched here.  Returns the user-facing Vietnamese statement.
+    """
+
+    where = str(patch_out)
+    if not owned:
+        return (
+            f"Đã hủy tạo patch. Thư mục xuất {where} được giữ nguyên và chưa được xác nhận là patch hoàn chỉnh; "
+            "kiểm tra trước khi dùng. Game gốc không bị thay đổi."
+        )
+    if not os.path.lexists(patch_out):
+        return "Đã hủy tạo patch trước khi ghi thư mục xuất. Game gốc không bị thay đổi."
+    is_junction = getattr(os.path, "isjunction", lambda _p: False)
+    try:
+        if patch_out.is_symlink() or is_junction(patch_out):
+            raise OSError("output directory is a link")
+        entries = list(os.scandir(patch_out))
+        foreign = [e.name for e in entries if e.name not in _PATCH_OUTPUT_ARTIFACTS or e.is_symlink() or is_junction(e.path)]
+    except OSError as exc:
+        return (
+            f"Đã hủy tạo patch nhưng không đọc được thư mục xuất {where} ({exc}); không dọn gì. "
+            "Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
+        )
+    if foreign:
+        return (
+            f"Đã hủy tạo patch. Thư mục xuất {where} có mục không phải do lần chạy này tạo ({foreign[0]}), "
+            "nên không dọn gì. Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
+        )
+    try:
+        for entry in entries:
+            target = Path(entry.path)
+            if entry.is_dir(follow_symlinks=False):
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        if created:
+            patch_out.rmdir()
+    except OSError as exc:
+        return (
+            f"Đã hủy tạo patch nhưng không dọn hết được thư mục xuất {where} ({exc}). "
+            "Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
+        )
+    return (
+        f"Đã hủy tạo patch. Phần do lần chạy này tạo trong {where} đã được dọn; không có patch dở nào còn lại. "
+        "Game gốc không bị thay đổi. Chạy lại Patch để tạo mới."
+    )
+
+
 def run_patch_task(
     csv_path: Path,
     manifest_path: Path,
@@ -2295,6 +2363,24 @@ def run_patch_task(
     patch_trace_metadata: dict[str, object] = {}
     trace_run_finished = False
     manifest_for_trace: dict = {}
+    out_created = False
+    out_owned = False
+    late_cancel = False
+
+    def patch_progress(info) -> None:
+        # The final progress event is sent after the verification report and import report exist.
+        # A cancel first observed there is too late to stop anything: record it and finish honestly.
+        nonlocal late_cancel
+        if isinstance(info, dict) and info.get("file") == PATCH_FINAL_PROGRESS_LABEL:
+            try:
+                progress(info)
+            except BaseException as exc:  # noqa: BLE001
+                if not _is_task_cancellation(exc):
+                    raise
+                late_cancel = True
+            return
+        progress(info)
+
     try:
         game_root = Path(src)
         if enable_trace:
@@ -2322,6 +2408,11 @@ def run_patch_task(
             else Path(out) / "Patch_Viet_Hoa" / f"VNTextPatch_v{VERSION}"
         )
         validate_patch_output(src, patch_out, transactional_existing=patch_engine == "renpy")
+        # validate_patch_output proved a new or empty directory for every non-Ren'Py engine, so
+        # everything written there from now on belongs to this run.  Ren'Py keeps its transactional
+        # overlay and is never cleaned by the cancel path.
+        out_created = not patch_out.exists()
+        out_owned = patch_engine != "renpy"
         patch_out.mkdir(parents=True, exist_ok=True)
         if patch_engine == "renpy":
             stale_unity_artifacts = [
@@ -2337,7 +2428,7 @@ def run_patch_task(
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
             log("Ren'Py: đang tạo native overlay.")
-        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), progress)
+        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress)
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,
         # per-target read-back report before any optional overlay is accepted.
@@ -2389,6 +2480,10 @@ def run_patch_task(
             )
             log("Ren'Py: overlay hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc native này để cài.")
             summary = f"Xong: Ren'Py native overlay nằm tại {patch_out}. Copy nội dung COPY_TO_GAME_ROOT vào game root."
+        if late_cancel:
+            # The cancel arrived after the output was complete and verified: say so instead of
+            # reporting a cancellation over a finished patch.
+            summary = "Yêu cầu hủy đến quá muộn: patch đã hoàn tất và qua read-back. " + summary
         log(summary)
         if trace is not None:
             from vntext.traceability import EVENT_COMPLETED
@@ -2418,6 +2513,11 @@ def run_patch_task(
             patch_install_instructions=patch_install_instructions,
         )
     except Exception as exc:
+        cancel_output_statement = ""
+        if _is_task_cancellation(exc) and patch_out is not None:
+            # Settle this run's own output first, before the (slow) trace finalisation, so the
+            # terminal never describes a complete-looking patch after a cancel.
+            cancel_output_statement = _settle_cancelled_patch_output(patch_out, owned=out_owned, created=out_created)
         if trace is not None:
             from vntext.traceability import (
                 ROOT_CAUSE_PATCH_VERIFY_FAILED,
@@ -2477,6 +2577,8 @@ def run_patch_task(
                     "patch_install_instructions": patch_install_instructions,
                 }
             )
+        if cancel_output_statement:
+            extra["patch_install_instructions"] = cancel_output_statement
         # A host cancel observed through the progress callback is one cancelled
         # terminal, not a failure with the cancellation's empty message.
         error = "cancelled" if _is_task_cancellation(exc) else str(exc)
