@@ -74,6 +74,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private int _translatePackageTranslatedCount;
     private string _translateReadinessPath = "";
     private int _translateReadinessEpoch;
+    private int _taskStartGeneration;
+    internal Action<Action>? TestDeferReadinessApply;
     private string _patchPreflightMessage = "";
     private bool _patchPreflightOk;
     private bool _patchPreflightEvaluated;
@@ -1171,7 +1173,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     internal void TestBeginCancelAndExit() => CancelAndExit();
     internal void TestMarkAnalyzeStarted() { _analyzeIdentity = AnalyzeIdentityOf(InputPath, OutputPath); _analyzeRejectLate = false; }
     internal void TestSetRenpySdkAction(string action) => RenpySdkAction = action;
-    internal void TestSetActiveTask(string id, string task) { _activeTaskId = id; _runningTask = task; Busy = true; }
+    internal void TestSetActiveTask(string id, string task) { _activeTaskId = id; _runningTask = task; Interlocked.Increment(ref _taskStartGeneration); Busy = true; }
+    internal void TestMarkTaskStarted() => Interlocked.Increment(ref _taskStartGeneration);
+    internal void TestSetBusy(bool busy) => Busy = busy;
     internal void TestMarkTaskTerminal(string id) { MarkTaskTerminal(id); Busy = false; _runningTask = null; }
     internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}");
 

@@ -198,6 +198,7 @@ internal static partial class Program
         Run("CsvPickers_UseContextSpecificTitles", CsvPickers_UseContextSpecificTitles, failures);
         Run("CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness", CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness, failures);
         Run("RetryAfterCancel_RunningTextIsNotTheCancelledSummary", RetryAfterCancel_RunningTextIsNotTheCancelledSummary, failures);
+        Run("RetryAfterCancel_DelayedSummaryCallbackCannotOverwriteRetryOrItsTerminal", RetryAfterCancel_DelayedSummaryCallbackCannotOverwriteRetryOrItsTerminal, failures);
         Run("RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit", RetryAfterCancel_StaleTerminalCannotEndRetryOrRequestExit, failures);
         Run("RenpyGameDetector_RequiresCredibleRecoveryEvidence", RenpyGameDetector_RequiresCredibleRecoveryEvidence, failures);
         Run("RenpySdkOptionsVisibility_FollowsSelectedGame", RenpySdkOptionsVisibility_FollowsSelectedGame, failures);
@@ -705,6 +706,63 @@ internal static partial class Program
             vm.ShowTranslateRunningState();
             vm.TestHandleWorkerEvent(Terminal("run-3", false, "\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":0,\"blocked\":0,\"translated\":0"));
             AssertTrue(SpinWait.SpinUntil(() => vm.CsvValidationMessage.StartsWith("Đã hủy — đã dịch an toàn 1/2", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
+    }
+
+    private static void RetryAfterCancel_DelayedSummaryCallbackCannotOverwriteRetryOrItsTerminal()
+    {
+        static WorkerEvent Terminal(string id, bool ok, string tail) => WorkerEvent.FromJson(
+            "{\"v\":1,\"type\":\"complete\",\"id\":\"" + id + "\",\"ok\":" + (ok ? "true" : "false") + "," + tail + "}")!;
+        const string Cancelled = "\"summary\":\"\",\"error\":\"cancelled\",\"complete\":false,\"pending\":1,\"review_only\":0,\"blocked\":0,\"translated\":0";
+        const string Done = "\"summary\":\"\",\"error\":\"\",\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":2";
+        var package = CreatePackage(withTranslation: false, withPatch: false);
+        try
+        {
+            var csv = Path.Combine(package, "translation.csv");
+            File.WriteAllText(csv, "key,source_text,translation\r\nk1,Hello,Xin chào\r\nk2,World,\r\n", Encoding.UTF8);
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+
+            // The cancelled run's summary refresh is HELD (its completion is genuinely delayed); only that refresh is captured.
+            var held = new List<Action>();
+            vm.TestDeferReadinessApply = a => held.Add(a);
+            vm.TestBeginTaskLog("run-1", "translate");
+            vm.TestSetActiveTask("run-1", "translate");
+            vm.TestHandleWorkerEvent(Terminal("run-1", false, Cancelled));
+            AssertTrue(held.Count >= 1);
+            var cancelledSummaryApply = held[^1];
+            vm.TestDeferReadinessApply = null;
+
+            // retry starts and FINISHES before the held callback runs
+            vm.TestBeginTaskLog("run-2", "translate");
+            vm.TestSetActiveTask("run-2", "translate");
+            vm.TestMarkTaskStarted();
+            vm.TestHandleWorkerEvent(Terminal("run-2", true, Done));
+            AssertFalse(vm.Busy);
+            var finished = vm.CsvValidationMessage;
+            AssertTrue(finished.StartsWith("Đã dịch 2", StringComparison.Ordinal));
+
+            cancelledSummaryApply();
+            AssertTrue(vm.CsvValidationMessage == finished);
+            AssertFalse(vm.CsvValidationMessage.Contains("Đã hủy", StringComparison.Ordinal));
+
+            // isolate the generation guard: a held summary from a run whose retry began and ended WITHOUT any readiness refresh
+            held.Clear();
+            vm.TestDeferReadinessApply = a => held.Add(a);
+            vm.TestRefreshTranslateReadiness(cancelledSummary: true);
+            var lateSummary = held[^1];
+            vm.TestDeferReadinessApply = null;
+            vm.TestMarkTaskStarted();      // a retry begins (generation changes) and ends without refreshing readiness
+            vm.TestSetBusy(false);
+            lateSummary();
+            AssertTrue(vm.CsvValidationMessage == finished);
         }
         finally
         {

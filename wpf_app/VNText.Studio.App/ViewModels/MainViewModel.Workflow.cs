@@ -123,6 +123,7 @@ public sealed partial class MainViewModel
     private void RefreshTranslateReadiness(bool syncCsvValidation = false, bool cancelledSummary = false)
     {
         var epoch = Interlocked.Increment(ref _translateReadinessEpoch);
+        var taskGeneration = Volatile.Read(ref _taskStartGeneration);
         string path;
         try { path = Path.GetFullPath(GetTranslateReadinessPath()); }
         catch
@@ -169,10 +170,11 @@ public sealed partial class MainViewModel
                 CsvValidationOk = result.Ok;
                 CsvValidationMessage = result.Message;
             }
-            if (cancelledSummary && !Busy)
+            if (cancelledSummary && !Busy && taskGeneration == Volatile.Read(ref _taskStartGeneration))
             {
-                // `!Busy`: this refresh was started by the cancelled run's terminal and can complete after the user already
-                // started a retry; the running text must not be overwritten by the finished run's history.
+                // This refresh was started by the cancelled run's terminal and can complete after the user already started a retry
+                // (`!Busy`) or even after that retry finished (generation): neither the running text nor the retry's terminal
+                // may be overwritten by the finished run's history.  The readiness epoch alone is not relied on for this.
                 // CsvValidationOk stays as it was: GetTranslateReadinessPath() falls back to
                 // <output>/translation.csv when it is false, which is not the file the user picked.
                 CsvValidationMessage = result.Ok
@@ -191,7 +193,8 @@ public sealed partial class MainViewModel
         if (dispatcher is null || !dispatcher.CheckAccess())
         {
             var (syncResult, syncImages) = Evaluate(path);
-            Apply(syncResult, syncImages);
+            if (TestDeferReadinessApply is { } defer) defer(() => Apply(syncResult, syncImages));
+            else Apply(syncResult, syncImages);
             return;
         }
         _ = Task.Run(() => Evaluate(path))
@@ -614,6 +617,7 @@ public sealed partial class MainViewModel
         _cancelWatchdog?.Dispose();
         _cancelWatchdog = null;
         _activeTaskId = $"task-{Guid.NewGuid():N}";
+        Interlocked.Increment(ref _taskStartGeneration);
         _completionHandledKey = null;
         _translateLastRunCancelled = false;
         _runningTask = task;

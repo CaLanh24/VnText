@@ -557,7 +557,8 @@ class WpfWorkflowTests(unittest.TestCase):
         # shown only after the worker accepted the task (a failed send keeps the honest last state)
         self.assertLess(begin.index("_worker.RunTask(_activeTaskId"), begin.index("ShowTranslateRunningState()"))
         # the late readiness completion of a cancelled run cannot overwrite the running text of a retry
-        self.assertIn("if (cancelledSummary && !Busy)", workflow)
+        self.assertIn("if (cancelledSummary && !Busy && taskGeneration == Volatile.Read(ref _taskStartGeneration))", workflow)
+        self.assertIn("Interlocked.Increment(ref _taskStartGeneration);", workflow)
 
     def test_image_workspace_is_reachable_and_every_command_is_bound(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
