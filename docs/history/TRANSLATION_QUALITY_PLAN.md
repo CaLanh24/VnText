@@ -1,0 +1,1022 @@
+# Cải thiện chất lượng dịch sau bản phát hành đang chuẩn bị
+
+## Active goal quality campaign — Owner continued2026-10-20
+
+Owner explicitly authorized goal execution beyond earlier terminal micro-fixes.
+Goal active across commits/turns; DEV sole source writer, Brain read-only
+acceptance reviewer; no child. Baseclean c9825d466ada179b39bca7968f6f50c43e95b412.
+Historical researchclosed/terminal pointers do not stop this campaign. Budget0đ,
+same existing CT2/OPUS, no downloads/training/cloud/accounts/host changes/user-data/
+protocol/architecture/model/push/Release or silver->approved memory promotion.
+
+### Proposed measurable goal acceptance (Brain review required before complete)
+
+1. Inventory every demonstrated open code defect in the known Phase2/19/22
+   transport/glossary/memory/protected/retry evidence; close reproducible in-scope
+   defects with red/green regression and actual product-path evidence. Distinguish
+   model semantic limits/conditional prerequisites rather than silently relabel
+   them repaired. Do not declare goal complete from one micro-fix/tests/docs alone.
+2. Freeze a bounded before/after product-route audit on the existing100source
+   synthetic corpus (all now seen, not a new heldout/benchmark or prompt campaign),
+   same OPUS/modelbytes, package isolation, unchanged CSV source/key/order/schema,
+   zero new written structural failures. Review changed outputs and observed
+   semantic regressions separately; never alter answers/validators to improve
+   a score. Do not infer whole-language/game or human acceptance from this audit.
+3. Actual synthetic workflow proof: extract -> local translation and separately
+   explicit CSV import -> patch gate/read-back, preserving source/locator/keys/
+   placeholders/tags/newlines. Invalid imported structures must stay rejected;
+   no user/game mutation or claimed full-game support. Preserve original raw
+   failures, cache/ledger/status and unsupported cases.
+4. Final affected gates plus one current DEV executable/build/worker smoke and
+   complete cleanup/quota, source/build/runtime/model identities. Final four-step
+   matrix must state which product behavior delivered, residual model meaning/
+   register/idiom limitations and training NOT_TRIGGERED/DEFERRED. Brain must
+   accept the whole bounded goal before create_goal is marked complete.
+
+### Final bounded goal evidence matrix — 2026-10-21, Brain accepted
+
+This matrix evaluates the four campaign requirements above, not general language
+quality. Historical receipts keep the actual source hashes they ran; current UI
+evidence does not relabel the older model audit as an exact-current-commit run.
+
+| Requirement | Delivered evidence | Limits / remaining acceptance |
+| --- | --- | --- |
+| 1. Demonstrated defects and backlog | G1 protected flat-glossary spans/structural admission, G2 requested-term retry/cache admission and G5 initial prose headwords have recorded bounded fixes. Strict reviewed memory adds exact package/source/file/context/method, no CSV autoapproval, CAS/rollback/provenance and cache/rebuild boundaries. `evaluation/translation_quality_goal_v1/receipt.json`, `evaluation/translation_owner_approval_v1/scoped-delivery.json` and `entrypoint-delivery.json` retain evidence. | Idiom, actor, register, gender and term-sense errors remain model limits. Rejected carrier/segmentation experiments stay rejected; no new dictionary campaign or automatic semantic acceptance. |
+| 2. Frozen 100-source audit | Same seen corpus/model: unassisted 98 written/2 blocked before and after; supplied glossary 98/2 to 96/4, zero new written structural failures. Two changed unassisted texts and two additional glossary refusals are recorded separately in the goal receipt. | All inputs seen, not heldout or human gold. Professor address gender remains unresolved. Missing original mt_check provenance field is explicitly qualified by the separate supplement, not rewritten. |
+| 3. Real synthetic product workflow | Goal receipt records local translation and explicit import branches through patch/read-back, source/CSV invariants and hostile import rejection. Later editor workflow records selected approval and exact four-row reuse through patch/read-back; native two-row fixture verifies preview, cancel/no writes and confirm selected-only reuse. | Original failures retained. Generated fixtures only, not user/game acceptance; reviewed exact reuse does not improve all new sentences. |
+| 4. Current delivery, cleanup and disposition | `entrypoint-ui-delivery.json` binds current source/test hashes, affected localized WPF harness, current DEV build/worker smoke and native evidence. Existing app resources repair the new preview dialog. Registered native fixtures/processes disposed, terminal purge PASS. Brain accepted the feature and four-requirement campaign. | Dirty-base build, not exact-commit Release. New styled preview has refused Cancel input/no writes, separate from prior accepted functional cancel/confirm. Absent Git author identity remains separate. |
+
+Four-step disposition: existing CT2/OPUS route retained; demonstrated code
+defects repaired within scope; actual product and native evidence retained;
+training NOT_TRIGGERED/DEFERRED for lack of independent human gold, an accepted
+training criterion and explicit training permission. No new model, dependency,
+paid service, user-data approval, push or Release. Whole-language quality and
+human linguistic acceptance are not claimed. Brain explicitly accepted all four
+bounded objective requirements on 2026-10-21 and identified no remaining numbered
+gate. Inspection of the stored goal confirms this bounded campaign is its scope.
+Known disclosed OPUS semantic limits do not become an indefinite technical
+blocker. Closure does not authorize training, new campaigns, push or Release.
+
+### Initial backlog and first implementation owner
+
+| Item | Evidence/premise | Scope and disposition |
+| --- | --- | --- |
+| G1 flat glossary protected spans | package_glossary._GLOSSARY_PROTECTED double-escaped braces/control regex; may mask identifiers or accept exact target missing tokens. Read-only repro next. | package_glossary + targeted tests, preserve existing structural validator semantics; no generic lexical/translation replacement. |
+| G2 requested glossary lost in retry | Phase2 recorded ZZG carrier drift then unassisted retries losing requested terms; opaque workaround was rejected for semantic regressions. | Diagnose final admission of caller-supplied glossary, not resurrect rejected transport/lexical changes; actual baseline before mutation. |
+| G3 model semantic limits | Phase19/22 actor/polarity/idiom/term-sense failures, no independent human gold; Hy rejected. | Keep raw/limits; no sentence hardcoding/new model/prompt campaign. Does not block independent G1/G2/workflow work. |
+| G4 cross-flow proof | worker smoke exists but its patch installer caveat is not full import/read-back acceptance. | Dedicated synthetic extract/translate/import/patch positive+hostile proof, scoped disposable outputs. |
+
+Run budget before edits: read-only diagnosis -> focused red/green -> affected
+regression; one100row baseline audit (2 independent unassisted/supplied-glossary
+arms) frozen before G1/G2 product edits, one final same-input audit after fixes;
+max180s/stage/peakWS<1GiB, current model offline. Small actual seam checks only
+when needed for demonstrated prerequisite. Synthetic workflow<=1positive+1invalid
+import run with registered TEST_RUN scopes, no gamecopies. Final DEV build/smoke
+<=600s, repeat only if runtime source changes. Shared6GiB/artifact1GiB complete
+inventory; retain compact evidence DEV_RUN/translation-quality-goal; source-based
+gates may be refined from evidence, with reason persisted before dependent runs.
+
+G1 repro confirmed: flat mask rewrote `{mode}`/`${mode}`/`[br]`/literal newline;
+exact lookup admitted missing/changed tokens. Red11tests/5failed subcases;
+fixed escaped regex + reject structural-token term targets; green46affectedPASS,
+0skip/warning/cleanupPASS. Glossary cache strategy additionally flat-protection2.
+100source baseline frozen and completed before runtime edits:98written/2blocked
+per unassisted/supplied6term arms, no written structural failures, model unchanged.
+
+G2 bounded mechanism probe before product admission: three previously seen
+TERM001/004/014 sources and same six declared test-owned terms only. Replace
+current term carriers with temporary brace tokens, send complete source sentence
+to existing OPUS, require exact token counts/structural roundtrip before restore.
+No new prompt/model/answer replacements, no generic lexical-policy change. Probe
+max120s/oneprocess/three calls/one registered TEST_RUN, retain raw and judge target
+consistency plus source-aligned omissions/additions versus existing baseline;
+no promotion merely because term appears. Max2 hypotheses; no fresh dataset or
+full100 rerun until final pipeline frozen. If transport/meaning fails, preserve
+failure and do not ship failed probe or resurrect global opaque workaround.
+
+G2 first full-sentence probe rejected3/3: long ZZG brace IDs acquire extraZ or
+disappear, strict structural check catches all; no product code added. One second
+and final hypothesis uses short numeric `{0}` carriers rather than unknown-letter
+sentinels: justified by observed spelling drift, not target-answer/prompt tuning.
+Same3seen sources/6terms/3calls, separate immutable raw report. If still wrong,
+stop carrier variants and retain fail-closed/manual-import disposition rather than
+pretend glossary adherence or semantics repaired.
+
+G2 second numeric probe also3/3roundtrip failures; both mechanisms REJECTED,
+test-only/raw retained, no new translation strategy shipped. Next bounded product
+prerequisite is explicit glossary-adherence admission: selected scoped/priority
+targets must be present before cache/write and in retry candidate selection;
+missing requested targets remain review, never silently count complete. Exact
+whole-row authority precedes partial terms; source protected-only/no term implies
+no constraint. This is caller-supplied glossary contract validation, not a semantic
+oracle or improved-meaning claim. No outputs rewritten or generic validators weakened.
+Private retry gains optional glossary metadata only, not worker protocol change.
+G3 semantic disposition must still measure outputs/import corrections separately;
+REVIEW alone cannot close the overall goal.
+
+G1/G2 affected97PASS; actual worker workflow local translate/CSV import/patch
+read-back and invalid-placeholder import rejection PASS (same source bytes,
+no user files). First final100 audit: unassisted unchanged98/100; supplied glossary
+96/100, TERM001/004 now explicit review for omitted requested wording. No meaning
+gain claimed from those two rejects; raw outputs/reasons retained.
+
+G5 new **code** premise from that audit: source_proper_name_tokens classifies
+sentence-initial Open/Professor as names, so split_parts with protect_lexical=False
+emits them as tech and sends only tail to OPUS. This is not merely model meaning
+failure. Bounded remedy proposal: generic English initial command/title headword
+classes (English-only, no Vietnamese answer table), multiword sources only;
+unknown names/CamelCase/standalone literal and explicit glossary contracts remain.
+Tests must prove complete model input, names retained, and actual output gains
+versus frozen baseline without new name/meaning regression. No key/source sentence
+lookup. One final-headwords audit of same100 permitted only because runtime source
+changes; previous final.json remains intermediate evidence, not overwritten.
+
+G5 green98tests; actual final-headwords100: UI001 untranslated Open->Mở;
+ADDR016 Professor->Giáo sư, but masculine address remains unresolved. Other
+unassisted98outputs identical to baseline; supplied arm only those2changes plus
+TERM001/004review. No new output/name regression observed, not human gold.
+
+G6 long-text premise discovered from product source/API: input budget480 tokens
+but translate_batch uses implicit max_decoding_length256 (installedCT2 4.8.1
+docstring verified). This may silently drop tail of a valid source chunk; unrelated
+to short-sentence meaning errors. Freeze a technical fixture concatenating the
+17existing TERM source sentences (no new benchmark/gold), plus one short control;
+actual product-path capture delegates to real existing CT2, records input/output
+token lengths/default limit and raw output. One before +one after,2rows/stage,
+max180s/stage, one scopedTEST_RUN/no modelcopy. Admit only if before truly hits
+cap and after preserves tail without new control/structure regression. Proposed
+bounded decode budget max(256,min(1024,2*max_input_tokens+64)), explicitEOS return
+and reject budget-exhausted nonEOS output rather than silently write it. Expose
+decoding profile/policy in adapter metadata/cache fingerprint; weights/beam/model/
+protocol/architecture unchanged. Gate long-input/adapter/cache/worker affected;
+no coverage-penalty/beam tuning or promise all omissions fixed.
+
+### Current measured semantic disposition and remaining acceptance
+
+Owner subsequently delegated review to Brain (“m duyệt đi”, turn01a158d1).
+Brain approved17translations/6terms exactly within their proposal scopes. New
+`evaluation/translation_owner_approval_v1/decision.json` records attribution,
+authority, hashes and exact mapping, separately from the untouched pendingpacket.
+human_gold/training_eligible remain false; agentreview is not directhumangold or
+wholeappacceptance.8focuseddecision+packettestsPASS; no inference/runtimechange.
+Do not keep waiting for those23IDs. Integration prerequisite is now concrete:
+legacy normalized/contextfamily fallback and rebuild fromCSV lose stricter
+scope; additive seam proposal `docs/TRANSLATION_APPROVED_MEMORY_SCOPE.md` awaits
+Brain review before product integration. No globalbank/userdata mutation.
+
+Owner chose to prepare a context-qualified translation/glossary review packet,
+not to approve it (direct reply2026-10-20). Packet
+`evaluation/translation_owner_review_v1/REVIEW.md`:17known residual synthetic
+sources and6term candidates, exact historicalOPUS output, manually authored
+proposedVI, original same-scenario sources/address metadata, scoped source
+provenance and blank Owner decisions. All pending/unapproved/not human gold or
+training eligible; no native memory/glossary bank is emitted or product import
+performed. Do not hardcode these seen audit answers as a product default.
+Context uncertainty is explicit (Professor gender unknown; neutral proposal).
+The existing memory key/fallback is coarser than the intended file/scene approval
+scope: unique same-method wording may fall back across families within package.
+Packet discloses this rather than promising isolation. Owner response is needed
+before any accepted-label/integration claim; approval must identify IDs/revisions
+and scope, not be inferred from this preparation authorization. Offline verifier
+and focused provenance/forged-approval/scope/adherence tests validate packaging
+only, not semantic quality. No new inference/dependency/runtime/model changes.
+
+Latest follow-up outcome PM_DECISION_REQUIRED, not whole-goal completion:
+`evaluation/translation_quality_goal_v1/SEMANTIC_DECISION.md` records the
+17unit source-aligned segmentation review and concrete0đ Owner choices. One
+actual18text run after preflight guard correction; original failed preflight
+retained, no inference in that failure. Final fingerprint clause now covered but
+major omissions/term-sense defects remain, plus raw CSV->CNV; general discourse
+independence/opaque scope not certified. Segmentation NOT_ADMITTED, no production
+hook/decoder/model/prompt change; no further seen-fixture tuning. Brain accepted
+two G2remediations bounded, not overall semantic acceptance. Owner must choose
+product boundary or authorize a concrete new capability/approved-data pilot;
+DEV does not silently substitute manual CSV/REVIEW for automatic quality.
+
+Frozen long-paragraph probe contract (before inference): test-only candidate,
+not an admitted product route. Reuse exact17TERM-sentence concatenation from
+longtext-before, same weights/default decode and one short control; <=180s,
+one registeredTEST_RUN, <=18texts in one translate_many call, no new100/Hy.
+Candidate considers only >=800char prose with >=3period-delimited declarative
+sentences beginning A/An/The, each<=300chars. Any protected/escaped/bracket/quoted
+scope, digit/decimal, abbreviation/initial, detected proper name, or leading
+anaphoric noun phrase (same/latter/former/other/next/previous) makes the entire
+row fall back unchanged to the existing route. Preserve every source char via
+core+original separator reconstruction; translate cores separately and restore
+original separator/newline bytes in order. Controls freeze short, opaque/tag,
+escape,decimal,abbreviation,name,quote and anaphora refusals before inference.
+Exact glossary/memory authority is not bypassed: helper is called only on the
+known unassisted fixture, no pipeline hook/product change; any future admission
+would be downstream of existing authority, with explicit policy fingerprint.
+Lexical guards alone cannot prove general discourse independence. Even if tail
+coverage improves, inspect all17source/target units for omissions/additions/
+polarity/roles; default admission remains unproven without a supported boundary
+contract. This probe must not silently extend support to arbitrary paragraphs.
+
+Brain review01a158b0 rejected whole-goal completion: manual CSV correction and two
+text gains cannot substitute for automatic translation quality. Owner authorized
+the review/remediation exchange. Brain found two G2seams; focused red proves
+target wording inside placeholder/tag falsely satisfied prose terms and synonym
+could cache/write a target-omitting candidate. Fixed by counting separate
+unprotected prose segments only and applying final glossary admission to synonym
+before cache/write, including its fallback. Glossary strategy bumped to
+required-terms2-prose-synonym; no token rewriting. Positive glossary synonym pool
+still writes/caches. Follow-up94testsPASS0skip/warning/cleanupPASS; rebuilt DEV
+worker smoke PASS. Original receipt/build identity below is intermediate; do not
+upgrade old100audit or old242gate to current-source results. First red invocation
+had an invalid test keyword; corrected red retained three failing subcases,
+then green. Receipts `translation-goal-brain-g2-{red,red-corrected,green,dev-wrapper}.json`.
+
+Read-only `residual-input-diagnosis.json` inspects17known unresolved sources:
+15arrive as complete single text fragments,2split only at real names Mara/Lin.
+Thus broad unprotection cannot repair most observed short idiom/omission/register/
+term-sense errors; global opaque/name workaround already rejected for regressions.
+No new inference or semantic score is claimed from this diagnosis. A still
+plausible independent mechanism is conservative sentence-boundary segmentation
+for long paragraphs (actual234input/185output case lost tail without cap hit).
+Evaluate against that known technical fixture and short/protected/name controls;
+retain source reconstruction and explicit join spacing, reject abbreviation/
+ambiguous boundaries. This is not a decoder-budget remedy or promise to fix
+single-sentence idioms. No extra100source/prompt/Hy campaign is justified.
+
+The frozen baseline/final-headwords product runs are an audit of the same100
+previously seen sources, not human gold or fresh generalization. Unassisted
+98written/2blocked remains98/2; supplied-glossary98/2 becomes96/4 because two
+requested-term failures are now refused. Only UI-001 and ADDR-016 change text in
+the unassisted arm. These are two concrete input-protection fixes, not a claim
+that all sentence meanings were repaired. Original reports remain immutable in
+`DEV_RUN/translation-quality-goal/{baseline,final,final-headwords}.json`.
+
+| Known group / examples | Current product evidence | Disposition and route |
+| --- | --- | --- |
+| Initial action UI-001 | `Open phiên chạy đã lưu` -> `Mở phiên chạy đã lưu` | Delivered code fix: send the initial prose action to the existing model. Names/standalone literals retain protection. |
+| Title/address ADDR-016 | `Professor Anh...` -> `Giáo sư, ông...` | Title fixed; masculine address still unsupported by the source. Register/gender NOT repaired. Context sidecar stays METADATA_ONLY. |
+| Negation DLG-012 / ADDR-014 | `Đừng chạy...` / `...ta sẽ không giận...` | Negation already preserved on this full product route; no new gain. ADDR-014 register remains too strong/unsupported. Historical Phase19/22 role/polarity failures stay historical, not regraded as current success. |
+| Omission ADDR-008 / ADDR-015 | corrected-page object omitted / excuse clause omitted | Unchanged model omissions. No source transport loss established for these short rows. Do not autoapprove them from structure PASS. |
+| Idiom IDI-003 / IDI-011 | `lên đường` / `cùng quan điểm` | Already correct full-route readings; no improvement attribution from earlier fragmented research runs. |
+| Idiom IDI-005 / IDI-016 | literal `miếng bánh` / `ra khỏi rừng` in fever context | Still wrong, unchanged. Same limitation observed in beans/day/bullet/weather/arm-and-leg/salt/cat/rain cases. No finite benchmark-answer dictionary shipped. |
+| Term sense TERM-001 / TERM-004 | unassisted patch/checksum/cache-hit meaning remains weak; supplied targets missing | Caller-term admission now keeps these supplied-glossary rows in review. This prevents silent contract failure; it does not translate the missing meaning. |
+| Term sense TERM-014 | `Xuất khẩu lưu trữ...` | Export sense still wrong/ambiguous, unchanged; presence of a glossary word alone is insufficient semantic proof. |
+| Existing blocked IDI-009 / IDI-013 | blocked in both original and final audit | Original reasons retained; no validator relaxation. |
+
+For unresolved known lines, explicit user-reviewed CSV import followed by existing
+QA/Patch Gate/read-back is the supported correction route. Approved exact scoped
+memory can reuse genuinely approved translations when supplied; none is created
+by this audit. Existing silver candidates remain unapproved and were not imported.
+The controlled synthetic donor below proves import mechanics only, not approval
+or a semantic repair of these benchmark rows. Training remains NOT_TRIGGERED /
+DEFERRED: independent accepted labels, rights, training permission/environment and
+acceptance conditions are absent; budget0đ does not authorize procuring them.
+These residual errors must be accepted explicitly by Brain as bounded limitations
+or lead to a specific further in-scope remediation; they cannot be relabeled PASS.
+
+G6 actual probe **did not hit the decoding cap**: source234tokens, output185tokens
+with implicit256limit; it ended early and lost the final source clauses. Short
+control produced `Cửa đỏ mở.`. Therefore the proposed output-budget remedy above
+is NOT ADMITTED, no decoding parameters/profile/model weights changed, and no
+after-run is warranted for an unimplemented fix. Raw `longtext-before.json` plus
+`translation-goal-longtext-before-wrapper.json` preserve the failed premise.
+Multi-sentence context/meaning remains unverified; no safe generic repair proven.
+
+G4 final-source rerun `workflow-headwords.json` PASS: real worker extraction,
+local CT2 translation, exact patch read-back; separate controlled local CSV import
+applies4/4 and reads back exactly; missing-placeholder import applies0 and patch
+is rejected; input bytes unchanged, helper/wrapper childexit0/cleanupPASS. The
+existing `_stop_worker` explicitly terminates the idle worker after task results;
+its separate native exit is1, retained in both workflow reports, not a natural
+worker exit0 claim. `Open the red door.`
+now yields `Mở cửa đỏ ra.` on that path. Wrapper evidence is
+`Downloads/VM-Acceptance/translation-goal-workflow-headwords-module-wrapper.json`.
+Prior direct-script invocation failed before worker startup (`No module named
+tests`), retained in `translation-goal-workflow-headwords-wrapper.json`; corrected
+invocation uses `python -B -m tests.tools.translation_goal_workflow`. No product
+change was needed for that invocation error. Final affected regression, current
+DEV build/smoke, public compact receipt and Brain whole-goal acceptance remain
+pending at the time of the workflow report. Final affected242tests now PASS
+(0fail/error,3external-Unity-fixture skips,0warnings); verbose9QA identifies
+the three skips without adding real-game coverage. Current DebugDEV build and
+5step worker smoke PASS; smoke still reports missing patchinstaller. Public
+`evaluation/translation_quality_goal_v1/receipt.json` records run/file/model
+identities and the four-step matrix. Complete cleanup dry-run UNKNOWN0/LOCKED0/
+errors0, TEST_RUN/RELEASE_RUN absent, exactly one app executable. Quotas
+723481855/1073741824non-exempt and5778817474/6442450944sharedbytes. Brain
+whole-goal acceptance is still pending; goal stays active.
+
+## Product seam0đ — terminal2026-10-20, PASS bounded feature
+
+**Đã bàn giao code và tác dụng product-path**, không chỉ docs/packet:
+glossary conflict chỉ áp dụng occurrence maskable thật; `mode` absent/protected-only
+không chặn unrelated row, conflict thật vẫn review/blocked. Nonconflicting sentinel
+ordinal giữ nguyên. Strategy cache có glossary entries mang suffix applicability2
+để explicit retry không dùng draft lỗi policy cũ; không auto-overwrite CSV frozen.
+
+| Ma trận plan sau triển khai | Trạng thái thật |
+| --- | --- |
+| 1. Evaluation/data | Foundation và silver packet60 đã bàn giao; human gold chưa có, không tái nhãn seen thành heldout. |
+| 2. Existing route product | **Feature delivered**: row-local glossary conflict + cache invalidation; actual OPUS check coverage1/4->3/4 trong package conflict, control4/4 không đổi. Không claim model dịch tốt mọi câu. |
+| 3. Context candidate research | Các thử nghiệm cũ đã đo, HyREJECTED; không model/prompt campaign tiếp hoặc đổi OPUS. |
+| 4. Conditional training | NOT_TRIGGERED/DEFERRED, không thuê máy/chi tiền; không giả trainPASS, không prerequisite trả phí để khép feature này. |
+
+Final affected53PASS/0fail/error/skip/warning, canonical exit0/cleanupPASS.
+Worker16PASS trước final cache/ordinal changes ghi intermediate; final DebugDEV
+bootstrap +5step worker smoke PASS trên source runtime cuối. Actual before-trace:
+control4written/0blocked; conflict1written/3blocked, protected output ` {mode}`
+mất prose vẫn structuralPASS/cache1. Final after-cache: control4written nguyên
+văn, conflict3written/1blocked; outside/boundary bằng control, protected=`Xin hãy
+giữ lại {mode}.`; inside true conflict empty và là ledger/inventory item duy nhất.
+Cache0hits/3newwrites, legacy bad record vẫn còn, key protected đổi; unassisted
+cachekeys không đổi. Schema/order/source/token/model invariant PASS, modeltreeSHA
+`964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4`.
+
+Không chỉnh câu `The model is ready.` vẫn ra `Người mẫu đã sẵn sàng.` ở cảcontrol/
+fix: nguồn thiếu domain, model sense/naturalness không được nhận là repaired.
+Chỉ grammar `_PROTECTED` hiện hữu được giữ, không mở rộng parser; actual check
+không chứng minh mọi control syntax. Semantic/human/game/product-wide acceptance
+và Release không suy từ technicalPASS. Cảnh báo actualrun: transformers noPyTorch
+informational (CT2 dùng được), optional sacremoses UserWarning, không cài dependency.
+
+Raw failures/outputs/ledger/cache và per-runSHA/codehash giữ trong
+`DEV_RUN/glossary-conflict-scope`; canonical wrapper files trong VM-Acceptance.
+[Compact public receipt](../evaluation/glossary_conflict_scope_v1/receipt.json)
+ghi exact identities/diff/gates/limitations. Predeclared actual budget được thêm
+before-trace để thu thiếu ledger, after-final do ordinal remediation, after-cache
+do stale-cache prerequisite; không tuning dữ liệu/model/semantic validators.
+Final build identity nguồn base3710bd9 +dirtydiff và runtime hashes; docs sau build
+không nâng evidence cũ thành exactcommit/ReleasePASS. Chi0đ, không child/Hy/
+download/cloud/training/silver-import/product-memory writes/push/Release.
+
+### Activation và gate history (giữ nguyên failure evidence)
+
+Owner yêu cầu hoàn thiện phần product còn thiếu, không chỉ packet/docs. Steering
+này thay con trỏ researchclosed cho **task bounded này**: DEV sole writer,
+Brain read-only premise/acceptance review, không child. Training vẫn DEFERRED;
+không model/framework/protocol/validator/silver-import/game/user-data change.
+
+Premise đã repro trên base sạch3710bd9: glossaryV2 có2target cùng priority cho
+`mode`; `mask_terms('The red door is open.')` vẫn trả conflicts=['mode','mode'];
+batch đưa unrelated key vào conflict_keys, trả empty, model spy0calls. Đây là
+false-positive applicability trong code, không phải giới hạn nghĩa OPUS.
+Owner/seam: `vntext/glossary_v2.py::mask_terms` và focused/affected tests; chỉ
+báo conflict khi regex term thật sự match đoạn ngoài `_PROTECTED`. Giữ pattern/
+case/scope/priority và structural/quality/Patch gates; không sửa glossary carrier
+transport hoặc chạy lại opaque-remediation đã bị bác ở Phase2.
+
+Acceptance trước sửa: absent term, word-boundary mismatch, case/scope mismatch
+và term chỉ nằm trong vùng protected hiện hỗ trợ không làm block dòng unrelated;
+term conflict thật ngoài protected/exact vẫn fail-closed, không model call cho
+dòng conflict. Unaffected output bằng arm không glossary, source/schema/order/
+placeholder/model bytes giữ nguyên; cache/worker/retry không regression.
+Gate budget: focused red->green, một affected regression batch chọn từ glossary/
+cache/structural/worker matrix; không125research tests. Một actual product-path
+check before/after (2stages, mỗi stage2independent packages *4synthetic rows),
+OPUS offline có sẵn, max120s/stage/peakWS<1GiB, không gamecopies. Sources/glossary
+đóng băng trước run, không tuning outputs. Một DEV bootstrap build+worker smoke
+max600s khi source runtime đã qua gate; nếu gatefail do task thì remediation chỉ
+gate liên quan. TEST_RUN disposable/canonical wrapper sequential, compact raw/
+receipts DEV_RUN/glossary-conflict-scope; max1DEV exe bootstrap-build, khôngRelease/
+download/install/cloud/training/push hoặc chi tiền. Preflight quota1GiB/shared6GiB.
+
+Gate premise red10tests/5failed subcases expected, cleanupPASS. Actual before
+control4written/0blocked vs conflict1written/3blocked; protected-only row lost
+ordinary prose (raw retained), distinct from structural PASS. First wrapper
+START failed before model because TEMP outsideTEST_RUN; corrected harness to
+registeredtemp, original receipt retained. Before mutation one instrumentation-only
+repeat `before-trace` of same frozen2x4 packages is added to capture review ledger/
+blocker inventory/read-only cache rows that first compact report omitted. No source/
+model/prompt tuning or fixture change; final after run compares identical control.
+
+Review prerequisite: first green guard also skipped ordinal allocation for absent
+nonconflicting entries; Brain identified possible carrier/input drift beyond seam.
+Final guard is restricted to conflict branch only; explicit absent-valid-entry
+regression preserves prior ZZG900001ZZG/mapping. First after receipt stays historic;
+one `after-final` rerun required for final source, same frozen inputs/model/control.
+No glossary/semantic tuning; no broad new benchmark. Combined affected gate initially
+failed worker setup because default model path was wrong;16worker tests thenPASS
+with explicit existing release-venv/OPUS path, no download. All failed receipts retained.
+
+Observed prerequisite after raw review: before-trace protected-only row wrote/cache
+` {mode}` as structurallyPASS despite lost prose. Preserve CSV/frozen policy, but
+invalidate old cache fingerprints on explicitly retried glossary packages using
+strategy suffix glossary-applicability-2 when entries exist (not DBschema change,
+unassisted strategy unchanged). Owner seam extends minimally to cache-context
+version in mt_ct2_pipeline plus cache regression; no validator/auto-cleaning.
+One final after-cache instrumentation adds the actual historical protected cache
+record as a disposable regression seed and proves miss/new correct prose/legacy
+record retained. Earlier after/final smoke receipts stay intermediate; rerun only
+affected gate and DEVsmoke after this prerequisite source change. No fixture/model/
+prompt tuning, no silver/approved memory imported.
+
+## M1–M4 offline0đ đã thực thi — 2026-10-20
+
+Owner giao “Thực hiện đi”; DEV sole writer triển khai, Brain read-only audit/
+nghiệm thu. [Public packet](../evaluation/translation_silver_packet_v1/README.md)
+có60source/context/curation rows, raw3arms/review/mapping/seal và SHA/identity thật.
+All60 seen development/regression;0model/inference/benchmark mới. Rights nguồn
+generated-for-project60known/0UNKNOWN, không human gold.
+
+Audit12IDs trong README/audit12 bao gồm4historical severity overrides, giữ original
+verdict/winner riêng. Bank48:42 không occurrence,6 có occurrence, chỉ3term candidates
+checksum/migration/copy có exact-phrase observation ở agent-acceptable draft.
+Domain/counter-sense là design scope, chưa model-test negative controls. Memory9
+exact-source/domain/address/scenario pairs: cả2reviewed arms acceptable rồi lấy
+OPUS glossary gốc, không aggregate score. Loại Q19-ui-04 undo/cancel và
+Q19-dialogue-06 xưng hô nam khi context không nêu, không đổi raw/verdict cũ.
+Không padding12/20; tất cả needs-human-review/approved=false/training=false.
+
+Offline verifier kiểm hashes/rights/seal/mapping/adjustments/derived rows/policy
+và JSON Pointer `/rows/<index>`+stableID/source/target. Public clone chỉ cần tracked
+packet/dataset; original full-file hashes là provenance lịch sử, compact projections
+không tự chứng minh lại model execution. Focused4tests PASS/0fail/error/skip/warning,
+canonical exit0/cleanupPASS; gate đầu4PASS giữ riêng, final4PASS sau memory remediation.
+Base0b01fa97+per-file hashes, không nâng model evidence cũ thành exactHEAD.
+
+Outcome **PASS data/technical M1–M4**, không semantic/model/product/training
+acceptance. Chi phát sinh0đ, không child/download/install/cloud/upload/account/
+training/inference/build/release/push/product glossary-memory-cache writes.
+Training **NOT_TRIGGERED/DEFERRED**, Hy REJECTED, OPUS giữ nguyên. Gói offline
+này đã khép, không tự mở phase tiếp. Public `handoff.json`; canonical receipts
+ở Downloads/VM-Acceptance/silver-packet-*.json.
+
+## Owner quyết định ngân sách0đ — 2026-10-20
+
+Không thuê reviewer/GPU/máy, mua phần cứng, trial cần thẻ/đặt cọc/autocharge.
+Quyết định này thay gợi ý xin budget trong các mục lịch sử; bản trả phí đang soạn
+đã hủy trước commit. [Lộ trình0đ](TRANSLATION_TRAINING_PILOT_PROPOSAL.md) đề nghị
+gói offline60 nguồn synthetic Phase19/raw đã có, agent-reviewed silver, audit
+bank48/candidate memory, <=5h DEV/1h Brain read-only nghiệm thu; sau đó Owner
+đã giao thực thi và hoàn tất ở mục trên.
+Không inference/benchmark/prompt campaign mới. Không thuê máy vẫn khép nghiên
+cứu bước1–3/bàn giao plan; bước4 NOT_TRIGGERED/DEFERRED, không giả đã train hoặc
+human gold. Free notebook chỉ tùy chọn chưa kiểm account/card/resources/privacy,
+không prerequisite đóng plan. Nguồn/hardware kiểm2026-10-20; Brain review trước
+Owner giao thực thi. OPUS giữ nguyên, Hy vẫn REJECTED.
+
+## Disposition hiện hành — 2026-10-20
+
+Phần này thay mọi con trỏ lịch sử gợi ý tự mở phase tiếp theo. Khép chiến dịch
+nghiên cứu hiện tại; không mở thêm benchmark, model hay vòng prompt từ các lỗi
+đã quan sát. Outcome bàn giao: **PM_DECISION_REQUIRED** cho hướng tiếp theo của
+plan; không phải product acceptance hoặc tuyên bố đã thực hiện huấn luyện.
+
+Phân vai Owner đã sửa và Brain chuyển giao: DEV là implementation owner duy
+nhất; Brain chỉ điều phối và nghiệm thu read-only, không tự sửa source/test/model.
+Owner quyết định acceptance và kích hoạt công việc tiếp theo. Không writer/child
+thứ hai, không chuyển phần triển khai tồn đọng ngược cho Brain.
+
+| Bước gốc | Đã thực hiện, SHA và receipt thực | Chưa đạt / disposition |
+| --- | --- | --- |
+| 1. Bộ đánh giá | Frozen 100 câu synthetic có provenance, split/rubric và baseline OPUS thật. Base `10873fc61db4f97db9a42d63fcac9f8b993e3570`, `DEV_RUN/translation-quality-phase1/baseline-wrapper.json` PASS. Corpus SHA `7f75108ff031022f94b5a68965eebc6f0a99ff37d3fd1804ebec4c6d2fe9242d`. | Foundation đã đo; không có gold tiếng Việt/nghiệm thu ngữ nghĩa độc lập của người. Synthetic không đại diện toàn game. |
+| 2. Route hiện có | Đã so OPUS/glossary/memory, ablation lexical và opaque; candidate runtime bị bác và khôi phục. Base `4c72525226301d7230db88b8d22f06c8129f1528`, `DEV_RUN/translation-quality-phase2/opaque-pipeline-wrapper.json` cùng raw/review Phase2. | Runner PASS không phải chất lượng candidate PASS. Memory nhất quán không chứng minh câu mới; OPUS product giữ nguyên. |
+| 3. Một candidate có context | Pinned Hy Q4/runtime đã được duyệt trước đây; direct/context/repair thực ở Phase4 (base `d78f53c`, exact hash trong `DEV_RUN/translation-quality-phase4/final.json`, receipt `final-wrapper.json`). Phase19 broad60/separate-agent review base `685c810d320da3c9ba3b41cc6ce0cf213214d9fb`; Phase22 raw12/review base `228f0387baeda60a9d1569ae5f40cde4d2e2a288`. | Nghiên cứu đã có kết quả và candidate REJECTED. Phase22 còn 3 major/2 uncertain/7 acceptable do agent đánh giá, không human gold. Scheduler/complete/possession còn sai; finite MATCH không phải semantic approval. Không thay OPUS. |
+| 4. Huấn luyện có điều kiện | Đã có corpus synthetic có quyền/split, raw lỗi và phân loại lỗi để đề xuất tuyển dữ liệu; yêu cầu pilot SFT/LoRA và held-out đã được mô tả ở mục 4. Chưa tạo corpus training đã duyệt hoặc chạy training. | NOT_TRIGGERED. Thiếu bản dịch gold được duyệt độc lập, curator/reviewer, quyền cho từng nguồn training, ngưỡng acceptance, ngân sách/môi trường/GPU/dung lượng và stop condition được Owner duyệt. Output model/agent không tự thành gold. |
+
+Đề xuất cụ thể cho bước 4, chưa kích hoạt: nếu Owner chọn pilot, trước tiên chỉ
+tuyển một corpus synthetic có provenance từ nguồn đã có, để người duyệt độc lập
+viết/duyệt target và lỗi; tạo split training/validation/held-out theo scenario và
+khử trùng trước training. Các câu đã xem ở Phase1–22 chỉ dùng development hay
+regression, không đổi tên thành held-out mới. Owner cần quyết định người duyệt,
+phạm vi/quyền dữ liệu, candidate/runtime/license cho training, nơi chạy, trần
+chi phí/thời gian/dung lượng, tiêu chí cải thiện nghĩa và no-new-major/structure,
+và điều kiện dừng pilot. Không mặc định VM 4GiB đủ train. Giấy phép inference
+đã kiểm trước đây không tự xác nhận mọi điều kiện của training/publication.
+Nếu chưa kích hoạt, giữ OPUS và kết thúc nghiên cứu hiện tại; không tự bù bằng
+một phase prompt khác. Không xin hay giả cấp quyền tải/cài/dùng dữ liệu user,
+training/GPU hoặc publication trong task khép này.
+
+### Khép prerequisite retry Phase22
+
+Base sạch `1c863838522c7b889f4c0b49d11a68ca2cafea3f`, thay đổi chỉ research
+helper/test và tài liệu. Retry trước đây đưa draft đã decode lexical vào prompt,
+làm mất carrier. Nay dùng draft carrier-bearing đã qua restore gate, trước
+lexical decode/role edits, để builder remask LEX/BND và token gốc cùng nhau.
+Không đảo ngược chuỗi tiếng Việt để đoán marker; raw sai vẫn bị reject, bản gốc
+được giữ và output luôn NEEDS_REVIEW. Production validator/services không đổi.
+
+Focused receipt đầu `translation-plan-closure-focused.json` FAIL 1/8 do fixture
+có tag ngoài finite source contract nên không kích hoạt retry; đã sửa fixture
+để kiểm pipeline contract thật, tách bundle prompt thành case riêng. Giữ receipt
+FAIL/cleanup PASS. Gate affected dùng nguyên danh sách module của Phase22 cộng
+3 test mới: **125 PASS, 0 failures/errors/skips/warnings, exit 0, cleanup PASS**.
+Receipt mới ở `C:/Users/VNTextDev/Downloads/VM-Acceptance/translation-plan-closure-regression.json`;
+command chính xác trong receipt, không chạy model/benchmark/build/game thêm.
+`translation-plan-closure-cleanup.json` là dry-run inventory/quota terminal.
+Raw Phase22 và hashes lịch sử giữ nguyên; fix này chưa có model-run quality
+evidence, không đổi 3 major thành repaired, không nâng evidence cũ thành exact-HEAD.
+
+
+## Owner kích hoạt Phase 1 — 2026-10-19
+
+Owner authorizes phase 1 after the UI and release work closed: create a public,
+agent-authored synthetic EN→VI benchmark of about 100 sentences, evaluator
+tooling, and one actual CT2/OPUS baseline on the model already present in
+`.dev-env`. This is evaluation foundation only; it does not change the product
+route, model, WPF, protocol, or validators and does not claim translation
+improvement, product-wide quality, human gold, or human acceptance.
+
+### Protocol frozen before the first baseline
+
+- One frozen 100-row dataset is split before model execution into 80
+  `development` and 20 `held_out` rows. The six groups and split counts are:
+  dialogue 12/4, idioms 13/4, address/register 13/4, UI 13/4, terminology
+  15/2, and protected tokens 14/2 (development/held-out). Every row has a
+  synthetic source, explicit scenario boundary, stable ID, and split. Rows in
+  one scenario group stay in one split. Dataset validation rejects duplicate
+  IDs, NFKC/case-fold/punctuation-normalized duplicate sources, and any group
+  crossing the split boundary. The benchmark does not use the existing frozen
+  30-row benchmark as held-out data.
+- Provenance is `author=agent-generated synthetic`,
+  `rights=generated-for-project`, and
+  `semantic_review_status=draft/unreviewed`. No game, user, CSV, web, or
+  copyrighted benchmark sentence is included. The dataset contains no gold
+  Vietnamese reference. Frozen dataset SHA-256 is
+  `7f75108ff031022f94b5a68965eebc6f0a99ff37d3fd1804ebec4c6d2fe9242d` and
+  baseline protocol SHA-256 is
+  `651edf8ed92675b533d0f3e33758aa244ec0160528090eab26407e8b17b45702`; both
+  were computed by `tests/tools/translation_quality_phase1.py validate-dataset`
+  before baseline execution. The protocol includes the frozen split/rubric and
+  route, declared model revision, local model path, resource limits, and metric
+  definitions.
+- The rubric keeps semantic review separate from structural checks:
+  meaning error, omitted meaning, added meaning, address/register, terminology,
+  and naturalness are separate human review dimensions. Structural checks
+  separately record protected-span, markup, placeholder, and newline failures.
+  Because no independent semantic reviewer or human acceptance is available in
+  phase 1, semantic quality and acceptance remain `UNKNOWN`; reference matching
+  and structural success cannot produce a semantic score.
+- The baseline is one offline CPU run of the existing
+  `vntext.mt_strategies.translate_row_ct2` protected/segmented route with the
+  existing `Ct2Translator` and local INT8 OPUS model. It records raw
+  model calls, restored route output, row disposition, source-identical output,
+  structural results, failures,
+  model initialization, per-row execution and translation-loop/overall wall
+  time, process peak working set, local model file hashes and declared model
+  revision, runtime, and machine CPU/OS. File hashes identify the bytes used;
+  the repository revision is model metadata, not separate proof of how those
+  local bytes were obtained. It does not apply glossary,
+  translation memory, or context and therefore is not the full product
+  translation workflow. No sentence is retried. Network/model download is
+  disabled; one CPU thread is used. The run has a 900-second wall deadline and
+  stops before another row if observed peak working set reaches 1 GiB. The
+  model/cache in `.dev-env` is read-only. Output is retained as compact evidence
+  under `DEV_RUN/translation-quality-phase1`; the evaluator stops at 840 seconds
+  to leave cleanup room inside the canonical wrapper's 900-second hard timeout.
+  Transient files are registered under `TEST_RUN` and cleaned by the canonical
+  wrapper.
+- A route return equal to its source is recorded as source-identical output,
+  not as a successful translation or an inferred fallback; its raw model call
+  remains visible when one occurred.
+- Machine metrics are limited to route-return coverage/dispositions,
+  source-identical output count, structural
+  outcomes, latency, and measured memory. No BLEU/reference-match/LLM or other
+  semantic proxy score is reported. Baseline output includes every row as a
+  completed result or explicit failure/skip/not-run disposition; it never
+  fabricates model output after an error or timeout.
+- Coverage is intentionally narrow: terminology examples are mostly VNText and
+  translation-tool concepts, UI examples are desktop labels/messages, and the
+  dialogue is synthetic. This 100-row draft does not represent every game,
+  engine, genre, or content type.
+
+The 30-row frozen local benchmark tooling has a separate fixed-count, pinned
+identity, and private runtime contract (`tests/tools/local_translation_benchmark.py`);
+the 30-row worker sample exercises a different package/worker path
+(`tests/tools/phase_c_ct2_sample.py`). Neither corpus is promoted or repurposed
+as this benchmark's held-out set. Existing glossary/memory/context owners for
+phase 2 are `vntext/glossary_v2.py`, `vntext/mt_memory.py`, and
+`vntext/context_builder.py`; context sidecars remain `METADATA_ONLY` until a
+separate test proves model use.
+
+### Phase 1 baseline receipt — 2026-10-19
+
+- Focused gate: the canonical wrapper ran
+  `python -B -m unittest discover -s tests/unit -p test_translation_quality_phase1.py -v`;
+  PASS, 10 tests, 0 failures/errors/skips/warnings. Dataset CLI validation also
+  emitted valid JSON and PASS. Receipt: `DEV_RUN/translation-quality-phase1/focused-wrapper.json`.
+- Actual baseline: one canonical-wrapper run of
+  `tests/tools/translation_quality_phase1.py opus-baseline`; PASS in 23 seconds
+  including cleanup, with 100/100 `ROUTE_RETURNED`, 0 row errors, 0 not-run,
+  0 source-identical outputs, and 100 structural PASS. The report retained 140
+  raw CT2 call records over the rows. These are route/structure measurements,
+  not semantic scores or proof that every returned row is a good translation.
+- Report: `DEV_RUN/translation-quality-phase1/opus-baseline.v1.json`, SHA-256
+  `b92b2f9c6d6ca84c97e4eea05b0d5a50526460196e7bebf116e193af4f841c5b`.
+  Wrapper/cleanup receipt:
+  `DEV_RUN/translation-quality-phase1/baseline-wrapper.json`. The run used base
+  Git HEAD `10873fc61db4f97db9a42d63fcac9f8b993e3570`; its uncommitted evaluator
+  is bound by tool SHA-256
+  `fd90586ea5d18eadc3cfd2b3cd0c762fdde22976d4ef1a46a14bb7263a8523fb`, plus
+  the frozen dataset and protocol hashes above. This is not an exact-HEAD claim
+  for the later source commit.
+- Runtime/machine: Python 3.12.10, CTranslate2 4.8.1, Transformers 5.20.1;
+  Windows 11, Intel Family 6 Model 198, 4 logical CPUs. Model declaration:
+  `dekthedev/opus-mt-en-vi-ct2-int8`, revision
+  `c22547827b876e8ee939d6a9363965e5c9f769e1`. The 33-file local tree hash was
+  `964dd51bc39f391bee84fb94b8988073f6ee84188c986406ac9f7622080a90b4` both
+  before and after the run. The revision is repository metadata; the local file
+  hash identifies the bytes used.
+- Measured latency: model initialization 13.361 s, sum of row executions
+  5.404 s, translation-loop wall time 6.318 s, total run time 19.860 s.
+  Windows PSAPI `GetProcessMemoryInfo` measured 202,620,928 bytes peak working
+  set, under the 1 GiB stop threshold. No model download/copy or dependency
+  installation occurred. Wrapper warning: Transformers recommends
+  `sacremoses`; it was not installed. Transformers also reported PyTorch absent,
+  but the local tokenizer and CTranslate2 CPU model completed the run.
+- Wrapper cleanup PASS; `TEST_RUN` returned absent. Final project size was
+  693,943,081 non-exempt bytes / 1,073,741,824 and 4,575,800,745 shared
+  `.dev-env` bytes / 5,368,709,120.
+- Semantic review and human acceptance remain `UNKNOWN` and `NOT_CONDUCTED`.
+  Held-out rows have baseline outputs but no human gold or review; do not tune
+  on them. Next step is independent review of development outputs, then a
+  bounded experiment on the existing route before considering model changes.
+
+### Coordinator acceptance and development review — 2026-10-19
+
+Phase1 foundation PASS, semantic improvement NOT CLAIMED. Coordinator read the evaluator, focused and baseline receipts directly; dataset/tool/report hashes still match the receipts, and TEST_RUN is absent. DEV child stopped at its usage limit after the successful runs and before final handoff/commit; Coordinator took over the sole writer role and persisted the review. No second child/model was opened to bypass that limit. Evidence remains base10873fc plus the recorded task/tool/dataset hashes, not the eventual commit SHA.
+
+Independent Coordinator agent review of development outputs (not human gold, no tuning on held-out outputs) found concrete semantic defects: DLG008 “save me a chair” becomes “lưu Tôi là một chiếc ghế…”, DLG012 loses “Do not run”, IDI001/005 render idioms as literal beans/cake, UI001 retains “Open”, and TERM013 mutates CSV to CNV. Structural100/100 does not establish semantic correctness. Raw calls for DLG008 receive only “Then” and “me a chair beside the back”, while UI001 receives only “the saved session”. Source inspection links this fragmentation to default lexical protection in `collect_spans`/`split_parts`; sentence-initial title-case name detection is a separate hypothesis. Model and preprocessing failures must be distinguished; no benchmark phrase lookup or validator relaxation is justified.
+
+Next bounded Phase2 experiment is the existing CT2 route's treatment of ordinary lexical words. Preserve technical tokens/names/paths, glossary/memory contracts, validators and CSV schema. Predeclare comparison before changing the route; retain the frozen baseline and dataset, inspect development first and use held-out only after fixing the candidate. No new model, download, training, UI or Release is authorized by this experiment.
+
+Phase2 trial A, declared before execution: use a test-only scoped override of `split_parts(..., protect_lexical=False)` for the same strategy route. All other policies/model/dataset remain fixed. This tests lexical fragmentation only; title-case name detection remains unchanged. Run the same100 rows once, retain original baseline untouched, and inspect development before opening held-out row outputs. Admission requires zero new structural failures, zero row errors and unchanged model bytes; a useful candidate must improve at least five development examples on independent Coordinator agent review without a new severe meaning loss on a reviewed development example. Agent review is qualitative evidence, never human acceptance; absent human gold, trial success alone cannot promote a product/model. Report failures/regressions as observed. One run, offline, same840/900-second and1GiB peakWS/default1GiB artifact/shared5GiB limits; canonical wrapper/terminal cleanup. No product runtime edit or DEV executable build is needed for this test-only trial.
+
+### Phase2 trial A acceptance — reject unconditional lexical-off change
+
+Actual `translation_quality_lexical_trial.py` execution on base28a4fd7 plus the recorded trial-script hash completed100 rows/117 raw calls, zero row errors,100 structural PASS and unchanged model tree. Total9.109s/init2.435s/peakWS201506816 bytes; startup timing is warm-cache and not a speedup claim against the baseline. Final wrapper child0/outer0/cleanupPASS/TEST_RUN absent; optional tokenizer warning remains. The first wrapper failed before model execution because the baseline evaluator only admits its exact owned report path. The trial now scopes that path to its own separate evidence filename; neither the frozen baseline nor the product report guard was overwritten. Original failed receipt retained.
+
+Coordinator development-only qualitative review found clear improvements for DLG008 (save a chair), DLG012 (preserves “Do not run”), IDI011 (same page), UI006 (unsaved changes), and other examples. It also found new omissions: ADDR008 loses “the corrected page”, and TERM011 loses “context”. Consequently the predeclared no-new-severe-meaning-loss condition fails. Outcome **PREMISE_INVALID for treating unconditional lexical-off as an acceptable fix**, not for the narrower finding that lexical fragmentation harms some sentences. Do not ship this override, weaken validators, add benchmark phrase replacements, or claim better product/model quality. Held-out row outputs were not opened for tuning after this development gate failed.
+
+Evidence: `DEV_RUN/translation-quality-phase1/{lexical-trial-wrapper.json,lexical-trial-wrapper-final.json,lexical-trial-a.v1.json,coordinator-review.json}`; the review includes14 before/after development observations and exact report/script hashes. Phase1 foundation remains PASS. Next work in step2 remains a bounded full-product-route glossary/memory/input-policy comparison with verified semantics; the failed ablation does not justify skipping to model promotion or training. The public app and release0.1.8 are unchanged.
+
+### Phase2 full-pipeline comparison protocol — declared 2026-10-19
+
+Owner requests continuation; Coordinator remains sole writer because the previous DEV child terminated at its usage limit. Clean base f87cebd; no retry/new child to bypass usage. Evaluation-only owners: one script `tests/tools/translation_quality_pipeline_trial.py`, this plan and AI_STATE. Product code/CSV schema/model/UI/release remain unchanged. One canonical-wrapper CPU/offline run, three independent synthetic packages from the frozen100 rows: (A) no supplied assistance; (B) six package glossary terms; (C) the same glossary plus two explicitly agent-reviewed draft memory fixtures from development. Same plain-text import boundary and stable IDs, independent package caches; no game copy or user data. Direct production `run_ct2_translate` exercises classifier, batch/retry, glossary, memory, cache, validation and CSV write-back, not worker transport or game patch proof.
+
+Freeze glossary before execution: checksum→mã kiểm tra, manifest→bản kê khai, cache→bộ nhớ đệm, glossary→bảng thuật ngữ, CSV→CSV, placeholder→biến giữ chỗ. No complete benchmark sentence enters the glossary. Memory fixtures DLG008→“Vậy hãy để dành cho tôi một cái ghế bên cạnh cửa sau.” and IDI005→“Đối với Lin, câu đố đầu tiên rất dễ.” are deliberately in-sample, agent-reviewed synthetic data, not human gold. Their reuse demonstrates exact consistency only; exclude both from any generalization/improvement claim. Held-out gets no memory seeds and is not inspected for tuning; source/split/dataset hash cannot change.
+
+Report all100 rows per arm including blocked/empty dispositions, explicit pipeline result, structural/quality gate reasons, assistance identities, memory hits inferred only from lookup plus exact output, and untouched source/order/schema checks. Structural PASS is not semantic acceptance. Gate existing glossary/context/cache tests before the run; then directly review development changes, separate assisted repetition from new-text term consistency, and reject regressions. Same840/900s and1GiB observed peakWS bounds; default1GiB project/shared5GiB caps. Registered temporary packages only in TEST_RUN, compact receipts under DEV_RUN/translation-quality-phase2; TEST_RUN absent at terminal. No new dependencies/downloads, product edits, full regression, executable build or publication for this evaluation-only task.
+
+Phase2 measured baseline: focused22PASS/child-wrapper0/no skips/warnings; actual three production-pipeline arms each wrote98/100, blocked2, complete=false, zero written structural failures, separate caches/hits0, original source/order/schema unchanged. Memory arm has exactly2 lookup/output matches (both deliberately in-sample), only IDI005 changes relative to glossary arm; DLG008 was already corrected by the full pipeline. Glossary arm changes development TERM005 but leaves requested checksum/cache terms absent. Trace proves initial masked outputs mutate ZZG carriers, then retries accept unassisted translations without requested terms (TERM001/004). Parent source inspection: `collect_spans` recognizes internal sentinels when excluding lexical/name matches but omits them from emitted opaque technical spans, so batch fragment translation sends those carriers to the model. This is a concrete prerequisite defect in explicit glossary protection, distinct from the rejected generic lexical ablation. No semantic improvement or whole-product quality claim follows from98 applied rows. Report `DEV_RUN/translation-quality-phase2/pipeline-arms.v1.json`, wrapper `pipeline-wrapper.json`; peakWS342425600 bytes, model unchanged, cleanupPASS/TEST_RUN absent. Evidence basef87cebd plus recorded script/dataset hashes.
+
+Next bounded remediation under Owner's activated existing-route plan: emit internal sentinel spans as opaque technical spans in `vntext/mt_translation_safety.py`; targeted batch glossary regression in `test_user_glossary.py`, existing strategy/structural/glossary/cache/worker regression, then repeat exactly the frozen three-arm comparison to a separate evidence file. No model, generic lexical, validator or sentence-specific translation changes. Acceptance: fake hostile adapter never receives glossary carriers, repeated/multiple term targets and source structural tokens survive; real glossary arm retains requested development terms with no extra blocked/structural-failing rows or new severe reviewed development defect. Trial source names/protected lexical policy otherwise unchanged. Runtime source edit requires one DEV build + configured worker smoke. Default1GiB/shared5GiB budget, no game copies/download/Release/push.
+
+### Phase2 remediation acceptance — candidate rejected, original product restored
+
+The hostile-model regression first failed as expected (one failure, cleanupPASS). Candidate opaque spans + cache-span-schema2 then passed59 focused strategy/structural/glossary/context/cache tests with child/outer0, no skips/warnings, cleanupPASS. The repeated real three-arm run also completed with98 written/2blocked per arm, zero written structural failures, model unchanged and peakWS365150208 bytes; unassisted outputs were identical to control. Nevertheless development comparison failed the semantic acceptance: TERM001 now interprets patch as a wound, TERM014 interprets stores as shops, and TERM004 can still lose the requested cache wording on retry. Do not trade technical marker retention for worse meaning or claim a model improvement.
+
+Outcome PREMISE_INVALID for promoting this implementation as the quality fix. Coordinator reverted only the task's runtime/cache/test edits with exact inverse patches; these four files match clean base4c72525. Retained candidate patch/source hashes, red/focused/comparison receipts and14 preceding/5 current development observations remain under DEV_RUN, not shipped in the app. No held-out row output tuning, no new model/dependency, no Release/push. Candidate failed before broader regression/DEV build gate, so neither is claimed; final change is evaluation/docs only and existing DEV executable remains current. Evidence `DEV_RUN/translation-quality-phase2/{focused.json,pipeline-wrapper.json,pipeline-arms.v1.json,glossary-premise-red.json,opaque-focused.json,opaque-pipeline-wrapper.json,pipeline-arms.opaque-fix.v1.json,rejected-opaque-fix.patch,rejected-candidate-source-hashes.json,coordinator-review.json,REVIEW.md}`. Original failed and passing receipts are not relabelled. Memory assists exact consistency but provides no unseen-text quality proof; full pipeline still has independently observed idiom and meaning errors. Steps1–2 have measured results; model research is the next gated experiment, not automatic product replacement.
+
+### Step3 concrete R&D proposal — approval pending, nothing downloaded
+
+One candidate only: Tencent Hy-MT2-1.8B Q4_K_M GGUF, pinned repository revision `a0c709d9fac510f2c807aa3af52872340dc37a4a`, file1133080448 bytes, SHA256 `dc5f44fcf1fa496ee7ad725982c0c8c553a4de00259b53af84c4b89fb0c06699`. Official [model card](https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF) lists Vietnamese and context/terminology instructions; [license](https://huggingface.co/tencent/Hy-MT2-1.8B-GGUF/blob/a0c709d9fac510f2c807aa3af52872340dc37a4a/LICENSE.txt) is Apache2.0. These are upstream capability claims, not local quality/speed/RAM proof. Low-bit STQ kernel PR22836 is open; do not assume its ARM kernel is available on this Windowsx64 guest. Proposed standardQ4 runtime is official llama.cpp WindowsCPUx64 b11724 prerelease ZIP19667407 bytes/SHA2569f575bca009b1343fb710b11efb687d771e130ea97e119af1570372844f2aba1; architecture/build compatibility still requires local preflight. No CUDA, Torch or system install proposed.
+
+Current shared dependencies4575800745 bytes plus model~1.13GB/runtime/extraction exceed approved5GiB. Request an explicit6GiB shared cap and download permission under AGENTS before any allocation. Artifact cap stays1GiB; one shared runtime/model, no duplicate model copies. VM has4GiB physical RAM/4logicalCPUs/no discrete GPU; observed freeRAM around0.5–0.8GiB is not inference readiness. Before model load, verify runtime architecture and RAM/headroom, impose bounded resources/time and stop if unsafe; actual Windows/latency/quality support remains UNKNOWN. No implicit permission to resize VM, change host/security, train, publish or replace OPUS. After approval, first small CPU preflight; only if viable compare source+context direct translation against OPUS-draft repair with the same context/model, frozen data and explicit semantic/structural review. No training until corpus rights/review and separate budget/stop-condition approval.
+
+## Quyết định Owner — 2026-10-11
+
+Hoãn đợt cải thiện chất lượng dịch và nghiên cứu huấn luyện tới sau khi phát hành bản đang chuẩn bị. Trước phát hành, ưu tiên chỉnh UI và luồng thông báo cập nhật theo `docs/UPDATE_UI.md`. Không mở chiến dịch model/huấn luyện song song với task UI/updater hoặc Release.
+
+Đây là kế hoạch, chưa phải bằng chứng chất lượng hoặc quyền tải model, huấn luyện, thuê GPU hay sử dụng dữ liệu game. Version bản phát hành tiếp theo chưa được quyết định trong kế hoạch này.
+
+## Premise hiện tại và giới hạn
+
+- Route sản phẩm là CT2/OPUS-MT theo CONTRACTS §4/§4a; adapter, glossary, memory và cache đã tồn tại, cần tận dụng trước khi thêm hệ thống mới.
+- Hai lượt kiểm game gần nhất chứng minh pipeline mẫu, không chứng minh chất lượng dịch toàn game. Evidence `DEV_RUN/two-game-report.md` tại checkpoint `3bbe595` ghi lỗi nghĩa như `sprang to my feet` và `Lewd Girl`; không đưa dữ liệu game riêng vào Git.
+- QA cấu trúc và import Cloud Repair thành công không chứng minh bản dịch đúng nghĩa. Chỉ bản dịch đã được duyệt ngữ nghĩa mới có thể làm dữ liệu chuẩn.
+- Context hiện là `METADATA_ONLY`; có sidecar không chứng minh model sử dụng ngữ cảnh hiệu quả. Memory/cache hợp lệ cấu trúc cũng không tự là dữ liệu đã duyệt ngữ nghĩa.
+- Plan cũ và bài tham khảo chỉ là ý tưởng R&D. Danh sách model, phần cứng, tốc độ, giấy phép và benchmark lịch sử phải xác minh lại khi cần; không lấy lịch sử private làm prerequisite.
+
+## 1. Bộ đánh giá và dữ liệu
+
+Bắt đầu khoảng 100 câu EN→VI có quyền sử dụng, gồm hội thoại, thành ngữ, xưng hô, UI, thuật ngữ và protected tokens. Chốt người/quy trình duyệt ngữ nghĩa và tiêu chí đánh giá trước khi so sánh. Nếu chưa có người duyệt độc lập, báo rõ mức tin cậy; không gọi điểm tự chấm của model là human acceptance.
+
+Tách dữ liệu phát triển và held-out đánh giá; không dùng các câu đã sửa để chứng minh khả năng tổng quát. Ghi nguồn, quyền sử dụng, phiên bản dữ liệu, engine/boundary/context khi có, bản dịch duyệt và loại lỗi. Không tự đưa game, CSV riêng hoặc dữ liệu người dùng vào Git/training. Không cần copy game chỉ để đánh giá các câu được phép sử dụng.
+
+Đo sai nghĩa, bỏ/thêm ý, xưng hô, thuật ngữ và độ tự nhiên riêng với lỗi cấu trúc; giữ baseline OPUS và output trước/sau. Frozen benchmark 30 câu hiện có có thể tái sử dụng cho regression phù hợp, chưa đủ đại diện toàn sản phẩm.
+
+## 2. Cải thiện route hiện có
+
+Kiểm tác dụng glossary, bộ nhớ bản dịch đã duyệt và chuẩn hóa đầu vào theo lỗi có bằng chứng. So sánh baseline và từng thay đổi trên cùng held-out; không hardcode câu benchmark hoặc nới validator để tăng điểm.
+
+Thu thập context chỉ khi có boundary đáng tin: cùng file/cảnh/nhóm, người nói và câu liền kề. Không đoán xuyên engine/file, không nối hội thoại vào CT2 rồi mặc định là dịch có ngữ cảnh. Chưa dựng vector database hoặc retrieval phức tạp nếu exact glossary/memory chưa cho thấy giới hạn cần giải quyết.
+
+## 3. Một thử nghiệm model có ngữ cảnh
+
+Khi bước 1–2 đã có kết quả, đề xuất tối đa một candidate đầu tiên, kiểm lại license, Windows/deployment và RAM/VRAM trên phần cứng thực. Owner duyệt model/download/quota trước thực thi.
+
+So sánh dịch trực tiếp từ nguồn + context với sửa draft OPUS từ cùng nguồn + context trên cùng model và dữ liệu. Dịch trực tiếp là giả thuyết ưu tiên thử, không phải kết luận đã chứng minh. Giữ OPUS làm baseline/lựa chọn nhanh; không thay model sản phẩm chỉ vì một demo tốt.
+
+## 4. Huấn luyện có điều kiện
+
+Chỉ đề xuất pilot SFT/LoRA khi đã có corpus được duyệt, quyền sử dụng rõ và evidence cho thấy model candidate có triển vọng nhưng còn lỗi có thể học từ dữ liệu. Output teacher/cloud là draft cần duyệt, không tự là gold. Chốt ngân sách, môi trường, dung lượng và stop condition trước khi chạy; không mở hàng loạt model/training jobs.
+
+Đánh giá trên held-out không lọt vào training; nếu không cải thiện đủ theo tiêu chí đã chốt thì dừng để xem lại premise/dữ liệu. Không tăng quy mô chỉ vì pilot chưa đạt.
+
+## Acceptance và đóng từng đợt
+
+Mỗi bước là một task bounded, một writer, theo AGENTS và CONTRACTS §10a/§10c. Trước task implementation, chốt phạm vi, gate, ngân sách run/copy/disk và tiêu chí cải thiện. Kết thúc phải có so sánh ngữ nghĩa, structural regression, latency/tài nguyên thực và giới hạn bằng chứng; cleanup riêng, một DEV executable khi sửa app. Không giữ bản sao game/model trùng lặp.
+
+Candidate chỉ được promote khi cải thiện ngữ nghĩa trên nhóm mục tiêu, không có regression nghiêm trọng mới và mọi invariant cấu trúc/dữ liệu vẫn đạt. Ngưỡng và phạm vi hỗ trợ phải chốt trước thử nghiệm. Gate DEV không thay gate Release hoặc cập nhật trên bản cài thật.
+
+### Step3 Owner approval and bounded execution — 2026-10-19
+
+Owner explicitly approved the proposed pinned Hy-MT2 Q4 model, official portable CPU runtime download and shared6GiB cap. Product OPUS stays unchanged. Coordinator sole writer; previous child usage-terminal, no replacement child. Preflight: verify download hashes/size and license, CLI build/architecture, free RAM and disk before loading. First attempt at most120s, context512, output128 tokens, CPU2threads, no GPU; do not load if available physical memory cannot cover model file plus512MiB headroom. Do not close unrelated apps or resize VM. If preflight fails, retain evidence and report prerequisite, no repeated blind model loads. Development-only semantic comparison follows only after viable inference, before any held-out output review. Test scripts use canonical registered TEST_RUN and cleanup; compact evidence in DEV_RUN/translation-quality-phase3. No training, product edit, release or push.
+
+### Step3 download/preflight result — PROVEN_BLOCKED (2026-10-19)
+
+Approved downloads completed and exact size/SHA256 matched both pinned artifacts; official Apache-2.0 model and MIT runtime license texts retained beside dependencies, receipts include their hashes. CLI --version/--help exit0:0.7.0-dev build11724 commit99db719bd, Windowsx86_64. GGUFv3 metadata parses354tensors, architecture hunyuan-dense. This proves file integrity and CLI startup only, not model-load architecture compatibility or inference. No model load attempted: measured free physical827678720bytes < fixed pre-load1669951360bytes (model1133080448 +512MiB). Guest physical4293808128bytes. Outcome PROVEN_BLOCKED for inference/semantic comparison under the bounded RAM guard; not proof the model cannot run in some other memory configuration. Safe completed alternatives: portable runtime startup and metadata parsing without loading weights. Needed prerequisite: at least the fixed1.56GiB available physical RAM, or a separately approved revised resource protocol; do not resize VM/change host/close unrelated apps automatically. No speed, translation quality, direct-versus-repair or held-out result claimed.
+
+Focused quota gates: `python -B tests/tools/run_with_cleanup.py --timeout-seconds 180 --report DEV_RUN/translation-quality-phase3/quota-focused.json -- python -B -m unittest tests.unit.test_cleanup_work_artifacts.CleanupLifecycleTests.test_combined_exempt_cap_and_exact_baseline_roots tests.unit.test_cleanup_work_artifacts.CleanupLifecycleTests.test_project_size_measures_fixed_exemptions_and_fails_closed_on_links_and_special_nodes` using shared release-venv Python3.12:2testsPASS,0fail/error/skip/warning, child/outer0, cleanupPASS. Evidence source3808ccb plus scoped quota/doc diff, not exact latercommit validation. Final inventory complete/within_limit: non-exempt695861971/1073741824bytes, shared5778817474/6442450944bytes; TEST_RUN/RELEASE_RUN absent. Evidence `DEV_RUN/translation-quality-phase3/{downloads.json,licenses.json,runtime-version.txt,runtime-help.txt,preflight.json,quota-focused.json,terminal-quota.json}`. Product source/model and current DEV/public0.1.8 unchanged, no release/push.
+
+### Owner-approved RAM increase — host access blocked (2026-10-19)
+
+Owner explicitly requests increasing VM RAM sufficiently then continuing. Clean main b9d1268; Coordinator sole writer. Guest identity from Hyper-V guest registry: VM VNTextStudio-DevWin11, ID D5318551-BB01-4754-AC54-1C275BB3BACF, physical host DESKTOP-4S3QPMN. Guest has4293808128 physical bytes, free847460KiB. Get-VM/Set-VMMemory and vmms unavailable in guest; local root/virtualization/v2 query exits1 Invalid namespace. Read-only remote CIM/DCOM probe with current identity and8s operation timeout exits1: The RPC server is unavailable. Host free RAM/configuration UNKNOWN, no safe allocation selected; no VM changes, shutdown, firewall/security/service changes or model load attempted. Outcome PROVEN_BLOCKED: host management session/access required to execute authorized RAM increase; guest cannot allocate its own physical RAM. This is an access prerequisite, not another request for permission. Already downloaded verified model/runtime retained under6GiB cap, product OPUS unchanged. Once host access is available, inspect host memory, increase only this VM allocation, then repeat fixed RAM preflight and bounded inference.
+
+### Guest-only memory reclamation — 2026-10-19
+
+Owner clarifies host has insufficient spare RAM; keep VM4GiB, authorizes closing VNText app/test processes then retrying preflight. This replaces the proposed RAM-increase next step; no other app/system process termination authorized. On clean342773e, process inventory by executable name plus absolute checkout executable paths finds no VNText app, Python worker, llama or project test process running; nothing can be closed within scope. Free physical702423040bytes remains below unchanged1669951360byte guard, so no model load/inference attempted. Highest working sets belong to Codex/ChatGPT and Windows, not VNText; these were left running. Outcome PROVEN_BLOCKED, exact evidence DEV_RUN/translation-quality-phase3/close-vntext-preflight.json; prior receipts preserved. No source/runtime/dependency changes, download, build or test run. Need additional available memory or a separately bounded alternate execution environment before inference.
+
+### Low-memory alternate protocol, fixed before inference (2026-10-19)
+
+Owner asks to optimize RAM/try alternatives on unchanged4GiB guest. Existing pagefile5GiB, no enlargement. Working-set sums share pages and cannot be added as unique physical RAM. Snapshot groups: ChatGPT13processes1061MiB summedWS, node21processes724MiB, codex2processes291MiB, Windows services/system also substantial. Model is not loaded in ChatGPT processes. Background Edge root14592 has --no-startup-window and all5Edge processes zero window handles; these may be stopped, record PIDs. Do not kill Codex core, its per-session tools of unknown activity, security or Windows services.
+
+Existing llama.cpp b11724 CLI documents load-mode mmap, context/batch/ubatch bounds. One test-only source sentence, no held-out data: CPU2threads, context512, batch32/ubatch16, max64outputtokens, no warmup, mmap (no mlock), timeout120s; free physical>=256MiB and available commit>=2GiB before launch. Monitor physical+commit and process memory every0.5s; stop model if free physical<128MiB for3s, free commit<512MiB, model private>2GiB or working set>1.75GiB, or timeout. This revises the prior conservative full-file-plus512MiB pre-load heuristic using existing pagefile/mmap, not proof of model suitability. Child/outer exits, stdout/stderr, minavailableRAM/commit and peakWS/private retained, canonical TEST_RUN cleanup required. If successful, compare a small fixed development-only direct/context versus OPUS-repair set under same monitored configuration; no100row/full-product claim or app change. Gate order protocol/preflight -> single inference -> development comparison if viable -> docs/cleanup; no DEV executable needed for test-only work. Artifact1GiB/shared6GiB unchanged.
+
+Low-memory measured control: single smoke returns0/6.563s/peakWS1350MiB/private859MiB; transient free12.3MiB recovered before3s guard (not pressure-free). First contextual direct returns0/5.031s/peakWS1651MiB; subsequent repair startup stopped atWS1883MiB >1792MiB, child/outer1, cleanupPASS. Preserve failed receipt. New evidence: CLI default --repack enabled may allocate alternate CPU weight buffers; test one --no-repack configuration with all same memory/time/output guards, same five development IDs/order/prompts/arms, separate receipts. No raised memory cap, fallback semantic validator or product change.
+
+### Low-memory result — PASS bounded feasibility, no quality promotion
+
+Default-repack trial retained its real memory-stop failure; --no-repack is a new evidence-backed remediation without raising limits. Same pinned Q4/model/CPU runtime on unchanged4GiB VM, mmap/context512/batch32/ubatch16/2threads/no warmup/cache0/output64:10/10 executions returned0 (five fixed development sentences x direct/repair), total35.156s including ten CLI starts. PeakWS1232142336bytes, peakprivate152944640bytes, minimumfreephysical140738560bytes, minimumfreecommit2728157184bytes. Comparison child/outer0 and cleanupPASS; default-repack failed child/outer1 and cleanupPASS preserved. Thus original pre-load heuristic was overly conservative; no requirement for8/16GiB is established. RAM remains tight; no broad throughput/deployment claim.
+
+Existing structural checker passes10outputs on these plain text samples, no protected-token coverage or human acceptance implied. Direct improves targeted idiom/corrected-page examples, but repair adds context to DLG008 and changes page to report in ADDR008; TERM001 still loses technical meaning; TERM014 direct translates preceding context instead of target. Reject product promotion, no OPUS/framework/validator change. This is a five-row targeted development feasibility probe, not a representative quality score or completed100-row contextual evaluation. Gate command: shared Python3.12 `tests/tools/run_with_cleanup.py --timeout-seconds 1350 --report DEV_RUN/translation-quality-phase3/no-repack-comparison-wrapper.json -- <shared-python> -B tests/tools/translation_quality_low_memory_trial.py --comparison --no-repack`; actualbase2a6356a+reportedscriptSHA, not exact later commit claim.
+
+Evidence `DEV_RUN/translation-quality-phase3/{process-inventory.json,closed-background-edge.json,low-memory-smoke.json,low-memory-smoke-wrapper.json,low-memory-comparison.json,low-memory-comparison-wrapper.json,low-memory-comparison-no-repack.json,no-repack-comparison-wrapper.json,low-memory-review.json,LOW_MEMORY_REVIEW.md,low-memory-terminal-quota.json}`. Terminal inventory complete/withinlimit:696715330non-exemptbytes/1GiB,5778817474sharedbytes/6GiB; TEST_RUN/RELEASE_RUN absent. No new downloads, system changes, persistent process disabling, currentDEV executable change or push/release. Further contextual quality work needs a frozen prompt/target boundary admission before broader evaluation; do not tune using held-out outputs.
+
+### Prompt/context refinement task — Owner activated2026-10-19
+
+Clean maind78f53c, Coordinator sole writer. Test-only scope: new prompt experiment tool + focused boundary tests + canonical/evidence docs; reuse low-memory monitor, add optional128token output limit (default64 unchanged). No product/runtime/UI/model/framework/validator/release/dependency changes. Gate order: focused prompt/context tests -> fixed development panel -> freeze winning configuration/hash before opening held-out outputs -> one final100row evaluation -> semantic/structural review and cleanup. Upstream pinned modelcard recommends source-last translation/terminology/background sections; prompts use this shape, without claiming upstream quality.
+
+Development panel fixed before outputs: DLG008,IDI005,ADDR008,TERM001,TERM014,IDI009,IDI013,UI001,TERM004,TOK001,TOK003,TOK006. Three same-model configurations: source-only, bounded-context direct, bounded-context OPUS-draft repair. Source last, context/draft explicitly reference-only; no source-specific translation hints. Context at most2preceding rows, matching file/group/engine and earlier turn, plus existing address metadata; no future rows or cross-boundary retrieval. Reuse exactly6flatglossary terms from phase2 when whole English term appears in source; compare primary assisted OPUSglossary arm and unassisted arm separately. No training, new gold or sentence hardcoding. No additional prompt variation unless development failures provide a specific new hypothesis; at most two development rounds.
+
+Same pinned model, CPU2threads/mmap/no-repack/context512/batch32/ubatch16/cache0/temp0/seed42/output128. Preserve memory/commit/time guards120sperrequest; development wrapper1800s, final3600s and internal3300s. No server/session reuse, each CLI turn isolated to prevent cross-row contamination. Same frozen100dataset/hash,80dev20heldout; heldout outputs untouched until selection frozen. Review all final rows against source and OPUS, report severe meaning/addition/omission/context leaks independently of structural gate, dispositions/time/resources/nohumanacceptance. Admission: fix demonstrated leakage/meaning errors on development without new severe defects; frozen heldout must show fewer severe defects than OPUS with no new structural failure; otherwise reject product promotion. Synthetic targeted set only, no overallgamequality claim. Existing1GiBartifact/shared6GiB, canonical TEST_RUN disposal, retained compact evidence DEV_RUN/translation-quality-phase4. Product OPUS remains baseline regardless of experiment.
+
+Prerequisite transport defect observed before first panel completes: CLI defaults --escape=true, converting literal backslash-n in the prompt/source before inference; exact-output-boundary parser correctly refused initial row, child/outer1/cleanupPASS. Preserve development.json/development-wrapper.json. Add explicit --no-escape (no validator relaxation), rerun same unchanged panel/prompts as attempt2. This is transport correction with fresh evidence, not another semantic prompt iteration; all heldout outputs still unopened.
+
+Fresh evidence after --no-escape: CLI chat UI truncates echoed prompts longer than its display bound, so attempt2 row2 parser fails (child/outer1/cleanupPASS). Do not infer model failure or relax source-boundary matching. Use already downloaded official llama-completion.exe with --jinja/--conversation/--no-display-prompt/--no-escape: direct generated stdout, model logs stderr, same model/template/memory/prompt/sampling guards; omit CLI-only cache-ram flag. Attempt3 same panel/prompts, fresh report. This corrects console transport; no semantic tuning loop has occurred. Runtime binary hash in report updated explicitly, prior failed receipts immutable.
+
+Round2 semantic hypothesis declared before outputs: explicit long instruction prefix yields literal idioms (IDI005/009) despite reduced context leakage. Compare a concise source-last prompt based on the upstream translation pattern, same12panel/3arms/glossary/domain, only add preservation instruction when source has protected syntax. No sentence-specific hints. Terminal [end of text] is a completion transport marker, remove only exact trailing marker in extracted output (raw retained), never interior text. Add focused tests. Development attempt4/styleconcise; final selection must freeze style and variant plus script/helper hashes. No further semantic tuning rounds.
+
+Selection frozen after36concise development outputs and before any heldout output inspection: variantcontext/styleconcise, exactscript/helper/data/development-report hashes in DEV_RUN/translation-quality-phase4/selection.json. Source-last/context prevents prior DLG008/TERM014context leakage, retains corrected-page, technicaldomain improvesexport/checksum; repair still copies literalcake error. However TOK006 context/source convert literalbackslash-n to physicalnewline (existing structural checker rejects), so candidate already FAILS admission. Do not repair/accept these outputs or call semantic success structuralPASS. Proceed with the planned one-shot100row run as diagnostic quantification only, preserving this rejection; no further prompt changes, no promotion regardless of heldout score. This does not relax gate: structural failures remain rejected rows. All final outputs will be reviewed after frozen inference; noheldout-driven tuning.
+
+### Phase4 terminal result — PASS bounded evaluation; product admission REJECTED
+
+Seven focused prompt/context/transport tests PASS,0skip/warning/child-outer0/cleanupPASS. Two semantic development rounds each36executions on fixed12panel; explicit prompt corrected source boundary but literal idioms persisted, concise improved some targeted meanings. Freeze context+concise/script/helper/dataset/development-report hashes before heldout outputs. Actual final100/100returned/EOG complete/model unchanged in300.610s, median3.015s/max4.016s perCLI start; peakWS1226858496/private156569600/minfreephysical501219328/minfreecommit2575212544 bytes. Finalchild/outer0/cleanupPASS. Two earlier transport attempts remainFAIL1/cleanupPASS, not relabelled. Completion binary from same approved runtime, no new dependencies or system/VM changes.
+
+Coordinator-agent review of all100 paired source/OPUSglossary/Hy outputs: development80 OPUS24major+2blocked, Hy20major; heldout20 OPUS6major/Hy4major, one ambiguous boat/ticket idiom uncertain for both; totalOPUS30major+2blocked/Hy24major. These are auditable single-agent judgments, not human gold/automatic quality scores/statistical generalization. On heldout Hy fixes5OPUS major cases but introduces3newmajor (DLG016crown/helmet,UI014review continuation,TERM017fingerprint). Fewer total errors does not satisfy no-regression admission. Existing structural gate: Hy98PASS/2rejected(TOK006literalnewline,TOK008ALLY_NAME->PLAYER context leakage), OPUS98written/2qualityblocked(no written structuralfailures). Preserve raw rejects, no fake repairs/validator relaxation. Direct+context now fixes prior DLG008addition/ADDR008page/TERM001checksum/TERM014target selection; literalidioms, terminology logic, UIaction, role register and tag-body coverage remain. Reject product promotion; no product OPUS/UI/framework/worker/Release changes, no DEV rebuild needed.
+
+Evidence `DEV_RUN/translation-quality-phase4/{focused-2-wrapper.json,development.json,development-2.json,development-3.json,development-4.json,development-3-wrapper.json,development-4-wrapper.json,selection.json,final.json,final-wrapper.json,semantic-notes.json,review-summary.json,REVIEW.md,terminal-quota.json}`. New tools and helper extension proven on based78f53c plus exact reported hashes; docs commit does not upgrade this to exact-HEAD product acceptance. Terminal inventorycomplete/withinlimit699243186non-exemptbytes<=1GiB/shared5778817474<=6GiB, TEST_RUN/RELEASE_RUN absent. Frozen20heldout outputs are now observed: any future prompt tuning must treat them as seen; do not claim unseen generalization from rerunning this set. Next product-quality prerequisite is strict protected-token/target boundary handling and new independent semantic acceptance, not automatic model replacement.
+
+### Phase5 Owner activation — protection first, then meaning, new evaluation (2026-10-19)
+
+Owner requests placeholder/symbol correction, further semantic prompt refinement and a new sentence test set, explicitly no OPUS replacement. Clean main2438c5c; Coordinator sole writer. Scope test-only guarded inference helpers/new synthetic corpus/evaluator/focused tests/docs. Product source, app, validators, worker/model/framework and public releases remain unchanged; no download/training/publication. Existing old100 are seen development material now. New60sentence synthetic corpus:40development/20heldout, normalized unique against old100, scenario groups split together, rights/provenance agent-authored/nohuman gold. Create/freeze source/split/hash before outputs; tune only on a fixed old seen panel, choose configuration/hash before any new-set inference output.
+
+Guard whole source sentence using unique per-occurrence [VNTnnn] markers for placeholders/tags/brackets/hashtags/star effects/hearts/printf and literal+physical newline/tab controls; do not protect tag body or ordinary capitalized prose. Remove structural tokens from background references so source identifiers cannot leak from earlier rows. Restore only if exact marker multiset+order is intact, no unknown markers/raw structural injection, then require original protected-token sequence AND existing structural validator. Missing/extra/duplicate/reordered/damaged carriers reject, never append guessed originals or relax validation. Keep raw/masked/restored output/reject reasons; failures remain rejected, not successful translations. Unsupported carrier collision fails closed. No lexical-glossary semantic rewrites in protection.
+
+Gate order: hostile-unit protection/context/newdata tests + existing structural gate -> fixed seen-panel real Hy inference (oldTOK006/008 included, all token types) -> semantic comparison on fixed old panel with at most2generic prompt variants -> freeze chosen guard/prompt/dataset/model hashes -> new60actual production OPUS unassisted + common-glossary independent packages, then same60Hy guarded -> source/meaning/coverage/structural review -> cleanup. Never call two models concurrently on4GiB. Common standard software glossary is declared before new outputs; retain both OPUS arms, no per-row best-of cherry-picking. Acceptance for guard: no accepted structural corruption, demonstrated coverage on old failures/new token cases, rejected counts explicit; review meaning separately, no product admission inferred. Generic meaning prompt can mention idioms/negation/action intent and role-appropriate address but no per-sentence answer hints. No tuning after new heldout outputs.
+
+Reuse pinned Q4/llama-completion CPU2/mmap/no-repack/context512/batch32/ubatch16/temp0/output128, original120s perrequest/RAM/commit guards; wrapper1800s dev/OPUS,3600s final, artifact1GiB/shared6GiB. All transient packages/raw inference in registered TEST_RUN, compact receipts DEV_RUN/translation-quality-phase5; terminal TEST_RUN/RELEASE_RUN absent. Test-only no new DEV executable/build. Evidence reports exactsource+script/data/protocol hashes; same-agent review not independent human acceptance.
+
+Phase5 guard focused21PASS/0skip-warning/child-outer0/cleanupPASS, then real old14token rows all14guardaccepted/existingstructuralPASS, including oldnewline/ALLY leakage and translated amber tag body. Seen meaning panel14x2=28 allguardaccepted, source/token safety unchanged; semantic instruction improves some wording but blue-moon still lunar, journal still magazine/export still foreign trade. Evidence-backed final seen refinement (not third instruction style): keep semantic style, add six standard lexical entries export/journal/shortcut/badge/overwrite/overwriting to shared16term glossary, test same14seen rows +UI002/TOK011/TOK013 (17calls). No whole-sentence gold/idiom answer dictionary or new-data tuning. Shared22term baseline/candidate bank frozen after this refinement, both OPUS arms retained; new60outputs still unopened.
+
+Phase5 selection frozen before any new60output: semantic style + shared22standardterms, exact code/data/refinement hashes in selection.json. Old17refinement guardaccepted17/existingstructuralPASS, journal/shortcut/badge/export/overwriting improved; blue-moon remains wrong. Focused23PASS/0skip-warning/child-outer0/cleanupPASS. No further prompt/glossary/guard tuning from new outcomes. New60OPUS arms then Hy sequential; allnewoutputs initiallyunseen.
+
+### Phase5 terminal — PASS bounded protection/evaluation, no app promotion
+
+Fresh committed synthetic60dataset SHA199d5bde7dcf9b7ff9f2e08e0782a7ff88d39563b8cb0ec1a645c6570082759d:40dev/20heldout,30scenario pairs, normalizedunique against old100, no scenario crosses split; source/rights agent-generated/nohuman Vietnamese gold. Some linguistic phenomena recur; not an unseen-idiom claim. Seven prior prompt tests + existing structural gate + new guard/context/data tests total23PASS/0skip-warning/child-outer0/cleanupPASS. Actual old14 protection +28 two-style meaning +17shared-terminology-refinement runs all guardaccepted. Source syntax never sent literally to model; background tokens redacted; exact carrier count/order/unknown/raw-token refusals and existing structural validation after deterministic restore, no guessed append or validator relaxation. Tag bodies remain translatable.
+
+Freeze semantic style +22commonterms/script-helper-guard-data hashes before any new output. Actual new60Hy:60returned/EOG/guardaccepted,0reject/0exact-token mismatch/0existingstructuralfailure, including all20protected-syntax rows and both old failures; model unchanged. Total226.656s/median3.516s, peakWS1227104256/private156635136/minfreephysical332660736/minfreecommit3560660992bytes on unchanged4GiBVM. Actual productionOPUS two independent60row packages, default +same22terms:58written/2qualityblocked/completefalse each, originalkey/source/order/schema preserved/cacheindependent/model unchanged, existingstructural0writtenfailures. Default stricter-token mismatches Q5-04-2printf,Q5-07-1SFX; glossary arm adds Q5-09-2dispatch->dis+Vietnamese patch. SFX localization is a declared-policy difference, not automatically a product bug. Source `package_glossary.mask_user_glossary_terms` substitutes substrings without word boundaries; synthetic exporter->export+suffix and dispatch bracket damage retained for future bounded product remediation, no product source edits in this task. Guard contract stricter than current mt_check; do not relabel old validator PASS as full opaque-format proof.
+
+Coordinator-agent meaning review all60: OPUSdefault17major+2blocked, common-glossary17major+2blocked, Hy9major; heldout20 default7major+1blocked/common-glossary8major+1blocked/Hy3major. Hy introduces2newheldout major (platform->map, youngerbrother->olderbrother), and still reverses outside/DO NOT outside patch eligibility, misreads blue-moon and medical-woods idioms, software exporter/file semantics and family address. Sharedterminology fixes multiple seenlabels, but no semantic promotion. These are one-agent auditable judgments, not independent human acceptance or objective whole-game score; no old-versus-new-corpus rate comparison as matched benchmark. Allnewheldout outputs now seen; further tuning must not re-label this set unseen.
+
+Allwrappers child/outer0/cleanupPASS; OPUS optional sacremoses warning1 explicitly retained, no dependency installation. Evidence DEV_RUN/translation-quality-phase5/{guard-focused-2.json,protect-1.json,develop-1.json,refine-1.json,selection.json,baseline-1.json,baseline-wrapper.json,final-1.json,final-wrapper.json,semantic-notes.json,review-summary.json,REVIEW.md,terminal-quota.json}. Sourcebase2438c5c+perrun exact code/data hashes, not exactlatercommit app acceptance. Terminal inventorycomplete/withinlimit701307532non-exemptbytes<=1GiB/shared5778817474<=6GiB; TEST_RUN/RELEASE_RUN absent. No download/training/newmodel/framework/worker/UI/OPUS default/build/Release/push changes. Task PASS for bounded experimental guard and measurement; candidate not approved for product. Next quality work must address semantic logic/register with independently reviewed acceptance, without weakening token safety.
+
+
+### Phase6 bounded protocol — Owner activation 2026-10-19
+Clean main77e37e4, sole Coordinator writer. Fix research-only platform sense/family-age errors, polarity/eligibility, idioms and role address. Product OPUS/validators/app untouched; no dependency/model/download/release/push. Retain Phase5 exact carrier guard. Existing160sentences are seen. New40synthetic sentences/24development+16heldout, paired scenes split together, normalized unique against both previous corpora; freeze before inference. Agent-authored/no human Vietnamese gold. English domain/relationship metadata may guide sense, never per-row Vietnamese answers. Some known phenomena recur, not unseen-idiom generalization.
+At most2 generic prompt hypotheses on fixed seen Phase5 panel: existing semantic control vs Vietnamese explicit role/domain and polarity instructions. No whole-sentence answers or idiom dictionary. Tune before fresh outputs, freeze exact data/code/model hashes; new40 default and common-glossary OPUS independent packages then candidate sequential. Review source-aligned meaning and syntax separately, report regressions/uncertainty/rejections; no quality promotion from lower aggregate errors. Focused guard/prompt/policy tests first. Existing pinned Q4/CPU2/context512/no-repack/temp0/output128, unchanged memory/time safeguards; wrappers1800s development/baseline and3600s final. One registered TEST_RUN scope, no model copies/game, evidence DEV_RUN/translation-quality-phase6, terminal cleanup absent. Shared6GiB/non-exempt1GiB unchanged; test-only no DEV build. Persist actual source SHA and per-run hashes, agent judgments not independent acceptance. If instruction-only hypothesis fails, collect evidence before a second bounded hypothesis; do not blindly repeat.
+
+Phase6 first development24calls completed: roles prompt fixes medical woods and outside-policy inversion, but still ignores family/student pronouns, little-brother age and blue-moon frequency; source amber/exporter also wrong. A prior attempt was stopped by unchanged low-physical-RAM guard, cleanupPASS; five windowless Edge background processes closed under prior Owner permission, fresh attempt succeeded. Evidence develop.json/develop-2.json preserved. Second/final hypothesis before new outputs: bounded reusable lexical sense hints (not full-sentence answers), explicit I/you equivalents from declared role, rare-frequency idiom definition and medical-only woods sense; platform sense only with explicit domain, unspecified platform flagged ambiguous rather than asserted solved. This explicitly revises the earlier no-idiom-dictionary restriction: finite phrase-sense coverage is measured as such, never called general idiom learning. Compare same12seen panel once; no further tuning/new heldout feedback. Add diagnostic semantic flags for these known failure classes, never auto-repair or equate no-flag with semanticPASS.
+
+Phase6 final seen refinement12calls: finite hints correct blue-moon frequency, medical danger, younger-brother age; pronoun compliance still weak. Q5-29-2 wrongly translates preceding school-context instead of source coat offer: candidate admission REJECTED before fresh outputs. New40 remains planned diagnostic measurement only, no promotion regardless aggregate score. Freeze hints selection/code/data/model hashes; flag-only addition after refine module loaded is recorded, no prompt change. Unknown platform domain remains flagged rather than silently assumed railway. New baseline uses unchanged22term common glossary, not candidate-only role/sense hints; thus context-assisted candidate vs OPUS routes, not an isolated architecture/model causal comparison.
+
+### Phase6 terminal — PASS bounded measurement; semantic admission REJECTED
+Fresh40 source/hashcc8e241d4b31859d95af51c1939c93f8f48bc2af1602708e62c93bc5bd9f453d,24dev/16heldout, scenario-separated and normalized unique against old160; finite phrase hints explicitly limit generalization.28focusedPASS, no skips; first attempt low-memory stop child1/cleanupPASS retained;24seencomparison+12refinement completed. Final40returned,37guardaccepted/3raw-heading-newline rejects,0accepted exacttoken corruption. Both actual OPUS packages40written/completetrue/model unchanged; optional sacremoses warning retained. Agent review all40 OPUS13major(default and22term glossary), Hy8acceptedmajor+3rejected; held16 OPUS7major, Hy3major+1reject. Not independent human gold; context/hints differ between routes. Domain-qualified platform improves; medical/rare idiom finite hints improve with literal controls, but sibling role/age, pronouns, cancellation and unless inversion remain. Newheld Q6-17-2 regression andQ6-18-1 rejection prevent promotion. Narrow semantic flags miss actual logic errors: no-flag is never semanticPASS. Sourcebase77e37e4+perrun hashes; final199.141s,peakWS1227034624/private157011968,minfreephysical136126464/freecommit3102662656bytes. Same4GiBVM; no model/download/system/product/DEV/release/push changes. All final wrappers0/cleanupPASS; TEST_RUN/RELEASE_RUN absent. Evidence DEV_RUN/translation-quality-phase6/REVIEW.md and alignedraw/selection/reviewsummary/wrappers. All40 now seen; next work needs explicit target-boundary/role consistency strategy and new independent sentences, not further tuning on heldout. User-requested semantic classes remain incompletely solved; taskPASS only for bounded implementation and evaluation, not product acceptance.
+
+
+### Phase7 activation — target isolation / logic / roles (2026-10-19)
+Owner accepts proposed next step: eliminate context-target confusion, polarity/condition inversion and role inconsistency, then fresh evaluation; OPUS product unchanged. Clean mainf68e6fa; sole Coordinator/source writer, no active inference/source writer found. Test-only owner tests/tools, tests/unit, evaluation and canonical docs. No download/dependency/system/model/product/release/push. Existing200sentences are seen; create24new synthetic source sentences12dev/12heldout in scene pairs, unique against old100+60+40; freeze data before inference, no target answers. At most2 prompt hypotheses tested on fixed seen panel: source-only translation with structured domain/role/lexical hints (no raw previous prose) vs same plus explicit source polarity/condition analysis instructions. Role metadata explicit, unknown remains unknown; pronoun lexical carrier experiment permitted if instructions alone fail, with exact occurrence/order admission and no guessed roles. No whole-sentence gold substitutions. Finite idiom hints retained as such, not general learning.
+Gate order: focused target/role/logic/oldguard checks -> bounded seen comparison -> choose/freeze hashes before fresh outputs -> actual independent OPUSdefault/common22term packages -> frozen24Hy -> agent aligned semantic/structural review and cleanup. Fresh outputs never tune prompt. Diagnostic rejection counts separate from successful translations. Acceptance: no accepted structural corruption; source-target, negation and role improvement measured, new major regressions prevent admission. A failed hypothesis remains evidence, not proof requested fixes done. Same pinned Q4/runtime,CPU2/no-repack/mmap/context512/output128/temp0 and unchanged RAM/commit/120s guards. One registered TEST_RUN, no copies of model/game; wrappers1800s dev/baseline,3600s final; compact evidence DEV_RUN/translation-quality-phase7. Non-exempt1GiB/shared6GiB, no DEV build. Sourcebasef68e6fa+perrun hashes; no exactlatercommit acceptance inference.
+
+Phase7 second hypothesis bounded before fresh outputs: seen source-isolation improves target selection but role hints still ignored. Add exact per-occurrence lexical role carriers only for explicit I/me/my/you/your, with declared directional role metadata. Restore required full ordered carriers, reject unknown/damaged/duplicate or generated generic pronoun; never guess a role, contractions/quoted prose left unsupported. This controls surface pronouns, not all relational semantics. Conservative source-derived English paraphrase only positive unless-copula and explicit user/operator confirms/approves/consents into if-not; record original/derived inputs/rule, negative/nested conditions not transformed. No whole-sentence translation dictionary, output word deletion or validator relaxation. Same10seen panel once after current comparison; choose before new24outputs. No third hypothesis.
+
+Phase7 seen30control/isolated/logic calls allreturned; control3heading/newline rejects, isolated/logic each10guardaccepted. Source isolation fixes coat-target, policy/cancel/unless meaning and heading leakage on this panel, but pronouns ignored. Final10carrier/paraphrase calls allreturned/guardaccepted under the then-loaded helper: mother/child and student/professor bound, sister request correct, unless→if-not correct; Q6-04-2 retains explicit chị là em gái contradiction. Final post-inference narrow self-sibling contradiction refusal added, focused35testsPASS; no additional prompt tuning or inference claimed for refusal. Frozen transport variant/data/code/helper hashes before new24outputs, candidate not product-approved. Model/static guard unchanged; helper old snapshot hash in refine report retained. New24 still source-only metadata, never whole previous prose. Lexical role carriers control surface forms, not general pronoun resolution or full meaning.
+
+### Phase7 terminal — PASS bounded experiment; carrier candidate REJECTED
+Fresh24(12dev/12heldout) SHA6c8b2cc9b13a31909a61966c29e52e62d87c20d2a8d929c2105b6bd5db4f0c0b, source/rights synthetic, scene separated, normalizedunique vs previous200.35focusedPASS/0skipwarning; seen30control-isolated-logic plus10carrierrefinement completed, then frozen24allreturned/EOG/guardaccepted/0token mismatch. No previous prose in isolated target prompts; observed oldtarget/heading/cancellation/unless regressions improve. New8logic cases preserve core conditions/actions, two protected no-delete/confirm cases also retain meaning. No general semantic guarantee. Lexical role carriers introduce4coremeaning errors in10role rows: added recipient or malformed sibling relation;6acceptable, exact surface carriers do not prove relational correctness. One newheldmajorQ7-09-2 vsOPUS, reject promotion. Narrow self-age check misses these other errors; absent flag not semanticPASS.
+Agent coremeaning review all24:OPUSdefault7major/common22term5major/Hy4major; held12:3/3/1. OPUS explicit role violations10/10 tracked separately from core table; no human gold, statistical or old-versus-new-corpus rate claim. Actual OPUS packages24written/completetrue/0existingstructuralfail/modelunchanged; optional sacremoses warning1 retained. Candidate has metadata+finite sense hints, baseline none/softwareglossary: configured-route comparison not isolated model effect. Runtime113.313s/median4.5155s/peakWS1225789440/private155082752/minfreephysical425267200/freecommit3974172672bytes; unchanged4GiBVM/pinnedmodel/runtime. All wrapperschild/outer0/cleanupPASS, transientrootsabsent. Sourcebasef68e6fa+perrunexacthashes, laterdocscommitnot exact-HEAD productacceptance. Evidence DEV_RUN/translation-quality-phase7/REVIEW.md, rawselection/wrappers/reviewsummary/terminalquota. No OPUS/app/validator/worker/framework/dependency/model/system/DEV/release/push changes. Allnew24nowseen. Do not promote lexical role carrier; retain source-isolation/logic findings as test-only evidence. Role correctness remains a prerequisite; further work needs a different strategy and fresh acceptance, not more tuning on this heldout.
+
+
+### Phase8 activation — bounded natural translation/audit/retry (2026-10-19)
+Owner authorizes completing subsequent steps autonomously, not stopping at intermediate reports; keep product OPUS. Clean main623ea87, sole Coordinator/source writer; no transient roots/active inference. Research-only tests/tools/tests/unit/evaluation/docs; no model/dependency/download/system/product/release/push. Retain proven isolated target boundary and conservative unless paraphrase, abandon lexical pronoun carriers. Build natural draft -> independent bounded audit of source/draft/explicit roles -> at mostone natural revision -> audit again; unresolved/rejected needs review, never successful translation. No raw previous prose in target prompt. Same model audit is not independent human verification: must validate checker against predeclared positive/negative traps before relying on it, report falseaccept/reject/unknown and coverage. Strict parse of audit output, malformed/uncertain fails closed. At most2generic audit prompt forms on fixed12seen/curated fixtures (six positive/negative pairs), no whole-sentence answer injection; choose before fresh corpus. New24synthetic sentences12dev/12heldout, disjointscenario/string against previous224, rights generated-for-project, no VIgold. Freeze code/data/checker configuration before outputs; allnewoutputretuning forbidden. Additional12fresh adversarial audit fixtures (six positive/negative pairs) with explicit expected labels checked separately; judge false acceptance prevents automatic acceptance claim.
+Gate order focused structural/role/audit parser/retry state tests ->12checkertraps x atmost2styles ->seen naturalpipeline8rows ->freeze ->actual OPUSdefault/common22term baseline ->new24natural/audit/retry ->sourcealigned review including freshcheckertraps ->cleanup/commit. If checker premise fails, persist falseaccept evidence, choose deterministic fail-closed advisory audit rather than repeatedly sampling unreliable same-model verdicts. Follow independent remaining work without stopping to ask routine decisions. Maxone retry perrow; process/runtimeerrors stop scope, no silent fallback. Same pinned Q4/CPU2/no-repack/mmap/context512/temp0/output128/120s and RAMguards, sequentialmodels; wrappers1800sdev/OPUS,3600sfinal, one registered TEST_RUN, no model/gamecopy. Artifact1GiB/shared6GiB, VM4GiB unchanged; no DEVbuild. Evidence DEV_RUN/translation-quality-phase8 with SHA623ea87+exactcode/data/model/runtimehashes. Promotion requires no new major regression and validated semantic acceptance; smaller error total or zero flags not sufficient.
+
+Phase8 checker premise invalid on predeclared calibration: question style falsely accepts6/6bad and6/6good; label emits unparseable PASS explanations for all12, including bad. Strict parser unchanged. Disable same-model audit for pipeline, no automatic acceptance; deterministic advisory flags drive atmostone revision, allremainingdrafts NEEDS_REVIEW. Fresh12checkertraps will measure question style diagnostically only, not authorize it. Continue seen/new natural workflow and baseline independently; no stop or permission needed.
+
+Phase8 seen8 natural/retry run: target/condition meaning retained and no recipient addition, but generic self/listener pronouns persist after one model revision. Evidence develop.json retained. Evidence-backed second hypothesis before fresh outputs: conservative post-edit of generic tôi/bạn ONLY when explicit directional roles and English source contains corresponding first/second-person reference, no quotations/third-person-human/plural-first-person/friend ambiguity; edit only outside protected syntax, preserve every other character and existing structural gate. This is explicit surface-pronoun binding after natural translation, not English carriers or relation-noun rewriting; relationships/added recipients still audited. Record original draft and exact edits; no hidden whole-sentence replacements. Unsupported cases remain review; no automatic semantic acceptance. Add high-precision affirmative delete/accept contradiction flags with negative controls, run hostile focused tests and same8seen once; then freeze without new-output tuning.
+
+Phase8 second seen8 completes8calls, allsyntaxintact; conservative postedit resolves prior generic pronouns without added recipients or sibling-age reversal on this panel. No modeljudge used, all8remainNEEDS_REVIEW (not automatic semanticPASS).44focusedPASS/0skipwarning. Freeze data/fixtures/code/checkerselection/model hashes before anynew24output or fresh12audittraps. Retain baseline original natural/retry failures and bogus model-audit raw output. No further edits driven by new outcomes.
+
+### Phase8 terminal — PASS bounded pipeline/evaluation; automatic semantic admission REJECTED
+Completed all planned stages without requesting routine confirmation.24calibration calls prove same-model audit unreliable: question falsely accepts6/6wrong, label12unknown. Pipeline disables it; fresh diagnostic checker falsely accepts5/6wrong while6/6correct pass. Clarification: protocol "12pairs" wording meant12fixtures/sixpairs per split, as frozen fixture file before any run; only6badseen+6badfresh traps measured, no12bad claim. Deterministic audit flags6/6seenbad,5/6freshbad,0correctfreshfalseflags; one missed wrong draft remainsUNKNOWN, neverPASS. This gate does not prove complete semantic validation.
+Initial seen8natural/retry uses12modelcalls, generic pronouns repeat despite one revision. Narrow logged generic-role binding after natural translation tested with quoted/third-person/plural/unknown/protected-token negative controls; revised seen8calls correct prior role examples without co-recipient additions.44focused testsPASS/0skipwarning. Config/code/data/fixtures/checkerselection frozen before new24sources (12dev/12heldout), hash867143bb1e4a0c27b8370c8704139be4fcc20cb3597130c1a746b0677c0c9fa8; agent-generated, scene-split, normalizedunique vs previous224, no Vietnamese gold supplied to generation. Finite lexical/role metadata vs baseline OPUSdefault/common22terms; not an isolated-model causal comparison.
+Final24drafts/25calls/24syntaxintact/0tokenmismatch/allEOG;26loggedrole edits.12role sentences10agent-reviewed role-correct/2fail (plural listener; guessed ông for professor), no recurrence of carrier-added co-recipient on this new set. Core meaning failures3: outline→reanalysis, essential Reject English, outside eligible set→still exportable. Agent core table OPUSdefault10/commonterms9/Hy3, role-only violations tracked separately (OPUS12/12,Hy2/12). Held12 OPUS6/6core vsHy1core+1role; eligibility relation is a new logical regression, prevents promotion regardless aggregate improvement. Single-agent review not independent human acceptance, no statistics/global game claim. All24remainNEEDS_REVIEW/0AUTO_CANDIDATE because modeljudge unvalidated; one professor row retries once and remains flagged. Draft quality never equated with verified output.
+Resourcefinal74.719s/median3.015spercall/peakWS1226350592/private155111424/minfreephysical458653696/freecommit4142018560bytes. Same4GiBVM/model/runtime, no downloads/system/model/product/worker/UI/validator/DEVbuild/release/push changes. OPUS packages24written/completetrue/source-key-order-schema/modelunchanged; optional sacremoses warning retained, no package install. Allwrapperschild/outer0/cleanupPASS, transientrootsabsent. Sourcebase623ea87+perrunexacthashes; laterdocscommitnot exact-HEAD app acceptance. Evidence DEV_RUN/translation-quality-phase8/REVIEW.md plus rawcalibration/develop/refine/final/freshaudit/rulefixtures/selection/summary/wrappers/terminalquota. Allfreshsources/checkerfixturesnowseen. Retain natural draft+logged postedit as experimental improvement; do not deploy an auditor that approves known wrong sentences. Trustworthy automatic semantic acceptance remains unproven; protected syntax safety and observed role improvement are distinct.
+
+
+### Phase9 activation — source-derived constraint checker (2026-10-19)
+Owner authorizes proposed source obligations/check/retry and continued autonomous work, no OPUS replacement. Clean main21e0f96, sole writer, no transient roots/inference. Scope research-only source-constraint grammar/audit, bounded retry harness, tests/newsynthetic sources/negative fixtures/docs. No product/validator/worker/model/dependency/system/DEV/release/push changes. Do not use invalid same-model judge. Compile only explicitly recognized source relations: donor/recipient/owner from I/you and directional role metadata, cancellation-preserves-data, unless/only-if implications with polarity, and exclusion from eligible sets. Represent source relations/Boolean truth table and compare independently parsed Vietnamese facts. Missing/unsupported evidence UNKNOWN, contradiction FAIL, supported matches CONSTRAINTS_MATCH only, never semanticPASS. No arbitrary whole-sentence translation replacements or guessed people. Preserve structural guard and logged generic-pronoun postedit; revision atmostone using source-derived feedback. Add finite action/role/condition lexicons, no sentence-answer database.
+Gate order: truth-table and role-graph adversarial focused tests + prior syntax/transport gates -> seen Phase8 seeded wrong/correct fixtures -> frozen new fixture/source hashes before outputs -> source-derived checker on fresh positive/corrupted fixtures -> pinned real-model fixed seen regression then fresh16source model/audit/one-retry plus actual OPUSbaseline -> source-aligned review and cleanup/commit. New16synthetic source strings8dev/8heldout scene-paired unique against prior248; fresh checker36records12correct+24corruptions, independently source-authored English/Vietnamese fixtures, not injected into translation prompt. Agent authors/reviews, no human gold or global NLP claim. Atmost2 grammar remediation rounds on seen evidence before freeze; no fresh-output tuning. Falseaccept means a corrupted supported constraint reported MATCH; UNKNOWN is abstention, report separately. A full unsupported target cannot be marked MATCH just because one symptom absent.
+Same pinned Q4/runtime/CPU2/no-repack/context512/temp0/output128/120s RAM/commit safeguards, unchanged4GiBVM; sequentialmodels, wrapper1800sseen/OPUS and3600sfinal. One registered TEST_RUN no model/game copies, compact evidence DEV_RUN/translation-quality-phase9; artifact1GiB/shared6GiB. Persist source21e0f96+perrun exactcode/data/model hashes. No build needed for test-only. Automatic semantic admission remains rejected unless actually proven; source constraints only check declared phenomena.
+
+Phase9 focused59PASS,0skipwarning; one seen-grammar remediation before freeze adds explicit sibling-age propositions, postfix if/identifier confirmation and symmetric role conjunctions with negative controls. Frozen code/data/fixtures hashes before fresh outcomes. Old24fixtures:10correctMATCH,11badFAIL,3UNKNOWN(2correct/1bad),0falseaccept/0correctfalseflags. Fresh36finite-template fixtures:12correctMATCH,24badFAIL,0unknown/falseaccept/falseflags. These intentionally exercise declared grammar/lexicons, not general-language independent human validation. Source/VIfixture labels agent-authored; source truth vectors and role graphs supply explanations, no same-model judge. Continue real-model seen/new pipelines without using fresh fixtures as target hints or tuning outputs.
+
+### Phase9 terminal — PASS bounded constraint implementation/evaluation; no semantic promotion
+Implemented finite source/target role graph, kinship age/gender and Boolean implication/polarity with action/object identity, cancellation-preservation and eligible-set exclusion. No same-model judge or whole-sentence answer substitutions. Complete supported properties MATCH only; unsupported/missing scope UNKNOWN, contradictionsFAIL. Logged generic-pronoun postedit/oldstructuralgate retained, feedback from source, atmostone modelrevision, never automatic semantic acceptance.
+59focusedPASS/0skipwarning; old24fixtures10correctMATCH/11badFAIL/3UNKNOWN(2correct+1bad),0falseaccept/falseflags. Frozen fresh36fixtures12correctMATCH/24badFAIL/0UNKNOWN/falseaccept/falseflags, grammar-template-directed agent labels not human/unrestrictedlanguagegold. Truth-table and all-role-swap/object/reflexive/negation/quote fences tested; fixtures excluded from model prompts. Newdataset16(8dev/8heldout), SHA f35bd9acfe70af58e7572f97222debea4de0a867a3b7c38b30b101e5aedcb4ae, generated rights, scene-separated, normalizedunique vs prior248evaluation sources. Allsource+checkerfixturesnowseen.
+Actual sixseen hard cases10modelcalls: plural recipient and outside-but-still-exportable blocked; repeat modelrevision does not fix them. Old outline→reanalysis still MATCH role-only property, proving not semanticPASS. New16/22modelcalls:10CONSTRAINTS_MATCH,6UNKNOWN,0finalFAIL, all16NEEDS_REVIEW/0autoaccepted;8/8address rows have source-consistent agent/recipient/owner by agent review. Sixunknowns include correct paraphrases outside grammar, one essentialReject English, and ambiguous eligible-export sentence. One revision can remove a useful negation and worsen ambiguity(Q9-04-1); both histories preserved, never infer laterdraftbetter. No fresh-result parser/prompt tuning.
+Agent all16coremeaning table OPUSdefault7/common22terms7/Hy1clearmajor+1ambiguous; held8OPUS3/3vsHy1clearmajor,devambiguityseparate. Role-only violations OPUS8/8,Hy0/8. Not independenthumanacceptance/model-onlycausality/cross-corpusgeneralization. Candidate includes explicitrolemetadata/postedit/sourcefeedback, baseline differentsoftwareglossary; OPUS synthetic16written/completetrue/sourcekeyorderschema/modelunchanged; optional sacremoses warning retained and hủyZZ glossary leakage recorded, no product patch.
+Final75.656s/median3.266spercall/peakWS1226625024/private155078656/minfreephysical496500736/freecommit4092559360bytes. Same4GiBVM/pinnedQ4/runtime/RAMguards;0tokenmismatch/all22EOG. Allwrapperschild/outer0/cleanupPASS, transientrootsabsent; sourcebase21e0f96+perrun code/data/modelhashes, laterdocscommitnot exact-HEAD appacceptance. Evidence DEV_RUN/translation-quality-phase9/REVIEW.md, rawseen/final/baseline/fixtures/selection/summary/wrappers/terminalquota. No product/OPUS/worker/validator/UI/framework/dependency/system/DEVbuild/release/push changes. Source-property checking now bounded/measured; remaining general-language/lexical gaps must stay review, not hidden behind MATCH.
+
+
+### Phase10 activation — remaining abstentions, critical terminology, stable revision (2026-10-19)
+Owner continues current translation-quality scope autonomously, OPUS unchanged. Clean main1834bb7, sole writer, no transient roots/inference. Research-only new grammar extension/helper/harness, unit tests, synthetic data/docs. No app/worker/validators/model/framework/dependency/system/DEV/release/push changes. Preserve frozen Phase9 implementation for receipts. Extend finite parser on seen evidence only: compositional preservation aliases, explicit file-anaphor reference to unique source archive, clear contiguous eligible-set paraphrases; ambiguous comma-separated eligibility stays UNKNOWN. Flag untranslated critical action from compiled source. Declare standard critical-action/technical vocabulary, whole-word source matching, never full-sentence answers; use common bank in baseline glossary arm. Keep all originals and role edits.
+Stable revision policy: choose revised draft only if its constraint/advisory state becomes MATCH without structural failure; otherwise retain first structurally valid draft and expose both to review. A revision with equal uncertainty is not an improvement. This is not semantic acceptance, allremainNEEDS_REVIEW. No same-model judge.
+Gate order: old unknown/corruption and new extension/stable-selection unit checks with prior59 ->fixed seen regression6cases ->freeze chosen code/bank/data after atmost2 evidence-backed remediation hypotheses ->new12source8dev/4heldout across6scene pairs, unique vs prior264eval strings plus earlier audit-only source, agent-generated/no human gold ->fresh checker24fixtures8correct/16corruptions (unsupported controls separately counted), no fixture VI sent to generation ->actual OPUSdefault/commonbank independent packages then12Hy/one-retry ->aligned review/cleanup/commit. Freeze before fresh inference/checker outputs; no tuning afterward. Source-propertyMATCH remains narrower than translation correctness. Retain unknowns, falseflags and incorrect MATCH if found.
+Same approved Q4/runtime/CPU2/no-repack/context512/output128/temp0/120s/RAMguards on4GiBVM; models sequential, one registered TEST_RUN, no model/gamecopy. Wrappers1800sseen/baseline,3600sfinal; compact DEV_RUN/translation-quality-phase10. Artifact1GiB/shared6GiB, no DEVbuild. Source1834bb7+exact perrun code/data/model hashes, no later exact-HEAD product claim.
+
+Phase10 initial seen6/9calls: vocabulary fixes Reject; preservation/release matches; archive becomes another safe như cũ paraphrase outside parser; singular listener and unknown-gender professor remain wrong after one retry. Before any fresh outputs, second bounded remediation: parse equivalent như cũ and source-supported temporal adjunct only; logged span-specific metadata binding for plural single participants and gendered professor honorific at the actual subject/recipient slot, only a compiled closed I/you frame. Never globally replace kinship nouns/honorific objects or quoted/third-person context; unsupported/implicit ownership staysUNKNOWN. Preserve all other text, original tokens, source-derived obligations and exact edit records. Add hostile source/target controls; retest same6 once, then freeze.
+
+Phase10 second seen6/7calls:5MATCH,1UNKNOWN implicit ownership; singular counterpart and professor honorific corrected only at source-bound slots, Reject and preservation/release/unchanged phrasing now match. Stable first draft retained for unresolved revision.73focusedPASS/0skipwarning. Freeze all code/helpers/34term bank/data/freshfixture hashes before any new outputs; no model selfjudge, no source-specific VI sentence hints. ParserMATCH remains property-only; ambiguous scope/implicit ownership never guessed.
+
+### Phase10 terminal — PASS bounded implementation, no product promotion
+73focusedPASS/0skipwarning; seen6initial9calls/refined7calls yields5MATCH/1UNKNOWN implicitowner. Fresh24fixtures8correctMATCH/16badFAIL/0unknownfalseacceptfalseflags, template-directed agentlabels not human/unrestrictedproof. New12(8dev/4heldout), hash6998e9cc7ed1df11551f865ef756dbe99085cebe00bdfce963002db816735c27, sourceunique vs264eval+earlieraudit-onlysource, allfreshnowseen. Candidate/shared34termOPUSglossary bank frozen beforeoutputs; defaultOPUS also retained. New12/17calls,9propertyMATCH/3UNKNOWN/allNEEDS_REVIEW/0autoacceptance/0tokenmismatch;2revisionschosen afterMATCH. Critical Reject translated in2newcases; explicitprofessor/singularspan repairs logged, all6role counterparts correct byagentreview but1ownershipimplicit. Stable UNKNOWN policy retains original Q10-04-2addedprohibition although revised unsupported paraphrase removesit: clear remaining semantic failure, bothreviewdrafts preserved, no fresh-output tuning. MATCH not fullmeaningPASS and no generalization from templates. Resource/provenance exact final.json/reviewsummary, sourcebase1834bb7+perrunhashes; laterdocscommitnot exact-HEADappclaim. Allwrapperschild/outer0/cleanupPASS,transientrootsabsent,artifact1GiB/shared6GiB/VM4GiB unchanged. Evidence DEV_RUN/translation-quality-phase10/REVIEW.md plusselection/rawfixtures/baseline/history/summary/wrappers/quota. OPUSsource/model/worker/UI/validator/dependency/system/DEV/release/push unchanged; optional sacremoses warning retained. Do not present stable selection as semantic quality oracle.
+
+
+### Phase11 activation — added prohibition and three named abstentions (2026-10-19)
+Owner specifically requests fixing added Đừng and3unknown Phase10rows, retesting fully; OPUS remains product route. Clean main1e762a5 sole writer/no transient inference. Research-only grammarv3/harness/tests/synthetic fixtures/docs; no product/model/dependency/system/DEV/release/push. Compile affirmative exclusion source into positive keep-outside versus negative prohibition; full Vietnamese clause parser must reject added Đừng/không, recognize eligible-list relative clauses and entry nouns, distinguish negative eligibility modifiers. Preserve unknown/quoted/thirdparty/nested clauses. Missing ownership cannot be declared correct by inference: require explicit possessive in revised natural output using source-derived role cue. No generic stripping of Đừng, no fixed sentence answers. At most2seen remediation variants, fresh outputs not used for tuning.
+Gate: adversarial exclusion polarity/scope/owner fixtures + prior gates ->actual fixed three unknowns Q10-02-1/Q10-04-2/Q10-06-2 ->freeze ->fresh8source(4dev/4heldout) and18correct/corrupted fixtures, wholewordunique vs prior276+audit sources ->OPUSdefault/commonterms thenHy atmostone revision ->aligned review/cleanup/commit. MATCH property only, never wholetranslation semantic acceptance. If actual unknown remains, retain evidence and continue bounded remediation on seen cases, not falsely close requested fixes. Same pinned Q4/runtime/CPU2/no-repack/context512/output128/temp0/120s/RAMguards sequentialmodels; wrappers1800sseen/baseline/3600sfinal, one TEST_RUN, artifact1GiB/shared6GiB/VM4GiB/no copies. Evidence DEV_RUN/translation-quality-phase11, source1e762a5+exactcode/data/modelhashes. No build needed test-only.
+
+Phase11 initial parser3testsFAIL2 due missing passive được after có thể, output preserved/cleanupPASS; fix optional passive marker without relaxing polarity/scope, focused79PASS/0skipwarning. Actual3targeted oldunknowns/4modelcalls allMATCH: explicit owner in summary; addedĐừngFAILthen revisedaffirmativeMATCH selectedattempt1; unchecked entries aliasMATCH. No deletion of Đừng by postprocess, actual modelrevision. Freeze allhelpers/code/bank/data/fixtures before fresh8/18fixtures; no fresh-result tuning.
+
+### Phase11 terminal — PASS named old3remediation; product unchanged
+Fixed actual3unknowns with model evidence: Q10-02-1explicit reflexiveowner, Q10-04-2addedĐừngFAIL→modelrevisionaffirmativeMATCH selectedattempt1, Q10-06-2relative eligibilityMATCH;4calls/3MATCH. Not a blind deletion of negation or guessed ownership. Initialparser3tests2fail child1/cleanupPASS preserved; actual optionalpassive marker fix, final79focusedPASS/0skipwarning. Fresh18fixtures6correctMATCH/12badFAIL/0falseacceptfalseflagsunknown, template-directed agentlabels not human/globalvalidation. Frozen new8sources4dev/4heldout, hash1a4f0eebb6e6259dae898fd51be736de2bc83cd15c7e0451ab48ecf121e00500; unique against earlier eval strings, known phenomena recur. New8/11calls,5propertyMATCH/3UNKNOWN/0tokenmismatch,allNEEDS_REVIEW. No addedĐừng observed fresh;4addressrole directions correct byagentreview. New unknowns patch→update precision, comma negativeeligibility scope, unresolved hồ sơ/paraphrase retained; old3closed does not mean unrestrictedlanguagecomplete. No fresh-output tuning. OPUSactual8written/completetrue/sourcekeyorderschema/modelunchanged; same34termglossary/default retained, optional sacremoses warning. Same4GiBVM/pinnedQ4/runtime/guards; exactresources in final/summary. Allsuccessfulwrapperschild0/cleanupPASS,transientrootsabsent,artifact1GiB/shared6GiB; sourcebase1e762a5+perrunhashes not laterexactHEADappclaim. Evidence DEV_RUN/translation-quality-phase11/REVIEW.md and rawseen/final/fixtures/baseline/selection/summary/wrappers/quota. Allnewsource/fixturesnowseen. No app/OPUS/worker/validator/model/dependency/system/DEV/release/push changes.
+
+
+### Phase12 activation — close three named Phase11 review cases (2026-10-20)
+Owner specifically authorizes Q11-02-1(patching/update),Q11-02-2(comma negative eligibility),Q11-04-2(hồ sơ/phù hợp với việc) correction and complete retest, OPUS unchanged. Clean mainea8f614, sole writer/no transient roots or inference. Research-only v4checker/prompt harness/tests/evidence/docs. No app/worker/validator/model/framework/dependency/system/DEV/release/push. Closed scope: bounded noun/relative-eligibility grammar plus explicit patching vsupdate action distinction, preserve comma/negativeeligibilityUNKNOWN rather than bless it. General source-derived constraint phrase/lexical hints for an affirmative outside eligible-set instruction, explicit positive destination eligibility, no guessed ontology or source-specific full Vietnamese answers. Atmost2seen prompt hypotheses, one modelrevision perhypothesis; do not post-delete/rewrite negation or replace complete outputs by templates.
+Acceptance: actual3namedmodelrows must preserve entryclass/outside/destinationoperation and be recognized after source-aligned review; adversarialprohibition/inside/operation/negative-scope cases retainFAIL/UNKNOWN. If further bounded prerequisite fixes necessary, use seen evidence, never heldout tuning. Gatefocused+prior79 ->source3seenmodel ->freeze ->fresh18checkerfixtures6correct/12wrong plus4newlogic source rows(2dev/2heldout), knownphenomena/newstrings against prior284eval+fixture source, no VIgold in generation ->OPUSdefault/sharedterms actual packages ->realcandidate ->aligned review/cleanup/commit. No desire to expand endlessly beyond named3; newlyunsupported paraphrases remain transparent. MATCH still property-only, allreviewdrafts no semanticautoacceptance.
+Same pinnedQ4/runtime/CPU2/no-repack/context512/output128/temp0/120s/RAMguards,4GiBVM unchanged, sequentialmodel, wrappers1800sseen/baseline/3600sfinal, one registeredTEST_RUN/no copies,artifact1GiB/shared6GiB. Compactevidence DEV_RUN/translation-quality-phase12 sourceea8f614+exactperrunhashes; test-only noDEVbuild. No downloads/release/push.
+
+
+### Phase12 terminal — PASS bounded named3; OPUS unchanged
+Sourcebase ea8f614 plus exact per-run hashes. Actual Q11-02-1/Q11-02-2/Q11-04-2 all3MATCH in3first-attempt modelcalls, agent review confirms entry class/outside/eligible-operation; patch→update corrected to vá, comma negative scope replaced by actual affirmative model output, unresolved hồ sơ recognized. No stripping negation or templated sentence replacement. First source-derived eligibility hypothesis sufficient; no second tuning variant. Freeze prior to fresh outputs.
+Focused initial80PASS accidentally omitted Phase11 harness module; corrected all prior79+new7=86PASS,0fail/error/skip/warning. Fresh18finite fixtures6goodMATCH/12badFAIL,0falseacceptunknown; separate unit operation/negative-scope/quoted controls. Fresh4synthetic logic sources2dev/2heldout unique versus prior284evaluation+audit source, dataset hash e329e48cbb49ee2c6adb3e1f6fe5b85d4caa9b8c0a75efb673a9783fa211d247. Shared36-term bank and helper hashes frozen before fresh outputs. Actual OPUSdefault/glossary4each, source/key/order/schema/model unchanged; optional sacremoses warning retained. Hy new4/5calls:3MATCH/1UNKNOWN; Q12-02-1 unresolved→chưa hoàn thiện changes resolution/completion nuance, both identical attempts retained, original selected conservatively. No fresh-result tuning or semantic acceptance. Allnewoutputs nowseen; templates recur, agent-only review/no human gold, no general-language benchmark claim.
+Total8Hy calls/36.626s; peakWS1226526720/private155041792 bytes. Minimum sampled freephysical29454336/availablecommit2759507968; freephysical briefly below128MiB but not sustained3s, no guard abort; memory headroom is not proven ample. VM4GiB/dependency/runtime untouched. Allwrapperschild0/cleanupPASS, TEST_RUN+RELEASE_RUNabsent; project/shared quotas within1GiB/6GiB, exact receipt terminal-quota.json. No product/OPUS/worker/validator/model/framework/dependency/system/DEV/release/push change. Evidence DEV_RUN/translation-quality-phase12/REVIEW.md plus frozen selection, raw seen/final/fixtures/baseline/history, review-summary, wrappers/quota. Later docs/source commit does not upgrade receipts into exact-HEAD app/Release validation.
+
+
+### Phase13 activation — unresolved versus unfinished (2026-10-20)
+Owner requests remaining Q12-02-1 resolution/completion nuance fixed, actual retest, OPUS unchanged. Clean main dbc3cc3, sole Coordinator/writer, no transient roots/processes. Research-only v5 checker/harness/tests/synthetic data/docs; preserve prior receipts. Source-derived whole-word unresolved lexical cue (chưa giải quyết), not a full sentence answer or target replacement. Detect explicit unfinished/completion paraphrase only for compiled unresolved exclusion without source unfinished/incomplete; quoted/unsupported contexts abstain. Keep class/outside/operation/opaque syntax and stable revision policy.
+Acceptance named model output preserves unresolved meaning; unit correct/wrong distinction, unfinished-source/quote controls, prior86 -> seen named case plus3previous exclusions -> freeze -> fresh4unresolved sources2dev/2heldout unique vs288previous evaluation/audit source plus12checkerfixtures4good/8wrong -> actual OPUSdefault/shared37term bank and pinnedHy -> alignedreview/cleanup/commit. Atmost2seen hypotheses; no fresh-output tuning. AllNEEDS_REVIEW, MATCH property-only/agent review not human gold. No product/dependency/model/system/DEV/release/push changes.
+Runtime budget same pinnedQ4/no-repack/CPU2/context512/output128/seed42/120s-call guards on VM4GiB; sequential1800s wrappers, one registered TEST_RUN/no copies, nonexempt1GiB/shared6GiB. Evidence DEV_RUN/translation-quality-phase13 sourcebase dbc3cc3 plus exact per-run hashes, terminal roots absent. Test-only no app build.
+
+
+### Phase13 terminal — PASS named unresolved nuance; OPUS unchanged
+Sourcebase dbc3cc3 plus exact per-run code/data/model/runtime hashes. Q12-02-1 actual model now “Giữ các bản dịch chưa giải quyết bên ngoài tập hợp được phép phát hành.”, propertyMATCH and source-aligned agent review;3earlier exclusions stillMATCH. Source-derived whole-word unresolved cue, no full Vietnamese answer or target rewriting; first hypothesis sufficient. Scoped checker rejects completion paraphrases for unresolved, genuine unfinished-source/quoted/unsupported cases not force-corrected. Stable failed retry retained original, never autoaccepted.
+Focused92PASS/0failure/error/skip/warning includes prior86+new6. Freeze then fresh4sources2dev/2heldout unique vs288previous eval+audit strings, datasetea4644e47dba7a643e530e826191b3f8d8af39d793360d9d949850d19e10721c; all4MATCH on first actual model attempt, unresolved state/outside/operation correct in agent review. Fresh12finitefixtures4goodMATCH/8badFAIL/0falseacceptunknown. Known templates recur, no human gold/full-language or global model superiority claim; all8draftsNEEDS_REVIEW/outputempty, allnewcorpusnowseen, no fresh-result tuning. Actual OPUSdefault/shared37terms4each independently written, source/key/order/schema/model unchanged; optional sacremoses warning retained.
+8Hy calls/35.642s, peakWS1226600448/private155058176, minsamplefreephysical2404352/availablecommit2944356352 bytes. Very low physical sample transient, not sustained3s guard cutoff; no abort, not ample-memory proof. VM4GiB/pinnedruntime/dependencies/system unchanged. Allwrapperschild0/cleanupPASS, TEST_RUN+RELEASE_RUNabsent, nonexempt711383485<1GiB/shared5778817474<6GiB. Evidence DEV_RUN/translation-quality-phase13/REVIEW.md and selection/seen/final/fixtures/OPUS/history/summary/wrappers/quota. No app/OPUS/worker/productionvalidator/DEV/release/push changes. Subsequent commit not exact-HEAD app/Release acceptance.
+
+
+### Phase14 activation — frozen mixed regression audit (2026-10-20)
+Owner continues research with OPUS unchanged after named repairs closed. Clean main99a669d, sole writer/no transient roots. Next bounded action is mixed regression audit, not automatic product promotion: replay24existing Phase8 role/logic/protected rows plus4Phase13resolution rows using unchanged Phase13 pipeline/checker/37terms. Corpus is all seen, not fresh/heldout quality proof; original split metadata historical only. New harness and test/docs/evidence only, no prompt/checker/product/dependency/system/DEV/release/push mutation. Acceptance audit completed with every output/source/OPUS baseline retained, exact structure checked, unsupported semantics explicit rather than counted failed or passed by absence of flags.
+Gate harness identity/corpus/unit+prior92 ->freeze code/data/model/bank ->actualOPUSdefault/sharedterms independent packages ->Hy28 with maxone retry each ->source-aligned agent review/remaining-failure inventory ->cleanup/commit. No tuning in this audit; no same-model semantic judge or autoacceptance. Same pinnedQ4/no-repack/CPU2/context512/output128/120s/RAMguards on VM4GiB, sequential1800s wrappers/one TEST_RUN/no copies, artifact1GiB/shared6GiB. Evidence DEV_RUN/translation-quality-phase14 source99a669d+perrunhashes. Transient low RAM remains a limitation. Test-only no executable build.
+
+
+### Phase14 terminal — PASS mixed audit, remaining translation defects explicit
+Sourcebase99a669d+exactperrunhashes, frozen importedPhase13pipeline/37terms unchanged. Entire28source corpus replayPhase8+13 seen, historical splits not currentheldout. Focused93PASS/0fail/error/skipwarning. OPUSdefault/commonterms each28complete/sourcekeyorderschemamodelunchanged, optional sacremoses warning. ActualHy28rows/30calls:14propertyMATCH/13UNKNOWN/1FAIL,0structuralerrors/allNEEDS_REVIEW/outputempty. All4resolution cases retained correct. Agent source review identifies Q8-09-1missing explicit my-owner plus table→bảng tính narrowing, and Q8-10-1snapshot→backup object drift (FAILbothattempts); terminology precision upload→gửi dữ liệu and migration/rollback→generic di chuyển/phục hồi needs review. UNKNOWNunsupported templates not automatically semantic errors; MATCH not fullacceptance. No tuning during audit, no human gold/generalization/modelpromotionclaim.
+108.472smodelcalls/peakWS1226731520/minfreephysical13541376 bytes, very low transientRAM/no guardabort, VM4GiB unchanged. Allwrappers0/cleanupPASS, transientrootsabsent/quotas1GiBshared6GiB. Evidence DEV_RUN/translation-quality-phase14/REVIEW.md aligned all28source/OPUS/candidate plus selection/rawhistory/summary/wrappers/quota. No product/app/OPUS/worker/validator/dependency/system/DEV/release/push changes. This closes audit, not remaining translation defects; source-specific owner/object and technicalterm remediation is next within research, not OPUSreplacement. Subsequent commit not exactHEADapp/Release acceptance.
+
+
+### Final research closure activation — Phase15 (Owner2026-10-20)
+Owner requests autonomous completion of plan without incremental approval/report stops, retaining OPUS. Clean main132524d, sole writer/no transientroots; bounded research closure: repair demonstrated explicitowner/snapshotobject/technicalterm precision in test-only prompt, no hardcoded sentence outputs or validator relaxation. Atmost2seen hypotheses, maxone retry/request. Frozen before final mixed regression+fresh12synthetic diverse sources, sourceunique vs allprevious eval+audit strings; no fresh-output tuning. Final audit covers existing28 plusfresh12roles/logic/tokens/idioms, actual OPUSdefault/sharedterm packages, structural/source-aligned review, runtime and cleanup. Gates newprompt tests+prior93 ->actual4namedseen ->freeze ->40finalsource/OPUS and priorfinitecheckerfixtures ->summary/disposition of plansteps1–4. Unknown supported-language coverage/humanacceptance cannot be fabricated; training remains conditional/unapproved without curatedgold/budget. Plan completion means close research evidence/recommendation, not productreplacement/training/release. No newdependency/model/system/product/DEV/push. Same pinnedQ4/VM4GiB/no-repack/CPU2/context512/output128/120sRAMguards, sequential3600swrapperfinal/1800sbaseline,1GiBartifact/shared6GiB/one registeredTEST_RUN/no copies. Source132524d+perrunhashes, evidence DEV_RUN/translation-quality-phase15; terminal roots absent.
+
+
+### Phase15 terminal — PASS bounded execution; candidate admission REJECTED
+Sourcebase132524d+perrunhashes. Firstseen hypothesis source-derived my-owner/technicallexicon fixes Q8-09-1explicitowner/table and Q8-10-1snapshotobject, but upload hint introduces stopping→completion error in Q8-04-2; retainedseen receipt, not hidden. Secondfinalseen hypothesis adds lexical stopping=dừng and interruption-vscompletion instruction, actualdraft nowcorrect. Atmost2hypotheses honored; no parser/productionvalidator relaxation or templated targetreplacement. Q8-10-2rollback wording still indirect/process-storage interpretation, not declared fullycorrect. Initial fresh-data generation duplicate rejected beforelock/inference and replaced with unique source, not a passing test/model attempt.
+Final96focusedPASS/0fail/error/skip/warning; earlier95PASS retained. Prior12checkerfixtures4goodMATCH/8badFAIL reused as regression, not fresh evidence. Final40sources28seen+12fresh6dev/6heldout, datasethash70af9a362e389229be33d44d00991f918235547344c2af5d38acdf049abe45b6, freshsourceunique versus earlier evaluation/audit strings; familiar phenomena remain.43term bank/helper hashes frozen before finaloutputs. ActualOPUSdefault/glossary each39written/1blocked/Q15-10-1/completefalse, sourcekeyorderschemamodelunchanged; optional sacremoseswarning. Candidate given explicit roles/context beyond OPUS, not an isolated model-only comparison.
+ActualHy40rows/43calls:21propertyMATCH/19UNKNOWN/0FAIL/0structuralerrors, fresh12=6MATCH/6UNKNOWN; allNEEDS_REVIEW/outputempty. Same-source agentreview confirms namedowner/snapshot/stopping repairs and4newrole directions;2freshidioms coremeaning retained, no unrestrictedidiomclaim. Residualreview: Q8-04-1softwaretransfer→chuyển nhượng, Q8-10-2rollbackdata→data stored duringrollback, Q15-06-1commaeligible-scope ambiguity. No fresh-result tuning; originals/history retained.21MATCH is not fullsemanticPASS; no human gold or productpromotion.
+53totalHy seen/refined/finalcalls/185.301smodeltime, peakWS1226776576/private155271168/minfreephysical224280576/availablecommit3689291776 bytes. Currentrun no128MiBthresholdbreach; earliercampaign lowRAM limitations remain, not ample-memory/deploymentproof. VM4GiB/pinnedruntime/dependencies unchanged. Allwrapperschild0/cleanupPASS, transientrootsabsent, project713725640<1GiB/shared5778817474<6GiB. Evidence DEV_RUN/translation-quality-phase15/REVIEW.md aligned40source/OPUS/candidate plus selection/seen/refined/final/fixtures/baseline/summary/wrappers/quota. No app/OPUS/worker/productionvalidator/model/framework/dependency/system/DEV/release/push changes. Subsequent commit not exactHEADapp/Release acceptance.
+
+## Research plan disposition — 2026-10-20
+This section supersedes open-ended “next case” continuation pointers for the current research campaign. Owner requested autonomous completion; completion is the evidence-backed research disposition below, not a claim every translation defect has been solved. Do not silently initiate a new model/training/product campaign from a generic old pointer.
+
+| Plan step | Completed evidence / disposition |
+| --- | --- |
+| 1. Evaluation foundation | Frozen100synthetic corpus, provenance/splits/rubric, actualOPUSbaseline and source-aligned agent review recorded in Phase1. Later corpora separated seen/fresh with receipts. Independent human gold/acceptance NOT_CONDUCTED throughout, explicitly limited. |
+| 2. Existing route | Full OPUS/glossary/memory comparison completed in Phase2. Unconditional lexical-off and opaque-glossary candidate rejected by semantic evidence; runtime changes restored. Exactmemory consistency is not unseen-text quality. Product route unchanged. |
+| 3. One contextual candidate | Approved single pinnedHyQ4/officialruntime/license/hash/download and realWindowsCPU/memory feasibility completed; direct/context/repair comparisons, rejected same-model judge, source-safe prompt/protection/role/constraint/retry research, fresh/mixed final audits completed throughPhase15. Targeted repairs improve observations, but remaining ambiguity/technicalprecision, finite-checker abstention, no human gold, constrainedVM prohibit productadmission. Keep OPUS. |
+| 4. Conditional training | NOT_TRIGGERED, not an unfinished trainingjob. No curated independent semanticgold or approvedtrainingbudget/environment/stopcondition; original plan explicitly makes these prerequisites. Modeloutputs remain drafts and cannot be relabelled gold. No LoRA/SFT/training/download launched. A separate Owner decision with those prerequisites is needed to activate this step. |
+
+Current research execution outcome: **PASS bounded execution/reporting; product admission REJECTED**. OPUS remains the app model. No automatic approval/release or promise of whole-game translation quality. Recommendations and all remaining limitations are persisted above; stop indefinite prompt tuning on newly observed cases. Future product integration, training, larger independent evaluation or a new campaign requires a bounded Owner decision; no permission request is needed merely to preserve the current product route.
+
+
+### Phase16 activation — Owner continues named residual precision (2026-10-20)
+Owner explicitly continues after Phase15 disposition; bounded continuation is the3reported residuals Q8-04-1softwaretransfer/Q8-10-2rollbackdata/Q15-06-1eligible-set scope, not training/productpromotion. Clean main05d2c3a/solewriter/no transientroots. Research-only prompt/harness/tests/synthetic data/docs, preserve original campaign dispositions. Source/domain-derived softwaretransfer sense (not financial/ownership transfer), rollback data as data for undoing changes not generated-during, contiguous eligibility modifier with no comma. Lexical fragments, no full Vietnamese gold outputs or post-edits. Atmost2seen hypotheses, maxone retry. No parser/productionvalidator/model/framework/dependency/system/DEV/release/push change.
+Gate newdomain/prompt/source tests+prior96 ->3actualseen ->freeze ->existing40mixed+fresh8synthetic (softwaretransfer/rollback/exclusion + legal/financialcontrol;4dev4heldout; sourceunique vs allprior eval/audit strings) ->OPUSdefault/commonterms then pinnedHy ->aligned agent review/cleanup/commit. No fresh-output tuning; MATCH propertyonly/allNEEDS_REVIEW/no humangold. Unknown lexical/generalization limits explicit. Same VM4GiB/pinnedQ4/CPU2/no-repack/context512/output128/120sguards, sequential3600sfinal/1800sotherwrappers, one registeredTEST_RUN/no copies, artifact1GiB/shared6GiB. Evidence DEV_RUN/translation-quality-phase16 source05d2c3a+perrunhashes; transientrootsabsent atterminal. Conditionaltraining remains nottriggered.
+
+
+### Phase16 checkpoint and continuing compound precision — Phase17 (2026-10-20)
+Ongoing Owner authorization to finish plan autonomously covers2adjacent precision findings; not terminating at another microreport. Phase16named3 actualsource-aligned repairsPASS,99testsPASS, frozen48/51calls=24MATCH24UNKNOWN0structuralerrors; fresh8legal/bankcontrols retained distinct senses. New findings explicit file noun lost in generic transfer and verification weakened to confirmation. Phase16fresh evidence immutable, now seen; no relabelled heldout or fresh-result tuning in that run. Current checkout own Phase16changes only, main05d2c3a solewriter; continuation adds research-only Phase17compoundlexicalcue and tests/data/docs, no product/dependency/system/training/model change.
+Source-derived file transfer noun phrase truyền tệp overrides generic data-transfer cue only for exact compound; verified=xác minh vocabulary preserves verification distinct from confirmation. No fullsentencegold/outputrewrite/checkerrelaxation. Max2seen hypotheses against Q16-01-1/Q16-03-1+legal/financialcontrols; gateprior99+new ->freeze ->48seen+4freshcompound/verification/control sources2dev2heldout ->actualOPUSdefault/commonterms thenHy ->alignedreview/cleanup/terminalcommit. No further fresh-output tuning. Same runtime/provenance/quotas/guards asPhase16; one TEST_RUN, sequential1800sbaseline/3600sfinal, no copies/downloads/DEV/release/push. Evidence DEV_RUN/translation-quality-phase17 source05d2c3a+perrunhashes. Humanacceptance/productadmission still separate.
+
+
+Phase16 completed receipt: named3actualmodel repairs source-aligned, first hypothesis;99focusedPASS/0fail/error/skipwarning. Frozen48/51calls=24MATCH24UNKNOWN/0structuralerrors; fresh8=2MATCH6UNKNOWN with legal/bankcontrols correctly distinct in agentreview. AllNEEDS_REVIEW, no checkerrelaxation. OPUSdefault/common46terms47written/1blocked each/completefalse, sourcekeyorderschemamodelunchanged, optional sacremoseswarning.54totalseen+finalcalls/193.887s, peakWS1226850304/private155336704/minfreephysical134840320/availablecommit3993378816 bytes; no guardabort, VM4GiB unchanged. Allwrappers0cleanupPASS/transientrootsabsent, project715112652<1GiB/shared5778817474<6GiB. Evidence DEV_RUN/translation-quality-phase16/REVIEW.md and frozenrawrecords/wrappers/quota, source05d2c3a+perrunhashes. Two newcompound/verification precision findings carried directly into authorized ongoingPhase17, not fresh-output tuning/reclassification inPhase16. No app/OPUS/worker/validator/dependency/system/DEV/release/push changes.
+
+
+### Phase17 terminal — PASS named compound repairs/evaluation; admission still rejected
+Actual Q16-01-1 nowexplicit truyền tệp, Q16-03-1 nowđược xác minh; legalownership/financialtransfer controls remain correct. Firstseen hypothesis sufficient,4modelcalls/4propertyUNKNOWN due unsupported grammar, source-aligned agentreview confirms namedrepairs; not automaticsemanticPASS. Phase16data-transfer/rollbackdata/eligibilityscope repairs retained on full finalreplay. No outputreplacement/fullsentencegold/parser/validatorrelaxation.
+101focusedPASS/0fail/error/skipwarning includesprior99+new2. Frozen48termbank/code/data before52finalsources (48seen+4fresh2dev2heldout), hashbf28f94d51334e061a5627b1f8938abcd2874634573be0e6c9d686c71056fb0d. Final52/55calls=24propertyMATCH28UNKNOWN/0structuralerrors;fresh4allUNKNOWN outsidefinitecompiler. AllNEEDS_REVIEW/outputempty; no fresh-result tuning. Agentreview new4 preserves file/verification/time/financial/legal relations, but Q17-04-1contract→hiệp định in houseownership context is wrong lexicalsense (hợp đồng required), so cannot claim full finalsemanticadequacy. Q17-01pause-as-request versus keep-paused aspect also remains reviewable. Preserve failure findings, not an endless post-hoc glossary loop on heldout. No independent human gold/general-gamequality claim; productadmission remains rejected, OPUS unchanged, trainingconditionalnottriggered.
+ActualOPUSdefault/common48terms each51written/1blocked/completefalse, sourcekeyorderschemamodelunchanged; optional sacremoseswarning. Candidate has extra explicitdomain/roles, comparison not pure model-only. Prior12checkerfixtures4MATCH/8FAIL reused regression, not newfreshfixtureevidence.59totalseen+finalcalls/202.986s, peakWS1226813440/private155271168/minfreephysical265756672/availablecommit4017061888 bytes, no guardabort/VM4GiB unchanged. Allwrappers0cleanupPASS/transientrootsabsent; project716479834<1GiB/shared5778817474<6GiB. Evidence DEV_RUN/translation-quality-phase17/REVIEW.md plus frozenidentity/rawall52source/OPUS/Hy/summary/wrappers/quota, sourcebase05d2c3a+perrunhashes; latercommit not exactHEADapp/Release acceptance. Phase16/17changes researchonly, no app/OPUS/worker/productionvalidator/dependency/system/DEV/release/push/training changes.
+
+Current continuation disposition: reported three residuals plus two adjacent compound/verification points corrected in actual outputs and audited across fullmixed/fresh/control sets. Fullcandidate semanticadmission remains rejected on recorded fresh lexicalfailure and absent independentacceptance. The four-step plan disposition above remains in force; this continuation does not authorize production promotion or training merely because targeted repairs passed.
+
+
+### Phase18 prerequisite remediation within ongoing control acceptance
+Phase17fresh legalcontrol reveals contract→hiệp định in houseownership domain; receipt stays semanticfailure/notfresh-retuned. Owner autonomous completion includes safe prerequisite correction within same research owner. Restrict lexical hint contract=hợp đồng to explicit house/property-ownership domain; do not alter unknown/programming/treaty context. No globalsentence answer/postreplacement/checkerchange. NewPhase18records formerfresh nowseen, new4source2dev2heldout unique against allprior; no newfull-game/modelclaim. Gate103(new2+prior101) including equality of prompts againstPhase17 for51unaffected52sources ->actual3seenlegal/moneycontrols ->freeze ->17affected/regression+new4 total17 (13replayed+4fresh), actualOPUSdefault/common48terms andHy. Reuse unchanged-source52run only as earlier evidence, do not label newexactHEADfullrun; isolated requests/nohistory and exactprompt-equality justify no redundantfull52modelrun. Max2seenhypotheses/no fresh-output tuning. Same runtime/budgets/provenance/cleanup boundaries asPhase17, evidence DEV_RUN/translation-quality-phase18, no app/product/dependency/system/training/DEV/release/push change.
+
+
+### Phase18 terminal — PASS residual/control prerequisite repairs and affected validation
+Actual house-contract seenoutput now “Hợp đồng đã được xác minh cho phép việc chuyển nhượng quyền sở hữu.”; legalownership and moneytransfer/verification controls remain correct. Firsthypothesis sufficient. Source/domain-only lexicalcue, no fullsentencegold/outputreplacement/checkerchange. Phase17fresh lexicalfailure remains immutable and nowseen, not relabelled freshPASS.
+103focusedPASS/0fail/error/skipwarning includesprior101+new2. Equality test verifies51/52Phase17first-attempt prompts identical, onlyQ17-04-1housecontract changed; unknown/programming/treaty contexts unchanged. Because requests isolated/nohistory, affected13replay+4fresh2dev2heldout chosen over redundant52modelrerun. Earlierfull52receipt remains earliercode evidence, not upgraded to exactcurrentfullrun. Frozennewdataset4a29ade8c76d92ffe24c0ec967c06cea53f0a415899fb4865daee451313b582a,48commonterms/codehashes beforefresh outputs, unique against prior evaluation/audit sources. Actual17/18calls=3propertyMATCH14UNKNOWN/0structuralerrors;fresh4allUNKNOWN outsidefinitecompiler, core source relations retained in agentreview. AllNEEDS_REVIEW/outputempty, no autoacceptance/no independenthumangold/full-language claim. Prior12checkerfixtures4MATCH8FAIL reused regression. No fresh-output tuning.
+OPUSdefault/common48terms each17written/0blocked/completeTrue/sourcekeyorderschemamodelunchanged, optional sacremoseswarning; earlier52baseline51written/1blocked remains incomplete in immutablePhase17receipt. Candidate receives additionaldomain/roles, no isolatedmodel-superiority claim.21totalseen+finalcalls/69.781s, peakWS1226784768/private155242496/minfreephysical198103040/availablecommit4014014464 bytes; no guardabort/VM4GiB unchanged. Allwrappers0cleanupPASS/transientrootsabsent, project717304514<1GiB/shared5778817474<6GiB. Evidence DEV_RUN/translation-quality-phase18/REVIEW.md and frozenrawseen/final/OPUS/summary/wrappers/quota, sourcebase05d2c3a+perrunhashes; latercommit not exactHEADapp/Release acceptance.
+Current authorized continuation terminal: six recorded technical/compound/control points now corrected in actualoutputs (softwaretransfer, rollbackdata, eligibilityscope, filetransfer, verification, housecontract); previousownership/snapshot/negation/token cases retained. Latest4fresh has no coremeaningdefect observed by Coordinator; style/aspect and unrestricteddomain adequacy remain reviewable. Conditionaltraining and independenthumansemanticacceptance not established; productOPUS stays unchanged, no productpromotion or automaticapproval inferred. No app/worker/productionvalidator/model/framework/dependency/system/DEV/release/push/training change. Overallresearch step1–4 disposition remains evidence-backed/conditional; do not call this whole-product translation quality PASS.
+
+
+### Phase19 activation — frozen broad fresh comparison and blind separate agent review
+Owner continues after named repairs; current gap broad new-text evidence and reviewer separation, not another prompt polish. Clean main685c810/solewriter/no transientroots. Research-only harness/dataset/tests/blind-review evidence/docs; exactPhase18pipeline/checker/48term bank imported unchanged, no prompt tuning or product/model/dependency/system/training/DEV/release/push change. Fresh60synthetic EN sources6groups*10 (dialogue,idiom,address,UI,terminology,protected),7development/3heldout pergroup; single source scenes, normalizedunique against allprior eval/audit strings. Familiar phenomena, no unseenidiom/fullgame claim. Freeze dataset/pipeline/labels/rubric before outputs. No Vietnamese gold in generation, no same-Hy judge.
+Gate harness/data/blinding tests+prior103 ->frozenOPUSdefault/common48terms independent packages ->pinnedHy60 maxone supported retry ->blindpack with per-row A/B seeded shuffle, no modelnames/routeflags/hashes/paths in reviewer input ->one sequential read-only child review (Owner earlier explicitly delegated dev/review for this plan; existing authorization retained), GPT6LunaMax perAGENTS, max2spawnattempts/no grandchildren/no second sourcewriter ->terminal Coordinator ingest/audit major/uncertain findings against source, retain disagreements separately ->unmask counts bygroup/split, no fresh-output tuning ->persist/cleanup/commit. Agent review is independent of this prompt editor but is NOT independenthuman gold or automatic semantic acceptance. Root sourcewriter pauses during child evidencewrite; child restricted to suppliedblindpack/rubric and one evidence JSON, no source mutations or other-model report lookup.
+Rubricfixed: peroutput acceptable/minor/major/unusable/uncertain; note meaning change, omitted/additionalmeaning, role/register, terminology and naturalness separately; major means material source relation/polarity/actor/object lost/changed, unusable includes missing translation. Structure measured separately, no conflation. Winner A/B/tie/neither/uncertain; no forcedwinner on ambiguous source. Product admission still requires targetmeaningimprovement/no majorregression/structuralinvariants and Ownerdecision; absence of human gold stays explicit. Conditionaltraining NOT_TRIGGERED.
+Runtime sameVM4GiB/pinnedQ4/CPU2/no-repack/context512/output128/120sRAMguards, sequential1800sbaseline/3600sfinal, one registeredTEST_RUN/no copies,1GiBartifact/shared6GiB. Evidence DEV_RUN/translation-quality-phase19 source685c810+exactperrunhashes, transientrootsabsent atterminal. No externalmessages/uploads/publication.
+
+
+### Phase19 terminal — PASS frozen broad evaluation/reviewer separation; admission rejected
+Sourcebase685c810+perrunhelpers/data/model/runtime hashes, frozenPhase18pipeline/checker/48terms imported byidentity (no tuning). Fresh60normalizedunique synthetic sources6groups*10,42development18heldout, dataset085c0731f7ca5c1ed3fcc6342c882516c1c95d66d5d82ac47ca49dd78b6013ee/rubricc0f948c0548e13a539d4b8387c64e29404cb393642c320827eaffae9b35a4f16 fixedbeforeoutputs. Familiar phenomena/hints recur, no new-idiom/allgame claim.105focusedPASS/0fail/error/skipwarning. ActualOPUSdefault/common48terms each59written/1blocked/completefalse,0writtenstructuralfailure/sourcekeyorderschemamodelunchanged, optional sacremoseswarning. ActualHy60drafts/61calls/162.925s,0empty/0structuralrejections, allEOGreturned/modelunchanged;2propertyMATCH58UNKNOWN/allNEEDS_REVIEW/outputempty. Unsupported parser states not semantic scores.
+OneGPT6LunaMaxread-only reviewer child (1spawnattempt/2cap, no grandchildren/parallelwriter), authorized under Owner's earlier plan delegation, reviewed all60A/B randomizedpairssourcealigned withoutmapping. Root sourcewriting paused until childterminal. Originalreview immutable; Coordinator audited allmajor/unusable/uncertain sourcefindings and4adjacent calibration points before openingmapping; bothreview/audit hashes retained. Childterminal/ingested/persisted; no separateuserchat/worktree created to archive. Separateagent review NOT humangold; no same-Hy judge or automaticapproval.
+Rawblindreview: Hy38acceptable/15minor/6major/1uncertain; OPUSglossary15acceptable/26minor/17major/1uncertain/1unusable. Preferences60:Hy36/OPUS10/tie12/neither1/uncertain1; pairedcovered59 excludesblockedrow:Hy35/OPUS10/tie12/neither1/uncertain1. Coverageunusable separatefromsemanticfailure. Coordinatorblindseverityadjustments: Hy36acceptable/16minor/6major/2uncertain; OPUS15acceptable/24minor/19major/1uncertain/1unusable. Fourtransparentdisagreements preserveoriginalpreferences/counts, not humantruth; raw6/17 used asprimarycount ratherthan selecting favorableaudit6/19. Heldout18rawHy4major/OPUS7major, auditedOPUS8major. Context/rolemetadata suppliedtoHy notOPUS, so workflowcomparisonnotpuremodelarchitectureeffect.
+Hybenefits idioms/address but retains6major sourcefailures: pastcounterfactual→present/future, subordinateI-gave-you→you-gave-me, discard→skip/ignore, database rollback→cancel, invoice→receipt, pressure sensor→switch. Rawdraft inspection confirms errors already in model draft; roleposteditonlytôi→chị in embedded-rolecase, not the originofreversal. Afterblindseveritycalibration2unambiguousnewmajorregressions vscoveredacceptable/minorOPUS remain invoice/sensor; new-major gatefailsdespitefewertotalerrors. AdmissionREJECTED, OPUSunchanged; no humansemanticacceptance/curatedgold/trainingbudget, conditionaltrainingNOT_TRIGGERED. Do not post-hoctune this corpus then call it heldout; all60nowseen.
+OPUSloops4.203sdefault/3.109sglossary versusHy162.925sisolatedCLIcalls (differentstartup/sessioncharacteristics, not predictedapplatency). PeakHyWS1226887168/private155357184/minfreephysical290803712/commit3987062784bytes, no guardabort/VM4GiBunchanged. Models/provenance unchanged. Wrappers0cleanupPASS/transientrootsabsent, artifact1GiB/shared6GiB withinlimits. Evidence DEV_RUN/translation-quality-phase19/REVIEW.md with all60alignedsource/outputs/reviewnotes plus selection/rawruns/blindrubric/input/seal/map/originalreview/coordinatoraudit/unmask/summary/wrappers/quota. Privatehistoricalevidence not publiccloneprerequisite. Subsequentcommit not exactHEADapp/Releasevalidation. No app/OPUS/worker/productionvalidator/dependency/system/DEV/release/push/training change.
+Current disposition: broadernewtext evidence and separateagentreview nowcompleted; targetedmicrofixsuccessdidnotestablish safeunrestrictedmodelreplacement. Planstep1–3 research results persisted, step4 remains explicitlyconditional/nottriggered, no furtherautopromotion or teacher-draft-as-gold. Independenthumandata/acceptance and a boundedproduct/trainingdecision remain prerequisites, not another optionaltest assumedpassed.
+
+
+## Phase20 active — six observed semantic classes
+Research owner: Coordinator; test-only prompt harness and synthetic evaluation only. Preserve Phase18 checker/selection and OPUS product route. First bounded hypothesis: source-derived semantic hints for past counterfactual, embedded giver, discard, database roll back, invoice and sensor. No target sentence substitution or semantic PASS inferred from checker. Gates: new focused tests plus prior105, actual six seen cases, then freeze before fresh controls and actual comparison. At most two seen hypotheses; model/runtime/quota guards and canonical sequential cleanup unchanged. No downloads, app build, release or training.
+
+### Phase20 terminal — PREMISE_INVALID for semantic-hint sufficiency
+- Implemented research-only `translation_quality_phase20.py`: six source-derived hints; no full Vietnamese sentence targets, output replacement, production change or checker relaxation. Two seen hypotheses retained separately. Refined version moves short cues near source and binds explicit relative-clause roles; old checker/48-term OPUS bank unchanged.
+- Actual six seen cases: embedded giver/recipient, discard, invoice and sensor improved; past-counterfactual condition remains insufficiently explicit and database roll back still becomes cancellation. These are seen remediation results, not heldout acceptance. First hypothesis and its failures retained.
+- Freeze before new12 project-owned English sources, six paired semantic controls, unique against prior evaluation/audit source strings. Dataset SHA256 `6d24e47132dd8b4f9d8d3aaeba8bb35eaf11696ca4ac00d44ae8854890b0c49d`. Separate actual OPUSdefault/common48terms arms both12/12 complete, zero blocked; raw results retained. Hy12 drafts/12 real calls,34.157s model-call total, all NEEDS_REVIEW/output empty; structural/property checks are not semantic grades.
+- Coordinator source-aligned review (NOT blind/human gold):4 acceptable,5 minor,2 major,1 uncertain. Major: database roll back becomes cancellation; temperature switch becomes converter. Counterfactual remains uncertain. Minor: reload/refresh, physical roll/fold, receipt paraphrase and reading/data specificity. Do not treat the two failures as repaired or tune these fresh outputs in place. OPUS comparison is workflow-level with extra metadata/hints for Hy, not isolated model superiority.
+- Gate: final canonical unittest command (prior105 plus3 Phase20 tests)108 PASS,0fail/error/skip/warning, exit0; actual seen/seen-refined/baseline/final wrappers exit0 and cleanupPASS. Sourcebase `7bbbe78f4d27f696791a39f866017fe2795d14c0` plus each run's actual code hashes; final tests after final harness/dataset change. Earlier seen hashes/data differ and remain historical, not exact final-harness reruns.
+- Compact evidence: `DEV_RUN/translation-quality-phase20/{seen,seen-refined,baseline,final}.json`, immutable selections, wrapper/logs, all12 aligned `REVIEW.md`, `review-summary.json`, terminal-quota. Non-exempt719513917B<1GiB; shared5778817474B<6GiB; transient roots absent. No app/executable build required for test-only changes; no download, training, publication or system changes.
+- Outcome PREMISE_INVALID: adding semantic prompt hints alone did not satisfy the all-six/no-new-major premise. Candidate admission REJECTED; OPUS stays in app. Next research must change the tested mechanism and evaluate on fresh sources, not keep rewriting cues against the same outputs. The existing independent human acceptance/curated-gold/training-permission boundary remains; no training or product acceptance claimed.
+
+
+## Phase21 activation — constrained terminology transport / finite source normalization
+Coordinator sole writer; clean main146393a, previous child terminal, transient roots absent. Test-only helper/harness/synthetic sources/tests/docs, unchanged app OPUS/worker/production validator/model/runtime. New mechanism: domain-qualified source term carriers restored to bounded Vietnamese lexicon after existing opaque transport validation; final original-source structural validation remains mandatory. No full sentence replacement. Finite I-would-have/if-I-had clause reordering only when opaque/quoted scopes absent, to test temporal clarity without changing propositions; unsupported grammar untouched. Cases from Phases19/20 now seen, not heldout. At most two seen hypotheses; gate new adversarial transport tests+prior108 -> actual affected seen -> freeze -> fresh paired terms/grammar/opaque controls -> real OPUSdefault/commonbank+Hy -> aligned review/cleanup/commit. Fresh-output tuning prohibited; property checks never semantic acceptance. Same pinned CPU2/no-repack/context512/output128, measured RAM guards, max120s/call; sequential canonical wrappers1800s per stage, one registered disposableTEST_RUN, no data copies; compact evidence DEV_RUN/translation-quality-phase21, nonexempt1GiB/shared6GiB. No downloads/training/release/push/app build.
+
+Phase21 review protocol before reviewer dispatch: sixteen frozen exact-text A/B pairs, per-row seed2121 mapping sealed; reuse Phase19 rubric. Under Owner earlier explicit dev/review delegation, route one sequential read-only GPT6LunaMax child (max2 creation attempts, no grandchildren), limited to AGENTS/AI_STATE bootstrap and supplied pack/rubric, one review JSON. Coordinator pauses sourcewriting until terminal, ingests and audits separately before publishing. Agent review not human gold, no semantic autoapproval or product promotion.
+
+### Phase21 terminal — PASS mechanism evaluation, admission rejected
+New source-semantic transport is research-only: domain-qualified longest nonoverlapping term carriers, narrow I-would-have/if-I-had grammatical fragments, existing guard first then original-source opaque/structural gate. Initial source clause reordering failed temporal meaning; first single-word transport produced bad modifier order. Refined whole compounds and tense fragments improved six seen cases; lower-case surface formatting corrected before freeze. No complete Vietnamese sentence gold or target substitution. Historical attempts retain different code/data hashes.
+Frozen fresh16 unique English sources (c4cb0be191ea0eba60013ccb853e88dfdf432badc19b6243765ffb854289b9e6), paired senses/grammar/protected controls.116testsPASS/0fail/error/skip/warning. Actual OPUS arms each15written/1blocked/incomplete (optional sacremoseswarning); Hy15nonempty/1blocked,17calls/47.750s/2structural-rejected attempts on dense markers. AllNEEDS_REVIEW/outputempty; no marker guessing or guard relaxation. Core temporal/rollback/sensor/switch repairs generalize to several fresh sentences, but not universal quality.
+One sequential GPT6LunaMax child,1creation attempt, sourcewriter paused; initial bootstrap-only stop resolved by same-task clean-start/evidence-scope clarification, same child resumed then terminal/ingested. Blindseed2121 exacttexts/mapping/rubricsealed. Raw review: Hy8acceptable5minor2major1unusable; OPUS2acceptable3minor10major1unusable; preferencesHy12/OPUS3/tie1. Coordinator agrees material failures: physical roll→fold, whether finish OR undo→finish OR NOT undo, and one blocked dense-marker output; doubled đã is minor naturalness. Review is agent evidence NOT human gold; extra context/lexicon means workflow comparison, not pure architecture effect.
+Evidence DEV_RUN/translation-quality-phase21/{seen,seen-refined,baseline,final}.json, selections/wrappers/blindseal/input/originalreview/summary/all16REVIEW/quota; sourcebase146393a+actualperrunhashes, all wrappers exit0/cleanupPASS and terminalrootsabsent, nonexempt<1GiB/shared<6GiB. All16 nowseen. No fresh-output tuning, app/model/productionvalidator/dependency/system/training/release/push changes. Candidate remains rejected for major/coverage failures; next bounded task targets these new classes with new-source proof.
+
+
+## Phase22 activation — composition/opaque density prerequisite remediation
+Clean main228f038, previous child terminal and ingested; Coordinator sole writer. Same research-only scope/runtime/quotas/gates, no product/training/publish/dependency changes. Treat all Phase21 outputs as seen. New bounded mechanisms: keep positive alternative conjunction with rollback term and check finite whether-A-or-B polarity; household carpet/rug-specific roll sense; bundle only adjacent original opaque runs as atomic carriers with final exact original token/structural validation; normalize only duplicate tense at known grammar-carrier join, not arbitrary target words. Tighten finite past grammar to explicit participles and abstain on possession. Newhelper versions preserve earlier snapshots. Atmost2seen hypotheses -> focused/prior116 -> actual3seen failures plus past duplicate ->freeze ->fresh source controls ->actualOPUS/Hy ->alignedreview/cleanup/commit. No fresh-output tuning or alias repair of corrupted markers. All drafts NEEDS_REVIEW.
+
+### Phase22 terminal — PREMISE_INVALID for no-major fresh generalization
+Research-only v2 lexicon transport adds household rug/carpet roll sense, finite positive-alternative conjunction/grammar fragments, adjacent ORIGINAL opaque-run bundling and typed đã/sẽ joins. No corrupted-marker aliases, no guessed append/delete, no production validator changes. Past grammar now requires explicit finite participles, possession controls abstain; inherited broad past directive suppressed on unsupported possession scopes. Ordinary words inside tags remain translatable. New finite alternative checker rejects added negatives only in its closed positive-source grammar; propertyMATCH is never whole-sentence adequacy.
+Two seen hypotheses retained. First exposed a checker false accept of inserted hay-không scope; recorded bad draft added to trap tests, parser narrowed. Final seen mechanism fixes physical roll, tense duplication, dense marker sentence and positive rollback branch; intermediate repeated sẽ corrected at typed join before fresh freeze. These are seen remediation results, not new-source acceptance. Source/code hashes differ between seen/final and remain explicit.
+Final focused+affected gate122PASS/0fail/error/skip/warning. Frozen new12 English sources/6dev6heldout normalizedunique against prior evaluation/audit, no Vietnamese gold; dataset39612f4d1151fa7d7e319367ded73985ed53153dbbe46e2df143daf724c22710. ActualOPUSdefault/common48terms each11written1blocked/incomplete, optional sacremoseswarning, model/source/schema/order unchanged. ActualHy12nonempty/13calls/40.703s; one structurally rejected revision retained, original preserved; all final original opaque tokens/structure valid, allNEEDS_REVIEW/outputempty. One propertyMATCH/11UNKNOWN are not semantic grades.
+Coordinator fullsource review (NOT blind/human gold):7acceptable3major2uncertain. Major new sources: complete→completely; scheduler→slideshow; having listener address→giving speaker address. Uncertain: scope of source-authorized negative alternative; cleaning log narrowed to deleting a record. Dense formatted-placeholder sources and new unreal-past example succeeded, including ordinary translatable tag text. PropertyMATCH on scheduler sentence did not catch wrong actor and must not approve it. Revision on wrong complete predicate lost lexical carriers because previous decoded draft is not fully remasked; existing guard rejected it and originalUNKNOWN was preserved. This retry integration gap remains explicit for any subsequent mechanism work; no fresh-output tuning or claim it is repaired.
+Evidence DEV_RUN/translation-quality-phase22/{seen,seen-refined,baseline,final}.json, immutable selections/wrappers/logs, all12REVIEW/summary/terminalquota; sourcebase228f038+actualperrunhashes, no later exactHEADapp claim. All wrapper exits0/cleanupPASS; transientrootsabsent, nonexempt721624821B<1GiB/shared5778817474B<6GiB. No app build required/test-only; no product model/worker/framework/productionvalidator/dependency/system/training/Release/push changes.
+Outcome PREMISE_INVALID: observed prerequisites improved but finite term/grammar constraints did not remove new sentence-level major errors. Candidate admission remains REJECTED; do not broaden finite dictionaries and call the same seen outputs heldout. Existing independent-human acceptance, curated gold and explicit training permission prerequisites are still absent; training/product promotion not triggered. Preserve all outputs as research evidence rather than silently normalize them into acceptance.

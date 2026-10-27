@@ -1,84 +1,12 @@
-Owner0.1.7 final-baseline decision (2026-10-19):0.1.8+ full-app admission and immutable named-route-copy guards in test_setup_package.py; legacy/named coexistence in test_full_app_update_publisher.py; real WPF FullAppUpdate_BaselineRoutesChooseVerifiedHop validates newest-incompatible→older-compatible metadata/download, selected URL/name/digest and package rejection. Actual public0.1.7 offer/download/apply/restart plus complete target/data/model/health readback is mandatory before in-app readiness claim; helper/mock alone does not prove live GitHub acceptance. Future releases keep a legacy0.1.7 asset plus the predecessor-specific route and older hops.
-
 # VNText Studio — Test Matrix
 
-Reviewed-memory editor entrypoint:66backendtestsPASS incl cancelpreview/stale/
-selection/legacyconversion/rollback/foreignmutation/mixedattribution; localized
-WPFharnessPASS vi/encontrols; actualgenerated4rowCLIworkerextract/import/approval/
-reuse/patchreadbackPASS, currentDEVsmokePASS. Currenthashes/receipts at
-`evaluation/translation_owner_approval_v1/entrypoint-delivery.json`. NativeUI
-NOTVERIFIED: supportedskyreturned conflictingappidentity, no UIinput/capture.
-TechnicalPASS does not waive native gate or whole-goal semantic acceptance.
+Chọn gate theo vùng thay đổi trong bảng dưới, rồi focused → affected → integration/native → full/Release nếu scope yêu cầu. Chỉ chạy lại khi source/prerequisite liên quan mất hiệu lực. Gate catalog không chứng minh PASS; kết quả hiện tại ở [AI_STATE](AI_STATE.md) và ledger task. Quyền/baseline mới nhất ở CONTRACTS và Owner; các yêu cầu public0.1.7 trong chronology không mở lại scope pre0.1.12 của release0.1.13.
 
-Strict approved memory: `test_strict_approval_memory`14tests includes exact scope/
-binding/proposalIDs,missing/corrupt/unknownpolicy nolegacyrebuild,duplicates,
-liveguardcache read/write refusal,positivecachehit then samekey wrongfile/rawcase
-miss, structuralgate unchanged. Finalaffected161PASS0skip/warning inclworker/
-legacy/glossary/status/cache/traceability; actual17reuse+5wrongscope+wrongpackage
-probe and currentDEV recoveryworkersmokePASS. Evidence at
-`evaluation/translation_owner_approval_v1/scoped-delivery.json`; scoped approved
-reuse only, not inference learning/generalization/whole-app acceptance.
+- [Gate chuyên biệt](docs/validation/SPECIALIZED_GATES.md): Muc1/RenPy, CSV, Patch và các phase research; tra theo owner, không nạp tất cả.
+- [Evidence lịch sử](docs/history/TEST_MATRIX.md): snapshot đầy đủ ở docs source `b7e842419bef`, giữ nguyên kết quả cũ; không bootstrap từ đó.
+- [INDEX](docs/INDEX.md) và [WORKFLOW](docs/WORKFLOW.md): routing/lưu lịch sử.
 
-Owner-delegated approval: `test_translation_owner_approval` plus original
-`test_translation_owner_review_packet` (8tests) verifies separate exact23ID
-decision mapping/authority/package-context restrictions, rejects target additions,
-scope broadening and false human_gold/training/whole-app flags, preserves sealed
-originals. Approval is not runtime import or direct human semantic gold. Approved
-memory integration remains subject to strict scope/cache/rebuild prerequisite.
-
-Owner review packet: `test_translation_owner_review_packet` covers portable
-original-packet hashes/provenance, rejects forged approval/gold/training flags
-and cross-scene/broadened-scope/address metadata, checks proposed term wording
-against whole-sentence proposals. `python -B -m
-tests.tools.translation_owner_review_packet verify` needs tracked packet/dataset
-only, no ignored reports/model/inference. It checks the original pending packet;
-Owner may copy the blank decision CSV or reply with IDs/revisions, not edit
-sealed originals and silently turn them approved. Neither gate grants semantic
-acceptance, memory import/training authority or fresh benchmark quality.
-
-Active zero-cost translation goal: public compact evidence at
-`evaluation/translation_quality_goal_v1/receipt.json`, canonical residual decisions
-in TRANSLATION_QUALITY_PLAN. Final affected242tests/0fail/error/3external Unity
-fixture skips/0warnings, currentDEVbuild/workersmoke and actual synthetic local
-translate/import->patch/read-back/hostile-placeholder refusal PASS. Three skips
-have separate verbose9QA receipt, not game acceptance. Same seen100source/model
-audit changes2unassisted outputs; two additional glossary rejects are not meaning
-improvements. No decoder/training/silver promotion; Brain whole-goal acceptance
-pending, no human-gold/generalization/whole-language claim.
-
-Glossary V2 row-local conflict fix: `test_glossary_context_v2`, `test_user_glossary`,
-`test_translation_cache`, `test_mt_structural`, `test_mt_ct2_status`,
-`test_mt_patch_gate_write`: final53PASS, including absent/protected-only/scope/case/
-boundary nonconflict, true conflict closed, nonconflicting sentinel ordinal stable,
-old glossary cache miss/record retained. Worker16PASS on intermediate source;
-final DEV bootstrap/worker smokePASS. Frozen actual `glossary_conflict_scope_check`
-before-trace/after-cache uses2x4synthetic packages, unchanged localOPUS; false blockers
-3->1, control4written unchanged, protected prose restored, true conflict ledger
-retained, oldcache not reused. No general semantic-quality/release claim.
-
-Offline silver packet M1–M4: `test_translation_silver_packet` focused4 tests
-(public hash/mapping/policy verification without ignored originals, raw tamper,
-rehashed unsafe-memory rejection, retained grades/overrides/current exclusions).
-Run through canonical wrapper; no inference/model/build or125-test rerun.
-`python -B tests/tools/translation_silver_packet.py verify` validates public packet
-and tracked dataset. Counts60/12audit/48terms/3candidates/9memory; silver only,
-not human gold or product acceptance. Source/check hashes in packet/handoff.json.
-
-Research-only contextual model guard/fresh-corpus gate: `tests/unit/test_translation_quality_guard.py`, `test_translation_quality_prompt_trial.py`, `test_mt_structural.py`; then pinned real-model seen regression and frozen new-corpus comparison via `translation_quality_phase5.py` under canonical cleanup. Reject missing/extra/duplicated/reordered/damaged carriers, context-token injection and source collisions; preserve exact original tokens, translate tag bodies, keep scenario/split boundaries. Output/model-process success is not semantic acceptance. Test tools do not change product CT2/OPUS routing; new corpus rights/split/hash and per-run source/model identity are mandatory.
-
-App journal Cockpit follow-up: `JournalStore_BoundsHistorySearchSeverityAndClear` exercises real daily persistence, severity/literal/regex filters, file rotation/caps, traversal rejection, selected-file deletion preserving other files and modal navigation preserving the active tab. Same canonical WPF workflow gate, DEV build/configured worker smoke and native modal inspection.
-
-App journal (Owner2026-10-18): WPF harness `Journal_RoutesProgressAndErrorsWithoutCrossTabLeak` checks navigation, task-ID routing after tab changes, independent bounded progress, app-wide stderr/errors/UI exception logging and caps. Affected source/workflow test gate plus DEV build/configured worker smoke; native Journal/Extract/Translate/Patch inspection confirms one heading and shared card rhythm, separate Patch preflight. No game copies or Release claim.
-
-Automatic image drafts (Owner2026-10-18): `test_image_batch.py` covers real Windows OCR/CT2 and extraction hook, original/CSV protection, outside-region pixels/alpha, duplicate names, RPA provenance, missing model/OCR, unsupported backgrounds, cancellation, budget and fresh retry output. Run together with image-text/manual checks, RenPy extraction/archive, worker protocol and WPF workflow. Generated fixtures only; DEV build plus configured worker smoke and native hidden-OCR/retry-action inspection required. Auto drafts never bypass manual renderer approvals or prove patch/game/translation quality.
-
-Release 0.1.5 epoch-chain remediation: focused cleanup tests cover eight-hop success/ninth refusal, cycle/depth bounds, ancestor policy corruption, immutable prior files/records, CAS and existing writer/inventory/rollback refusals. Owner-authorized rebaseline adds eight-hop history preservation and post-rebaseline ancestor hash tamper refusal while keeping ordinary ninth-hop refusal. Affected gates are artifact-write policy, work paths, mirror package, regression runner, venv pruning and Setup package (including uninstall watchdog). Terminal metadata retention accepts the exact canonical `work_temp_dir` root purpose only while its registered `tmp` tree contains empty containers.
-
-Release snapshot prerequisites additionally require parent-wide quota inventory, exact source containment and fail-closed parent budget verification, idempotent exact candidate registration, actual regression child execution against a deliberately conflicting dependency `tests` package, a valid-identity legacy timeout fixture, and mocked download isolation with an inherited no-download flag. Focused cleanup then affected runner/legacy/model-download/artifact/work-path/bootstrap/Setup tests run sequentially before the next clean source commit and epoch transition.
-
-Full-regression fixture remediation keeps synthetic game input separate from package/patch output; the CSV/JSON/XML round trips retain their original source hashes and read-back assertions. Mirror fixtures clear inherited scope markers instead of weakening write guards. Publisher guard tests accept explicit shared `VNTEXT_DEV_ENV_ROOT`; the regression child explicitly uses UTF-8 and the local `tests` package also resolves in new DEV worker interpreters. Exact Release snapshot quota-root detection must not absorb synthetic descendant workspaces. Route the existing pinned native SDK through `VNTEXT_RENPY_NATIVE_SDK` for native generated fixtures and image delivery, without copying/installing SDK or real games. Prebuild GUI/patch-installer skips remain explicit and their mandatory candidate gates run after build; external Unity opt-in skips remain deferred.
-
-Dùng matrix này để chọn regression theo vùng thay đổi. `full unit` không thay thế các gate game-copy/release khi thay đổi writer, worker hoặc packaging.
+## Matrix theo vùng thay đổi
 
 | Thay đổi vùng nào | Test bắt buộc | Test bổ sung rủi ro cao | PASS condition |
 |---|---|---|---|
@@ -161,70 +89,14 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 - `--release-verify-qml` có entry point nhưng `qml_ui.bridge` chưa có trong source hiện tại; QML-ready behavior là UNKNOWN, không ghi là PASS từ smoke Qt/WPF.
 - Full unit có thể có skip do fixture/runtime optional; phải ghi lý do skip, không chuyển skip thành PASS.
 
-## Muc 1 continuation focused gates
-- `test_renpy_compiled.py`, generated `test_renpy_native_sdk.py`: inert reducers/cycles, malformed/trailing/version rejection; compiled native ID→package→overlay→SDK lookup readback. Unresolved AST nodes must keep worker PARTIAL. Affected: RenPy extraction, patch/delivery and worker protocol. Compiled dialogue coverage does not imply complete menu/Python-string/legacy-schema coverage.
-- `test_renpy_sdk_download.py`: pinned official URL and SHA-256, bounded streaming download, progress reporting, cancellation cleanup, incomplete-transfer rejection and retry-safe output. These fake-response cases do not establish public-network or installed-app behavior; release acceptance must separately show the user-visible progress, cancel and retry states on the packaged app.
-- `test_image_delivery.py`: loose/RPA baseline, tamper/path/source protection, no-overwrite, rollback after receipt failure/interruption, preserve user edits; SDK loader reads Vietnamese image then original after rollback. Lint initialization proves native loader bytes, not visual gameplay.
-- `test_image_text.py`, WPF workflow harness: clone donor bounds/non-overlap/original pixels and approval invalidation; actual WPF edit/render/package interaction plus output pixel comparison is a separate mandatory DEV acceptance.
 
-- UIA generated acceptance: template translation must target the editing TextBox and persist through UI-saved review; edits invalidate approval before reapproval. Render/package/install hashes and outside pixels must agree. Native game change_language plus loader receipt proves fixture activation only; GUI layout/real-game coverage remains separate.
+## Gate chuyên biệt và anchor tương thích
 
-## CSV editor bounded acceptance
-- Focused csv_editor_api + WPF harness: immutable baseline mutation/order/header/width/quoted-record rejection, UTF8/BOM/multiline and extra field roundtrip, error rollback preserves exact CSV/review bytes, Cancel reload preserves dirty edits.
-- Affected external_translation_import, human_review_workflow, characterization_package_split: existing draft warnings/review gate and safe no-drop import remain intact.
-- Actual WPF generated fixture: open/filter/edit/save/reload and visible invalid input; preserve manifest, keys, sources, all non-translation fields/order and backup bytes. Import functional route receipt is separate from import-button interaction. No game/Patch/Release acceptance implied.
-- UX workflow regression: a structurally valid generated blank-translation package passes local-translation preflight while strict Patch validation still rejects it; verify CT2 command/request, progress, non-empty result, save/reload using an existing offline model. Check ETA number/string/non-finite handling and extraction mode ignores legacy saved choices.
-- Generated WPF CT2 E2E drives actual Extract → Translate → Patch commands against a fresh TEST_RUN fixture and existing offline model; verify non-empty translation, CT2 status/provenance, patch readback, and terminal cleanup. The probe recognizes persistent step evidence so short-lived Busy transitions cannot create false negatives; it rejects stale/non-fresh output roots.
-- WPF layout acceptance separately checks expander focus/collapse, window resize/DPI, visible issue guidance and dialog theme. A supported native capture/input failure remains NOT_VERIFIED/PROVEN_BLOCKED and cannot be replaced by build or workflow receipts.
+Các mục dưới được chuyển sang [catalog chuyên biệt](docs/validation/SPECIALIZED_GATES.md).
 
-## Patch input and bounded native acceptance
-- `test_patch_input_safety`: traversal/absolute source rejection, output/game separation, exact preservation of existing output, duplicate/ambiguous CSV rejection, CSV/manifest source identity and partial-sidecar rejection before output mutation.
-- Explicit worker CSV/manifest plus package-as-output uses separate Patch_Viet_Hoa, completes readback and preserves exact CSV/manifest bytes; actual DEV smoke exercises this caller route after a clean-source build.
-- `test_unity_serialized_patch`: generated v17 SerializedFile, real installed UnityPy extract/write/reopen, exact path ID and translated semantic lines, untouched remaining content, source/backup hashes and released Windows file handle. Direct slot padding is permitted; growth policy is unchanged. This is parser/writer proof, not Unity Editor/gameplay.
-- Existing Ren'Py transaction tests cover rollback/interruption/retry and native contract drift; generated official SDK lookup proves compiled dialogue overlay activation. Other AST coverage, arbitrary games and GUI layout remain separate.
-- Actual PatchInstaller build plus generated install/uninstall must reopen the translated serialized asset and restore exact original hash. Discovery-only executable/data markers are not gameplay or Release provenance. Missing installer skips remain explicit until this independent native gate runs.
-
-
-Research-only Phase6 semantic gate: `tests/unit/test_translation_quality_phase6.py` plus guard/prompt/structural tests, then seen control/roles/final finite-sense refinement and frozen new40 corpus via `translation_quality_phase6.py`. Check directional roles, unknown gender, domain-qualified platform and literal-woods controls. Diagnostic flags are not semantic PASS; finite phrase hints are not general idiom learning. No product OPUS replacement.
-
-Phase7 research-only: `test_translation_quality_phase7` and `test_translation_quality_semantic_transport` plus prior guard/prompt/structural gates; real seen comparison then frozen fresh24. Verify no previous prose reaches isolated prompt, exact role carriers with explicit metadata/unknown/quoted controls, conservative unless transforms, and explicit relation contradiction refusal. Rejections remain unsuccessful rows; no semantic PASS inferred from transport or absent flags. No product model/validator change.
-
-Phase8 natural draft/audit/one-retry research gate: `tests/unit/test_translation_quality_phase8.py` plus Phase7/semantic-transport/prior guard/prompt/structural gates. Strict audit parse, known wrong drafts versus correct fixtures, calibrated classifier before any auto candidate, fail-closed unknown and bounded retry, unchanged protected syntax. New source corpus and withheld checker traps freeze separately. Same-model audit is advisory and requires fresh false-accept measurement; no product OPUS promotion.
-
-Phase9 source-constraint research gate: `test_translation_constraints` + `test_translation_quality_phase9` with previous Phase8/transport/guard/prompt/structural suites. Check complete finite grammar, source/target role graphs and reflexive ownership, Boolean implication direction/polarity, action/object identity, exclusion and cancellation invariants; unsupported scopes abstain. Frozen fresh36constraintfixtures (12correct/24corrupted), then pinned real-model seen/new16source audit-and-one-retry plus actual OPUSbaseline. CONSTRAINTS_MATCH is a property check, never semantic acceptance or app-model promotion.
-
-Phase10 research-only: add `test_translation_constraints_v2`, `test_translation_role_binding`, `test_translation_quality_phase10` to prior Phase9/8guard suites. Span-only explicit role repair must preserve protected tokens/unknown/quoted context; predicate aliases remain finite. Stable revision selects only propertyMATCH and keeps both drafts; UNKNOWN parity cannot prove semantic improvement. Freeze term bank/code before fresh24fixtures/new12inference. No semantic acceptance or OPUS promotion from MATCH.
-
-Phase11 targeted research gate: `test_translation_constraints_v3` and `test_translation_quality_phase11` plus Phase10/prior focused suites. Affirmative exclusion must reject added Đừng/không được/chớ without rejecting source-authorized deletion prohibitions; full relative eligibility grammar, quoted/negative-scope controls. Ownership prompt never substitutes absent owner evidence. Actual three oldunknowns must match after maxone revision; freeze before fresh8source/18checkerfixtures and real OPUS comparison. Still property-only, no app promotion.
-
-
-Phase12 named-three research gate: `test_translation_constraints_v4`, `test_translation_quality_phase12` plus complete Phase11/prior focused suites (86 tests). Distinguish patching from update; finite hồ sơ/eligibility paraphrases must retain class/outside/action; quoted and ambiguous negative eligibility remain UNKNOWN. Actual named3 required correct model output, not post-deletion of negation. Freeze then fresh18checkerfixtures/new4source actual OPUSdefault/commonterms and Hy-one-retry. All research drafts NEEDS_REVIEW; propertyMATCH is not full semantic acceptance. Unknown new resolution/completion nuance remains explicit; no fresh-output tuning. No app-model promotion.
-
-
-Phase13 unresolved-state research gate: `test_translation_constraints_v5` + `test_translation_quality_phase13` and prior86focused tests (92 total). Verify unresolved versus unfinished/completion remains distinct, genuine unfinished source and quoted scope abstain, failed retries do not overwrite originals. Actual Q12-02-1 plus3earlier exclusions -> freeze -> fresh4source/12checkerfixtures -> actual OPUSdefault/common37terms and pinnedHy. AllNEEDS_REVIEW/propertyMATCH only, no product promotion or fresh-result tuning.
-
-
-Phase14 mixed research replay: `test_translation_quality_phase14` + prior92 (93 total). Exact corpus replay and identity of imported Phase13pipeline/term bank; no tuning. Frozen seen28 -> actual OPUSdefault/common37terms -> actualHy maxone retry -> aligned source review. Report UNKNOWN separately from actual semantic defects; zero structural errors does not prove semantic PASS. Preserve missing-owner/snapshot-object failures and technical precision findings, allNEEDS_REVIEW; no apppromotion.
-
-
-Phase15 final research closure: `test_translation_quality_phase15` + prior93; final96tests after stopping/interruption regression. Atmost2seen hypotheses source-derived owner/criticalterms ->freeze ->28seen+12fresh fullsource/OPUSdefault/common43terms/Hy comparison. Priorfinite12fixtures are reused regression, not fresh. Require exact protectedtokens, retain originals/retries/UNKNOWN, no parserrelaxation. Complete audit even whenOPUS blocks one row; do not label blocked complete. ResearchexecutionPASS is separate from rejected productadmission and conditionaltrainingNOT_TRIGGERED. No further fresh-output tuning or OPUSreplacement.
-
-
-Phase16–17 research precision gates: `test_translation_quality_phase16` adds domain-bound software-transfer/rollback/contiguous-eligibility checks (99 includingprior96); `test_translation_quality_phase17` adds file-compound specificity/verification distinction (101 includingprior99). Actual namedseen/control model runs ->freeze before respective8/4fresh sources ->OPUSdefault/commonbank and full48/52mixedsource candidate ->source-alignedreview/cleanup. Keep financial/legal transfer senses, verification versus confirmation, opaque structure and historical evidence. No full-sentencegold, outputreplacement, checkerrelaxation or fresh-result tuning. AllNEEDS_REVIEW; source-propertyUNKNOWN not automatic adequacyFAIL/PASS. Product OPUS and conditionaltraining boundary unchanged.
-
-
-Phase18 control prerequisite gate: `test_translation_quality_phase18` + prior101 (103total). House/property-only contract hint must not affect programming/treaty/unknown contexts; exact firstprompt equality for51/52old sources. Actualseen failedlegalcontrol nowseenremediation ->freeze ->13affectedreplay+4fresh ->actualOPUSdefault/common48terms/Hy ->source-alignedreview/cleanup. Preserve earlierfreshfailure, do not reclassify/tune it as heldout; do not rerun full52 when51prompts unchanged/isolated. AllNEEDS_REVIEW/propertyUNKNOWN not automaticsemanticPASS. No product/training promotion.
-
-
-Phase19 broad blind research gate: `test_translation_quality_phase19` + prior103 (105total). Exact Phase18pipeline/termbank identity,60freshnormalizedunique sources6balancedgroups/42dev18heldout, deterministicper-rowA/Bmapping/exacttext/noidentitymetadata. Freeze pipeline/data/rubric before actualOPUSdefault/commonbank andHy; sealmapping/input; one sequentialseparateagentreview (not humangold), Coordinatorauditmajor/uncertainbeforeunmask, persistoriginal+auditseparately. Validate60uniqueIDs/schema/aggregates, coveragefailure separatefromsemanticmajor, unknownpropertynotacceptance, no fresh-output tuning. Newmajorregressions rejectproductadmission evenwithfewertotalerrors. No app/trainingpromotion; wrappercleanup/quotaproofs required.
-
-
-Phase20 semantic-hint research: `test_translation_quality_phase20` plus prior105 (108 total). Six hint triggers with negative sense controls, unchanged checker/common terms and unaffected prompts, frozen fresh12 dataset. Actual two seen hypotheses -> frozen fresh12 -> actual OPUS arms/Hy -> full aligned Coordinator review (not blind/gold), preserve semantic failures and UNKNOWN. Prompt sufficiency premise invalid when rollback/switch remain wrong; no app promotion or fresh-output tuning. Canonical wrappers exit0/cleanupPASS; retain actual per-run hashes and differing seen snapshots.
-
-Phase21 research gate: `test_translation_lexical_transport`5 + `test_translation_quality_phase21`3 + prior108 =116PASS. Longest compound, domain/POS/quote/opaque abstention, exact original carrier/structure rejection, finite past fragments and unaffected prompt/draft status. Actual seen attempts then frozen16 OPUS/Hy, blind sequential reviewer, preserve2major+1blocked and all metadata. Never infer semantic acceptance from term restoration/UNKNOWN.
-
-Phase22 research gate: `test_translation_quality_phase22`6+prior116=122PASS. Positive versus source-authorized-negative alternatives, hay-không false-accept trap, adjacent opaque bundle and corrupted marker refusal, ordinary tag text, physical roll, typed tense join, possession abstention and frozen12 corpus. Actual seen hypotheses/frozenOPUS+Hy/all12review/cleanup. Preserve3newmajor/2uncertain despite final structural validity; MATCH checks only finite alternative property. No fresh tuning/app promotion; failed retry remasking remains explicit.
-
-RenPy original compiled mapping boundary: tests/unit/test_renpy_compiled.py covers exactempty RevertableDict NEWOBJ and OrderedDict REDUCE as inertmappingdata, memo/cycle/state/order preservation, AST traversal and unknowncontainer/nonemptyargs/duplicate/refusal without constructor execution. ExactOwneroriginalscreens.rpyc hash fadc20d18f3ca4613a65885c4f5299491ca9f756d2b9bbf6fb9dcb5d1a7782ae was traced atSETITEMS1538/SETITEM292588 and now admits227staticdialogue slots; unknownAST/PARTIAL and purecompiled-only/runtime qualifications remain. Gate: focusedcompiled -> allRenPyregression + delivery/worker -> immutable19aggregate -> cleancommit/DEVbuild-smoke. Local fonttrial tests are harness-only/defaultOFF/language-only/ownedrollback, never automatic productfont promotion.
-
-Bounded Ren'Py native lifecycle receipt: `tests/unit/test_renpy_owner_rar_lifecycle.py` uses fake process/clock to prove natural exit, explicit finish signal, deadline and observation failure cleanup. `native_process_started` distinguishes launch from `native_window_waiting`; `native_window_ready` stays false until supported external observation records a returned game window/readiness result. This is harness observability only, not visual acceptance or product behavior.
+<a id="muc-1-continuation-focused-gates"></a>
+- [Muc 1 continuation focused gates](docs/validation/SPECIALIZED_GATES.md#muc-1-continuation-focused-gates)
+<a id="csv-editor-bounded-acceptance"></a>
+- [CSV editor bounded acceptance](docs/validation/SPECIALIZED_GATES.md#csv-editor-bounded-acceptance)
+<a id="patch-input-and-bounded-native-acceptance"></a>
+- [Patch input and bounded native acceptance](docs/validation/SPECIALIZED_GATES.md#patch-input-and-bounded-native-acceptance)

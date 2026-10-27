@@ -3,7 +3,7 @@
 ```
 tests/
   golden/          # Dữ liệu golden nguồn; không chứa runtime test
-  TEST_RUN/        # Runtime test tạm, tự dọn absent/empty sau terminal outcome
+  # Runtime nằm ở <checkout>/TEST_RUN, không phải tests/TEST_RUN; lifecycle theo CONTRACTS §10a.
   lib/             # Thư viện dùng chung (work_paths, fixture Unity, E2E lib)
   unit/            # unittest: test_*.py (publish gate chạy ở đây)
   harness/         # Harness E2E/điều tra; game-specific probes được track nhưng cần fixture bên ngoài

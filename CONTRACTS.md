@@ -1,5 +1,28 @@
 # VNText Studio — Contracts Spine
 
+> Tra cứu theo chủ đề, không nạp toàn file khi bootstrap. Trạng thái task/nguồn quyền hiện tại ở [AI_STATE.md](AI_STATE.md); bản đồ tài liệu ở [docs/INDEX.md](docs/INDEX.md). Evidence lịch sử dưới từng mục giữ nguyên SHA/phạm vi, không tự là gate đã đạt của task mới.
+
+## Tra cứu nhanh
+
+- [1. Entry, key, CSV và package](#1-entry-key-csv-và-package)
+- [CSV editor write boundary](#csv-editor-write-boundary)
+- [1a. Traceability, provenance và identity](#1a-traceability-provenance-và-identity)
+- [2. Extract contract](#2-extract-contract)
+- [2a. Unity analyzer và resource inventory](#2a-unity-analyzer-và-resource-inventory)
+- [3. Translation structure và quality gate](#3-translation-structure-và-quality-gate)
+- [4. Translation states và memory](#4-translation-states-và-memory)
+- [4a. Local Translation V2: classifier, model, cache, glossary và context](#4a-local-translation-v2-classifier-model-cache-glossary-và-context)
+- [5. Worker NDJSON protocol](#5-worker-ndjson-protocol)
+- [6. WPF binding, command và workflow state](#6-wpf-binding-command-và-workflow-state)
+- [7. Patch, UnityFS và Addressables](#7-patch-unityfs-và-addressables)
+- [8. Naninovel và Ren’Py boundary](#8-naninovel-và-renpy-boundary)
+- [9. Compatibility facade](#9-compatibility-facade)
+- [10. Portable Release](#10-portable-release)
+- [10a. Test artifact retention and cleanup lifecycle](#10a-test-artifact-retention-and-cleanup-lifecycle)
+- [10b. Prospective artifact-registry epoch](#10b-prospective-artifact-registry-epoch)
+- [TEST GAP đã biết](#test-gap-đã-biết)
+- [10c. DEV validation và chiến dịch game](#10c-dev-validation-và-chiến-dịch-game)
+
 Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. Đây là contract kỹ thuật đã quan sát được; không mở rộng behavior ngoài source/test.
 
 ## 1. Entry, key, CSV và package

@@ -1,5 +1,11 @@
 # VNText Studio — Trục kiến trúc
 
+> Tra cứu theo chủ đề, không nạp toàn file khi bootstrap. Trạng thái task/nguồn quyền hiện tại ở [AI_STATE.md](AI_STATE.md); bản đồ tài liệu ở [docs/INDEX.md](docs/INDEX.md). Evidence lịch sử dưới từng mục giữ nguyên SHA/phạm vi, không tự là gate đã đạt của task mới.
+
+## Tra cứu nhanh
+
+
+
 Trạng thái: phản ánh source hiện tại; SHA của checkpoint/evidence phải lấy từ Git và ghi trong `AI_STATE.md`, không hard-code một HEAD lịch sử trong bản đồ này. Đây là bản đồ tra cứu, không phải kế hoạch refactor mới.
 
 ## Nguồn sự thật và nguyên tắc đọc

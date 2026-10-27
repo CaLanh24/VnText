@@ -1,8 +1,10 @@
 # Phát triển VNText Studio
 
+> Hướng dẫn environment/build, không phải checkpoint task. Agent bắt đầu ở [AGENTS](../AGENTS.md) và [AI_STATE](../AI_STATE.md); tra chủ đề ở [INDEX](INDEX.md).
+
 Quy trình dành cho clone public mới trên Windows x64; không cần repo private,
 virtualenv, registry lịch sử hay artifact trên máy cũ. `v0.1` là bản công khai
-đầu tiên; bản public hiện tại là `0.1.4`.
+đầu tiên; trạng thái public/source hiện tại xem [README](../README.md) và [AI_STATE](../AI_STATE.md); không lấy phiên bản lịch sử trong hướng dẫn này làm live status.
 
 ## Kiểm prerequisite trước khi tải
 
@@ -30,7 +32,7 @@ cần quyền tải/cài, không tự dùng mạng. Các lệnh thủ công phí
 
 Output duy nhất của apply là `DEV_RUN/bootstrap-build`, có ownership marker;
 không ghi đè directory có sẵn thiếu marker. Build dự phòng 128 MiB ngoài phần
-miễn trừ, chặn trước nếu inventory thiếu hoặc vượt tổng 1+3 GiB cho `.dev-env`. Tái chạy dùng
+miễn trừ, chặn trước nếu inventory thiếu hoặc vượt profile/cap hiện hành trong CONTRACTS §10a; các số mặc định không thay quyền release theo scope. Tái chạy dùng
 cùng output/cache, không nhân bản venv/SDK/model. Môi trường APPDATA/LOCALAPPDATA
 và NuGet riêng chỉ có hiệu lực trong child build; không sửa profile user.
 Giữ command và JSON/exit code ngoài payload. Build/smoke không phải cleanup PASS.
