@@ -4,9 +4,9 @@
 
 ## Candidate và quyền
 
-- Candidate p13n/s13n, source `5150fd97d159c15456eac704f2aff337cbfd5f22`. Setup SHA256 `08b504b48e1d46fad9118b5511b761f7f2bf5e76f92adc2c7c2d2ac5c02c3d29`; exe `02acaf3b9107cb672f97cc15ff3fd6877fbd733ee0e045be053b37c471182412`.
+- Candidate hiện hành p13o, source `4809077aecf614edbe26d30ebb0c7238bb3348c0`. Setup SHA256 `7b28ba564fff744f5465037eb0c02a7350e120d8e27bc2c3dbb880818be6ae91`; exe cài ra `0763a42984a563de570c541998a05b404252254da0f8ef79d969ee17af476206`; payload 7193 file / 514,808,080 byte. Candidate cũ p13n (source `5150fd97d159c15456eac704f2aff337cbfd5f22`, Setup `08b504b4…3d29`, exe `02acaf3b…2412`) không chứa remediation #4/#6; evidence native p13n chỉ thuộc p13n.
 - Baseline bắt buộc 0.1.12 → 0.1.13; từ 0.1.13 một thao tác tới latest. Pre-0.1.12/Setup-origin0.1.10 ngoài scope. OPUS limits được chấp nhận, không semantic PASS. Real-game E2E defer NOT TESTED; generated/installed-app acceptance vẫn bắt buộc.
-- Source gates 79/107/22, publisher/release-verify/hai worker smoke và ba updater case đã được ghi nhận trên candidate; không chạy lại nếu phần liên quan không đổi. Receipt prefix `DEV_RUN/gatec/`: `candidate-receipt-p13n.json`, `candidate-verify-p13n.json`, `updater-matrix-p13n-summary.json`. Wrapper cleanup REVIEW_REQUIRED tách khỏi child test exit0.
+- p13o: focused 66 (`db0e847`), affected 35/71/22 gồm WPF harness (`4809077`), asset receipt 13 asset, release-verify + hai smoke worker, ba ca updater (named-0.1.12, health-rollback, tampered); lần đầu `named-0.1.12` fail chỉ do hằng số exe của script, đã sửa và chạy lại ca đó. Receipt prefix `DEV_RUN/gatec/`: `candidate-receipt-p13o.json`, `candidate-verify-p13o.json`, `updater-matrix-p13o-summary.json`, `handoff_p13o.json`. Wrapper REVIEW_REQUIRED do `terminal_root preexisting_test_run_content`, tách khỏi test exit 0. Gate p13n 79/107/22 là lịch sử của candidate cũ.
 
 ## Bảng trạng thái acceptance
 
@@ -14,9 +14,9 @@
 |---|---|---|
 | #1 Setup, #2 identity | Setup native vào s13n, exe/source khớp đã quan sát | Receipt candidate; kiểm phần checklist chưa đủ nếu còn |
 | #3, #7–9, #16 | Evidence p13m chỉ được reuse bounded theo patch-only impact review | Không gọi p13n exact-native hoặc toàn bộ PASS |
-| #4 SDK recovery | PARTIAL. Owner chọn (2026-10-27) quét tĩnh review-only: MAIN rỗng, không dịch/patch, luôn PARTIAL. Source đã sửa nhưng dirty/chưa commit; p13n KHÔNG chứa bản sửa; chưa có canonical validation | native45-s13n-partial.json, native4-review-result.json; sau Brain review: commit, ordinary epoch hop, canonical gates, candidate mới rồi native lại |
-| #5 SDK offline/cancel | NOT_PROVEN | Launch proxy bị automatic review từ chối; không suy bằng chứng từ attempt chưa chạy |
-| #6 OCR | PARTIAL: native p13n 22 ready/8 failed (tilt gate giữ nguyên), translated 0, chưa thấy ETA. Source thêm ETA advisory nhưng dirty/chưa commit, p13n không chứa; chưa canonical validation | native6-result.json; native lại trên candidate mới |
+| #4 SDK recovery | PARTIAL. Owner chọn (2026-10-27) quét tĩnh review-only: MAIN rỗng, không dịch/patch, luôn PARTIAL. Có trong p13o (`db0e847`, `4809077`), gate canonical đạt; p13n không chứa; native trên p13o chưa chạy | native45-s13n-partial.json, native4-review-result.json (p13n); cài p13o vào thư mục trống mới rồi native lại |
+| #5 SDK offline/cancel | NOT_PROVEN. p13o: lỗi tải/SDK đã chọn không hợp lệ báo nguyên nhân, không bịa số review (test canonical); native chưa chạy | Launch proxy bị automatic review từ chối trên p13n; không suy evidence từ attempt chưa chạy |
+| #6 OCR | PARTIAL: native p13n 22 ready/8 failed (tilt gate giữ nguyên), translated 0, chưa thấy ETA. p13o có ETA advisory (test canonical); native chưa chạy | native6-result.json (p13n); native lại trên p13o |
 | #10 cancel-exit | PASS bounded | native10-s13n-result.json; không có exit-code/in-flight-boundary proof |
 | #11 ordinary failure | PASS bounded, thông báo nguyên nhân còn English | native11-s13n-result.json, sampled hash checks |
 | #12 patch-readback | PASS bounded generic text 8000/8000 | native12-13-s13n-root.json; installer apply/restore chưa chạy; không engine/game claim |
