@@ -69,6 +69,13 @@ Khi sửa WPF hoặc runtime app, để lại tối đa một executable thử �
 
 Chỉ sửa file trong scope; giữ nguyên thay đổi ngoài scope. Không xóa/di chuyển/ghi đè game, save, CSV/glossary user, output hoặc môi trường phát triển nếu chưa được phép. Không commit game, model, release binary, log lớn, cache hay secret. Cleanup/evidence tuân theo `CONTRACTS.md` và gate của `TEST_MATRIX.md`; private historical artifacts không là prerequisite của public clone và việc thiếu chúng không chứng minh PASS hay FAIL hiện tại.
 
+## Cleanup và retention
+
+- Mỗi allocation/artifact có owner, task, đường dẫn tuyệt đối, kích thước, consumer đang dùng, điều kiện hết hạn và bước dọn. RETAINED/UNKNOWN/“để làm evidence” không tự tạo quyền giữ vô hạn: retention cần consumer cụ thể và mốc rà lại; UNKNOWN phải được điều tra (owner/Git/process/consumer) ở checkpoint cleanup kế tiếp, câu hỏi chưa giải quyết ghi kèm owner xử lý và mốc rà lại.
+- Sau mỗi phase và trước allocation lớn, dọn scratch/output/build copy hết consumer; cuối task dọn mọi disposable. Một release đang mở không giữ hộ artifact của task/release cũ; không chờ publication để dọn bản stale. Chỉ giữ candidate hiện hành, baseline/fixture có consumer acceptance hoặc route rõ, repro gắn finding còn mở, và shared env/model/SDK đang cần.
+- Evidence mặc định là receipt gọn (SHA, lệnh/exit, verdict, hash/count/bytes, finding, đoạn log cần thiết; mục tiêu ≤ 20 MiB/task, vượt phải có lý do và mốc rà lại). Không giữ installer, cây giải nén, output/build hàng loạt hay cache trùng chỉ để làm bằng chứng; ghi rõ payload đã disposed, không hứa chạy lại artifact đã xóa.
+- Cleanup chạy theo plan có đường dẫn tuyệt đối, bytes, bằng chứng ownership/hết consumer và exclusions, tại ranh giới an toàn (không song song với writer/test/native, không cắt giao dịch epoch), qua helper/registry đúng lifecycle; không follow link ra ngoài root, không kill process dùng chung, không xóa source bẩn/user data, không đụng epoch đang hoạt động. Báo before/after, đường dẫn đã dọn, phần còn giữ + consumer + hạn, và cleanup verdict riêng; chỉ tuyên bố đã dọn sau readback. Chi tiết: `CONTRACTS.md` §10a.
+
 ## Release và cập nhật
 
 Phiên bản source lấy từ `VERSION.txt` cùng các version owner liên quan. Mỗi Setup/release cần evidence riêng từ đúng source, payload, hash và test của chính lần build đó; không suy ra phát hành từ tag dự kiến, metadata, mock hay artifact cục bộ.
