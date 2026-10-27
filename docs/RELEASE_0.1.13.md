@@ -14,9 +14,9 @@
 |---|---|---|
 | #1 Setup, #2 identity | Setup native vào s13n, exe/source khớp đã quan sát | Receipt candidate; kiểm phần checklist chưa đủ nếu còn |
 | #3, #7–9, #16 | Evidence p13m chỉ được reuse bounded theo patch-only impact review | Không gọi p13n exact-native hoặc toàn bộ PASS |
-| #4 SDK recovery | PARTIAL, mâu thuẫn UI/contract/parser cần điều tra | native45-s13n-partial.json, native4-review-result.json; không xuất CSV ở probe mới nhất |
+| #4 SDK recovery | PARTIAL. Owner chọn (2026-10-27) quét tĩnh review-only: MAIN rỗng, không dịch/patch, luôn PARTIAL. Source đã sửa nhưng dirty/chưa commit; p13n KHÔNG chứa bản sửa; chưa có canonical validation | native45-s13n-partial.json, native4-review-result.json; sau Brain review: commit, ordinary epoch hop, canonical gates, candidate mới rồi native lại |
 | #5 SDK offline/cancel | NOT_PROVEN | Launch proxy bị automatic review từ chối; không suy bằng chứng từ attempt chưa chạy |
-| #6 OCR | OPEN | Generated multi-image native acceptance |
+| #6 OCR | PARTIAL: native p13n 22 ready/8 failed (tilt gate giữ nguyên), translated 0, chưa thấy ETA. Source thêm ETA advisory nhưng dirty/chưa commit, p13n không chứa; chưa canonical validation | native6-result.json; native lại trên candidate mới |
 | #10 cancel-exit | PASS bounded | native10-s13n-result.json; không có exit-code/in-flight-boundary proof |
 | #11 ordinary failure | PASS bounded, thông báo nguyên nhân còn English | native11-s13n-result.json, sampled hash checks |
 | #12 patch-readback | PASS bounded generic text 8000/8000 | native12-13-s13n-root.json; installer apply/restore chưa chạy; không engine/game claim |
@@ -39,7 +39,7 @@ Each item needs native evidence on the installed candidate (exact executable SHA
 | 1 | Fresh Setup into an empty registered folder; Intel terms accepted deliberately | Install completes; `VNText Studio.exe` and `Uninstall.exe` at root; `app/`, `data/` created; no AppData/shortcut writes | Setup SHA, install inventory vs payload manifest, startup log shows worker ready |
 | 2 | About / version | 0.1.13 and source SHA from `app/RELEASE.json` | Screenshot + RELEASE.json hash |
 | 3 | Model absent (rename the packaged model dir in the test install only) | Translate readiness explains the missing model and offers no false Start; restoring it returns to ready | Screenshots before/after |
-| 4 | Ren'Py SDK missing on a generated Ren'Py fixture | Recovery offers picker, pinned download, cancel, retry through Extract and continue-with-review; no loose-parser fallback | Screenshots of each choice |
+| 4 | Ren'Py SDK missing on a generated Ren'Py fixture | Recovery offers picker, pinned download, cancel, retry through Extract and continue as review-only export (Owner decision in CONTRACTS: review evidence only, MAIN empty, no native IDs/proof, no translate/patch, always PARTIAL); an SDK failure shows the cause and no review count | Screenshots of each choice + extract_status/CSV counts |
 | 5 | SDK download offline / cancelled mid-transfer | Actionable failure, partial file removed, retry offered | Screenshot + absence of partial file |
 | 6 | Extract on multi-image OCR-only fixture | Stage-specific progress, advisory ETA format, no machine translation or rendering during Extract | Screenshots + CSV/report counts |
 | 7 | Translate a blank CSV; switch pages during the run | Progress stays on the owning card; late events cannot overwrite a newer/completed run | Screenshots at two pages |

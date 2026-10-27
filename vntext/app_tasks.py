@@ -1201,8 +1201,8 @@ def run_extract_task(
                     renpy_sdk_missing = True
                     raise RenPyToolchainError("Source Ren'Py trong RPA cần SDK 8.5.3 để tạo native identity; không thể trả kết quả loose-parser một phần.")
                 renpy_sdk_missing = True
-                log("Thiếu công cụ Ren'Py: đã lấy text một phần; lời thoại cần mã định danh được giữ để xem lại. Kết quả chưa đầy đủ.")
-                main, review, stats = extract_loose_source(src)
+                log("Thiếu công cụ Ren'Py: chỉ quét tĩnh để xuất danh sách cần xem lại; không có dòng nào được dịch hay patch. Kết quả chưa đầy đủ.")
+                main, review, stats = extract_loose_source(src, review_only=True)
             else:
                 Path(out).mkdir(parents=True, exist_ok=True)
                 with tempfile.TemporaryDirectory(prefix="vntext-renpy-", dir=out) as temp:
@@ -1289,7 +1289,7 @@ def run_extract_task(
         elif renpy_sdk_missing:
             summary = (
                 f"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; "
-                f"{review_count} lời thoại cần xem lại. Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
+                f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
             )
         empty = not (main_count or review_count)
         completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty)
@@ -1302,7 +1302,7 @@ def run_extract_task(
         elif renpy_sdk_missing:
             completion_error = (
                 "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. "
-                f"{review_count} lời thoại cần xem lại; chọn công cụ SDK và thư mục xuất mới rồi lấy text lại để nhận dạng đầy đủ."
+                f"Đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch); chọn công cụ SDK và thư mục xuất mới rồi lấy text lại để nhận dạng đầy đủ."
             )
         elif review_count:
             completion_error = (
@@ -1399,14 +1399,16 @@ def run_extract_task(
             )
             return
         recovery_fields = {"renpy_sdk_missing": True} if renpy_sdk_missing else {}
+        # An SDK recovery failure (download, chosen SDK) produced no review evidence: do not report the generic sentinel
+        # count as if one row were waiting for review.
         _emit_complete(
             complete,
             ok=False,
             error=str(exc),
             complete=False,
             pending=1,
-            review_only=1,
-            blocked=1,
+            review_only=0 if renpy_sdk_missing else 1,
+            blocked=0 if renpy_sdk_missing else 1,
             **_diagnostic_completion_fields(
                 Path(out),
                 fallback_stage="EXTRACT",

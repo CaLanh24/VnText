@@ -1200,7 +1200,15 @@ def native_dialogue_ids(template_root: str | Path) -> list[tuple[str, str, str]]
     return found
 
 
-def extract_loose_source(root: str | Path, *, template_root: str | Path | None = None) -> tuple[list[Entry], list[Entry], dict]:
+def extract_loose_source(root: str | Path, *, template_root: str | Path | None = None, review_only: bool = False) -> tuple[list[Entry], list[Entry], dict]:
+    """Scan loose .rpy text without executing anything.
+
+    ``review_only`` (the no-SDK route, Owner decision 2026-10-27): every row found is evidence for the user to review; none
+    is promoted, MAIN stays empty, no native identity or proof is invented, so nothing can be translated or patched from it.
+    It cannot be combined with ``template_root``: native templates are exactly what would supply identities.
+    """
+    if review_only and template_root:
+        raise ValueError("review_only loose scan cannot use a native template_root")
     base = Path(root).resolve()
     game = base / "game"
     ids = native_dialogue_ids(template_root) if template_root else []
@@ -1238,4 +1246,14 @@ def extract_loose_source(root: str | Path, *, template_root: str | Path | None =
                 text = _quoted(match.group(1))
                 entry = Entry(text, rel, f"RenPy:{rel}:{number}:string", import_method="renpy_string", safety="safe", backend="renpy_loose_source", locator={"line": number, "source": text}, patch_proof=dict(RENPY_STRING_PATCH_PROOF)).finalize()
                 main.append(entry)
-    return main, review, {"engine": "RENPY_LOOSE_SOURCE", "native_template": bool(template_root), "files_scanned": len(list(game.rglob("*.rpy"))) + len(list(game.rglob("*.rpym")))}
+    if review_only:
+        review = [*main, *review]
+        main = []
+        for entry in review:
+            # evidence only: no proof, no native contract; the row can never enter the translation/patch flow
+            entry.patch_proof = {}
+            entry.native_contract = {}
+            entry.review_only = True
+            for field in ("native_id", "unit_type"):
+                entry.locator.pop(field, None)
+    return main, review, {"engine": "RENPY_LOOSE_SOURCE", "native_template": bool(template_root), "review_only": bool(review_only), "files_scanned": len(list(game.rglob("*.rpy"))) + len(list(game.rglob("*.rpym")))}

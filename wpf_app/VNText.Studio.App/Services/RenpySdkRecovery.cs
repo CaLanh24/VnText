@@ -23,8 +23,8 @@ internal static class RenpySdkRecovery
         {
             "download" => "Đang thử tải SDK Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn SDK đã cài.",
             "existing" => "Đã chọn thư mục công cụ; sẽ kiểm tra khi lấy text.",
-            "none" => "Sẽ tiếp tục không có công cụ; một số lời thoại cần xem lại.",
-            "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK sẽ cho kết quả chưa đầy đủ." + suffix,
+            "none" => "Sẽ chỉ quét tĩnh để xuất danh sách cần xem lại; không dịch, không tạo patch và kết quả luôn chưa đầy đủ.",
+            "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK chỉ xuất danh sách cần xem lại (không dịch, không tạo patch)." + suffix,
             "cancelled" => "Đã hủy bước lấy text/SDK. Chọn SDK đã cài hoặc thử tải lại khi sẵn sàng.",
             "error" => "Không thể hoàn tất bước lấy text/SDK. Hãy xem lỗi, chọn SDK đã cài hoặc thử tải lại." + suffix,
             "ready" => "Đã sẵn sàng SDK Ren'Py 8.5.3.",

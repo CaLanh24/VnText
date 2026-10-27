@@ -422,12 +422,12 @@
                                         <StackPanel x:Name="RenpySdkOptionsPanel" Grid.Row="2" Margin="0,13,0,0"
                                                     Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="Game Ren'Py được nhận diện" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBlock Text="Chọn SDK 8.5.3 đã cài hoặc tải SDK để lấy lời thoại. Tiếp tục khi chưa có SDK sẽ không dùng parser thay thế và kết quả có thể chưa đầy đủ." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                            <TextBlock Text="Chọn SDK 8.5.3 đã cài hoặc tải SDK để lấy lời thoại. Tiếp tục khi chưa có SDK chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch và luôn chưa đầy đủ." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             <TextBlock Text="{Binding RenpySdkStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             <WrapPanel Margin="0,8,0,0">
                                                 <Button Style="{StaticResource OutlineButton}" Command="{Binding DownloadRenpySdkCommand}"><TextBlock Text="Tải công cụ rồi lấy text" /></Button>
                                                 <Button Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseRenpySdkCommand}"><TextBlock Text="Chọn công cụ đã cài" /></Button>
-                                                <Button Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ContinueWithoutRenpySdkCommand}"><TextBlock Text="Tiếp tục, lời thoại cần xem lại" /></Button>
+                                                <Button Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ContinueWithoutRenpySdkCommand}"><TextBlock Text="Tiếp tục, chỉ xuất để xem lại" /></Button>
                                             </WrapPanel>
                                         </StackPanel>
                                     </Grid>

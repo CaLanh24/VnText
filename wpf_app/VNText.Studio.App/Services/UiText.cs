@@ -185,7 +185,7 @@ public static class UiText
         ["Rộng"] = "Width",
         ["Cao"] = "Height",
         ["Tải công cụ rồi lấy text"] = "Download tools, then extract text",
-        ["Tiếp tục, lời thoại cần xem lại"] = "Continue; dialogue needs review",
+        ["Tiếp tục, chỉ xuất để xem lại"] = "Continue; export for review only",
         ["Chọn công cụ đã cài"] = "Choose installed tools",
         ["Chỉ lấy văn bản"] = "Extract text only",
         ["Tài nguyên"] = "Assets",

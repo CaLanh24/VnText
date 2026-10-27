@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import time
 import uuid
 
 from vntext.image_text import _regular, _image, _box, discover_images, recognize_image
@@ -106,6 +107,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
             json.dump(report,stream,ensure_ascii=False,indent=2)
         temp.replace(report_path)
     save(); used_bytes=0; translator=None; model_error=''
+    started=time.monotonic()
     try:
         for index,reference in enumerate(inventory['image_paths']):
             if cancelled():
@@ -169,7 +171,12 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     used_bytes+=unchanged.stat().st_size; item['untranslated']=str(unchanged.relative_to(root))
                 if cancelled(): report['status']='CANCELLED'
             finally: save()
-            if progress: progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'OCR ảnh','item':Path(reference).name})
+            if progress:
+                event={'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'OCR ảnh','item':Path(reference).name}
+                # Advisory ETA (seconds, the convention of the other stages): elapsed/done * remaining; omitted while unknown or finished.
+                elapsed=time.monotonic()-started;remaining=event['total']-event['done']
+                if remaining>0 and elapsed>0: event['eta']=round(elapsed/event['done']*remaining,1)
+                progress(event)
         if report['status']=='RUNNING':
             failed=any(item['status']=='UNTRANSLATED' for item in report['items'])
             complete=inventory['complete'] and not failed

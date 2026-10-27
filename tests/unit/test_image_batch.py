@@ -68,6 +68,32 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertEqual(result['ocr_failed'],0)
         self.assertEqual(result['untranslated'],0)
 
+    def test_ocr_progress_carries_advisory_eta_without_machine_translation_or_render(self):
+        """advisory_eta: seconds in the formatter convention, from elapsed/progress; omitted when unknown or finished."""
+        second=self.root/'second.png';second.write_bytes(self.data)
+        third=self.root/'third.png';third.write_bytes(self.data)
+        events=[]
+        clock=iter([0.0,2.0,4.0,6.0])
+        with patch('vntext.image_batch.recognize_image',side_effect=self.ocr),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')),patch('vntext.image_batch._render_draft',side_effect=AssertionError('render must not run')),patch('vntext.image_batch.time.monotonic',side_effect=lambda:next(clock)):
+            result=run_image_batch(self.source,self.package,sources=[str(self.source),str(second),str(third)],translate=False,progress=events.append)
+        self.assertEqual([(event['done'],event['total']) for event in events],[(1,3),(2,3),(3,3)])
+        self.assertEqual(events[0]['eta'],4.0)   # 2 s for 1 image, 2 left
+        self.assertEqual(events[1]['eta'],2.0)   # 4 s for 2 images, 1 left
+        self.assertNotIn('eta',events[2])        # finished: nothing left to estimate
+        for event in events:
+            self.assertEqual(event['step'],'OCR ảnh')
+            self.assertTrue(event.get('eta',0)>=0)
+        self.assertEqual(result['translated'],0)
+        self.assertFalse(any((Path(result['output'])/'translated').iterdir()))
+
+    def test_eta_is_omitted_when_elapsed_is_unknown(self):
+        events=[]
+        clock=iter([5.0,5.0,5.0])
+        with patch('vntext.image_batch.recognize_image',side_effect=self.ocr),patch('vntext.image_batch.time.monotonic',side_effect=lambda:next(clock)):
+            second=self.root/'second.png';second.write_bytes(self.data)
+            run_image_batch(self.source,self.package,sources=[str(self.source),str(second)],translate=False,progress=events.append)
+        self.assertNotIn('eta',events[0])
+
     def test_ocr_failure_emits_progress_and_partial_result(self):
         events=[]
         with patch('vntext.image_batch.recognize_image',side_effect=ValueError('OCR unavailable')),patch('vntext.image_batch._translator',side_effect=AssertionError('translation must not run')):

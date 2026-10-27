@@ -250,8 +250,12 @@ public sealed partial class MainViewModel
                 var needsHumanReview = evt.HumanReviewRequiredCount > 0;
                 var isExternalTranslationImport = completedTask == "external_translation_import";
                 var externalRemaining = Math.Max(evt.Pending, evt.ReviewOnly);
+                // A count is only real when the worker wrote a package (it then reports its extract status); an SDK recovery
+                // failure (download, chosen SDK) carries no evidence count and must not invent one.
                 var manualReviewText = renpySdkIncomplete
-                    ? $"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; {evt.ReviewOnly} lời thoại cần xem lại."
+                    ? !string.IsNullOrWhiteSpace(evt.ExtractStatus)
+                        ? $"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; đã xuất {evt.ReviewOnly} dòng chỉ để xem lại (không dịch, không tạo patch)."
+                        : "Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; chưa tạo gói. Chọn SDK đã cài hoặc thử tải lại."
                     : extractionIncomplete
                     ? evt.ExtractStatus == "EMPTY"
                         ? "Không có text sử dụng được — xem report, kiểm input hoặc mức quét."

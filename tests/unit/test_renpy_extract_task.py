@@ -283,6 +283,130 @@ class RenPyExtractTaskTests(unittest.TestCase):
             self.assertIn("chưa có công cụ Ren'Py", completed[-1]["error"])
             self.assertTrue(any("Kết quả chưa đầy đủ" in line for line in logs))
 
+    FIXTURE_OPTIONS = 'define config.name = _("Synthetic Village")\n'
+    FIXTURE_SCRIPT = (
+        'define e = Character("Eileen")\n'
+        'label start:\n'
+        '    e "Welcome to the village, traveler."\n'
+        '    e "The gate is open, but the road is long."\n'
+        '    menu:\n'
+        '        "Take the north road":\n'
+        '            e "A cold wind blows from the mountains."\n'
+        '        "Rest at the inn":\n'
+        '            e "The innkeeper smiles and offers you a warm meal."\n'
+        '    e "Come back soon."\n'
+        '    return\n'
+    )
+
+    def _no_sdk_run(self, temp, action="none", sdk_path="", extra_patch=None):
+        root = Path(temp) / "game"
+        (root / "game").mkdir(parents=True)
+        (root / "game" / "options.rpy").write_text(self.FIXTURE_OPTIONS, encoding="utf-8")
+        (root / "game" / "script.rpy").write_text(self.FIXTURE_SCRIPT, encoding="utf-8")
+        out = Path(temp) / "out"
+        completed, logs = [], []
+        with patch("vntext.app_tasks._run_unity_preflight"), patch("vntext.renpy_toolchain.managed_sdk", return_value=None), \
+                patch.dict("os.environ", {}, clear=True):
+            if extra_patch is not None:
+                with extra_patch:
+                    run_extract_task(str(root), str(out), "safe", "balanced", True, renpy_sdk_path=sdk_path, renpy_sdk_action=action,
+                                     progress=lambda _x: None, log=logs.append, complete=completed.append)
+            else:
+                run_extract_task(str(root), str(out), "safe", "balanced", True, renpy_sdk_path=sdk_path, renpy_sdk_action=action,
+                                 progress=lambda _x: None, log=logs.append, complete=completed.append)
+        return root, out, completed, logs
+
+    def test_no_sdk_loose_source_exports_review_only_with_empty_main_and_cannot_translate_or_patch(self):
+        """Owner decision 2026-10-27: static scan only for a review list; MAIN empty, never translated/patched, always PARTIAL."""
+        import csv as csv_module
+        from vntext.patch_gate import validate_patch_package_identity
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root, out, completed, logs = self._no_sdk_run(temp)
+            self.assertEqual(len(completed), 1, completed)
+            done = completed[0]
+            # 3 strings (title + two menu choices) and 5 dialogue lines: all review-only, nothing in MAIN, no symmetry exception
+            self.assertEqual(done["review_only"], 8, done)
+            self.assertFalse(done["ok"])
+            self.assertFalse(done["complete"])
+            self.assertTrue(done["renpy_sdk_missing"])
+            self.assertEqual(done["extract_status"], "PARTIAL")
+            self.assertNotIn("symmetry", done["error"])
+            self.assertIn("Đã xuất 8 dòng chỉ để xem lại", done["error"])
+            status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
+            self.assertFalse(status["complete"])
+            self.assertEqual((status["status"], status["main"], status["review"]), ("PARTIAL", 0, 8))
+            # the package exists, but translation.csv has no data row to translate
+            with (out / "translation.csv").open(encoding="utf-8-sig", newline="") as stream:
+                self.assertEqual(list(csv_module.DictReader(stream)), [])
+            review_text = (out / "review_only.csv").read_text(encoding="utf-8-sig")
+            for expected in ("Synthetic Village", "Take the north road", "Rest at the inn", "Welcome to the village, traveler.", "Come back soon."):
+                self.assertIn(expected, review_text)
+            with (out / "review_only.csv").open(encoding="utf-8-sig", newline="") as stream:
+                self.assertEqual(len(list(csv_module.DictReader(stream))), 8)
+            manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8-sig"))
+            self.assertEqual(len(manifest["entries"]), 8)
+            for entry in manifest["entries"]:   # evidence rows only: flagged review, no proof, no native contract/identity
+                self.assertTrue(entry["review_only"])
+                self.assertFalse(entry.get("patch_proof"))
+                self.assertNotIn("native_contract", entry)
+                self.assertFalse(entry["locator"].get("native_id"))
+            # final Patch is refused by the extract status (and there is nothing to patch)
+            with self.assertRaisesRegex(ValueError, "Extraction is incomplete; final Patch is blocked"):
+                validate_patch_package_identity(out / "translation.csv", manifest)
+            self.assertTrue(any("không có dòng nào được dịch hay patch" in line for line in logs))
+            self.assertEqual((root / "game" / "script.rpy").read_text(encoding="utf-8"), self.FIXTURE_SCRIPT)
+
+    def test_loose_scan_review_only_never_invents_native_identity_or_proof(self):
+        from vntext.renpy_extract import extract_loose_source
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            game = Path(temp) / "game"
+            (game / "game").mkdir(parents=True)
+            (game / "game" / "options.rpy").write_text(self.FIXTURE_OPTIONS, encoding="utf-8")
+            (game / "game" / "script.rpy").write_text(self.FIXTURE_SCRIPT, encoding="utf-8")
+            main, review, stats = extract_loose_source(game, review_only=True)
+            self.assertEqual(main, [])
+            self.assertEqual(len(review), 8)
+            self.assertTrue(stats["review_only"])
+            for entry in review:
+                self.assertEqual(entry.patch_proof, {})
+                self.assertTrue(entry.review_only)
+                self.assertEqual(entry.native_contract, {})
+                self.assertFalse(entry.locator.get("native_id"))
+                self.assertNotIn("unit_type", entry.locator)
+            # a template could supply native identities: the combination is rejected, not silently honoured
+            with self.assertRaises(ValueError):
+                extract_loose_source(game, template_root=game, review_only=True)
+            # the default (template-backed) mode is unchanged: menu/strings stay MAIN candidates there
+            main_default, _review_default, stats_default = extract_loose_source(game)
+            self.assertEqual(len(main_default), 3)
+            self.assertFalse(stats_default["review_only"])
+
+    def test_sdk_download_failure_reports_the_cause_and_no_review_count(self):
+        from vntext.renpy_toolchain import RenPyToolchainError
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            failing = patch("vntext.renpy_toolchain.download_and_install_managed_sdk", side_effect=RenPyToolchainError("offline: connection refused"))
+            _root, out, completed, _logs = self._no_sdk_run(temp, action="download", extra_patch=failing)
+            done = completed[0]
+            self.assertFalse(done["ok"])
+            self.assertTrue(done["renpy_sdk_missing"])
+            self.assertIn("Tải SDK Ren'Py 8.5.3 chưa hoàn tất", done["error"])
+            self.assertIn("offline: connection refused", done["error"])
+            self.assertEqual(done["review_only"], 0, "no evidence exists: the generic sentinel must not read as one review row")
+            self.assertEqual(done["blocked"], 0)
+            self.assertNotIn("extract_status", done)
+            self.assertFalse((out / "translation.csv").exists())
+            self.assertEqual([item.name for item in out.glob("renpy-sdk-*")], [], "no archive/partial is left behind")
+
+    def test_chosen_sdk_that_is_not_valid_reports_the_cause_and_no_review_count(self):
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            _root, out, completed, _logs = self._no_sdk_run(temp, action="existing", sdk_path=str(Path(temp) / "not-an-sdk"))
+            done = completed[0]
+            self.assertFalse(done["ok"])
+            self.assertTrue(done["renpy_sdk_missing"])
+            self.assertIn("SDK Ren'Py đã chọn chưa hợp lệ", done["error"])
+            self.assertEqual((done["review_only"], done["blocked"]), (0, 0))
+            self.assertFalse((out / "translation.csv").exists())
+
     def test_worker_forwards_explicit_sdk_choice(self):
         callbacks = (lambda _x: None, lambda _x: None, lambda _x: None)
         with patch("vntext_worker.task_runners._make_callbacks", return_value=callbacks), patch("vntext_worker.task_runners.run_extract_task") as task:

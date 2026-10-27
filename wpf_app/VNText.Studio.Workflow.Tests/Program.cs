@@ -221,6 +221,7 @@ internal static partial class Program
         Run("WorkerEvent_ParsesDiagnosticFields", WorkerEvent_ParsesDiagnosticFields, failures);
         Run("WorkerEvent_FormatsNumericEta", WorkerEvent_FormatsNumericEta, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
+        Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
         Run("BlockedCompletion_IsNotAccepted", BlockedCompletion_IsNotAccepted, failures);
         Run("NavigateTab_ChangesSelectedTab", NavigateTab_ChangesSelectedTab, failures);
@@ -1441,14 +1442,16 @@ internal static partial class Program
             Ok = false,
             Complete = false,
             ReviewOnly = 2,
+            ExtractStatus = "PARTIAL",
             RenpySdkMissing = true,
             Summary = "Lấy text chưa đầy đủ do thiếu công cụ Ren'Py.",
-            Error = "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. 2 lời thoại cần xem lại.",
+            Error = "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. Đã xuất 2 dòng chỉ để xem lại (không dịch, không tạo patch).",
         });
 
         AssertEqual("Lấy text chưa đầy đủ", vm.StatusText);
         AssertTrue(vm.ProgressSubtitle.Contains("thiếu công cụ Ren'Py", StringComparison.Ordinal));
-        AssertTrue(vm.StepStatusLine.Contains("2 lời thoại cần xem lại", StringComparison.Ordinal));
+        AssertTrue(vm.StepStatusLine.Contains("đã xuất 2 dòng chỉ để xem lại", StringComparison.Ordinal));
+        AssertTrue(vm.StepStatusLine.Contains("không dịch, không tạo patch", StringComparison.Ordinal));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —", StringComparison.Ordinal));
         AssertTrue(vm.RenpySdkOptionsVisible);
         AssertEqual("missing", vm.RenpySdkAction);
@@ -1456,6 +1459,37 @@ internal static partial class Program
         AssertTrue(vm.ChooseRenpySdkCommand.CanExecute(null));
         AssertTrue(vm.LogLines.Any(line => line.Contains("chưa có công cụ Ren'Py", StringComparison.Ordinal)));
         AssertFalse(vm.LogLines.Any(line => line.Contains("Lỗi: Lấy text chưa đầy đủ", StringComparison.Ordinal)));
+    }
+
+    private static void RenpySdkRecoveryFailure_DoesNotInventAReviewCount()
+    {
+        var picker = new FakePathPicker();
+        using var vm = new MainViewModel(picker, new PythonWorkerHost(), startWorker: false);
+        // The worker's failure terminal (download/chosen SDK failed): generic sentinel counts, no extract status, no package.
+        vm.TestSimulateTaskComplete("extract", new WorkerEvent
+        {
+            Type = "complete",
+            Ok = false,
+            Complete = false,
+            Pending = 1,
+            ReviewOnly = 0,
+            Blocked = 0,
+            RenpySdkMissing = true,
+            Error = "Tải SDK Ren'Py 8.5.3 chưa hoàn tất; chưa tạo CSV. Hãy thử tải lại hoặc chọn SDK đã cài. Chi tiết: không có mạng",
+        });
+        Require(vm.StatusText == "Lấy text chưa đầy đủ", "status text: " + vm.StatusText);
+        Require(vm.StepStatusLine.Contains("chưa tạo gói", StringComparison.Ordinal), "true#1: vm.StepStatusLine.Contains('chưa tạo gói', StringComparison.Ordinal)");
+        Require(!(vm.StepStatusLine.Contains("lời thoại", StringComparison.Ordinal)), "false#2: vm.StepStatusLine.Contains('lời thoại', StringComparison.Ordinal)");
+        Require(!(vm.StepStatusLine.Contains("1 dòng", StringComparison.Ordinal)), "false#3: vm.StepStatusLine.Contains('1 dòng', StringComparison.Ordinal)");
+        Require(!(vm.ProgressSubtitle.Contains("1 lời thoại", StringComparison.Ordinal)), "false#4: vm.ProgressSubtitle.Contains('1 lời thoại', StringComparison.Ordinal)");
+        Require(vm.RenpySdkOptionsVisible, "true#5: vm.RenpySdkOptionsVisible");
+        Require(vm.RenpySdkStatus.Contains("không có mạng", StringComparison.Ordinal), "true#6: vm.RenpySdkStatus.Contains('không có mạng', StringComparison.Ordinal)");
+        // The legacy sentinel (review_only = 1) from an older worker must not be shown as evidence either.
+        using var older = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+        older.TestSimulateTaskComplete("extract", new WorkerEvent { Type = "complete", Ok = false, Complete = false, Pending = 1, ReviewOnly = 1, Blocked = 1, RenpySdkMissing = true, Error = "x" });
+        Require(!(older.StepStatusLine.Contains("1 dòng", StringComparison.Ordinal)), "false#7: older.StepStatusLine.Contains('1 dòng', StringComparison.Ordinal)");
+        // WorkerEvent.ExtractStatus defaults to "" (not null): only a non-empty status proves a package was written.
+        Require(older.StepStatusLine.Contains("chưa tạo gói", StringComparison.Ordinal), "older sentinel without a package says no package: " + older.StepStatusLine);
     }
 
     private static void PartialPackage_TranslateNotComplete()
@@ -5119,6 +5153,11 @@ internal static partial class Program
     }
 
     private sealed record UpdateFixture(string Root, string SourcePath, string PackagePath, string FeedPath, string UpdatesRoot, string BaselineExeHash, string CandidateExeHash);
+
+    private static void Require(bool condition, string what)
+    {
+        if (!condition) throw new InvalidOperationException("failed: " + what);
+    }
 
     private static void AssertEqual<T>(T expected, T actual)
     {
