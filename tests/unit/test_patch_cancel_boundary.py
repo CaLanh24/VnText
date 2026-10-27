@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import vntext.patch_readback as patch_readback
-from vntext.app_tasks import _settle_cancelled_patch_output, run_patch_task
+from vntext.app_tasks import _cancelled_patch_output_statement, run_patch_task
 from vntext.patch_pipeline import PATCH_FINAL_PROGRESS_LABEL
 from vntext_worker.task_runners import WorkerCancelled
 
@@ -37,20 +37,62 @@ def _package(root: Path) -> tuple[Path, Path, Path]:
     return csv_path, manifest_path, game
 
 
-def _fake_apply(cancel_in_verify: bool = False, foreign: bool = False):
-    """Writes what the real writer writes (payload, backup, reports) and reports progress like it."""
+def _snapshot(root: Path) -> dict[str, tuple[str, str]]:
+    """Every entry under root (files by content hash, links by target) so any change, deletion or addition shows."""
+    import hashlib
+    import os
+
+    out: dict[str, tuple[str, str]] = {}
+    isjunction = getattr(os.path, "isjunction", lambda _p: False)
+    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+        for name in dirnames + filenames:
+            path = Path(dirpath) / name
+            rel = path.relative_to(root).as_posix()
+            if path.is_symlink() or isjunction(path):
+                out[rel] = ("link", os.readlink(path) if path.is_symlink() else "junction")
+            elif path.is_dir():
+                out[rel] = ("dir", "")
+            else:
+                out[rel] = ("file", hashlib.sha256(path.read_bytes()).hexdigest())
+    return out
+
+
+def _make_link(link: Path, target: Path) -> bool:
+    try:
+        link.symlink_to(target, target_is_directory=True)
+        return True
+    except (OSError, NotImplementedError):
+        made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
+        return made.returncode == 0
+
+
+def _fake_apply(snapshots: list | None = None, cancel_in_verify: bool = False, foreign: str = "", link_to: Path | None = None):
+    """Writes what the real writer writes (payload, backup, reports) and reports progress like it.
+
+    ``foreign`` injects data the run did NOT write: ``nested`` (a user file below COPY_TO_GAME_ROOT) or ``samename``
+    (user content in a file that carries an artifact name).  ``snapshots`` receives the tree right before the cancel.
+    """
 
     def fake(_csv, _manifest, _game, output, progress):
         out = Path(output)
-        (out / "COPY_TO_GAME_ROOT").mkdir(parents=True)
-        (out / "COPY_TO_GAME_ROOT" / "dialogue.txt").write_text("Xin chao\n", encoding="utf-8")
+        if link_to is not None:
+            assert _make_link(out / "COPY_TO_GAME_ROOT", link_to)
+        else:
+            (out / "COPY_TO_GAME_ROOT").mkdir(parents=True)
+            (out / "COPY_TO_GAME_ROOT" / "dialogue.txt").write_text("Xin chao\n", encoding="utf-8")
         (out / "backup_original").mkdir()
         (out / "backup_original" / "dialogue.txt").write_text("Hello\n", encoding="utf-8")
         (out / "HUONG_DAN_CAI_PATCH.txt").write_text("guide\n", encoding="utf-8")
-        if foreign:
-            (out / "user-notes.txt").write_text("not ours\n", encoding="utf-8")
+        if foreign == "nested":
+            nested = out / "COPY_TO_GAME_ROOT" / "user" / "deep"
+            nested.mkdir(parents=True)
+            (nested / "notes.txt").write_text("user data below the payload\n", encoding="utf-8")
+        if foreign == "samename":
+            (out / "patch_manifest.json").write_text("USER CONTENT, same name as an artifact\n", encoding="utf-8")
         progress({"done": 1, "total": 3, "file": "Dang ghi patch manifest / kiem tra patch..."})
         if cancel_in_verify:
+            if snapshots is not None:
+                snapshots.append(_snapshot(out))
             progress({"done": 1, "total": 3, "file": VERIFY_LABEL})
         (out / "patch_verification.json").write_text(
             json.dumps({"counts": {"PASS": 1}, "results": [{"status": "PASS"}]}), encoding="utf-8"
@@ -126,74 +168,106 @@ class VerificationCancelTests(unittest.TestCase):
 
 
 class CancelledOutputTests(unittest.TestCase):
-    def test_cancel_in_verification_removes_the_runs_own_output_and_a_retry_succeeds(self):
+    def _assert_kept(self, completed, before, out):
+        self.assertEqual(len(completed), 1, completed)
+        self.assertFalse(completed[0]["ok"])
+        self.assertEqual(completed[0]["error"], "cancelled")
+        statement = completed[0]["patch_install_instructions"]
+        self.assertIn("GIỮ NGUYÊN", statement)
+        self.assertIn("chọn thư mục xuất trống mới", statement)
+        self.assertNotIn("đã được dọn", statement)
+        self.assertNotIn("dịch tiếp", statement)
+        self.assertEqual(_snapshot(out), before, "a cancel must leave the output exactly as it was")
+
+    def test_cancel_in_verification_keeps_the_output_byte_identical_and_says_so(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             out = root / "patch-out"
-            completed, game = _run(root / "a", _Host(VERIFY_LABEL), _fake_apply(cancel_in_verify=True), out=out)
-            self.assertEqual(len(completed), 1, completed)
-            self.assertFalse(completed[0]["ok"])
-            self.assertEqual(completed[0]["error"], "cancelled")
-            statement = completed[0]["patch_install_instructions"]
-            self.assertIn("đã được dọn", statement)
-            self.assertNotIn("dịch tiếp", statement)
-            self.assertFalse(out.exists(), "the directory this run created must not survive a cancel")
+            snaps: list = []
+            completed, game = _run(root / "a", _Host(VERIFY_LABEL), _fake_apply(snaps, cancel_in_verify=True), out=out)
+            self._assert_kept(completed, snaps[0], out)
             self.assertEqual((game / "dialogue.txt").read_text(encoding="utf-8"), "Hello\n")
-            self.assertNotIn("patch_verification_report", completed[0])
-            # the same output path is usable again because nothing complete-looking was left behind
-            retry, _game = _run(root / "b", _Host(None), _fake_apply(), out=out)
-            self.assertTrue(retry[0]["ok"], retry[0])
-            self.assertTrue((out / "patch_verification.json").is_file())
+            # the kept folder is non-empty, so the same path is refused; a NEW empty directory works
+            again, _g = _run(root / "b", _Host(None), _fake_apply(), out=out)
+            self.assertFalse(again[0]["ok"])
+            self.assertIn("not empty", again[0]["error"])
+            fresh, _g = _run(root / "c", _Host(None), _fake_apply(), out=root / "patch-out-2")
+            self.assertTrue(fresh[0]["ok"], fresh[0])
 
-    def test_preexisting_empty_output_directory_is_emptied_but_kept(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "my-empty-output"
-            completed, _game = _run(Path(tmp) / "a", _Host(VERIFY_LABEL), _fake_apply(cancel_in_verify=True), out=out, mkdir_out=True)
-            self.assertEqual(completed[0]["error"], "cancelled")
-            self.assertTrue(out.is_dir(), "a directory the user created stays")
-            self.assertEqual(list(out.iterdir()), [])
-
-    def test_foreign_entry_in_the_output_blocks_every_deletion(self):
+    def test_nested_foreign_data_below_the_payload_is_never_touched(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "patch-out"
+            snaps: list = []
             completed, _game = _run(
-                Path(tmp) / "a", _Host(VERIFY_LABEL), _fake_apply(cancel_in_verify=True, foreign=True), out=out
+                Path(tmp) / "a", _Host(VERIFY_LABEL), _fake_apply(snaps, cancel_in_verify=True, foreign="nested"), out=out
             )
-            self.assertEqual(completed[0]["error"], "cancelled")
-            self.assertIn("không phải do lần chạy này tạo", completed[0]["patch_install_instructions"])
-            self.assertTrue((out / "user-notes.txt").is_file())
-            self.assertTrue(
-                (out / "COPY_TO_GAME_ROOT" / "dialogue.txt").is_file(), "nothing is deleted when ownership is not provable"
+            self._assert_kept(completed, snaps[0], out)
+            self.assertEqual(
+                (out / "COPY_TO_GAME_ROOT" / "user" / "deep" / "notes.txt").read_text(encoding="utf-8"),
+                "user data below the payload\n",
             )
 
-    def test_unowned_output_is_never_touched(self):
+    def test_user_content_under_an_artifact_name_is_never_touched(self):
         with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "overlay"
-            (out / "COPY_TO_GAME_ROOT").mkdir(parents=True)
-            (out / "COPY_TO_GAME_ROOT" / "x.rpy").write_text("keep", encoding="utf-8")
-            text = _settle_cancelled_patch_output(out, owned=False, created=False)
-            self.assertTrue((out / "COPY_TO_GAME_ROOT" / "x.rpy").is_file())
-            self.assertIn("giữ nguyên", text)
+            out = Path(tmp) / "patch-out"
+            snaps: list = []
+            completed, _game = _run(
+                Path(tmp) / "a", _Host(VERIFY_LABEL), _fake_apply(snaps, cancel_in_verify=True, foreign="samename"), out=out
+            )
+            self._assert_kept(completed, snaps[0], out)
+            self.assertEqual(
+                (out / "patch_manifest.json").read_text(encoding="utf-8"), "USER CONTENT, same name as an artifact\n"
+            )
 
-    def test_linked_directory_inside_the_output_is_not_followed(self):
+    def test_preexisting_empty_output_directory_keeps_whatever_the_run_wrote(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "my-empty-output"
+            snaps: list = []
+            completed, _game = _run(
+                Path(tmp) / "a", _Host(VERIFY_LABEL), _fake_apply(snaps, cancel_in_verify=True), out=out, mkdir_out=True
+            )
+            self._assert_kept(completed, snaps[0], out)
+            self.assertTrue(out.is_dir())
+
+    def test_linked_directory_in_the_output_is_not_followed_and_stays(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             target = root / "elsewhere"
             target.mkdir()
             (target / "precious.txt").write_text("user data", encoding="utf-8")
+            probe = root / "probe"
+            if not _make_link(probe, target):
+                self.skipTest("neither symlinks nor junctions can be created for this account")
+            probe.unlink() if probe.is_symlink() else probe.rmdir()
             out = root / "out"
-            out.mkdir()
-            link = out / "COPY_TO_GAME_ROOT"
-            try:
-                link.symlink_to(target, target_is_directory=True)
-            except (OSError, NotImplementedError):
-                # No symlink privilege: a directory junction needs none and is what Windows users actually have.
-                made = subprocess.run(["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True)
-                if made.returncode != 0:
-                    self.skipTest("neither symlinks nor junctions can be created for this account")
-            text = _settle_cancelled_patch_output(out, owned=True, created=True)
-            self.assertTrue((target / "precious.txt").is_file())
-            self.assertIn("không phải do lần chạy này tạo", text)
+            snaps: list = []
+            completed, _game = _run(
+                root / "a", _Host(VERIFY_LABEL), _fake_apply(snaps, cancel_in_verify=True, link_to=target), out=out
+            )
+            self._assert_kept(completed, snaps[0], out)
+            self.assertEqual((target / "precious.txt").read_text(encoding="utf-8"), "user data")
+
+    def test_statement_helper_is_read_only_and_honest_when_nothing_was_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "overlay"
+            (out / "COPY_TO_GAME_ROOT").mkdir(parents=True)
+            (out / "COPY_TO_GAME_ROOT" / "x.rpy").write_text("keep", encoding="utf-8")
+            before = _snapshot(out)
+            text = _cancelled_patch_output_statement(out)
+            self.assertEqual(_snapshot(out), before)
+            self.assertIn("GIỮ NGUYÊN", text)
+            self.assertIn("trước khi ghi thư mục xuất", _cancelled_patch_output_statement(Path(tmp) / "never-created"))
+            self.assertIn("trước khi ghi thư mục xuất", _cancelled_patch_output_statement(None))
+
+    def test_cancel_before_the_final_progress_is_still_a_cancel_and_keeps_the_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "patch-out"
+            completed, _game = _run(
+                Path(tmp) / "a", _Host("Dang ghi patch manifest / kiem tra patch..."), _fake_apply(), out=out
+            )
+            self.assertEqual(completed[0]["error"], "cancelled")
+            self.assertTrue((out / "COPY_TO_GAME_ROOT" / "dialogue.txt").is_file(), "nothing is deleted on cancel")
+            self.assertIn("GIỮ NGUYÊN", completed[0]["patch_install_instructions"])
 
 
 class LateCancelTests(unittest.TestCase):
@@ -213,15 +287,6 @@ class LateCancelTests(unittest.TestCase):
             completed, _game = _run(Path(tmp) / "a", _Host(None), _fake_apply(), out=Path(tmp) / "patch-out")
             self.assertTrue(completed[0]["ok"])
             self.assertNotIn("quá muộn", completed[0]["summary"])
-
-    def test_cancel_before_the_final_progress_is_still_a_cancel(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "patch-out"
-            completed, _game = _run(
-                Path(tmp) / "a", _Host("Dang ghi patch manifest / kiem tra patch..."), _fake_apply(), out=out
-            )
-            self.assertEqual(completed[0]["error"], "cancelled")
-            self.assertFalse(out.exists())
 
 
 if __name__ == "__main__":

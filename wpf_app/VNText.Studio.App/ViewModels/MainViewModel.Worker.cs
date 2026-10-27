@@ -616,8 +616,8 @@ public sealed partial class MainViewModel
 
     /// <summary>
     /// The cancelled-terminal line is task specific: the "keep the safe part, run again to continue translating" copy
-    /// belongs to translation only.  A cancelled Patch states what happened to its output directory (the worker settles
-    /// only the output it can prove it created) and never invites a re-run that would hit a non-empty output.
+    /// belongs to translation only.  A cancelled Patch states what happened to its output directory (the worker keeps it untouched
+    /// and says it may be partial) and tells the user to choose a new empty output directory.
     /// </summary>
     internal static string CancelledTerminalText(string? task, WorkerEvent evt)
     {

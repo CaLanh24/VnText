@@ -782,10 +782,11 @@ internal static partial class Program
             vm.TestBeginTaskLog("patch-1", "patch");
             vm.TestSetActiveTask("patch-1", "patch");
             vm.TestHandleWorkerEvent(Cancelled("patch-1",
-                ",\"patch_engine\":\"unity\",\"patch_install_instructions\":\"Đã hủy tạo patch. Phần do lần chạy này tạo trong X đã được dọn; không có patch dở nào còn lại.\""));
+                ",\"patch_engine\":\"unity\",\"patch_install_instructions\":\"Đã hủy tạo patch. Thư mục xuất X được GIỮ NGUYÊN, không dọn gì; không dùng làm patch hoàn chỉnh.\""));
             AssertFalse(vm.Busy);
             AssertEqual("Đã hủy", vm.StatusText);
-            AssertTrue(vm.LogLines.Any(l => l.Contains("đã được dọn", StringComparison.Ordinal)));
+            AssertTrue(vm.LogLines.Any(l => l.Contains("GIỮ NGUYÊN", StringComparison.Ordinal)));
+            AssertFalse(vm.LogLines.Any(l => l.Contains("đã được dọn", StringComparison.Ordinal)));
             AssertFalse(vm.LogLines.Any(l => l.Contains(TranslateCopy, StringComparison.Ordinal)));
             AssertFalse(vm.PatchDeliveryReady);
         }

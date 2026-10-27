@@ -2272,70 +2272,20 @@ def run_external_translation_import_task(
         )
 
 
-# Top-level names the patch writer creates inside its output directory.  Only these may ever be
-# removed when a cancelled run settles its own output; any other entry proves the directory is
-# not exclusively this run's, so nothing is deleted.
-_PATCH_OUTPUT_ARTIFACTS = frozenset({
-    "COPY_TO_GAME_ROOT",
-    "backup_original",
-    "HUONG_DAN_CAI_PATCH.txt",
-    "patch_manifest.json",
-    "import_report.txt",
-    "patch_verification.json",
-    ".patch_verification.json.tmp",
-    "VNTextPatchInstaller.exe",
-})
+def _cancelled_patch_output_statement(patch_out: Path | None) -> str:
+    """User-facing statement for a cancelled Patch.  READ-ONLY: it never deletes, moves or rewrites anything.
 
-
-def _settle_cancelled_patch_output(patch_out: Path, *, owned: bool, created: bool) -> str:
-    """Leave a cancelled patch output in a state that cannot be mistaken for a finished patch.
-
-    ``owned`` is only true for engines whose output directory was proven new or empty before this
-    run wrote anything (``validate_patch_output``).  Ren'Py keeps its own transactional overlay
-    contract and is never touched here.  Returns the user-facing Vietnamese statement.
+    A cancelled run cannot prove which entries of the output directory are exclusively its own (a user or
+    another process may have added data, or replaced a file with the same name, at any depth), so the output is
+    kept exactly as it is and described honestly.  Retrying needs a new empty output directory.
     """
 
-    where = str(patch_out)
-    if not owned:
-        return (
-            f"Đã hủy tạo patch. Thư mục xuất {where} được giữ nguyên và chưa được xác nhận là patch hoàn chỉnh; "
-            "kiểm tra trước khi dùng. Game gốc không bị thay đổi."
-        )
-    if not os.path.lexists(patch_out):
+    if patch_out is None or not os.path.lexists(patch_out):
         return "Đã hủy tạo patch trước khi ghi thư mục xuất. Game gốc không bị thay đổi."
-    is_junction = getattr(os.path, "isjunction", lambda _p: False)
-    try:
-        if patch_out.is_symlink() or is_junction(patch_out):
-            raise OSError("output directory is a link")
-        entries = list(os.scandir(patch_out))
-        foreign = [e.name for e in entries if e.name not in _PATCH_OUTPUT_ARTIFACTS or e.is_symlink() or is_junction(e.path)]
-    except OSError as exc:
-        return (
-            f"Đã hủy tạo patch nhưng không đọc được thư mục xuất {where} ({exc}); không dọn gì. "
-            "Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
-        )
-    if foreign:
-        return (
-            f"Đã hủy tạo patch. Thư mục xuất {where} có mục không phải do lần chạy này tạo ({foreign[0]}), "
-            "nên không dọn gì. Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
-        )
-    try:
-        for entry in entries:
-            target = Path(entry.path)
-            if entry.is_dir(follow_symlinks=False):
-                shutil.rmtree(target)
-            else:
-                target.unlink()
-        if created:
-            patch_out.rmdir()
-    except OSError as exc:
-        return (
-            f"Đã hủy tạo patch nhưng không dọn hết được thư mục xuất {where} ({exc}). "
-            "Không dùng nội dung đó làm patch hoàn chỉnh; chọn thư mục xuất mới. Game gốc không bị thay đổi."
-        )
     return (
-        f"Đã hủy tạo patch. Phần do lần chạy này tạo trong {where} đã được dọn; không có patch dở nào còn lại. "
-        "Game gốc không bị thay đổi. Chạy lại Patch để tạo mới."
+        f"Đã hủy tạo patch. Thư mục xuất {patch_out} được GIỮ NGUYÊN, không dọn gì: có thể chứa patch dở hoặc đã ghi xong "
+        "nhưng chưa được xác nhận, nên không dùng làm patch hoàn chỉnh. Để tạo lại, chọn thư mục xuất trống mới. "
+        "Patch chỉ ghi vào thư mục xuất; game gốc không bị sửa bởi bước này."
     )
 
 
@@ -2363,8 +2313,6 @@ def run_patch_task(
     patch_trace_metadata: dict[str, object] = {}
     trace_run_finished = False
     manifest_for_trace: dict = {}
-    out_created = False
-    out_owned = False
     late_cancel = False
 
     def patch_progress(info) -> None:
@@ -2408,11 +2356,6 @@ def run_patch_task(
             else Path(out) / "Patch_Viet_Hoa" / f"VNTextPatch_v{VERSION}"
         )
         validate_patch_output(src, patch_out, transactional_existing=patch_engine == "renpy")
-        # validate_patch_output proved a new or empty directory for every non-Ren'Py engine, so
-        # everything written there from now on belongs to this run.  Ren'Py keeps its transactional
-        # overlay and is never cleaned by the cancel path.
-        out_created = not patch_out.exists()
-        out_owned = patch_engine != "renpy"
         patch_out.mkdir(parents=True, exist_ok=True)
         if patch_engine == "renpy":
             stale_unity_artifacts = [
@@ -2513,11 +2456,8 @@ def run_patch_task(
             patch_install_instructions=patch_install_instructions,
         )
     except Exception as exc:
-        cancel_output_statement = ""
-        if _is_task_cancellation(exc) and patch_out is not None:
-            # Settle this run's own output first, before the (slow) trace finalisation, so the
-            # terminal never describes a complete-looking patch after a cancel.
-            cancel_output_statement = _settle_cancelled_patch_output(patch_out, owned=out_owned, created=out_created)
+        # A cancel never deletes or rewrites the output: ownership of every nested entry cannot be proven.
+        cancel_output_statement = _cancelled_patch_output_statement(patch_out) if _is_task_cancellation(exc) else ""
         if trace is not None:
             from vntext.traceability import (
                 ROOT_CAUSE_PATCH_VERIFY_FAILED,
