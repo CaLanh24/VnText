@@ -312,6 +312,21 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_4 = (
     "call_29c7ca59cc1947f89b14f31a4c7d289e and call_5c6b05faa7a54881a1c491eebbebc8a6; the ordinary eight-hop "
     "transition limit remains unchanged."
 )
+# Fifth, independent single-use authority for release 0.1.13 (after the fourth ordinary eight-hop chain, which began at the
+# fourth rebaseline and ended at epoch-20261027T050000Z-5150fd9).  The Owner answered a fresh question call_567ecb4e733c463c8cd2b1fe2bb51ef6
+# with the exact phrase below.  Never a reuse of an earlier approval.
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_5 = "call_567ecb4e733c463c8cd2b1fe2bb51ef6"
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_5 = (
+    "Owner 2026-10-27 answered question call_567ecb4e733c463c8cd2b1fe2bb51ef6 "
+    "(request_user_input_async) with the exact reply 'Cho phép một lần rebaseline', authorizing ONE additional "
+    "no-delete 0.1.13 epoch metadata rebaseline after the ordinary eight-hop chain ended at "
+    "epoch-20261027T050000Z-5150fd9, so that the native checks can run at the docs-only HEAD that follows candidate "
+    "source 5150fd97d159c15456eac704f2aff337cbfd5f22; it preserves the complete existing epoch history, deletes "
+    "nothing and relaxes no validator or protection. It is distinct from the consumed "
+    "call_6331409a3fcc4443b4b66fb4552c4254, call_29c7ca59cc1947f89b14f31a4c7d289e, "
+    "call_5c6b05faa7a54881a1c491eebbebc8a6 and call_5fc7951df0eb4d5b845dd932e2818b7d; the ordinary eight-hop "
+    "transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -328,6 +343,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_4: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_4
+    ),
+    RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_5: (
+        RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_5
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
