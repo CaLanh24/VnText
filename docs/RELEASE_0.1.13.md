@@ -2,6 +2,17 @@
 
 **Status: IN PROGRESS.** This ledger carries forward the remaining acceptance gaps recorded for public 0.1.12 and the Owner's approved remediation plan. Public 0.1.12 remains immutable. Target release: 0.1.13.
 
+## Current summary (authoritative; everything below is chronological HISTORY)
+
+- **Task / status:** release 0.1.13, IN PROGRESS, publication HOLD. Candidate p13n, source `5150fd97d159c15456eac704f2aff337cbfd5f22` (Setup `08b504b4…3d29`, installed exe `02acaf3b…2412`) is unchanged; source gates, publisher, verify, two smokes and 3 updater cases are recorded below with receipts. Later commits are docs/authority only (`494a1c9` fifth rebaseline, `213b2e8` cleanup policy, this summary).
+- **Owner decisions in force:** baseline 0.1.12 -> 0.1.13 (pre-0.1.12 and Setup-origin 0.1.10 out of acceptance), model limits accepted (not a semantic PASS), real-game E2E NOT TESTED, cleanup policy (`CONTRACTS.md` §10a), no automatic Brain replacement (`AGENTS.md`).
+- **Native on p13n (s13n), Root 2026-10-27:** #12 PASS bounded generic text: UI preflight 8000/8000, retry into `fx9/patch-cancel-8k/out3` completed, `patch_verification.json` PASS 8000, `import_report.txt` 8000/8000 with no skip, installer present, game sha256 unchanged. #13 checklist (one cancelled terminal, output-state warning, retry) proved: worker ack 23 ms, one terminal after 47.4 s, `out2` empty, game unchanged, no translate wording. #13 cancellation DURING READ-BACK is NOT_PROVEN (the cancel hit the initial stage before any output); the remediation stays PARTIAL for that point. Residual: terminal latency about 47 s (coarse cancel points plus trace finalisation). Receipts: `DEV_RUN/gatec/native12-13-s13n-root.json`, `native13-s13n-cancel1.json`, `native12-s13n-retry.png`. Installer apply/restore were not run; no Unity/Ren'Py/real-game claim.
+- **Older native evidence (p13m, executable `72d7c10b…`):** #3, #7-#9, #12 (120/120), #13 finding, #16 partial. The 0.1.13 patch-only source diff between p13m and p13n does not touch those areas, so they are reused as bounded evidence, NOT as p13n exact-native claims.
+- **Cleanup phase (Owner 2026-10-27):** PARTIAL, about 2.33 GB removed (C:\b net 594,696,663 B with baseline 0.1.7 relocated into the counted scope, 12/12 RELEASE_RUN targets, 12 of 41 TEST_RUN targets); non-exempt 6,366,627,083 B, reserve 2,760,178,421 B. Remaining UNKNOWN-descendant TEST_RUN roots and old DEV_RUN release dirs carry a question, owner and review point (after native 10/11) and are not a release gate. Receipt `DEV_RUN/gatec/cleanup_phase_result.json`; preflight `cleanup_phase_native_preflight.json`.
+- **Epoch:** fifth rebaseline consumed (`494a1c9`); ordinary chain restarts at 0/8, hop 1 at `213b2e8`, this closure uses hop 2. Any dirty/staged tree drops the release-0.1.13 budget profile: keep Git clean after activation and keep live results in ignored `DEV_RUN` receipts.
+- **Open acceptance (not PASS):** #10 CT2 cancel-and-exit with process list before/after and #11 invalid CSV are the next finite native phase; #4/#5 SDK recovery (#4 partial), #6 OCR, #14/#15 editor, #17-#19 sweeps/DPI/keyboard, #20/#21 offline updater/cache, #22 uninstall remain open or partial. Updater UI offer/download/restart needs GitHub (post-publication check). Docs drift (docs/agents/issue-tracker.md, docs/DEVELOPMENT.md, tests/README.md) is deferred, not a gate.
+- **Next action:** Root native #10 and #11 on s13n, then the remaining items; Brain ACCEPT is required before any publication.
+
 ## Starting point and publication boundary
 
 - Starting source: `a223aab86a151e72e57f5a95c319021a751ee4a3` on clean `main`.
@@ -39,7 +50,7 @@
 8. Produce Vietnamese user-facing release notes focused on changes to features and interface. Keep technical evidence in this ledger/receipts, not the GitHub body.
 9. Persist a review packet; wait for Brain `ACCEPT`, then publish source/tag/release/assets/latest-feed and verify public read-back. Clean registered temporary scope to the terminal storage limits.
 
-## Progress and evidence
+## Progress and evidence (HISTORY — chronological; statements of 'pending'/'current' here are superseded by the Current summary)
 
 | Date | Change/evidence | SHA | Outcome / remaining work |
 |---|---|---|---|
