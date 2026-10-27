@@ -1312,7 +1312,15 @@ def run_extract_task(
         elif empty:
             completion_error = "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét."
             summary = completion_error
-        extract_status = "FAILED" if empty and extract_errors else "EMPTY" if empty else "PARTIAL" if completion_blockers else "COMPLETE"
+        # Owner decision (2026-10-27): a no-SDK static export is always PARTIAL, even when the scan found no row;
+        # real extract errors stay FAILED and an empty extraction with the SDK stays EMPTY.
+        extract_status = (
+            "FAILED" if empty and extract_errors
+            else "PARTIAL" if renpy_sdk_missing
+            else "EMPTY" if empty
+            else "PARTIAL" if completion_blockers
+            else "COMPLETE"
+        )
         log(summary)
         log("Gói dịch nằm trong thư mục trên; app không tạo ZIP package nữa.")
         payload = {

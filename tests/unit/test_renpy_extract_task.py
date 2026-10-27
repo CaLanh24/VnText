@@ -298,11 +298,11 @@ class RenPyExtractTaskTests(unittest.TestCase):
         '    return\n'
     )
 
-    def _no_sdk_run(self, temp, action="none", sdk_path="", extra_patch=None):
+    def _no_sdk_run(self, temp, action="none", sdk_path="", extra_patch=None, options_text=None, script_text=None):
         root = Path(temp) / "game"
         (root / "game").mkdir(parents=True)
-        (root / "game" / "options.rpy").write_text(self.FIXTURE_OPTIONS, encoding="utf-8")
-        (root / "game" / "script.rpy").write_text(self.FIXTURE_SCRIPT, encoding="utf-8")
+        (root / "game" / "options.rpy").write_text(self.FIXTURE_OPTIONS if options_text is None else options_text, encoding="utf-8")
+        (root / "game" / "script.rpy").write_text(self.FIXTURE_SCRIPT if script_text is None else script_text, encoding="utf-8")
         out = Path(temp) / "out"
         completed, logs = [], []
         with patch("vntext.app_tasks._run_unity_preflight"), patch("vntext.renpy_toolchain.managed_sdk", return_value=None), \
@@ -355,6 +355,20 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 validate_patch_package_identity(out / "translation.csv", manifest)
             self.assertTrue(any("không có dòng nào được dịch hay patch" in line for line in logs))
             self.assertEqual((root / "game" / "script.rpy").read_text(encoding="utf-8"), self.FIXTURE_SCRIPT)
+
+    def test_no_sdk_static_export_with_zero_rows_is_still_partial_never_empty_or_complete(self):
+        """Owner decision 2026-10-27: no-SDK extract_status is always PARTIAL, also when the static scan found nothing to review."""
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            _root, out, completed, _logs = self._no_sdk_run(temp, options_text="define config.version = \"1\"\n", script_text="label start:\n    return\n")
+            self.assertEqual(len(completed), 1, completed)
+            done = completed[0]
+            self.assertEqual(done["extract_status"], "PARTIAL", done)
+            self.assertFalse(done["complete"])
+            self.assertFalse(done["ok"])
+            self.assertTrue(done["renpy_sdk_missing"])
+            self.assertEqual(done["review_only"], 0)
+            status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
+            self.assertEqual((status["status"], status["complete"], status["main"], status["review"]), ("PARTIAL", False, 0, 0))
 
     def test_loose_scan_review_only_never_invents_native_identity_or_proof(self):
         from vntext.renpy_extract import extract_loose_source
