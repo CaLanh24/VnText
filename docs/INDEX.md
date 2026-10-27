@@ -106,7 +106,7 @@
 
 ## Snapshot lịch sử đã tách
 
-Chỉ đọc theo câu hỏi/task ID. Bytes snapshot gốc được giữ nguyên; relative paths bên trong được hiểu từ origin. Không dùng một raw snapshot làm bootstrap/authority hiện tại. Origin và commit đủ để tìm lại lịch sử Git, không cần giữ binary/game/cache.
+Chỉ đọc theo câu hỏi/task ID. Nội dung evidence của snapshot giữ nguyên; ba relative link của translation history đã rebase theo vị trí mới. SHA trong bảng là Git blob gốc tại origin/commit, không phải hash file sau sửa link điều hướng. Không dùng một raw snapshot làm bootstrap/authority hiện tại. Origin và commit đủ để tìm lại lịch sử Git, không cần giữ binary/game/cache.
 
 | Origin / topic | Snapshot | Original Git-blob bytes SHA256 |
 |---|---|---|

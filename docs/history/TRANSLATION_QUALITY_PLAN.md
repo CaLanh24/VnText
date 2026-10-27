@@ -337,7 +337,7 @@ informational (CT2 dùng được), optional sacremoses UserWarning, không cài
 
 Raw failures/outputs/ledger/cache và per-runSHA/codehash giữ trong
 `DEV_RUN/glossary-conflict-scope`; canonical wrapper files trong VM-Acceptance.
-[Compact public receipt](../evaluation/glossary_conflict_scope_v1/receipt.json)
+[Compact public receipt](../../evaluation/glossary_conflict_scope_v1/receipt.json)
 ghi exact identities/diff/gates/limitations. Predeclared actual budget được thêm
 before-trace để thu thiếu ledger, after-final do ordinal remediation, after-cache
 do stale-cache prerequisite; không tuning dữ liệu/model/semantic validators.
@@ -409,7 +409,7 @@ prompt tuning, no silver/approved memory imported.
 ## M1–M4 offline0đ đã thực thi — 2026-10-20
 
 Owner giao “Thực hiện đi”; DEV sole writer triển khai, Brain read-only audit/
-nghiệm thu. [Public packet](../evaluation/translation_silver_packet_v1/README.md)
+nghiệm thu. [Public packet](../../evaluation/translation_silver_packet_v1/README.md)
 có60source/context/curation rows, raw3arms/review/mapping/seal và SHA/identity thật.
 All60 seen development/regression;0model/inference/benchmark mới. Rights nguồn
 generated-for-project60known/0UNKNOWN, không human gold.
@@ -441,7 +441,7 @@ này đã khép, không tự mở phase tiếp. Public `handoff.json`; canonical
 
 Không thuê reviewer/GPU/máy, mua phần cứng, trial cần thẻ/đặt cọc/autocharge.
 Quyết định này thay gợi ý xin budget trong các mục lịch sử; bản trả phí đang soạn
-đã hủy trước commit. [Lộ trình0đ](TRANSLATION_TRAINING_PILOT_PROPOSAL.md) đề nghị
+đã hủy trước commit. [Lộ trình0đ](../TRANSLATION_TRAINING_PILOT_PROPOSAL.md) đề nghị
 gói offline60 nguồn synthetic Phase19/raw đã có, agent-reviewed silver, audit
 bank48/candidate memory, <=5h DEV/1h Brain read-only nghiệm thu; sau đó Owner
 đã giao thực thi và hoàn tất ở mục trên.

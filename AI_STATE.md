@@ -16,7 +16,7 @@
 
 ## Git/epoch và cleanup
 
-- Docs base trước lượt tổ chức: `b7e842419beffad9ed2d8d0bc4829d69050ff3d8` main sạch, epoch hop4 đã được Brain verify; candidate source không đổi. Lượt tổ chức docs tạo đúng một commit. Trước gate kế tiếp Brain thực hiện một ordinary exact-CAS no-delete transition theo guard nếu cần để epoch khớp HEAD mới; fifth rebaseline đã dùng, không tự cấp quyền rebaseline mới. Chỉ docs commit không buộc build lại hoặc nâng evidence cũ thành exactHEAD.
+- Docs base trước lượt tổ chức: `b7e842419beffad9ed2d8d0bc4829d69050ff3d8` main sạch, epoch hop4 đã được Brain verify; candidate source không đổi. Lượt tổ chức docs và sửa ba link archive được gom trước activation kế tiếp (không có gate/runtime change ở giữa). Trước gate kế tiếp Brain thực hiện một ordinary exact-CAS no-delete transition theo guard nếu cần để epoch khớp HEAD mới; fifth rebaseline đã dùng, không tự cấp quyền rebaseline mới. Chỉ docs commit không buộc build lại hoặc nâng evidence cũ thành exactHEAD.
 - Checkpoint riêng đã cũ: `DEV_RUN/gatec/cleanup_phase_root_checkpoint.json`; KHÔNG ghi đè trạng thái mới ở đây bằng checkpoint cleanup cũ. Trong transaction mới có thể ghi operational delta vào receipt ignored được chỉ rõ, cập nhật tracked ở boundary đã có; không docs→epoch→docs loop.
 - CleanupPARTIAL: khoảng2.33GB dọn, 29historical TEST_RUN roots/oldDEVdirs còn ownership/consumer questions, không releasegate. `cleanup_phase_result.json`; consumer/review point cần được đốichiếu live. Giữ p13n/s13n, fx9/fx8 và fx2/fx10 SDK đúng consumer, baseline có route, sharedSDK/model; dọn bulk hếtconsumer theo CONTRACTS/WORKFLOW. Latest profile trước docs6,480,308,015B nonexempt,2,646,497,489B reserve; remeasure trước allocation, không coi số này là hiện tại.
 
