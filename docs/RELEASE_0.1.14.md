@@ -1,6 +1,6 @@
 # VNText Studio 0.1.14 — acceptance hiện hành
 
-**IN PROGRESS — publication cần Brain ACCEPT.** Owner (2026-10-28): “Xem báo cáo này xem đúng k, nếu đúng thì sửa cho bản update 0.1.14, sửa xong release. Cần hoàn thành nhanh.” Báo cáo là UI QA 0.1.13 (source `9b2c05e`, receipt `DEV_RUN/uiqa28-receipt.json`, `uiqa28-deep-receipt.json`). Trạng thái hiện hành ở [AI_STATE](../AI_STATE.md); 0.1.13 đã phát hành ([ledger](RELEASE_0.1.13.md)).
+**PUBLISHED — [v0.1.14](https://github.com/CaLanh24/VnText/releases/tag/v0.1.14), stable, latest.** Brain ACCEPT p14b cho phạm vi sửa lỗi báo cáo (2026-10-29), không phải QA toàn app/pixel parity/game thật. Báo cáo gốc: UI QA 0.1.13 (source `9b2c05e`; `DEV_RUN/uiqa28-receipt.json`, `uiqa28-deep-receipt.json`). Trạng thái hiện hành ở [AI_STATE](../AI_STATE.md); 0.1.13 ở [ledger](RELEASE_0.1.13.md).
 
 ## Quyền và phạm vi
 
@@ -28,11 +28,19 @@ PASS có mục tiêu: #2 (CSV lỗi: tiêu đề/document 4 dòng giữ, banner 
 
 Lỗi mới phát hiện: `SetGlossaryBackdrop` blur mọi con của root trừ overlay, kể cả lớp toast, nên toast validation “Thêm” khi hai ô rỗng bị mờ không đọc được. **p14a bị từ chối cho release.** Sửa: `ModalBackdrop.BlurBackground` chỉ blur nội dung nền, bỏ qua overlay và mọi lớp có z-order ≥ overlay (toast z=200, lớp dim của dialog), khôi phục đúng effect cũ khi đóng; không đổi geometry/motion. Test harness mới `ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores` + kiểm tĩnh. Finding 5: với CSV hợp lệ đang mở, chọn CSV thiếu manifest giữ document cũ (đúng hành vi); case gốc (chưa chọn gì) cần native lại: **chọn CSV thiếu manifest trước**; test harness nay xác nhận cả dòng readiness lẫn workflow không còn “File không tồn tại”.
 
-## Acceptance 0.1.14
+## Candidate đã phát hành và evidence
 
-| Mục | Trạng thái | Evidence |
-|---|---|---|
-| Source + test (harness 6, Python 3, static) và hiệu chỉnh glossary toast | Chờ gate canonical | `DEV_RUN/gatec/impl50-*.json` |
-| Build/verify/smoke/updater trên candidate sửa | Chờ | Candidate p14b |
-| Native có mục tiêu lần hai (no-manifest trước, nhãn patch plain text, glossary validation toast + một confirmation lồng) | Chờ | `native_plan_p14b.md` |
-| Publication | HOLD tới Brain ACCEPT | — |
+- Candidate p14b, source `002035a4a523fb09a538dc0f20879c6cffc186c9` (tag `v0.1.14` annotated, peel đúng source này). Setup SHA256 `902a32868de92ecf85a605f655d0de8dba67bd64cbc0e33a9e70d4bc762e0c27` (222,482,432 B); exe cài ra `c92d992dc4247ac5e515eb8e281438a119d560f1dcbc2e139eebb58d77fb2c1d`; payload 7193 file / 514,815,311 B; 15 asset (Setup + 7 gói + 7 feed), gồm route 0.1.13 → 0.1.14 và các route 0.1.8–0.1.12/0.1.7 theo publisher contract. Source tag khác HEAD docs: docs-only không dựng lại bản.
+- Gate canonical (child 0, không skip/warning): `test_wpf_workflow` 23 (static + harness, gồm test ModalBackdrop và test Translate hai dòng) tại `002035a`; Python 20 (patch_delivery, patch_cancel_boundary, publish_release_root_guard) và epoch 3 tại `e6b2efa`; traceability 32 / cancel 25 / worker_tasks 16 reuse từ `9b2c05e` (không đổi phần cancel/trace). Release-verify + hai smoke worker + updater 3 ca (named-0.1.13 từ baseline dựng từ payload Setup chính thức, health-rollback, tampered) trên p14b; p14a có thêm named-0.1.12. Wrapper REVIEW_REQUIRED do `terminal_root preexisting_test_run_content`, tách khỏi child exit 0.
+- Receipt `DEV_RUN/gatec/`: `candidate-receipt-p14b.json`, `candidate-verify-p14b.json`, `updater-matrix-p14b-summary.json`, `handoff_p14b.json`, `published_release_v0.1.14.json`.
+
+## Native và Brain ACCEPT (tóm tắt)
+
+- p14a (exe `286e53c6…6654`): PASS có mục tiêu #2 (CSV lỗi giữ document, banner nêu file/lý do), #3 (cảnh báo khi lưu: số dòng, lý do, Trạng thái), #4 (preview đọc đủ), #8 (primary gradient/elevation sáng/tối), #7/#9 (dark 120% Journal/notes theo scale, nhãn Việt, giờ `dd/MM/yyyy HH:mm`, badge English). Lỗi mới: toast glossary bị blur → p14a bị từ chối.
+- p14b (exe `c92d992d…2c1d`, source `002035a`): PASS #5 (chưa chọn gì → chọn CSV thiếu manifest: toast và readiness cùng “Thiếu manifest.json cùng thư mục với translation.csv”, Start bị khóa); regression glossary (toast “Chọn file dịch trước khi thêm thuật ngữ” sắc nét, nền blur, đóng thì nền sắc nét); #6 (Patch qua UI trên fx14: nhãn “Gói patch có installer — VNTextPatchInstaller.exe”, hướng dẫn “Patch văn bản thường đã sẵn sàng…”, không Unity; read-back 4/4 PASS, hash game không đổi; preflight UI ban đầu chặn vì fixture chưa có trạng thái dịch xong, Brain dùng Translate thường với overwrite OFF, 4 bản dịch giữ nguyên); modal lồng (xóa thuật ngữ → Không giữ mục, primary đọc được, đóng overlay trả nền). Settings bản cài thử mặc định (100%, sáng, Việt); Desktop của người dùng không đụng tới.
+- Giới hạn: không pixel parity, không toàn app/engine/game thật/ngữ nghĩa dịch; không claim cài/gỡ mới; Escape trong modal vẫn NOT_PROVEN (không có bug). Finding 1 là cấu hình theo ngữ cảnh ngoài payload Setup; nguồn gốc chính xác không có bằng chứng được theo dõi.
+
+## Publication và cleanup
+
+- [https://github.com/CaLanh24/VnText/releases/tag/v0.1.14](https://github.com/CaLanh24/VnText/releases/tag/v0.1.14): stable, latest, tag `v0.1.14` → `002035a`, `main` fast-forward; 15/15 asset khớp tên, kích thước và sha256 (server digest) với receipt cục bộ.
+- Cleanup (qua registry, đọc lại, tách khỏi gate): đã dispose p14b, s14b, fx14 và hai source clone (p14a/s14a đã dispose trước đó). Giữ: baselines (0.1.8–0.1.13 + legacy 0.1.7, route cho bản kế tiếp), `inputs` (bản sao model), `fixtures` của 0.1.13 — consumer là build route cập nhật của bản kế tiếp, rà lại khi bắt đầu bản kế tiếp; `DEV_RUN/release-0.1.13/Setup.exe` là file của Owner (OWNER_TEST_PENDING), không xóa. Không giữ candidate cài thử vì không còn consumer. 29 root `TEST_RUN` lịch sử còn câu hỏi ownership, không phải release gate.

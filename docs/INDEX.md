@@ -10,7 +10,7 @@
 | Source owner/caller ở đâu? | ARCHITECTURE theo heading | Source/tests ở owner đó |
 | Invariant/cleanup/epoch/quyền đang có? | CONTRACTS đúng § | Authority/receipt mà § trỏ tới |
 | Cần chạy gate nào? | TEST_MATRIX theo vùng thay đổi | Script/harness tương ứng; không mọi history |
-| Release0.1.13 thiếu gì? | RELEASE_0.1.13 current checklist | Exact receipt, rồi snapshot nếu cần nguồn gốc |
+| Release0.1.14/0.1.13 thiếu gì? | RELEASE_0.1.14 / RELEASE_0.1.13 ledger | Exact receipt, rồi snapshot nếu cần nguồn gốc |
 | Vì sao từng đổi một hành vi? | Topic router ở bảng dưới | Chọn heading/ID trong archive, không đọc toàn file |
 | Khôi phục sau compact/resume? | AGENTS + AI_STATE | Delta/receipt; lịch sử chỉ cho câu hỏi chưa trả lời |
 
@@ -41,7 +41,7 @@
 | [docs/RELEASE_0.1.11.md](RELEASE_0.1.11.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.12.md](RELEASE_0.1.12.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ĐÃ PHÁT HÀNH v0.1.13 (đã đóng; lịch sử) |
-| [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ACTIVE — triage 9 finding UI QA và acceptance 0.1.14; xem AI_STATE |
+| [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ĐÃ PHÁT HÀNH v0.1.14 (triage 9 finding UI QA, acceptance, native, cleanup); xem AI_STATE |
 | [docs/RELEASE_0.1.6.md](RELEASE_0.1.6.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.7.md](RELEASE_0.1.7.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.8.md](RELEASE_0.1.8.md) | HISTORY — release/authority cũ, không tự mở lại |

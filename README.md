@@ -3,7 +3,7 @@
 
 Phiên bản mới nhất là [**VNText Studio 0.1.12**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.12); trang phát hành có Setup cho người cài mới và gói cập nhật cho người đang dùng app.
 
-Bản công khai mới nhất là [0.1.13](https://github.com/CaLanh24/VnText/releases/tag/v0.1.13) (source `9b2c05e`); các bản trước vẫn có trên trang Releases.
+Bản công khai mới nhất là [0.1.14](https://github.com/CaLanh24/VnText/releases/tag/v0.1.14) (source `002035a`); các bản trước vẫn có trên trang Releases.
 
 Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật** để cập nhật trực tiếp lên bản mới nhất. Người mới có thể tải Setup 0.1.12 từ trang Releases.
 
