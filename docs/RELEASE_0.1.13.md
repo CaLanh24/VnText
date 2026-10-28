@@ -15,20 +15,32 @@
 | #1 Setup, #2 identity | p13o Setup native vào s13p đúng đường, exe/source khớp (`native22-post-install.json` ok:true; lần kiểm đầu ok:false chỉ do Setup còn mở, chạy lại sau khi đóng) | native22-setup-success.png; p13n/s13n là evidence cũ |
 | #3, #7–9, #16 | Evidence p13m chỉ được reuse bounded theo patch-only impact review | Không gọi p13n exact-native hoặc toàn bộ PASS |
 | #4 SDK recovery | PASS bounded trên p13o (Owner 2026-10-27): không SDK → 0 MAIN / 8 review, PARTIAL, không ID/proof, Translate/Patch khóa | native47-review-result.json; gate canonical `db0e847`+`4809077` |
-| #5 SDK offline/cancel | PARTIAL: cancel pha connect (0-byte .part) → terminal một lần, retry bật; retry tải SDK chính thức 8.5.3 vào `s13o/data/tools` COMPLETE (8 MAIN, 0 review, 316 common loại, không zip/.part). Cancel giữa chừng/offline NOT_PROVEN | native48-sdk-result.json; offline cần route Owner |
+| #5 SDK offline/cancel | PARTIAL: cancel pha connect (0-byte .part) → terminal một lần, retry bật; retry tải SDK chính thức 8.5.3 vào `s13o/data/tools` COMPLETE (8 MAIN, 0 review, 316 common loại, không zip/.part); lỗi tải/SDK không hợp lệ báo nguyên nhân, không bịa số review (test canonical). Cancel giữa chừng/offline NOT_PROVEN, ngoài release có giới hạn | native48-sdk-result.json |
 | #6 OCR | PASS bounded trên p13o: progress theo stage + ETA (97%, còn 24), 22 ready / 8 failed / 0 translated, untranslated là bản gốc, 31 hash nguồn khớp; không MT/render | native47-ocr-result.json |
 | #10 cancel-exit | PASS bounded | native10-s13n-result.json; không có exit-code/in-flight-boundary proof |
 | #11 ordinary failure | PASS bounded, thông báo nguyên nhân còn English | native11-s13n-result.json, sampled hash checks |
 | #12 patch-readback | PASS bounded generic text 8000/8000 | native12-13-s13n-root.json; installer apply/restore chưa chạy; không engine/game claim |
 | #13 patch-cancel | PASS bounded trên p13o (native49-readback-result.json): child read-back dừng 350 ms sau yêu cầu hủy / 346 ms sau ACK, không có read-back PASS, không có báo cáo verify, một terminal trung thực giữ output nguyên. Terminal đến sau 43,231 s (mỗi action abort commit riêng ở trace); batch hóa đã sửa trong source tiếp theo, cần đo lại thời gian trên candidate mới | native49_readback_diagnosis.json; không waiver Release |
 | #14/#15 editor | PASS bounded: search/preview/apply/undo (khôi phục đúng SHA)/lưu tay/reload; thay đổi ngoài ở dòng khác và cùng dòng bị từ chối, hash ngoài giữ nguyên, edit dirty giữ, Cancel giữ edit, discard reload bản ngoài | native47-csv-result.json; `fx6` edit đã khôi phục từ golden |
-| #17–19 UI/DPI/keyboard | #17 PARTIAL: dark Settings/Translate/glossary đọc được, chưa quét đủ trạng thái. #18 PARTIAL: phóng to 1556×800 và khôi phục 1428×794 ở 100%; kéo cạnh không đổi; kích thước tối thiểu và 125/150% chờ chạy với quyền Owner đã cấp (khôi phục 100%). #19 PARTIAL: Tab/Return ở cửa sổ chính PASS bounded; Esc trong dialog NOT_PROVEN (tool chỉ liệt kê cửa sổ chủ) | native49-ui-result.json, native49-keyboard-result.json |
-| #20/#21 update offline/cache | #21 PASS bounded: lịch sử release tiếng Việt online tới v0.1.12. #20 và cache offline: Owner đã cấp trạng thái offline tạm thời và khôi phục kết nối; chưa chạy | Headless matrix không thay offer/download/restart |
-| #22 uninstall | PROVEN_BLOCKED/NOT_PROVEN: Setup vào s13p PASS, nhưng tool policy chặn mở `s13p/Uninstall.exe`; không vượt qua; bàn giao cho người dùng | native22-result.json; giữ `s13p` cho bước uninstall của người dùng |
+| #17–19 UI/DPI/keyboard | #17 PARTIAL: dark Settings/Translate/glossary đọc được. #18 PARTIAL: phóng to 1556×800 và khôi phục 1428×794 ở 100%; kéo cạnh không đổi; kích thước tối thiểu và 125/150% NOT_PROVEN, ngoài release có giới hạn (Owner 2026-10-28). #19 PARTIAL: Tab/Return ở cửa sổ chính PASS bounded; Esc trong dialog NOT_PROVEN, ngoài release | native49-ui-result.json, native49-keyboard-result.json; không PASS giả |
+| #20/#21 update offline/cache | #21 PASS bounded: lịch sử release tiếng Việt online tới v0.1.12. #20 và cache offline: NOT_PROVEN, ngoài release có giới hạn (Owner 2026-10-28), không đổi mạng | Headless matrix không thay offer/download/restart |
+| #22 uninstall | BỎ khỏi release acceptance (Owner 2026-10-28); Setup vào s13p PASS, Uninstall chưa chạy, không PASS giả | native22-post-install.json |
 | Publication/readback | HOLD | Brain ACCEPT trước mutation; public exact asset/live-update checks riêng |
 | Cleanup | PARTIAL, khoảng2.33GB đã dọn | cleanup_phase_result.json; unresolved roots phải có consumer/review point, không thành gate giả |
 
 Receipt names above are relative to the `DEV_RUN/gatec` prefix and may be local-only; missing files do not establish PASS. Update this table once per meaningful phase and keep only current verdicts. Detailed source/gate history is in the archive below. Authority/invariants remain in CONTRACTS; checklist below preserves original acceptance wording, including the unresolved #4 contract discrepancy.
+
+## Phạm vi sửa được yêu cầu cho bản cập nhật này (Owner 2026-10-28)
+
+| Mục sửa | Evidence | Trạng thái |
+|---|---|---|
+| #4 không SDK → review-only, MAIN rỗng, luôn PARTIAL (kể cả 0 dòng) | test canonical `db0e847`/`4809077`; native p13o 0 MAIN / 8 review | PASS bounded |
+| #5 lỗi tải/SDK báo nguyên nhân, không bịa số review; cancel pha connect + retry | test canonical; native48 | PASS bounded (giữa chừng/offline ngoài release) |
+| #6 OCR có ETA advisory, không MT/render | test canonical; native p13o 22/8/0, ETA thấy | PASS bounded |
+| #13 hủy patch/read-back: terminal trung thực; trace abort batch hóa | native49 (child dừng 350 ms, terminal 43,2 s); test mới + 32 + 25 test canonical ở `8c00998` | Đo lại thời gian trên candidate mới |
+| #14/#15 CSV editor, #11 lỗi thường, #12 patch read-back, #1/#2 Setup | native47/p13n; p13o Setup | PASS bounded |
+| #3, #7–#10, #16 model/tiến trình/hủy | evidence p13m/p13n; đường trace batch cũng dùng ở dịch: test traceability đạt | Reuse có giới hạn, không PASS exact-native |
+| Updater 0.1.12→0.1.13 | ma trận headless 3 ca | PASS headless |
 
 ## Native acceptance checklist (Gate C, packaged candidate)
 

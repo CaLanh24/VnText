@@ -2182,7 +2182,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         fourth_id, fourth_text = ids[5]          # (name kept from the earlier tests: this is the NEW approval)
         self.assertEqual("owner-direct-20261028-lam-cho-xong", fourth_id)
         self.assertIn("'Làm cho xong đi, t cho m toàn quyền'", fourth_text)
-        self.assertIn(fourth_id, fourth_text)
+        self.assertNotIn("call_", fourth_id)                  # a direct Owner reply, not a question call id
         self.assertIn("4809077aecf614edbe26d30ebb0c7238bb3348c0", fourth_text)
         for earlier_id, _earlier_text in ids[:5]:
             self.assertIn(earlier_id, fourth_text)          # named as consumed, never reused
