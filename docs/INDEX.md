@@ -40,7 +40,7 @@
 | [docs/RELEASE_0.1.10.md](RELEASE_0.1.10.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.11.md](RELEASE_0.1.11.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.12.md](RELEASE_0.1.12.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ACTIVE — acceptance đang mở; xem AI_STATE |
+| [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ĐÃ PHÁT HÀNH v0.1.13 (acceptance có giới hạn đã đóng); xem AI_STATE |
 | [docs/RELEASE_0.1.6.md](RELEASE_0.1.6.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.7.md](RELEASE_0.1.7.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.8.md](RELEASE_0.1.8.md) | HISTORY — release/authority cũ, không tự mở lại |

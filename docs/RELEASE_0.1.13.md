@@ -1,12 +1,12 @@
 # VNText Studio 0.1.13 — acceptance hiện hành
 
-**IN PROGRESS — publication HOLD.** Đọc trạng thái mới nhất ở [AI_STATE](../AI_STATE.md); Owner đã cho hoàn thành/publish sau Brain ACCEPT, không xin lại duyệt routine. Không có Release ACCEPT từ việc tổ chức tài liệu.
+**PUBLISHED — [v0.1.13](https://github.com/CaLanh24/VnText/releases/tag/v0.1.13), stable, latest.** Release ACCEPT bởi Brain/Root (2026-10-28) cho phạm vi Owner yêu cầu và validation affected; không phải QA toàn bộ game. Trạng thái hiện hành ở [AI_STATE](../AI_STATE.md).
 
 ## Candidate và quyền
 
-- Candidate hiện hành p13o, source `4809077aecf614edbe26d30ebb0c7238bb3348c0`. Setup SHA256 `7b28ba564fff744f5465037eb0c02a7350e120d8e27bc2c3dbb880818be6ae91`; exe cài ra `0763a42984a563de570c541998a05b404252254da0f8ef79d969ee17af476206`; payload 7193 file / 514,808,080 byte. Candidate cũ p13n (source `5150fd97d159c15456eac704f2aff337cbfd5f22`, Setup `08b504b4…3d29`, exe `02acaf3b…2412`) không chứa remediation #4/#6; evidence native p13n chỉ thuộc p13n.
+- Candidate đã phát hành p13p, source `9b2c05ea2aad8a6c9f4f1079db4138e81f153497` (tag `v0.1.13` annotated, peel đúng source này). Setup SHA256 `ab06e365310ea15d4b9dc48bb2e337c9fb8c51fdc1c5beb12f2ea930b740383d`; exe cài ra `0763a42984a563de570c541998a05b404252254da0f8ef79d969ee17af476206`; payload 7193 file / 514,809,021 byte; 13 asset (Setup + 6 gói + 6 feed). p13o (source `4809077`) và p13n (`5150fd9`) là candidate cũ đã dispose, không phát hành.
 - Baseline bắt buộc 0.1.12 → 0.1.13; từ 0.1.13 một thao tác tới latest. Pre-0.1.12/Setup-origin0.1.10 ngoài scope. OPUS limits được chấp nhận, không semantic PASS. Real-game E2E defer NOT TESTED; generated/installed-app acceptance vẫn bắt buộc.
-- p13o: focused 66 (`db0e847`), affected 35/71/22 gồm WPF harness (`4809077`), asset receipt 13 asset, release-verify + hai smoke worker, ba ca updater (named-0.1.12, health-rollback, tampered); lần đầu `named-0.1.12` fail chỉ do hằng số exe của script, đã sửa và chạy lại ca đó. Receipt prefix `DEV_RUN/gatec/`: `candidate-receipt-p13o.json`, `candidate-verify-p13o.json`, `updater-matrix-p13o-summary.json`, `handoff_p13o.json`. Wrapper REVIEW_REQUIRED do `terminal_root preexisting_test_run_content`, tách khỏi test exit 0. Gate p13n 79/107/22 là lịch sử của candidate cũ.
+- p13p: traceability 32 + patch-cancel/readback 25 (`8c00998`, runtime giống `9b2c05e`), test authority thứ sáu và `test_worker_tasks` 16 (`9b2c05e`), không skip/warning; focused 66, affected 35/71/22 và WPF harness từ `4809077` reuse (không đổi WPF/extract/image). Asset receipt 13/13, release-verify + hai smoke worker, ba ca updater đạt trên p13p. Native p13p #13: hủy giữa read-back, child dừng 234 ms, terminal 10,818 s (p13o: 43,231 s), không read-back PASS, hash game/CSV không đổi (native51-result.json). Wrapper REVIEW_REQUIRED do `terminal_root preexisting_test_run_content`, tách khỏi child exit 0. Receipt `DEV_RUN/gatec/`: `handoff_p13p.json`, `candidate-receipt-p13p.json`, `candidate-verify-p13p.json`, `updater-matrix-p13p-summary.json`, `brain-accept-p13p.json`, `published_release_v0.1.13.json`.
 
 ## Bảng trạng thái acceptance
 
@@ -20,13 +20,13 @@
 | #10 cancel-exit | PASS bounded | native10-s13n-result.json; không có exit-code/in-flight-boundary proof |
 | #11 ordinary failure | PASS bounded, thông báo nguyên nhân còn English | native11-s13n-result.json, sampled hash checks |
 | #12 patch-readback | PASS bounded generic text 8000/8000 | native12-13-s13n-root.json; installer apply/restore chưa chạy; không engine/game claim |
-| #13 patch-cancel | PASS bounded trên p13o (native49-readback-result.json): child read-back dừng 350 ms sau yêu cầu hủy / 346 ms sau ACK, không có read-back PASS, không có báo cáo verify, một terminal trung thực giữ output nguyên. Terminal đến sau 43,231 s (mỗi action abort commit riêng ở trace); batch hóa đã sửa trong source tiếp theo, cần đo lại thời gian trên candidate mới | native49_readback_diagnosis.json; không waiver Release |
+| #13 patch-cancel | PASS bounded trên p13p (native51): child read-back dừng 234 ms sau yêu cầu, terminal 10,818 s so với 43,231 s trên p13o (trace abort batch hóa), không read-back PASS, output giữ nguyên | native51-result.json, native49-readback-result.json |
 | #14/#15 editor | PASS bounded: search/preview/apply/undo (khôi phục đúng SHA)/lưu tay/reload; thay đổi ngoài ở dòng khác và cùng dòng bị từ chối, hash ngoài giữ nguyên, edit dirty giữ, Cancel giữ edit, discard reload bản ngoài | native47-csv-result.json; `fx6` edit đã khôi phục từ golden |
 | #17–19 UI/DPI/keyboard | #17 PARTIAL: dark Settings/Translate/glossary đọc được. #18 PARTIAL: phóng to 1556×800 và khôi phục 1428×794 ở 100%; kéo cạnh không đổi; kích thước tối thiểu và 125/150% NOT_PROVEN, ngoài release có giới hạn (Owner 2026-10-28). #19 PARTIAL: Tab/Return ở cửa sổ chính PASS bounded; Esc trong dialog NOT_PROVEN, ngoài release | native49-ui-result.json, native49-keyboard-result.json; không PASS giả |
 | #20/#21 update offline/cache | #21 PASS bounded: lịch sử release tiếng Việt online tới v0.1.12. #20 và cache offline: NOT_PROVEN, ngoài release có giới hạn (Owner 2026-10-28), không đổi mạng | Headless matrix không thay offer/download/restart |
 | #22 uninstall | BỎ khỏi release acceptance (Owner 2026-10-28); Setup vào s13p PASS, Uninstall chưa chạy, không PASS giả | native22-post-install.json |
-| Publication/readback | HOLD | Brain ACCEPT trước mutation; public exact asset/live-update checks riêng |
-| Cleanup | PARTIAL, khoảng2.33GB đã dọn | cleanup_phase_result.json; unresolved roots phải có consumer/review point, không thành gate giả |
+| Publication/readback | ĐÃ PHÁT HÀNH [https://github.com/CaLanh24/VnText/releases/tag/v0.1.13](https://github.com/CaLanh24/VnText/releases/tag/v0.1.13): stable, latest, tag `v0.1.13` → `9b2c05e`, `main` fast-forward tới `9b2c05e` trước commit docs; 13/13 asset khớp tên, kích thước và sha256 với receipt cục bộ | published_release_v0.1.13.json |
+| Cleanup | Đã dispose qua registry sau publish (đọc lại không còn): s13o (kèm SDK), s13q, p13o, p13p, fx2/3/5/6/8/9/10/11/12/13, ngoại lệ lịch sử p13n/s13n/s13p đã dispose trước đó. Giữ: baselines (≈3 GB, tái dựng từ release công khai; legacy-0.1.7 khó tái dựng) + inputs + fixtures + source clone, consumer: build route cập nhật của bản kế tiếp, mốc rà lại: lúc bắt đầu bản kế tiếp. 29 root TEST_RUN lịch sử còn câu hỏi ownership, không phải release gate | cleanup_final_result.json, budget_final_p13p.json |
 
 Receipt names above are relative to the `DEV_RUN/gatec` prefix and may be local-only; missing files do not establish PASS. Update this table once per meaningful phase and keep only current verdicts. Detailed source/gate history is in the archive below. Authority/invariants remain in CONTRACTS; checklist below preserves original acceptance wording, including the unresolved #4 contract discrepancy.
 
@@ -73,7 +73,7 @@ Each item needs native evidence on the installed candidate (exact executable SHA
 
 ## Final acceptance record
 
-Pending: source/payload identities, exact validation and skips, installed/native/Setup/updater evidence, release assets/readback, cleanup disposition and Brain ACCEPT. No publication from partial evidence.
+Đã chốt: Release v0.1.13 công khai tại https://github.com/CaLanh24/VnText/releases/tag/v0.1.13; source `9b2c05ea2aad8a6c9f4f1079db4138e81f153497`; Setup `ab06e365310ea15d4b9dc48bb2e337c9fb8c51fdc1c5beb12f2ea930b740383d`; 13 asset đọc lại khớp; native p13o/p13p bounded và gate affected như trên; chưa kiểm: 125/150% DPI, kích thước cửa sổ tối thiểu, offline, lần hủy SDK giữa chừng thứ hai, Esc trong dialog, uninstall (Owner đã bỏ #22) — NOT_PROVEN ngoài release, không PASS giả. Không có QA toàn bộ game thật; model OPUS-MT giữ giới hạn đã chấp nhận.
 
 ## Lịch sử và provenance
 
