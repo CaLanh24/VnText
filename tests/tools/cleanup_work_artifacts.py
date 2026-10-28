@@ -163,6 +163,15 @@ RELEASE_TASK_013_BUDGET_APPROVAL = (
 )
 
 RELEASE_TASK_014_BUDGET_ID = "release-0.1.14"
+RELEASE_TASK_014_PREVIOUS_BUDGET_LIMIT_BYTES = 7 * 1024 ** 3
+RELEASE_TASK_014_PREVIOUS_BUDGET_APPROVAL = (
+    "Owner 2026-10-28 authorized diagnosis, the fixes and the release of 0.1.14 ('Xem báo cáo này xem đúng k, nếu đúng thì sửa cho bản update 0.1.14, "
+    "sửa xong release'). Under the standing 2026-10-24 measured release-allocation authorization, the coordinator records a temporary 7 GiB "
+    "non-exempt ceiling for the exact registered candidate-0.1.14 after the checkout measured 5.15 GiB (five verified public baseline trees kept "
+    "for the supported direct updater routes) and the candidate build/package peak needs about 1.3 GiB more. Terminal cleanup returns to at most "
+    "1 GiB, shared .dev-env stays at most 6 GiB, and all history, cache and user data are preserved. No epoch rebaseline authority of an earlier "
+    "release is inherited."
+)
 RELEASE_TASK_014_BUDGET_LIMIT_BYTES = 8 * 1024 ** 3
 RELEASE_TASK_014_BUDGET_APPROVAL = (
     "Owner 2026-10-28 authorized diagnosis, the fixes and the release of 0.1.14 ('Xem báo cáo này xem đúng k, nếu đúng thì sửa cho bản update 0.1.14, "
@@ -274,6 +283,10 @@ def _release_budget_record_is_valid(
         task_id == RELEASE_TASK_013_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_013_PREVIOUS_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_013_PREVIOUS_BUDGET_APPROVAL
+    ) or (
+        task_id == RELEASE_TASK_014_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_014_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_014_PREVIOUS_BUDGET_APPROVAL
     )
 
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL
