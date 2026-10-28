@@ -272,6 +272,40 @@ class TraceStoreTests(unittest.TestCase):
         finally:
             store.close()
 
+    def test_cancel_abort_ends_every_open_action_in_a_few_commits(self):
+        """Cancel path: thousands of open actions end ABORTED/UNKNOWN in short groups, not one fsync commit each (native #13: 43 s)."""
+        from math import ceil
+        from vntext.app_tasks import _TRACE_ABORT_BATCH, _trace_abort_actions
+
+        count = 2050
+        store = TraceStore(self.root, self.package_id)
+        try:
+            result = store.register_entry(_entry())
+            store.start_run(metadata={"fixture": "abort-batch"})
+            actions = {}
+            with store.batch():
+                for index in range(count):
+                    actions[f"k{index}"] = {"action_id": store.start_event(STAGE_EXTRACTED, trace_id=result["trace_id"])}
+            actions["done"] = {"action_id": store.start_event(STAGE_EXTRACTED, trace_id=result["trace_id"])}
+            store.finish_event(actions["done"]["action_id"], EVENT_COMPLETED)
+            actions["done"]["finished"] = True
+            actions["ghost"] = {"action_id": "no-such-action"}            # a failing item must not stop the others
+            with patch.object(TraceStore, "batch", autospec=True, side_effect=TraceStore.batch) as spy:
+                _trace_abort_actions(store, actions, error="cancelled", status=EVENT_ABORTED)
+            self.assertEqual(ceil((count + 1) / _TRACE_ABORT_BATCH), spy.call_count)     # a handful of groups, not 2,050 commits
+            self.assertFalse(store.connection.in_transaction)
+            rows = store.connection.execute(
+                "SELECT event_status, root_cause, COUNT(*) FROM trace_events WHERE event_status <> ? GROUP BY 1, 2", (EVENT_STARTED,)
+            ).fetchall()
+            self.assertEqual([(EVENT_ABORTED, ROOT_CAUSE_UNKNOWN, count)], [tuple(r) for r in rows if r[0] == EVENT_ABORTED])
+            self.assertTrue(all(actions[f"k{i}"].get("finished") for i in range(count)))
+            self.assertFalse(actions["ghost"].get("finished"))
+            with patch.object(TraceStore, "batch", autospec=True, side_effect=TraceStore.batch) as again:
+                _trace_abort_actions(store, {k: v for k, v in actions.items() if k != "ghost"}, error="cancelled", status=EVENT_ABORTED)
+            self.assertEqual(0, again.call_count)                          # nothing left open: idempotent
+        finally:
+            store.close()
+
     def test_event_ordering_summary_and_export(self):
         store = TraceStore(self.root, self.package_id)
         try:

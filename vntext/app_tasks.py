@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+from contextlib import nullcontext
 import uuid
 import os
 import shutil
@@ -121,6 +122,9 @@ def _trace_exception_status(exc: BaseException) -> str:
     return EVENT_ABORTED if _is_task_cancellation(exc) else EVENT_FAILED
 
 
+_TRACE_ABORT_BATCH = 500
+
+
 def _trace_abort_actions(
     trace,
     actions: dict[str, dict],
@@ -133,21 +137,31 @@ def _trace_abort_actions(
 
     terminal_root = root_cause or ROOT_CAUSE_UNKNOWN
     terminal_status = status or EVENT_ABORTED
-    for item in actions.values():
-        if item.get("finished"):
-            continue
+    pending = [item for item in actions.values() if not item.get("finished")]
+    batch = getattr(trace, "batch", None)
+    # With synchronous=FULL every finish_event is its own fsync commit; an 8,000-target cancel then spent ~36 s unwinding. Short
+    # trace-only groups keep one commit per group (the success paths already batch) and never hold a transaction across external work.
+    for start in range(0, len(pending), _TRACE_ABORT_BATCH):
+        group = pending[start:start + _TRACE_ABORT_BATCH]
         try:
-            trace.finish_event(
-                item["action_id"],
-                terminal_status,
-                root_cause=terminal_root,
-                payload={"error": error, "aborted": terminal_status == EVENT_ABORTED},
-            )
-            item["finished"] = True
+            with (batch() if callable(batch) else nullcontext()):
+                for item in group:
+                    try:
+                        trace.finish_event(
+                            item["action_id"],
+                            terminal_status,
+                            root_cause=terminal_root,
+                            payload={"error": error, "aborted": terminal_status == EVENT_ABORTED},
+                        )
+                        item["finished"] = True
+                    except Exception:
+                        # The store's crash recovery remains the final safety net if a
+                        # terminal trace write itself cannot be made.
+                        pass
         except Exception:
-            # The store's crash recovery remains the final safety net if a
-            # terminal trace write itself cannot be made.
-            pass
+            # A failed group commit leaves its items unfinished; crash recovery marks them.
+            for item in group:
+                item.pop("finished", None)
 
 
 def _sha256_if_file(path: Path) -> str:

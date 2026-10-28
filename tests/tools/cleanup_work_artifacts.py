@@ -327,6 +327,21 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_5 = (
     "call_5c6b05faa7a54881a1c491eebbebc8a6 and call_5fc7951df0eb4d5b845dd932e2818b7d; the ordinary eight-hop "
     "transition limit remains unchanged."
 )
+# Sixth, independent single-use authority for release 0.1.13 (after the fifth ordinary eight-hop chain, which began at the
+# fifth rebaseline epoch-20261027T120000Z-494a1c9 and ended at epoch-20261028T020000Z-05b1e04).  There is no question call id this
+# time: the Owner's DIRECT reply (2026-10-28, quoted exactly below) granted full authority to finish the release, and the
+# coordinator records it as this single-use authority.  Never a reuse of an earlier approval.
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_6 = "owner-direct-20261028-lam-cho-xong"
+RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_6 = (
+    "Owner 2026-10-28 answered directly with the exact words 'Làm cho xong đi, t cho m toàn quyền', which resolves the pending "
+    "authority questions for release 0.1.13 and authorizes ONE additional no-delete 0.1.13 epoch metadata rebaseline after the "
+    "ordinary eight-hop chain ended at epoch-20261028T020000Z-05b1e04, so that the focused and affected gates for the bounded trace-abort "
+    "performance correction and a new candidate can run at the next source commit; the packaged candidate p13o stays bound to source "
+    "4809077aecf614edbe26d30ebb0c7238bb3348c0. It preserves the complete existing epoch history, deletes nothing and relaxes no validator or "
+    "protection. It is distinct from the consumed call_6331409a3fcc4443b4b66fb4552c4254, call_29c7ca59cc1947f89b14f31a4c7d289e, "
+    "call_5c6b05faa7a54881a1c491eebbebc8a6, call_5fc7951df0eb4d5b845dd932e2818b7d and call_567ecb4e733c463c8cd2b1fe2bb51ef6; the ordinary "
+    "eight-hop transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -346,6 +361,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_5: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_5
+    ),
+    RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_6: (
+        RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_6
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
