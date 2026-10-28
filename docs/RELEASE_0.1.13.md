@@ -12,19 +12,19 @@
 
 | Mục | Trạng thái đã biết | Evidence/bước kế tiếp |
 |---|---|---|
-| #1 Setup, #2 identity | Setup native vào s13n, exe/source khớp đã quan sát | Receipt candidate; kiểm phần checklist chưa đủ nếu còn |
+| #1 Setup, #2 identity | p13o Setup native vào s13p đúng đường, exe/source khớp (`native22-post-install.json` ok:true; lần kiểm đầu ok:false chỉ do Setup còn mở, chạy lại sau khi đóng) | native22-setup-success.png; p13n/s13n là evidence cũ |
 | #3, #7–9, #16 | Evidence p13m chỉ được reuse bounded theo patch-only impact review | Không gọi p13n exact-native hoặc toàn bộ PASS |
-| #4 SDK recovery | PARTIAL. Owner chọn (2026-10-27) quét tĩnh review-only: MAIN rỗng, không dịch/patch, luôn PARTIAL. Có trong p13o (`db0e847`, `4809077`), gate canonical đạt; p13n không chứa; native trên p13o chưa chạy | native45-s13n-partial.json, native4-review-result.json (p13n); cài p13o vào thư mục trống mới rồi native lại |
-| #5 SDK offline/cancel | NOT_PROVEN. p13o: lỗi tải/SDK đã chọn không hợp lệ báo nguyên nhân, không bịa số review (test canonical); native chưa chạy | Launch proxy bị automatic review từ chối trên p13n; không suy evidence từ attempt chưa chạy |
-| #6 OCR | PARTIAL: native p13n 22 ready/8 failed (tilt gate giữ nguyên), translated 0, chưa thấy ETA. p13o có ETA advisory (test canonical); native chưa chạy | native6-result.json (p13n); native lại trên p13o |
+| #4 SDK recovery | PASS bounded trên p13o (Owner 2026-10-27): không SDK → 0 MAIN / 8 review, PARTIAL, không ID/proof, Translate/Patch khóa | native47-review-result.json; gate canonical `db0e847`+`4809077` |
+| #5 SDK offline/cancel | PARTIAL: cancel pha connect (0-byte .part) → terminal một lần, retry bật; retry tải SDK chính thức 8.5.3 vào `s13o/data/tools` COMPLETE (8 MAIN, 0 review, 316 common loại, không zip/.part). Cancel giữa chừng/offline NOT_PROVEN | native48-sdk-result.json; offline cần route Owner |
+| #6 OCR | PASS bounded trên p13o: progress theo stage + ETA (97%, còn 24), 22 ready / 8 failed / 0 translated, untranslated là bản gốc, 31 hash nguồn khớp; không MT/render | native47-ocr-result.json |
 | #10 cancel-exit | PASS bounded | native10-s13n-result.json; không có exit-code/in-flight-boundary proof |
 | #11 ordinary failure | PASS bounded, thông báo nguyên nhân còn English | native11-s13n-result.json, sampled hash checks |
 | #12 patch-readback | PASS bounded generic text 8000/8000 | native12-13-s13n-root.json; installer apply/restore chưa chạy; không engine/game claim |
-| #13 patch-cancel | PARTIAL | Một terminal/warning/retry đạt, cancellation DURING READ-BACK chưa chứng minh; native13-s13n-cancel1.json |
-| #14/#15 editor | OPEN | Search/preview/apply/undo/save/reload và dirty/external conflicts |
-| #17–19 UI/DPI/keyboard | OPEN | Không thay OS DPI bằng app scale |
-| #20/#21 update offline/cache | OPEN | Actual UI evidence; headless matrix không thay offer/download/restart |
-| #22 uninstall | OPEN | Owned test install; process/folder readback |
+| #13 patch-cancel | PARTIAL: cancel read-back NOT_PROVEN trên p13o (cancel tới 1,8 s sau verifier PASS; patch hoàn tất ở `out2`). Đã chuẩn bị watcher chỉ đọc và output trống `out4` | native13_prep.json, native13_watch.ps1; chỉ thử lại có đo, báo NOT_PROVEN nếu cửa sổ quá ngắn |
+| #14/#15 editor | PASS bounded: search/preview/apply/undo (khôi phục đúng SHA)/lưu tay/reload; thay đổi ngoài ở dòng khác và cùng dòng bị từ chối, hash ngoài giữ nguyên, edit dirty giữ, Cancel giữ edit, discard reload bản ngoài | native47-csv-result.json; `fx6` edit đã khôi phục từ golden |
+| #17–19 UI/DPI/keyboard | #17 mở. #18 NOT_PROVEN: cần Owner cho đổi OS display scale, Settings launch lỗi, không thay bằng app scale. #19 NOT_PROVEN: focus/Esc ambiguous (source có Esc) | Chờ câu trả lời thật của Owner; không suy diễn |
+| #20/#21 update offline/cache | #21 PASS bounded: lịch sử release tiếng Việt online tới v0.1.12 (native48-release-notes.png). #20 và cache offline mở: cần route mạng offline do Owner cho phép | Headless matrix không thay offer/download/restart |
+| #22 uninstall | PROVEN_BLOCKED/NOT_PROVEN: Setup vào s13p PASS, nhưng tool policy chặn mở `s13p/Uninstall.exe`; không vượt qua bằng CLI/đổi tên/automation | native22-result.json; giữ `s13p` cho native uninstall khi policy cho phép |
 | Publication/readback | HOLD | Brain ACCEPT trước mutation; public exact asset/live-update checks riêng |
 | Cleanup | PARTIAL, khoảng2.33GB đã dọn | cleanup_phase_result.json; unresolved roots phải có consumer/review point, không thành gate giả |
 
