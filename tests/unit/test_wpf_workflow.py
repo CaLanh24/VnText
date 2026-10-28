@@ -333,6 +333,48 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("RenpySdkRecovery.ResolveAction", worker)
         self.assertIn("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", workflow_tests)
 
+    def test_release_0114_ui_fixes_stay_wired(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        csv_vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        styles = (app / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        tokens = (app / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
+        appearance = (app / "Services" / "UiAppearance.cs").read_text(encoding="utf-8")
+        dialog = (app / "Services" / "AppDialogWindow.cs").read_text(encoding="utf-8")
+        journal = (app / "JournalWindow.cs").read_text(encoding="utf-8")
+        update = (app / "UpdateWindow.cs").read_text(encoding="utf-8")
+        main_code = (app / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        # (2) a rejected CSV never blanks the open document: the early clear is gone and the error is inline
+        self.assertNotIn("ClearSilentThenNotify", csv_vm)
+        self.assertIn("FailCsvEditorLoad(pathCopy, err);", csv_vm)
+        self.assertIn('x:Name="CsvEditorLoadErrorBanner"', xaml)
+        # (3) the save result carries count, reason and fills the status column
+        self.assertIn("ApplyValidationFromBatch(validation.IssuesByKey", csv_vm)
+        self.assertIn("BuildCsvWarningSummary(validation)", csv_vm)
+        # (4) bulk preview is readable: scrolls instead of a 54 DIP clip
+        self.assertNotIn('MaxHeight="54"', xaml)
+        self.assertIn('x:Name="CsvBulkPreviewScroll"', xaml)
+        # (7) one backdrop and one scale rule for every modal, the glossary overlay included
+        self.assertIn("internal static readonly Color BackdropColor", dialog)
+        for source in (dialog, journal, update):
+            self.assertIn("UiAppearance.Scaled", source)
+        self.assertNotIn("Color.FromArgb(155,15,23,42)", journal)
+        self.assertIn("SetGlossaryBackdrop(true)", main_code)
+        self.assertIn('Background="#8C181F2D"', xaml)
+        self.assertIn("UiAppearance.Scale = vm.UiScale;", main_code)
+        # (8) primary fill is blue to cyan with elevation, disabled stays flat, commands and geometry untouched
+        self.assertIn('x:Key="PrimaryFillBrush"', tokens)
+        self.assertIn('x:Key="PrimaryElevation"', tokens)
+        self.assertIn('DynamicResource PrimaryFillBrush', styles)
+        self.assertIn('Property="Effect" Value="{x:Null}"', styles)
+        self.assertIn('"PrimaryFillBrush"', appearance)
+        # (9) wording, local time and the badge
+        for old in ("Open nhật ký", "Copy Vị trí tệp", "Copy khắc phục lỗi"):
+            self.assertNotIn(old, journal)
+        self.assertIn("UiText.FormatLocalTime(", journal)
+        self.assertNotIn('Text="Chạy trên máy"', xaml)
+        self.assertIn("{Binding LocalProcessingLabel}", xaml)
+
     def test_csv_editor_controls_stay_visible_and_validation_stays_automatic(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")

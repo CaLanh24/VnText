@@ -71,6 +71,7 @@ internal sealed class JournalWindow : Window
         }
         var surface=new Border{Margin=new Thickness(AppDialogWindow.CardMargin),CornerRadius=new CornerRadius(AppDialogWindow.CardRadius),Background=B("SurfaceBrush"),Effect=new DropShadowEffect{BlurRadius=32,ShadowDepth=9,Opacity=.25}};
         var grid=new Grid();surface.Child=grid;Content=surface;
+        if(UiAppearance.Scaled){surface.LayoutTransform=new ScaleTransform(UiAppearance.Scale,UiAppearance.Scale);Width*=UiAppearance.Scale;Height*=UiAppearance.Scale;}
         grid.RowDefinitions.Add(new(){Height=GridLength.Auto});grid.RowDefinitions.Add(new());grid.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var header=new DockPanel{Margin=new Thickness(28,24,28,24)};
         var close=Button("×",Close);close.Content=new TextBlock{Text="×",FontSize=20,VerticalAlignment=VerticalAlignment.Center};close.Style=(Style)owner.FindResource("DialogCloseButton");close.Width=32;close.Height=32;close.ToolTip="Đóng (Esc)";System.Windows.Automation.AutomationProperties.SetName(close,"Đóng Nhật ký");DockPanel.SetDock(close,Dock.Right);header.Children.Add(close);
@@ -107,12 +108,12 @@ internal sealed class JournalWindow : Window
         {
             if(_files.SelectedItem is string name && AppDialogService.Show($"Xóa tệp nhật ký {name}?","Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question,this)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
         }));
-        footer.Children.Add(Button("Open nhật ký",()=>
+        footer.Children.Add(Button("Mở nhật ký",()=>
         {
             if(_files.SelectedItem is string name){var info=new ProcessStartInfo("notepad.exe");info.ArgumentList.Add(_store.FilePath(name));Process.Start(info);}
         }));
-        footer.Children.Add(Button("Copy Vị trí tệp",()=>{if(_files.SelectedItem is string name)Clipboard.SetText(_store.FilePath(name));}));
-        footer.Children.Add(Button("Copy khắc phục lỗi",()=>Clipboard.SetText($"VNText Studio {vm.Version}\n{System.Runtime.InteropServices.RuntimeInformation.OSDescription}\n.NET {Environment.Version}\nLog: {_files.SelectedItem}\n\n{(_files.SelectedItem is string file ? _store.Read(file) : _content.Text)}"),true));
+        footer.Children.Add(Button("Chép vị trí tệp",()=>{if(_files.SelectedItem is string name)Clipboard.SetText(_store.FilePath(name));}));
+        footer.Children.Add(Button("Chép thông tin lỗi",()=>Clipboard.SetText($"VNText Studio {vm.Version}\n{System.Runtime.InteropServices.RuntimeInformation.OSDescription}\n.NET {Environment.Version}\nLog: {_files.SelectedItem}\n\n{(_files.SelectedItem is string file ? _store.Read(file) : _content.Text)}"),true));
         var footerWidths=new[]{68d,88d,60d,116d,122d,172d};
         for(var i=0;i<footer.Children.Count;i++) if(footer.Children[i] is Button item){item.Width=footerWidths[i];item.Padding=new Thickness(8,7,8,7);}
         _files.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_level.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_size.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};
@@ -120,8 +121,8 @@ internal sealed class JournalWindow : Window
         var previous=owner.Effect;Border? overlay=null;var panel=owner.Content as Panel;
         Loaded+=(_,_)=>
         {
-            owner.Effect=new BlurEffect{Radius=7};
-            if(panel is not null){overlay=new Border{Background=new SolidColorBrush(Color.FromArgb(155,15,23,42)),IsHitTestVisible=false};Grid.SetRowSpan(overlay,20);Grid.SetColumnSpan(overlay,20);Panel.SetZIndex(overlay,int.MaxValue);panel.Children.Add(overlay);}
+            owner.Effect=new BlurEffect{Radius=AppDialogWindow.BackdropBlur};
+            if(panel is not null){overlay=new Border{Background=new SolidColorBrush(AppDialogWindow.BackdropColor),IsHitTestVisible=false};Grid.SetRowSpan(overlay,20);Grid.SetColumnSpan(overlay,20);Panel.SetZIndex(overlay,int.MaxValue);panel.Children.Add(overlay);}
             Safe(Refresh);
         };
         Closed+=(_,_)=>{if(overlay is not null)panel?.Children.Remove(overlay);owner.Effect=previous;};
@@ -150,6 +151,6 @@ internal sealed class JournalWindow : Window
         if(_nextPage is not null){_nextPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_nextPage.IsEnabled=_page<pages-1;}
         var start=Math.Max(0,lines.Length-(_page+1)*size);
         _content.Text=string.Join(Environment.NewLine,lines.Skip(start).Take(Math.Min(size,lines.Length-_page*size)));_content.ScrollToEnd();
-        _status.Text=$"{lines.Length} bản ghi · {_page+1}/{pages}";_modified.Text=File.GetLastWriteTime(_store.FilePath(file)).ToString("g");
+        _status.Text=$"{lines.Length} bản ghi · {_page+1}/{pages}";_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));
     }
 }

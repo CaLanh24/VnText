@@ -155,6 +155,16 @@ class PatchDeliveryTests(unittest.TestCase):
                 self.assertNotIn("Mở VNTextPatchInstaller.exe", completed[0]["summary"])
             self.assertEqual(completed[0]["patch_delivery"], "unity_installer")
 
+    def test_patch_content_label_names_what_was_patched_not_the_engine(self):
+        from vntext.app_tasks import _patch_content_label
+
+        self.assertEqual("Patch văn bản thường", _patch_content_label({"results": [{"method": "plain_text_line"}]}))
+        self.assertEqual("Patch Unity/Naninovel", _patch_content_label(
+            {"results": [{"method": "unity_textasset_line"}, {"method": "naninovel_script_string"}]}))
+        self.assertEqual("Patch", _patch_content_label({"results": [{"method": "plain_text_line"}, {"method": "unity_ui_text"}]}))
+        self.assertEqual("Patch", _patch_content_label(None))
+        self.assertEqual("Patch", _patch_content_label({"results": []}))
+
     def test_missing_unity_installer_is_not_reported_ready_to_install(self):
         self.test_unity_task_keeps_installer_delivery(installer_available=False)
 

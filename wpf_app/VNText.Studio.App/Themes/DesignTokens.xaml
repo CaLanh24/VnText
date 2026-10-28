@@ -211,6 +211,14 @@
 
 
 
+    <!-- Primary action fill (blue to cyan, the Cockpit reference grammar, same endpoints family as SettingsTitleBrush) + elevation. -->
+    <LinearGradientBrush x:Key="PrimaryFillBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#0A93AB" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PrimaryFillHoverBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#1D4FD0" Offset="0" /><GradientStop Color="#077C91" Offset="1" />
+    </LinearGradientBrush>
+    <DropShadowEffect x:Key="PrimaryElevation" Color="#2563EB" BlurRadius="12" ShadowDepth="3" Direction="270" Opacity="0.28" />
     <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource BlueColor}" />
 
     <SolidColorBrush x:Key="BlueSoftBrush" Color="{StaticResource BlueSoftColor}" />

@@ -125,6 +125,22 @@ def _trace_exception_status(exc: BaseException) -> str:
 _TRACE_ABORT_BATCH = 500
 
 
+def _patch_content_label(patch_verification: dict | None) -> str:
+    """Wording for what the installer-route patch contains, from the verified targets (never from engine detection)."""
+
+    methods = {
+        str(item.get("method") or "")
+        for item in ((patch_verification or {}).get("results") or [])
+        if isinstance(item, dict)
+    }
+    methods.discard("")
+    if methods and methods <= {"plain_text_line"}:
+        return "Patch văn bản thường"
+    if methods and all(method.startswith(("unity_", "naninovel_")) for method in methods):
+        return "Patch Unity/Naninovel"
+    return "Patch"
+
+
 def _trace_abort_actions(
     trace,
     actions: dict[str, dict],
@@ -2423,7 +2439,7 @@ def run_patch_task(
             patch_delivery = "unity_installer"
             patch_payload_path = str(patch_out / "COPY_TO_GAME_ROOT")
             patch_install_instructions = (
-                f"Patch Unity/Naninovel đã sẵn sàng tại {patch_out}. "
+                f"{_patch_content_label(patch_verification)} đã sẵn sàng tại {patch_out}. "
                 "Mở VNTextPatchInstaller.exe để cài/gỡ."
             )
             summary = f"Xong: patch nằm tại {patch_out}. Mở VNTextPatchInstaller.exe để cài/gỡ."

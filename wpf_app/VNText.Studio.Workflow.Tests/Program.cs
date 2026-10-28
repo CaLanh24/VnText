@@ -220,6 +220,11 @@ internal static partial class Program
         Run("DiagnosticCompletion_IsVisibleAndActionable", DiagnosticCompletion_IsVisibleAndActionable, failures);
         Run("WorkerEvent_ParsesDiagnosticFields", WorkerEvent_ParsesDiagnosticFields, failures);
         Run("WorkerEvent_FormatsNumericEta", WorkerEvent_FormatsNumericEta, failures);
+        Run("CsvEditor_RejectedFileKeepsOpenDocumentAndShowsInlineError", CsvEditor_RejectedFileKeepsOpenDocumentAndShowsInlineError, failures);
+        Run("CsvEditor_WarningSummaryCountsReasonAndPointsToRows", CsvEditor_WarningSummaryCountsReasonAndPointsToRows, failures);
+        Run("TranslateReadiness_ChosenCsvWithoutManifestKeepsItsOwnReason", TranslateReadiness_ChosenCsvWithoutManifestKeepsItsOwnReason, failures);
+        Run("PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine", PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine, failures);
+        Run("UiText_BadgeAndLocalTimeFollowTheLanguage", UiText_BadgeAndLocalTimeFollowTheLanguage, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
@@ -1633,6 +1638,131 @@ internal static partial class Program
         vm.TestSetActiveTask("eta-task", "extract");
         vm.TestHandleWorkerEvent(new WorkerEvent { Type = "progress", Id = "eta-task", Done = 2, Total = 10, Eta = "1e308" });
         AssertFalse(vm.ExtractProgressSubtitle.Contains("ước tính thời gian", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void CsvEditor_RejectedFileKeepsOpenDocumentAndShowsInlineError()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_reject_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var good = Path.Combine(root, "translation.csv");
+            File.WriteAllText(good,
+                "key,source_text,translation,context,file_path,import_method\r\n" +
+                "k1,Hello,Hi,UI:Text,game/data.unity3d,unity_textasset_line\r\n" +
+                "k2,Bye,Tam biet,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"),
+                """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"Bye"}]}""", Encoding.UTF8);
+            var bad = Path.Combine(root, "bad.csv");
+            const string badText = "wrong,header\r\nx,y\r\n";
+            File.WriteAllText(bad, badText);
+            using var worker = new PythonWorkerHost();
+            var picker = new FakePathPicker { TranslationCsv = good };
+            using var vm = new MainViewModel(picker, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertEqual(2, vm.CsvEditorRows.Count);
+            AssertEqual("translation.csv", vm.CsvEditorPathDisplay);
+            AssertFalse(vm.HasCsvEditorLoadError);
+
+            picker.TranslationCsv = bad;
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            // The open document, its title and its rows stay; the rejected file and the reason are shown inline.
+            Require(vm.CsvEditorRows.Count == 2, "rows kept: " + vm.CsvEditorRows.Count);
+            Require(vm.CsvEditorPathDisplay == "translation.csv", "title kept: " + vm.CsvEditorPathDisplay);
+            Require(vm.HasCsvEditorLoadError, "inline error shown");
+            Require(vm.CsvEditorLoadError.Contains("bad.csv", StringComparison.Ordinal), "error names the rejected file: " + vm.CsvEditorLoadError);
+            Require(vm.CsvEditorLoadError.Contains("translation.csv", StringComparison.Ordinal), "error says which document stays: " + vm.CsvEditorLoadError);
+            AssertFalse(vm.CsvEditorLoading);
+            AssertEqual(badText, File.ReadAllText(bad));   // never repaired or rewritten
+
+            picker.TranslationCsv = good;
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertFalse(vm.HasCsvEditorLoadError);
+            AssertEqual(2, vm.CsvEditorRows.Count);
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch { /* best effort */ }
+        }
+    }
+
+    private static void CsvEditor_WarningSummaryCountsReasonAndPointsToRows()
+    {
+        var warnings = new CsvEditorValidateResult(
+            true, "3 dòng cần xem lại", 3, new Dictionary<string, int> { ["placeholder_missing"] = 2, ["number_changed"] = 1 },
+            new Dictionary<string, string> { ["k1"] = "placeholder_missing", ["k2"] = "placeholder_missing", ["k3"] = "number_changed" },
+            new Dictionary<string, string> { ["k1"] = "thiếu {name}", ["k2"] = "thiếu {name}", ["k3"] = "đổi số" },
+            2, 0, 0, true);
+        var text = MainViewModel.BuildCsvWarningSummary(warnings);
+        Require(text.Contains("3 dòng", StringComparison.Ordinal), "count: " + text);
+        Require(text.Contains("2× thiếu {name}", StringComparison.Ordinal), "most frequent reason first: " + text);
+        Require(text.Contains("Trạng thái", StringComparison.Ordinal), "tells where to look: " + text);
+        AssertEqual("", MainViewModel.BuildCsvWarningSummary(warnings with { HasWarnings = false }));   // no warning, no noise
+        AssertEqual("", MainViewModel.BuildCsvWarningSummary(warnings with { Ok = false }));
+    }
+
+    private static void TranslateReadiness_ChosenCsvWithoutManifestKeepsItsOwnReason()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_manifest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(csv, "key,source_text,translation\r\nk1,Hello,\r\n", new UTF8Encoding(true));
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OutputPath = Path.Combine(root, "other-output");
+            vm.ChooseTranslationCsvCommand.Execute(null);     // rejected: no manifest.json beside it
+            AssertEqual("", vm.TranslationCsvPath);
+            var result = CsvPackageValidator.Validate(csv, requireTranslations: false);
+            AssertFalse(result.Ok);
+            AssertTrue(result.Message.Contains("manifest.json", StringComparison.Ordinal));
+            // Readiness must evaluate the chosen CSV (same reason as the validation line), not the missing default file.
+            AssertEqual(Path.GetFullPath(csv), Path.GetFullPath(vm.TestGetTranslateReadinessPath()));
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch { /* best effort */ }
+        }
+    }
+
+    private static void PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        vm.TestSimulateTaskComplete("patch", new WorkerEvent
+        {
+            Type = "complete", Id = "patch-delivery-installer", Ok = true, Complete = true,
+            PatchEngine = "unity", PatchDelivery = "unity_installer",
+            PatchPayloadPath = @"C:\package\Patch_Viet_Hoa\COPY_TO_GAME_ROOT",
+            PatchInstallInstructions = "Patch văn bản thường đã sẵn sàng tại C:\\out. Mở VNTextPatchInstaller.exe để cài/gỡ.",
+        });
+        AssertTrue(vm.PatchDeliveryReady);
+        AssertTrue(vm.PatchDeliveryLabel.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal));
+        AssertFalse(vm.PatchDeliveryLabel.Contains("Unity", StringComparison.Ordinal));
+        AssertFalse(vm.PatchDeliveryLabel.Contains("Naninovel", StringComparison.Ordinal));
+        AssertTrue(vm.PatchInstallInstructions.Contains("văn bản thường", StringComparison.Ordinal));
+    }
+
+    private static void UiText_BadgeAndLocalTimeFollowTheLanguage()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        var previous = UiText.Language;
+        try
+        {
+            UiText.SetLanguage("vi");
+            AssertEqual("Chạy trên máy", vm.LocalProcessingLabel);
+            AssertEqual("28/10/2026 18:05", UiText.FormatLocalTime(new DateTime(2026, 10, 28, 18, 5, 0)));
+            UiText.SetLanguage("en");
+            AssertEqual("On-device processing", vm.LocalProcessingLabel);
+            AssertEqual("2026-10-28 18:05", UiText.FormatLocalTime(new DateTime(2026, 10, 28, 18, 5, 0)));
+            AssertEqual("Open log", UiText.Translate("Mở nhật ký"));
+            AssertEqual("Copy file location", UiText.Translate("Chép vị trí tệp"));
+            AssertEqual("Copy error details", UiText.Translate("Chép thông tin lỗi"));
+        }
+        finally { UiText.SetLanguage(previous); }
     }
 
     private static void PatchDelivery_RoutesRenPyInstructions()

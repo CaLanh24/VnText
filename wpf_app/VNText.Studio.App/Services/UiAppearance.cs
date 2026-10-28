@@ -6,6 +6,9 @@ namespace VNText.Studio.App.Services;
 
 public static class UiAppearance
 {
+    /// <summary>Current interface scale (1, 1.1, 1.2). Owned windows follow it so a modal does not keep its own size rhythm.</summary>
+    public static double Scale { get; set; } = 1;
+    public static bool Scaled => Scale > 1.0001;
     private static ResourceDictionary? _overrides;
     private static readonly Dictionary<string, Brush> Original = new();
     public static bool IsDark(string theme)
@@ -42,6 +45,12 @@ public static class UiAppearance
         _overrides["SettingsTitleBrush"] = new LinearGradientBrush(
             (Color)ColorConverter.ConvertFromString(C("#2563EB", "#8CB5FF")),
             (Color)ColorConverter.ConvertFromString(C("#089DB2", "#65D6E8")), 0);
+        _overrides["PrimaryFillBrush"] = new LinearGradientBrush(
+            (Color)ColorConverter.ConvertFromString(C("#2563EB", "#3A74E8")),
+            (Color)ColorConverter.ConvertFromString(C("#0A93AB", "#158FA6")), 0);
+        _overrides["PrimaryFillHoverBrush"] = new LinearGradientBrush(
+            (Color)ColorConverter.ConvertFromString(C("#1D4FD0", "#2E63CF")),
+            (Color)ColorConverter.ConvertFromString(C("#077C91", "#10788C")), 0);
         Set("NavActiveBackgroundBrush", C("#212563EB", "#2B4772"));
         Set("NavActiveForegroundBrush", C("#2454EE", "#8CB5FF"));
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));

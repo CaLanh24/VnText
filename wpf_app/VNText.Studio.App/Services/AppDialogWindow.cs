@@ -33,6 +33,9 @@ internal sealed class AppDialogWindow : Window
     /// <summary>Invoked once when the dialog is closed without an explicit button (X, Esc, Alt+F4).</summary>
     internal Action? OnDismiss { get; set; }
     internal Button CloseButton => _close;
+    /// <summary>Shared modal backdrop: every modal dims with this colour and blurs what is behind it by this radius.</summary>
+    internal static readonly Color BackdropColor = Color.FromArgb(140, 24, 31, 45);
+    internal const double BackdropBlur = 8;
     internal ScrollViewer BodyScroll => _bodyScroll;
     internal Panel ButtonPanel => _buttons;
 
@@ -126,6 +129,12 @@ internal sealed class AppDialogWindow : Window
         Grid.SetRow(footer, 2);
         grid.Children.Add(footer);
         Content = card;
+        if (UiAppearance.Scaled)
+        {
+            // Follow the owner's interface scale (the owner scales its content; a separate window would otherwise keep its own size).
+            card.LayoutTransform = new ScaleTransform(UiAppearance.Scale, UiAppearance.Scale);
+            Width *= UiAppearance.Scale;
+        }
 
         PreviewKeyDown += (_, e) =>
         {
@@ -193,7 +202,7 @@ internal sealed class AppDialogWindow : Window
         if (panel is null) return;
         _ownerPanel = panel;
         _previousEffect = panel.Effect;
-        _overlay = new Border { Background = new SolidColorBrush(Color.FromArgb(140, 24, 31, 45)), IsHitTestVisible = false };
+        _overlay = new Border { Background = new SolidColorBrush(BackdropColor), IsHitTestVisible = false };
         if (_wrappedOriginal is Border ownerCard)
         {
             // Transparent shell owner: dim only the visible rounded card, not the whole transparent window.
@@ -202,7 +211,7 @@ internal sealed class AppDialogWindow : Window
         }
         else
         {
-            panel.Effect = new BlurEffect { Radius = 8 };
+            panel.Effect = new BlurEffect { Radius = BackdropBlur };
         }
         Grid.SetColumnSpan(_overlay, 2);
         Grid.SetRowSpan(_overlay, Math.Max(1, (panel as Grid)?.RowDefinitions.Count ?? 1));

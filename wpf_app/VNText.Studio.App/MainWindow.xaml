@@ -218,7 +218,7 @@
                     <Border Background="{DynamicResource GreenSoftBrush}" CornerRadius="12" Padding="13,10">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Fill="{DynamicResource GreenBrush}" VerticalAlignment="Center" />
-                            <TextBlock Text="Chạy trên máy" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource GreenDarkBrush}" Margin="8,0,0,0" />
+                            <TextBlock Text="{Binding LocalProcessingLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource GreenDarkBrush}" Margin="8,0,0,0" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -962,7 +962,7 @@
                                                     <Border Background="{DynamicResource GreenSoftBrush}" CornerRadius="12" Padding="13,10">
                                                         <StackPanel Orientation="Horizontal">
                                                             <Ellipse Width="8" Height="8" Fill="{DynamicResource GreenBrush}" VerticalAlignment="Center" />
-                                                            <TextBlock Text="Chạy trên máy" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource GreenDarkBrush}" Margin="8,0,0,0" />
+                                                            <TextBlock Text="{Binding LocalProcessingLabel}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource GreenDarkBrush}" Margin="8,0,0,0" />
                                                         </StackPanel>
                                                     </Border>
                                                 </StackPanel>
@@ -1301,6 +1301,11 @@
                                     </Border>
                                 </Grid>
 
+                                <Border Grid.Row="1" x:Name="CsvEditorLoadErrorBanner" Margin="0,6,0,0" Padding="10,7" CornerRadius="8" Background="{DynamicResource WarningSoftBrush}"
+                                        BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" VerticalAlignment="Top"
+                                        Visibility="{Binding HasCsvEditorLoadError, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock Text="{Binding CsvEditorLoadError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource WarningBrush}" />
+                                </Border>
                                 <StackPanel Grid.Row="2" Margin="0,5,0,0">
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,4">
                                     <Grid>
@@ -1344,18 +1349,20 @@
 
                                 </StackPanel>
 <StackPanel Grid.Row="3" Margin="0,6,0,0">
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource SoftTextBrush}"
-                                               Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" MaxHeight="54" ToolTip="{Binding CsvBulkPreview}">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding CsvBulkPreview}" Value="Nhập chuỗi rồi bấm Xem trước.">
-                                                        <Setter Property="Visibility" Value="Collapsed" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False">
+                                        <TextBlock FontSize="12" Foreground="{DynamicResource SoftTextBrush}"
+                                                   Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CsvBulkPreview}" Value="Nhập chuỗi rồi bấm Xem trước.">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </ScrollViewer>
                                     <TextBlock FontSize="12" Foreground="{DynamicResource SoftTextBrush}" Margin="0,2,0,0"
                                                Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap" />
                                 </StackPanel>
@@ -1478,7 +1485,7 @@
         </Border>
 
         <Grid x:Name="GlossaryOverlay" Grid.ColumnSpan="2" Panel.ZIndex="100"
-              Background="#990F172A" Visibility="Collapsed" Focusable="True"
+              Background="#8C181F2D" Visibility="Collapsed" Focusable="True"
               PreviewKeyDown="GlossaryOverlay_PreviewKeyDown"
               PreviewMouseDown="GlossaryOverlay_PreviewMouseDown">
             <Border Width="720" MaxHeight="610" Margin="24" Padding="22"

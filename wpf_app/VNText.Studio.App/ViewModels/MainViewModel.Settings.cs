@@ -32,8 +32,11 @@ public sealed partial class MainViewModel
     public double BackgroundStrength { get => _settings.BackgroundStrength; set { if (!double.IsFinite(value)) return; value = Math.Clamp(value, 0, 100); if (_settings.BackgroundStrength == value) return; _settings.BackgroundStrength = value; Raise(); SaveSettings(); } }
     public bool BackgroundUpdateDownload { get => _settings.BackgroundUpdateDownload; set { if (_settings.BackgroundUpdateDownload == value) return; _settings.BackgroundUpdateDownload = value; Raise(); SaveSettings(); } }
     public string UpdateReminder { get => _settings.UpdateReminderHours.ToString(); set { if (!int.TryParse(value, out var h) || h is not (4 or 24 or 168) || h == _settings.UpdateReminderHours) return; _settings.UpdateReminderHours = h; Raise(); SaveSettings(); } }
+    public string LocalProcessingLabel => UiText.Translate("Chạy trên máy");
+
     internal void RefreshLocalizedOptions()
     {
+        Raise(nameof(LocalProcessingLabel));
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));

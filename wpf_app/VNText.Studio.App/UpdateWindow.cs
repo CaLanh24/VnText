@@ -57,6 +57,12 @@ internal sealed class UpdateWindow : Window
         var surface = new Border { Margin = new Thickness(AppDialogWindow.CardMargin), CornerRadius = new CornerRadius(AppDialogWindow.CardRadius),
             Background = Brush("SurfaceBrush"), Effect = new DropShadowEffect { BlurRadius = 32, ShadowDepth = 9, Opacity = .25 } };
         var grid = new Grid(); surface.Child = grid; Content = surface;
+        if (UiAppearance.Scaled)
+        {
+            surface.LayoutTransform = new ScaleTransform(UiAppearance.Scale, UiAppearance.Scale);
+            Width *= UiAppearance.Scale;
+            if (notesOnly) Height *= UiAppearance.Scale;
+        }
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         if (notesOnly) grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
@@ -126,9 +132,9 @@ internal sealed class UpdateWindow : Window
         {
             if (owner.Content is UIElement element)
             {
-                _previousEffect = element.Effect; element.Effect = new BlurEffect { Radius = 8 };
+                _previousEffect = element.Effect; element.Effect = new BlurEffect { Radius = AppDialogWindow.BackdropBlur };
                 _ownerPanel = element as Panel ?? throw new InvalidOperationException("Modal owner must expose the app root panel for dim coverage.");
-                _overlay = new Border { Background = new SolidColorBrush(Color.FromArgb(140, 24, 31, 45)), IsHitTestVisible = false };
+                _overlay = new Border { Background = new SolidColorBrush(AppDialogWindow.BackdropColor), IsHitTestVisible = false };
                 Grid.SetColumnSpan(_overlay, 2); Grid.SetRowSpan(_overlay, Math.Max(1, (_ownerPanel as Grid)?.RowDefinitions.Count ?? 1));
                 Panel.SetZIndex(_overlay, int.MaxValue); _ownerPanel.Children.Add(_overlay);
             }

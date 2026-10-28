@@ -92,6 +92,25 @@ public sealed partial class MainViewModel
         private set => Set(ref _csvEditorStatus, value);
     }
 
+    private string _csvEditorLoadError = "";
+    private string _csvEditorWarningSummary = "";
+
+    /// <summary>Shown inline in the editor when a chosen CSV is rejected (the file name and the reason); the previously open document stays.</summary>
+    public string CsvEditorLoadError
+    {
+        get => _csvEditorLoadError;
+        private set { if (Set(ref _csvEditorLoadError, value)) Raise(nameof(HasCsvEditorLoadError)); }
+    }
+
+    public bool HasCsvEditorLoadError => !string.IsNullOrEmpty(_csvEditorLoadError);
+
+    /// <summary>Count, reason and where to look for the rows that saved or validated with warnings.</summary>
+    public string CsvEditorWarningSummary
+    {
+        get => _csvEditorWarningSummary;
+        private set { if (Set(ref _csvEditorWarningSummary, value)) Raise(nameof(CsvEditorUserValidationMessage)); }
+    }
+
     public string CsvEditorSearch
     {
         get => _csvEditorSearch;
@@ -140,6 +159,7 @@ public sealed partial class MainViewModel
 
     public string CsvEditorUserValidationMessage => _csvEditorRows.Count == 0 || CsvEditorLoading || CsvEditorValidating || CsvEditorSaving
         ? CsvEditorValidationMessage
+        : !string.IsNullOrEmpty(CsvEditorWarningSummary) ? CsvEditorWarningSummary
         : _csvEditorAllTranslationsEmpty ? "Chưa có bản dịch — chuyển sang Dịch tự động để bắt đầu."
         : CsvEditorPatchBlocked > 0 ? "Một số câu cần xem lại trước khi tạo gói. Chọn câu để xem lý do và chỉnh bản dịch."
         : "Bản dịch được kiểm tra tự động. Bạn có thể chỉnh ngữ cảnh, xưng hô và cách diễn đạt.";
@@ -448,18 +468,11 @@ public sealed partial class MainViewModel
         var ct = _csvLoadCts.Token;
         var pathCopy = path;
 
+        // The open document stays untouched until the new file is proven readable (a rejected file must not blank the editor
+        // or leave a title that names another file); ResetCsvEditorDocumentState runs when the new document is applied.
         CsvEditorLoading = true;
-        CsvEditorStaleOnDisk = false;
-        _csvEditorSourceSha256 = null;
+        CsvEditorLoadError = "";
         CsvEditorStatus = "Đang tải CSV…";
-        CsvEditorValidationMessage = "";
-        CsvEditorPatchEligible = 0;
-        CsvEditorPatchBlocked = 0;
-        CsvEditorBatchActionable = 0;
-        _csvEditorAllTranslationsEmpty = false;
-        Raise(nameof(CsvEditorGateStats));
-        _csvEditorRows.ClearSilentThenNotify();
-        CsvEditorVisibleCount = 0;
         AppendLog($"[csv] Bắt đầu tải nền: {Path.GetFileName(pathCopy)} (gen={gen})");
 
         var dispatcher = Application.Current?.Dispatcher;
@@ -493,9 +506,7 @@ public sealed partial class MainViewModel
                 {
                     if (gen != Volatile.Read(ref _csvLoadGeneration))
                         return;
-                    CsvEditorLoading = false;
-                    CsvEditorStatus = err;
-                    AppendLog($"CSV editor: {err}");
+                    FailCsvEditorLoad(pathCopy, err);
                 });
                 return;
             }
@@ -535,15 +546,59 @@ public sealed partial class MainViewModel
         }, ct);
     }
 
+    private void ResetCsvEditorDocumentState()
+    {
+        CsvEditorStaleOnDisk = false;
+        _csvEditorSourceSha256 = null;
+        CsvEditorValidationMessage = "";
+        CsvEditorWarningSummary = "";
+        CsvEditorPatchEligible = 0;
+        CsvEditorPatchBlocked = 0;
+        CsvEditorBatchActionable = 0;
+        _csvEditorAllTranslationsEmpty = false;
+        Raise(nameof(CsvEditorGateStats));
+        CsvEditorVisibleCount = 0;
+    }
+
+    private void FailCsvEditorLoad(string rejectedPath, string reason)
+    {
+        CsvEditorLoading = false;
+        var rejected = string.IsNullOrWhiteSpace(rejectedPath) ? "CSV đã chọn" : Path.GetFileName(rejectedPath);
+        var keeping = string.IsNullOrWhiteSpace(CsvEditorPath)
+            ? "chưa có file nào đang mở"
+            : $"đang giữ {Path.GetFileName(CsvEditorPath)}";
+        CsvEditorLoadError = $"Không mở được {rejected}: {reason} ({keeping}).";
+        CsvEditorStatus = CsvEditorLoadError;
+        AppendLog($"CSV editor: {CsvEditorLoadError}");
+        ShowToast(CsvEditorLoadError, "error");
+        SaveCsvEditorCommand?.RaiseCanExecuteChanged();
+    }
+
+    /// <summary>Count, reason and the way to the affected rows for a validation that passed with warnings; empty otherwise.</summary>
+    internal static string BuildCsvWarningSummary(CsvEditorValidateResult validation)
+    {
+        if (!validation.Ok || !validation.HasWarnings || validation.IssueCount <= 0)
+            return "";
+        var reasons = validation.IssuesDisplayByKey.Values
+            .Where(text => !string.IsNullOrWhiteSpace(text))
+            .GroupBy(text => text)
+            .OrderByDescending(group => group.Count())
+            .Take(2)
+            .Select(group => $"{group.Count():N0}× {group.Key}")
+            .ToList();
+        var detail = reasons.Count > 0 ? string.Join("; ", reasons) : validation.Summary;
+        return $"Cảnh báo: {validation.IssueCount:N0} dòng cần xem lại — {detail}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.";
+    }
+
     private void ApplyCsvDocumentSync(CsvEditorDocument doc)
     {
         if (!doc.Ok)
         {
-            CsvEditorLoading = false;
-            CsvEditorStatus = doc.Error ?? "Không mở được CSV";
+            FailCsvEditorLoad(doc.CsvPath, doc.Error ?? "Không mở được CSV");
             return;
         }
 
+        ResetCsvEditorDocumentState();
         _csvEditorFields.Clear();
         _csvEditorFields.AddRange(doc.Fields);
         _csvEditorSourceSha256 = doc.SourceSha256;
@@ -594,6 +649,7 @@ public sealed partial class MainViewModel
         };
 
         var populateSw = Stopwatch.StartNew();
+        ResetCsvEditorDocumentState();
         _csvEditorFields.Clear();
         _csvEditorFields.AddRange(doc.Fields);
         _csvEditorSourceSha256 = doc.SourceSha256;
@@ -1017,6 +1073,7 @@ public sealed partial class MainViewModel
         CsvEditorValidationMessage = _csvEditorAllTranslationsEmpty
             ? "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
             : result.Summary;
+        CsvEditorWarningSummary = BuildCsvWarningSummary(result);
 
         var bindSw = Stopwatch.StartNew();
         if (_csvEditorView is null)
@@ -1229,12 +1286,19 @@ public sealed partial class MainViewModel
         CsvEditorStatus = unchanged
             ? $"{savedMsg} (UTF-8 BOM, giữ nguyên cột)"
             : $"{savedMsg}; còn chỉnh sửa mới chưa lưu";
+        if (unchanged)
+            ApplyValidationFromBatch(validation.IssuesByKey, validation.IssuesDisplayByKey, validation.Summary,
+                validation.PatchEligible, validation.PatchBlocked, validation.BatchActionable);
         CsvEditorValidationMessage = validation.Summary;
+        CsvEditorWarningSummary = BuildCsvWarningSummary(validation);
         StatusText = "Đã lưu CSV";
         AppendLog($"Đã lưu translation.csv: {path}");
         if (validation.HasWarnings)
             AppendLog($"Cảnh báo trước khi lưu: {validation.Summary}");
-        ShowToast(savedMsg, validation.HasWarnings ? "warning" : "success");
+        if (CsvEditorWarningSummary.Length > 0)
+            CsvEditorStatus = $"{CsvEditorStatus} — {CsvEditorWarningSummary}";
+        ShowToast(CsvEditorWarningSummary.Length > 0 ? $"{savedMsg}. {CsvEditorWarningSummary}" : savedMsg,
+            validation.HasWarnings ? "warning" : "success");
         LogExpanded = true;
         SaveCsvEditorCommand.RaiseCanExecuteChanged();
         return unchanged;

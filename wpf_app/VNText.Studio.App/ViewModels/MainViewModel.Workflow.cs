@@ -113,11 +113,25 @@ public sealed partial class MainViewModel
         RunTranslateCommand?.RaiseCanExecuteChanged();
     }
 
+    private string _translateRejectedCsvPath = "";
+
+    internal string TestGetTranslateReadinessPath() => GetTranslateReadinessPath();
+
     private string GetTranslateReadinessPath()
     {
         if (_csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath))
             return TranslationCsvPath;
-        return Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+        var fallback = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+        // A chosen CSV that exists but failed its own validation (for example no manifest.json beside it) is reported with that
+        // reason; it must not be replaced by the missing default file, which produced a second, contradicting message.
+        if (!File.Exists(fallback))
+        {
+            if (!string.IsNullOrWhiteSpace(TranslationCsvPath) && File.Exists(TranslationCsvPath))
+                return TranslationCsvPath;
+            if (!string.IsNullOrWhiteSpace(_translateRejectedCsvPath) && File.Exists(_translateRejectedCsvPath))
+                return _translateRejectedCsvPath;
+        }
+        return fallback;
     }
 
     private void RefreshTranslateReadiness(bool syncCsvValidation = false, bool cancelledSummary = false)

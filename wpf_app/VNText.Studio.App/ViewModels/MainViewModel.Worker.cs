@@ -643,7 +643,8 @@ public sealed partial class MainViewModel
         }
         else if (string.Equals(evt.PatchDelivery, "unity_installer", StringComparison.OrdinalIgnoreCase))
         {
-            PatchDeliveryLabel = "Unity/Naninovel — VNTextPatchInstaller.exe";
+            // The installer route also delivers plain text and other supported formats: name the delivery, not an engine.
+            PatchDeliveryLabel = "Gói patch có installer — VNTextPatchInstaller.exe";
             PatchInstallInstructions = evt.PatchInstallInstructions ?? "";
             PatchDeliveryReady = true;
         }

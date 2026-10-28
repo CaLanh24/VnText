@@ -86,8 +86,13 @@ public sealed partial class MainViewModel
         {
             AppendLog($"CSV: {candidate.Message}");
             ShowToast(candidate.Message, "warning");
+            // The rejected pick is not adopted, but the Translate readiness line must give the same specific reason
+            // instead of reporting the default output file as missing.
+            _translateRejectedCsvPath = path;
+            RefreshTranslateReadiness();
             return;
         }
+        _translateRejectedCsvPath = "";
 
         var previousPath = TranslationCsvPath;
         var previousMessage = CsvValidationMessage;

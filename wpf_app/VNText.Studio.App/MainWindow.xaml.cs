@@ -52,6 +52,7 @@ public partial class MainWindow : Window
             {
                 if (Content is FrameworkElement content)
                     content.LayoutTransform = new ScaleTransform(vm.UiScale, vm.UiScale);
+                    UiAppearance.Scale = vm.UiScale;
             }
             var applyingPreferences = false;
             void ApplyPreferences()
@@ -244,8 +245,31 @@ public partial class MainWindow : Window
             vm.UpdateCsvEditorSelection(grid.SelectedItems);
     }
 
+    private readonly Dictionary<UIElement, System.Windows.Media.Effects.Effect?> _glossaryBlurred = new();
+
+    /// <summary>The glossary overlay uses the shared modal backdrop: dim colour (XAML) plus the same blur radius as AppDialogWindow.</summary>
+    private void SetGlossaryBackdrop(bool on)
+    {
+        if (Content is not Panel root) return;
+        if (on)
+        {
+            foreach (UIElement child in root.Children)
+            {
+                if (ReferenceEquals(child, GlossaryOverlay) || _glossaryBlurred.ContainsKey(child)) continue;
+                _glossaryBlurred[child] = child.Effect;
+                child.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = VNText.Studio.App.Services.AppDialogWindow.BackdropBlur };
+            }
+        }
+        else
+        {
+            foreach (var (element, effect) in _glossaryBlurred) element.Effect = effect;
+            _glossaryBlurred.Clear();
+        }
+    }
+
     private void GlossaryEditButton_Click(object sender, RoutedEventArgs e)
     {
+        SetGlossaryBackdrop(true);
         GlossaryOverlay.Visibility = Visibility.Visible;
         Dispatcher.BeginInvoke(new Action(() => GlossaryTermTextBox.Focus()));
     }
@@ -268,6 +292,7 @@ public partial class MainWindow : Window
 
     private void CloseGlossaryOverlay()
     {
+        SetGlossaryBackdrop(false);
         GlossaryOverlay.Visibility = Visibility.Collapsed;
         GlossaryEditButton.Focus();
     }

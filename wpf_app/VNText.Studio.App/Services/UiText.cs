@@ -14,6 +14,10 @@ public static class UiText
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         ["Chạy trên máy"] = "On-device processing",
+        ["Mở nhật ký"] = "Open log",
+        ["Chép vị trí tệp"] = "Copy file location",
+        ["Chép thông tin lỗi"] = "Copy error details",
+        ["Gói patch có installer — VNTextPatchInstaller.exe"] = "Patch package with installer — VNTextPatchInstaller.exe",
         ["Dịch Anh sang Việt trên máy"] = "Translate English to Vietnamese on this device",
         ["Mô hình dịch trên máy"] = "On-device translation model",
         ["Duyệt bản dịch trước khi đóng gói"] = "Review translations before packaging",
@@ -251,6 +255,10 @@ public static class UiText
         ["Chọn thời gian nhắc lại sau khi bạn hoãn cập nhật."] = "Choose when to remind you after postponing an update.",
         ["Thực thi các tác vụ xử lý trên máy."] = "Run processing tasks on this computer.",
     };
+    /// <summary>Display timestamps follow the app language, not the machine culture (never the on-disk log text).</summary>
+    public static string FormatLocalTime(DateTime value) => Language == "en"
+        ? value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)
+        : value.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
     public static string Translate(string text) => Language == "en" && English.TryGetValue(text, out var translated) ? translated : text;
     public static void SetLanguage(string language) => Language = language == "en" ? "en" : "vi";
     public static void Install()
