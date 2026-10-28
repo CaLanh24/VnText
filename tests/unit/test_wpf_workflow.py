@@ -360,6 +360,10 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn("UiAppearance.Scaled", source)
         self.assertNotIn("Color.FromArgb(155,15,23,42)", journal)
         self.assertIn("SetGlossaryBackdrop(true)", main_code)
+        self.assertIn("ModalBackdrop.BlurBackground(root, GlossaryOverlay", main_code)
+        self.assertNotIn("foreach (UIElement child in root.Children)", main_code)   # blur policy lives in ModalBackdrop only
+        toast_layer = xaml[xaml.index("Panel.ZIndex=\"200\""):xaml.index("x:Name=\"GlossaryOverlay\"")]
+        self.assertIn("ToastMessage", toast_layer)                                   # the toast host sits above the overlay (z 200 > 100)
         self.assertIn('Background="#8C181F2D"', xaml)
         self.assertIn("UiAppearance.Scale = vm.UiScale;", main_code)
         # (8) primary fill is blue to cyan with elevation, disabled stays flat, commands and geometry untouched

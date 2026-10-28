@@ -225,6 +225,7 @@ internal static partial class Program
         Run("TranslateReadiness_ChosenCsvWithoutManifestKeepsItsOwnReason", TranslateReadiness_ChosenCsvWithoutManifestKeepsItsOwnReason, failures);
         Run("PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine", PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine, failures);
         Run("UiText_BadgeAndLocalTimeFollowTheLanguage", UiText_BadgeAndLocalTimeFollowTheLanguage, failures);
+        Run("ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores", ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
@@ -1713,8 +1714,13 @@ internal static partial class Program
             using var worker = new PythonWorkerHost();
             using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
             vm.OutputPath = Path.Combine(root, "other-output");
-            vm.ChooseTranslationCsvCommand.Execute(null);     // rejected: no manifest.json beside it
+            vm.TestSetTranslationModelReady(true);
+            vm.ChooseTranslationCsvCommand.Execute(null);     // rejected FIRST (nothing chosen before): no manifest.json beside it
             AssertEqual("", vm.TranslationCsvPath);
+            // The two user-visible lines name the same specific reason; the missing default file is never the story.
+            Require(vm.TranslateReadinessText.Contains("manifest.json", StringComparison.Ordinal), "readiness line: " + vm.TranslateReadinessText);
+            Require(!vm.TranslateReadinessText.Contains("File không tồn tại", StringComparison.Ordinal), "no misleading default-file message: " + vm.TranslateReadinessText);
+            Require(!vm.TranslateWorkflowStatusText.Contains("File không tồn tại", StringComparison.Ordinal), "workflow status line: " + vm.TranslateWorkflowStatusText);
             var result = CsvPackageValidator.Validate(csv, requireTranslations: false);
             AssertFalse(result.Ok);
             AssertTrue(result.Message.Contains("manifest.json", StringComparison.Ordinal));
@@ -1763,6 +1769,53 @@ internal static partial class Program
             AssertEqual("Copy error details", UiText.Translate("Chép thông tin lỗi"));
         }
         finally { UiText.SetLanguage(previous); }
+    }
+
+    private static void ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores()
+    {
+        Exception? failure = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var root = new Grid();
+                var sidebar = new Border();
+                var page = new Grid();
+                var preexisting = new System.Windows.Media.Effects.DropShadowEffect();
+                page.Effect = preexisting;
+                var toast = new Border();
+                Panel.SetZIndex(toast, 200);
+                var overlay = new Grid();
+                Panel.SetZIndex(overlay, 100);
+                foreach (UIElement child in new UIElement[] { sidebar, page, toast, overlay }) root.Children.Add(child);
+                var saved = new Dictionary<UIElement, System.Windows.Media.Effects.Effect?>();
+
+                ModalBackdrop.BlurBackground(root, overlay, saved);
+                Require(sidebar.Effect is System.Windows.Media.Effects.BlurEffect blur && Math.Abs(blur.Radius - AppDialogWindow.BackdropBlur) < 0.001, "sidebar blurred");
+                Require(page.Effect is System.Windows.Media.Effects.BlurEffect, "page blurred");
+                Require(toast.Effect is null, "the toast layer must stay sharp (validation feedback stays readable)");
+                Require(overlay.Effect is null, "the overlay itself stays sharp");
+                ModalBackdrop.BlurBackground(root, overlay, saved);      // idempotent: no double blur, the original effect is kept
+                Require(saved.Count == 2, "saved " + saved.Count);
+
+                // a dim layer added later by a nested dialog (z-order int.MaxValue) is also left alone
+                var dim = new Border();
+                Panel.SetZIndex(dim, int.MaxValue);
+                root.Children.Add(dim);
+                ModalBackdrop.BlurBackground(root, overlay, saved);
+                Require(dim.Effect is null, "dialog dim layer stays sharp");
+
+                ModalBackdrop.Restore(saved);
+                Require(sidebar.Effect is null, "sidebar restored");
+                Require(ReferenceEquals(page.Effect, preexisting), "the effect the page had before is restored, not dropped");
+                Require(saved.Count == 0, "nothing left saved");
+            }
+            catch (Exception ex) { failure = ex; }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
     }
 
     private static void PatchDelivery_RoutesRenPyInstructions()

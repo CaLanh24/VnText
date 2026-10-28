@@ -11,7 +11,7 @@
 
 | # | Finding | Kết luận | Nguyên nhân / source / evidence | Sửa |
 |---|---|---|---|---|
-| 1 | Updater About: cấu hình trỏ `Desktop\New folder` | **CONTEXTUAL (bàn giao test bị nhiễm), không phải lỗi sản phẩm** | `Desktop\vntextapp\.vntext-update-source.json` có `updates_root` = `DEV_RUN\release-0.1.13\Updates` (thư mục chưa tồn tại) và `work/backup/staging_root` = `Desktop\New folder\.update\…` cùng khóa `fault_inject_after_first_replace`: đúng định dạng override của harness updater. Payload Setup chính thức (7194 mục) **không** chứa file này; file tạo cùng giây với bản cài (18:33:37) nên được chép từ cây test. Guard `update working directory must stay under the install test scope` hoạt động đúng. Cây Desktop không bị sửa | Không đổi source. Bản Desktop cần cài sạch từ Setup chính thức hoặc xóa file override (việc của người kiểm thử) |
+| 1 | Updater About: cấu hình trỏ `Desktop\New folder` | **CONTEXTUAL (bàn giao test bị nhiễm), không phải lỗi sản phẩm** | `Desktop\vntextapp\.vntext-update-source.json` có `updates_root` = `DEV_RUN\release-0.1.13\Updates` (thư mục chưa tồn tại) và `work/backup/staging_root` = `Desktop\New folder\.update\…` cùng khóa `fault_inject_after_first_replace`: đúng định dạng override của harness updater. Payload Setup chính thức (7194 mục) **không** chứa file này; file tạo cùng giây với bản cài (18:33:37). Điều này chỉ gợi ý nó đi cùng bản cài; nguồn gốc chính xác (ví dụ chép từ cây test hay di chuyển thư mục cài) chưa có bằng chứng được theo dõi nên không khẳng định. Guard `update working directory must stay under the install test scope` hoạt động đúng. Cây Desktop không bị sửa | Không đổi source, không sửa cây Desktop, không rebase đường dẫn, không nới guard. Phản hồi thân thiện cho cài đặt bị di chuyển có thể cân nhắc sau (chưa làm). Bản Desktop cần cài sạch từ Setup chính thức hoặc bỏ file override (việc của người kiểm thử) |
 | 2 | CSV lỗi → bảng rỗng, tiêu đề cũ, lý do chỉ ở Journal | **CONFIRMED** | `LoadCsvEditor` xóa hàng/số liệu trước khi biết file đọc được; `CsvEditorStatus` không hiển thị ở đâu | Giữ document đang mở tới khi file mới đọc được; banner inline “Không mở được X: lý do (đang giữ Y)”; dirty guard không đổi |
 | 3 | Lưu có warning chỉ ghi “Đã lưu 4 dòng” | **CONFIRMED** | `FinishCsvEditorSave` bỏ qua kết quả validate; cột Trạng thái trống | Số dòng, lý do thường gặp và chỗ xem ngay ở kết quả lưu; cột Trạng thái điền từ validate; guard lưu draft/patch giữ nguyên |
 | 4 | Bulk preview bị cắt | **CONFIRMED** | `MaxHeight="54"` | Vùng cuộn tối đa 170 DIP, đọc đủ; preview/confirm/backup/Undo giữ nguyên |
@@ -22,11 +22,17 @@
 | 9 | Wording/casing/giờ/badge | **CONFIRMED** | Nút Journal trộn Anh–Việt; giờ theo culture máy (`ToString("g")`); badge là literal | “Mở nhật ký”, “Chép vị trí tệp”, “Chép thông tin lỗi”; giờ hiển thị theo ngôn ngữ app; badge qua binding; không dịch CSV/đường dẫn/log trên đĩa |
 | — | Escape của release notes | **NOT_PROVEN (rút lại, không tạo bug)** | Binding CU chỉ trả owner; source có handler Escape | Không đổi |
 
+## Native p14a (Brain, bản giải nén thử từ Setup thật, exe `286e53c6…6654`, 2026-10-29) và hiệu chỉnh
+
+PASS có mục tiêu: #2 (CSV lỗi: tiêu đề/document 4 dòng giữ, banner inline nêu file, lý do, đang giữ `translation.csv`, toast đỏ), #3 (lưu draft: toast vàng có 4 dòng đã lưu + 1 cảnh báo + lý do placeholder + nơi xem; cột Trạng thái dòng 1 có lý do; dirty xóa), #4 (preview 3 dòng/4 thay thế đọc đủ trong vùng cuộn 170 DIP, Áp dụng gradient + shadow), #8 (primary gradient/elevation sáng và tối, disabled phẳng), #7/#9 (dark 120%: Journal và release notes theo scale, footer vừa; nhãn Việt, giờ `29/10/2026 00:07`; backdrop glossary đã blur; English badge “On-device processing”). Chưa pixel parity, chưa toàn app.
+
+Lỗi mới phát hiện: `SetGlossaryBackdrop` blur mọi con của root trừ overlay, kể cả lớp toast, nên toast validation “Thêm” khi hai ô rỗng bị mờ không đọc được. **p14a bị từ chối cho release.** Sửa: `ModalBackdrop.BlurBackground` chỉ blur nội dung nền, bỏ qua overlay và mọi lớp có z-order ≥ overlay (toast z=200, lớp dim của dialog), khôi phục đúng effect cũ khi đóng; không đổi geometry/motion. Test harness mới `ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores` + kiểm tĩnh. Finding 5: với CSV hợp lệ đang mở, chọn CSV thiếu manifest giữ document cũ (đúng hành vi); case gốc (chưa chọn gì) cần native lại: **chọn CSV thiếu manifest trước**; test harness nay xác nhận cả dòng readiness lẫn workflow không còn “File không tồn tại”.
+
 ## Acceptance 0.1.14
 
 | Mục | Trạng thái | Evidence |
 |---|---|---|
-| Source + test mới (harness 5, Python 3 gồm static và handoff epoch) | Chờ gate canonical | Receipt `DEV_RUN/gatec/impl49-*.json` |
-| Build/verify/smoke/updater apply+rollback+tamper | Chờ | Candidate p14a |
-| Native Brain có mục tiêu (CSV lỗi, warning/dòng, preview/prereq/nhãn, modal scale/theme/primary/localization) | Chờ | Kế hoạch trong handoff |
+| Source + test (harness 6, Python 3, static) và hiệu chỉnh glossary toast | Chờ gate canonical | `DEV_RUN/gatec/impl50-*.json` |
+| Build/verify/smoke/updater trên candidate sửa | Chờ | Candidate p14b |
+| Native có mục tiêu lần hai (no-manifest trước, nhãn patch plain text, glossary validation toast + một confirmation lồng) | Chờ | `native_plan_p14b.md` |
 | Publication | HOLD tới Brain ACCEPT | — |

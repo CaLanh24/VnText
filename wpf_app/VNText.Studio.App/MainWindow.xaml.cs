@@ -50,9 +50,9 @@ public partial class MainWindow : Window
             if (!_presentationFixture) Loaded += async (_, _) => await vm.CheckUpdatesOnStartupAsync();
             void ApplyScale()
             {
+                UiAppearance.Scale = vm.UiScale;
                 if (Content is FrameworkElement content)
                     content.LayoutTransform = new ScaleTransform(vm.UiScale, vm.UiScale);
-                    UiAppearance.Scale = vm.UiScale;
             }
             var applyingPreferences = false;
             void ApplyPreferences()
@@ -251,20 +251,8 @@ public partial class MainWindow : Window
     private void SetGlossaryBackdrop(bool on)
     {
         if (Content is not Panel root) return;
-        if (on)
-        {
-            foreach (UIElement child in root.Children)
-            {
-                if (ReferenceEquals(child, GlossaryOverlay) || _glossaryBlurred.ContainsKey(child)) continue;
-                _glossaryBlurred[child] = child.Effect;
-                child.Effect = new System.Windows.Media.Effects.BlurEffect { Radius = VNText.Studio.App.Services.AppDialogWindow.BackdropBlur };
-            }
-        }
-        else
-        {
-            foreach (var (element, effect) in _glossaryBlurred) element.Effect = effect;
-            _glossaryBlurred.Clear();
-        }
+        if (on) ModalBackdrop.BlurBackground(root, GlossaryOverlay, _glossaryBlurred);
+        else ModalBackdrop.Restore(_glossaryBlurred);
     }
 
     private void GlossaryEditButton_Click(object sender, RoutedEventArgs e)
