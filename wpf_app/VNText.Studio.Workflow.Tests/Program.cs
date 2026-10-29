@@ -1917,6 +1917,16 @@ internal static partial class Program
             var unknown = "Không đọc được " + path + " vì file bị khóa bởi tiến trình khác";
             vm.TestSetModelStatus(unknown, path);
             AssertEqual(unknown, vm.ModelStatusDisplay);
+            // unrecognised text that merely LOOKS like a path-bearing status is never rewritten
+            var unknownReady = "Lỗi nạp model OPUS-MT INT8: " + path;
+            vm.TestSetModelStatus(unknownReady, path);
+            AssertEqual(unknownReady, vm.ModelStatusDisplay);
+            var unknownMissing = "Không thể mở model CTranslate2 tại " + path + ". Quyền truy cập bị từ chối.";
+            vm.TestSetModelStatus(unknownMissing, path);
+            AssertEqual(unknownMissing, vm.ModelStatusDisplay);
+            var nearMiss = "Model OPUS-MT INT8 sẵn sàng: " + path + " (phiên bản cũ)";   // the exact ready form plus extra text
+            vm.TestSetModelStatus(nearMiss, path);
+            AssertEqual(nearMiss, vm.ModelStatusDisplay);
             AssertEqual("", MainViewModel.PresentModelStatus("", path));
             AssertEqual("giữ nguyên", MainViewModel.PresentModelStatus("giữ nguyên", ""));
 

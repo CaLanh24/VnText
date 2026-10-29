@@ -71,18 +71,24 @@ public sealed partial class MainViewModel
     /// <summary>Short status for the Settings row: the model path is shown once, in the folder line below it (the raw ModelStatus keeps it for diagnostics).</summary>
     public string ModelStatusDisplay => UiText.Translate(PresentModelStatus(_modelStatus, _modelFolder));
 
+    private const string ModelReadyPrefix = "Model OPUS-MT INT8 sẵn sàng: ";
+    private const string ModelMissingPrefix = "Model CTranslate2 chưa có tại ";
+    private const string ModelMissingSuffix = ". Cần tải model OPUS-MT en→vi INT8 trước khi dịch.";
+
     /// <summary>
-    /// Removes the path only from the two message shapes of vntext.mt_ct2_model.model_status() that embed it (ready: "...: PATH", missing: "... tại PATH. ...").
-    /// Every other text (runtime errors, exceptions, anything unknown) is returned whole so real failure context is never hidden.
+    /// Removes the path only from the two EXACT messages vntext.mt_ct2_model.model_status() produces for a model folder: ready
+    /// ("Model OPUS-MT INT8 sẵn sàng: PATH") and missing ("Model CTranslate2 chưa có tại PATH. Cần tải model OPUS-MT en→vi INT8 trước khi dịch.").
+    /// Anything else - runtime errors, exceptions and any unrecognised text, even one that ends with ": PATH" or contains " tại PATH." -
+    /// is returned whole so real failure context is never hidden.
     /// </summary>
     internal static string PresentModelStatus(string status, string folder)
     {
         if (string.IsNullOrWhiteSpace(status) || string.IsNullOrWhiteSpace(folder)) return status;
-        var ready = ": " + folder;
-        if (status.EndsWith(ready, StringComparison.Ordinal)) return status[..^ready.Length] + ".";
-        var missing = " tại " + folder + ".";
-        var at = status.IndexOf(missing, StringComparison.Ordinal);
-        return at >= 0 ? status.Remove(at, missing.Length).Insert(at, " trên máy.") : status;
+        if (string.Equals(status, ModelReadyPrefix + folder, StringComparison.Ordinal))
+            return ModelReadyPrefix.TrimEnd(' ', ':') + ".";
+        if (string.Equals(status, ModelMissingPrefix + folder + ModelMissingSuffix, StringComparison.Ordinal))
+            return "Model CTranslate2 chưa có trên máy" + ModelMissingSuffix;
+        return status;
     }
 
     internal void TestSetModelStatus(string status, string folder)

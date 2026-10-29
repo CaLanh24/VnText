@@ -429,6 +429,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Text="{Binding ModelStatusDisplay}"', xaml)
         self.assertIn('Text="{Binding ModelFolder}"', xaml)
         self.assertIn("PresentModelStatus", settings_vm)
+        body = settings_vm[settings_vm.index("internal static string PresentModelStatus"):settings_vm.index("internal void TestSetModelStatus")]
+        self.assertNotIn("EndsWith(", body)      # exact known messages only, never a generic path pattern
+        self.assertNotIn("IndexOf(", body)
 
     def test_csv_editor_controls_stay_visible_and_validation_stays_automatic(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
