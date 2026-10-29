@@ -24,8 +24,15 @@
         </Style>
     </UserControl.Resources>
     <StackPanel>
-        <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,0,0,12"
-                   Text="Ảnh tĩnh PNG/JPEG/WebP. OCR tiếng Anh luôn cần bạn xem lại: sửa text, nhập bản dịch, chọn đúng một chế độ nền rồi tick Duyệt. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+        <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,4"
+                   Text="Chọn ảnh, chạy OCR, sửa và duyệt từng vùng rồi dựng ảnh." />
+        <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
+                   Text="Game gốc không bị ghi: chỉ bước cài mới ghi vào một bản sao game do bạn chọn." />
+        <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
+        <Expander x:Name="IntroDetails" Header="Chi tiết" IsExpanded="False" Margin="0,0,0,12" Foreground="{DynamicResource InkBrush}" AutomationProperties.Name="Chi tiết an toàn và quy trình">
+            <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. OCR tiếng Anh luôn cần bạn xem lại: sửa text, nhập bản dịch, chọn đúng một chế độ nền rồi tick Duyệt. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+        </Expander>
 
         <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->
         <Border x:Name="TaskBanner" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12"

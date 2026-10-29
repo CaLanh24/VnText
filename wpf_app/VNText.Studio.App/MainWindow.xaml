@@ -1252,8 +1252,8 @@
                                 <TextBlock Text="Tìm trong CSV" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                 <TextBox Grid.Column="1" x:Name="CsvEditorSearchBox" AutomationProperties.Name="Tìm trong toàn bộ CSV"
                                          Text="{Binding CsvEditorSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource CompactFieldTextBoxStyle}" Margin="8,0,0,0" Height="34" />
-                                <ComboBox Grid.Column="2" Margin="8,0,0,0" Width="150" Height="34" Style="{StaticResource SettingsCombo}"
+                                         Style="{StaticResource CompactFieldTextBoxStyle}" Margin="8,0,0,0" Height="{StaticResource UiControlHeightStandard}" />
+                                <ComboBox Grid.Column="2" Margin="8,0,0,0" Width="150" Height="{StaticResource UiControlHeightStandard}" Style="{StaticResource SettingsCombo}"
                                           ItemsSource="{Binding CsvFilterOptions}"
                                           SelectedValue="{Binding CsvFilterMode, Mode=TwoWay}"
                                           SelectedValuePath="Value" DisplayMemberPath="Label" />
@@ -1296,7 +1296,8 @@
                                         <TextBlock Text="{Binding CsvEditorLockText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
                                                    TextWrapping="Wrap" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <Button Grid.Column="2" Content="Chọn CSV" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}" />
+                                    <Button x:Name="CsvChooseHeaderButton" Grid.Column="2" Content="Chọn CSV" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}"
+                                            Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}" />
                                     <Border Grid.Column="3" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding CsvEditorDirty, Converter={StaticResource BoolToVis}}">
                                         <TextBlock Text="{Binding CsvEditorDirtySummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
@@ -1316,7 +1317,20 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Margin="0,5,0,0">
-<Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,4">
+<Border x:Name="CsvBulkSummary" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="12,4"
+                                        Visibility="{Binding CsvBulkSummaryVisible, Converter={StaticResource BoolToVis}}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Tìm và thay thế bản dịch" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        <Button x:Name="CsvBulkOpenButton" Grid.Column="1" Content="Mở công cụ" Style="{StaticResource CompactOutlineButton}"
+                                                AutomationProperties.Name="Mở công cụ Tìm và thay thế" Command="{Binding ToggleCsvBulkCommand}" />
+                                    </Grid>
+                                </Border>
+<Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,4"
+                                        Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -1330,13 +1344,15 @@
                                         <TextBlock Text="Tìm và thay thế bản dịch" Grid.ColumnSpan="2"
                                                    FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
+                                        <Button x:Name="CsvBulkCloseButton" Grid.Column="1" HorizontalAlignment="Right" Content="Thu gọn" Style="{StaticResource CompactOutlineButton}"
+                                                AutomationProperties.Name="Thu gọn công cụ Tìm và thay thế" Command="{Binding ToggleCsvBulkCommand}" />
                                         <StackPanel Grid.Row="1" Margin="0,0,7,0">
                                             <TextBlock Text="Tìm trong bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="32" ToolTip="Chỉ tìm trong cột Bản dịch" />
+                                            <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Chỉ tìm trong cột Bản dịch" />
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="7,0,7,0">
                                             <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="32" />
+                                            <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" />
                                         </StackPanel>
                                         <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,5,0,0">
                                             <Grid.ColumnDefinitions>
@@ -1345,7 +1361,7 @@
                                             </Grid.ColumnDefinitions>
                                             <ComboBox x:Name="CsvBulkScopeComboBox" AutomationProperties.Name="Phạm vi thay thế"
                                                       ItemsSource="{Binding CsvBulkScopeOptions}" SelectedValue="{Binding CsvBulkScope, Mode=TwoWay}"
-                                                      SelectedValuePath="Value" DisplayMemberPath="Label" Width="144" Height="32"
+                                                      SelectedValuePath="Value" DisplayMemberPath="Label" Width="144" Height="{StaticResource UiControlHeightStandard}"
                                                       VerticalAlignment="Center" Style="{StaticResource SettingsCombo}" />
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                                                 <Button x:Name="CsvBulkPreviewButton" Content="Xem trước" ToolTip="Đếm các dòng và lần thay thế trước khi áp dụng." Style="{StaticResource OutlineButton}" MinWidth="96" Margin="0,0,8,0" Command="{Binding BulkReplaceCsvCommand}" />
@@ -1389,7 +1405,19 @@
 
                                 </Grid>
 
+                                <Border x:Name="CsvEmptyState" Grid.Row="1" Margin="0,8,0,0" MinHeight="150" Style="{StaticResource SubtlePanelBorder}"
+                                        Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource InvBoolToVis}}">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource BlueSoftBrush}" HorizontalAlignment="Center">
+                                            <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="20" Height="20" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="Chọn file translation.csv để xem và sửa bản dịch." TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,10" MaxWidth="420"
+                                                   Foreground="{DynamicResource MutedBrush}" />
+                                        <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
+                                    </StackPanel>
+                                </Border>
                                 <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="0,8,0,0" MinHeight="150"
+                                          Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
                                           AutoGenerateColumns="False"
@@ -1570,10 +1598,20 @@
                                 Style="{StaticResource OutlineButton}" Margin="5,5,0,0"
                                 Command="{Binding AddGlossaryEntryCommand}" IsDefault="True" />
                     </Grid>
-                    <ListBox x:Name="GlossaryListBox" Grid.Row="2" ItemsSource="{Binding GlossaryEntries}"
-                             Height="300" Margin="28,16,28,28" BorderBrush="{DynamicResource LineBrush}"
+                    <Grid Grid.Row="2" Margin="28,16,28,28">
+                    <ListBox x:Name="GlossaryListBox" ItemsSource="{Binding GlossaryEntries}"
+                             Margin="0" BorderBrush="{DynamicResource LineBrush}"
                              BorderThickness="1" Background="{DynamicResource SurfaceBrush}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.Style>
+                            <Style TargetType="{x:Type ListBox}">
+                                <Setter Property="Height" Value="300" />
+                                <Style.Triggers>
+                                    <!-- no entries: a compact region that carries its own instruction instead of 300 blank DIP -->
+                                    <DataTrigger Binding="{Binding GlossaryEntries.Count}" Value="0"><Setter Property="Height" Value="150" /></DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -1598,6 +1636,14 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    <StackPanel x:Name="GlossaryEmptyState" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Visibility="{Binding GlossaryEntries.Count, Converter={StaticResource EmptyLogVis}}">
+                        <TextBlock Text="Chưa có thuật ngữ nào. Nhập từ trong game và cách dịch ở trên, rồi bấm Thêm." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="440"
+                                   Foreground="{DynamicResource MutedBrush}" />
+                        <Button x:Name="GlossaryEmptyFocusButton" Content="Nhập thuật ngữ đầu tiên" Style="{StaticResource CompactOutlineButton}" HorizontalAlignment="Center" Margin="0,10,0,0"
+                                Click="GlossaryEmptyFocusButton_Click" />
+                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

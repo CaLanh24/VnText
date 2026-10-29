@@ -72,6 +72,8 @@ public sealed partial class MainViewModel
             {
                 Raise(nameof(CsvEditorPathDisplay));
                 Raise(nameof(CsvEditorPathToolTip));
+                Raise(nameof(CsvEditorHasDocument));
+                ApplyCsvBulkDefault();
             }
         }
     }
@@ -79,6 +81,42 @@ public sealed partial class MainViewModel
     public string CsvEditorPathDisplay =>
         string.IsNullOrWhiteSpace(CsvEditorPath) ? "Chưa chọn file…" : Path.GetFileName(CsvEditorPath);
     public string CsvEditorPathToolTip => CsvEditorPath;
+
+    /// <summary>A CSV is open (the path stays through a failed reload); without one the editor shows only its empty state.</summary>
+    public bool CsvEditorHasDocument => !string.IsNullOrWhiteSpace(_csvEditorPath);
+
+    private bool _csvBulkExpanded, _csvBulkUserChoice, _csvLowHeight;
+    /// <summary>The bulk find/replace tools are open. Collapsed it is still one visible row with an explicit open button; the typed find/replace/preview state is never reset by toggling.</summary>
+    public bool CsvBulkExpanded
+    {
+        get => _csvBulkExpanded;
+        private set
+        {
+            if (!Set(ref _csvBulkExpanded, value)) return;
+            Raise(nameof(CsvBulkPanelVisible));
+            Raise(nameof(CsvBulkSummaryVisible));
+        }
+    }
+    public bool CsvBulkPanelVisible => CsvEditorHasDocument && _csvBulkExpanded;
+    public bool CsvBulkSummaryVisible => CsvEditorHasDocument && !_csvBulkExpanded;
+    public RelayCommand ToggleCsvBulkCommand { get; private set; } = null!;
+
+    /// <summary>Low window heights leave the table fewer than ~3 rows; until the user chooses, the tools start collapsed there (and when no CSV is open).</summary>
+    internal void SetCsvLowHeight(bool low)
+    {
+        if (_csvLowHeight == low) return;
+        _csvLowHeight = low;
+        ApplyCsvBulkDefault();
+    }
+
+    private void ApplyCsvBulkDefault()
+    {
+        if (!_csvBulkUserChoice) CsvBulkExpanded = CsvEditorHasDocument && !_csvLowHeight;
+        Raise(nameof(CsvBulkPanelVisible));
+        Raise(nameof(CsvBulkSummaryVisible));
+    }
+
+    internal void TestSetCsvEditorPath(string path) => CsvEditorPath = path;
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
     {
         0 => "Chọn một dòng để xem mã kỹ thuật.",
@@ -384,6 +422,7 @@ public sealed partial class MainViewModel
             }
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
+        ToggleCsvBulkCommand = new RelayCommand(_ => { _csvBulkUserChoice = true; CsvBulkExpanded = !CsvBulkExpanded; });
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),
             _ => !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);

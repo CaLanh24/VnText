@@ -157,6 +157,7 @@ internal static class PreferencesTests
             var trayWindow=new Window { Width=300,Height=120,Title="VNText preference tray test" };trayWindow.Show();
             using(var tray=new AppTray(trayWindow,()=>{})) { Check(tray.Hide() && !trayWindow.IsVisible,"tray hide");tray.Restore();Check(trayWindow.IsVisible,"tray restore"); }
             trayWindow.Close();Console.WriteLine("PASS native tray icon / hide / restore / disposal");
+            CsvLowHeightLayout();Console.WriteLine("PASS CSV editor low-height layout (OS150 x UI120 window): empty state, collapsed bulk tools, table viewport");
             UiText.SetLanguage("vi");UiAppearance.Apply("light",100);Console.WriteLine("Preferences tests: PASS (8 groups)");return 0;
         }
         finally { app.Shutdown(); }
@@ -188,6 +189,40 @@ internal static class PreferencesTests
         var key=isOn?"BlueBrush":"SwitchOffBrush";
         Check(window.TryFindResource(key) is SolidColorBrush expected && actual!.Color==expected.Color,
             $"Settings {(isOn?"on":"off")} toggle track uses {key} resource");
+    }
+    private static void CsvLowHeightLayout()
+    {
+        // 1565x1080 physical at OS 150% is a 1043x720 DIP window; at UI scale 120% the content sees about 600 DIP.
+        var vm=new MainViewModel(new Picker(),new PythonWorkerHost(),startWorker:false);
+        vm.UiScale=1.2;vm.NavigateTabCommand.Execute("editcsv");
+        var window=new MainWindow(vm,new Presentation());
+        try
+        {
+            window.WindowState=WindowState.Normal;window.Width=1043;window.Height=720;window.Show();window.UpdateLayout();Pump(200);
+            FrameworkElement Named(string name)=>(FrameworkElement)(window.FindName(name) ?? throw new InvalidOperationException(name));
+            var grid=Named("CsvEditorGrid");
+            // No CSV: one empty state with the primary action; the bulk tools and the empty table are not shown.
+            Check(Named("CsvEmptyState").IsVisible && Named("CsvEmptyChooseButton").IsVisible,"empty CSV shows its instruction and Chọn CSV action");
+            Check(!Named("CsvBulkReplacePanel").IsVisible && !Named("CsvBulkSummary").IsVisible && !grid.IsVisible && !Named("CsvChooseHeaderButton").IsVisible,"no CSV: bulk tools, table and the duplicate header action stay hidden");
+            var emptyHeight=Named("CsvEmptyState").ActualHeight;
+            vm.TestSetCsvEditorPath(@"C:ixture	ranslation.csv");window.UpdateLayout();Pump(150);
+            Check(!vm.CsvBulkExpanded && Named("CsvBulkSummary").IsVisible && !Named("CsvBulkReplacePanel").IsVisible,"low height starts with the tools collapsed to ONE visible summary row");
+            Check(Named("CsvBulkOpenButton").IsVisible && Named("CsvBulkOpenButton").ActualHeight>=29.5,"the collapsed summary has an explicit open button");
+            Check(grid.IsVisible && !Named("CsvEmptyState").IsVisible,"a loaded CSV shows the table, not the empty state");
+            Check(grid.ActualHeight>=150,"the table keeps a finite viewport of at least three rows plus the header (got "+grid.ActualHeight+")");
+            Check(Math.Abs(grid.ActualHeight-emptyHeight)<=Math.Max(60,emptyHeight*0.5),"the table viewport does not jump against the empty state");
+            // Opening the tools never resets what was typed; closing keeps it; the choice then sticks.
+            vm.CsvBulkFind="cửa";vm.CsvBulkReplace="cổng";
+            vm.ToggleCsvBulkCommand.Execute(null);window.UpdateLayout();Pump(100);
+            Check(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible && !Named("CsvBulkSummary").IsVisible,"the open action expands the tools");
+            vm.ToggleCsvBulkCommand.Execute(null);window.UpdateLayout();Pump(100);
+            Check(!vm.CsvBulkExpanded && vm.CsvBulkFind=="cửa" && vm.CsvBulkReplace=="cổng","collapsing keeps the find/replace text");
+            vm.CsvFilterMode="untranslated";vm.CsvEditorSearch="x";Pump(50);
+            Check(!vm.CsvBulkExpanded && vm.CsvBulkFind=="cửa","filtering/searching neither expands nor resets the tools");
+            // The select family: 36 DIP beside the 36 DIP buttons.
+            Check(Named("CsvBulkScopeComboBox").Height==36,"bulk scope select is the 36 DIP standard size");
+        }
+        finally { window.Close(); UiText.SetLanguage("vi"); UiAppearance.Apply("light",100); }
     }
     private static void Pump(int milliseconds)
     {

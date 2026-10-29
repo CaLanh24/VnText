@@ -507,6 +507,47 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("SelectedTab == WorkflowTabs.Patch ? PatchCsvPickerTitle : TranslateCsvPickerTitle", paths)
         self.assertIn('TranslateCsvPickerTitle = "Chọn CSV cần dịch"', paths)
 
+    def test_polish_batch_csv_collapse_empty_states_ocr_details_and_select_sizes_are_wired(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        code = (app / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        journal = (app / "JournalWindow.cs").read_text(encoding="utf-8")
+        # (N1) collapsible bulk tools: an explicit summary row + open/close buttons, state kept in the view model
+        self.assertIn('x:Name="CsvBulkSummary"', xaml)
+        self.assertIn('Content="Mở công cụ"', xaml)
+        self.assertIn('Content="Thu gọn"', xaml)
+        self.assertIn('Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn("public bool CsvBulkExpanded", vm)
+        self.assertIn("_csvBulkUserChoice", vm)
+        self.assertIn("SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 760)", code)
+        self.assertNotIn("CsvBulkFind = \"\"", vm.split("ToggleCsvBulkCommand = ")[1].split("\n")[0])   # toggling never resets the typed text
+        grid_start = xaml.index('x:Name="CsvEditorGrid"')
+        self.assertIn("ScrollViewer.CanContentScroll=\"True\"", xaml[grid_start:grid_start + 1800])     # the table keeps its own virtualized viewport
+        # (N2) CSV and glossary empty states
+        self.assertIn('x:Name="CsvEmptyState"', xaml)
+        self.assertIn('x:Name="CsvEmptyChooseButton"', xaml)
+        self.assertIn('Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource InvBoolToVis}}"', xaml)
+        self.assertIn('x:Name="GlossaryEmptyState"', xaml)
+        self.assertEqual(1, xaml.count('Command="{Binding AddGlossaryEntryCommand}"'))           # no second Add button
+        self.assertIn("GlossaryTermTextBox.Focus()", code)
+        self.assertIn('Binding GlossaryEntries.Count}" Value="0"><Setter Property="Height" Value="150"', xaml)
+        # (N3) OCR: short lead + one safety sentence, the complete original text unchanged inside Details
+        self.assertIn('x:Name="LeadText"', panel)
+        self.assertIn('x:Name="SafetyText"', panel)
+        self.assertIn('<Expander x:Name="IntroDetails" Header="Chi tiết" IsExpanded="False"', panel)
+        details = panel[panel.index('x:Name="IntroDetails"'):panel.index("</Expander>")]
+        for phrase in ("OCR tiếng Anh luôn cần bạn xem lại", "BẢN SAO game do bạn chọn", "bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối"):
+            self.assertIn(phrase, details)
+        # (N4) selects use the two shared sizes
+        self.assertNotIn('Width="150" Height="34"', xaml)
+        self.assertGreaterEqual(xaml.count('Height="{StaticResource UiControlHeightStandard}"'), 5)
+        self.assertIn('var compactHeight=(double)owner.FindResource("UiControlHeightCompact")', journal)
+        for member in ("_files.Height=compactHeight", "_level.Height=compactHeight", "_size.Height=compactHeight"):
+            self.assertIn(member, journal)
+        self.assertNotIn("_files.Height=24", journal)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"

@@ -204,6 +204,9 @@ public partial class MainWindow : Window
         if (ActualWidth <= 0)
             return;
 
+        // Effective height after the interface scale: under ~760 DIP the CSV table would keep fewer than three rows with the tools open.
+        if (DataContext is MainViewModel sizeVm) sizeVm.SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 760);
+
         if (_layoutInitialized)
             return;
         _layoutInitialized = true;
@@ -263,6 +266,9 @@ public partial class MainWindow : Window
     }
 
     private void GlossaryCloseButton_Click(object sender, RoutedEventArgs e) => CloseGlossaryOverlay();
+
+    // The empty-state action only moves focus into the existing add form (no second Add button).
+    private void GlossaryEmptyFocusButton_Click(object sender, RoutedEventArgs e) => GlossaryTermTextBox.Focus();
 
     private void GlossaryOverlay_PreviewKeyDown(object sender, KeyEventArgs e)
     {

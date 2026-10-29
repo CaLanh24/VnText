@@ -33,6 +33,7 @@ internal sealed class JournalWindow : Window
         TextOptions.SetTextFormattingMode(this,TextFormattingMode.Display);
         KeyboardNavigation.SetTabNavigation(this,KeyboardNavigationMode.Cycle);
         Brush B(string key)=>(Brush)owner.FindResource(key);
+        var compactHeight=(double)owner.FindResource("UiControlHeightCompact");   // file/level/page-size selects share the 30 DIP compact row with the folder chip and pager
         Foreground=B("InkBrush");
         foreach(var combo in new[]{_files,_level,_size})
         {
@@ -41,7 +42,7 @@ internal sealed class JournalWindow : Window
             <DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"><TextBlock Text="{Binding}" FontFamily="Segoe UI" FontSize="12" FontWeight="Normal"/></DataTemplate>
             """);
         }
-        _files.MinWidth=0;_files.Width=228;_files.Height=24;_files.FontSize=12;_level.MinWidth=0;_size.MinWidth=0;_level.Width=110;_level.Height=28;_level.FontSize=12;_size.Width=92;_size.Height=28;_size.FontSize=12;_query.Style=(Style)owner.FindResource("FieldTextBoxStyle");
+        _files.MinWidth=0;_files.Width=228;_files.Height=compactHeight;_files.FontSize=12;_level.MinWidth=0;_size.MinWidth=0;_level.Width=110;_level.Height=compactHeight;_level.FontSize=12;_size.Width=92;_size.Height=compactHeight;_size.FontSize=12;_query.Style=(Style)owner.FindResource("FieldTextBoxStyle");
         _query.MaxLength=500;_query.Height=36;_query.Background=B("SurfaceBrush");_query.BorderBrush=B("LineBrush");
         var actionStyle=(Style)System.Windows.Markup.XamlReader.Parse("""
         <Style xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="Button">
@@ -81,7 +82,7 @@ internal sealed class JournalWindow : Window
         for(var i=0;i<3;i++)body.RowDefinitions.Add(new(){Height=GridLength.Auto});body.RowDefinitions.Add(new());
         var fileRow=new StackPanel{Orientation=Orientation.Horizontal,Margin=new Thickness(0,0,0,12)};body.Children.Add(fileRow);
         var fileChip=new StackPanel{Orientation=Orientation.Horizontal};fileChip.Children.Add(new IconView{Icon="journal",Width=14,Height=14,StrokeBrush=B("MutedBrush"),Margin=new Thickness(8,0,6,0)});fileChip.Children.Add(_files);
-        fileRow.Children.Add(new Border{Child=fileChip,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(5),Padding=new Thickness(0,3,6,3)});
+        fileRow.Children.Add(new Border{Child=fileChip,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(5),Padding=new Thickness(0,0,6,0),VerticalAlignment=VerticalAlignment.Center});
         var folder=Button("",()=>Process.Start(new ProcessStartInfo(_store.Root){UseShellExecute=true}));folder.Content=IconLabel("folder_outline",_store.Root);folder.ToolTip=_store.Root;folder.Style=(Style)owner.FindResource("CompactOutlineButton");folder.Width=268;folder.Padding=new Thickness(10,3,10,3);folder.Background=B("SubtlePanelBrush");fileRow.Children.Add(folder);
         var modifiedChip=new StackPanel{Orientation=Orientation.Horizontal};modifiedChip.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M20 7 A9 9 0 1 0 21 14 M20 2 V7 H15"),Stretch=Stretch.Uniform,Width=14,Height=14,Stroke=B("MutedBrush"),StrokeThickness=1.4,Margin=new Thickness(0,0,6,0)});modifiedChip.Children.Add(_modified);
         fileRow.Children.Add(new Border{Child=modifiedChip,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(5),Padding=new Thickness(10,6,10,6),Margin=new Thickness(8,0,0,0)});_modified.FontSize=12;
