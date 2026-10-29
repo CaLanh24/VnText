@@ -25,6 +25,8 @@ internal static partial class Program
             return RunAppDialogFixture(args);
         if (args.Contains("--image-workspace-fixture", StringComparer.Ordinal))
             return RunImageWorkspaceFixture();
+        if (args.Contains("--csv-layout-fixture", StringComparer.Ordinal))
+            return RunCsvLayoutFixture();
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
@@ -1952,7 +1954,7 @@ internal static partial class Program
         Require(!xaml.Contains("Dịch local", StringComparison.Ordinal), "the sidebar must use the heading name, not Dịch local");
         Require(xaml.Contains("<TextBlock Text=\"Dịch tự động\" />", StringComparison.Ordinal), "the sidebar must say Dịch tự động");
         Require(!xaml.Contains("Chọn file CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn file\"", StringComparison.Ordinal), "CSV pickers must not use the longer or generic names");
-        AssertEqual(3, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn CSV\"").Count);
+        AssertEqual(4, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn CSV\"").Count);   // editor header, empty state, Translate, Patch
     }
 
     private static void ModelStatus_PresentsThePathOnceAndKeepsFailureContext()

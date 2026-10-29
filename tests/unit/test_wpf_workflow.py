@@ -1158,6 +1158,9 @@ class WpfWorkflowTests(unittest.TestCase):
             workspace_proc = _run_harness(harness_env, artifacts_root, ["--image-workspace-fixture"])
             self.assertEqual(0, workspace_proc.returncode, (workspace_proc.stdout or "") + (workspace_proc.stderr or ""))
             self.assertIn("WPF image workspace fixture: PASS", workspace_proc.stdout)
+            csv_layout_proc = _run_harness(harness_env, artifacts_root, ["--csv-layout-fixture"])
+            self.assertEqual(0, csv_layout_proc.returncode, (csv_layout_proc.stdout or "") + (csv_layout_proc.stderr or ""))
+            self.assertIn("WPF CSV low-height layout fixture: PASS", csv_layout_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:
                 import shutil
