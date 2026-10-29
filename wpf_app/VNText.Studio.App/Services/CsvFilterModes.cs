@@ -13,7 +13,7 @@ public static class CsvFilterModes
     [
         new(All, "Tất cả"),
         new(Untranslated, "Chưa dịch"),
-        new(ReviewOnly, "review_only"),
+        new(ReviewOnly, "Cần xem lại"),
         new(Errors, "Chỉ dòng lỗi"),
     ];
 }

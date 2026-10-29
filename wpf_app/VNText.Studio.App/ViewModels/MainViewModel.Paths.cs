@@ -49,13 +49,14 @@ public sealed partial class MainViewModel
     // translate input made a blank CSV look invalid.
     internal const string TranslateCsvPickerTitle = "Chọn CSV cần dịch";
     internal const string CsvEditorPickerTitle = "Chọn CSV để sửa";
+    internal const string PatchCsvPickerTitle = "Chọn CSV để tạo patch";
     internal const string ImportTranslatedCsvPickerTitle = "Chọn translation.csv đã dịch để nhập";
 
     private async void ChooseTranslationCsv()
     {
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
-        var path = _pathPicker.PickTranslationCsvFile(TranslateCsvPickerTitle);
+        var path = _pathPicker.PickTranslationCsvFile(SelectedTab == WorkflowTabs.Patch ? PatchCsvPickerTitle : TranslateCsvPickerTitle);
         if (string.IsNullOrWhiteSpace(path))
             return;
 

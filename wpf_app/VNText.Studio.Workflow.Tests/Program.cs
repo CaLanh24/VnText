@@ -229,6 +229,7 @@ internal static partial class Program
         Run("CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess", CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess, failures);
         Run("ModelStatus_PresentsThePathOnceAndKeepsFailureContext", ModelStatus_PresentsThePathOnceAndKeepsFailureContext, failures);
         Run("ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist", ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist, failures);
+        Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
         Run("Labels_UseOneNameForAutomaticTranslationAndCsvPicking", Labels_UseOneNameForAutomaticTranslationAndCsvPicking, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
@@ -868,6 +869,16 @@ internal static partial class Program
             picker.LastCsvTitle = null;
             vm.OpenCsvEditorFileCommand.Execute(null);
             AssertEqual("Chọn CSV để sửa", picker.LastCsvTitle);
+
+            picker.LastCsvTitle = null;
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("Chọn CSV để tạo patch", picker.LastCsvTitle);
+            AssertFalse(picker.LastCsvTitle!.Contains("cần dịch", StringComparison.Ordinal));
+            vm.NavigateTabCommand.Execute("translate");
+            picker.LastCsvTitle = null;
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("Chọn CSV cần dịch", picker.LastCsvTitle);
         }
         finally
         {
@@ -1917,6 +1928,22 @@ internal static partial class Program
         // Rows without a preview (a saved review) still open the grid but not an empty preview.
         vm.ImageRegions.Add(new ImageTextRegion { Id = "r2", Box = new[] { 0, 0, 2, 2 }, SourceText = "Yo" });
         Require(vm.ImageHasRegions && !vm.ImageHasPreview && !vm.ImageShowEmptyState, "loaded rows must keep the grid open without a preview");
+    }
+
+    private static void CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue()
+    {
+        var review = CsvFilterModes.Options.Single(o => o.Value == "review_only");
+        AssertEqual("review_only", CsvFilterModes.ReviewOnly);
+        AssertEqual("Cần xem lại", review.Label);
+        Require(CsvFilterModes.Options.All(o => !o.Label.Contains('_')), "no filter label may show an internal name");
+        AssertEqual(4, CsvFilterModes.Options.Count);
+        var previous = UiText.Language;
+        try
+        {
+            UiText.SetLanguage("en");
+            AssertEqual("Needs review", UiText.Translate(review.Label));
+        }
+        finally { UiText.SetLanguage(previous); }
     }
 
     private static void Labels_UseOneNameForAutomaticTranslationAndCsvPicking()

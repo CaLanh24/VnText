@@ -243,6 +243,20 @@
 
     <SolidColorBrush x:Key="ErrorSoftBrush" Color="{StaticResource ErrorSoftColor}" />
 
+    <!-- Toast severity pairs (background / foreground / border); the dark pairs are set in UiAppearance. -->
+    <SolidColorBrush x:Key="ToastInfoBackgroundBrush" Color="#E9F1FF" />
+    <SolidColorBrush x:Key="ToastInfoForegroundBrush" Color="#111827" />
+    <SolidColorBrush x:Key="ToastInfoBorderBrush" Color="#2868E8" />
+    <SolidColorBrush x:Key="ToastSuccessBackgroundBrush" Color="#E6FAEF" />
+    <SolidColorBrush x:Key="ToastSuccessForegroundBrush" Color="#111827" />
+    <SolidColorBrush x:Key="ToastSuccessBorderBrush" Color="#16A34A" />
+    <SolidColorBrush x:Key="ToastWarningBackgroundBrush" Color="#FFF4DF" />
+    <SolidColorBrush x:Key="ToastWarningForegroundBrush" Color="#111827" />
+    <SolidColorBrush x:Key="ToastWarningBorderBrush" Color="#B56D00" />
+    <SolidColorBrush x:Key="ToastErrorBackgroundBrush" Color="#FFF0F0" />
+    <SolidColorBrush x:Key="ToastErrorForegroundBrush" Color="#111827" />
+    <SolidColorBrush x:Key="ToastErrorBorderBrush" Color="#C84040" />
+
 
 
     <SolidColorBrush x:Key="PurpleBrush" Color="{StaticResource PurpleAccentColor}" />

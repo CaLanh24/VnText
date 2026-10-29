@@ -100,6 +100,29 @@ internal static partial class Program
                         AssertTrue(ReferenceEquals(outerCard, outer.Content));
                         AssertTrue(outer.Effect is null);
                         outer.Close();
+                        // Content that grows AFTER the first layout (OCR rows) must keep header and footer inside the work area.
+                        var growing = new Border { Height = 80, Child = new TextBlock { Text = "empty" } };
+                        var grow = new AppDialogWindow(owner, "Growth bounds", growing, 560);
+                        grow.AddButton("Đóng", () => { }, true, true);
+                        grow.Show();
+                        grow.UpdateLayout();
+                        var area = grow.CurrentWorkAreaDips();
+                        grow.Top = area.Bottom - grow.ActualHeight - 12;     // bottom edge close to the taskbar, like a centred window that then grows
+                        grow.UpdateLayout();
+                        growing.Height = 5000;
+                        grow.UpdateLayout();
+                        grow.Dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                        grow.UpdateLayout();
+                        area = grow.CurrentWorkAreaDips();
+                        AssertTrue(grow.ActualHeight <= area.Height + 0.5);
+                        AssertTrue(grow.Top >= area.Top - 0.5);
+                        AssertTrue(grow.Top + grow.ActualHeight <= area.Bottom + 0.5);
+                        AssertTrue(grow.Left >= area.Left - 0.5 && grow.Left + grow.ActualWidth <= area.Right + 0.5);
+                        var footerButton = grow.ButtonPanel.Children.OfType<Button>().Single();
+                        var footerPoint = footerButton.TranslatePoint(new Point(0, footerButton.ActualHeight), grow);
+                        AssertTrue(footerPoint.Y <= grow.ActualHeight);
+                        AssertTrue(grow.BodyScroll.ScrollableHeight > 0);   // the body scrolls instead of pushing the footer out
+                        grow.Close();
                         Console.WriteLine("WPF app dialog interaction fixture: PASS (dark/light resources, long text, default/explicit owner modal, shared rounded shell/custom X/scroll body, affirmative click, safe No default, Escape and X safe dismiss, rounded footer corners, nested owner overlay restored)");
                         exitCode = 0;
                     }

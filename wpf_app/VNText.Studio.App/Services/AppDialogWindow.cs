@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -64,6 +66,7 @@ internal sealed class AppDialogWindow : Window
         FontSize = 14;
         var area = SystemParameters.WorkArea;
         var heightBound = owner is { ActualHeight: > 0 } ? owner.ActualHeight - 24 : area.Height - 48;
+        _ownerHeightBound = heightBound;
         MaxHeight = Math.Max(240, Math.Min(heightBound, area.Height - 24));
         MaxWidth = Math.Max(320, (owner is { ActualWidth: > 0 } ? owner.ActualWidth : area.Width) - 24);
         KeyboardNavigation.SetTabNavigation(this, KeyboardNavigationMode.Cycle);
@@ -145,8 +148,49 @@ internal sealed class AppDialogWindow : Window
             if (e.Key == Key.Escape) { e.Handled = true; Dismiss(); }
         };
         Closing += (_, _) => RaiseDismissIfNeeded();
-        Loaded += (_, _) => { AttachOverlay(); FocusDefault(); };
+        Loaded += (_, _) => { AttachOverlay(); FitToWorkArea(); FocusDefault(); };
+        // Content that grows after the first layout (OCR rows, a longer message) must keep the header and footer inside the work area.
+        SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };
         Closed += (_, _) => DetachOverlay();
+    }
+
+    private double _ownerHeightBound;
+
+    [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
+    [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)] private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public uint Flags; }
+
+    /// <summary>Work area (taskbar excluded) of the monitor this window is on, in the window's own DIPs.</summary>
+    internal Rect CurrentWorkAreaDips()
+    {
+        var fallback = SystemParameters.WorkArea;
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero) return fallback;
+        var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>() };
+        var monitor = MonitorFromWindow(handle, 2 /* MONITOR_DEFAULTTONEAREST */);
+        if (monitor == IntPtr.Zero || !GetMonitorInfo(monitor, ref info)) return fallback;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var sx = dpi.DpiScaleX <= 0 ? 1 : dpi.DpiScaleX;
+        var sy = dpi.DpiScaleY <= 0 ? 1 : dpi.DpiScaleY;
+        return new Rect(info.Work.Left / sx, info.Work.Top / sy, (info.Work.Right - info.Work.Left) / sx, (info.Work.Bottom - info.Work.Top) / sy);
+    }
+
+    /// <summary>Keeps the whole window (header and footer included) inside the work area: caps the height so the body scrolls, then moves the window back in.</summary>
+    internal void FitToWorkArea()
+    {
+        if (!IsLoaded) return;
+        var area = CurrentWorkAreaDips();
+        if (area.Width <= 0 || area.Height <= 0) return;
+        var limit = Math.Max(240, Math.Min(_ownerHeightBound > 0 ? _ownerHeightBound : area.Height, area.Height));
+        if (Math.Abs(MaxHeight - limit) > 0.5) MaxHeight = limit;
+        var height = Math.Min(ActualHeight, limit);
+        var width = Math.Min(ActualWidth, area.Width);
+        if (double.IsNaN(Top) || double.IsNaN(Left) || height <= 0) return;
+        var top = Math.Clamp(Top, area.Top, Math.Max(area.Top, area.Bottom - height));
+        var left = Math.Clamp(Left, area.Left, Math.Max(area.Left, area.Right - width));
+        if (Math.Abs(top - Top) > 0.5) Top = top;
+        if (Math.Abs(left - Left) > 0.5) Left = left;
     }
 
     /// <summary>Adds a footer button; clicking it is an explicit choice (no dismiss callback).</summary>

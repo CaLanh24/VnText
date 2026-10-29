@@ -455,6 +455,58 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn("Chọn file CSV", xaml)
         self.assertNotIn('Content="Chọn file"', xaml)
 
+    def test_toast_severity_pairs_are_readable_in_both_themes_and_the_second_style_batch_is_wired(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        tokens = (app / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
+        appearance = (app / "Services" / "UiAppearance.cs").read_text(encoding="utf-8")
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        dialog = (app / "Services" / "AppDialogWindow.cs").read_text(encoding="utf-8")
+        paths = (app / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
+        filters = (app / "Services" / "CsvFilterModes.cs").read_text(encoding="utf-8")
+        # (1) every severity has its own background/foreground/border pair per theme; text >= 4.5:1, border >= 3:1
+        severities = ("Info", "Success", "Warning", "Error")
+        light = dict(re.findall(r'x:Key="(Toast\w+Brush)" Color="(#[0-9A-Fa-f]{6})"', tokens))
+        dark = {key: night for key, _day, night in re.findall(r'Set\("(Toast\w+Brush)", C\("(#[0-9A-Fa-f]{6})", "(#[0-9A-Fa-f]{6})"\)\)', appearance)}
+        self.assertEqual(12, len(light))
+        self.assertEqual(12, len(dark))
+        for name, palette in (("light", light), ("dark", dark)):
+            for severity in severities:
+                background = palette[f"Toast{severity}BackgroundBrush"]
+                self.assertGreaterEqual(self._contrast(palette[f"Toast{severity}ForegroundBrush"], background), 4.5, (name, severity))
+                self.assertGreaterEqual(self._contrast(palette[f"Toast{severity}BorderBrush"], background), 3.0, (name, severity))
+        # the reported pair (light ink on the light warning surface) can no longer happen
+        self.assertLess(self._contrast("#EDF1F7", light["ToastWarningBackgroundBrush"]), 1.5)
+        self.assertNotEqual(dark["ToastWarningBackgroundBrush"].upper(), light["ToastWarningBackgroundBrush"].upper())
+        toast = xaml[xaml.index("<!-- Toast -->"):xaml.index('<Grid x:Name="GlossaryOverlay"')]
+        self.assertNotIn("InkBrush", toast)
+        for kind, severity in (("error", "Error"), ("warning", "Warning"), ("info", "Info")):
+            self.assertIn(f'Binding ToastKind}}" Value="{kind}"', toast)
+            for part in ("Background", "Border", "Foreground"):
+                self.assertIn(f"DynamicResource Toast{severity}{part}Brush", toast)
+        for part in ("Background", "Border", "Foreground"):
+            self.assertIn(f"DynamicResource ToastSuccess{part}Brush", toast)       # the default (success) pair
+        # (2) the shared dialog keeps header and footer inside the work area when content grows after loading
+        self.assertIn("GetMonitorInfo", dialog)
+        self.assertIn("SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };", dialog)
+        self.assertIn("Loaded += (_, _) => { AttachOverlay(); FitToWorkArea(); FocusDefault(); };", dialog)
+        # (3) image choices follow the theme
+        self.assertIn('Foreground="{DynamicResource InkBrush}"', panel)
+        self.assertIn('<Style TargetType="CheckBox">', panel)
+        self.assertIn("DisabledForegroundBrush", panel)
+        # (4) the two Lấy text actions share one row and one centre line; the status has its own row
+        row = xaml[xaml.index('x:Name="ExtractImageTextButton"'):xaml.index("Lấy text\" Foreground=\"White\"")]
+        self.assertIn('Grid.Row="1" Grid.Column="0"', row)
+        self.assertIn('x:Name="ExtractRunButton" Grid.Row="1" Grid.Column="1"', row)
+        self.assertEqual(2, row.count('VerticalAlignment="Center"'))
+        self.assertIn('Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"', xaml)
+        # (5) readable filter label with the stored value untouched; the Patch picker names its own step
+        self.assertIn('public const string ReviewOnly = "review_only";', filters)
+        self.assertIn('new(ReviewOnly, "Cần xem lại")', filters)
+        self.assertIn('PatchCsvPickerTitle = "Chọn CSV để tạo patch"', paths)
+        self.assertIn("SelectedTab == WorkflowTabs.Patch ? PatchCsvPickerTitle : TranslateCsvPickerTitle", paths)
+        self.assertIn('TranslateCsvPickerTitle = "Chọn CSV cần dịch"', paths)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"

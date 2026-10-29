@@ -58,6 +58,18 @@ public static class UiAppearance
         Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
         Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"));
         Set("HoverBorderBrush", C("#C5D7EC", "#5A7396"));
+        Set("ToastInfoBackgroundBrush", C("#E9F1FF", "#28436C"));
+        Set("ToastInfoForegroundBrush", C("#111827", "#EDF1F7"));
+        Set("ToastInfoBorderBrush", C("#2868E8", "#8CB5FF"));
+        Set("ToastSuccessBackgroundBrush", C("#E6FAEF", "#173D32"));
+        Set("ToastSuccessForegroundBrush", C("#111827", "#EDF1F7"));
+        Set("ToastSuccessBorderBrush", C("#16A34A", "#7BDEA7"));
+        Set("ToastWarningBackgroundBrush", C("#FFF4DF", "#4A3410"));
+        Set("ToastWarningForegroundBrush", C("#111827", "#FFF1D6"));
+        Set("ToastWarningBorderBrush", C("#B56D00", "#E0A33A"));
+        Set("ToastErrorBackgroundBrush", C("#FFF0F0", "#4A1F24"));
+        Set("ToastErrorForegroundBrush", C("#111827", "#FFE4E4"));
+        Set("ToastErrorBorderBrush", C("#C84040", "#FF8A8A"));
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));
         Set("GreenBrush", C("#16A34A", "#7BDEA7"));
