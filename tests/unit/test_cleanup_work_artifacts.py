@@ -2317,6 +2317,89 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertIn("epoch_rebaseline_approval_already_consumed", twice["reasons"])
             self.assertEqual(after_hop, manifest.read_bytes())
 
+    def test_release_014_rebaseline_is_independent_single_use_exact_scope_and_keeps_every_guard(self):
+        task_id = cleanup.RELEASE_TASK_014_BUDGET_ID
+        auth_id = cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID
+        auth_text = cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL
+        self.assertEqual("owner-direct-20261029-cho-phep-lam-di-014", auth_id)
+        self.assertIn("'cho phép, làm đi để t test'", auth_text)
+        self.assertIn("7caef0d407b2996938071bb2bb76a4d4c463b090", auth_text)
+        self.assertIn("002035a4a523fb09a538dc0f20879c6cffc186c9", auth_text)
+        self.assertEqual((task_id, "0.1.14", auth_text), cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[auth_id])
+        earlier = [key for key in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS if key != auth_id]
+        self.assertTrue(all(cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[key][0] != task_id for key in earlier))
+        mine = {"owner_rebaseline_authorization_id": auth_id, "owner_rebaseline_authorization": auth_text}
+
+        def guards(sha):
+            return self._release_013_guards(sha, version="0.1.14")
+
+        def hop(manifest, n):
+            before = manifest.read_bytes()
+            sha = f"{n + 140:040x}"
+            g = guards(sha)
+            with g[0], g[1], g[2], g[3]:
+                return cleanup.activate_prospective_epoch(
+                    dry_run=False, epoch_id=f"epoch-014-hop-{n}", source_sha=sha, release_task_id=task_id,
+                    transition_from_epoch_id=json.loads(before)["prospective_epoch"]["epoch_id"],
+                    expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                    owner_transition_authorization=cleanup.RELEASE_TASK_014_BUDGET_APPROVAL,
+                ), before
+
+        def rebaseline(manifest, sha, epoch_id, **overrides):
+            g = guards(sha)
+            kwargs = dict(mine)
+            kwargs.update(release_task_id=task_id)
+            kwargs.update(overrides)
+            with g[0], g[1], g[2], g[3]:
+                return self._release_013_rebaseline(manifest, sha, epoch_id, **kwargs)
+
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.14", task_id=task_id)
+            for n in range(1, 9):
+                result, _ = hop(manifest, n)
+                self.assertTrue(result["ok"], result)
+            exhausted, before = hop(manifest, 9)
+            self.assertIn("transition_active_epoch_integrity_failed", exhausted["reasons"])
+            self.assertEqual(before, manifest.read_bytes())
+            target = f"{7000:040x}"
+            for key in earlier:
+                other = cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[key]
+                refused = rebaseline(manifest, target, "epoch-014-other", owner_rebaseline_authorization_id=key, owner_rebaseline_authorization=other[2])
+                self.assertFalse(refused["ok"], refused)
+            wrong_task = rebaseline(manifest, target, "epoch-014-wrong-task", release_task_id=cleanup.RELEASE_TASK_013_BUDGET_ID)
+            self.assertFalse(wrong_task["ok"], wrong_task)
+            tampered = rebaseline(manifest, target, "epoch-014-tampered", owner_rebaseline_authorization=auth_text + " (extended)")
+            self.assertIn("epoch_rebaseline_owner_authorization_invalid", tampered["reasons"])
+            stale = rebaseline(manifest, target, "epoch-014-stale", expected_manifest_sha256="0" * 64)
+            self.assertFalse(stale["ok"], stale)
+            unknown = rebaseline(manifest, target, "epoch-014-unknown", owner_rebaseline_authorization_id="owner-direct-20261029-unregistered")
+            self.assertFalse(unknown["ok"], unknown)
+            self.assertEqual(before, manifest.read_bytes())
+            old_files = {p: p.read_bytes() for p in cleanup._prospective_epoch_root().rglob("*") if p.is_file()}
+            old_document = json.loads(before)
+            planned = rebaseline(manifest, target, "epoch-014-rebaseline", dry_run=True)
+            self.assertTrue(planned["ok"], planned)
+            self.assertEqual(before, manifest.read_bytes())
+            applied = rebaseline(manifest, target, "epoch-014-rebaseline")
+            self.assertTrue(applied["ok"], applied)
+            self.assertEqual([], applied["deletions"])
+            g = guards(target)
+            with g[0], g[1], g[2], g[3]:
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+            document = json.loads(manifest.read_bytes())
+            record = document["prospective_epoch"]["rebaseline_provenance"]
+            self.assertEqual(auth_id, record["authorization_id"])
+            self.assertEqual(auth_text, record["owner_authorization"])
+            self.assertEqual(before, Path(document["prospective_epoch"]["rollback"]["path"]).read_bytes())
+            self.assertEqual(old_document["artifacts"], document["artifacts"][: len(old_document["artifacts"])])
+            self.assertEqual(old_files, {p: p.read_bytes() for p in old_files})
+            result, _ = hop(manifest, 20)
+            self.assertTrue(result["ok"], result)
+            after_hop = manifest.read_bytes()
+            twice = rebaseline(manifest, f"{9000:040x}", "epoch-014-twice")
+            self.assertIn("epoch_rebaseline_approval_already_consumed", twice["reasons"])
+            self.assertEqual(after_hop, manifest.read_bytes())
+
     def test_release_013_rebaseline_refuses_wrong_task_version_text_lineage_and_active_task(self):
         cases = ("wrong_task", "wrong_version", "bad_text", "non_descendant", "active_012")
         for failure_case in cases:

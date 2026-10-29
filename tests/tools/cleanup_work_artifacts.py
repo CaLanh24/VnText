@@ -374,6 +374,19 @@ RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_6 = (
     "call_5c6b05faa7a54881a1c491eebbebc8a6, call_5fc7951df0eb4d5b845dd932e2818b7d and call_567ecb4e733c463c8cd2b1fe2bb51ef6; the ordinary "
     "eight-hop transition limit remains unchanged."
 )
+# First, independent single-use authority for release 0.1.14 (the ordinary eight-hop chain from epoch-20261028T070000Z-e6b2efa ended at
+# epoch-20261029T040000Z-3b014fd).  The Owner's DIRECT reply (2026-10-29, quoted exactly below) is recorded as this single-use authority;
+# it is never a reuse of an earlier 0.1.13 approval.
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID = "owner-direct-20261029-cho-phep-lam-di-014"
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL = (
+    "Owner 2026-10-29 answered directly with the exact words 'cho phép, làm đi để t test' (after Brain explained the eight-hop limit and asked for "
+    "a rebaseline for the exact 0.1.14 fix campaign) and authorizes ONE no-delete 0.1.14 epoch metadata rebaseline after the ordinary eight-hop "
+    "chain ended at epoch-20261029T040000Z-3b014fd, so that the focused gates and one DEV build for the seven bounded style fixes at source "
+    "7caef0d407b2996938071bb2bb76a4d4c463b090 (and its authority/focused-prerequisite descendants) can run; the version stays 0.1.14 and the public "
+    "v0.1.14 release at source 002035a4a523fb09a538dc0f20879c6cffc186c9 is unchanged (no push, release or tag replacement). It preserves the complete "
+    "existing epoch history, deletes nothing and relaxes no validator or protection. It is distinct from every 0.1.13 approval "
+    "(owner-direct-20261028-lam-cho-xong and the earlier question ids); the ordinary eight-hop transition limit remains unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -396,6 +409,9 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
     RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_ID_6: (
         RELEASE_TASK_013_BUDGET_ID, "0.1.13", RELEASE_TASK_013_EPOCH_REBASELINE_APPROVAL_6
+    ),
+    RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID: (
+        RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
