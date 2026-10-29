@@ -226,6 +226,8 @@ internal static partial class Program
         Run("PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine", PatchDelivery_InstallerLabelNamesTheDeliveryNotAnEngine, failures);
         Run("UiText_BadgeAndLocalTimeFollowTheLanguage", UiText_BadgeAndLocalTimeFollowTheLanguage, failures);
         Run("ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores", ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores, failures);
+        Run("CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess", CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess, failures);
+        Run("ModelStatus_PresentsThePathOnceAndKeepsFailureContext", ModelStatus_PresentsThePathOnceAndKeepsFailureContext, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
@@ -1816,6 +1818,113 @@ internal static partial class Program
         thread.Start();
         thread.Join();
         if (failure is not null) throw new InvalidOperationException(failure.Message, failure);
+    }
+
+    private static void CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_conflict_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            const string header = "key,source_text,translation,context,file_path,import_method\r\n";
+            File.WriteAllText(csv, header + "k1,Hello,Original,UI:Text,game/data.unity3d,unity_textasset_line\r\nk2,Bye,Tam biet,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"Bye"}]}""", Encoding.UTF8);
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            vm.CsvEditorRows[0].Translation = "Bản nháp của tôi";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            AssertTrue(vm.CsvEditorDirty);
+            AssertFalse(vm.HasCsvEditorSaveError);
+
+            // a REAL external change: the saved hash no longer matches
+            File.WriteAllText(csv, header + "k1,Hello,Chỉnh sửa bên ngoài,UI:Text,game/data.unity3d,unity_textasset_line\r\nk2,Bye,Tam biet,UI:Text,game/data.unity3d,unity_textasset_line\r\n",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            var externalBytes = File.ReadAllBytes(csv);
+
+            AssertFalse(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+            AssertFalse(vm.CsvEditorSaving);
+            Require(vm.HasCsvEditorSaveError, "the refusal is shown inline");
+            Require(vm.CsvEditorSaveError.StartsWith("Không lưu được:", StringComparison.Ordinal), vm.CsvEditorSaveError);
+            Require(vm.CsvEditorSaveError.Contains("Tải lại", StringComparison.Ordinal) && vm.CsvEditorSaveError.Contains("không bị ghi đè", StringComparison.Ordinal), "safe recovery, no forced overwrite: " + vm.CsvEditorSaveError);
+            // the getter no longer falls back to the generic text once saving ended
+            AssertEqual(vm.CsvEditorSaveError, vm.CsvEditorUserValidationMessage);
+            AssertTrue(vm.CsvEditorDirty);
+            AssertEqual("Bản nháp của tôi", vm.CsvEditorRows[0].Translation);
+            AssertTrue(externalBytes.SequenceEqual(File.ReadAllBytes(csv)));
+            var error = vm.CsvEditorSaveError;
+
+            // ordinary edit, filter, tab navigation and a cancelled reload do NOT clear it
+            vm.CsvEditorRows[1].Translation = "Sửa thêm";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[1]);
+            AssertEqual(error, vm.CsvEditorSaveError);
+            vm.CsvEditorSearch = "Hello";
+            AssertEqual(error, vm.CsvEditorSaveError);
+            vm.CsvEditorSearch = "";
+            vm.SelectedTab = WorkflowTabs.Translate;
+            vm.SelectedTab = WorkflowTabs.EditCsv;
+            AssertEqual(error, vm.CsvEditorSaveError);
+            vm.CsvEditorMessageBox = (_, _, _, _) => MessageBoxResult.Cancel;
+            vm.ReloadCsvEditorCommand.Execute(null);
+            AssertEqual(error, vm.CsvEditorSaveError);
+            AssertTrue(vm.CsvEditorDirty);
+            AssertEqual("Bản nháp của tôi", vm.CsvEditorRows[0].Translation);
+
+            // an explicit discard + reload loads the external file: only then does the error go
+            vm.CsvEditorMessageBox = (_, _, _, _) => MessageBoxResult.No;
+            vm.ReloadCsvEditorCommand.Execute(null);
+            AssertFalse(vm.HasCsvEditorSaveError);
+            AssertEqual("Chỉnh sửa bên ngoài", vm.CsvEditorRows[0].Translation);
+            AssertFalse(vm.CsvEditorDirty);
+
+            // a later successful save keeps it clear, and a new refusal appears again
+            vm.CsvEditorRows[0].Translation = "Lưu được";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            AssertTrue(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+            AssertFalse(vm.HasCsvEditorSaveError);
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch { /* best effort */ }
+        }
+    }
+
+    private static void ModelStatus_PresentsThePathOnceAndKeepsFailureContext()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        const string path = @"C:\app\data\models\opus-mt-en-vi-int8";
+        var previous = UiText.Language;
+        try
+        {
+            UiText.SetLanguage("vi");
+            vm.TestSetModelStatus("Model OPUS-MT INT8 sẵn sàng: " + path, path);
+            AssertEqual("Model OPUS-MT INT8 sẵn sàng.", vm.ModelStatusDisplay);
+            AssertEqual(path, vm.ModelFolder);                                   // the folder line keeps the real path
+            AssertTrue(vm.ModelStatus.Contains(path, StringComparison.Ordinal)); // the raw diagnostic keeps it too
+
+            vm.TestSetModelStatus("Model CTranslate2 chưa có tại " + path + ". Cần tải model OPUS-MT en→vi INT8 trước khi dịch.", path);
+            Require(!vm.ModelStatusDisplay.Contains(path, StringComparison.Ordinal), "path once: " + vm.ModelStatusDisplay);
+            Require(vm.ModelStatusDisplay.Contains("Cần tải model OPUS-MT", StringComparison.Ordinal), "the instruction stays: " + vm.ModelStatusDisplay);
+            Require(vm.ModelStatus.Contains(path, StringComparison.Ordinal), "raw status keeps the path");
+
+            // real failures are never trimmed: runtime errors and unknown messages stay whole, even when they mention the path
+            var runtime = "Không nạp được runtime CTranslate2 (ImportError: DLL load failed); Dịch tự động đang bị khóa.";
+            vm.TestSetModelStatus(runtime, path);
+            AssertEqual(runtime, vm.ModelStatusDisplay);
+            var unknown = "Không đọc được " + path + " vì file bị khóa bởi tiến trình khác";
+            vm.TestSetModelStatus(unknown, path);
+            AssertEqual(unknown, vm.ModelStatusDisplay);
+            AssertEqual("", MainViewModel.PresentModelStatus("", path));
+            AssertEqual("giữ nguyên", MainViewModel.PresentModelStatus("giữ nguyên", ""));
+
+            UiText.SetLanguage("en");
+            vm.TestSetModelStatus("Model OPUS-MT INT8 sẵn sàng: " + path, path);
+            AssertEqual("OPUS-MT INT8 model ready.", vm.ModelStatusDisplay);
+        }
+        finally { UiText.SetLanguage(previous); }
     }
 
     private static void PatchDelivery_RoutesRenPyInstructions()

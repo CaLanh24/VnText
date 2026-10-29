@@ -379,6 +379,57 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('Text="Chạy trên máy"', xaml)
         self.assertIn("{Binding LocalProcessingLabel}", xaml)
 
+    @staticmethod
+    def _contrast(foreground: str, background: str) -> float:
+        def luminance(color: str) -> float:
+            color = color.lstrip("#")
+            channels = [int(color[index:index + 2], 16) / 255 for index in (0, 2, 4)]
+            linear = [value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4 for value in channels]
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        high, low = sorted((luminance(foreground), luminance(background)), reverse=True)
+        return (high + 0.05) / (low + 0.05)
+
+    def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
+        import re
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        appearance = (app / "Services" / "UiAppearance.cs").read_text(encoding="utf-8")
+        tokens = (app / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
+        csv_vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        settings_vm = (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8")
+        # the preview and validation lines no longer use the 2.56:1 soft grey
+        preview = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
+        validation = xaml[xaml.index('x:Name="CsvEditorValidationText"'):xaml.index("</TextBlock>", xaml.index('x:Name="CsvEditorValidationText"'))]
+        for block in (preview, validation):
+            self.assertIn('Foreground="{DynamicResource MutedBrush}"', block)
+            self.assertNotIn("SoftTextBrush", block)
+        self.assertLess(self._contrast("#94A3B8", "#FFFFFF"), 3.0)          # the old pair, for the record
+        def pair(key: str):
+            match = re.search(r'"%s"[^\n]*?C\("(#[0-9A-Fa-f]{6})", "(#[0-9A-Fa-f]{6})"\)' % key, appearance)
+            return match.groups()
+        muted = pair("MutedBrush")
+        surface = pair("SurfaceBrush")
+        ink = pair("InkBrush")
+        subtle = pair("SubtlePanelBrush")
+        for theme in (0, 1):
+            self.assertGreaterEqual(self._contrast(muted[theme], surface[theme]), 4.5, f"muted on surface, theme {theme}")
+            self.assertGreaterEqual(self._contrast(ink[theme], subtle[theme]), 4.5, f"banner ink on its panel, theme {theme}")
+        # both banners use that themed pair (never the warning colour as text on a cream fill)
+        for name in ("CsvEditorLoadErrorBanner", "CsvEditorSaveErrorBanner"):
+            banner = xaml[xaml.index('x:Name="%s"' % name):xaml.index("</Border>", xaml.index('x:Name="%s"' % name))]
+            self.assertIn('Background="{DynamicResource SubtlePanelBrush}"', banner)
+            self.assertIn('Foreground="{DynamicResource InkBrush}"', banner)
+        # durable inline save error: set at each refusal for the open document, cleared only by a successful save or a loaded document
+        self.assertIn("SetCsvEditorSaveError(path", csv_vm)
+        self.assertGreaterEqual(csv_vm.count("SetCsvEditorSaveError("), 7)
+        self.assertIn('CsvEditorSaveError = "";                      // only a successful save', csv_vm)
+        self.assertIn('CsvEditorSaveError = "";                      // a loaded document starts clean', csv_vm)
+        self.assertNotIn("CsvEditorSaveError = \"\"", csv_vm.split("private void ApplyValidationFromBatch")[1])   # validation never clears it
+        # Settings: one short status + one ellipsized path with the full tooltip, raw diagnostic kept as the tooltip/ModelStatus
+        self.assertIn('Text="{Binding ModelStatusDisplay}"', xaml)
+        self.assertIn('Text="{Binding ModelFolder}"', xaml)
+        self.assertIn("PresentModelStatus", settings_vm)
+
     def test_csv_editor_controls_stay_visible_and_validation_stays_automatic(self):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")

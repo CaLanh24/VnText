@@ -1135,7 +1135,7 @@
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                                         <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
                                                             <TextBlock Text="Mô hình dịch trên máy" Style="{StaticResource SettingsRowLabelTextStyle}" />
-                                                            <TextBlock Text="{Binding ModelStatus}" Style="{StaticResource SettingsRowHelperTextStyle}" />
+                                                            <TextBlock Text="{Binding ModelStatusDisplay}" ToolTip="{Binding ModelStatus}" Style="{StaticResource SettingsRowHelperTextStyle}" />
                                                             <TextBlock Text="{Binding ModelFolder}" Style="{StaticResource SettingsRowHelperTextStyle}" Margin="0,4,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding ModelFolder}" />
                                                         </StackPanel>
                                                         <Button Grid.Column="1" Content="Mở thư mục" Command="{Binding OpenModelFolderCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" />
@@ -1301,11 +1301,18 @@
                                     </Border>
                                 </Grid>
 
-                                <Border Grid.Row="1" x:Name="CsvEditorLoadErrorBanner" Margin="0,6,0,0" Padding="10,7" CornerRadius="8" Background="{DynamicResource WarningSoftBrush}"
-                                        BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" VerticalAlignment="Top"
-                                        Visibility="{Binding HasCsvEditorLoadError, Converter={StaticResource BoolToVis}}">
-                                    <TextBlock Text="{Binding CsvEditorLoadError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource WarningBrush}" />
-                                </Border>
+                                <StackPanel Grid.Row="1" Margin="0,6,0,0" VerticalAlignment="Top">
+                                    <Border x:Name="CsvEditorLoadErrorBanner" Padding="10,7" CornerRadius="8" Background="{DynamicResource SubtlePanelBrush}"
+                                            BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
+                                            Visibility="{Binding HasCsvEditorLoadError, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding CsvEditorLoadError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                    </Border>
+                                    <Border x:Name="CsvEditorSaveErrorBanner" Margin="0,6,0,0" Padding="10,7" CornerRadius="8" Background="{DynamicResource SubtlePanelBrush}"
+                                            BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1"
+                                            Visibility="{Binding HasCsvEditorSaveError, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock Text="{Binding CsvEditorSaveError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                    </Border>
+                                </StackPanel>
                                 <StackPanel Grid.Row="2" Margin="0,5,0,0">
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,4">
                                     <Grid>
@@ -1350,7 +1357,7 @@
                                 </StackPanel>
 <StackPanel Grid.Row="3" Margin="0,6,0,0">
                                     <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False">
-                                        <TextBlock FontSize="12" Foreground="{DynamicResource SoftTextBrush}"
+                                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}"
                                                    Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
@@ -1363,8 +1370,19 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </ScrollViewer>
-                                    <TextBlock FontSize="12" Foreground="{DynamicResource SoftTextBrush}" Margin="0,2,0,0"
-                                               Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
+                                               Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <!-- the refusal is already shown, with its recovery, in the banner above -->
+                                                    <DataTrigger Binding="{Binding HasCsvEditorSaveError}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 </StackPanel>
 
                                 </Grid>

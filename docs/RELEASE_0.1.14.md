@@ -44,3 +44,13 @@ Lỗi mới phát hiện: `SetGlossaryBackdrop` blur mọi con của root trừ 
 
 - [https://github.com/CaLanh24/VnText/releases/tag/v0.1.14](https://github.com/CaLanh24/VnText/releases/tag/v0.1.14): stable, latest, tag `v0.1.14` → `002035a`, `main` fast-forward; 15/15 asset khớp tên, kích thước và sha256 (server digest) với receipt cục bộ.
 - Cleanup (qua registry, đọc lại, tách khỏi gate): đã dispose p14b, s14b, fx14 và hai source clone (p14a/s14a đã dispose trước đó). Giữ: baselines (0.1.8–0.1.13 + legacy 0.1.7, route cho bản kế tiếp), `inputs` (bản sao model), `fixtures` của 0.1.13 — consumer là build route cập nhật của bản kế tiếp, rà lại khi bắt đầu bản kế tiếp; `DEV_RUN/release-0.1.13/Setup.exe` là file của Owner (OWNER_TEST_PENDING), không xóa. Không giữ candidate cài thử vì không còn consumer. 29 root `TEST_RUN` lịch sử còn câu hỏi ownership, không phải release gate.
+
+## Sửa sau phát hành từ uiqa29/29b (Owner “sua di”, CHƯA phát hành, chưa đổi version)
+
+Ba finding còn lại của báo cáo kiểm thử lần sau, sửa trong phạm vi bounded và chờ native có mục tiêu của Brain trước mọi quyết định release:
+
+1. **P2 lưu lỗi bị mất sau khi hết trạng thái Saving** (`uiqa29b-conflict.png`): khi lưu bị từ chối (hash ngoài khác, key trùng, validate/ghi lỗi) lý do cụ thể kèm cách xử lý an toàn (“bản nháp được giữ, file ngoài không bị ghi đè, bấm Tải lại để Lưu/Bỏ/Hủy”) hiện bền trong banner của trình sửa CSV. Nó chỉ mất khi lưu thành công hoặc nạp document; sửa/lọc/đổi tab/validate và Hủy ở hộp thoại tải lại không xóa. Chỉ áp cho document đang mở (lưu của path khác không ghi trạng thái lỗi).
+2. **P2 tương phản** (`SoftTextBrush` #94A3B8 trên trắng 2,56:1 ở 12 DIP): dòng preview và dòng validation dùng `MutedBrush` (6,92:1 sáng, 7,93:1 tối); hai banner của trình sửa dùng nền `SubtlePanelBrush` + chữ `InkBrush` (banner tải lỗi trước đó dùng chữ cảnh báo trên nền kem chỉ đạt 3,74:1 và không đọc được ở theme tối). Không đổi palette toàn cục, font, geometry, vùng cuộn 170, preview/xác nhận/backup/Undo.
+3. **P3 Cài đặt – Dữ liệu – Mô hình dịch** lặp đường dẫn: dòng trạng thái ngắn (không còn đường dẫn) + một dòng đường dẫn có ellipsis và tooltip đầy đủ; `ModelStatus` thô, readiness và nút mở thư mục giữ nguyên. Chỉ hai dạng thông điệp của `model_status()` bị bỏ đường dẫn; lỗi runtime/ngoại lệ/thông điệp lạ giữ nguyên.
+
+Impeccable (scoped, không NO_PRODUCT/DESIGN mới): chỉ sửa trong ngữ cảnh code đang có, theo craft-floor (contrast ≥ 4.5:1, lỗi nêu vấn đề và cách khắc phục); không init/interview/hệ thiết kế mới, không đổi config/hook. Các điều chưa chứng minh trong báo cáo vẫn NOT_PROVEN. Evidence: `DEV_RUN/gatec/impl51-*.json`, candidate DEV riêng (không công khai).

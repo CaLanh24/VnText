@@ -36,7 +36,7 @@ public sealed partial class MainViewModel
 
     internal void RefreshLocalizedOptions()
     {
-        Raise(nameof(LocalProcessingLabel));
+        Raise(nameof(LocalProcessingLabel)); Raise(nameof(ModelStatusDisplay));
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
@@ -68,6 +68,28 @@ public sealed partial class MainViewModel
     private string _modelStatus = "Đang kiểm tra mô hình dịch…";
     public string ModelFolder => _modelFolder;
     public string ModelStatus => UiText.Translate(_modelStatus);
+    /// <summary>Short status for the Settings row: the model path is shown once, in the folder line below it (the raw ModelStatus keeps it for diagnostics).</summary>
+    public string ModelStatusDisplay => UiText.Translate(PresentModelStatus(_modelStatus, _modelFolder));
+
+    /// <summary>
+    /// Removes the path only from the two message shapes of vntext.mt_ct2_model.model_status() that embed it (ready: "...: PATH", missing: "... tại PATH. ...").
+    /// Every other text (runtime errors, exceptions, anything unknown) is returned whole so real failure context is never hidden.
+    /// </summary>
+    internal static string PresentModelStatus(string status, string folder)
+    {
+        if (string.IsNullOrWhiteSpace(status) || string.IsNullOrWhiteSpace(folder)) return status;
+        var ready = ": " + folder;
+        if (status.EndsWith(ready, StringComparison.Ordinal)) return status[..^ready.Length] + ".";
+        var missing = " tại " + folder + ".";
+        var at = status.IndexOf(missing, StringComparison.Ordinal);
+        return at >= 0 ? status.Remove(at, missing.Length).Insert(at, " trên máy.") : status;
+    }
+
+    internal void TestSetModelStatus(string status, string folder)
+    {
+        _modelStatus = status; _modelFolder = folder;
+        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(ModelStatusDisplay));
+    }
     public string WorkerStatus
     {
         get { try { return UiText.Translate(File.Exists(WorkerPaths.PythonExecutable()) ? "Python worker có sẵn" : "Thiếu Python worker"); }
@@ -159,7 +181,7 @@ public sealed partial class MainViewModel
             _modelStatus = "Không kiểm tra được mô hình dịch: " + ex.Message;
         }
         if (_disposed != 0) return;
-        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText));
+        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText));
         RunTranslateCommand?.RaiseCanExecuteChanged();
     }
     private void OpenSettingsFolder(string path)

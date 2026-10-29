@@ -93,6 +93,7 @@ public sealed partial class MainViewModel
     }
 
     private string _csvEditorLoadError = "";
+    private string _csvEditorSaveError = "";
     private string _csvEditorWarningSummary = "";
 
     /// <summary>Shown inline in the editor when a chosen CSV is rejected (the file name and the reason); the previously open document stays.</summary>
@@ -103,6 +104,34 @@ public sealed partial class MainViewModel
     }
 
     public bool HasCsvEditorLoadError => !string.IsNullOrEmpty(_csvEditorLoadError);
+
+    /// <summary>
+    /// Durable reason a save was refused (external hash conflict, duplicate keys, failed validation/write). It stays visible until a save
+    /// succeeds or a document is loaded; editing, filtering, tab changes, validation and a cancelled reload never clear it.
+    /// </summary>
+    public string CsvEditorSaveError
+    {
+        get => _csvEditorSaveError;
+        private set
+        {
+            if (!Set(ref _csvEditorSaveError, value)) return;
+            Raise(nameof(HasCsvEditorSaveError));
+            Raise(nameof(CsvEditorUserValidationMessage));
+        }
+    }
+
+    public bool HasCsvEditorSaveError => !string.IsNullOrEmpty(_csvEditorSaveError);
+
+    private const string CsvSaveKeepsDraftRecovery = " Bản nháp của bạn vẫn được giữ và file ngoài không bị ghi đè; bấm “Tải lại” để chọn Lưu, Bỏ hoặc Hủy.";
+    private const string CsvSaveFixRecovery = " Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại.";
+
+    /// <summary>Records the refusal only for the document that is open (a stale or concurrent save of another path must not paint this one).</summary>
+    private void SetCsvEditorSaveError(string path, string reason, string recovery)
+    {
+        if (!string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase)) return;
+        var text = string.IsNullOrWhiteSpace(reason) ? "không rõ lý do" : reason.Trim().TrimEnd('.');
+        CsvEditorSaveError = $"Không lưu được: {text}.{recovery}";
+    }
 
     /// <summary>Count, reason and where to look for the rows that saved or validated with warnings.</summary>
     public string CsvEditorWarningSummary
@@ -157,7 +186,9 @@ public sealed partial class MainViewModel
         private set { if (Set(ref _csvEditorValidationMessage, value)) Raise(nameof(CsvEditorUserValidationMessage)); }
     }
 
-    public string CsvEditorUserValidationMessage => _csvEditorRows.Count == 0 || CsvEditorLoading || CsvEditorValidating || CsvEditorSaving
+    public string CsvEditorUserValidationMessage => CsvEditorSaving ? CsvEditorValidationMessage
+        : !string.IsNullOrEmpty(CsvEditorSaveError) ? CsvEditorSaveError
+        : _csvEditorRows.Count == 0 || CsvEditorLoading || CsvEditorValidating
         ? CsvEditorValidationMessage
         : !string.IsNullOrEmpty(CsvEditorWarningSummary) ? CsvEditorWarningSummary
         : _csvEditorAllTranslationsEmpty ? "Chưa có bản dịch — chuyển sang Dịch tự động để bắt đầu."
@@ -552,6 +583,7 @@ public sealed partial class MainViewModel
         _csvEditorSourceSha256 = null;
         CsvEditorValidationMessage = "";
         CsvEditorWarningSummary = "";
+        CsvEditorSaveError = "";                      // a loaded document starts clean
         CsvEditorPatchEligible = 0;
         CsvEditorPatchBlocked = 0;
         CsvEditorBatchActionable = 0;
@@ -1193,6 +1225,7 @@ public sealed partial class MainViewModel
         {
             CsvEditorStatus = "Chưa lưu — không xác minh được CSV gốc; hãy tải lại file.";
             CsvEditorValidationMessage = CsvEditorStatus;
+            SetCsvEditorSaveError(path, "không xác minh được CSV gốc", CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
             return false;
         }
@@ -1202,6 +1235,7 @@ public sealed partial class MainViewModel
             var duplicateMessage = CsvEditorDiagnostics.FormatDuplicateMessage(duplicates);
             CsvEditorValidationMessage = duplicateMessage;
             CsvEditorStatus = $"Chưa lưu — {duplicates.Count} key trùng";
+            SetCsvEditorSaveError(path, $"{duplicates.Count} key trùng — {duplicateMessage}", CsvSaveFixRecovery);
             AppendLog(duplicateMessage);
             ShowToast(duplicateMessage, "error");
             return false;
@@ -1223,6 +1257,7 @@ public sealed partial class MainViewModel
         {
             CsvEditorStatus = $"Lưu thất bại: {ex.Message}";
             CsvEditorValidationMessage = CsvEditorStatus;
+            SetCsvEditorSaveError(path, ex.Message, CsvSaveKeepsDraftRecovery);
             AppendLog(CsvEditorStatus);
             ShowToast(CsvEditorStatus, "error");
             return false;
@@ -1255,6 +1290,7 @@ public sealed partial class MainViewModel
             CsvEditorValidationMessage = validation.Error ?? "Không thể lưu — kiểm tra thất bại";
             CsvEditorStatus = CsvEditorValidationMessage;
             AppendLog(CsvEditorValidationMessage);
+            SetCsvEditorSaveError(path, CsvEditorValidationMessage, CsvSaveFixRecovery);
             ShowToast(CsvEditorValidationMessage, "error");
             return false;
         }
@@ -1264,6 +1300,7 @@ public sealed partial class MainViewModel
             CsvEditorStatus = save?.Error ?? "Lưu thất bại";
             CsvEditorValidationMessage = CsvEditorStatus;
             AppendLog(CsvEditorStatus);
+            SetCsvEditorSaveError(path, CsvEditorStatus, CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
             return false;
         }
@@ -1273,10 +1310,13 @@ public sealed partial class MainViewModel
             CsvEditorStatus = "Lưu thất bại — không nhận được mã xác minh file đã lưu. Hãy tải lại CSV trước khi tiếp tục.";
             CsvEditorValidationMessage = CsvEditorStatus;
             AppendLog(CsvEditorStatus);
+            SetCsvEditorSaveError(path, "không nhận được mã xác minh file đã lưu", CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
             return false;
         }
         _csvEditorSourceSha256 = save.SourceSha256;
+        if (string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase))
+            CsvEditorSaveError = "";                      // only a successful save of this document clears a refusal
         TranslationCsvPath = path;
         var unchanged = editGeneration == Volatile.Read(ref _csvEditorEditGeneration)
             && string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase);

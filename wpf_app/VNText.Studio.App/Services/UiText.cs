@@ -15,6 +15,8 @@ public static class UiText
     {
         ["Chạy trên máy"] = "On-device processing",
         ["Mở nhật ký"] = "Open log",
+        ["Model OPUS-MT INT8 sẵn sàng."] = "OPUS-MT INT8 model ready.",
+        ["Model CTranslate2 chưa có trên máy. Cần tải model OPUS-MT en→vi INT8 trước khi dịch."] = "CTranslate2 model is not on this device. Download the OPUS-MT en→vi INT8 model before translating.",
         ["Chép vị trí tệp"] = "Copy file location",
         ["Chép thông tin lỗi"] = "Copy error details",
         ["Gói patch có installer — VNTextPatchInstaller.exe"] = "Patch package with installer — VNTextPatchInstaller.exe",
