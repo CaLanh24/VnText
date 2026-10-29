@@ -17,7 +17,7 @@ public sealed partial class MainViewModel
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); } } }
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); RaiseImageContentState(); } } }
     public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
     public ImageSource? ImagePreview
     {
@@ -27,7 +27,20 @@ public sealed partial class MainViewModel
             if (!Set(ref _imagePreview, value)) return;
             Raise(nameof(ImagePreviewPixelWidth));
             Raise(nameof(ImagePreviewPixelHeight));
+            RaiseImageContentState();
         }
+    }
+    /// <summary>The preview and the region grid only take room once there is an image/data to show; otherwise one hint explains the next step.</summary>
+    public bool ImageHasPreview => _imagePreview is not null;
+    public bool ImageHasRegions => ImageRegions.Count > 0;
+    public bool ImageShowEmptyState => !ImageHasPreview && !ImageHasRegions;
+    public string ImageEmptyHint => string.IsNullOrWhiteSpace(_imagePath)
+        ? "Chọn ảnh để xem trước và OCR"
+        : "Bấm “OCR ảnh đã chọn” để xem trước và đọc text trong ảnh này.";
+    internal void TestSetImagePreview(ImageSource? preview) => ImagePreview = preview;
+    private void RaiseImageContentState()
+    {
+        Raise(nameof(ImageHasPreview)); Raise(nameof(ImageHasRegions)); Raise(nameof(ImageShowEmptyState)); Raise(nameof(ImageEmptyHint));
     }
     /// <summary>Preview size in source PIXELS.  Region boxes are source pixels, while BitmapSource.Width/Height are DPI-scaled
     /// DIPs (a 600x200 px image at 300 DPI is 192x64 DIP), so the overlay canvas must use these, not Width/Height.</summary>
@@ -133,6 +146,7 @@ public sealed partial class MainViewModel
             foreach (ImageTextRegion region in e.OldItems) { region.PropertyChanged -= OnImageRegionPropertyChanged; _trackedImageRegions.Remove(region); }
         if (e.NewItems is not null)
             foreach (ImageTextRegion region in e.NewItems) if (_trackedImageRegions.Add(region)) region.PropertyChanged += OnImageRegionPropertyChanged;
+        RaiseImageContentState();
         OnImageReviewChanged();
     }
     private bool CanCreateImageDelivery() =>

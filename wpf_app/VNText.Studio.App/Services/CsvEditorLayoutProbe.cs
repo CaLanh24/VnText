@@ -254,7 +254,7 @@ internal static class CsvEditorLayoutProbe
         var loadedRowCount = await window.Dispatcher.InvokeAsync(() => vm.CsvEditorRows.Count);
         var gateStatsReflectsDraft = gateStats.Contains($"Chưa dịch {loadedRowCount:N0}", StringComparison.Ordinal)
             && gateStats.Contains("Cần xem lại 0", StringComparison.Ordinal);
-        var blankDraftMessageOk = validationMessage == "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
+        var blankDraftMessageOk = validationMessage == "Chưa có bản dịch — chuyển sang Dịch tự động để dịch CSV."
             && gateStatsReflectsDraft && blankDraftRowStatusesClear;
         var ok = blankDraftMessageOk && metrics.Count == 3 && metrics.All(m =>
             m.ActualWindowWidth > 0 && m.ActualWindowHeight > 0 && m.ContentViewportWidth > 0

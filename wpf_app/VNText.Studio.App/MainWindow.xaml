@@ -57,12 +57,8 @@
         </Style>
         <Style x:Key="AboutInfoSurfaceStyle" TargetType="Border">
             <Setter Property="UseLayoutRounding" Value="True" /><Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="ctrl:HoverMotion.Kind" Value="AboutCard" />
+            <!-- Static information card: no hover border, shadow or motion (only the destination cards signal a click). -->
             <Setter Property="BorderThickness" Value="1" /><Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
-            <Style.Triggers><Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="#4063ED" />
-                <Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#475569" BlurRadius="24" ShadowDepth="6" Opacity="0.12" RenderingBias="Quality" /></Setter.Value></Setter>
-            </Trigger></Style.Triggers>
         </Style>
     </Window.Resources>
 
@@ -118,7 +114,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="translate">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="translate" ToolTip="Dịch trên máy bằng mô hình local, không gửi nội dung ra ngoài.">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=translate}" />
@@ -128,7 +124,7 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="Dịch local" />
+                            <TextBlock Text="Dịch tự động" />
                         </StackPanel>
                     </Button>
 
@@ -479,7 +475,7 @@
                                         </StackPanel>
                                         <TextBlock Text="{Binding ExtractProgressEta, StringFormat='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Command="{Binding RunExtractCommand}">
+                                    <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" VerticalAlignment="Center" Command="{Binding RunExtractCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Data="{StaticResource ScanIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="White" Width="16" Height="16" Margin="0,0,8,0" />
                                             <TextBlock Text="Lấy text" Foreground="White" />
@@ -540,7 +536,7 @@
                                             </Border>
                                             <Button x:Name="ChooseTranslateCsvButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
                                                     Command="{Binding ChooseTranslationCsvCommand}">
-                                                <TextBlock Text="Chọn file CSV" />
+                                                <TextBlock Text="Chọn CSV" />
                                             </Button>
                                         </Grid>
                                         <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage}" Margin="0,8,0,0" FontSize="{StaticResource UiBodySize}"
@@ -1294,7 +1290,7 @@
                                         <TextBlock Text="{Binding CsvEditorLockText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
                                                    TextWrapping="Wrap" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <Button Grid.Column="2" Content="Chọn file" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}" />
+                                    <Button Grid.Column="2" Content="Chọn CSV" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}" />
                                     <Border Grid.Column="3" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding CsvEditorDirty, Converter={StaticResource BoolToVis}}">
                                         <TextBlock Text="{Binding CsvEditorDirtySummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
@@ -1345,11 +1341,11 @@
                                                       ItemsSource="{Binding CsvBulkScopeOptions}" SelectedValue="{Binding CsvBulkScope, Mode=TwoWay}"
                                                       SelectedValuePath="Value" DisplayMemberPath="Label" Width="144" Height="32"
                                                       VerticalAlignment="Center" Style="{StaticResource SettingsCombo}" />
-                                            <UniformGrid Grid.Column="1" Columns="3" HorizontalAlignment="Stretch" VerticalAlignment="Center">
-                                                <Button x:Name="CsvBulkPreviewButton" Content="Xem trước" ToolTip="Đếm các dòng và lần thay thế trước khi áp dụng." Style="{StaticResource OutlineButton}" Margin="0,0,4,0" Command="{Binding BulkReplaceCsvCommand}" />
-                                                <Button x:Name="CsvBulkApplyButton" Content="Áp dụng" Style="{StaticResource PrimaryButton}" Margin="0,0,4,0" Command="{Binding ApplyBulkReplaceCsvCommand}" />
-                                                <Button x:Name="CsvBulkUndoButton" Content="Hoàn tác" Style="{StaticResource OutlineButton}" Margin="0" Command="{Binding UndoBulkReplaceCsvCommand}" />
-                                            </UniformGrid>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Button x:Name="CsvBulkPreviewButton" Content="Xem trước" ToolTip="Đếm các dòng và lần thay thế trước khi áp dụng." Style="{StaticResource OutlineButton}" MinWidth="96" Margin="0,0,8,0" Command="{Binding BulkReplaceCsvCommand}" />
+                                                <Button x:Name="CsvBulkApplyButton" Content="Áp dụng" Style="{StaticResource PrimaryButton}" MinWidth="96" Margin="0,0,8,0" Command="{Binding ApplyBulkReplaceCsvCommand}" />
+                                                <Button x:Name="CsvBulkUndoButton" Content="Hoàn tác" Style="{StaticResource OutlineButton}" MinWidth="96" Margin="0" Command="{Binding UndoBulkReplaceCsvCommand}" />
+                                            </StackPanel>
                                         </Grid>
 </Grid>
                                 </Border>
@@ -1506,7 +1502,7 @@
               Background="#8C181F2D" Visibility="Collapsed" Focusable="True"
               PreviewKeyDown="GlossaryOverlay_PreviewKeyDown"
               PreviewMouseDown="GlossaryOverlay_PreviewMouseDown">
-            <Border Width="720" MaxHeight="610" Margin="24" Padding="22"
+            <Border Width="720" MaxHeight="610" Margin="24" Padding="0"
                     Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}"
                     BorderThickness="1" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center"
                     KeyboardNavigation.TabNavigation="Cycle">
@@ -1516,14 +1512,14 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="0,0,0,14" VerticalAlignment="Top">
+                    <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="{StaticResource UiDialogHeaderPadding}" VerticalAlignment="Top">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <StackPanel>
-                            <TextBlock Text="Thuật ngữ ưu tiên" Style="{StaticResource UiSectionTitleTextStyle}" />
+                            <TextBlock Text="Thuật ngữ ưu tiên" Style="{StaticResource UiSectionTitleTextStyle}" FontSize="{StaticResource UiDialogTitleSize}" FontWeight="Bold" />
                             <TextBlock Text="Chọn cách dịch muốn dùng thống nhất cho những từ thường gặp." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
                             <TextBlock Text="{Binding GlossaryStatus}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
                         </StackPanel>
@@ -1534,7 +1530,7 @@
                         </Button>
                     </Grid>
                     </Border>
-                    <Grid Grid.Row="1" Margin="0,18,0,0">
+                    <Grid Grid.Row="1" Margin="28,18,28,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -1559,7 +1555,7 @@
                                 Command="{Binding AddGlossaryEntryCommand}" IsDefault="True" />
                     </Grid>
                     <ListBox x:Name="GlossaryListBox" Grid.Row="2" ItemsSource="{Binding GlossaryEntries}"
-                             Height="300" Margin="0,16,0,0" BorderBrush="{DynamicResource LineBrush}"
+                             Height="300" Margin="28,16,28,28" BorderBrush="{DynamicResource LineBrush}"
                              BorderThickness="1" Background="{DynamicResource SurfaceBrush}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.ItemContainerStyle>
@@ -1580,7 +1576,7 @@
                                     <TextBlock Text="{Binding Term}" FontSize="12" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="→" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="10,0" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="2" Text="{Binding Translation}" FontSize="12" Foreground="{DynamicResource BlueBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                    <Button Grid.Column="3" Content="Xóa" Padding="8,2" MinWidth="52" MinHeight="28" Height="28" FontSize="12" VerticalAlignment="Center" Style="{StaticResource OutlineButton}"
+                                    <Button Grid.Column="3" Content="Xóa" MinWidth="52" FontSize="12" VerticalAlignment="Center" Style="{StaticResource CompactOutlineButton}"
                                             ToolTip="Xóa thuật ngữ này" Command="{Binding DataContext.RemoveGlossaryEntryCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" CommandParameter="{Binding}" />
                                 </Grid>
                             </DataTemplate>

@@ -78,6 +78,7 @@ public static class UiText
         ["Lấy text"] = "Extract text",
         ["Dịch local"] = "Local translation",
         ["Dịch tự động"] = "Automatic translation",
+        ["Dịch trên máy bằng mô hình local, không gửi nội dung ra ngoài."] = "Translates on this computer with a local model; nothing is sent out.",
         ["Sửa CSV"] = "CSV editor",
         ["Tạo patch"] = "Create patch",
         ["Chọn game, rồi bấm Lấy text."] = "Choose a game, then extract text.",

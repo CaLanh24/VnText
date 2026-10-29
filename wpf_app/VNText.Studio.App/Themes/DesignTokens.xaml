@@ -73,6 +73,12 @@
     <CornerRadius x:Key="UiCardRadius">18</CornerRadius>
     <Thickness x:Key="UiCardPadding">24,20</Thickness>
     <sys:Double x:Key="UiControlHeight">34</sys:Double>
+    <sys:Double x:Key="UiControlHeightStandard">36</sys:Double>
+    <!-- Shared modal chrome (AppDialogWindow/Journal/Update+ReleaseNotes/Glossary): title 20 Bold, header 28,20,24,20, body 28,20. -->
+    <sys:Double x:Key="UiDialogTitleSize">20</sys:Double>
+    <Thickness x:Key="UiDialogHeaderPadding">28,20,24,20</Thickness>
+    <Thickness x:Key="UiDialogBodyPadding">28,20,28,20</Thickness>
+    <sys:Double x:Key="UiControlHeightCompact">30</sys:Double>
     <sys:Double x:Key="UiCompactControlHeight">32</sys:Double>
     <CornerRadius x:Key="UiControlRadius">10</CornerRadius>
     <Thickness x:Key="UiSectionTopGap">0,16,0,0</Thickness>
@@ -248,6 +254,10 @@
     <SolidColorBrush x:Key="FieldBackgroundBrush" Color="{StaticResource FieldBackgroundColor}" />
 
     <SolidColorBrush x:Key="SubtlePanelBrush" Color="{StaticResource SubtlePanelColor}" />
+
+    <SolidColorBrush x:Key="HoverSurfaceBrush" Color="#F0F6FC" />
+
+    <SolidColorBrush x:Key="HoverBorderBrush" Color="#C5D7EC" />
 
     <SolidColorBrush x:Key="LogPanelBrush" Color="{StaticResource LogPanelColor}" />
 

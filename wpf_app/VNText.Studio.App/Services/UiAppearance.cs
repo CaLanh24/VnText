@@ -56,6 +56,8 @@ public static class UiAppearance
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));
         Set("NavHoverBrush", C("#0E000000", "#354258"));
         Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
+        Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"));
+        Set("HoverBorderBrush", C("#C5D7EC", "#5A7396"));
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));
         Set("GreenBrush", C("#16A34A", "#7BDEA7"));

@@ -66,20 +66,20 @@ internal sealed class UpdateWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         if (notesOnly) grid.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
-        var header = new Grid { Margin = new Thickness(24, 17, 24, 17) };
+        var header = new Grid { Margin = AppDialogWindow.HeaderPadding };
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         header.ColumnDefinitions.Add(new ColumnDefinition()); header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var icon = new Border { Width = 28, Height = 28, CornerRadius = new CornerRadius(8), Background = Gradient(false), Margin = new Thickness(0, 0, 12, 0) };
         icon.Child = new TextBlock { Text = notesOnly ? "≡" : "↻", Foreground = Brushes.White, FontSize = 19, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         if (!notesOnly) header.Children.Add(icon);
         var heading = new TextBlock { Text = notesOnly ? "Ghi chú phát hành" : successVersion is null ? "Có bản cập nhật mới" : "Cập nhật thành công",
-            FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
+            FontSize = AppDialogWindow.HeaderTitleSize, FontWeight = FontWeights.Bold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         Grid.SetColumn(heading, 1); header.Children.Add(heading);
         var close = new Button { Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center }, Style = (Style)owner.FindResource("DialogCloseButton") };
         AutomationProperties.SetName(close, "Đóng " + Title); close.ToolTip = "Đóng (Esc)";
         close.Click += (_, _) => Close(); Grid.SetColumn(close, 2); header.Children.Add(close);
         grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
-        var body = new Grid { Margin = new Thickness(26, 18, 26, 18) }; Grid.SetRow(body, 1); grid.Children.Add(body);
+        var body = new Grid { Margin = AppDialogWindow.BodyPadding }; Grid.SetRow(body, 1); grid.Children.Add(body);
         for (var n = 0; n < 4; n++) body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         if (notesOnly) body.RowDefinitions[3].Height = new GridLength(1, GridUnitType.Star);
         _version = new TextBlock { Foreground = notesOnly ? Brush("MutedBrush") : Brush("BlueBrush"), FontSize = 13, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };

@@ -228,6 +228,8 @@ internal static partial class Program
         Run("ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores", ModalBackdrop_BlursOnlyBackgroundAndKeepsToastSharpAndRestores, failures);
         Run("CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess", CsvEditor_ConflictSaveKeepsDurableInlineErrorUntilLoadOrSuccess, failures);
         Run("ModelStatus_PresentsThePathOnceAndKeepsFailureContext", ModelStatus_PresentsThePathOnceAndKeepsFailureContext, failures);
+        Run("ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist", ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist, failures);
+        Run("Labels_UseOneNameForAutomaticTranslationAndCsvPicking", Labels_UseOneNameForAutomaticTranslationAndCsvPicking, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
         Run("PartialPackage_TranslateNotComplete", PartialPackage_TranslateNotComplete, failures);
@@ -1889,6 +1891,41 @@ internal static partial class Program
         {
             try { Directory.Delete(root, true); } catch { /* best effort */ }
         }
+    }
+
+    private static void ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        var changed = new List<string>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
+        // Null / empty: one explanatory hint, nothing reserved for the preview or the grid.
+        Require(vm.ImageShowEmptyState && !vm.ImageHasPreview && !vm.ImageHasRegions, "nothing selected must show only the hint");
+        AssertEqual("Chọn ảnh để xem trước và OCR", vm.ImageEmptyHint);
+        // Selected but not yet read (or the load failed): still no preview/rows, and the hint names the next step.
+        vm.ImagePath = Path.Combine(Path.GetTempPath(), "does-not-exist.png");
+        Require(vm.ImageShowEmptyState && !vm.ImageHasPreview && !vm.ImageHasRegions, "a selected image that failed to load must stay collapsed");
+        Require(vm.ImageEmptyHint.Contains("OCR ảnh đã chọn", StringComparison.Ordinal), "selected-image hint must name the OCR action");
+        Require(changed.Contains("ImageEmptyHint") && changed.Contains("ImageShowEmptyState"), "the empty-state bindings must refresh when the path changes");
+        // Loaded: preview and rows open, the hint goes away, and a new selection returns to the collapsed state.
+        vm.TestSetImagePreview(System.Windows.Media.Imaging.BitmapSource.Create(2, 2, 96, 96, System.Windows.Media.PixelFormats.Gray8, null, new byte[4], 2));
+        Require(vm.ImageHasPreview && !vm.ImageShowEmptyState, "a loaded preview must open the preview region");
+        vm.ImageRegions.Add(new ImageTextRegion { Id = "r1", Box = new[] { 0, 0, 2, 2 }, SourceText = "Hi" });
+        Require(vm.ImageHasRegions && !vm.ImageShowEmptyState, "a region must open the grid");
+        vm.ImagePath = Path.Combine(Path.GetTempPath(), "other.png");
+        Require(!vm.ImageHasPreview && !vm.ImageHasRegions && vm.ImageShowEmptyState, "choosing another image must drop the old preview and rows");
+        // Rows without a preview (a saved review) still open the grid but not an empty preview.
+        vm.ImageRegions.Add(new ImageTextRegion { Id = "r2", Box = new[] { 0, 0, 2, 2 }, SourceText = "Yo" });
+        Require(vm.ImageHasRegions && !vm.ImageHasPreview && !vm.ImageShowEmptyState, "loaded rows must keep the grid open without a preview");
+    }
+
+    private static void Labels_UseOneNameForAutomaticTranslationAndCsvPicking()
+    {
+        var xaml = File.ReadAllText(Path.Combine(RepoRoot(), "wpf_app", "VNText.Studio.App", "MainWindow.xaml"), Encoding.UTF8);
+        Require(!xaml.Contains("Dịch local", StringComparison.Ordinal), "the sidebar must use the heading name, not Dịch local");
+        Require(xaml.Contains("<TextBlock Text=\"Dịch tự động\" />", StringComparison.Ordinal), "the sidebar must say Dịch tự động");
+        Require(!xaml.Contains("Chọn file CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn file\"", StringComparison.Ordinal), "CSV pickers must not use the longer or generic names");
+        AssertEqual(3, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn CSV\"").Count);
     }
 
     private static void ModelStatus_PresentsThePathOnceAndKeepsFailureContext()

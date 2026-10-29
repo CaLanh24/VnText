@@ -389,6 +389,72 @@ class WpfWorkflowTests(unittest.TestCase):
         high, low = sorted((luminance(foreground), luminance(background)), reverse=True)
         return (high + 0.05) / (low + 0.05)
 
+    def test_style_system_sizes_hover_about_modal_and_labels_are_shared(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        styles = (app / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        tokens = (app / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
+        appearance = (app / "Services" / "UiAppearance.cs").read_text(encoding="utf-8")
+        journal = (app / "JournalWindow.cs").read_text(encoding="utf-8")
+        dialog = (app / "Services" / "AppDialogWindow.cs").read_text(encoding="utf-8")
+        update = (app / "UpdateWindow.cs").read_text(encoding="utf-8")
+        image = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        # (1) two shared sizes; Primary and Outline share the standard one, compact is explicit
+        self.assertIn('x:Key="UiControlHeightStandard">36<', tokens)
+        self.assertIn('x:Key="UiControlHeightCompact">30<', tokens)
+        self.assertEqual(2, styles.count('Property="MinHeight" Value="{StaticResource UiControlHeightStandard}"'))
+        for key in ("GuiPrimaryButtonStyle", "GuiOutlineButtonStyle"):
+            block = styles[styles.index('x:Key="%s"' % key):]
+            block = block[:block.index("</Style>")]
+            self.assertIn('Property="VerticalAlignment" Value="Center"', block, key)
+        self.assertIn('x:Key="CompactOutlineButton"', styles)
+        self.assertIn('Property="MinHeight" Value="{StaticResource UiControlHeightCompact}"', styles)
+        self.assertIn('Style="{StaticResource PrimaryButton}" VerticalAlignment="Center" Command="{Binding RunExtractCommand}"', xaml)
+        self.assertNotIn("Height=38", journal)
+        self.assertNotIn('Padding="14,7"', image)
+        # (2) the Journal toggle/buttons use a theme pair, not the hard-coded light hover
+        self.assertNotIn("JournalHoverBrush", journal)
+        self.assertNotIn("240,246,252", journal)
+        self.assertEqual(2, journal.count('Value="{DynamicResource HoverSurfaceBrush}"'))
+        self.assertGreaterEqual(journal.count('<Setter Property="Foreground" Value="{DynamicResource InkBrush}"/>'), 4)
+        self.assertIn('Property="FocusVisualStyle" Value="{DynamicResource KeyboardFocusStyle}"', journal)
+        for theme, ink, hover in (("light", "#111827", "#F0F6FC"), ("dark", "#EDF1F7", "#354258")):
+            self.assertIn(hover.lstrip("#"), (tokens + appearance).upper().replace("#", ""), theme)
+            self.assertGreaterEqual(self._contrast(ink, hover), 7.0, theme)
+        self.assertIn('Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"))', appearance)
+        # (3) the bulk action buttons size to their content
+        self.assertEqual(3, xaml.count('MinWidth="96"'))
+        # (4) static About cards carry no interactive hover; the destination cards keep it
+        info = xaml[xaml.index('x:Key="AboutInfoSurfaceStyle"'):xaml.index("</Window.Resources>")]
+        self.assertNotIn("HoverMotion", info)
+        self.assertNotIn("IsMouseOver", info)
+        self.assertNotIn("DropShadowEffect", info)
+        destination = xaml[xaml.index('x:Key="AboutDestinationStyle"'):xaml.index('x:Key="AboutInfoSurfaceStyle"')]
+        self.assertIn("HoverMotion.Kind", destination)
+        self.assertIn("IsMouseOver", destination)
+        # (5) the empty image workspace reserves nothing until there is data
+        self.assertIn('Visibility="{Binding ImageHasPreview, Converter={StaticResource PanelBoolToVis}}"', image)
+        self.assertEqual(2, image.count('Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}"'))
+        self.assertIn("{Binding ImageEmptyHint}", image)
+        # (6) one modal header: title size/weight, padding and body from the same values
+        self.assertIn('x:Key="UiDialogTitleSize">20<', tokens)
+        self.assertIn('x:Key="UiDialogHeaderPadding">28,20,24,20<', tokens)
+        self.assertIn("HeaderTitleSize = 20;", dialog)
+        self.assertIn("HeaderPadding = new(28, 20, 24, 20);", dialog)
+        self.assertIn("BodyPadding = new(28, 20, 28, 20);", dialog)
+        for source in (journal, update):
+            self.assertIn("AppDialogWindow.HeaderPadding", source)
+            self.assertIn("AppDialogWindow.HeaderTitleSize", source)
+            self.assertIn("AppDialogWindow.BodyPadding", source)
+        self.assertIn("HeaderTitleSize, FontWeight = FontWeights.Bold", dialog)
+        self.assertIn("HeaderTitleSize, FontWeight = FontWeights.Bold", update)
+        self.assertIn('Padding="{StaticResource UiDialogHeaderPadding}"', xaml)
+        self.assertIn('FontSize="{StaticResource UiDialogTitleSize}" FontWeight="Bold"', xaml)
+        # (7) names
+        self.assertNotIn("Dịch local", xaml)
+        self.assertNotIn("Chọn file CSV", xaml)
+        self.assertNotIn('Content="Chọn file"', xaml)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"
@@ -441,7 +507,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Text="Tìm và thay thế bản dịch"', xaml)
         self.assertIn('x:Name="CsvEditorCard"', xaml)
         self.assertIn('x:Name="CsvEditorSearchBox"', xaml)
-        self.assertIn('<UniformGrid Grid.Column="1" Columns="3"', xaml)
+        self.assertNotIn('<UniformGrid Grid.Column="1" Columns="3"', xaml)
+        self.assertIn('<StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">', xaml)
         self.assertIn('x:Name="CsvBulkFindTextBox"', xaml)
         self.assertIn('x:Name="CsvBulkReplaceTextBox"', xaml)
         self.assertIn('Text="Tìm trong bản dịch"', xaml)

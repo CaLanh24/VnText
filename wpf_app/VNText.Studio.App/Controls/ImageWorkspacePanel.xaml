@@ -31,7 +31,7 @@
                     <ProgressBar x:Name="TaskSpinner" Height="6" IsIndeterminate="True" Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,12,0" />
                 </StackPanel>
                 <Button x:Name="CancelButton" Grid.Column="1" Content="Hủy tác vụ" Command="{Binding CancelCommand}" Style="{StaticResource OutlineButton}"
-                        VerticalAlignment="Center" Padding="14,7" AutomationProperties.Name="Hủy tác vụ đang chạy" />
+                        VerticalAlignment="Center" AutomationProperties.Name="Hủy tác vụ đang chạy" />
             </Grid>
         </Border>
 
@@ -42,17 +42,23 @@
 
         <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <WrapPanel Margin="0,0,0,8">
-            <Button x:Name="DiscoverButton" Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="DiscoverButton" Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
         <ComboBox x:Name="CandidateCombo" ItemsSource="{Binding ImageCandidates}" SelectedItem="{Binding ImagePath, Mode=TwoWay}" IsEnabled="{Binding ImageGridEnabled}"
                   Style="{StaticResource SettingsPreferenceCombo}" MinHeight="32" AutomationProperties.Name="Ảnh ứng viên" />
         <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" />
 
         <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
-        <Border Style="{StaticResource SubtlePanelBorder}" Padding="8" Margin="0,0,0,8">
+        <Border x:Name="ImageEmptyState" Style="{StaticResource SubtlePanelBorder}" Padding="16,14" Margin="0,0,0,8"
+                Visibility="{Binding ImageShowEmptyState, Converter={StaticResource PanelBoolToVis}}">
+            <TextBlock x:Name="ImageEmptyHintText" Text="{Binding ImageEmptyHint}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
+                       AutomationProperties.Name="Chưa có ảnh để xem trước" />
+        </Border>
+        <Border x:Name="ImagePreviewPanel" Style="{StaticResource SubtlePanelBorder}" Padding="8" Margin="0,0,0,8"
+                Visibility="{Binding ImageHasPreview, Converter={StaticResource PanelBoolToVis}}">
             <Viewbox Height="150" Stretch="Uniform" HorizontalAlignment="Left">
                 <!-- 1 DIP == 1 source pixel here: boxes are source pixels, so the canvas uses PixelWidth/PixelHeight and the image is
                      stretched to exactly that size regardless of the file's DPI metadata. -->
@@ -79,6 +85,7 @@
         <DataGrid x:Name="RegionGrid" ItemsSource="{Binding ImageRegions}" SelectedItem="{Binding SelectedImageRegion, Mode=TwoWay}"
                   Style="{StaticResource CsvDataGridStyle}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
                   Height="170" MinRowHeight="32" IsEnabled="{Binding ImageGridEnabled}"
+                  Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
                   AutomationProperties.Name="Vùng chữ trong ảnh">
             <DataGrid.Columns>
@@ -92,7 +99,7 @@
                 <DataGridTemplateColumn Header="XÓA" Width="70">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="Xóa" Style="{StaticResource OutlineButton}" Padding="8,2" AutomationProperties.Name="Xóa vùng"
+                            <Button Content="Xóa" Style="{StaticResource CompactOutlineButton}" AutomationProperties.Name="Xóa vùng"
                                     Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -102,7 +109,8 @@
 
         <!-- Selected region details.  Editing any value clears the approval (model rule); the four background modes stay independent
              explicit choices, none is ticked by default, and render still requires exactly one plus Approved. -->
-        <Border x:Name="RegionDetails" Style="{StaticResource SubtlePanelBorder}" Padding="14,12" Margin="0,8,0,8" IsEnabled="{Binding ImageGridEnabled}">
+        <Border x:Name="RegionDetails" Style="{StaticResource SubtlePanelBorder}" Padding="14,12" Margin="0,8,0,8" IsEnabled="{Binding ImageGridEnabled}"
+                Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}">
             <StackPanel>
                 <TextBlock x:Name="RegionDetailsHint" Text="Chọn một dòng trong bảng để sửa crop, cỡ chữ, màu và chế độ nền của vùng đó." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap">
                     <TextBlock.Style>
@@ -141,17 +149,17 @@
             </StackPanel>
         </Border>
         <WrapPanel Margin="0,2,0,12">
-            <Button x:Name="AddRegionButton" Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="SaveReviewButton" Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="AddRegionButton" Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="SaveReviewButton" Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
 
         <TextBlock Text="3 · Dựng ảnh và gói cài" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <WrapPanel Margin="0,0,0,8">
-            <Button x:Name="RenderButton" Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="DeliveryButton" Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="InstallButton" Content="Cài gói vào bản sao game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
-            <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" Padding="14,7" />
+            <Button x:Name="RenderButton" Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="DeliveryButton" Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="InstallButton" Content="Cài gói vào bản sao game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
         <TextBlock x:Name="StatusLine" Text="{Binding ImageStatus}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
                    AutomationProperties.Name="Trạng thái xử lý ảnh" />

@@ -508,7 +508,9 @@
 
         <Setter Property="BorderThickness" Value="1" />
 
-        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="MinHeight" Value="{StaticResource UiControlHeightStandard}" />
+
+        <Setter Property="VerticalAlignment" Value="Center" />
 
         <Setter Property="MinWidth" Value="68" />
 
@@ -585,7 +587,9 @@
 
         <Setter Property="BorderThickness" Value="0" />
 
-        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="MinHeight" Value="{StaticResource UiControlHeightStandard}" />
+
+        <Setter Property="VerticalAlignment" Value="Center" />
 
         <Setter Property="MinWidth" Value="112" />
 
@@ -1452,6 +1456,12 @@
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource GuiOutlineButtonStyle}" />
 
     <Style x:Key="OutlineButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}" />
+
+    <!-- Compact size (30 DIP) for dense rows; standard (36 DIP) is the default of Primary/Secondary/Outline. -->
+    <Style x:Key="CompactOutlineButton" TargetType="Button" BasedOn="{StaticResource OutlineButton}">
+        <Setter Property="MinHeight" Value="{StaticResource UiControlHeightCompact}" />
+        <Setter Property="Padding" Value="10,4" />
+    </Style>
 
     <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
         <Setter Property="Background" Value="Transparent" />

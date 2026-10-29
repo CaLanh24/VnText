@@ -1103,7 +1103,7 @@ public sealed partial class MainViewModel
             && emptyTranslations >= _csvEditorRows.Count;
         Raise(nameof(CsvEditorGateStats));
         CsvEditorValidationMessage = _csvEditorAllTranslationsEmpty
-            ? "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
+            ? "Chưa có bản dịch — chuyển sang Dịch tự động để dịch CSV."
             : result.Summary;
         CsvEditorWarningSummary = BuildCsvWarningSummary(result);
 
@@ -1577,7 +1577,7 @@ public sealed partial class MainViewModel
             && _csvEditorRows.All(row => string.IsNullOrWhiteSpace(row.Translation));
         Raise(nameof(CsvEditorGateStats));
         CsvEditorValidationMessage = _csvEditorAllTranslationsEmpty
-            ? "Chưa có bản dịch — chuyển sang Dịch local để dịch CSV."
+            ? "Chưa có bản dịch — chuyển sang Dịch tự động để dịch CSV."
             : summary;
         ApplyCsvEditorFilter();
     }

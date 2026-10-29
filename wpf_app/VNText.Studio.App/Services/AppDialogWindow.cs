@@ -18,6 +18,10 @@ internal sealed class AppDialogWindow : Window
     internal const double CardMargin = 18;
     /// <summary>Shared modal card radius; Update/Journal/Glossary shells use the same value.</summary>
     internal const double CardRadius = 18;
+    // Shared modal chrome; keep in sync with UiDialogTitleSize / UiDialogHeaderPadding / UiDialogBodyPadding in DesignTokens.xaml.
+    internal const double HeaderTitleSize = 20;
+    internal static readonly Thickness HeaderPadding = new(28, 20, 24, 20);
+    internal static readonly Thickness BodyPadding = new(28, 20, 28, 20);
     private readonly StackPanel _buttons = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
     private readonly Button _close;
     private readonly ScrollViewer _bodyScroll;
@@ -81,12 +85,12 @@ internal sealed class AppDialogWindow : Window
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         card.Child = grid;
 
-        var header = new Grid { Margin = new Thickness(24, 14, 18, 14) };
+        var header = new Grid { Margin = HeaderPadding };
         header.ColumnDefinitions.Add(new ColumnDefinition());
         header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var heading = new TextBlock
         {
-            Text = title, FontSize = 18, FontWeight = FontWeights.SemiBold, Foreground = ink,
+            Text = title, FontSize = HeaderTitleSize, FontWeight = FontWeights.Bold, Foreground = ink,
             VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap,
         };
         header.Children.Add(heading);
@@ -109,7 +113,7 @@ internal sealed class AppDialogWindow : Window
 
         _bodyScroll = new ScrollViewer
         {
-            Content = new Border { Padding = new Thickness(26, 18, 26, 18), Child = body },
+            Content = new Border { Padding = BodyPadding, Child = body },
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Style = Application.Current?.TryFindResource("ContentPanelScrollViewer") as Style,
