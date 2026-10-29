@@ -409,7 +409,7 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn('Property="VerticalAlignment" Value="Center"', block, key)
         self.assertIn('x:Key="CompactOutlineButton"', styles)
         self.assertIn('Property="MinHeight" Value="{StaticResource UiControlHeightCompact}"', styles)
-        self.assertIn('Style="{StaticResource PrimaryButton}" VerticalAlignment="Center" Command="{Binding RunExtractCommand}"', xaml)
+        self.assertIn('Style="{StaticResource PrimaryButton}" VerticalAlignment="Center" Margin="12,12,0,0" Command="{Binding RunExtractCommand}"', xaml)
         self.assertNotIn("Height=38", journal)
         self.assertNotIn('Padding="14,7"', image)
         # (2) the Journal toggle/buttons use a theme pair, not the hard-coded light hover
