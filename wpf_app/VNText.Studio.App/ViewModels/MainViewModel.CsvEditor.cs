@@ -83,6 +83,9 @@ public sealed partial class MainViewModel
     public string CsvEditorPathToolTip => CsvEditorPath;
 
     /// <summary>A CSV is open (the path stays through a failed reload); without one the editor shows only its empty state.</summary>
+    /// <summary>At low heights the "pick a row" hint line is dropped while nothing is selected, so the table keeps its rows; a selection shows its details again.</summary>
+    public bool CsvEditorSelectionDetailsVisible => !(_csvLowHeight && _csvEditorSelectedKeys.Count == 0);
+
     public bool CsvEditorHasDocument => !string.IsNullOrWhiteSpace(_csvEditorPath);
 
     private bool _csvBulkExpanded, _csvBulkUserChoice, _csvLowHeight;
@@ -93,6 +96,7 @@ public sealed partial class MainViewModel
         private set
         {
             if (!Set(ref _csvBulkExpanded, value)) return;
+            if (!value && _csvBulkPreviewDetailOpen) { _csvBulkPreviewDetailOpen = false; RaiseCsvBulkPreviewParts(); }
             Raise(nameof(CsvBulkPanelVisible));
             Raise(nameof(CsvBulkSummaryVisible));
         }
@@ -106,6 +110,7 @@ public sealed partial class MainViewModel
     {
         if (_csvLowHeight == low) return;
         _csvLowHeight = low;
+        Raise(nameof(CsvEditorSelectionDetailsVisible));
         ApplyCsvBulkDefault();
     }
 
@@ -117,6 +122,20 @@ public sealed partial class MainViewModel
     }
 
     internal void TestSetCsvEditorPath(string path) => CsvEditorPath = path;
+
+    /// <summary>Layout fixture hook: shows these rows in the real grid without running the worker.</summary>
+    internal void TestLoadCsvRows(string path, IEnumerable<CsvEditorRow> rows, string validationMessage)
+    {
+        _csvEditorRows.Clear();
+        foreach (var row in rows) _csvEditorRows.Add(row);
+        CsvEditorPath = path;
+        _csvEditorView = CollectionViewSource.GetDefaultView(_csvEditorRows);
+        _csvEditorView.Filter = CsvEditorFilter;
+        Raise(nameof(CsvEditorView));
+        ApplyCsvEditorFilter();
+        CsvEditorValidationMessage = validationMessage;
+    }
+    internal void TestSetCsvBulkPreview(string text) => CsvBulkPreview = text;
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
     {
         0 => "Chọn một dòng để xem mã kỹ thuật.",
@@ -271,7 +290,37 @@ public sealed partial class MainViewModel
     public string CsvBulkPreview
     {
         get => _csvBulkPreview;
-        private set => Set(ref _csvBulkPreview, value);
+        private set
+        {
+            if (!Set(ref _csvBulkPreview, value)) return;
+            _csvBulkPreviewDetailOpen = false;       // a new preview never opens its examples by surprise
+            RaiseCsvBulkPreviewParts();
+        }
+    }
+
+    private bool _csvBulkPreviewDetailOpen;
+    /// <summary>First line of the preview: how many replacements in how many rows. Always the only preview text a collapsed tools row keeps.</summary>
+    public string CsvBulkPreviewSummary
+    {
+        get { var text = _csvBulkPreview ?? ""; var cut = text.IndexOf('\n'); return cut < 0 ? text : text[..cut]; }
+    }
+    /// <summary>The Trước/Sau examples (everything after the first line); shown only through the explicit toggle, in a height-bounded scroller.</summary>
+    public string CsvBulkPreviewDetail
+    {
+        get { var text = _csvBulkPreview ?? ""; var cut = text.IndexOf('\n'); return cut < 0 ? "" : text[(cut + 1)..]; }
+    }
+    public bool CsvBulkHasPreviewDetail => CsvBulkPreviewDetail.Length > 0;
+    public bool CsvBulkPreviewDetailOpen => _csvBulkPreviewDetailOpen && CsvBulkHasPreviewDetail;
+    public string CsvBulkPreviewDetailButtonText => CsvBulkPreviewDetailOpen ? "Ẩn ví dụ" : "Xem ví dụ";
+    public RelayCommand ToggleCsvBulkPreviewDetailCommand { get; private set; } = null!;
+
+    private void RaiseCsvBulkPreviewParts()
+    {
+        Raise(nameof(CsvBulkPreviewSummary));
+        Raise(nameof(CsvBulkPreviewDetail));
+        Raise(nameof(CsvBulkHasPreviewDetail));
+        Raise(nameof(CsvBulkPreviewDetailOpen));
+        Raise(nameof(CsvBulkPreviewDetailButtonText));
     }
 
     public bool CsvBulkCanApply => _csvBulkPendingPreview is { Ok: true, Count: > 0 } &&
@@ -423,6 +472,7 @@ public sealed partial class MainViewModel
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
         ToggleCsvBulkCommand = new RelayCommand(_ => { _csvBulkUserChoice = true; CsvBulkExpanded = !CsvBulkExpanded; });
+        ToggleCsvBulkPreviewDetailCommand = new RelayCommand(_ => { _csvBulkPreviewDetailOpen = !_csvBulkPreviewDetailOpen; RaiseCsvBulkPreviewParts(); });
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),
             _ => !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);
@@ -447,6 +497,7 @@ public sealed partial class MainViewModel
                 _csvEditorSelectedKeys.Add(row.Key);
         }
         Raise(nameof(CsvEditorSelectionDetails));
+        Raise(nameof(CsvEditorSelectionDetailsVisible));
         ClearBlockedCsvCommand.RaiseCanExecuteChanged();
         RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
         ApproveCsvMemoryCommand.RaiseCanExecuteChanged();

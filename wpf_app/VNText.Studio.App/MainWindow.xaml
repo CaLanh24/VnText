@@ -1374,9 +1374,14 @@
 
                                 </StackPanel>
 <StackPanel Grid.Row="3" Margin="0,6,0,0">
-                                    <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False">
-                                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}"
-                                                   Text="{Binding CsvBulkPreview}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview}">
+                                    <!-- The preview keeps ONE summary line; the Trước/Sau examples open only through the explicit button, in a bounded scroller. -->
+                                    <Grid x:Name="CsvBulkPreviewHeader">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="CsvBulkPreviewSummaryText" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"
+                                                   Text="{Binding CsvBulkPreviewSummary}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Style.Triggers>
@@ -1387,6 +1392,13 @@
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
+                                        <Button x:Name="CsvBulkPreviewDetailButton" Grid.Column="1" Style="{StaticResource CompactOutlineButton}" Margin="8,0,0,0"
+                                                Content="{Binding CsvBulkPreviewDetailButtonText}" Command="{Binding ToggleCsvBulkPreviewDetailCommand}"
+                                                Visibility="{Binding CsvBulkHasPreviewDetail, Converter={StaticResource BoolToVis}}" />
+                                    </Grid>
+                                    <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="120" Margin="0,4,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
+                                                  Visibility="{Binding CsvBulkPreviewDetailOpen, Converter={StaticResource BoolToVis}}">
+                                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding CsvBulkPreviewDetail}" TextWrapping="Wrap" />
                                     </ScrollViewer>
                                     <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
                                                Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap">
@@ -1396,6 +1408,11 @@
                                                     <!-- the refusal is already shown, with its recovery, in the banner above -->
                                                     <DataTrigger Binding="{Binding HasCsvEditorSaveError}" Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                    <!-- collapsed tools: one trimmed line so the table keeps its rows (the whole message is in the tooltip) -->
+                                                    <DataTrigger Binding="{Binding CsvBulkSummaryVisible}" Value="True">
+                                                        <Setter Property="TextWrapping" Value="NoWrap" />
+                                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -1478,12 +1495,14 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding IssueDisplay}" IsReadOnly="True" Width="115" MinWidth="95">
+                                        <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding IssueShort}" IsReadOnly="True" Width="132" MinWidth="112">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">
                                                     <Setter Property="VerticalAlignment" Value="Center" />
-                                                    <Setter Property="TextWrapping" Value="Wrap" />
+                                                    <Setter Property="TextWrapping" Value="NoWrap" />
+                                                    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                                                     <Setter Property="ToolTip" Value="{Binding IssueDisplay}" />
+                                                    <Setter Property="AutomationProperties.HelpText" Value="{Binding IssueDisplay}" />
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
@@ -1492,7 +1511,8 @@
 
                                 <StackPanel Grid.Row="2" Margin="0,6,0,0">
 <TextBlock Text="{Binding CsvEditorGateStats}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
-<TextBlock Text="{Binding CsvEditorSelectionDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+<TextBlock Text="{Binding CsvEditorSelectionDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+           Visibility="{Binding CsvEditorSelectionDetailsVisible, Converter={StaticResource BoolToVis}}"/>
 </StackPanel>
                             </Grid>
                         </Border>

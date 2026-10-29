@@ -548,6 +548,35 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn(member, journal)
         self.assertNotIn("_files.Height=24", journal)
 
+    def test_csv_preview_keeps_one_summary_line_and_status_uses_a_short_label_with_the_full_diagnostic(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        row = (app / "Models" / "CsvEditorRow.cs").read_text(encoding="utf-8")
+        # preview: summary line always, examples only behind an explicit, bounded toggle; never reopened by a new preview or by the collapse
+        self.assertIn('x:Name="CsvBulkPreviewSummaryText"', xaml)
+        self.assertIn('x:Name="CsvBulkPreviewDetailButton"', xaml)
+        scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
+        self.assertIn('MaxHeight="120"', scroll)
+        self.assertIn("CsvBulkPreviewDetailOpen", scroll)
+        self.assertIn("_csvBulkPreviewDetailOpen = false;       // a new preview never opens its examples by surprise", vm)
+        self.assertIn("if (!value && _csvBulkPreviewDetailOpen)", vm)
+        # the stored preview, the Apply guard and its signature are untouched
+        self.assertIn("public bool CsvBulkCanApply => _csvBulkPendingPreview is { Ok: true, Count: > 0 } &&", vm)
+        self.assertIn("string.Equals(_csvBulkPendingSignature, CsvBulkSignature(), StringComparison.Ordinal);", vm)
+        # status column: short label, never wrapped, full diagnostic in tooltip and accessible help; no validator change
+        col = xaml[xaml.index('Header="TRẠNG THÁI"'):xaml.index("</DataGridTextColumn>", xaml.index('Header="TRẠNG THÁI"'))]
+        self.assertIn('Binding="{Binding IssueShort}"', col)
+        self.assertIn('TextWrapping" Value="NoWrap"', col)
+        self.assertIn('TextTrimming" Value="CharacterEllipsis"', col)
+        self.assertIn('ToolTip" Value="{Binding IssueDisplay}"', col)
+        self.assertIn('AutomationProperties.HelpText" Value="{Binding IssueDisplay}"', col)
+        self.assertIn('"Mất/sai placeholder {…}" => "Sai placeholder"', row)
+        self.assertIn("_ => display,", row)                                     # every other diagnostic is passed through unchanged
+        self.assertEqual(1, row.count('"Sai placeholder"'))
+        patch_gate = (ROOT / "vntext" / "patch_gate.py").read_text(encoding="utf-8")
+        self.assertIn('"placeholder mismatch": "Mất/sai placeholder {…}",', patch_gate)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"

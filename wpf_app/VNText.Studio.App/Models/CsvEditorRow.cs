@@ -48,8 +48,24 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
             if (_issueDisplay == value) return;
             _issueDisplay = value ?? "";
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueDisplay)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueShort)));
         }
     }
+
+    /// <summary>Short status label for the narrow column; the full diagnostic stays in <see cref="IssueDisplay"/> (tooltip, accessible help text).
+    /// Only the known long labels are shortened; any other text is passed through unchanged (the column trims it with an ellipsis).</summary>
+    public string IssueShort => ShortenIssue(_issueDisplay);
+
+    internal static string ShortenIssue(string display) => display switch
+    {
+        "Mất/sai placeholder {…}" => "Sai placeholder",
+        "Hỏng tag <…>" => "Sai tag",
+        "Trong review_only.csv (cần xem lại thủ công)" => "Cần xem lại",
+        "Rác lặp từ/ký tự" => "Rác lặp",
+        "HTML/entity rác" => "HTML rác",
+        "Dòng synonym — dịch thủ công" => "Synonym thủ công",
+        _ => display,
+    };
 
     public void SetIssueSilent(string label, string display)
     {
@@ -61,6 +77,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueLabel)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueDisplay)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueShort)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasIssue)));
     }
 
