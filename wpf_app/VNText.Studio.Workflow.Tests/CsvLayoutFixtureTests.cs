@@ -73,14 +73,13 @@ internal static partial class Program
                     CsvEditorRow Row(int index, string source, string translation, string label, string display) =>
                         new() { Index = index, Key = "k" + index, SourceText = source, Translation = translation, IssueLabel = label, IssueDisplay = display };
                     const string placeholderDisplay = "Mất/sai placeholder {…}";
+                    // the exact rows of the reviewed fx16\pkg-warn fixture (the third source wraps in the narrow source column)
                     var rows = new List<CsvEditorRow>
                     {
-                        Row(1, "Hello, {name}.", "Xin chào, {name}.", "", ""),
+                        Row(1, "Hello, {name}.", "Xin chào.", "placeholder mismatch", placeholderDisplay),
                         Row(2, "Open the door.", "Hãy mở cửa.", "", ""),
-                        Row(3, "The door is old.", "Cánh cửa đã cũ.", "", ""),
-                        Row(4, "Bye, {name}.", "Tạm biệt.", "placeholder mismatch", placeholderDisplay),
-                        Row(5, "Thanks.", "Cảm ơn.", "", ""),
-                        Row(6, "Sorry.", "Xin lỗi.", "", ""),
+                        Row(3, "The door is old and the door is heavy.", "Cánh cửa đã cũ và cửa rất nặng.", "", ""),
+                        Row(4, "Close the door when you leave.", "Hãy đóng cửa khi bạn rời đi.", "", ""),
                     };
                     var warning = "Cảnh báo: 1 dòng cần xem lại — 1× Mất/sai placeholder {...}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.";
                     var examples = "Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).\nTrước: Hãy mở cửa.\nSau: Hãy mở cổng.\nTrước: Cánh cửa đã cũ và cửa rất nặng.\nSau: Cánh cổng đã cũ và cổng rất nặng.\nTrước: Hãy đóng cửa khi bạn rời đi.\nSau: Hãy đóng cổng khi bạn rời đi.";
@@ -106,15 +105,50 @@ internal static partial class Program
                                 && dataRow.TranslatePoint(new Point(0, dataRow.ActualHeight), window).Y <= limit) count++;
                         return count;
                     }
-                    Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= window.ActualHeight, "the table ends inside the window");
-                    var rowsShown = VisibleRows();
-                    Require(rowsShown >= 3, "at least three ordinary rows stay visible after preview + collapse (got " + rowsShown + ", items " + grid.Items.Count + ", gridH " + grid.ActualHeight + ", c0 " + (grid.ItemContainerGenerator.ContainerFromIndex(0) is null ? "null" : "ok") + ", winH " + window.ActualHeight + ")");
-                    var warningRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromIndex(3);
+                    // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, preview kept, tools collapsed ----
+                    var viewportBottom = Math.Min(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y, window.ActualHeight);
+                    Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= window.ActualHeight, "the table ends inside the window (bottom " + grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y + " of " + window.ActualHeight + ")");
+                    var fullRows = 0;
+                    var rowBottoms = new List<double>();
+                    for (var i = 0; i < rows.Count; i++)
+                    {
+                        if (grid.ItemContainerGenerator.ContainerFromIndex(i) is not DataGridRow { IsVisible: true } dataRow) continue;
+                        var bottom = dataRow.TranslatePoint(new Point(0, dataRow.ActualHeight), window).Y;
+                        rowBottoms.Add(bottom);
+                        if (bottom <= viewportBottom + 0.5) fullRows++;
+                    }
+                    var rowsShown = fullRows;
+                    var thirdBottom = rowBottoms.Count >= 3 ? rowBottoms[2] : double.MaxValue;
+                    var slack = viewportBottom - thirdBottom;
+                    Require(rowsShown >= 3, "three FULL rows are visible after preview + collapse (full " + rowsShown + ", bottoms " + string.Join("/", rowBottoms.Select(b => Math.Round(b))) + ", viewportBottom " + Math.Round(viewportBottom) + ", gridH " + Math.Round(grid.ActualHeight) + ")");
+                    Require(slack >= 12, "a real margin (not one pixel) remains below the third full row (slack " + Math.Round(slack, 1) + " DIP)");
+                    var gridScroll = FindVisualChildren<ScrollViewer>(grid).First();
+                    Require(gridScroll.ScrollableWidth < 1, "the three columns fit the small card without a horizontal scroll (" + gridScroll.ScrollableWidth + ")");
+                    var warningRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromIndex(0);
                     Require(warningRow.ActualHeight <= 40, "the placeholder warning row stays a single-line row (got " + warningRow.ActualHeight + ")");
+                    // status label: the whole short label fits its cell, at the real font and DPI
+                    var statusCell = (TextBlock)grid.Columns[3].GetCellContent(rows[0]);
+                    var typeface = new System.Windows.Media.Typeface(statusCell.FontFamily, statusCell.FontStyle, statusCell.FontWeight, statusCell.FontStretch);
+                    var labelWidth = new System.Windows.Media.FormattedText(statusCell.Text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, typeface, statusCell.FontSize,
+                        System.Windows.Media.Brushes.Black, System.Windows.Media.VisualTreeHelper.GetDpi(statusCell).PixelsPerDip).Width;
+                    AssertEqual("Sai placeholder", statusCell.Text);
+                    Require(statusCell.ActualWidth >= labelWidth + 4, "the status label fits without an ellipsis (cell " + Math.Round(statusCell.ActualWidth, 1) + " vs text " + Math.Round(labelWidth, 1) + ")");
+                    var statusRight = statusCell.TranslatePoint(new Point(statusCell.ActualWidth, 0), grid).X;
+                    Require(statusRight <= grid.ActualWidth + 0.5, "the status cell is inside the table viewport (right " + Math.Round(statusRight) + " of " + Math.Round(grid.ActualWidth) + ")");
+                    // the validation message is ONE line while collapsed (a local TextWrapping value used to beat the style trigger)
+                    var shortWarning = (TextBlock)Named("CsvEditorValidationShortText");
+                    var fullWarning = (TextBlock)Named("CsvEditorValidationText");
+                    Require(shortWarning.IsVisible && !fullWarning.IsVisible, "collapsed tools show the one-line summary instead of the wrapped message");
+                    Require(shortWarning.TextWrapping == TextWrapping.NoWrap && shortWarning.ActualHeight <= 20, "the summary is a single line (height " + shortWarning.ActualHeight + ")");
+                    AssertEqual("Cảnh báo: 1 dòng cần xem lại", shortWarning.Text);
+                    AssertEqual(warning, vm.CsvEditorUserValidationMessage);
+                    AssertEqual(warning, shortWarning.ToolTip as string);
+                    AssertEqual(warning, System.Windows.Automation.AutomationProperties.GetHelpText(shortWarning));
+                    AssertEqual(warning, System.Windows.Automation.AutomationProperties.GetHelpText(fullWarning));  // the displayed text and the raw message are the same here
                     // Finding 2: a short semantic label, the full diagnostic untouched.
-                    AssertEqual("Sai placeholder", rows[3].IssueShort);
-                    AssertEqual(placeholderDisplay, rows[3].IssueDisplay);
-                    AssertEqual("placeholder mismatch", rows[3].IssueLabel);
+                    AssertEqual("Sai placeholder", rows[0].IssueShort);
+                    AssertEqual(placeholderDisplay, rows[0].IssueDisplay);
+                    AssertEqual("placeholder mismatch", rows[0].IssueLabel);
                     AssertEqual("Sai số \\n", CsvEditorRow.ShortenIssue("Sai số \\n"));            // unknown/other diagnostics pass through unchanged
                     AssertEqual("Sai tag", CsvEditorRow.ShortenIssue("Hỏng tag <…>"));
                     Require(vm.CsvEditorValidationMessage == warning, "the full validation message is untouched");
@@ -130,10 +164,17 @@ internal static partial class Program
                     window.UpdateLayout();
                     PumpFixture(100);
                     Require(!Named("CsvBulkPreviewScroll").IsVisible && vm.CsvBulkPreview == examples && vm.CsvBulkFind == "cửa", "collapsing closes the examples but keeps the preview and the typed text");
+                    vm.SetCsvLowHeight(false);
+                    vm.ToggleCsvBulkCommand.Execute(null);
+                    window.UpdateLayout();
+                    Require(fullWarning.IsVisible && !shortWarning.IsVisible && fullWarning.TextWrapping == TextWrapping.Wrap && fullWarning.Text == vm.CsvEditorUserValidationMessage, "at a normal height with the tools open the whole message wraps again");
+                    vm.ToggleCsvBulkCommand.Execute(null);
+                    vm.SetCsvLowHeight(true);
+                    window.UpdateLayout();
                     vm.ToggleCsvBulkPreviewDetailCommand.Execute(null);
                     vm.TestSetCsvBulkPreview(examples + "\nTrước: x\nSau: y");
                     Require(!vm.CsvBulkPreviewDetailOpen, "a new preview never opens its examples by surprise");
-                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, 36 DIP selects, preview summary + examples toggle, short status label; rows visible after preview+collapse: " + rowsShown + ")");
+                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
                     exitCode = 0;
                 }
                 finally { window.Close(); UiText.SetLanguage("vi"); UiAppearance.Apply("light", 100); app.Shutdown(); }

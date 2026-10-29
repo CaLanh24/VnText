@@ -99,6 +99,7 @@ public sealed partial class MainViewModel
             if (!value && _csvBulkPreviewDetailOpen) { _csvBulkPreviewDetailOpen = false; RaiseCsvBulkPreviewParts(); }
             Raise(nameof(CsvBulkPanelVisible));
             Raise(nameof(CsvBulkSummaryVisible));
+            Raise(nameof(CsvEditorValidationCompact));
         }
     }
     public bool CsvBulkPanelVisible => CsvEditorHasDocument && _csvBulkExpanded;
@@ -111,7 +112,44 @@ public sealed partial class MainViewModel
         if (_csvLowHeight == low) return;
         _csvLowHeight = low;
         Raise(nameof(CsvEditorSelectionDetailsVisible));
+        RaiseCsvCompactLayout();
         ApplyCsvBulkDefault();
+    }
+
+    // Low-height presentation: tighter vertical gaps only (controls keep their 36/30 DIP sizes) and a one-line validation summary.
+    public Thickness CsvBannerMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
+    public Thickness CsvBulkAreaMargin => new(0, _csvLowHeight ? 2 : 5, 0, 0);
+    public Thickness CsvBulkSummaryMargin => new(0, _csvLowHeight ? 0 : 3, 0, 0);
+    public Thickness CsvPreviewAreaMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
+    public Thickness CsvGridMargin => new(0, _csvLowHeight ? 4 : 8, 0, 0);
+
+    /// <summary>With the tools collapsed (or at a low height) the validation message is ONE line; the whole message stays in the tooltip and the accessible help text.</summary>
+    public bool CsvEditorValidationCompact => CsvBulkSummaryVisible || _csvLowHeight;
+
+    public string CsvEditorUserValidationShort
+    {
+        get
+        {
+            var message = CsvEditorUserValidationMessage ?? "";
+            var cut = message.IndexOf(" — ", StringComparison.Ordinal);
+            if (cut > 0) message = message[..cut];
+            else
+            {
+                var dot = message.IndexOf(". ", StringComparison.Ordinal);
+                if (dot > 0) message = message[..(dot + 1)];
+            }
+            return message.Length <= 80 ? message : message[..79] + "…";
+        }
+    }
+
+    private void RaiseCsvCompactLayout()
+    {
+        Raise(nameof(CsvBannerMargin));
+        Raise(nameof(CsvBulkAreaMargin));
+        Raise(nameof(CsvBulkSummaryMargin));
+        Raise(nameof(CsvPreviewAreaMargin));
+        Raise(nameof(CsvGridMargin));
+        Raise(nameof(CsvEditorValidationCompact));
     }
 
     private void ApplyCsvBulkDefault()
@@ -119,6 +157,7 @@ public sealed partial class MainViewModel
         if (!_csvBulkUserChoice) CsvBulkExpanded = CsvEditorHasDocument && !_csvLowHeight;
         Raise(nameof(CsvBulkPanelVisible));
         Raise(nameof(CsvBulkSummaryVisible));
+        Raise(nameof(CsvEditorValidationCompact));
     }
 
     internal void TestSetCsvEditorPath(string path) => CsvEditorPath = path;
@@ -134,6 +173,7 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvEditorView));
         ApplyCsvEditorFilter();
         CsvEditorValidationMessage = validationMessage;
+        CsvEditorWarningSummary = validationMessage;
     }
     internal void TestSetCsvBulkPreview(string text) => CsvBulkPreview = text;
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
@@ -471,6 +511,7 @@ public sealed partial class MainViewModel
             }
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
+        PropertyChanged += (_, e) => { if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort)); };
         ToggleCsvBulkCommand = new RelayCommand(_ => { _csvBulkUserChoice = true; CsvBulkExpanded = !CsvBulkExpanded; });
         ToggleCsvBulkPreviewDetailCommand = new RelayCommand(_ => { _csvBulkPreviewDetailOpen = !_csvBulkPreviewDetailOpen; RaiseCsvBulkPreviewParts(); });
         ReloadCsvEditorCommand = new RelayCommand(

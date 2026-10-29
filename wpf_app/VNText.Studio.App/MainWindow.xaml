@@ -1304,7 +1304,7 @@
                                     </Border>
                                 </Grid>
 
-                                <StackPanel Grid.Row="1" Margin="0,6,0,0" VerticalAlignment="Top">
+                                <StackPanel Grid.Row="1" Margin="{Binding CsvBannerMargin}" VerticalAlignment="Top">
                                     <Border x:Name="CsvEditorLoadErrorBanner" Padding="10,7" CornerRadius="8" Background="{DynamicResource SubtlePanelBrush}"
                                             BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
                                             Visibility="{Binding HasCsvEditorLoadError, Converter={StaticResource BoolToVis}}">
@@ -1316,8 +1316,8 @@
                                         <TextBlock Text="{Binding CsvEditorSaveError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     </Border>
                                 </StackPanel>
-                                <StackPanel Grid.Row="2" Margin="0,5,0,0">
-<Border x:Name="CsvBulkSummary" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="12,4"
+                                <StackPanel Grid.Row="2" Margin="{Binding CsvBulkAreaMargin}">
+<Border x:Name="CsvBulkSummary" Style="{StaticResource SubtlePanelBorder}" Margin="{Binding CsvBulkSummaryMargin}" Padding="12,4"
                                         Visibility="{Binding CsvBulkSummaryVisible, Converter={StaticResource BoolToVis}}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1373,7 +1373,7 @@
                                 </Border>
 
                                 </StackPanel>
-<StackPanel Grid.Row="3" Margin="0,6,0,0">
+<StackPanel Grid.Row="3" Margin="{Binding CsvPreviewAreaMargin}">
                                     <!-- The preview keeps ONE summary line; the Trước/Sau examples open only through the explicit button, in a bounded scroller. -->
                                     <Grid x:Name="CsvBulkPreviewHeader">
                                         <Grid.ColumnDefinitions>
@@ -1401,19 +1401,41 @@
                                         <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding CsvBulkPreviewDetail}" TextWrapping="Wrap" />
                                     </ScrollViewer>
                                     <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
-                                               Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}" TextWrapping="Wrap">
+                                               Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}"
+                                               AutomationProperties.HelpText="{Binding CsvEditorValidationMessage}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
+                                                <!-- wrapping is a STYLE value here (a local value would beat the triggers below) -->
+                                                <Setter Property="TextWrapping" Value="Wrap" />
                                                 <Style.Triggers>
                                                     <!-- the refusal is already shown, with its recovery, in the banner above -->
                                                     <DataTrigger Binding="{Binding HasCsvEditorSaveError}" Value="True">
                                                         <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
-                                                    <!-- collapsed tools: one trimmed line so the table keeps its rows (the whole message is in the tooltip) -->
-                                                    <DataTrigger Binding="{Binding CsvBulkSummaryVisible}" Value="True">
-                                                        <Setter Property="TextWrapping" Value="NoWrap" />
-                                                        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                                    <!-- collapsed tools / low height: the one-line summary below replaces this block -->
+                                                    <DataTrigger Binding="{Binding CsvEditorValidationCompact}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
                                                     </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock x:Name="CsvEditorValidationShortText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
+                                               Text="{Binding CsvEditorUserValidationShort}" ToolTip="{Binding CsvEditorUserValidationMessage}"
+                                               AutomationProperties.HelpText="{Binding CsvEditorUserValidationMessage}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="TextWrapping" Value="NoWrap" />
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding CsvEditorValidationCompact}" Value="True" />
+                                                            <Condition Binding="{Binding HasCsvEditorSaveError}" Value="False" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
@@ -1433,7 +1455,7 @@
                                         <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </StackPanel>
                                 </Border>
-                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="0,8,0,0" MinHeight="150"
+                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="150"
                                           Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
@@ -1471,7 +1493,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="NGUYÊN BẢN" Binding="{Binding SourceText}" IsReadOnly="True" Width="2*" MinWidth="180">
+                                        <DataGridTextColumn Header="NGUYÊN BẢN" Binding="{Binding SourceText}" IsReadOnly="True" Width="2*" MinWidth="150">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">
                                                     <Setter Property="VerticalAlignment" Value="Center" />
@@ -1480,7 +1502,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="BẢN DỊCH TIẾNG VIỆT" Binding="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="280">
+                                        <DataGridTextColumn Header="BẢN DỊCH TIẾNG VIỆT" Binding="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="220">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">
                                                     <Setter Property="VerticalAlignment" Value="Center" />
@@ -1495,7 +1517,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding IssueShort}" IsReadOnly="True" Width="132" MinWidth="112">
+                                        <DataGridTextColumn Header="TRẠNG THÁI" Binding="{Binding IssueShort}" IsReadOnly="True" Width="140" MinWidth="120">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">
                                                     <Setter Property="VerticalAlignment" Value="Center" />

@@ -577,6 +577,37 @@ class WpfWorkflowTests(unittest.TestCase):
         patch_gate = (ROOT / "vntext" / "patch_gate.py").read_text(encoding="utf-8")
         self.assertIn('"placeholder mismatch": "Mất/sai placeholder {…}",', patch_gate)
 
+    def test_csv_validation_line_has_no_local_value_that_beats_its_style_and_low_height_gaps_are_bound(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        # a LOCAL TextWrapping attribute outranks a style trigger, so neither validation block may declare one on its element
+        for name in ("CsvEditorValidationText", "CsvEditorValidationShortText"):
+            start = xaml.index(f'x:Name="{name}"')
+            opening = xaml[start:xaml.index(">", start)]
+            self.assertNotIn("TextWrapping=", opening, name)
+            self.assertNotIn("TextTrimming=", opening, name)
+            self.assertNotIn("Visibility=", opening, name)
+        full = xaml[xaml.index('x:Name="CsvEditorValidationText"'):xaml.index('x:Name="CsvEditorValidationShortText"')]
+        short = xaml[xaml.index('x:Name="CsvEditorValidationShortText"'):xaml.index("</TextBlock>", xaml.index('x:Name="CsvEditorValidationShortText"'))]
+        self.assertIn('<Setter Property="TextWrapping" Value="Wrap" />', full)
+        self.assertIn('<Setter Property="TextWrapping" Value="NoWrap" />', short)
+        self.assertIn('<Setter Property="TextTrimming" Value="CharacterEllipsis" />', short)
+        for block in (full, short):
+            self.assertIn("AutomationProperties.HelpText", block)
+            self.assertIn("ToolTip=", block)
+        self.assertIn("CsvEditorValidationCompact", full)
+        # the short summary keeps the meaning (cut at the first dash/sentence) and never replaces the stored message
+        self.assertIn('message.IndexOf(" — ", StringComparison.Ordinal)', vm)
+        # low-height gaps are bound values, with no literal margin left on those elements
+        for binding in ("CsvBannerMargin", "CsvBulkAreaMargin", "CsvBulkSummaryMargin", "CsvPreviewAreaMargin", "CsvGridMargin"):
+            self.assertIn("Margin=\"{Binding %s}\"" % binding, xaml)
+            self.assertIn("public Thickness %s" % binding, vm)
+        # columns fit the small card: minimum widths 150 + 220 + status 120 stay under the ~560 DIP card of a 1043 px window at UI 120%
+        self.assertIn('Width="2*" MinWidth="150"', xaml)
+        self.assertIn('Width="3*" MinWidth="220"', xaml)
+        self.assertIn('Binding="{Binding IssueShort}" IsReadOnly="True" Width="140" MinWidth="120"', xaml)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"
