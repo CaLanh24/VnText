@@ -48,3 +48,5 @@ release/tools/
 tests/**/game_copy/
 tests/**/game_test/
 *.bundle.bak
+/.agents/
+/.impeccable/
