@@ -569,8 +569,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Binding="{Binding IssueShort}"', col)
         self.assertIn('TextWrapping" Value="NoWrap"', col)
         self.assertIn('TextTrimming" Value="CharacterEllipsis"', col)
-        self.assertIn('ToolTip" Value="{Binding IssueDisplay}"', col)
-        self.assertIn('AutomationProperties.HelpText" Value="{Binding IssueDisplay}"', col)
+        self.assertIn('ToolTip" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}"', col)
+        self.assertIn('AutomationProperties.HelpText" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}"', col)
         self.assertIn('"Mất/sai placeholder {…}" => "Sai placeholder"', row)
         self.assertIn("_ => display,", row)                                     # every other diagnostic is passed through unchanged
         self.assertEqual(1, row.count('"Sai placeholder"'))
@@ -644,7 +644,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # (5) an invalid expression is its own message, the read failure keeps its own
         self.assertIn('Biểu thức tìm kiếm không hợp lệ.', journal)
         self.assertIn("catch(ArgumentException ex)", journal)
-        self.assertIn('_content.Text="Không đọc được nhật ký: "+ex.Message;', journal)
+        self.assertIn('_content.Text=UiText.TranslateDynamic("Không đọc được nhật ký: "+ex.Message);', journal)
         # (6) saved reviews explain the re-approval, failures keep their context, the guards are untouched
         self.assertIn('"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', image_vm)
         self.assertIn("TryLoadImageReview(p, fromSavedReview: true)", image_vm)
@@ -1132,7 +1132,7 @@ class WpfWorkflowTests(unittest.TestCase):
         adapter = (ROOT / "wpf_app" / "VNText.Studio.App" / "UpdatePresentation.cs").read_text(encoding="utf-8")
         self.assertIn("_vm.RecheckUpdateCommand.Execute(null)", adapter)
         self.assertIn("_vm.RestartForUpdate()", adapter)
-        self.assertIn('Text="{Binding GitHubUpdateStatus}"', xaml)
+        self.assertIn('Text="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}"', xaml)
         self.assertIn('AutomationProperties.Name="Kiểm tra cập nhật"', xaml)
         self.assertIn('DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng."', xaml)
         self.assertIn('"Chưa cấu hình nguồn cập nhật."', view_model)
