@@ -435,7 +435,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # (5) the empty image workspace reserves nothing until there is data
         self.assertIn('Visibility="{Binding ImageHasPreview, Converter={StaticResource PanelBoolToVis}}"', image)
         self.assertEqual(2, image.count('Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}"'))
-        self.assertIn("{Binding ImageEmptyHint}", image)
+        self.assertIn("Binding ImageEmptyHint", image)
         # (6) one modal header: title size/weight, padding and body from the same values
         self.assertIn('x:Key="UiDialogTitleSize">20<', tokens)
         self.assertIn('x:Key="UiDialogHeaderPadding">28,20,24,20<', tokens)
@@ -489,7 +489,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # (2) the shared dialog keeps header and footer inside the work area when content grows after loading
         self.assertIn("GetMonitorInfo", dialog)
         self.assertIn("SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };", dialog)
-        self.assertIn("Loaded += (_, _) => { AttachOverlay(); FitToWorkArea(); FocusDefault(); };", dialog)
+        self.assertIn("Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); FitToWorkArea(); FocusDefault(); };", dialog)
         # (3) image choices follow the theme
         self.assertIn('Foreground="{DynamicResource InkBrush}"', panel)
         self.assertIn('<Style TargetType="CheckBox">', panel)
@@ -1001,8 +1001,8 @@ class WpfWorkflowTests(unittest.TestCase):
         # The modal has its own Cancel (the owner window, with its Cancel button, is disabled while a modal is open),
         # shows the owning task and the progress/cancel-acknowledgement line, and offers a spinner only while Busy.
         self.assertRegex(panel, r'Command="\{Binding CancelCommand\}"')
-        self.assertIn("{Binding ImageWorkspaceTaskText}", panel)
-        self.assertIn("{Binding ImageWorkspaceProgressText}", panel)
+        self.assertIn("Binding ImageWorkspaceTaskText", panel)
+        self.assertIn("Binding ImageWorkspaceProgressText", panel)
         self.assertRegex(panel, r'x:Name="TaskBanner"[^>]*\n?[^>]*Visibility="\{Binding Busy')
         # Compact main grid; crop/font/colour/background options are in a labelled detail form bound to the selection.
         self.assertIn("SelectedItem=\"{Binding SelectedImageRegion", panel)
