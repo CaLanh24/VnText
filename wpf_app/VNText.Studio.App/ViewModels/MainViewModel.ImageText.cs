@@ -38,6 +38,12 @@ public sealed partial class MainViewModel
         ? "Chọn ảnh để xem trước và OCR"
         : "Bấm “OCR ảnh đã chọn” để xem trước và đọc text trong ảnh này.";
     internal void TestSetImagePreview(ImageSource? preview) => ImagePreview = preview;
+    /// <summary>The OCR panel shows these through the display-time localizer; a language switch refreshes them.</summary>
+    internal void RaiseImageLanguageText()
+    {
+        Raise(nameof(ImageStatus)); Raise(nameof(ImageEmptyHint)); Raise(nameof(ImageWorkspaceSummary)); Raise(nameof(ImageWorkspaceTaskText)); Raise(nameof(ImageWorkspaceProgressText));
+        foreach (var region in ImageRegions) region.RaiseLanguageText();
+    }
     private void RaiseImageContentState()
     {
         Raise(nameof(ImageHasPreview)); Raise(nameof(ImageHasRegions)); Raise(nameof(ImageShowEmptyState)); Raise(nameof(ImageEmptyHint));

@@ -235,6 +235,8 @@ internal static partial class Program
         Run("ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist", ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist, failures);
         Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
         Run("PatchState_FollowsTheSourceAndRequiresACurrentCheck", PatchState_FollowsTheSourceAndRequiresACurrentCheck, failures);
+        Run("PatchBadge_KindFollowsTheCurrentReadiness", PatchBadge_KindFollowsTheCurrentReadiness, failures);
+        Run("UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone", UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone, failures);
         Run("ImageReview_OpeningASavedReviewExplainsTheReapproval", ImageReview_OpeningASavedReviewExplainsTheReapproval, failures);
         Run("Labels_UseOneNameForAutomaticTranslationAndCsvPicking", Labels_UseOneNameForAutomaticTranslationAndCsvPicking, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
@@ -1936,7 +1938,7 @@ internal static partial class Program
         Require(vm.ImageHasRegions && !vm.ImageHasPreview && !vm.ImageShowEmptyState, "loaded rows must keep the grid open without a preview");
     }
 
-    private static string CreatePatchSourcePackage(string translation)
+    private static string CreatePatchSourcePackage(string translation, bool complete = true)
     {
         var root = Path.Combine(TestTempRoot(), "vntext_wpf_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(root, ".mt"));
@@ -1944,7 +1946,8 @@ internal static partial class Program
             $"key,source_text,translation,context,file_path,import_method\r\nk1,Escort,{translation},UI:Text,game/data.unity3d,unity_ui_text\r\n", Encoding.UTF8);
         File.WriteAllText(Path.Combine(root, "manifest.json"),
             """{"entries":[{"key":"k1","source_text":"Escort","file_path":"game/data.unity3d","import_method":"unity_ui_text"}]}""", Encoding.UTF8);
-        File.WriteAllText(Path.Combine(root, ".mt", "translate_status.json"), "{\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":1}", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, ".mt", "translate_status.json"),
+            complete ? "{\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":1}" : "{\"complete\":false,\"pending\":0,\"review_only\":0,\"blocked\":1,\"translated\":0}", Encoding.UTF8);
         return root;
     }
 
@@ -1994,13 +1997,73 @@ internal static partial class Program
             AssertTrue(File.Exists(Path.Combine(packageA, "translation.csv")));
             // The XAML badge must not show the CSV-valid badge once the preflight has judged the source.
             var xaml = File.ReadAllText(Path.Combine(RepoRoot(), "wpf_app", "VNText.Studio.App", "MainWindow.xaml"), Encoding.UTF8);
-            Require(xaml.Contains("<Condition Binding=\"{Binding PatchPreflightEvaluated}\" Value=\"False\" />", StringComparison.Ordinal), "CSV HỢP LỆ only before the preflight has run");
+            Require(xaml.Contains("Binding PatchBadgeKind", StringComparison.Ordinal) && !xaml.Contains("<Border Grid.Column=\"1\" Background=\"{DynamicResource GreenSoftBrush}\"", StringComparison.Ordinal), "the badge colour is a style bound to the same readiness kind as its text");
         }
         finally
         {
             Directory.Delete(packageA, true);
             Directory.Delete(packageB, true);
         }
+    }
+
+    private static void PatchBadge_KindFollowsTheCurrentReadiness()
+    {
+        var packageA = CreatePatchSourcePackage("Hộ tống");
+        var packageB = CreatePatchSourcePackage("Đồng " + string.Join(" ", Enumerable.Repeat("bán", 40)), complete: false);
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(packageA, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA };
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);                       // A: current preflight is ready
+            AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
+            AssertTrue(vm.RunPatchCommand.CanExecute(null) || vm.Busy);
+            vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));   // source changed, nothing checked yet
+            AssertEqual("stale", vm.PatchBadgeKind); AssertEqual("CẦN KIỂM TRA LẠI", vm.PatchBadgeText);
+            AssertFalse(vm.PatchPreflightOk);
+            picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
+            vm.ChooseTranslationCsvCommand.Execute(null);                       // B: judged and blocked
+            AssertEqual("review", vm.PatchBadgeKind); AssertEqual("CẦN XEM LẠI", vm.PatchBadgeText);
+            AssertFalse(vm.PatchPreflightOk);
+            AssertFalse(vm.RunPatchCommand.CanExecute(null));                    // packaging stays disabled
+            picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
+            vm.ChooseTranslationCsvCommand.Execute(null);                       // back to A: green only after its own current check
+            AssertEqual("ready", vm.PatchBadgeKind);
+            AssertTrue(vm.PatchPreflightEvaluated && vm.PatchPreflightOk);
+            // English badge text goes through the same localizer as the rest of the page.
+            var previous = UiText.Language;
+            try { UiText.SetLanguage("en"); AssertEqual("READY", UiText.TranslateDynamic(vm.PatchBadgeText)); AssertEqual("CHECK AGAIN", UiText.TranslateDynamic("CẦN KIỂM TRA LẠI")); }
+            finally { UiText.SetLanguage(previous); }
+        }
+        finally
+        {
+            Directory.Delete(packageA, true);
+            Directory.Delete(packageB, true);
+        }
+    }
+
+    private static void UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone()
+    {
+        var previous = UiText.Language;
+        try
+        {
+            UiText.SetLanguage("vi");
+            AssertEqual("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", UiText.TranslateDynamic("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."));
+            AssertEqual("Không mở được review: Review rỗng.", UiText.TranslateDynamic("Không mở được review: Review rỗng."));   // Vietnamese is exact
+            UiText.SetLanguage("en");
+            AssertEqual("Could not open the review: The review is empty.", UiText.TranslateDynamic("Không mở được review: Review rỗng."));
+            AssertEqual("Running: OCR images.", UiText.TranslateDynamic("Đang chạy: OCR ảnh."));
+            AssertEqual("3 regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.",
+                UiText.TranslateDynamic("3 region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render."));
+            AssertEqual("Found 5 candidate images; text is not confirmed. Choose an image to OCR.", UiText.TranslateDynamic("Tìm thấy 5 ảnh ứng viên; chưa xác nhận có chữ. Chọn ảnh để OCR."));
+            // user data, paths, technical and unknown text stay untouched
+            foreach (var userText in new[] { "Xin chào, nhà thám hiểm", @"C:\Trò chơi\Ảnh\ui_01.png", "System.IO.IOException: The process cannot access the file", "Hello", "Nền phẳng của tôi" })
+                AssertEqual(userText, UiText.TranslateDynamic(userText));
+            AssertEqual("Flat background", UiText.TranslateDynamic("Nền phẳng"));
+            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic("Không mở được review: Access to the path 'C:\\x' is denied."));
+        }
+        finally { UiText.SetLanguage(previous); }
     }
 
     private static void ImageReview_OpeningASavedReviewExplainsTheReapproval()

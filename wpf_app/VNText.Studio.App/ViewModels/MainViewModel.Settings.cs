@@ -41,6 +41,7 @@ public sealed partial class MainViewModel
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
         Raise(nameof(HeroTitle)); Raise(nameof(HeroHint)); Raise(nameof(SelectedTab));
+        RaiseImageLanguageText();
     }
     public double[] UiScaleOptions { get; } = [1, 1.1, 1.2];
     public double UiScale

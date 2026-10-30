@@ -26,7 +26,8 @@ internal static partial class Program
                 app.InitializeComponent();
                 app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 var worker = new PythonWorkerHost();
-                var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+                var picker = new FakePathPicker();
+                var vm = new MainViewModel(picker, worker, startWorker: false);
                 vm.UiScale = 1.2;   // the reviewed UI scale: the content is laid out at 1/1.2 of the window
                 vm.NavigateTabCommand.Execute("editcsv");
                 var window = new MainWindow(vm, new FixtureUpdatePresentation());
@@ -175,6 +176,55 @@ internal static partial class Program
                     vm.ToggleCsvBulkPreviewDetailCommand.Execute(null);
                     vm.TestSetCsvBulkPreview(examples + "\nTrước: x\nSau: y");
                     Require(!vm.CsvBulkPreviewDetailOpen, "a new preview never opens its examples by surprise");
+                    // ---- Patch badge: text AND local colour follow the same current readiness (Light and Dark) ----
+                    var packageA = CreatePatchSourcePackage("Hộ tống");
+                    var packageB = CreatePatchSourcePackage("Đồng " + string.Join(" ", Enumerable.Repeat("bán", 40)), complete: false);
+                    var badgeReport = new List<string>();
+                    try
+                    {
+                        picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
+                        vm.NavigateTabCommand.Execute("patch");
+                        foreach (var badgeTheme in new[] { "light", "dark" })
+                        {
+                            vm.Theme = badgeTheme;
+                            window.UpdateLayout();
+                            PumpFixture(250);
+                            System.Windows.Media.Color Token(string key) => ((System.Windows.Media.SolidColorBrush)window.FindResource(key)).Color;
+                            void Badge(string expectedText, string background, string foreground, string state)
+                            {
+                                window.UpdateLayout();
+                                PumpFixture(120);
+                                var border = (Border)Named("PatchBadge");
+                                var label = (TextBlock)Named("PatchBadgeText");
+                                AssertEqual(expectedText, label.Text);
+                                var bg = ((System.Windows.Media.SolidColorBrush)border.Background).Color;
+                                var fg = ((System.Windows.Media.SolidColorBrush)label.Foreground).Color;
+                                Require(bg == Token(background) && fg == Token(foreground), $"{badgeTheme} {state}: badge colours come from {background}/{foreground}");
+                                Require(ContrastRatio(fg, bg) >= 4.5, $"{badgeTheme} {state}: readable badge ({Math.Round(ContrastRatio(fg, bg), 1)}:1)");
+                            }
+                            picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
+                            vm.ChooseTranslationCsvCommand.Execute(null);
+                            Require(Named("PatchBadge").IsVisible, $"{badgeTheme}: the badge is shown once a source was checked");
+                            Badge("SẴN SÀNG", "GreenSoftBrush", "GreenDarkBrush", "A ready");
+                            vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));
+                            Badge("CẦN KIỂM TRA LẠI", "SubtlePanelBrush", "MutedBrush", "B invalidated");
+                            Require(!Named("PatchBadge").IsVisible, $"{badgeTheme}: nothing is claimed while the new source is unchecked");
+                            picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
+                            vm.ChooseTranslationCsvCommand.Execute(null);
+                            Badge("CẦN XEM LẠI", "ToastWarningBackgroundBrush", "ToastWarningForegroundBrush", "B blocked");
+                            Require(Named("PatchBadge").IsVisible && !vm.RunPatchCommand.CanExecute(null), $"{badgeTheme}: B shows the amber badge and packaging is disabled");
+                            picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
+                            vm.ChooseTranslationCsvCommand.Execute(null);
+                            Badge("SẴN SÀNG", "GreenSoftBrush", "GreenDarkBrush", "A ready again after its own check");
+                            badgeReport.Add(badgeTheme);
+                        }
+                        vm.Theme = "light";
+                    }
+                    finally
+                    {
+                        Directory.Delete(packageA, true);
+                        Directory.Delete(packageB, true);
+                    }
                     // ---- English sidebar at UI 100% / 120%, 1043x720 DIP: every label is fully inside its navigation button ----
                     var navKeys = new[] { "Lấy text", "Dịch tự động", "Sửa CSV", "Tạo patch", "Nhật ký", "Cài đặt" };
                     var navReport = new List<string>();
@@ -229,7 +279,7 @@ internal static partial class Program
                     PumpFixture(150);
                     Require(Note() is not { IsVisible: true } && !logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal) && logBox.Text.Contains("[bracket]", StringComparison.Ordinal), "turning regex off restores the plain search (the text '[' is found literally)");
                     journal.Close();
-                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
+                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Patch badge states (" + string.Join("/", badgeReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
                     exitCode = 0;
                 }
                 finally { window.Close(); UiText.SetLanguage("vi"); UiAppearance.Apply("light", 100); app.Shutdown(); }

@@ -9,8 +9,8 @@ public sealed class WpfPathPickerService : IPathPickerService
     public string? PickImageFile(bool review = false)
     {
         var dialog = new OpenFileDialog { CheckFileExists = true,
-            Title = review ? "Mở review text ảnh" : "Chọn ảnh có chữ",
-            Filter = review ? "Image review (*.json)|*.json" : "Ảnh tĩnh|*.png;*.jpg;*.jpeg;*.webp" };
+            Title = UiText.Translate(review ? "Mở review text ảnh" : "Chọn ảnh có chữ"),
+            Filter = review ? "Image review (*.json)|*.json" : UiText.Translate("Ảnh tĩnh") + "|*.png;*.jpg;*.jpeg;*.webp" };
         return dialog.ShowDialog() == true ? dialog.FileName : null;
     }
 

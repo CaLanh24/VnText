@@ -302,3 +302,11 @@ public sealed class CountNonZeroToVisibilityConverter : IValueConverter
   public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
     throw new NotSupportedException();
 }
+
+/// <summary>Display-time localization of bound status text: Vietnamese passes through exactly, English maps known/dynamic app messages only (never user data).</summary>
+public sealed class UiTextConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+        value is string text ? VNText.Studio.App.Services.UiText.TranslateDynamic(text) : value;
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}

@@ -17,6 +17,7 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
+        <conv:UiTextConverter x:Key="UiTextDynamic" />
         <conv:StepStateToDotBrushConverter x:Key="StepDot" />
         <conv:StepStateToFontWeightConverter x:Key="StepWeight" />
         <conv:StepStateToTitleForegroundConverter x:Key="StepTitleFg" />
@@ -834,24 +835,27 @@
                                     <StackPanel>
                                         <TextBlock Text="Kiểm tra trước khi build" Style="{StaticResource UiSectionTitleTextStyle}" />
                                     </StackPanel>
-                                    <Border Grid.Column="1" Background="{DynamicResource GreenSoftBrush}" CornerRadius="8" Padding="9,5"
+                                    <Border x:Name="PatchBadge" Grid.Column="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource GreenDarkBrush}">
+                                        <!-- Colours are STYLE values bound to the same PatchBadgeKind as the text: ready = success green, review/blocked = amber, csvok/stale = neutral -->
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource ToastWarningBackgroundBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Background" Value="{DynamicResource GreenSoftBrush}" /></DataTrigger>
+                                                    <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
+                                                    <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock x:Name="PatchBadgeText" Text="{Binding PatchBadgeText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="CẦN XEM LẠI" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource ToastWarningForegroundBrush}" />
                                                     <Style.Triggers>
-                                                        <!-- "CSV HỢP LỆ" only while the preflight has not judged this source yet; a failed preflight never keeps the green CSV badge -->
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding CsvValidationOk}" Value="True" />
-                                                                <Condition Binding="{Binding PatchPreflightEvaluated}" Value="False" />
-                                                            </MultiDataTrigger.Conditions>
-                                                            <Setter Property="Text" Value="CSV HỢP LỆ" />
-                                                        </MultiDataTrigger>
-                                                        <DataTrigger Binding="{Binding PatchPreflightOk}" Value="True">
-                                                            <Setter Property="Text" Value="SẴN SÀNG" />
-                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </TextBlock.Style>

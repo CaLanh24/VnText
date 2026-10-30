@@ -100,10 +100,10 @@ internal sealed class AppDialogWindow : Window
         _close = new Button
         {
             Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center },
-            ToolTip = "Đóng (Esc)",
+            ToolTip = UiText.Translate("Đóng (Esc)"),
             Style = Application.Current?.TryFindResource("DialogCloseButton") as Style,
         };
-        AutomationProperties.SetName(_close, "Đóng " + title);
+        AutomationProperties.SetName(_close, UiText.Translate("Đóng") + " " + title);
         _close.Click += (_, _) => Dismiss();
         Grid.SetColumn(_close, 1);
         header.Children.Add(_close);
@@ -148,7 +148,7 @@ internal sealed class AppDialogWindow : Window
             if (e.Key == Key.Escape) { e.Handled = true; Dismiss(); }
         };
         Closing += (_, _) => RaiseDismissIfNeeded();
-        Loaded += (_, _) => { AttachOverlay(); FitToWorkArea(); FocusDefault(); };
+        Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); FitToWorkArea(); FocusDefault(); };
         // Content that grows after the first layout (OCR rows, a longer message) must keep the header and footer inside the work area.
         SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };
         Closed += (_, _) => DetachOverlay();

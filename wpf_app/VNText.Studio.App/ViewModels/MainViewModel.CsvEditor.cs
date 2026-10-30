@@ -511,7 +511,11 @@ public sealed partial class MainViewModel
             }
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
-        PropertyChanged += (_, e) => { if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort)); };
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort));
+            if (e.PropertyName is nameof(PatchPreflightOk) or nameof(PatchPreflightEvaluated) or nameof(CsvValidationOk)) RaisePatchBadge();
+        };
         ToggleCsvBulkCommand = new RelayCommand(_ => { _csvBulkUserChoice = true; CsvBulkExpanded = !CsvBulkExpanded; });
         ToggleCsvBulkPreviewDetailCommand = new RelayCommand(_ => { _csvBulkPreviewDetailOpen = !_csvBulkPreviewDetailOpen; RaiseCsvBulkPreviewParts(); });
         ReloadCsvEditorCommand = new RelayCommand(

@@ -56,6 +56,24 @@ public sealed partial class MainViewModel
     /// The Patch results (badge, counts, readiness, completion/delivery text) belong to ONE source. When the CSV/package source changes
     /// they are dropped and a fresh check is required; the old artifact on disk is never touched.
     /// </summary>
+    private bool _patchSourceStale;
+
+    /// <summary>One readiness state for the Patch badge: ready | review | csvok | stale. Text AND colour in the view both follow this value.</summary>
+    public string PatchBadgeKind =>
+        PatchPreflightOk ? "ready" : PatchPreflightEvaluated ? "review" : _patchSourceStale ? "stale" : CsvValidationOk ? "csvok" : "review";
+
+    public string PatchBadgeText => PatchBadgeKind switch
+    {
+        "ready" => "SẴN SÀNG",
+        "csvok" => "CSV HỢP LỆ",
+        "stale" => "CẦN KIỂM TRA LẠI",
+        _ => "CẦN XEM LẠI",
+    };
+
+    private void RaisePatchBadge() { Raise(nameof(PatchBadgeKind)); Raise(nameof(PatchBadgeText)); }
+
+    internal void TestSetTranslationCsvPath(string path) => TranslationCsvPath = path;
+
     private void InvalidatePatchSourceState()
     {
         var hadState = PatchResultsAvailable || PatchPreflightEvaluated || PatchDeliveryReady || CsvValidationOk;
@@ -63,6 +81,7 @@ public sealed partial class MainViewModel
         PatchDeliveryLabel = "";
         PatchInstallInstructions = "";
         if (!hadState) return;
+        _patchSourceStale = true;
         CsvValidationOk = false;
         CsvValidationMessage = "";
         ReadyForPatch = false;
@@ -73,6 +92,7 @@ public sealed partial class MainViewModel
         PatchPreflightMessage = "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch.";
         PatchResultsAvailable = false;
         PatchResultsExpanded = false;
+        RaisePatchBadge();
     }
 
     internal void TestSetPatchDelivery(string label, string instructions)
@@ -134,6 +154,7 @@ public sealed partial class MainViewModel
         var previousBlocked = PatchBlockedCount;
         var previousPreflightMessage = PatchPreflightMessage;
         var previousEvaluated = PatchPreflightEvaluated;
+        var previousStale = _patchSourceStale;
         var previousResultsAvailable = PatchResultsAvailable;
         var previousResultsExpanded = PatchResultsExpanded;
         var previousDeliveryReady = PatchDeliveryReady;
@@ -152,6 +173,8 @@ public sealed partial class MainViewModel
             PatchBlockedCount = previousBlocked;
             PatchPreflightMessage = previousPreflightMessage;
             PatchPreflightEvaluated = previousEvaluated;
+            _patchSourceStale = previousStale;
+            RaisePatchBadge();
             PatchResultsAvailable = previousResultsAvailable;
             PatchResultsExpanded = previousResultsExpanded;
             PatchDeliveryLabel = previousDeliveryLabel;
@@ -201,6 +224,7 @@ public sealed partial class MainViewModel
             PatchResultsAvailable = true;
             PatchResultsExpanded = true;
         }
+        _patchSourceStale = false;
         CsvValidationOk = result.Ok;
         CsvValidationMessage = result.Message;
         ReadyForPatch = result.Ok && WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(path)!).IsComplete;
@@ -277,6 +301,7 @@ public sealed partial class MainViewModel
         var result = !progress.IsComplete
             ? PatchPreflightResult.Fail(csv, $"Dịch chưa hoàn tất — pending {progress.Pending}, review {progress.ReviewOnly}, blocked {progress.Blocked}. Chưa thể tạo Patch.")
             : PatchPreflightService.Run(csv, manifest);
+        _patchSourceStale = false;
         PatchPreflightOk = result.Ok;
         PatchPreflightEvaluated = true;
         PatchResultsAvailable = true;

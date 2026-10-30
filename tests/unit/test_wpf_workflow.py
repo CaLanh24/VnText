@@ -622,7 +622,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("InvalidatePatchSourceState();", main_vm)
         for member in ("PatchDeliveryReady = false;", "PatchPreflightEvaluated = false;", "PatchResultsAvailable = false;", "CsvValidationOk = false;", "ReadyForPatch = false;"):
             self.assertIn(member, paths_vm)
-        self.assertIn('<Condition Binding="{Binding PatchPreflightEvaluated}" Value="False" />', xaml)
+        self.assertIn('x:Name="PatchBadgeText" Text="{Binding PatchBadgeText, Converter={StaticResource UiTextDynamic}}"', xaml)
+        self.assertIn('Binding="{Binding PatchBadgeKind}" Value="ready"', xaml)
         self.assertEqual(2, paths_vm.count("CsvPackageValidator.Validate(path, requireTranslations)"))      # the pre-check and the check itself are unchanged
         # (2)+(3) OCR translation editor is the themed input; the delete button is fixed locally, the shared compact style is unchanged
         editor = panel[panel.index('x:Key="RegionTranslationEditor"'):panel.index('<Style x:Key="FormField"')]
@@ -646,6 +647,48 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('ImageStatus = "Không mở được review: " + e.Message', image_vm)
         for guard in ('throw new InvalidDataException("Review ảnh vượt 2 MiB.");', "document.Regions.Count > 500", "hash review không khớp", "region.Approved = false;"):
             self.assertIn(guard, image_vm)
+
+    def test_ocr_workspace_text_is_fully_covered_by_the_english_catalog_without_touching_user_data(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        ui_text = (app / "Services" / "UiText.cs").read_text(encoding="utf-8")
+        image_vm = (app / "ViewModels" / "MainViewModel.ImageText.cs").read_text(encoding="utf-8")
+        model = (app / "Models" / "ImageTextDocument.cs").read_text(encoding="utf-8")
+        picker = (app / "Services" / "WpfPathPickerService.cs").read_text(encoding="utf-8")
+        dialog = (app / "Services" / "AppDialogWindow.cs").read_text(encoding="utf-8")
+        keys = set(re.findall(r'^\s*\["((?:[^"\\]|\\.)*)"\]\s*=', ui_text, re.M))
+        vietnamese = re.compile("[ăâđêôơưàáạảãầấậẩẫằắặẳẵèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ]", re.I)
+        # every literal label/tooltip/automation text in the OCR panel (and the entry buttons) has an English entry
+        missing = []
+        for attribute in ("Text", "Content", "Header", "ToolTip", "AutomationProperties.Name", "AutomationProperties.HelpText"):
+            for value in re.findall(r'(?<![\w.])%s="([^"{]*)"' % re.escape(attribute), panel):
+                if vietnamese.search(value) and value not in keys:
+                    missing.append(value)
+        self.assertEqual([], missing)
+        # every status/summary message the view model and the model can show is in the catalog or matched by an anchored pattern
+        for message in re.findall(r'"([^"]*[ăâđêôơưàáạảãầấậẩẫằắặẳẵèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ][^"]*)"', model):
+            self.assertIn(message, keys, message)
+        for message in ("Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.", "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công.",
+                        "Review ảnh vượt 2 MiB.", "Ảnh nguồn đã đổi hoặc hash review không khớp.", "Chọn thư mục xuất trước.", "Đang xử lý text trong ảnh…"):
+            self.assertIn(message, image_vm)
+            self.assertIn(message, keys, message)
+        # display-time translation: converter bindings in the panel, exact Vietnamese pass-through, anchored patterns, prefixes
+        for name in ("ImageWorkspaceTaskText", "ImageWorkspaceProgressText", "ImageWorkspaceSummary", "ImageEmptyHint", "ImageStatus"):
+            self.assertIn("Text=\"{Binding %s, Converter={StaticResource UiTextDynamic}}\"" % name, panel)
+        self.assertIn("Binding=\"{Binding ModeSummary, Mode=OneWay, Converter={StaticResource UiTextDynamic}}\"", panel)
+        self.assertIn('if (Language != "en" || string.IsNullOrEmpty(text)) return text;', ui_text)
+        self.assertEqual(0, ui_text.count("Replace(\"Chọn"))                       # no substring replacement of user text anywhere
+        # automation names, grid headers and templated cells are localized by the same catalog; dialogs apply it on load; pickers use it
+        self.assertIn("AutomationProperties.NameProperty", ui_text)
+        self.assertIn("column.Header = Translate(original);", ui_text)
+        self.assertIn("raw = element.GetValue(property)", ui_text)
+        self.assertIn("UiText.Apply(this); AttachOverlay();", dialog)
+        self.assertIn('UiText.Translate(review ? "Mở review text ảnh" : "Chọn ảnh có chữ")', picker)
+        # a language switch refreshes the bound OCR text
+        self.assertIn("RaiseImageLanguageText();", (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8"))
+        # the Vietnamese UI strings themselves are unchanged
+        for exact in ('"Chọn ảnh để xem trước và OCR"', '"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', '"Không mở được review: "'):
+            self.assertIn(exact, image_vm)
 
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re

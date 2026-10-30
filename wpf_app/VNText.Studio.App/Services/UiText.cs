@@ -94,6 +94,136 @@ public static class UiText
         ["Chọn file CSV"] = "Choose CSV file",
         ["Chọn CSV"] = "Choose CSV",
         ["Mở công cụ"] = "Open tools",
+        ["Chưa bắt đầu"] = "Not started",
+        ["Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…"] = "The worker received the cancel request; waiting for the task to stop safely…",
+        ["Đã hủy"] = "Cancelled",
+        ["Lỗi"] = "Error",
+        ["Đầu vào đã đổi"] = "The input changed",
+        ["Phân tích hoàn tất"] = "Analysis finished",
+        ["Hoàn tất"] = "Finished",
+        ["Worker báo lỗi; đang chờ kết quả cuối để dừng an toàn…"] = "The worker reported an error; waiting for the final result to stop safely…",
+        ["Đang bắt đầu…"] = "Starting…",
+        ["Đã yêu cầu hủy; đang chờ worker xác nhận…"] = "Cancel requested; waiting for the worker to confirm…",
+        ["Chưa có kết quả cuối sau 30 giây; hãy tiếp tục chờ và không đóng ứng dụng cưỡng bức."] = "No final result after 30 seconds; keep waiting and do not force-close the application.",
+        ["Đóng (Esc)"] = "Close (Esc)",
+        ["Ảnh tĩnh PNG/JPEG/WebP. OCR tiếng Anh luôn cần bạn xem lại: sửa text, nhập bản dịch, chọn đúng một chế độ nền rồi tick Duyệt. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối."] = "Still PNG/JPEG/WebP images. English-language OCR always needs your review: edit the text, enter the translation, choose exactly one background mode, then tick Approve. OCR, review and rendering only read the original image and write results to a separate output folder. Only the “Install package into game copy…” step writes, into a game COPY you choose (with a backup and a read-back hash check); the original game folder is never written, and a copy that is the same as, or inside, the original game is refused.",
+        ["Tác vụ đang chạy"] = "Task running",
+        ["Tiến trình và xác nhận hủy"] = "Progress and cancellation status",
+        ["Hủy tác vụ đang chạy"] = "Cancel the running task",
+        ["Tình trạng ảnh trong gói"] = "Image status in the package",
+        ["1 · Chọn ảnh và OCR"] = "1 · Choose an image and run OCR",
+        ["Chọn ảnh…"] = "Choose image…",
+        ["Mở review đã lưu…"] = "Open saved review…",
+        ["Ảnh ứng viên"] = "Candidate images",
+        ["2 · Xem lại và duyệt"] = "2 · Review and approve",
+        ["Chưa có ảnh để xem trước"] = "No image to preview yet",
+        ["Vùng chữ trong ảnh"] = "Text regions in the image",
+        ["TEXT OCR"] = "OCR TEXT",
+        ["BẢN DỊCH"] = "TRANSLATION",
+        ["CHẾ ĐỘ NỀN"] = "BACKGROUND MODE",
+        ["DUYỆT"] = "APPROVED",
+        ["XÓA"] = "DELETE",
+        ["Xóa vùng"] = "Delete region",
+        ["Chọn một dòng trong bảng để sửa crop, cỡ chữ, màu và chế độ nền của vùng đó."] = "Select a row in the table to edit that region's crop, font size, colors and background mode.",
+        ["Chi tiết vùng đang chọn"] = "Selected region details",
+        ["X (pixel gốc)"] = "X (source pixels)",
+        ["X của vùng, pixel gốc"] = "Region X, source pixels",
+        ["Y (pixel gốc)"] = "Y (source pixels)",
+        ["Y của vùng, pixel gốc"] = "Region Y, source pixels",
+        ["Chiều rộng của vùng"] = "Region width",
+        ["Chiều cao của vùng"] = "Region height",
+        ["Cỡ chữ"] = "Font size",
+        ["Màu nền (RGB)"] = "Background color (RGB)",
+        ["Màu nền RGB"] = "Background color RGB",
+        ["Màu chữ (RGB)"] = "Text color (RGB)",
+        ["Màu chữ RGB"] = "Text color RGB",
+        ["Chế độ nền — chọn đúng một"] = "Background mode — choose exactly one",
+        ["Chế độ nền phẳng đã kiểm"] = "Flat background mode, checked",
+        ["Chế độ thay chữ trong suốt"] = "Replace transparent text mode",
+        ["Thay region bằng màu đặc"] = "Replace region with solid color",
+        ["Chế độ thay region bằng màu đặc"] = "Replace region with solid color mode",
+        ["Chế độ clone nền mẫu đã kiểm"] = "Clone sample background mode, checked",
+        ["X nền mẫu (clone)"] = "Sample X (clone)",
+        ["Y nền mẫu (clone)"] = "Sample Y (clone)",
+        ["Duyệt text/crop của vùng này"] = "Approve this region's text/crop",
+        ["Duyệt text và crop của vùng"] = "Approve the region's text and crop",
+        ["3 · Dựng ảnh và gói cài"] = "3 · Render and install package",
+        ["Trạng thái xử lý ảnh"] = "Image processing status",
+        ["Text trong ảnh…"] = "Text in images…",
+        ["Text trong ảnh"] = "Text in images",
+        ["Mở Text trong ảnh"] = "Open Text in images",
+        ["Dịch ảnh…"] = "Translate image…",
+        ["OCR, duyệt, dựng và cài ảnh trong game."] = "OCR, review, render and install images in the game.",
+        ["OCR, duyệt, dựng và cài ảnh (không cần dòng text trong CSV)."] = "OCR, review, render and install images (no CSV text rows needed).",
+        ["Chọn ảnh để tạo bản dịch nháp; việc này chỉ chạy khi bạn yêu cầu trong bước Dịch."] = "Choose an image to create a draft translation; this runs only when you ask for it in the Translate step.",
+        ["Nền phẳng"] = "Flat background",
+        ["Chữ trong suốt"] = "Transparent text",
+        ["Màu đặc"] = "Solid color",
+        ["Clone nền mẫu"] = "Clone sample background",
+        ["Chưa chọn chế độ nền"] = "No background mode chosen",
+        ["Chọn nhiều chế độ — cần đúng một"] = "Several modes chosen — exactly one is required",
+        ["Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch."] = "Choose a still image for OCR; the result needs review and never creates a patch by itself.",
+        ["Chọn ảnh để xem trước và OCR"] = "Choose an image to preview and OCR",
+        ["Bấm “OCR ảnh đã chọn” để xem trước và đọc text trong ảnh này."] = "Press “OCR the chosen image” to preview and read the text in this image.",
+        ["tìm ảnh trong thư mục game"] = "find images in the game folder",
+        ["OCR ảnh"] = "OCR images",
+        ["dịch nháp ảnh"] = "draft image translation",
+        ["dựng ảnh từ bản dịch đã duyệt"] = "render from the approved translation",
+        ["tạo gói ảnh"] = "create the image package",
+        ["cài gói vào bản sao game"] = "install the package into the game copy",
+        ["phục hồi giao dịch ảnh"] = "recover the image transaction",
+        ["dịch text trong CSV"] = "translate CSV text",
+        ["lấy text"] = "extract text",
+        ["phân tích game"] = "analyze the game",
+        ["tạo patch"] = "create the patch",
+        ["tác vụ"] = "task",
+        ["Chưa chọn game / thư mục chứa ảnh."] = "No game / image folder chosen.",
+        ["Chưa chọn thư mục xuất."] = "No output folder chosen.",
+        ["Chưa có báo cáo OCR trong gói. Bấm “Tìm ảnh từ thư mục game”, chọn ảnh rồi OCR."] = "No OCR report in the package yet. Press “Find images in the game folder”, choose an image, then run OCR.",
+        ["Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói)."] = "To review and install, choose the real image in the game folder (not the copy inside the package).",
+        ["Chọn thư mục xuất trước."] = "Choose the output folder first.",
+        ["Review đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các file đã dựng trước đó vẫn được giữ trong thư mục xuất."] = "The review changed after rendering — render again before creating the package or installing. Files rendered earlier are kept in the output folder.",
+        ["Đang dịch lại ảnh…"] = "Re-translating the image…",
+        ["Đang tạo gói ảnh locale…"] = "Creating the locale image package…",
+        ["Đang cài vào bản sao game…"] = "Installing into the game copy…",
+        ["Đang phục hồi giao dịch ảnh…"] = "Recovering the image transaction…",
+        ["Đang xử lý text trong ảnh…"] = "Processing the text in the image…",
+        ["Đang dựng ảnh từ bản dịch duyệt…"] = "Rendering the image from the approved translation…",
+        ["Review ảnh vượt 2 MiB."] = "The image review is larger than 2 MiB.",
+        ["Review rỗng."] = "The review is empty.",
+        ["Schema/region không hợp lệ."] = "Invalid schema/region.",
+        ["Ảnh nguồn không tồn tại hoặc vượt 32 MiB."] = "The source image is missing or larger than 32 MiB.",
+        ["Ảnh nguồn đã đổi hoặc hash review không khớp."] = "The source image changed or the review hash does not match.",
+        ["Kích thước ảnh nguồn không khớp review."] = "The source image size does not match the review.",
+        ["Không tìm thấy ảnh nguồn/preview."] = "The source image/preview was not found.",
+        ["Preview vượt 32 MiB."] = "The preview is larger than 32 MiB.",
+        ["Preview không hợp lệ hoặc quá 16 triệu pixel."] = "The preview is invalid or over 16 million pixels.",
+        ["Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."] = "No text found; choose another crop/image or add a region manually.",
+        ["Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."] = "Approve the text/crop and choose exactly one mode: flat background, keep transparent text, replace the region with a solid color, or clone a clean background area (sample X/Y).",
+        ["Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong thư mục xuất), hãy dựng lại cho review hiện tại."] = "The review changed during processing; the old result was dropped (files are kept in the output folder) — render again for the current review.",
+        ["Ảnh đang chọn đã đổi trong lúc xử lý; kết quả cũ bị bỏ, hãy chạy lại cho ảnh hiện tại."] = "The chosen image changed during processing; the old result was dropped — run again for the current image.",
+        ["Đã xử lý ảnh; xem thư mục images cạnh CSV."] = "Image processed; see the images folder next to the CSV.",
+        ["Chưa dịch được ảnh."] = "The image could not be translated yet.",
+        ["Chọn ảnh để OCR."] = "Choose an image to OCR.",
+        ["Đã xử lý gói ảnh"] = "Image package processed",
+        ["Đã render"] = "Rendered",
+        ["Thư mục review ảnh phải mới; giữ nguyên kết quả đã có."] = "The image review folder must be new; existing results are kept.",
+        ["Đã tạo gói ảnh locale Vietnamese. Cài vào bản sao game; cần chọn ngôn ngữ vietnamese trong game."] = "Vietnamese locale image package created. Install it into a game copy; choose Vietnamese in the game.",
+        ["Đã cài ảnh vào bản sao game và kiểm hash đọc lại. Chưa xác nhận game đang chọn Vietnamese."] = "Images installed into the game copy and hash-verified on read-back. It is not confirmed that the game is set to Vietnamese.",
+        ["Đã gỡ đúng ảnh của giao dịch; giữ nguyên ảnh nguồn."] = "The transaction's images were removed exactly; source images are untouched.",
+        ["RPA member không phải ảnh tĩnh được hỗ trợ."] = "The RPA member is not a supported still image.",
+        ["Ảnh thay đổi trong lúc OCR; hãy lấy lại text."] = "The image changed during OCR; extract the text again.",
+        ["Không thấy text; kiểm ảnh/crop rồi thử lại."] = "No text found; check the image/crop and try again.",
+        ["RPA container/member đã đổi; hãy tạo lại inventory và OCR."] = "The RPA container/member changed; rebuild the inventory and run OCR again.",
+        ["Ảnh nguồn đã thay đổi; review lại."] = "The source image changed; review again.",
+        ["Đã dựng ảnh từ bản dịch duyệt; mở preview để kiểm trước khi dùng. Ảnh nguồn giữ nguyên."] = "Image rendered from the approved translation; open the preview to check it before use. The source image is untouched.",
+        ["Mở review text ảnh"] = "Open image-text review",
+        ["Chọn ảnh có chữ"] = "Choose an image with text",
+        ["Ảnh tĩnh"] = "Still images",
+        ["SẴN SÀNG"] = "READY",
+        ["CSV HỢP LỆ"] = "CSV VALID",
+        ["CẦN XEM LẠI"] = "NEEDS REVIEW",
+        ["CẦN KIỂM TRA LẠI"] = "CHECK AGAIN",
         ["Biểu thức tìm kiếm không hợp lệ."] = "The search expression is not valid.",
         ["Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."] = "Review opened. For safety, choose the background mode again and approve the regions before rendering.",
         ["Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch."] = "The translation source changed — check it again before creating the patch.",
@@ -288,6 +418,60 @@ public static class UiText
         ? value.ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)
         : value.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture);
     public static string Translate(string text) => Language == "en" && English.TryGetValue(text, out var translated) ? translated : text;
+
+    private static readonly (string Vi, string En)[] DynamicPrefixes =
+    [
+        ("Không mở được review: ", "Could not open the review: "), ("Đã lưu review riêng: ", "Review saved separately: "), ("Lưu review lỗi: ", "Saving the review failed: "),
+        ("Chưa hoàn tất: ", "Not finished: "), ("Không đọc được kết quả ảnh: ", "Could not read the image result: "),
+    ];
+    private static readonly string[] SentenceKeys =
+    [
+        "Đã tạo gói ảnh locale Vietnamese. Cài vào bản sao game; cần chọn ngôn ngữ vietnamese trong game.",
+        "Đã cài ảnh vào bản sao game và kiểm hash đọc lại. Chưa xác nhận game đang chọn Vietnamese.",
+        "Đã gỡ đúng ảnh của giao dịch; giữ nguyên ảnh nguồn.", "Đã xử lý gói ảnh",
+        "Đã dựng ảnh từ bản dịch duyệt; mở preview để kiểm trước khi dùng. Ảnh nguồn giữ nguyên.",
+    ];
+    // (regex, English template, groups that are themselves app messages/labels)
+    private static readonly (System.Text.RegularExpressions.Regex Pattern, string English, int[] Nested)[] DynamicPatterns =
+    [
+        (new(@"^Đang chạy: (.+)\.$"), "Running: {1}.", [1]),
+        (new(@"^Một tác vụ khác đang chạy \((.+)\) — chờ xong hoặc bấm Hủy trước khi dùng ảnh\.$"), "Another task is running ({1}) — wait for it to finish or press Cancel before using images.", [1]),
+        (new(@"^Đang có tác vụ chạy; chưa thể (.+)\.$"), "A task is running; cannot {1} yet.", [1]),
+        (new(@"^Chưa thể (.+): chưa có ảnh dựng/gói khớp với review hiện tại\. Dựng lại ảnh từ review đã duyệt trước\.$"), "Cannot {1}: there is no rendered image/package matching the current review. Render again from the approved review first.", [1]),
+        (new(@"^Đã hủy (.+)\. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn \(nếu có\) có thể còn trong thư mục xuất\.$"), "Cancelled {1}. The original image is untouched; the cancelled result is not applied to this screen, but anything already written safely (if any) may remain in the output folder.", [1]),
+        (new(@"^(\d+) region cần review; tọa độ theo pixel ảnh gốc\. Chọn đúng một chế độ nền cho từng vùng trước render\.$"), "{1} regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.", []),
+        (new(@"^Gói có (\S+) ảnh: (\S+) đã OCR, (\S+) bản dịch nháp, (\S+) chưa OCR được \(cần xem tay\)\.(?: (.*))?$"), "The package has {1} images: {2} OCR'd, {3} draft translations, {4} not OCR-able (need manual attention). {5}", [5]),
+        (new(@"^Ảnh: (\d+) bản dịch nháp, (\d+) chưa dịch\. (.*)$"), "Images: {1} draft translations, {2} untranslated. {3}", []),
+        (new(@"^Tìm thấy (\d+) ảnh ứng viên; chưa xác nhận có chữ(?:; inventory chưa đầy đủ do (\d+) archive lỗi/không hỗ trợ)?\. Chọn ảnh để OCR\.$"), "Found {1} candidate images; text is not confirmed{2}. Choose an image to OCR.", []),
+        (new(@"^OCR (\d+) region — cần sửa text/tọa độ, duyệt nền phẳng và bản dịch trước render\.$"), "OCR found {1} regions — edit the text/coordinates, approve the flat background and the translation before rendering.", []),
+    ];
+
+    /// <summary>Display-time translation of app messages that contain numbers/labels. Vietnamese is returned untouched; user data, paths and
+    /// unknown (technical/Windows) text pass through unchanged because only whole known messages, known prefixes and anchored patterns match.</summary>
+    public static string TranslateDynamic(string text)
+    {
+        if (Language != "en" || string.IsNullOrEmpty(text)) return text;
+        if (English.TryGetValue(text, out var exact)) return exact;
+        foreach (var (vi, en) in DynamicPrefixes)
+            if (text.StartsWith(vi, StringComparison.Ordinal)) return en + TranslateDynamic(text[vi.Length..]);
+        foreach (var key in SentenceKeys)
+            if (text.Length > key.Length && text.StartsWith(key + " ", StringComparison.Ordinal)) return English[key] + text[key.Length..];
+        foreach (var (pattern, english, nested) in DynamicPatterns)
+        {
+            var match = pattern.Match(text);
+            if (!match.Success) continue;
+            var result = english;
+            for (var group = 1; group < match.Groups.Count; group++)
+            {
+                var value = match.Groups[group].Value;
+                if (Array.IndexOf(nested, group) >= 0) value = TranslateDynamic(value);
+                else if (group == 2 && english.Contains("not confirmed{2}")) value = value.Length > 0 ? $"; inventory incomplete because {value} archives failed or are unsupported" : "";
+                result = result.Replace("{" + group + "}", value);
+            }
+            return result.Trim();
+        }
+        return text;
+    }
     public static void SetLanguage(string language) => Language = language == "en" ? "en" : "vi";
     public static void Install()
     {
@@ -295,6 +479,9 @@ public static class UiText
         _installed = true;
         EventManager.RegisterClassHandler(typeof(FrameworkElement), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) => { if (sender is DependencyObject d) ApplyElement(d); }), true);
+        // Collapsed Expander content is not in the visual tree until it opens: localize it then.
+        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.Expander), System.Windows.Controls.Expander.ExpandedEvent,
+            new RoutedEventHandler((sender, _) => { if (sender is System.Windows.Controls.Expander expander) expander.Dispatcher.BeginInvoke(new Action(() => Apply(expander)), System.Windows.Threading.DispatcherPriority.Loaded); }), true);
     }
     public static void Apply(DependencyObject root)
     {
@@ -306,15 +493,40 @@ public static class UiText
         if (element is TextBlock) Literal(element, TextBlock.TextProperty);
         if (element is ContentControl) Literal(element, ContentControl.ContentProperty);
         if (element is HeaderedContentControl) Literal(element, HeaderedContentControl.HeaderProperty);
-        if (element is FrameworkElement) { Literal(element, FrameworkElement.ToolTipProperty); Literal(element, FrameworkElement.TagProperty); }
+        if (element is FrameworkElement)
+        {
+            Literal(element, FrameworkElement.ToolTipProperty); Literal(element, FrameworkElement.TagProperty);
+            Literal(element, System.Windows.Automation.AutomationProperties.NameProperty); Literal(element, System.Windows.Automation.AutomationProperties.HelpTextProperty);
+        }
+        if (element is DataGrid rowsGrid && RowHooked.TryGetValue(rowsGrid, out _) == false)
+        {
+            // Rows are realised later (and recycled): their templated labels are localized as each row loads.
+            RowHooked.Add(rowsGrid, new object());
+            rowsGrid.LoadingRow += (_, e) => rowsGrid.Dispatcher.BeginInvoke(new Action(() => Apply(e.Row)), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+        if (element is DataGrid grid)
+            foreach (var column in grid.Columns)
+            {
+                if (!ColumnHeaders.TryGetValue(column, out var original))
+                {
+                    if (column.Header is not string header || !English.ContainsKey(header)) continue;
+                    ColumnHeaders.Add(column, original = header);
+                }
+                column.Header = Translate(original);
+            }
     }
+    private static readonly ConditionalWeakTable<DataGridColumn, string> ColumnHeaders = new();
+    private static readonly ConditionalWeakTable<DataGrid, object> RowHooked = new();
     private static void Literal(DependencyObject element, DependencyProperty property)
     {
         if (System.Windows.Data.BindingOperations.IsDataBound(element, property)) return;
         var originals = Originals.GetOrCreateValue(element);
         if (!originals.TryGetValue(property, out var original))
         {
-            if (element.ReadLocalValue(property) is not string text || !English.ContainsKey(text)) return;
+            // Values written by a template/style are not "local"; read the effective value so templated cells and rows localize too.
+            var raw = element.ReadLocalValue(property);
+            if (raw is not string) raw = element.GetValue(property);
+            if (raw is not string text || !English.ContainsKey(text)) return;
             originals[property] = original = text;
         }
         element.SetCurrentValue(property, Translate(original));

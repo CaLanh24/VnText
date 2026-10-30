@@ -40,6 +40,7 @@ public sealed class ImageTextRegion : NotifyBase
     public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
     public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
     public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) Raise(nameof(ModeSummary)); } }
+    internal void RaiseLanguageText() => Raise(nameof(ModeSummary));
     /// <summary>One-line state of the four background modes for the compact grid; nothing is chosen by default.</summary>
     [JsonIgnore]
     public string ModeSummary
