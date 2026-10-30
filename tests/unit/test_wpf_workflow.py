@@ -767,12 +767,12 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Header="MÃ DÒNG" Binding="{Binding Key}" IsReadOnly="True" Width="0" MinWidth="0" Visibility="Collapsed"', xaml)
         self.assertIn('ToolTip="{Binding CsvEditorPathToolTip}"', xaml)
         self.assertIn('IsReadOnly="{Binding CsvEditorGridReadOnly}"', xaml)
-        self.assertIn('Text="{Binding CsvEditorLockText}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorLockText, Converter={StaticResource UiTextDynamic}}"', xaml)
         self.assertIn("if (Busy)", editor)  # direct-entry save guard
         self.assertIn('ToolTipService.IsEnabled', xaml)
-        self.assertIn('Text="{Binding CsvEditorSelectionDetails}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorSelectionDetails, Converter={StaticResource UiTextDynamic}}"', xaml)
         self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
-        self.assertIn('Text="{Binding PatchProgressStep, StringFormat=\'Bước: {0}\'}"', xaml)
+        self.assertIn("Text=\"{Binding PatchProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}\"", xaml)
         self.assertIn('Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Style="{StaticResource BlueProgressBarStyle}"', xaml)
@@ -781,8 +781,8 @@ class WpfWorkflowTests(unittest.TestCase):
         for command in ("ClearBlockedCsvCommand", "ValidateCsvEditorCommand", "RetranslateBlockedCsvCommand", "ApproveCsvMemoryCommand"):
             self.assertNotIn(f'Command="{{Binding {command}}}"', xaml)
         self.assertIn("ValidateCsvEditor(showLog: false)", editor)
-        self.assertIn('Text="{Binding CsvEditorUserValidationMessage}"', xaml)
-        self.assertIn('ToolTip="{Binding CsvEditorValidationMessage}"', xaml)
+        self.assertIn('Text="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}"', xaml)
+        self.assertIn('ToolTip="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}"', xaml)
 
     def test_csv_editor_save_is_async_and_protects_exit_and_external_edits(self):
         editor = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
