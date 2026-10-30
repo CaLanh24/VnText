@@ -29,6 +29,8 @@ internal static partial class Program
             return RunCsvLayoutFixture();
         if (args.Contains("--region-grid-fixture", StringComparer.Ordinal))
             return RunRegionGridFixture();
+        if (args.Contains("--english-pages-fixture", StringComparer.Ordinal))
+            return RunEnglishPagesFixture(args);
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
@@ -235,6 +237,7 @@ internal static partial class Program
         Run("ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist", ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist, failures);
         Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
         Run("PatchState_FollowsTheSourceAndRequiresACurrentCheck", PatchState_FollowsTheSourceAndRequiresACurrentCheck, failures);
+        Run("PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource", PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource, failures);
         Run("PatchBadge_KindFollowsTheCurrentReadiness", PatchBadge_KindFollowsTheCurrentReadiness, failures);
         Run("UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone", UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone, failures);
         Run("ImageReview_OpeningASavedReviewExplainsTheReapproval", ImageReview_OpeningASavedReviewExplainsTheReapproval, failures);
@@ -2003,6 +2006,95 @@ internal static partial class Program
         {
             Directory.Delete(packageA, true);
             Directory.Delete(packageB, true);
+        }
+    }
+
+    private static void PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource()
+    {
+        var garbage = "Đồng " + string.Join(" ", Enumerable.Repeat("bán", 40));
+        var packageA = CreatePatchSourcePackage("Hộ tống");
+        var packageB = CreatePatchSourcePackage(garbage);
+        var packageC = CreatePatchSourcePackage("Hộ tống");
+        try
+        {
+            var csvA = Path.Combine(packageA, "translation.csv");
+            var csvB = Path.Combine(packageB, "translation.csv");
+            var csvC = Path.Combine(packageC, "translation.csv");
+            var picker = new FakePathPicker { TranslationCsv = csvA };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA };
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+
+            void EditAndSave(string csv, string translation)
+            {
+                picker.TranslationCsv = csv;
+                vm.CsvEditorMessageBox = (_, _, _, _) => MessageBoxResult.No;
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                vm.CsvEditorRows[0].Translation = translation;
+                vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+                Require(vm.SaveCsvEditorAsync().GetAwaiter().GetResult(), "save of " + Path.GetFileName(Path.GetDirectoryName(csv)) + ": " + vm.CsvEditorStatus + " / " + vm.CsvEditorSaveError);
+            }
+
+            vm.CsvEditorMessageBox = (_, _, _, _) => MessageBoxResult.No;
+            picker.TranslationCsv = csvA;
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            // The save lands after the Patch source moved to another package: that package is neither invalidated nor re-pointed.
+            vm.CsvEditorRows[0].Translation = "Đã sửa A";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            vm.OutputPath = packageC;
+            vm.TestSetTranslationCsvPath(csvC);
+            vm.ValidateTranslationCsvCommand.Execute(null);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_C");
+            AssertTrue(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+            AssertEqual("ready", vm.PatchBadgeKind);
+            AssertTrue(vm.PatchPreflightOk && vm.PatchDeliveryReady);
+            AssertEqual(csvC, vm.TranslationCsvPath);
+            AssertEqual("Đã sửa A", TranslationCsvEditorService.Load(csvA).Rows[0]["translation"]);
+            vm.OutputPath = packageA; picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+
+            // valid -> invalid: saving the CURRENT Patch csv drops the old readiness; the artifact files stay.
+            EditAndSave(csvA, garbage);
+            AssertEqual("stale", vm.PatchBadgeKind);
+            AssertFalse(vm.PatchPreflightOk || vm.PatchPreflightEvaluated || vm.PatchDeliveryReady);   // the saved file is only re-judged by a fresh check
+            AssertEqual("", vm.PatchInstallInstructions);
+            AssertEqual(0, vm.PatchEligibleCount);
+            AssertTrue(File.Exists(csvA) && File.Exists(Path.Combine(packageA, "manifest.json")));
+            picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);      // fresh revalidation
+            AssertEqual("review", vm.PatchBadgeKind);
+            AssertFalse(vm.PatchPreflightOk);
+
+            // invalid -> valid
+            EditAndSave(csvA, "Hộ tống");
+            AssertEqual("stale", vm.PatchBadgeKind);
+            AssertFalse(vm.PatchPreflightOk || vm.PatchPreflightEvaluated);
+            picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            AssertTrue(vm.PatchPreflightOk);
+
+            // A failed save (external change refused) keeps the draft and leaves the Patch results alone.
+            picker.TranslationCsv = csvA; vm.OutputPath = packageA; vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            File.AppendAllText(csvA, "k3,More,Thêm,UI:Text,game/data.unity3d,unity_ui_text"+(char)13+(char)10, Encoding.UTF8);
+            vm.CsvEditorRows[0].Translation = "Bản nháp";
+            vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+            AssertFalse(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
+            AssertTrue(vm.CsvEditorDirty);
+            AssertEqual("Bản nháp", vm.CsvEditorRows[0].Translation);
+            AssertEqual("ready", vm.PatchBadgeKind);
+            AssertTrue(vm.PatchPreflightOk && vm.PatchDeliveryReady);
+        }
+        finally
+        {
+            foreach (var d in new[] { packageA, packageB, packageC }) try { Directory.Delete(d, true); } catch { /* best effort */ }
         }
     }
 

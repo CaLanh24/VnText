@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using VNText.Studio.App.Services;
 using System.Runtime.CompilerServices;
 
 namespace VNText.Studio.App.Models;
@@ -54,7 +55,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
 
     /// <summary>Short status label for the narrow column; the full diagnostic stays in <see cref="IssueDisplay"/> (tooltip, accessible help text).
     /// Only the known long labels are shortened; any other text is passed through unchanged (the column trims it with an ellipsis).</summary>
-    public string IssueShort => ShortenIssue(_issueDisplay);
+    public string IssueShort => UiText.TranslateDynamic(ShortenIssue(_issueDisplay));
 
     internal static string ShortenIssue(string display) => display switch
     {
@@ -72,6 +73,8 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
         _issueLabel = label ?? "";
         _issueDisplay = display ?? "";
     }
+
+    internal void RaiseLanguageText() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueShort)));
 
     public void NotifyIssueProperties()
     {

@@ -217,10 +217,9 @@ internal static partial class Program
             vm.SelectedImageRegion = region; Scan("region selected");
             grid.CurrentCell = new DataGridCellInfo(region, grid.Columns[1]); grid.BeginEdit(); Scan("translation editing");
             grid.CommitEdit(DataGridEditingUnit.Cell, true); grid.CommitEdit(DataGridEditingUnit.Row, true);
-            ((CheckBox)panel.FindName("FlatModeBox")).IsChecked = true; Scan("flat background chosen");
+            ((System.Windows.Controls.Primitives.ToggleButton)panel.FindName("FlatModeBox")).IsChecked = true; Scan("flat background chosen");
             ((CheckBox)panel.FindName("ApproveBox")).IsChecked = true; Scan("approved");
-            ((CheckBox)panel.FindName("CloneModeBox")).IsChecked = true; Scan("two modes (invalid)");
-            ((CheckBox)panel.FindName("CloneModeBox")).IsChecked = false;
+            ((System.Windows.Controls.Primitives.ToggleButton)panel.FindName("CloneModeBox")).IsChecked = true; Scan("mode changed");
             region.Translation = "Trò chơi mới"; vm.RenderImageCommand.Execute(null); Scan("render refused until approved again");
             Require(((TextBlock)panel.FindName("StatusLine")).Text.StartsWith("Approve the text/crop", StringComparison.Ordinal), "the refused render explains itself in English");
             Require(!vm.TryLoadImageReview(Review("bad.json", new string('0', 64)), fromSavedReview: true), "the invalid review is refused");

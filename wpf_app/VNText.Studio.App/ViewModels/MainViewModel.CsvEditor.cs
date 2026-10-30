@@ -176,6 +176,8 @@ public sealed partial class MainViewModel
         CsvEditorWarningSummary = validationMessage;
     }
     internal void TestSetCsvBulkPreview(string text) => CsvBulkPreview = text;
+    internal void TestSetCsvSaveError(string reason) => SetCsvEditorSaveError(CsvEditorPath, reason, CsvSaveKeepsDraftRecovery);
+    internal void TestSetCsvLoadError(string path, string reason) => FailCsvEditorLoad(path, reason);
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
     {
         0 => "Chọn một dòng để xem mã kỹ thuật.",
@@ -1452,7 +1454,15 @@ public sealed partial class MainViewModel
         _csvEditorSourceSha256 = save.SourceSha256;
         if (string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase))
             CsvEditorSaveError = "";                      // only a successful save of this document clears a refusal
-        TranslationCsvPath = path;
+        // The Patch results describe ONE CSV revision. Saving the CSV the Patch page currently uses changes that revision, so its
+        // preflight/counts/readiness/delivery text are dropped (the artifact on disk is untouched); saving some other CSV leaves them alone.
+        var patchSource = TranslationCsvPath;
+        var savedCurrentPatchCsv = !string.IsNullOrWhiteSpace(patchSource) && SameCsvPath(patchSource, path);
+        if (string.IsNullOrWhiteSpace(patchSource) || savedCurrentPatchCsv)
+        {
+            if (savedCurrentPatchCsv) InvalidatePatchSourceState();
+            TranslationCsvPath = path;
+        }
         var unchanged = editGeneration == Volatile.Read(ref _csvEditorEditGeneration)
             && string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase);
         if (unchanged)

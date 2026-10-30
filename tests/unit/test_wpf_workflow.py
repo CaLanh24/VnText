@@ -1178,6 +1178,30 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Path.Combine(WorkerPaths.AppDataRoot(), "output")', vm)
         self.assertIn("ReleaseManagedPaths_StayUnderInstallRoot", (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8"))
 
+    def test_fixed8_batch_markup_and_save_invalidation_contracts(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        csv_vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
+        # F1: the summary card and the diagnostics expander own separate Auto rows (no overlay in Grid.Row=1)
+        self.assertIn('x:Name="PatchDiagnosticsExpander"', xaml)
+        self.assertRegex(xaml, r'x:Name="PatchDiagnosticsExpander"[^>]*Grid\.Row="1"')
+        self.assertRegex(xaml, r'x:Name="PatchSummaryCard" Grid\.Row="2"')
+        # F2: the CSV translation cell editor is themed, wraps, and is not a global row-height change
+        self.assertIn('x:Key="CsvCellEditor"', xaml)
+        self.assertIn("EditingElementStyle", xaml)
+        # F5: one exclusive background-mode group, none chosen by default
+        for name in ("FlatModeBox", "TransparentModeBox", "SolidModeBox", "CloneModeBox"):
+            self.assertRegex(panel, r'<RadioButton x:Name="%s" GroupName="RegionBackgroundMode"' % name)
+        self.assertIn('x:Name="NoModeHint"', panel)
+        # F7: the six sidebar buttons carry an accessible name that is the visible label
+        for label in ("Lấy text", "Dịch tự động", "Sửa CSV", "Tạo patch", "Nhật ký", "Cài đặt"):
+            self.assertIn('AutomationProperties.Name="%s"' % label, xaml)
+        # F3: only a save of the CURRENT Patch csv drops the old results; another csv never re-points or resets them
+        self.assertIn("SameCsvPath(patchSource, path)", csv_vm)
+        self.assertIn("if (savedCurrentPatchCsv) InvalidatePatchSourceState();", csv_vm)
+        self.assertNotRegex(csv_vm, r"\n\s{8}TranslationCsvPath = path;\s*\n\s*var unchanged")
+
     def test_wpf_workflow_harness_passes(self):
         if not DOTNET.is_file():
             self.skipTest(f".NET SDK 10 is not installed at {DOTNET}")

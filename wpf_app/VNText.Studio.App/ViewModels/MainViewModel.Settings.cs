@@ -40,8 +40,12 @@ public sealed partial class MainViewModel
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
+        foreach (var option in CsvFilterModes.Options.Concat(CsvBulkScopeOptions)) option.RefreshLabel();
         Raise(nameof(HeroTitle)); Raise(nameof(HeroHint)); Raise(nameof(SelectedTab));
         RaiseImageLanguageText();
+        if (_csvEditorRows.Count <= 50000) foreach (var row in _csvEditorRows) row.RaiseLanguageText();
+        Raise(nameof(PatchInstallInstructions)); Raise(nameof(PatchProgressElapsed)); Raise(nameof(TranslateProgressElapsed)); Raise(nameof(ExtractProgressElapsed)); Raise(nameof(ExtractProgressHeading)); Raise(nameof(GlossaryStatus)); Raise(nameof(PatchProgressStep)); Raise(nameof(PatchProgressItem)); Raise(nameof(PatchProgressEta)); Raise(nameof(TranslateProgressStep)); Raise(nameof(TranslateProgressItem)); Raise(nameof(TranslateProgressEta)); Raise(nameof(ExtractProgressStep)); Raise(nameof(ExtractProgressItem)); Raise(nameof(ExtractProgressEta));
+        Raise(nameof(CsvBulkPreviewSummary)); Raise(nameof(CsvBulkPreviewDetail)); Raise(nameof(CsvBulkPreview)); Raise(nameof(CsvBulkPreviewDetailButtonText)); Raise(nameof(CsvEditorDirtySummary)); Raise(nameof(CsvEditorGateStats)); Raise(nameof(CsvEditorLoadError)); Raise(nameof(CsvEditorLockText)); Raise(nameof(CsvEditorPathDisplay)); Raise(nameof(CsvEditorSaveError)); Raise(nameof(CsvEditorSavingText)); Raise(nameof(CsvEditorSelectionDetails)); Raise(nameof(CsvEditorUserValidationMessage)); Raise(nameof(CsvEditorUserValidationShort)); Raise(nameof(CsvEditorValidationMessage)); Raise(nameof(CsvValidationMessage)); Raise(nameof(PatchDeliveryLabel)); Raise(nameof(PatchPreflightMessage)); Raise(nameof(StepStatusLine)); Raise(nameof(SettingsStatus)); Raise(nameof(GitHubUpdateStatus)); Raise(nameof(CloudRepairPackageDisplay)); Raise(nameof(PatchBadgeText));   // text bound through the display-time localizer
     }
     public double[] UiScaleOptions { get; } = [1, 1.1, 1.2];
     public double UiScale

@@ -1,6 +1,15 @@
 namespace VNText.Studio.App.Services;
 
-public sealed record CsvFilterOption(string Value, string Label);
+/// <summary>A filter/scope choice: the stored Value never changes; the shown Label follows the display language (RefreshLabel after a switch).</summary>
+public sealed class CsvFilterOption : System.ComponentModel.INotifyPropertyChanged
+{
+    private readonly string _viLabel;
+    public CsvFilterOption(string value, string label) { Value = value; _viLabel = label; }
+    public string Value { get; }
+    public string Label => UiText.Translate(_viLabel);
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+    public void RefreshLabel() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Label)));
+}
 
 public static class CsvFilterModes
 {

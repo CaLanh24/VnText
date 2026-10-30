@@ -18,6 +18,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
         <conv:UiTextConverter x:Key="UiTextDynamic" />
+        <conv:UiTextFormatConverter x:Key="UiTextFormat" />
         <conv:StepStateToDotBrushConverter x:Key="StepDot" />
         <conv:StepStateToFontWeightConverter x:Key="StepWeight" />
         <conv:StepStateToTitleForegroundConverter x:Key="StepTitleFg" />
@@ -55,6 +56,18 @@
             </Setter>
             <Setter Property="Effect" Value="{x:Null}" /><Setter Property="ctrl:HoverMotion.Kind" Value="AboutCard" />
             <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="{DynamicResource SurfaceBrush}" /><Setter Property="BorderBrush" Value="#4063ED" /><Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#475569" BlurRadius="24" ShadowDepth="6" Opacity="0.12" RenderingBias="Quality" /></Setter.Value></Setter></Trigger></Style.Triggers>
+        </Style>
+        <!-- In-cell CSV editor: the app input surface (theme background/foreground/border/focus, caret, selection); Enter still commits. -->
+        <Style x:Key="CsvCellEditor" TargetType="TextBox" BasedOn="{StaticResource FieldTextBoxStyle}">
+            <Setter Property="Height" Value="NaN" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="Margin" Value="1" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="CaretBrush" Value="{DynamicResource InkBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="SelectionOpacity" Value="0.4" />
         </Style>
         <Style x:Key="AboutInfoSurfaceStyle" TargetType="Border">
             <Setter Property="UseLayoutRounding" Value="True" /><Setter Property="SnapsToDevicePixels" Value="True" />
@@ -101,7 +114,7 @@
 
                 <StackPanel Grid.Row="1">
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="extract">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="extract" AutomationProperties.Name="Lấy text">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=extract}" />
@@ -115,7 +128,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="translate" ToolTip="Dịch trên máy bằng mô hình local, không gửi nội dung ra ngoài.">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="translate" AutomationProperties.Name="Dịch tự động" ToolTip="Dịch trên máy bằng mô hình local, không gửi nội dung ra ngoài.">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=translate}" />
@@ -129,7 +142,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="editcsv">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="editcsv" AutomationProperties.Name="Sửa CSV">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=editcsv}" />
@@ -143,7 +156,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="patch">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="patch" AutomationProperties.Name="Tạo patch">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=patch}" />
@@ -160,7 +173,7 @@
 
                 <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
                     <Border Height="1" Background="{DynamicResource LineBrush}" Margin="3,0,3,19" />
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="journal">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="journal" AutomationProperties.Name="Nhật ký">
     <Button.Style><Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
         <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=journal}" />
         <Setter Property="Tag" Value="{Binding SelectedTab, Converter={StaticResource StrMatch}, ConverterParameter=journal}" />
@@ -168,7 +181,7 @@
     </Style></Button.Style>
     <StackPanel Orientation="Horizontal"><Path Data="{StaticResource LogIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" /><TextBlock Text="Nhật ký" /></StackPanel>
 </Button>
-<Button Command="{Binding NavigateTabCommand}" CommandParameter="settings">
+<Button Command="{Binding NavigateTabCommand}" CommandParameter="settings" AutomationProperties.Name="Cài đặt">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=settings}" />
@@ -452,7 +465,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding ExtractProgressHeading}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                        <TextBlock Text="{Binding ExtractProgressHeading, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
                                         <TextBlock Grid.Column="1" Text="{Binding ExtractProgressPercent, Converter={StaticResource Pct}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource MutedBrush}" />
                                     </Grid>
@@ -474,10 +487,10 @@
                                         <TextBlock Text="{Binding ExtractProgressStep}" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Visibility="{Binding ExtractProgressActive, Converter={StaticResource BoolToVis}}" />
                                         <TextBlock Text="{Binding ExtractStatusText}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" Margin="0,3,0,0" />
                                         <StackPanel Margin="0,5,0,0" Visibility="{Binding ExtractProgressActive, Converter={StaticResource BoolToVis}}">
-                                                                                        <TextBlock Text="{Binding ExtractProgressItem, StringFormat='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding ExtractProgressItem}" />
-                                            <TextBlock Text="{Binding ExtractProgressElapsed}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
+                                                                                        <TextBlock Text="{Binding ExtractProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding ExtractProgressItem}" />
+                                            <TextBlock Text="{Binding ExtractProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                         </StackPanel>
-                                        <TextBlock Text="{Binding ExtractProgressEta, StringFormat='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Text="{Binding ExtractProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
                                     <Button x:Name="ExtractImageTextButton" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,12,0,0"
                                             Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh trong game." AutomationProperties.Name="Mở Text trong ảnh"
@@ -546,7 +559,7 @@
                                                 <TextBlock Text="Chọn CSV" />
                                             </Button>
                                         </Grid>
-                                        <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage}" Margin="0,8,0,0" FontSize="{StaticResource UiBodySize}"
+                                        <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" Margin="0,8,0,0" FontSize="{StaticResource UiBodySize}"
                                                    Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                                         <Grid Grid.Row="4" Margin="0,18,0,0">
                                             <Grid.ColumnDefinitions>
@@ -570,7 +583,7 @@
                                         </Grid.ColumnDefinitions>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="Thuật ngữ ưu tiên" Style="{StaticResource UiSectionTitleTextStyle}" />
-                                            <TextBlock Text="{Binding GlossaryStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis">
+                                            <TextBlock Text="{Binding GlossaryStatus, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Style.Triggers>
@@ -625,11 +638,11 @@
                                                      Value="{Binding TranslateProgressPercent, Mode=OneWay}" Style="{StaticResource BlueProgressBarStyle}"
                                                      Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}" />
                                         <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="{Binding TranslateProgressStep, StringFormat='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" />
-                                            <TextBlock Text="{Binding TranslateProgressItem, StringFormat='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" TextTrimming="CharacterEllipsis" MaxWidth="460" ToolTip="{Binding TranslateProgressItem}" />
-                                            <TextBlock Text="{Binding TranslateProgressElapsed}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
+                                            <TextBlock Text="{Binding TranslateProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" />
+                                            <TextBlock Text="{Binding TranslateProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" TextTrimming="CharacterEllipsis" MaxWidth="460" ToolTip="{Binding TranslateProgressItem}" />
+                                            <TextBlock Text="{Binding TranslateProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
                                         </StackPanel>
-                                        <TextBlock Grid.Row="3" Text="{Binding TranslateProgressEta, StringFormat='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding TranslateProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Grid.Row="3" Text="{Binding TranslateProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding TranslateProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </Grid>
                                 </Border>
 
@@ -642,7 +655,7 @@
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                             <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
                                                 <TextBlock Text="Dịch bằng công cụ bên ngoài" Style="{StaticResource UiRowTitleTextStyle}" TextWrapping="Wrap" />
-                                                <TextBlock Text="{Binding CloudRepairPackageDisplay}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"
+                                                <TextBlock Text="{Binding CloudRepairPackageDisplay, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"
                                                            Visibility="{Binding CloudRepairPackageReady, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>
                                             <Button Grid.Column="1" Content="Xuất ZIP" ToolTip="Tạo gói dịch để dịch bằng công cụ bên ngoài; sau đó chọn CSV kết quả ở Tạo patch."
@@ -766,7 +779,7 @@
                                                 <TextBlock Text="Kiểm tra" />
                                             </Button>
                                         </Grid>
-                                        <TextBlock Text="{Binding CsvValidationMessage}" Margin="0,10,0,0" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" Margin="0,10,0,0" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                                         <Button Margin="0,10,0,0" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left"
                                                 Command="{Binding OpenCsvEditorFromPatchCommand}">
                                             <TextBlock Text="Mở trong Sửa CSV…" />
@@ -793,11 +806,11 @@
                                     <ProgressBar x:Name="PatchProgressBar" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding PatchProgressPercent, Mode=OneWay}"
                                                  Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
                                     <StackPanel Grid.Row="2" Margin="0,7,0,0">
-                                        <TextBlock Text="{Binding PatchProgressStep, StringFormat='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
-                                        <TextBlock Text="{Binding PatchProgressItem, StringFormat='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding PatchProgressItem}" />
-                                        <TextBlock Text="{Binding PatchProgressElapsed}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
+                                        <TextBlock Text="{Binding PatchProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
+                                        <TextBlock Text="{Binding PatchProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding PatchProgressItem}" />
+                                        <TextBlock Text="{Binding PatchProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                     </StackPanel>
-                                    <TextBlock Grid.Row="3" Text="{Binding PatchProgressEta, StringFormat='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock Grid.Row="3" Text="{Binding PatchProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                 </Grid>
 
                                 <Grid Grid.Row="3" Margin="0,22,0,0">
@@ -811,8 +824,8 @@
                                 <Border x:Name="PatchDeliveryInstructionsPanel" Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0"
                                         Visibility="{Binding PatchDeliveryReady, Converter={StaticResource BoolToVis}}">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding PatchDeliveryLabel}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding PatchInstallInstructions}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PatchDeliveryLabel, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding PatchInstallInstructions, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -865,48 +878,51 @@
                                     </Border>
                                 </Grid>
 
-                                <Expander Foreground="{DynamicResource InkBrush}" Grid.Row="1" Header="Kết quả kiểm tra" Margin="0,24,0,0"
+                                <Expander x:Name="PatchDiagnosticsExpander" Foreground="{DynamicResource InkBrush}" Grid.Row="1" Header="Kết quả kiểm tra" Margin="0,24,0,0"
                                           Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"
                                           IsExpanded="{Binding PatchResultsExpanded, Mode=TwoWay}">
                                   <StackPanel Margin="0,16,0,0">
                                     <Border Style="{StaticResource ChecklistPanelBorder}">
-                                        <StackPanel Orientation="Horizontal">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                             <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource GreenSoftBrush}">
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
-                                            <StackPanel Margin="10,0,0,0">
+                                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                 <TextBlock Text="CSV / preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="{Binding CsvValidationMessage}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
-                                        </StackPanel>
+                                        </Grid>
                                     </Border>
                                     <Border Style="{StaticResource ChecklistPanelBorder}" Margin="0,10,0,0">
-                                        <StackPanel Orientation="Horizontal">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                             <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource GreenSoftBrush}">
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
-                                            <StackPanel Margin="10,0,0,0">
+                                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                 <TextBlock Text="Patch preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="{Binding PatchPreflightMessage}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
-                                        </StackPanel>
+                                        </Grid>
                                     </Border>
                                     <Border Style="{StaticResource ChecklistPanelBorder}" Margin="0,10,0,0">
-                                        <StackPanel Orientation="Horizontal">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                                             <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource GreenSoftBrush}">
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
-                                            <StackPanel Margin="10,0,0,0">
+                                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                 <TextBlock Text="Thư mục xuất" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding OutputDisplay}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                        </StackPanel>
+                                        </Grid>
                                     </Border>
                                   </StackPanel>
                                 </Expander>
 
 
-                                <Border Grid.Row="1" Background="{DynamicResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,24,0,0"
+                                <Border x:Name="PatchSummaryCard" Grid.Row="2" Background="{DynamicResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,16,0,0"
                                         Visibility="{Binding PatchPreflightEvaluated, Converter={StaticResource BoolToVis}}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -924,7 +940,7 @@
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="TRẠNG THÁI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
-                                            <TextBlock Text="{Binding StepStatusLine}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding StepStatusLine, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -941,7 +957,7 @@
 
                     <ScrollViewer x:Name="SettingsScrollViewer" Height="{Binding ActualHeight, ElementName=PageScrollViewer}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">
                         <StackPanel HorizontalAlignment="Stretch" Margin="0,0,0,20">
-                            <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,10">
+                            <TextBlock Text="{Binding SettingsStatus, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,10">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Visible" />
@@ -1180,14 +1196,14 @@
                                             </Border>
                                             <Button Click="CheckUpdates_Click" IsEnabled="{Binding UpdatePresentation.CanStart, ElementName=RootWindow}"
                                                     Style="{StaticResource AboutUtilityButton}" MinWidth="0" MinHeight="24"
-                                                    Padding="10,2" Margin="8,0,0,0" ToolTip="{Binding GitHubUpdateStatus}" AutomationProperties.Name="Kiểm tra cập nhật">
+                                                    Padding="10,2" Margin="8,0,0,0" ToolTip="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}" AutomationProperties.Name="Kiểm tra cập nhật">
                                                 <StackPanel Orientation="Horizontal"><TextBlock Text="↻" Margin="0,0,6,0" /><TextBlock Text="Kiểm tra cập nhật" /></StackPanel>
                                             </Button>
                                             <Button Command="{Binding OpenReleaseNotesCommand}" Style="{StaticResource AboutUtilityButton}" MinWidth="0" MinHeight="24" Padding="10,2" Margin="8,0,0,0" AutomationProperties.Name="Ghi chú phát hành">
                                                 <StackPanel Orientation="Horizontal"><ctrl:IconView Icon="journal" Width="14" Height="14" StrokeBrush="{DynamicResource MutedBrush}" Margin="0,0,6,0" /><TextBlock Text="Ghi chú phát hành" /></StackPanel>
                                             </Button>
                                         </StackPanel>
-                                        <TextBlock Grid.Row="2" Text="{Binding GitHubUpdateStatus}"
+                                        <TextBlock Grid.Row="2" Text="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}"
                                                    MaxWidth="560" TextWrapping="Wrap" TextAlignment="Center"
                                                    HorizontalAlignment="Center" Margin="0,8,0,0">
                                             <TextBlock.Style>
@@ -1301,17 +1317,17 @@
                                         <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding CsvEditorPathDisplay}" ToolTip="{Binding CsvEditorPathToolTip}" Style="{StaticResource UiRowTitleTextStyle}" TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding CsvEditorSavingText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource BlueBrush}"
+                                        <TextBlock Text="{Binding CsvEditorPathDisplay, Converter={StaticResource UiTextDynamic}}" ToolTip="{Binding CsvEditorPathToolTip}" Style="{StaticResource UiRowTitleTextStyle}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding CsvEditorSavingText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource BlueBrush}"
                                                    Visibility="{Binding CsvEditorSaving, Converter={StaticResource BoolToVis}}" />
-                                        <TextBlock Text="{Binding CsvEditorLockText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
+                                        <TextBlock Text="{Binding CsvEditorLockText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
                                                    TextWrapping="Wrap" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
                                     <Button x:Name="CsvChooseHeaderButton" Grid.Column="2" Content="Chọn CSV" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}"
                                             Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}" />
                                     <Border Grid.Column="3" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding CsvEditorDirty, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="{Binding CsvEditorDirtySummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
+                                        <TextBlock Text="{Binding CsvEditorDirtySummary, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
                                     </Border>
                                 </Grid>
 
@@ -1319,12 +1335,12 @@
                                     <Border x:Name="CsvEditorLoadErrorBanner" Padding="10,7" CornerRadius="8" Background="{DynamicResource SubtlePanelBrush}"
                                             BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
                                             Visibility="{Binding HasCsvEditorLoadError, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="{Binding CsvEditorLoadError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="{Binding CsvEditorLoadError, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     </Border>
                                     <Border x:Name="CsvEditorSaveErrorBanner" Margin="0,6,0,0" Padding="10,7" CornerRadius="8" Background="{DynamicResource SubtlePanelBrush}"
                                             BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1"
                                             Visibility="{Binding HasCsvEditorSaveError, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock Text="{Binding CsvEditorSaveError}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="{Binding CsvEditorSaveError, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Margin="{Binding CsvBulkAreaMargin}">
@@ -1392,7 +1408,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock x:Name="CsvBulkPreviewSummaryText" FontSize="12" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"
-                                                   Text="{Binding CsvBulkPreviewSummary}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview}">
+                                                   Text="{Binding CsvBulkPreviewSummary, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" ToolTip="{Binding CsvBulkPreview, Converter={StaticResource UiTextDynamic}}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Style.Triggers>
@@ -1404,16 +1420,16 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <Button x:Name="CsvBulkPreviewDetailButton" Grid.Column="1" Style="{StaticResource CompactOutlineButton}" Margin="8,0,0,0"
-                                                Content="{Binding CsvBulkPreviewDetailButtonText}" Command="{Binding ToggleCsvBulkPreviewDetailCommand}"
+                                                Content="{Binding CsvBulkPreviewDetailButtonText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleCsvBulkPreviewDetailCommand}"
                                                 Visibility="{Binding CsvBulkHasPreviewDetail, Converter={StaticResource BoolToVis}}" />
                                     </Grid>
                                     <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="120" Margin="0,4,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
                                                   Visibility="{Binding CsvBulkPreviewDetailOpen, Converter={StaticResource BoolToVis}}">
-                                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding CsvBulkPreviewDetail}" TextWrapping="Wrap" />
+                                        <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding CsvBulkPreviewDetail, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" />
                                     </ScrollViewer>
                                     <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
-                                               Text="{Binding CsvEditorUserValidationMessage}" ToolTip="{Binding CsvEditorValidationMessage}"
-                                               AutomationProperties.HelpText="{Binding CsvEditorValidationMessage}">
+                                               Text="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}" ToolTip="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}"
+                                               AutomationProperties.HelpText="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <!-- wrapping is a STYLE value here (a local value would beat the triggers below) -->
@@ -1432,8 +1448,8 @@
                                         </TextBlock.Style>
                                     </TextBlock>
                                     <TextBlock x:Name="CsvEditorValidationShortText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
-                                               Text="{Binding CsvEditorUserValidationShort}" ToolTip="{Binding CsvEditorUserValidationMessage}"
-                                               AutomationProperties.HelpText="{Binding CsvEditorUserValidationMessage}">
+                                               Text="{Binding CsvEditorUserValidationShort, Converter={StaticResource UiTextDynamic}}" ToolTip="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}"
+                                               AutomationProperties.HelpText="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="TextWrapping" Value="NoWrap" />
@@ -1514,6 +1530,9 @@
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
                                         <DataGridTextColumn Header="BẢN DỊCH TIẾNG VIỆT" Binding="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="220">
+                                            <DataGridTextColumn.EditingElementStyle>
+                                                <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource CsvCellEditor}" />
+                                            </DataGridTextColumn.EditingElementStyle>
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">
                                                     <Setter Property="VerticalAlignment" Value="Center" />
@@ -1534,8 +1553,8 @@
                                                     <Setter Property="VerticalAlignment" Value="Center" />
                                                     <Setter Property="TextWrapping" Value="NoWrap" />
                                                     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-                                                    <Setter Property="ToolTip" Value="{Binding IssueDisplay}" />
-                                                    <Setter Property="AutomationProperties.HelpText" Value="{Binding IssueDisplay}" />
+                                                    <Setter Property="ToolTip" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}" />
+                                                    <Setter Property="AutomationProperties.HelpText" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}" />
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
@@ -1543,8 +1562,8 @@
                                 </DataGrid>
 
                                 <StackPanel Grid.Row="2" Margin="0,6,0,0">
-<TextBlock Text="{Binding CsvEditorGateStats}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
-<TextBlock Text="{Binding CsvEditorSelectionDetails}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+<TextBlock Text="{Binding CsvEditorGateStats, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+<TextBlock Text="{Binding CsvEditorSelectionDetails, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
            Visibility="{Binding CsvEditorSelectionDetailsVisible, Converter={StaticResource BoolToVis}}"/>
 </StackPanel>
                             </Grid>
@@ -1618,7 +1637,7 @@
                         <StackPanel>
                             <TextBlock Text="Thuật ngữ ưu tiên" Style="{StaticResource UiSectionTitleTextStyle}" FontSize="{StaticResource UiDialogTitleSize}" FontWeight="Bold" />
                             <TextBlock Text="Chọn cách dịch muốn dùng thống nhất cho những từ thường gặp." FontSize="13" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
-                            <TextBlock Text="{Binding GlossaryStatus}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
+                            <TextBlock Text="{Binding GlossaryStatus, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
                         </StackPanel>
                         <Button x:Name="GlossaryCloseButton" Grid.Column="1" Style="{StaticResource DialogCloseButton}"
                                 Margin="12,0,0,0" VerticalAlignment="Top" Click="GlossaryCloseButton_Click"

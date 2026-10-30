@@ -30,17 +30,20 @@ public sealed class ImageTextRegion : NotifyBase
     private bool _cloneBackgroundApproved;
     public int DonorX { get => _donorX; set { if (Set(ref _donorX, value)) { Approved = false; CloneBackgroundApproved = false; } } }
     public int DonorY { get => _donorY; set { if (Set(ref _donorY, value)) { Approved = false; CloneBackgroundApproved = false; } } }
-    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set { if (Set(ref _cloneBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
+    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set { if (Set(ref _cloneBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
     public string SourceText { get => _sourceText; set { if (Set(ref _sourceText, value)) Approved = false; } }
     public string Translation { get => _translation; set { if (Set(ref _translation, value)) Approved = false; } }
     public string Background { get => _background; set { if (Set(ref _background, value)) { Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; CloneBackgroundApproved = false; } } }
     public string Foreground { get => _foreground; set { if (Set(ref _foreground, value)) Approved = false; } }
     public int FontSize { get => _fontSize; set { if (Set(ref _fontSize, value)) Approved = false; } }
     public bool Approved { get => _approved; set => Set(ref _approved, value); }
-    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
-    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) Raise(nameof(ModeSummary)); } }
-    public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) Raise(nameof(ModeSummary)); } }
+    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
+    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
+    public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
     internal void RaiseLanguageText() => Raise(nameof(ModeSummary));
+    /// <summary>True while none of the four background modes is chosen (the initial state; nothing is chosen for the user).</summary>
+    [JsonIgnore]
+    public bool NoModeChosen => !_flatBackgroundApproved && !_transparentTextApproved && !_replacementBackgroundApproved && !_cloneBackgroundApproved;
     /// <summary>One-line state of the four background modes for the compact grid; nothing is chosen by default.</summary>
     [JsonIgnore]
     public string ModeSummary

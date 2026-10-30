@@ -137,18 +137,44 @@ internal static partial class Program
                 panel.UpdateLayout();
                 AssertTrue(((FrameworkElement)panel.FindName("RegionDetailsForm")).IsVisible);
                 AssertFalse(((FrameworkElement)panel.FindName("RegionDetailsHint")).IsVisible);
-                CheckBox C(string name) => (CheckBox)panel.FindName(name);
+                System.Windows.Controls.Primitives.ToggleButton C(string name) => (System.Windows.Controls.Primitives.ToggleButton)panel.FindName(name);
                 TextBox T(string name) => (TextBox)panel.FindName(name);
                 AssertEqual("10", T("RegionXBox").Text);
                 AssertEqual("200", T("RegionWidthBox").Text);
-                // Explicit approval through the controls; the four modes stay independent flags.
+                // The four background modes are one exclusive choice; none is chosen initially and nothing auto-selects.
+                AssertTrue(region.NoModeChosen);
+                AssertTrue(((FrameworkElement)panel.FindName("NoModeHint")).IsVisible);
+                foreach (var m in new[] { "FlatModeBox", "TransparentModeBox", "SolidModeBox", "CloneModeBox" }) AssertFalse(C(m).IsChecked == true);
                 C("FlatModeBox").IsChecked = true;
                 C("ApproveBox").IsChecked = true;
                 AssertTrue(region.FlatBackgroundApproved && region.Approved);
                 AssertEqual("Nền phẳng", region.ModeSummary);
-                C("CloneModeBox").IsChecked = true;                      // a second mode is shown as invalid, never silently dropped
-                AssertEqual("Chọn nhiều chế độ — cần đúng một", region.ModeSummary);
-                C("CloneModeBox").IsChecked = false;
+                AssertFalse(((FrameworkElement)panel.FindName("NoModeHint")).IsVisible);
+                C("CloneModeBox").IsChecked = true;                      // changing the mode switches (never two) and drops the approval
+                AssertTrue(region.CloneBackgroundApproved);
+                AssertFalse(region.FlatBackgroundApproved || region.TransparentTextApproved || region.ReplacementBackgroundApproved);
+                AssertFalse(region.Approved);
+                AssertFalse(C("ApproveBox").IsChecked == true);
+                AssertFalse(C("FlatModeBox").IsChecked == true);
+                foreach (var (box, check) in new (string, Func<bool>)[] { ("FlatModeBox", () => region.FlatBackgroundApproved), ("TransparentModeBox", () => region.TransparentTextApproved), ("SolidModeBox", () => region.ReplacementBackgroundApproved), ("CloneModeBox", () => region.CloneBackgroundApproved) })
+                {
+                    C("ApproveBox").IsChecked = false;
+                    C(box).IsChecked = true;
+                    AssertTrue(check());
+                    AssertEqual(1, new[] { region.FlatBackgroundApproved, region.TransparentTextApproved, region.ReplacementBackgroundApproved, region.CloneBackgroundApproved }.Count(x => x));
+                    C("ApproveBox").IsChecked = true;
+                    AssertTrue(region.Approved);
+                    region.FlatBackgroundApproved = !region.FlatBackgroundApproved; // programmatic change also unapproves
+                    AssertFalse(region.Approved);
+                    region.FlatBackgroundApproved = box == "FlatModeBox";
+                    AssertFalse(region.Approved);
+                }
+                // A legacy review with several flags is ambiguous: the summary says so and nothing is inferred; one explicit choice resolves it.
+                var legacy = new ImageTextRegion();                    // not bound to a control: flags exactly as a legacy file loads them
+                legacy.FlatBackgroundApproved = true; legacy.CloneBackgroundApproved = true;
+                AssertEqual("Chọn nhiều chế độ — cần đúng một", legacy.ModeSummary);
+                AssertFalse(legacy.NoModeChosen);
+                region.FlatBackgroundApproved = false; region.TransparentTextApproved = false; region.ReplacementBackgroundApproved = false; region.CloneBackgroundApproved = false;
                 // Editing any reviewed value through the form clears approval and every mode choice.
                 T("RegionXBox").Text = "20";
                 AssertEqual(20, region.X);
@@ -368,7 +394,8 @@ internal static partial class Program
                 AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
                 live.TransparentTextApproved = true;                                    // background mode change
                 AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
-                live.TransparentTextApproved = false;
+                AssertFalse(live.Approved);                                             // a mode change unapproves by itself
+                live.TransparentTextApproved = false; live.Approved = true;             // explicit re-approval
                 RenderOk("render-4");
                 live.X = 11;                                                            // crop change (also clears approval and modes)
                 AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));

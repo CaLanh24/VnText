@@ -27,7 +27,7 @@ internal sealed class JournalWindow : Window
     private bool _loading;
     internal JournalWindow(MainWindow owner,MainViewModel vm)
     {
-        _store=vm.JournalStore;_vm=vm;Owner=owner;Title="Nhật ký — Khắc phục lỗi";
+        _store=vm.JournalStore;_vm=vm;Owner=owner;Title=UiText.Translate("Nhật ký — Khắc phục lỗi");
         Width=956;Height=500;MaxWidth=Math.Max(600,owner.ActualWidth-30);MaxHeight=Math.Max(400,owner.ActualHeight-30);
         WindowStartupLocation=WindowStartupLocation.CenterOwner;WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;
         AllowsTransparency=true;Background=Brushes.Transparent;ShowInTaskbar=false;FontFamily=owner.FontFamily;FontSize=13;
@@ -88,7 +88,7 @@ internal sealed class JournalWindow : Window
         var modifiedChip=new StackPanel{Orientation=Orientation.Horizontal};modifiedChip.Children.Add(new System.Windows.Shapes.Path{Data=Geometry.Parse("M20 7 A9 9 0 1 0 21 14 M20 2 V7 H15"),Stretch=Stretch.Uniform,Width=14,Height=14,Stroke=B("MutedBrush"),StrokeThickness=1.4,Margin=new Thickness(0,0,6,0)});modifiedChip.Children.Add(_modified);
         fileRow.Children.Add(new Border{Child=modifiedChip,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(5),Padding=new Thickness(10,6,10,6),Margin=new Thickness(8,0,0,0)});_modified.FontSize=12;
         var options=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(0,0,0,12)};Grid.SetRow(options,1);body.Children.Add(options);
-        _level.ItemsSource=new[]{"Tất cả","Thông tin","Cảnh báo","Lỗi","Debug"};_level.SelectedIndex=0;
+        _level.ItemsSource=new[]{"Tất cả","Thông tin","Cảnh báo","Lỗi","Debug"}.Select(UiText.Translate).ToArray();_level.SelectedIndex=0;
         _size.ItemsSource=new[]{100,200,500,1000};_size.SelectedItem=200;
         options.Children.Add(new TextBlock{Text="Mức",VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(0,0,8,0)});options.Children.Add(_level);
         options.Children.Add(_pageSizeLabel);options.Children.Add(_size);
@@ -123,6 +123,7 @@ internal sealed class JournalWindow : Window
         _files.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_level.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_size.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};
         _query.TextChanged+=(_,_)=>{_page=0;Safe(Render);};_regex.Checked+=(_,_)=>Safe(Render);_regex.Unchecked+=(_,_)=>Safe(Render);
         var previous=owner.Effect;Border? overlay=null;var panel=owner.Content as Panel;
+        Loaded+=(_,_)=>UiText.Apply(this);
         Loaded+=(_,_)=>
         {
             owner.Effect=new BlurEffect{Radius=AppDialogWindow.BackdropBlur};
@@ -134,7 +135,7 @@ internal sealed class JournalWindow : Window
     }
     private void Safe(Action action)
     {
-        try{action();}catch(Exception ex){_status.Text=ex.Message;_content.Text="Không đọc được nhật ký: "+ex.Message;}
+        try{action();}catch(Exception ex){_status.Text=ex.Message;_content.Text=UiText.TranslateDynamic("Không đọc được nhật ký: "+ex.Message);}
     }
     private void Refresh()
     {
@@ -146,9 +147,9 @@ internal sealed class JournalWindow : Window
     private void Render()
     {
         if(_loading)return;
-        if(_files.SelectedItem is not string file){_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text="Chưa có tệp nhật ký";return;}
+        if(_files.SelectedItem is not string file){_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text=UiText.Translate("Chưa có tệp nhật ký");return;}
         var levels=new[]{"ALL","INFO","WARN","ERROR","DEBUG"};var size=_size.SelectedItem is int value ? value : 200;
-        _pageSizeLabel.Text=$"{size} bản ghi/trang";
+        _pageSizeLabel.Text=UiText.TranslateDynamic($"{size} bản ghi/trang");
         // An invalid search expression is the user's input, not a log read failure: say so beside the field and keep the log readable (level filter only).
         var regexOn=_regex.IsChecked==true;var query=_query.Text;var expressionError="";var expressionDetail="";
         if(regexOn && query.Length>0 && query.Length<=500)
@@ -164,6 +165,6 @@ internal sealed class JournalWindow : Window
         if(_nextPage is not null){_nextPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_nextPage.IsEnabled=_page<pages-1;}
         var start=Math.Max(0,lines.Length-(_page+1)*size);
         _content.Text=string.Join(Environment.NewLine,lines.Skip(start).Take(Math.Min(size,lines.Length-_page*size)));_content.ScrollToEnd();
-        _status.Text=$"{lines.Length} bản ghi · {_page+1}/{pages}";_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));
+        _status.Text=UiText.TranslateDynamic($"{lines.Length} bản ghi · {_page+1}/{pages}");_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));
     }
 }

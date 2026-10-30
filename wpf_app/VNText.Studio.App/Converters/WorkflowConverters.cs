@@ -310,3 +310,11 @@ public sealed class UiTextConverter : IValueConverter
         value is string text ? VNText.Studio.App.Services.UiText.TranslateDynamic(text) : value;
     public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>Applies the Vietnamese format in ConverterParameter to the bound value, then localizes the result (the format and the value are catalog keys, not the interpolated text).</summary>
+public sealed class UiTextFormatConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+        VNText.Studio.App.Services.UiText.TranslateDynamic(string.Format(System.Globalization.CultureInfo.InvariantCulture, parameter as string ?? "{0}", value));
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}

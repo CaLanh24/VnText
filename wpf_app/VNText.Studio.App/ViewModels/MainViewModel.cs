@@ -457,7 +457,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string HeroTitle
     {
-        get => UiText.Translate(_heroTitle);
+        get => UiText.TranslateDynamic(_heroTitle);
         private set => Set(ref _heroTitle, value);
     }
 
@@ -469,7 +469,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string HeroHint
     {
-        get => UiText.Translate(_heroHint);
+        get => UiText.TranslateDynamic(_heroHint);
         private set => Set(ref _heroHint, value);
     }
 

@@ -94,6 +94,357 @@ public static class UiText
         ["Chọn file CSV"] = "Choose CSV file",
         ["Chọn CSV"] = "Choose CSV",
         ["Mở công cụ"] = "Open tools",
+        ["Sẵn sàng đóng gói {0} dòng; {1} dòng bị chặn."] = "Ready to package {0} rows; {1} rows are blocked.",
+        ["Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."] = "Check the CSV to see eligible / blocked rows before patching.",
+        ["Có thay đổi chưa lưu — bấm «Lưu CSV» trước khi patch."] = "Unsaved changes — press «Save CSV» before patching.",
+        ["Chỉnh translation trực tiếp; Patch dùng file đã lưu."] = "Edit translations directly; Patch uses the saved file.",
+        ["Thiết lập giao diện, dữ liệu và cập nhật."] = "Set up the interface, data and updates.",
+        ["Có thể dịch tiếp hoặc chuyển sang Tạo patch."] = "You can keep translating or switch to Create patch.",
+        ["Tạo patch Việt hóa"] = "Create the Vietnamese patch",
+        ["Đóng gói bản dịch thành patch cài vào game."] = "Package the translation as a patch to install into the game.",
+        ["Workflow hoàn tất"] = "Workflow finished",
+        ["Gói dịch và patch đã sẵn sàng. Có thể chạy lại bất kỳ bước nào."] = "The translation package and patch are ready. You can rerun any step.",
+        ["Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể Patch"] = "Step 2/3: The translation state is not verified — pending {0}, review {1}; Patch is not possible yet",
+        ["Bước 2/3: Dịch một phần — pending {0}, review {1}, blocked {2}"] = "Step 2/3: Partly translated — pending {0}, review {1}, blocked {2}",
+        ["Bước 1/3: Lấy text — chưa có translation.csv"] = "Step 1/3: Extract text — no translation.csv yet",
+        ["Bước 2/3: Dịch tự động — cần bản dịch trong translation.csv"] = "Step 2/3: Auto translate — translations are needed in translation.csv",
+        ["Bước 3/3: Tạo patch — cần translation.csv có bản dịch"] = "Step 3/3: Create the patch — translation.csv needs translations",
+        ["Bước 3/3: Tạo patch — đóng gói bản dịch"] = "Step 3/3: Create the patch — package the translation",
+        ["Hoàn tất — gói dịch và patch đã sẵn sàng"] = "Finished — the translation package and patch are ready",
+        ["Bước 1/3: Lấy text"] = "Step 1/3: Extract text",
+        ["Đang chạy: Tạo patch…"] = "Running: Create patch…",
+        ["Đang tạo patch…"] = "Creating the patch…",
+        ["CSV chưa hợp lệ"] = "The CSV is not valid yet",
+        ["CSV chưa sẵn sàng"] = "The CSV is not ready",
+        ["Không có dòng hợp lệ để patch"] = "No eligible row to patch",
+        ["Lỗi — {0}"] = "Error — {0}",
+        ["Đang hủy…"] = "Cancelling…",
+        ["Chưa gửi được yêu cầu hủy"] = "The cancel request could not be sent yet",
+        ["Hủy vẫn đang chờ tác vụ dừng an toàn"] = "The cancel is still waiting for the task to stop safely",
+        ["Chưa chọn game"] = "No game chosen",
+        ["Đang kiểm tra…"] = "Checking…",
+        ["Cài cập nhật"] = "Install update",
+        ["Đã cập nhật"] = "Updated",
+        ["Kiểm tra lại"] = "Check again",
+        ["Đang kiểm tra cập nhật…"] = "Checking for updates…",
+        ["Chưa thể kiểm tra. Hãy thử lại sau."] = "Cannot check right now. Try again later.",
+        ["Không thể kiểm tra bản cập nhật."] = "The update check failed.",
+        ["Không thể kiểm tra bản cập nhật: {0}"] = "The update check failed: {0}",
+        ["Bạn đang dùng phiên bản mới nhất."] = "You are using the latest version.",
+        ["Có bản cập nhật mới; chưa tải gói."] = "A new update is available; the package is not downloaded yet.",
+        ["Đã kiểm tra gói. Sẵn sàng cập nhật."] = "The package was verified. Ready to update.",
+        ["Bản cập nhật này cần bộ cài mới."] = "This update needs a new installer.",
+        ["Chưa thể kiểm tra cập nhật."] = "The update cannot be checked yet.",
+        ["Đóng VNText Studio và áp dụng bản cập nhật?"] = "Close VNText Studio and apply the update?",
+        ["Đóng VNText Studio và áp dụng bản cập nhật WPF ổn định v{0}?"] = "Close VNText Studio and apply the stable WPF update v{0}?",
+        ["Không thể khởi chạy updater: {0}"] = "The updater could not be started: {0}",
+        ["Không thể khởi chạy updater đã xác minh: {0}"] = "The verified updater could not be started: {0}",
+        ["Tác vụ đang chạy. Bạn có muốn yêu cầu hủy an toàn rồi thoát sau khi worker báo kết thúc không? Ứng dụng sẽ tiếp tục chờ nếu worker chưa dừng."] = "A task is running. Do you want to request a safe cancel and exit once the worker reports it has finished? The app keeps waiting if the worker has not stopped.",
+        ["Tác vụ chưa hoàn tất"] = "Task not finished",
+        ["CSV có thay đổi chưa lưu. Chọn Lưu để kiểm tra và lưu trước khi thoát, Bỏ thay đổi để thoát và bỏ phần đang sửa, hoặc Hủy để tiếp tục làm việc."] = "The CSV has unsaved changes. Choose Save to check and save before exiting, Discard changes to exit and drop the edits, or Cancel to keep working.",
+        ["CSV chưa lưu"] = "CSV not saved",
+        ["Danh sách từ được lưu cùng gói dịch."] = "The term list is saved with the translation package.",
+        ["Chọn file dịch trước khi thêm thuật ngữ."] = "Choose a translation file before adding terms.",
+        ["Đã lưu {0} thuật ngữ."] = "Saved {0} terms.",
+        ["Nhập từ gốc và cách dịch ưu tiên."] = "Enter the source word and its preferred translation.",
+        ["Bản dịch cần giữ nguyên ký hiệu và xuống dòng của từ gốc."] = "The translation must keep the symbols and line breaks of the source word.",
+        ["Đã lưu glossary: {0} → {1}"] = "Saved glossary: {0} → {1}",
+        ["Không lưu được glossary: {0}"] = "Could not save the glossary: {0}",
+        ["Xóa thuật ngữ “{0}”?"] = "Delete the term “{0}”?",
+        ["Xác nhận xóa"] = "Confirm deletion",
+        ["Lỗi worker"] = "Worker error",
+        ["Lỗi worker — không khởi động được Python worker"] = "Worker error — the Python worker could not be started",
+        ["Đang kiểm tra translation.csv và manifest…"] = "Checking translation.csv and the manifest…",
+        ["Chọn gói dịch có translation.csv và manifest.json hợp lệ."] = "Choose a translation package with a valid translation.csv and manifest.json.",
+        ["Đang kiểm tra gói dịch…"] = "Checking the translation package…",
+        ["Lỗi kiểm tra gói"] = "Package check error",
+        ["Bước: {0}"] = "Step: {0}",
+        ["Mục: {0}"] = "Item: {0}",
+        ["Ước tính còn: {0}"] = "Estimated remaining: {0}",
+        ["Đã chạy {0}"] = "Ran {0}",
+        ["Trước: {0}"] = "Before: {0}",
+        ["Sau: {0}"] = "After: {0}",
+        ["Thay thế {0} lần trong {1} dòng?"] = "Replace {0} times in {1} rows?",
+        ["Tìm: {0}"] = "Find: {0}",
+        ["Thay bằng: {0}"] = "Replace with: {0}",
+        ["Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên."] = "Only the Translation column is edited; the Source/key columns stay unchanged.",
+        ["Xóa cột translation của {0} dòng bị Patch Gate chặn?"] = "Clear the translation column of {0} rows blocked by the Patch Gate?",
+        ["Chỉ xóa bản dịch — giữ nguyên key và source."] = "Only the translation is cleared — key and source stay.",
+        ["Dịch lại {0} dòng bằng {1}?"] = "Retranslate {0} rows with {1}?",
+        ["Chỉ các dòng đã chọn hoặc đang bị gate chặn (cấu trúc)."] = "Only the selected rows or those blocked by the gate (structure).",
+        ["Chưa dịch"] = "Untranslated",
+        ["Chỉ dòng lỗi"] = "Error rows only",
+        ["Đã dịch"] = "Translated",
+        ["Sẽ patch"] = "Will be patched",
+        ["Trong review_only.csv (cần xem lại thủ công)"] = "In review_only.csv (needs manual review)",
+        ["Chưa có bản dịch trong translation.csv"] = "No translation in translation.csv yet",
+        ["Dòng synonym — dịch thủ công"] = "Synonym row — translate manually",
+        ["Mất/sai placeholder {…}"] = "Missing/wrong placeholder {…}",
+        ["Hỏng tag <…>"] = "Broken tag <…>",
+        ["Synonym sai tiền tố"] = "Synonym with a wrong prefix",
+        ["Synonym sai số biến thể"] = "Synonym with a wrong variant count",
+        ["Sai số \\n"] = "Wrong \\n count",
+        ["Sai số ký hiệu ♡"] = "Wrong ♡ symbol count",
+        ["Sai số biến thể RandPick"] = "Wrong RandPick variant count",
+        ["Hậu tố Anh sau placeholder"] = "English suffix after a placeholder",
+        ["Validation MT"] = "MT validation",
+        ["Gói dùng profile legacy không được hỗ trợ; hãy extract lại"] = "The package uses an unsupported legacy profile; extract again",
+        ["Locator tham chiếu ngoài không được hỗ trợ; hãy extract lại"] = "An external-reference locator is not supported; extract again",
+        ["Dịch lại vẫn bị chặn"] = "Retranslation is still blocked",
+        ["Trong review_only.csv"] = "In review_only.csv",
+        ["Ren'Py — native overlay (copy vào game root)"] = "Ren'Py — native overlay (copy into the game root)",
+        ["Ren'Py overlay đã sẵn sàng — copy COPY_TO_GAME_ROOT vào game root."] = "The Ren'Py overlay is ready — copy COPY_TO_GAME_ROOT into the game root.",
+        ["Patch văn bản thường"] = "Plain-text patch",
+        ["Patch Unity/Naninovel"] = "Unity/Naninovel patch",
+        ["Patch"] = "Patch",
+        ["{0} đã sẵn sàng tại {1}. Mở VNTextPatchInstaller.exe để cài/gỡ."] = "{0} is ready at {1}. Open VNTextPatchInstaller.exe to install/uninstall.",
+        ["Payload đã qua read-back tại {0}, nhưng thiếu installer. Chưa sẵn sàng cài/gỡ; cần VNTextPatchInstaller.exe phù hợp trước khi phân phối."] = "The payload passed read-back at {0}, but the installer is missing. It is not ready to install/uninstall; a matching VNTextPatchInstaller.exe is needed before distribution.",
+        ["Xong: patch nằm tại {0}. Mở VNTextPatchInstaller.exe để cài/gỡ."] = "Done: the patch is at {0}. Open VNTextPatchInstaller.exe to install/uninstall.",
+        ["Ren'Py native overlay đã sẵn sàng."] = "The Ren'Py native overlay is ready.",
+        ["1. Đóng game."] = "1. Close the game.",
+        ["2. Mở thư mục gói: {0}"] = "2. Open the package folder: {0}",
+        ["3. Copy toàn bộ nội dung bên trong vào game root: {0}"] = "3. Copy everything inside into the game root: {0}",
+        ["4. Giữ nguyên cấu trúc game/tl/vietnamese/ và game/."] = "4. Keep the game/tl/vietnamese/ and game/ structure unchanged.",
+        ["Kiểm tra phiên bản mới khi bạn sẵn sàng."] = "Check for a new version when you are ready.",
+        ["Đang kiểm tra mô hình dịch."] = "Checking the translation model.",
+        ["Bước 1/3: Chọn game — chưa có đường dẫn game / asset"] = "Step 1/3: Choose a game — no game / asset path yet",
+        ["Bước: Chưa bắt đầu"] = "Step: Not started",
+        ["Chọn SDK 8.5.3 đã cài hoặc tải SDK để lấy lời thoại. Tiếp tục khi chưa có SDK chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch…"] = "Choose an installed SDK 8.5.3 or download the SDK to extract the dialogue. Continuing without an SDK only scans statically to export a list for review: no translation, no patch…",
+        ["Chưa có thuật ngữ. Thêm từ bạn muốn dịch thống nhất."] = "No terms yet. Add words you want translated consistently.",
+        ["Chưa xác định engine"] = "Engine not identified yet",
+        ["Khi lấy text, app tự dùng công cụ đã có; nếu chưa có, kết quả sẽ được báo là chưa đầy đủ."] = "When extracting text the app uses the tools already installed; if none exist, the result is reported as incomplete.",
+        ["Mục: —"] = "Item: —",
+        ["Đã chạy 0 giây"] = "Ran 0 seconds",
+        ["Ước tính còn: "] = "Estimated remaining: ",
+        ["Bản dịch được kiểm tra tự động."] = "Translations are checked automatically.",
+        ["file đã đổi bên ngoài"] = "the file changed outside the app",
+        ["Cảnh báo: {0} dòng cần xem lại"] = "Warning: {0} rows need review",
+        ["Phiên bản hiện tại {0}, gói mới đã được kiểm tra."] = "Current version {0}, the new package has been verified.",
+        ["Phiên bản hiện tại {0}, đã có phiên bản mới."] = "Current version {0}, a newer version is available.",
+        ["Chưa mở translation.csv"] = "No translation.csv open",
+        ["Nhập chuỗi rồi bấm Xem trước."] = "Enter a string, then press Preview.",
+        ["Chưa chọn file…"] = "No file chosen…",
+        ["Chọn một dòng để xem mã kỹ thuật."] = "Select a row to see its technical key.",
+        ["Mã dòng: {0}"] = "Row key: {0}",
+        ["Đã chọn {0} dòng · Mã đầu tiên: {1}"] = "{0} rows selected · First key: {1}",
+        [" Bản nháp của bạn vẫn được giữ và file ngoài không bị ghi đè; bấm “Tải lại” để chọn Lưu, Bỏ hoặc Hủy."] = " Your draft is kept and the outside file was not overwritten; press “Reload” to choose Save, Discard or Cancel.",
+        [" Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại."] = " Your draft is kept; fix the problem and save again.",
+        ["không rõ lý do"] = "reason unknown",
+        ["Không lưu được: {0}.{1}"] = "Could not save: {0}.{1}",
+        ["Đã đổi nội dung lọc — hãy xem trước lại."] = "The filter text changed — preview again.",
+        ["Đã đổi bộ lọc — hãy xem trước lại."] = "The filter changed — preview again.",
+        ["Chưa lưu · {0} câu đã sửa"] = "Unsaved · {0} edited",
+        ["Có thay đổi chưa lưu"] = "Unsaved changes",
+        ["Chưa có bản dịch — chuyển sang Dịch tự động để bắt đầu."] = "No translations yet — switch to Auto translate to start.",
+        ["Một số câu cần xem lại trước khi tạo gói. Chọn câu để xem lý do và chỉnh bản dịch."] = "Some lines need review before creating the package. Select a line to see why and edit the translation.",
+        ["Bản dịch được kiểm tra tự động. Bạn có thể chỉnh ngữ cảnh, xưng hô và cách diễn đạt."] = "Translations are checked automatically. You can adjust context, forms of address and wording.",
+        ["Đã thay đổi chuỗi tìm — hãy xem trước lại."] = "The search string changed — preview again.",
+        ["Đã thay đổi chuỗi thay thế — hãy xem trước lại."] = "The replacement string changed — preview again.",
+        ["Đã đổi phạm vi — hãy xem trước lại."] = "The scope changed — preview again.",
+        ["Dòng đang lọc"] = "Filtered rows",
+        ["dòng đang lọc"] = "filtered rows",
+        ["Toàn bộ CSV"] = "Entire CSV",
+        ["toàn bộ CSV"] = "the entire CSV",
+        ["Chưa có câu"] = "No lines yet",
+        ["Hiện {0} / {1} câu · Đã dịch {2} · Chưa dịch {3} · Cần xem lại {4}"] = "Showing {0} / {1} lines · Translated {2} · Untranslated {3} · Needs review {4}",
+        ["Đang chạy tác vụ — tạm khóa chỉnh sửa CSV để tác vụ không ghi đè thay đổi của bạn."] = "A task is running — CSV editing is locked so the task cannot overwrite your changes.",
+        ["Đang kiểm tra và lưu {0} dòng…"] = "Checking and saving {0} rows…",
+        ["Đã hủy tải CSV ({0})"] = "CSV load cancelled ({0})",
+        ["Chưa chọn translation.csv"] = "No translation.csv chosen",
+        ["CSV có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?"] = "The CSV has unsaved changes. Save before reopening or choosing another file?",
+        ["Thay đổi CSV chưa lưu"] = "Unsaved CSV changes",
+        ["CSV có thay đổi chưa lưu. Lưu trước khi đổi nguồn hoặc thư mục xuất?"] = "The CSV has unsaved changes. Save before changing the source or output folder?",
+        ["Đang tải CSV…"] = "Loading CSV…",
+        ["Không mở được CSV"] = "Could not open the CSV",
+        ["CSV đã chọn"] = "the chosen CSV",
+        ["chưa có file nào đang mở"] = "no file is open",
+        ["đang giữ {0}"] = "keeping {0}",
+        ["Không mở được {0}: {1} ({2})."] = "Could not open {0}: {1} ({2}).",
+        ["Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”."] = "Warning: {0} rows need review — {1}. See the Status column or filter “Error rows only”.",
+        ["Đã mở {0} dòng — {1}"] = "Opened {0} rows — {1}",
+        ["Đang tải CSV… {0}/{1}"] = "Loading CSV… {0}/{1}",
+        ["Đã mở {0} dòng — {1} (đang kiểm tra…)"] = "Opened {0} rows — {1} (checking…)",
+        ["CSV đã được chỉnh sửa — hãy xem trước lại."] = "The CSV was edited — preview again.",
+        ["Chưa chọn file CSV."] = "No CSV file chosen.",
+        ["Nhập chuỗi cần tìm."] = "Enter the string to find.",
+        ["Chuỗi tìm/thay, bộ lọc hoặc dữ liệu đã đổi trong lúc xem trước — hãy xem trước lại."] = "The find/replace text, filter or data changed during the preview — preview again.",
+        ["Không xem trước được thao tác thay thế."] = "The replacement could not be previewed.",
+        ["Không tìm thấy chuỗi trong cột Bản dịch."] = "The string was not found in the Translation column.",
+        ["Sẽ thay {0} lần trong {1} dòng ({2})."] = "Will replace {0} times in {1} rows ({2}).",
+        ["Trước: {0}\nSau: {1}"] = "Before: {0}\nAfter: {1}",
+        ["Hãy lưu hoặc tải lại chỉnh sửa hiện tại trước khi áp dụng thay thế hàng loạt."] = "Save or reload the current edits before applying the bulk replacement.",
+        ["Chuỗi tìm/thay, bộ lọc hoặc dữ liệu đã đổi trong lúc kiểm tra — hãy xem trước lại."] = "The find/replace text, filter or data changed during the check — preview again.",
+        ["CSV đã thay đổi — hãy xem trước thao tác lần nữa."] = "The CSV changed — preview the operation again.",
+        ["Thay thế {0} lần trong {1} dòng?\n\n"] = "Replace {0} times in {1} rows?\n\n",
+        ["Tìm: {0}\nThay bằng: {1}\n"] = "Find: {0}\nReplace with: {1}\n",
+        ["Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.\n"] = "Only the Translation column is edited; the Source/key columns stay unchanged.\n",
+        ["Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu."] = "The app creates a recovery copy and checks the file after saving.",
+        ["Xác nhận thay thế hàng loạt"] = "Confirm bulk replacement",
+        ["Thay thế hàng loạt thất bại."] = "The bulk replacement failed.",
+        ["Đã áp dụng thay thế hàng loạt."] = "The bulk replacement was applied.",
+        ["Đã thay {0} lần trong {1} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục."] = "Replaced {0} times in {1} rows. You can undo it; a recovery copy was created.",
+        ["Hãy lưu hoặc tải lại chỉnh sửa hiện tại trước khi hoàn tác."] = "Save or reload the current edits before undoing.",
+        ["Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?"] = "Restore the CSV to before the latest bulk replacement?",
+        ["Xác nhận hoàn tác"] = "Confirm undo",
+        ["Hoàn tác thất bại."] = "The undo failed.",
+        ["Đã hoàn tác — khôi phục {0} dòng từ bản lưu khôi phục."] = "Undone — restored {0} rows from the recovery copy.",
+        ["Đang tải CSV — chờ xong rồi kiểm tra."] = "Loading the CSV — wait for it to finish, then check.",
+        ["Chưa có dữ liệu để kiểm tra."] = "There is no data to check yet.",
+        ["Đang kiểm tra CSV…"] = "Checking the CSV…",
+        ["Kiểm tra thất bại"] = "The check failed",
+        ["Chưa có bản dịch — chuyển sang Dịch tự động để dịch CSV."] = "No translations yet — switch to Auto translate to translate the CSV.",
+        ["Chưa lưu — đang có tác vụ chạy trên gói này; hãy đợi tác vụ kết thúc hoặc hủy tác vụ rồi lưu lại."] = "Not saved — a task is running on this package; wait for it to finish or cancel it, then save again.",
+        ["Đang tải CSV — chưa thể lưu."] = "Loading the CSV — cannot save yet.",
+        ["Chưa chọn file CSV để lưu."] = "No CSV file chosen to save.",
+        ["Chưa lưu — không xác minh được CSV gốc; hãy tải lại file."] = "Not saved — the original CSV could not be verified; reload the file.",
+        ["không xác minh được CSV gốc"] = "the original CSV could not be verified",
+        ["Chưa lưu — {0} key trùng"] = "Not saved — {0} duplicate keys",
+        ["{0} key trùng — {1}"] = "{0} duplicate keys — {1}",
+        ["Đang kiểm tra CSV trước khi lưu…"] = "Checking the CSV before saving…",
+        ["Lưu thất bại: {0}"] = "Save failed: {0}",
+        ["Không thể lưu — kiểm tra thất bại"] = "Cannot save — the check failed",
+        ["Lưu thất bại"] = "Save failed",
+        ["Lưu thất bại — không nhận được mã xác minh file đã lưu. Hãy tải lại CSV trước khi tiếp tục."] = "Save failed — no verification code for the saved file was received. Reload the CSV before continuing.",
+        ["không nhận được mã xác minh file đã lưu"] = "no verification code for the saved file was received",
+        ["Đã lưu {0} dòng — {1}"] = "Saved {0} rows — {1}",
+        ["{0} (UTF-8 BOM, giữ nguyên cột)"] = "{0} (UTF-8 BOM, columns unchanged)",
+        ["{0}; còn chỉnh sửa mới chưa lưu"] = "{0}; newer edits are not saved yet",
+        ["Đã lưu CSV"] = "CSV saved",
+        ["Hãy lưu hoặc tải lại chỉnh sửa hiện tại trước khi xóa bản dịch lỗi."] = "Save or reload the current edits before clearing faulty translations.",
+        ["Không xem trước được"] = "Could not preview",
+        ["Không có dòng lỗi cấu trúc nào có bản dịch để xóa."] = "No structurally faulty row has a translation to clear.",
+        ["Xóa cột translation của {0} dòng bị Patch Gate chặn?\n\n"] = "Clear the translation column of {0} rows blocked by the Patch Gate?\n\n",
+        ["Chỉ xóa bản dịch — giữ nguyên key và source.\n"] = "Only the translation is cleared — key and source stay.\n",
+        ["File backup sẽ được tạo trước khi ghi."] = "A backup file is created before writing.",
+        ["Xác nhận xóa bản dịch lỗi"] = "Confirm clearing faulty translations",
+        ["Xóa bản dịch thất bại"] = "Clearing the translations failed",
+        ["Đã xóa bản dịch {0} dòng — {1}"] = "Cleared the translations of {0} rows — {1}",
+        ["Worker đang bận — hãy đợi hoặc hủy tác vụ hiện tại."] = "The worker is busy — wait or cancel the current task.",
+        ["Không có dòng lỗi cấu trúc nào để dịch lại."] = "No structurally faulty row to retranslate.",
+        ["Dịch lại {0} dòng bằng {1}?\n\n"] = "Retranslate {0} rows with {1}?\n\n",
+        ["Chỉ các dòng đã chọn hoặc đang bị gate chặn (cấu trúc).\n"] = "Only the selected rows or those blocked by the gate (structure).\n",
+        ["Backup CSV sẽ được tạo trước khi ghi. Validation chạy sau khi dịch."] = "A CSV backup is created before writing. Validation runs after translating.",
+        ["Xác nhận dịch lại dòng lỗi"] = "Confirm retranslating faulty rows",
+        ["CSV có thay đổi chưa lưu. Lưu trước khi dịch lại?"] = "The CSV has unsaved changes. Save before retranslating?",
+        ["Lưu CSV"] = "Save CSV",
+        ["Đang dịch lại {0} dòng lỗi…"] = "Retranslating {0} faulty rows…",
+        ["File CSV đã đổi sau khi dịch xong — bấm Tải lại để xem bản mới (thay đổi chưa lưu được giữ nguyên)."] = "The CSV file changed after translating finished — press Reload to see the new version (unsaved changes are kept).",
+        ["File không tồn tại"] = "The file does not exist",
+        ["CSV không có dòng dữ liệu"] = "The CSV has no data rows",
+        ["Phải là file .csv"] = "Must be a .csv file",
+        ["Thiếu manifest.json cùng thư mục với translation.csv"] = "manifest.json is missing next to translation.csv",
+        ["CSV trống hoặc thiếu header"] = "The CSV is empty or has no header",
+        ["Header thiếu cột bắt buộc: key, source_text, translation"] = "The header lacks required columns: key, source_text, translation",
+        ["CSV hợp lệ nhưng chưa có bản dịch (0/{0} dòng)"] = "The CSV is valid but has no translations yet (0/{0} rows)",
+        ["Hợp lệ — {0}/{1} câu đã có bản dịch"] = "Valid — {0}/{1} lines have translations",
+        ["Không đọc được CSV: {0}"] = "Could not read the CSV: {0}",
+        ["Chưa chọn thư mục xuất"] = "No output folder chosen",
+        ["Chưa có bản dịch"] = "No translation yet",
+        ["Rác lặp từ/ký tự"] = "Repeated junk words/characters",
+        ["HTML/entity rác"] = "HTML/entity junk",
+        ["Synonym — dịch thủ công"] = "Synonym — translate manually",
+        ["Hỏng tag"] = "Broken tag",
+        ["translation.csv không tồn tại"] = "translation.csv does not exist",
+        ["Thiếu manifest.json cùng thư mục"] = "manifest.json is missing in the same folder",
+        ["Không khởi chạy được Python worker"] = "The Python worker could not be started",
+        ["Kiểm tra patch thất bại"] = "The patch check failed",
+        ["Lỗi kiểm tra patch: {0}"] = "Patch check error: {0}",
+        ["CSV trống"] = "The CSV is empty",
+        ["Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ"] = "The CSV header lacks required columns, has duplicates or is invalid",
+        ["CSV có key trống hoặc trùng"] = "The CSV has empty or duplicate keys",
+        ["Dòng CSV có số cột không khớp header"] = "A CSV row has a different column count than the header",
+        ["Validate thất bại"] = "Validation failed",
+        ["Preview thất bại"] = "Preview failed",
+        ["Thao tác thất bại"] = "The operation failed",
+        ["Preview thay thế thất bại"] = "The replacement preview failed",
+        ["Thay thế thất bại"] = "The replacement failed",
+        ["Không đọc được CSV"] = "Could not read the CSV",
+        ["Không khởi chạy được Python"] = "Python could not be started",
+        ["CSV editor API không trả output"] = "The CSV editor API returned no output",
+        ["CSV / preflight"] = "CSV / preflight",
+        ["Patch preflight"] = "Patch preflight",
+        ["Cần CSV hợp lệ trước khi kiểm tra chất lượng patch."] = "A valid CSV is needed before the patch quality check.",
+        ["Không thể cập nhật trạng thái CSV: {0}"] = "Could not update the CSV state: {0}",
+        ["Dịch chưa hoàn tất — pending {0}, review {1}, blocked {2}. Chưa thể tạo Patch."] = "Translation is not finished — pending {0}, review {1}, blocked {2}. The patch cannot be created yet.",
+        ["Kiểm tra patch: {0} hợp lệ, {1} bị chặn."] = "Patch check: {0} eligible, {1} blocked.",
+        ["Kiểm tra patch: {0}"] = "Patch check: {0}",
+        ["Không tìm thấy gói ZIP đã xuất. Hãy xuất lại gói ở tab Dịch rồi chọn CSV."] = "The exported ZIP package was not found. Export it again on the Translate tab, then choose the CSV.",
+        ["Chọn translation.csv đã dịch để nhập"] = "Choose the translated translation.csv to import",
+        ["Lưu gói Cloud Repair"] = "Save the Cloud Repair package",
+        ["Cloud Repair ZIP (*.zip)|*.zip|Tất cả (*.*)|*.*"] = "Cloud Repair ZIP (*.zip)|*.zip|All files (*.*)|*.*",
+        ["Tiếng Việt"] = "Vietnamese",
+        ["Đang kiểm tra mô hình dịch…"] = "Checking the translation model…",
+        ["Worker chưa sẵn sàng: "] = "The worker is not ready: ",
+        ["Đang tải lịch sử phát hành…"] = "Loading the release history…",
+        ["Chưa có ghi chú được lưu. Hãy kết nối mạng và kiểm tra cập nhật để lưu ghi chú phát hành."] = "No saved notes yet. Connect to the network and check for updates to save the release notes.",
+        ["Không mở được liên kết: "] = "Could not open the link: ",
+        ["Không khởi chạy được kiểm tra model."] = "The model check could not be started.",
+        ["Kiểm tra model exit {0}: {1}"] = "Model check exit {0}: {1}",
+        ["Mô hình dịch đã sẵn sàng."] = "The translation model is ready.",
+        ["Chưa có mô hình dịch trên máy."] = "No translation model on this computer yet.",
+        ["Không kiểm tra được mô hình dịch: "] = "Could not check the translation model: ",
+        ["Thư mục chưa có."] = "The folder does not exist yet.",
+        ["Không mở được thư mục: "] = "Could not open the folder: ",
+        ["Không lưu được cài đặt; file hiện có được giữ nguyên: "] = "Could not save the settings; the existing file is kept: ",
+        ["Mô hình dịch"] = "Translation model",
+        ["Mô hình OPUS-MT · INT8 · CTranslate2."] = "OPUS-MT model · INT8 · CTranslate2.",
+        ["Khi bật, bản dịch cần được bạn xem và lưu xác nhận trước khi đưa vào gói dịch."] = "When on, translations must be reviewed and confirmed by you before they go into the package.",
+        ["Python worker"] = "Python worker",
+        ["Tác giả: Calanh"] = "Author: Calanh",
+        ["Giấy phép: Apache-2.0"] = "License: Apache-2.0",
+        ["Tìm trong CSV"] = "Search in CSV",
+        ["Tìm trong toàn bộ CSV"] = "Search the whole CSV",
+        ["Phạm vi thay thế"] = "Replacement scope",
+        ["Đếm các dòng và lần thay thế trước khi áp dụng."] = "Counts the rows and replacements before applying.",
+        ["MÃ DÒNG"] = "ROW KEY",
+        ["Đóng Thuật ngữ ưu tiên"] = "Close Preferred terms",
+        ["Cập nhật VNText Studio"] = "Update VNText Studio",
+        ["Hủy rồi thoát"] = "Cancel and exit",
+        ["Biểu thức chính quy"] = "Regular expression",
+        ["Nhật ký — Khắc phục lỗi"] = "Journal — Troubleshooting",
+        ["Đóng Nhật ký"] = "Close Journal",
+        ["khắc phục lỗi"] = "troubleshooting",
+        ["Tất cả"] = "All",
+        ["Thông tin"] = "Info",
+        ["Cảnh báo"] = "Warning",
+        ["Mức"] = "Level",
+        ["Tìm trong nhật ký"] = "Search the journal",
+        ["Làm mới"] = "Refresh",
+        ["Xóa tệp nhật ký {0}?"] = "Delete the journal file {0}?",
+        ["Không đọc được nhật ký: "] = "Could not read the journal: ",
+        ["Chưa có tệp nhật ký"] = "No journal file yet",
+        ["{0} bản ghi/trang"] = "{0} entries/page",
+        ["{0} bản ghi · {1}/{2}"] = "{0} entries · {1}/{2}",
+        ["Đang tải xuống..."] = "Downloading...",
+        ["Khởi động lại"] = "Restart",
+        ["Cập nhật ngay"] = "Update now",
+        ["Có bản cập nhật mới"] = "A new update is available",
+        ["Cập nhật thành công"] = "Update successful",
+        ["Đóng "] = "Close ",
+        ["Hủy tải cập nhật"] = "Cancel the update download",
+        ["Có gì mới"] = "What's new",
+        ["Tính năng mới"] = "New features",
+        ["Bỏ qua phiên bản này"] = "Skip this version",
+        ["Không tải được cập nhật: "] = "Could not download the update: ",
+        ["Phát hành "] = "Released ",
+        ["Ghi chú phiên bản"] = "Release notes",
+        ["Đã cập nhật thành công lên phiên bản v{0}."] = "Successfully updated to version v{0}.",
+        ["Phiên bản hiện tại {0}, "] = "Current version {0}, ",
+        [" gói mới đã được kiểm tra."] = " the new package has been verified.",
+        [" đã có phiên bản mới."] = " a newer version is available.",
+        ["Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất."] = "No release notes yet. Check for updates to see the latest information.",
+        ["Đang tải xuống... {0}%"] = "Downloading... {0}%",
+        ["✓  VNText Studio đã cập nhật lên v{0} và sẵn sàng sử dụng."] = "✓  VNText Studio was updated to v{0} and is ready to use.",
+        ["✓  Phiên bản v{0} đã sẵn sàng. Hãy khởi động lại để áp dụng."] = "✓  Version v{0} is ready. Restart to apply it.",
+        ["Để sau"] = "Later",
+        ["Tải phiên bản "] = "Download version ",
+        ["Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng."] = "The download page could not be opened. Try again when the browser is ready.",
+        ["Mở trang tải"] = "Open the download page",
+        ["Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến."] = "No saved notes yet. Connect to the network and check for updates to load the history; you can then read it offline.",
+        ["Không"] = "No",
+        ["Có"] = "Yes",
+        ["Bỏ thay đổi"] = "Discard changes",
+        ["Lưu"] = "Save",
         ["Đường dẫn ảnh/output không được qua link hoặc reparse point."] = "Image/output paths must not go through links or reparse points.",
         ["Chỉ hỗ trợ ảnh tĩnh PNG/JPEG/WebP; không xử lý ảnh động."] = "Only still PNG/JPEG/WebP images are supported; animated images are not processed.",
         ["Ảnh vượt 32 MiB; hãy chọn crop nhỏ hơn."] = "The image is larger than 32 MiB; choose a smaller crop.",
@@ -206,6 +557,7 @@ public static class UiText
         ["Màu đặc"] = "Solid color",
         ["Clone nền mẫu"] = "Clone sample background",
         ["Chưa chọn chế độ nền"] = "No background mode chosen",
+        ["Chưa chọn chế độ nền — hãy chọn một chế độ trước khi duyệt."] = "No background mode chosen — choose one before approving.",
         ["Chọn nhiều chế độ — cần đúng một"] = "Several modes chosen — exactly one is required",
         ["Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch."] = "Choose a still image for OCR; the result needs review and never creates a patch by itself.",
         ["Chọn ảnh để xem trước và OCR"] = "Choose an image to preview and OCR",
@@ -283,7 +635,7 @@ public static class UiText
         ["Mở công cụ Tìm và thay thế"] = "Open Find and replace tools",
         ["Thu gọn công cụ Tìm và thay thế"] = "Collapse Find and replace tools",
         ["Chọn file translation.csv để xem và sửa bản dịch."] = "Choose a translation.csv file to view and edit translations.",
-        ["Chưa có thuật ngữ nào. Nhập từ trong game và cách dịch ở trên, rồi bấm Thêm."] = "No terms yet. Enter a game word and its translation above, then press Thêm.",
+        ["Chưa có thuật ngữ nào. Nhập từ trong game và cách dịch ở trên, rồi bấm Thêm."] = "No terms yet. Enter a game word and its translation above, then press Add.",
         ["Nhập thuật ngữ đầu tiên"] = "Enter the first term",
         ["Chọn ảnh, chạy OCR, sửa và duyệt từng vùng rồi dựng ảnh."] = "Choose an image, run OCR, edit and approve each region, then render.",
         ["Game gốc không bị ghi: chỉ bước cài mới ghi vào một bản sao game do bạn chọn."] = "The original game is never written: only the install step writes, into a game copy you choose.",
@@ -365,7 +717,7 @@ public static class UiText
         ["Chưa cấu hình nguồn cập nhật."] = "No update source configured.",
         ["Đóng"] = "Close",
         ["Thêm"] = "Add",
-        ["Xóa"] = "Remove",
+        ["Xóa"] = "Delete",
         ["Từ trong game"] = "In-game term",
         ["Dịch thành"] = "Translation",
         ["Ví dụ: pheromones"] = "Example: pheromones",
@@ -493,7 +845,45 @@ public static class UiText
         (new(@"^OCR (\d+) region — cần sửa text/tọa độ, duyệt nền phẳng và bản dịch trước render\.$"), "OCR found {1} regions — edit the text/coordinates, approve the flat background and the translation before rendering.", []),
     ];
 
+    private static (System.Text.RegularExpressions.Regex Pattern, string English, int Holes)[]? _formatEntries;
+    private static (string Vi, string En)[]? _prefixEntries;
+    private static readonly object TableGate = new();
+
+    private static void EnsureDynamicTables()
+    {
+        if (_formatEntries is not null) return;
+        lock (TableGate)
+        {
+            if (_formatEntries is not null) return;
+            var formats = new List<(string Key, System.Text.RegularExpressions.Regex Pattern, string English, int Holes)>();
+            var prefixes = new List<(string Vi, string En)>();
+            var hole = new System.Text.RegularExpressions.Regex(@"\{(\d+)\}");
+            foreach (var (key, english) in English)
+            {
+                var matches = hole.Matches(key);
+                if (matches.Count > 0)
+                {
+                    var pattern = new System.Text.StringBuilder("^");
+                    var last = 0;
+                    foreach (System.Text.RegularExpressions.Match m in matches)
+                    {
+                        pattern.Append(System.Text.RegularExpressions.Regex.Escape(key[last..m.Index])).Append("(.*?)");
+                        last = m.Index + m.Length;
+                    }
+                    pattern.Append(System.Text.RegularExpressions.Regex.Escape(key[last..])).Append('$');
+                    formats.Add((key, new System.Text.RegularExpressions.Regex(pattern.ToString(), System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.CultureInvariant), english, matches.Count));
+                }
+                else if (key.EndsWith(": ", StringComparison.Ordinal) || key.EndsWith(' '))
+                    prefixes.Add((key, english));
+            }
+            _prefixEntries = prefixes.OrderByDescending(p => p.Vi.Length).ToArray();
+            _formatEntries = formats.OrderByDescending(f => f.Key.Length).Select(f => (f.Pattern, f.English, f.Holes)).ToArray();
+        }
+    }
+
     // ETA text is produced by ProgressEtaFormatter: "12 giây", "3 phút", "2 giờ 5 phút", "1 ngày 2 giờ 5 phút".
+    private static readonly System.Text.RegularExpressions.Regex DurationText = new(@"^\d+ (?:giây|phút|giờ|ngày)(?: \d+ (?:giây|phút|giờ|ngày))*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     private static string TranslateEta(string eta)
     {
         var converted = System.Text.RegularExpressions.Regex.Replace(eta, @"(\d+) (giây|phút|giờ|ngày)", match => match.Groups[2].Value switch
@@ -512,10 +902,25 @@ public static class UiText
     {
         if (Language != "en" || string.IsNullOrEmpty(text)) return text;
         if (English.TryGetValue(text, out var exact)) return exact;
+        if (DurationText.IsMatch(text)) return TranslateEta(text);          // "12 giây", "2 giờ 5 phút" (elapsed/ETA values)
         foreach (var (vi, en) in DynamicPrefixes)
             if (text.StartsWith(vi, StringComparison.Ordinal)) return en + TranslateDynamic(text[vi.Length..]);
         foreach (var key in SentenceKeys)
             if (text.Length > key.Length && text.StartsWith(key + " ", StringComparison.Ordinal)) return English[key] + text[key.Length..];
+        if (TranslateGateSummary(text) is { } gateSummary) return gateSummary;
+        EnsureDynamicTables();
+        foreach (var (pattern, english, holes) in _formatEntries!)
+        {
+            var found = pattern.Match(text);
+            if (!found.Success) continue;
+            var filled = english;
+            for (var hole = 0; hole < holes; hole++)
+                filled = filled.Replace("{" + hole + "}", TranslateDynamic(found.Groups[hole + 1].Value));
+            return filled;
+        }
+        foreach (var (viPrefix, enPrefix) in _prefixEntries!)
+            if (text.Length > viPrefix.Length && text.StartsWith(viPrefix, StringComparison.Ordinal))
+                return enPrefix + TranslateDynamic(text[viPrefix.Length..]);
         foreach (var (pattern, english, nested) in DynamicPatterns)
         {
             var match = pattern.Match(text);
@@ -532,8 +937,47 @@ public static class UiText
             }
             return result.Trim();
         }
+        if (text.Contains('\n'))
+        {
+            // a multi-line message with no entry of its own is translated line by line (each line by exact entry, format key or prefix)
+            var lines = text.Split('\n');
+            var changed = false;
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var translated = TranslateDynamic(lines[i]);
+                if (!string.Equals(translated, lines[i], StringComparison.Ordinal)) { lines[i] = translated; changed = true; }
+            }
+            if (changed) return string.Join('\n', lines);
+        }
         return text;
     }
+
+    private static readonly System.Text.RegularExpressions.Regex GateSummaryPattern = new(
+        @"^(?:(Hợp lệ (\d+), bị chặn (\d+)(?:, có thể xử lý hàng loạt (\d+))?)|(Kiểm tra patch — hợp lệ (\d+), bị chặn (\d+) \(manifest (\d+) dòng, translation\.csv có (\d+) bản dịch\)))(?: — (không phát hiện lỗi cấu trúc trên các dòng có bản dịch)\.|\. (.+))?$",
+        System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>The CSV-validation and patch-preflight summaries are built by the workers from fixed Vietnamese pieces: head + optional "reason: n; reason: n" tail.</summary>
+    private static string? TranslateGateSummary(string text)
+    {
+        var m = GateSummaryPattern.Match(text);
+        if (!m.Success) return null;
+        string head;
+        if (m.Groups[1].Success)
+            head = $"Eligible {m.Groups[2].Value}, blocked {m.Groups[3].Value}" + (m.Groups[4].Success ? $", {m.Groups[4].Value} can be handled in bulk" : "");
+        else
+            head = $"Patch check — eligible {m.Groups[6].Value}, blocked {m.Groups[7].Value} (manifest {m.Groups[8].Value} rows, translation.csv has {m.Groups[9].Value} translations)";
+        if (m.Groups[10].Success) return head + " — no structural errors found in the translated rows.";
+        if (!m.Groups[11].Success) return head;
+        var items = m.Groups[11].Value.Split("; ").Select(item =>
+        {
+            var colon = item.LastIndexOf(": ", StringComparison.Ordinal);
+            if (colon > 0) return TranslateDynamic(item[..colon]) + item[colon..];
+            var more = System.Text.RegularExpressions.Regex.Match(item, @"^… \(\+(\d+) nhóm\)$");
+            return more.Success ? $"… (+{more.Groups[1].Value} groups)" : item;
+        });
+        return head + ". " + string.Join("; ", items);
+    }
+
     public static void SetLanguage(string language) => Language = language == "en" ? "en" : "vi";
     public static void Install()
     {
@@ -541,6 +985,9 @@ public static class UiText
         _installed = true;
         EventManager.RegisterClassHandler(typeof(FrameworkElement), FrameworkElement.LoadedEvent,
             new RoutedEventHandler((sender, _) => { if (sender is DependencyObject d) ApplyElement(d); }), true);
+        // Settings sub-tabs realise their content lazily: localize it when the tab is selected.
+        EventManager.RegisterClassHandler(typeof(System.Windows.Controls.TabControl), System.Windows.Controls.Primitives.Selector.SelectionChangedEvent,
+            new RoutedEventHandler((sender, e) => { if (sender is System.Windows.Controls.TabControl tabs && ReferenceEquals(e.OriginalSource, tabs)) tabs.Dispatcher.BeginInvoke(new Action(() => Apply(tabs)), System.Windows.Threading.DispatcherPriority.Loaded); }), true);
         // Collapsed Expander content is not in the visual tree until it opens: localize it then.
         EventManager.RegisterClassHandler(typeof(System.Windows.Controls.Expander), System.Windows.Controls.Expander.ExpandedEvent,
             new RoutedEventHandler((sender, _) => { if (sender is System.Windows.Controls.Expander expander) expander.Dispatcher.BeginInvoke(new Action(() => Apply(expander)), System.Windows.Threading.DispatcherPriority.Loaded); }), true);

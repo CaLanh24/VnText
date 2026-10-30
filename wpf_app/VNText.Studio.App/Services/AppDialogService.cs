@@ -44,6 +44,8 @@ internal static class AppDialogService
         Window? owner,
         Action<MessageBoxResult> setResult)
     {
+        message = UiText.TranslateDynamic(message);
+        caption = UiText.TranslateDynamic(caption);
         var app = Application.Current;
         var ink = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black;
         var muted = app?.TryFindResource("MutedBrush") as Brush ?? Brushes.DimGray;
@@ -68,8 +70,9 @@ internal static class AppDialogService
         });
         var dialog = new AppDialogWindow(owner, caption, body);
         dialog.OnDismiss = () => setResult(SafeDismissResult(buttons));
-        foreach (var (label, result, primary, isDefault) in ButtonSpecs(buttons))
+        foreach (var (specLabel, result, primary, isDefault) in ButtonSpecs(buttons))
         {
+            var label = UiText.Translate(specLabel);
             var captured = result;
             dialog.AddButton(label, () => setResult(captured), primary, isDefault);
         }

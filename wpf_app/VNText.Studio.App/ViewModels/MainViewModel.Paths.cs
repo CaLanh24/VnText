@@ -80,6 +80,12 @@ public sealed partial class MainViewModel
 
     internal void TestSetTranslationCsvPath(string path) => TranslationCsvPath = path;
 
+    private static bool SameCsvPath(string a, string b)
+    {
+        try { return string.Equals(Path.GetFullPath(a).TrimEnd('\\', '/'), Path.GetFullPath(b).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase); }
+        catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
+    }
+
     private void InvalidatePatchSourceState()
     {
         var hadState = PatchResultsAvailable || PatchPreflightEvaluated || PatchDeliveryReady || CsvValidationOk;

@@ -14,6 +14,13 @@
             <Setter Property="Margin" Value="0,0,0,3" />
         </Style>
         <!-- Choices and approval follow the theme (checked/unchecked/disabled/focus); the host window sets no Foreground of its own. -->
+        <Style TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+            <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="{DynamicResource DisabledForegroundBrush}" /></Trigger>
+            </Style.Triggers>
+        </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
             <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocusStyle}" />
@@ -164,11 +171,13 @@
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Màu chữ (RGB)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionForegroundBox" Width="110" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Màu chữ RGB" /></StackPanel>
                     </WrapPanel>
                     <TextBlock Text="Chế độ nền — chọn đúng một" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,2,0,6" />
+                    <TextBlock x:Name="NoModeHint" Text="Chưa chọn chế độ nền — hãy chọn một chế độ trước khi duyệt." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
+                               Visibility="{Binding NoModeChosen, Converter={StaticResource PanelBoolToVis}}" />
                     <WrapPanel>
-                        <CheckBox x:Name="FlatModeBox" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
-                        <CheckBox x:Name="TransparentModeBox" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
-                        <CheckBox x:Name="SolidModeBox" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
-                        <CheckBox x:Name="CloneModeBox" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
+                        <RadioButton x:Name="FlatModeBox" GroupName="RegionBackgroundMode" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
+                        <RadioButton x:Name="TransparentModeBox" GroupName="RegionBackgroundMode" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
+                        <RadioButton x:Name="SolidModeBox" GroupName="RegionBackgroundMode" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
+                        <RadioButton x:Name="CloneModeBox" GroupName="RegionBackgroundMode" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
                     </WrapPanel>
                     <WrapPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding DonorX, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="X nền mẫu" /></StackPanel>

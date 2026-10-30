@@ -53,7 +53,7 @@ public sealed partial class MainViewModel
         {
             if (kind is "error" or "warning") AppendLog($"[{kind}] {message}");
             _toastTimer?.Stop();
-            ToastMessage = message.Trim();
+            ToastMessage = UiText.TranslateDynamic(message.Trim());   // app-owned messages follow the language; user data/paths pass through
             ToastKind = kind;
             ToastVisible = true;
 

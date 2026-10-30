@@ -44,7 +44,7 @@ internal sealed class UpdateWindow : Window
     internal UpdateWindow(MainWindow owner, IUpdatePresentation source, bool notesOnly = false, string? successVersion = null)
     {
         _source = source; _notesOnly = notesOnly; _successVersion = successVersion;
-        Owner = owner; Title = notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio";
+        Owner = owner; Title = UiText.Translate(notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio");
         Width = notesOnly ? 880 : 620; SizeToContent = SizeToContent.Height;
         if (notesOnly) { Height = Math.Max(280, Math.Min(720, owner.ActualHeight - 24)); SizeToContent = SizeToContent.Manual; }
         MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = Math.Max(300, owner.ActualHeight - 24);
@@ -76,7 +76,7 @@ internal sealed class UpdateWindow : Window
             FontSize = AppDialogWindow.HeaderTitleSize, FontWeight = FontWeights.Bold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         Grid.SetColumn(heading, 1); header.Children.Add(heading);
         var close = new Button { Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center }, Style = (Style)owner.FindResource("DialogCloseButton") };
-        AutomationProperties.SetName(close, "Đóng " + Title); close.ToolTip = "Đóng (Esc)";
+        AutomationProperties.SetName(close, UiText.TranslateDynamic("Đóng " + Title)); close.ToolTip = "Đóng (Esc)";
         close.Click += (_, _) => Close(); Grid.SetColumn(close, 2); header.Children.Add(close);
         grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
         var body = new Grid { Margin = AppDialogWindow.BodyPadding }; Grid.SetRow(body, 1); grid.Children.Add(body);
@@ -124,10 +124,11 @@ internal sealed class UpdateWindow : Window
             if (_starting || source.Downloading || !source.CanStart) return;
             if (source.Ready) { try { source.Restart(); } catch (Exception ex) { _status.Text = ex.Message; } return; }
             _starting = true; _primary.IsEnabled = false;
-            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = "Không tải được cập nhật: " + ex.Message; }
+            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = UiText.TranslateDynamic("Không tải được cập nhật: " + ex.Message); }
             finally { _starting = false; if (IsVisible) Refresh(); }
         };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { e.Handled = true; Close(); } };
+        Loaded += (_, _) => UiText.Apply(this);
         Loaded += (_, _) =>
         {
             if (owner.Content is UIElement element)
@@ -167,16 +168,16 @@ internal sealed class UpdateWindow : Window
         var releaseVersion = _successVersion ?? state.Version;
         _version.Text = string.IsNullOrWhiteSpace(releaseVersion) ? "" : "v" + releaseVersion;
         _versionBadge.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
-        _date.Text = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? "" : "Phát hành " + _source.ReleaseDate;
+        _date.Text = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? "" : UiText.TranslateDynamic("Phát hành " + _source.ReleaseDate);
         _dateBadge.Visibility = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? Visibility.Collapsed : Visibility.Visible;
         _current.Visibility = _notesOnly ? Visibility.Collapsed : Visibility.Visible;
         _notesHeading.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
         var updateCompleted = !string.IsNullOrWhiteSpace(_successVersion);
-        _current.Text = _notesOnly ? "Ghi chú phiên bản"
+        _current.Text = UiText.TranslateDynamic(_notesOnly ? "Ghi chú phiên bản"
             : updateCompleted ? $"Đã cập nhật thành công lên phiên bản v{_successVersion}."
-            : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới.");
+            : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới."));
         var notesText = _successVersion is not null && Owner.DataContext is MainViewModel vm ? vm.VerifiedSuccessNotes : state.Notes;
-        if (string.IsNullOrWhiteSpace(notesText)) notesText = "Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.";
+        if (string.IsNullOrWhiteSpace(notesText)) notesText = UiText.Translate("Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.");
         if (_notesOnly && Owner.DataContext is MainViewModel historyVm)
         {
             var signature = string.Join("\u001f", historyVm.ReleaseNotesHistory.Select(entry => entry.Version + "\u001e" + entry.ReleaseDate + "\u001e" + entry.Notes));
@@ -186,12 +187,12 @@ internal sealed class UpdateWindow : Window
         else if (_renderedNotes != notesText) { _renderedNotes = notesText; _notes.Content = RenderNotes(notesText); }
         _progressArea.Visibility = state.Downloading && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
         _progress.IsIndeterminate = state.Indeterminate; _progress.Maximum = 100; _progress.Value = state.Percent;
-        _progressText.Text = state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%";
+        _progressText.Text = UiText.TranslateDynamic(state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%");
         _success.Visibility = (state.Ready || updateCompleted) && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
-        _banner.Text = updateCompleted
+        _banner.Text = UiText.TranslateDynamic(updateCompleted
             ? $"✓  VNText Studio đã cập nhật lên v{_successVersion} và sẵn sàng sử dụng."
-            : $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.";
-        _status.Text = _notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status;
+            : $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.");
+        _status.Text = UiText.TranslateDynamic(_notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status);
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.
         _notes.MaxHeight = _notesOnly ? double.PositiveInfinity : Math.Min(145, Math.Max(90, Owner.ActualHeight * .22));
@@ -205,6 +206,7 @@ internal sealed class UpdateWindow : Window
         _skip.Visibility = !state.Downloading && state.Available && !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
         _primary.Visibility = !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
         _later.Content = _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy";
+        UiText.Apply(this);          // literal chrome (buttons, headings, tooltips, accessible names); the release-note BODY is never in the catalog
     }
     internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);
     private static Button MakeButton(FrameworkElement owner, string text, bool primary)
@@ -251,11 +253,11 @@ internal sealed class UpdateWindow : Window
             {
                 var download = MakeButton(owner, "Tải xuống", false);
                 download.VerticalAlignment = VerticalAlignment.Top;
-                AutomationProperties.SetName(download, "Tải phiên bản " + entry.Version);
+                AutomationProperties.SetName(download, UiText.TranslateDynamic("Tải phiên bản " + entry.Version));
                 download.Click += (_, _) =>
                 {
                     try { Process.Start(new ProcessStartInfo(entry.DownloadUrl) { UseShellExecute = true }); }
-                    catch { AppDialogService.Show("Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng.", "Mở trang tải", MessageBoxButton.OK, MessageBoxImage.Information); }
+                    catch { AppDialogService.Show(UiText.Translate("Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng."), UiText.Translate("Mở trang tải"), MessageBoxButton.OK, MessageBoxImage.Information); }
                 };
                 Grid.SetColumn(download, 1); header.Children.Add(download);
             }
@@ -265,7 +267,7 @@ internal sealed class UpdateWindow : Window
                 CornerRadius = new CornerRadius(14), Padding = new Thickness(18), Margin = new Thickness(0, 0, 0, 12) });
         }
         if (panel.Children.Count == 0)
-            panel.Children.Add(new TextBlock { Text = "Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến.",
+            panel.Children.Add(new TextBlock { Text = UiText.Translate("Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến."),
                 TextWrapping = TextWrapping.Wrap, Foreground = (Brush)owner.FindResource("MutedBrush"), Margin = new Thickness(0, 8, 0, 8) });
         return panel;
     }
