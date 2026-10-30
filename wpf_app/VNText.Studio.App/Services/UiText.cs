@@ -94,6 +94,51 @@ public static class UiText
         ["Chọn file CSV"] = "Choose CSV file",
         ["Chọn CSV"] = "Choose CSV",
         ["Mở công cụ"] = "Open tools",
+        ["Đường dẫn ảnh/output không được qua link hoặc reparse point."] = "Image/output paths must not go through links or reparse points.",
+        ["Chỉ hỗ trợ ảnh tĩnh PNG/JPEG/WebP; không xử lý ảnh động."] = "Only still PNG/JPEG/WebP images are supported; animated images are not processed.",
+        ["Ảnh vượt 32 MiB; hãy chọn crop nhỏ hơn."] = "The image is larger than 32 MiB; choose a smaller crop.",
+        ["Ảnh tăng kích thước vượt budget; dừng đọc."] = "The image grew beyond the size budget; reading stopped.",
+        ["Ảnh quá lớn hoặc có nhiều frame; hãy chọn ảnh tĩnh/crop."] = "The image is too large or has several frames; choose a still image/crop.",
+        ["Region cần x,y,width,height nguyên."] = "A region needs whole-number x, y, width and height.",
+        ["Region nằm ngoài ảnh hoặc kích thước không hợp lệ."] = "The region is outside the image or has an invalid size.",
+        ["OCR ảnh hiện cần Windows OCR và language pack tiếng Anh."] = "Image OCR currently needs Windows OCR and the English language pack.",
+        ["OCR quá 60 giây; chưa có kết quả hoàn tất."] = "OCR took longer than 60 seconds; no finished result yet.",
+        ["Chữ nghiêng cần xoay/crop và review thủ công trước OCR."] = "Tilted text needs rotating/cropping and a manual review before OCR.",
+        ["Schema review ảnh không hợp lệ."] = "The image review schema is not valid.",
+        ["Output phải là file PNG mới; không ghi đè ảnh gốc/output đã có."] = "The output must be a new PNG file; the original image/existing output is never overwritten.",
+        ["Ảnh nguồn đã thay đổi; OCR/review lại trước render."] = "The source image changed; run OCR/review again before rendering.",
+        ["Không có region đã duyệt hoặc quá 500 region."] = "There is no approved region, or more than 500 regions.",
+        ["Render vượt 30 giây; giảm số region."] = "Rendering took longer than 30 seconds; reduce the number of regions.",
+        ["Region chồng nhau; gộp/sửa crop rồi duyệt lại."] = "Regions overlap; merge/fix the crops and approve again.",
+        ["Chọn đúng một cách render: nền phẳng, chữ trong suốt, màu đặc, hoặc clone nền mẫu."] = "Choose exactly one render mode: flat background, transparent text, solid color, or sample-background clone.",
+        ["Chế độ chữ trong suốt cần region có cả pixel trong suốt và glyph nhìn thấy."] = "Transparent-text mode needs a region with both transparent pixels and visible glyphs.",
+        ["Vùng chữ có alpha trong suốt; chọn giữ nền trong suốt hoặc xác nhận thay nền region bằng màu đặc."] = "The text area has transparent alpha; keep the transparent background or confirm replacing the region background with a solid color.",
+        ["Cần duyệt text/crop trước render."] = "Approve the text/crop before rendering.",
+        ["Bản dịch region cần text đã duyệt, tối đa 2000 ký tự."] = "A region translation needs approved text of at most 2000 characters.",
+        ["Font size phải từ 6 đến 144."] = "The font size must be between 6 and 144.",
+        ["Màu nền/chữ phải là RGB."] = "Background/text colors must be RGB.",
+        ["Nền region không đủ phẳng theo màu đã chọn; hãy crop/chuẩn bị nền thủ công."] = "The region background is not flat enough for the chosen color; crop or prepare the background manually.",
+        ["Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại."] = "The translation overflows the region; fix the line breaks/font/region and approve again.",
+        ["Vùng nền mẫu phải tách khỏi vùng chữ cần thay."] = "The sample background area must be separate from the text area to replace.",
+        ["Chọn thư mục game/ảnh để tìm ảnh."] = "Choose a game/image folder to search for images.",
+        ["Inventory ảnh vượt budget; chọn thư mục ảnh nhỏ hơn."] = "The image inventory exceeded its budget; choose a smaller image folder.",
+        ["Ảnh nguồn đã thay đổi trong khi OCR."] = "The source image changed during OCR.",
+        ["Vùng OCR quá lớn để dựng ảnh tự động."] = "The OCR area is too large to render automatically.",
+        ["Các vùng OCR chồng nhau."] = "The OCR areas overlap.",
+        ["Nền phức tạp: chưa thể tự xóa chữ mà giữ hình nền."] = "Complex background: the text cannot be removed automatically while keeping the background image.",
+        ["Vùng OCR không có chữ nhìn thấy."] = "The OCR area has no visible text.",
+        ["Bản dịch rỗng hoặc quá dài."] = "The translation is empty or too long.",
+        ["Bản dịch không vừa vùng chữ, cần thử lại ảnh rõ/lớn hơn."] = "The translation does not fit the text area; try a clearer/larger image.",
+        ["Ảnh vượt 32 MiB."] = "The image is larger than 32 MiB.",
+        ["Đã chạm giới hạn 512 MiB cho lần xử lý ảnh này."] = "The 512 MiB limit for this image run was reached.",
+        ["Không nhận diện được chữ tiếng Anh trong ảnh."] = "No English text could be recognised in the image.",
+        ["Ảnh có quá 500 vùng chữ."] = "The image has more than 500 text areas.",
+        ["Số dòng bản dịch không khớp OCR."] = "The number of translated lines does not match the OCR.",
+        ["Model chưa dịch được đầy đủ chữ trong ảnh."] = "The model could not translate all the text in the image.",
+        ["Output ảnh vượt giới hạn 512 MiB."] = "The image output exceeds the 512 MiB limit.",
+        ["Dịch ảnh"] = "Translate image",
+        ["Đang xử lý"] = "Processing",
+        ["CHƯA KIỂM TRA"] = "NOT CHECKED",
         ["Chưa bắt đầu"] = "Not started",
         ["Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…"] = "The worker received the cancel request; waiting for the task to stop safely…",
         ["Đã hủy"] = "Cancelled",
@@ -423,6 +468,7 @@ public static class UiText
     [
         ("Không mở được review: ", "Could not open the review: "), ("Đã lưu review riêng: ", "Review saved separately: "), ("Lưu review lỗi: ", "Saving the review failed: "),
         ("Chưa hoàn tất: ", "Not finished: "), ("Không đọc được kết quả ảnh: ", "Could not read the image result: "),
+        ("Windows OCR thất bại: ", "Windows OCR failed: "),
     ];
     private static readonly string[] SentenceKeys =
     [
@@ -434,6 +480,7 @@ public static class UiText
     // (regex, English template, groups that are themselves app messages/labels)
     private static readonly (System.Text.RegularExpressions.Regex Pattern, string English, int[] Nested)[] DynamicPatterns =
     [
+        (new(@"^(\d+)% • Bước: (.+?)(?: • Mục: (.+?))?(?: • ETA: (.+))?$"), "{1}% • Step: {2}{3}{4}", [2]),
         (new(@"^Đang chạy: (.+)\.$"), "Running: {1}.", [1]),
         (new(@"^Một tác vụ khác đang chạy \((.+)\) — chờ xong hoặc bấm Hủy trước khi dùng ảnh\.$"), "Another task is running ({1}) — wait for it to finish or press Cancel before using images.", [1]),
         (new(@"^Đang có tác vụ chạy; chưa thể (.+)\.$"), "A task is running; cannot {1} yet.", [1]),
@@ -445,6 +492,19 @@ public static class UiText
         (new(@"^Tìm thấy (\d+) ảnh ứng viên; chưa xác nhận có chữ(?:; inventory chưa đầy đủ do (\d+) archive lỗi/không hỗ trợ)?\. Chọn ảnh để OCR\.$"), "Found {1} candidate images; text is not confirmed{2}. Choose an image to OCR.", []),
         (new(@"^OCR (\d+) region — cần sửa text/tọa độ, duyệt nền phẳng và bản dịch trước render\.$"), "OCR found {1} regions — edit the text/coordinates, approve the flat background and the translation before rendering.", []),
     ];
+
+    // ETA text is produced by ProgressEtaFormatter: "12 giây", "3 phút", "2 giờ 5 phút", "1 ngày 2 giờ 5 phút".
+    private static string TranslateEta(string eta)
+    {
+        var converted = System.Text.RegularExpressions.Regex.Replace(eta, @"(\d+) (giây|phút|giờ|ngày)", match => match.Groups[2].Value switch
+        {
+            "giây" => match.Groups[1].Value + (match.Groups[1].Value == "1" ? " second" : " seconds"),
+            "phút" => match.Groups[1].Value + (match.Groups[1].Value == "1" ? " minute" : " minutes"),
+            "giờ" => match.Groups[1].Value + (match.Groups[1].Value == "1" ? " hour" : " hours"),
+            _ => match.Groups[1].Value + (match.Groups[1].Value == "1" ? " day" : " days"),
+        });
+        return converted;
+    }
 
     /// <summary>Display-time translation of app messages that contain numbers/labels. Vietnamese is returned untouched; user data, paths and
     /// unknown (technical/Windows) text pass through unchanged because only whole known messages, known prefixes and anchored patterns match.</summary>
@@ -465,6 +525,8 @@ public static class UiText
             {
                 var value = match.Groups[group].Value;
                 if (Array.IndexOf(nested, group) >= 0) value = TranslateDynamic(value);
+                else if (english.StartsWith("{1}% • Step: ", StringComparison.Ordinal) && group >= 3)
+                    value = group == 3 ? (value.Length > 0 ? " • Item: " + value : "") : (value.Length > 0 ? " • ETA: " + TranslateEta(value) : "");
                 else if (group == 2 && english.Contains("not confirmed{2}")) value = value.Length > 0 ? $"; inventory incomplete because {value} archives failed or are unsupported" : "";
                 result = result.Replace("{" + group + "}", value);
             }

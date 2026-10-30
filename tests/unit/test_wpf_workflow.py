@@ -624,6 +624,10 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn(member, paths_vm)
         self.assertIn('x:Name="PatchBadgeText" Text="{Binding PatchBadgeText, Converter={StaticResource UiTextDynamic}}"', xaml)
         self.assertIn('Binding="{Binding PatchBadgeKind}" Value="ready"', xaml)
+        self.assertEqual(2, xaml.count('Binding="{Binding PatchBadgeKind}" Value="idle"'))                    # initial/unchecked is neutral for both background and text
+        paths_vm = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
+        self.assertIn(': "idle";', paths_vm)
+        self.assertIn('"idle" => "CHƯA KIỂM TRA",', paths_vm)
         self.assertEqual(2, paths_vm.count("CsvPackageValidator.Validate(path, requireTranslations)"))      # the pre-check and the check itself are unchanged
         # (2)+(3) OCR translation editor is the themed input; the delete button is fixed locally, the shared compact style is unchanged
         editor = panel[panel.index('x:Key="RegionTranslationEditor"'):panel.index('<Style x:Key="FormField"')]
@@ -684,6 +688,16 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("raw = element.GetValue(property)", ui_text)
         self.assertIn("UiText.Apply(this); AttachOverlay();", dialog)
         self.assertIn('UiText.Translate(review ? "Mở review text ảnh" : "Chọn ảnh có chữ")', picker)
+        # every Vietnamese literal the image workers can raise to the UI has a catalog entry (the technical tail of the OCR failure stays raw)
+        worker_errors = 0
+        for relative in ("vntext/image_text.py", "vntext/image_batch.py", "vntext_worker/image_tasks.py"):
+            source = (ROOT / relative).read_text(encoding="utf-8")
+            for match in re.finditer(r'raise ValueError\(\s*(["\'])((?:(?!\1).)*[^\x00-\x7f](?:(?!\1).)*)\1\s*\)', source):
+                worker_errors += 1
+                self.assertIn(match.group(2), keys, match.group(2))
+        self.assertGreaterEqual(worker_errors, 45)
+        for phrase in ('("Windows OCR thất bại: ", "Windows OCR failed: ")', "{1}% • Step: {2}{3}{4}", "TranslateEta"):
+            self.assertIn(phrase, ui_text)
         # a language switch refreshes the bound OCR text
         self.assertIn("RaiseImageLanguageText();", (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8"))
         # the Vietnamese UI strings themselves are unchanged

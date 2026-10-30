@@ -60,13 +60,19 @@ public sealed partial class MainViewModel
 
     /// <summary>One readiness state for the Patch badge: ready | review | csvok | stale. Text AND colour in the view both follow this value.</summary>
     public string PatchBadgeKind =>
-        PatchPreflightOk ? "ready" : PatchPreflightEvaluated ? "review" : _patchSourceStale ? "stale" : CsvValidationOk ? "csvok" : "review";
+        PatchPreflightOk ? "ready"
+        : PatchPreflightEvaluated ? "review"                 // judged and blocked
+        : _patchSourceStale ? "stale"                          // source changed, no check yet
+        : CsvValidationOk ? "csvok"                            // CSV valid, preflight not run
+        : PatchResultsAvailable ? "review"                     // a check ran and failed (CSV invalid)
+        : "idle";                                              // nothing has been checked at all
 
     public string PatchBadgeText => PatchBadgeKind switch
     {
         "ready" => "SẴN SÀNG",
         "csvok" => "CSV HỢP LỆ",
         "stale" => "CẦN KIỂM TRA LẠI",
+        "idle" => "CHƯA KIỂM TRA",
         _ => "CẦN XEM LẠI",
     };
 

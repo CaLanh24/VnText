@@ -845,6 +845,7 @@
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Background" Value="{DynamicResource GreenSoftBrush}" /></DataTrigger>
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
+                                                    <DataTrigger Binding="{Binding PatchBadgeKind}" Value="idle"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
@@ -856,6 +857,7 @@
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" /></DataTrigger>
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding PatchBadgeKind}" Value="idle"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </TextBlock.Style>

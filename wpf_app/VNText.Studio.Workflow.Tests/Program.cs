@@ -2014,8 +2014,16 @@ internal static partial class Program
         {
             var picker = new FakePathPicker { TranslationCsv = Path.Combine(packageA, "translation.csv") };
             using var worker = new PythonWorkerHost();
-            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA };
+            var emptyFolder = Path.Combine(TestTempRoot(), "vntext_empty_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(emptyFolder);
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = emptyFolder };
             vm.NavigateTabCommand.Execute("patch");
+            AssertEqual("idle", vm.PatchBadgeKind);                              // nothing checked yet: neutral, not amber
+            AssertEqual("CHƯA KIỂM TRA", vm.PatchBadgeText);
+            vm.ValidateTranslationCsvCommand.Execute(null);                      // a check that FAILS (no CSV) is judged: amber
+            AssertEqual("review", vm.PatchBadgeKind);
+            vm.OutputPath = packageA;
+            Directory.Delete(emptyFolder, true);
             vm.ChooseTranslationCsvCommand.Execute(null);                       // A: current preflight is ready
             AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
             AssertTrue(vm.RunPatchCommand.CanExecute(null) || vm.Busy);
@@ -2061,6 +2069,16 @@ internal static partial class Program
             foreach (var userText in new[] { "Xin chào, nhà thám hiểm", @"C:\Trò chơi\Ảnh\ui_01.png", "System.IO.IOException: The process cannot access the file", "Hello", "Nền phẳng của tôi" })
                 AssertEqual(userText, UiText.TranslateDynamic(userText));
             AssertEqual("Flat background", UiText.TranslateDynamic("Nền phẳng"));
+            // worker-owned image phrases: progress line, errors, prefixed raw technical tails
+            AssertEqual("45% • Step: OCR images • Item: Trò chơi.png • ETA: 2 minutes", UiText.TranslateDynamic("45% • Bước: OCR ảnh • Mục: Trò chơi.png • ETA: 2 phút"));
+            AssertEqual("10% • Step: Translate image", UiText.TranslateDynamic("10% • Bước: Dịch ảnh"));
+            AssertEqual("99% • Step: OCR images • ETA: 1 hour 5 minutes", UiText.TranslateDynamic("99% • Bước: OCR ảnh • ETA: 1 giờ 5 phút"));
+            AssertEqual("5% • Step: OCR images • ETA: 12 seconds", UiText.TranslateDynamic("5% • Bước: OCR ảnh • ETA: 12 giây"));
+            AssertEqual("Not finished: The translation overflows the region; fix the line breaks/font/region and approve again.", UiText.TranslateDynamic("Chưa hoàn tất: Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại."));
+            AssertEqual("Approve the text/crop before rendering.", UiText.TranslateDynamic("Cần duyệt text/crop trước render."));
+            AssertEqual("Windows OCR failed: 0x80070005 Access is denied", UiText.TranslateDynamic("Windows OCR thất bại: 0x80070005 Access is denied"));      // the technical tail stays raw
+            AssertEqual("Images: 3 draft translations, 1 untranslated. C:\\Out\\Ảnh", UiText.TranslateDynamic("Ảnh: 3 bản dịch nháp, 1 chưa dịch. C:\\Out\\Ảnh"));   // the path stays raw
+            AssertEqual("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG", UiText.TranslateDynamic("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG"));
             AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic("Không mở được review: Access to the path 'C:\\x' is denied."));
         }
         finally { UiText.SetLanguage(previous); }

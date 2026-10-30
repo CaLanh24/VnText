@@ -202,6 +202,7 @@ internal static partial class Program
                                 Require(bg == Token(background) && fg == Token(foreground), $"{badgeTheme} {state}: badge colours come from {background}/{foreground}");
                                 Require(ContrastRatio(fg, bg) >= 4.5, $"{badgeTheme} {state}: readable badge ({Math.Round(ContrastRatio(fg, bg), 1)}:1)");
                             }
+                            if (badgeTheme == "light") Badge("CHƯA KIỂM TRA", "SubtlePanelBrush", "MutedBrush", "initial, nothing checked");
                             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Require(Named("PatchBadge").IsVisible, $"{badgeTheme}: the badge is shown once a source was checked");

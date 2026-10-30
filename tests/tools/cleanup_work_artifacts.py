@@ -387,8 +387,20 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL = (
     "existing epoch history, deletes nothing and relaxes no validator or protection. It is distinct from every 0.1.13 approval "
     "(owner-direct-20261028-lam-cho-xong and the earlier question ids); the ordinary eight-hop transition limit remains unchanged."
 )
+# Owner reply to the pending question; independent single-use authority, no guard change.
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2 = "call_58ba2f8e4ba1469da8255b76b2617e83"
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2 = (
+    "Owner 2026-10-30 answered question call_58ba2f8e4ba1469da8255b76b2617e83 with the exact reply "
+    "'Cho phép một lần rebaseline 0.1.14', authorizing ONE additional no-delete epoch metadata rebaseline "
+    "for the bounded Patch badge and OCR localization fixes after source 3ebe495bc1ad927edbdb24dd2a4677694c876f87, "
+    "including the prepared idle-badge/worker-phrase patch, authority and focused prerequisite descendants, "
+    "standard focused gates and one DEV candidate build. Version stays 0.1.14; no push, release or tag change. "
+    "All prior approvals remain consumed, full chain history/CAS/inventory/rollback/no-writer guards stay, "
+    "no files are deleted and no validator or protection is relaxed; the ordinary eight-hop limit is unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2),
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
         RELEASE_TASK_BUDGET_ID, "0.1.5", RELEASE_TASK_EPOCH_REBASELINE_APPROVAL
     ),
