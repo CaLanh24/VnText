@@ -4552,5 +4552,36 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(2, len((work / "cleanup_post_test.jsonl").read_text(encoding="utf-8").splitlines()))
 
 
+class ApprovalHistoryDepthTests(unittest.TestCase):
+    def test_long_history_keeps_single_use_cycle_and_malformed_refusals(self):
+        approval = "new-014-approval"
+        documents = {}
+        def history(length, used=False):
+            epoch = {"epoch_id": "origin"}
+            if used:
+                epoch["rebaseline_provenance"] = {"authorization_id": approval}
+            for n in range(length):
+                previous = epoch["epoch_id"]
+                path = f"synthetic-history-{n}.json"
+                documents[path] = json.dumps({"prospective_epoch": epoch})
+                epoch = {"epoch_id": f"hop-{n}", "transition_provenance": {"previous_epoch_id": previous},
+                         "rollback": {"manifest_absent": False, "path": path}}
+            return epoch
+        def used(epoch):
+            return cleanup._epoch_rebaseline_approval_used(epoch, manifest={}, authorization_id=approval)
+        with patch.object(Path, "read_text", lambda path, **kwargs: documents[str(path)]):
+            self.assertFalse(used(history(80)))
+            self.assertTrue(used(history(80, used=True)))
+            self.assertTrue(used(history(258)))
+            cycle = {"epoch_id": "cycle", "transition_provenance": {"previous_epoch_id": "cycle"},
+                     "rollback": {"manifest_absent": False, "path": "cycle.json"}}
+            documents["cycle.json"] = json.dumps({"prospective_epoch": cycle})
+            self.assertTrue(used(cycle))
+            documents["broken.json"] = "not-json"
+            malformed = {"epoch_id": "bad", "transition_provenance": {"previous_epoch_id": "old"},
+                         "rollback": {"manifest_absent": False, "path": "broken.json"}}
+            self.assertTrue(used(malformed))
+
+
 if __name__ == "__main__":
     unittest.main()

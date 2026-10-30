@@ -3580,7 +3580,7 @@ def _epoch_rebaseline_approval_used(
     """
 
     epoch_id = str(epoch.get("epoch_id") or "")
-    if not epoch_id or epoch_id in seen or depth > 64:
+    if not epoch_id or epoch_id in seen or depth > 256:
         return True
     rebaseline = epoch.get("rebaseline_provenance")
     if rebaseline is not None:
