@@ -19,6 +19,18 @@
                 <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="{DynamicResource DisabledForegroundBrush}" /></Trigger>
             </Style.Triggers>
         </Style>
+        <!-- In-grid translation editor: the app input surface (theme background/foreground/border/focus) but multi-line and auto height. -->
+        <Style x:Key="RegionTranslationEditor" TargetType="TextBox" BasedOn="{StaticResource FieldTextBoxStyle}">
+            <Setter Property="Height" Value="NaN" />
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="CaretBrush" Value="{DynamicResource InkBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
+            <Setter Property="SelectionOpacity" Value="0.4" />
+        </Style>
         <Style x:Key="FormField" TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,14,10" />
         </Style>
@@ -108,14 +120,14 @@
                 <DataGridTextColumn Header="TEXT OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="140" />
                 <DataGridTemplateColumn Header="BẢN DỊCH" Width="1.5*" MinWidth="180">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Translation}" TextWrapping="Wrap" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
-                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" /></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Style="{StaticResource RegionTranslationEditor}" Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" /></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="CHẾ ĐỘ NỀN" Binding="{Binding ModeSummary, Mode=OneWay}" IsReadOnly="True" Width="*" MinWidth="130" />
                 <DataGridCheckBoxColumn Header="DUYỆT" Binding="{Binding Approved}" Width="80" />
-                <DataGridTemplateColumn Header="XÓA" Width="70">
+                <DataGridTemplateColumn Header="XÓA" Width="80">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="Xóa" Style="{StaticResource CompactOutlineButton}" AutomationProperties.Name="Xóa vùng"
+                            <Button Content="Xóa" Style="{StaticResource CompactOutlineButton}" MinWidth="0" Padding="10,3" Margin="4,0" HorizontalAlignment="Center" AutomationProperties.Name="Xóa vùng"
                                     Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

@@ -841,9 +841,14 @@
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Text" Value="CẦN XEM LẠI" />
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CsvValidationOk}" Value="True">
+                                                        <!-- "CSV HỢP LỆ" only while the preflight has not judged this source yet; a failed preflight never keeps the green CSV badge -->
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding CsvValidationOk}" Value="True" />
+                                                                <Condition Binding="{Binding PatchPreflightEvaluated}" Value="False" />
+                                                            </MultiDataTrigger.Conditions>
                                                             <Setter Property="Text" Value="CSV HỢP LỆ" />
-                                                        </DataTrigger>
+                                                        </MultiDataTrigger>
                                                         <DataTrigger Binding="{Binding PatchPreflightOk}" Value="True">
                                                             <Setter Property="Text" Value="SẴN SÀNG" />
                                                         </DataTrigger>

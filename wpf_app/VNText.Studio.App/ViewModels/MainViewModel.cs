@@ -269,6 +269,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             if (Set(ref _translationCsvPath, value))
             {
+                InvalidatePatchSourceState();
                 _translateLastRunCancelled = false;
                 Raise(nameof(TranslationCsvDisplay));
                 LoadPackageGlossary();

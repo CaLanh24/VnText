@@ -22,6 +22,7 @@ internal sealed class JournalWindow : Window
     private Button? _previousPage, _nextPage;
     private readonly TextBlock _pageSizeLabel=new(){VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(12,0,8,0)};
     private readonly TextBlock _status=new(){VerticalAlignment=VerticalAlignment.Center}, _modified=new(){VerticalAlignment=VerticalAlignment.Center};
+    private readonly TextBlock _searchNote=new(){Visibility=Visibility.Collapsed,FontSize=12,Margin=new Thickness(0,4,0,0),TextWrapping=TextWrapping.Wrap};
     private int _page;
     private bool _loading;
     internal JournalWindow(MainWindow owner,MainViewModel vm)
@@ -95,6 +96,8 @@ internal sealed class JournalWindow : Window
         foreach(var button in new[]{previousPage,nextPage}){button.Style=(Style)owner.FindResource("CompactOutlineButton");button.Width=30;button.MinWidth=30;button.Padding=new Thickness(0);options.Children.Add(button);}
         _status.Visibility=Visibility.Collapsed;options.Children.Add(_status);
         var search=new Grid{Margin=new Thickness(0,0,0,10)};Grid.SetRow(search,2);body.Children.Add(search);
+        search.RowDefinitions.Add(new(){Height=GridLength.Auto});search.RowDefinitions.Add(new(){Height=GridLength.Auto});
+        _searchNote.Foreground=B("ErrorBrush");Grid.SetRow(_searchNote,1);Grid.SetColumnSpan(_searchNote,3);search.Children.Add(_searchNote);
         search.ColumnDefinitions.Add(new());search.ColumnDefinitions.Add(new(){Width=GridLength.Auto});search.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
         _query.ToolTip="Tìm trong nhật ký";search.Children.Add(_query);
         var placeholder=new TextBlock{Text="Tìm trong nhật ký",IsHitTestVisible=false,Foreground=B("MutedBrush"),Margin=new Thickness(12,0,0,0),VerticalAlignment=VerticalAlignment.Center};search.Children.Add(placeholder);
@@ -146,7 +149,16 @@ internal sealed class JournalWindow : Window
         if(_files.SelectedItem is not string file){_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text="Chưa có tệp nhật ký";return;}
         var levels=new[]{"ALL","INFO","WARN","ERROR","DEBUG"};var size=_size.SelectedItem is int value ? value : 200;
         _pageSizeLabel.Text=$"{size} bản ghi/trang";
-        var lines=AppJournalStore.Filter(_store.Read(file),_query.Text,levels[Math.Max(0,_level.SelectedIndex)],_regex.IsChecked==true);
+        // An invalid search expression is the user's input, not a log read failure: say so beside the field and keep the log readable (level filter only).
+        var regexOn=_regex.IsChecked==true;var query=_query.Text;var expressionError="";var expressionDetail="";
+        if(regexOn && query.Length>0 && query.Length<=500)
+        {
+            try{_=new System.Text.RegularExpressions.Regex(query,System.Text.RegularExpressions.RegexOptions.IgnoreCase|System.Text.RegularExpressions.RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));}
+            catch(ArgumentException ex){expressionError=UiText.Translate("Biểu thức tìm kiếm không hợp lệ.");expressionDetail=ex.Message;}
+        }
+        _searchNote.Text=expressionError;_searchNote.ToolTip=expressionError.Length>0?expressionDetail:null;_searchNote.Visibility=expressionError.Length>0?Visibility.Visible:Visibility.Collapsed;
+        System.Windows.Automation.AutomationProperties.SetHelpText(_searchNote,expressionDetail);
+        var lines=AppJournalStore.Filter(_store.Read(file),expressionError.Length>0?"":query,levels[Math.Max(0,_level.SelectedIndex)],regexOn && expressionError.Length==0);
         var pages=Math.Max(1,(lines.Length+size-1)/size);_page=Math.Clamp(_page,0,pages-1);
         if(_previousPage is not null){_previousPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_previousPage.IsEnabled=_page>0;}
         if(_nextPage is not null){_nextPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_nextPage.IsEnabled=_page<pages-1;}

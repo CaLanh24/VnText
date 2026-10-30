@@ -1,6 +1,7 @@
 using System.IO;
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using VNText.Studio.App;
 using VNText.Studio.App.Models;
@@ -174,7 +175,61 @@ internal static partial class Program
                     vm.ToggleCsvBulkPreviewDetailCommand.Execute(null);
                     vm.TestSetCsvBulkPreview(examples + "\nTrước: x\nSau: y");
                     Require(!vm.CsvBulkPreviewDetailOpen, "a new preview never opens its examples by surprise");
-                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
+                    // ---- English sidebar at UI 100% / 120%, 1043x720 DIP: every label is fully inside its navigation button ----
+                    var navKeys = new[] { "Lấy text", "Dịch tự động", "Sửa CSV", "Tạo patch", "Nhật ký", "Cài đặt" };
+                    var navReport = new List<string>();
+                    foreach (var navScale in new[] { 1.2, 1.0 })
+                    {
+                        vm.UiScale = navScale;
+                        vm.Language = "en";
+                        window.UpdateLayout();
+                        PumpFixture(300);
+                        foreach (var key in navKeys)
+                        {
+                            var english = UiText.Translate(key);
+                            var block = FindVisualChildren<TextBlock>(window).FirstOrDefault(b => b.Text == english && FindAncestor<Button>(b) is not null && b.TranslatePoint(new Point(0, 0), window).X < 230)
+                                ?? throw new InvalidOperationException("sidebar label not found: " + english);
+                            var button = FindAncestor<Button>(block)!;
+                            var right = block.TranslatePoint(new Point(block.ActualWidth, 0), button).X;
+                            Require(block.TextTrimming == TextTrimming.None && right <= button.ActualWidth - 6, $"English sidebar '{english}' fits its button at UI {navScale * 100:0}% (text right {Math.Round(right, 1)} of {Math.Round(button.ActualWidth, 1)})");
+                            Require(block.ActualWidth >= block.DesiredSize.Width - 0.5, $"English sidebar '{english}' is not squeezed below its natural width");
+                        }
+                        navReport.Add($"UI{navScale * 100:0}%");
+                    }
+                    AssertEqual("Auto translate", UiText.Translate("Dịch tự động"));
+                    vm.Language = "vi";
+                    vm.UiScale = 1.2;
+                    window.UpdateLayout();
+                    PumpFixture(200);
+                    AssertEqual("Dịch tự động", UiText.Translate("Dịch tự động"));                   // the Vietnamese label is unchanged
+                    // ---- Journal: an invalid search expression is not a log read failure ----
+                    Directory.CreateDirectory(vm.JournalStore.Root);
+                    File.WriteAllText(Path.Combine(vm.JournalStore.Root, "app.log." + DateTime.Now.ToString("yyyy-MM-dd")),
+                        "2026-10-30 10:00:00 +07:00 INFO alpha line one\n2026-10-30 10:00:01 +07:00 INFO beta [bracket] line\n", System.Text.Encoding.UTF8);
+                    var journal = new JournalWindow(window, vm);
+                    journal.Show();
+                    journal.UpdateLayout();
+                    PumpFixture(200);
+                    var regexToggle = FindVisualChildren<ToggleButton>(journal).First(b => b.Content as string == "Biểu thức chính quy");
+                    var queryBox = FindVisualChildren<TextBox>(journal).First(b => b.ToolTip as string == "Tìm trong nhật ký");
+                    var logBox = FindVisualChildren<TextBox>(journal).First(b => b.IsReadOnly);
+                    TextBlock? Note() => FindVisualChildren<TextBlock>(journal).FirstOrDefault(b => b.Text == "Biểu thức tìm kiếm không hợp lệ.");
+                    queryBox.Text = "[";
+                    regexToggle.IsChecked = true;
+                    journal.UpdateLayout();
+                    PumpFixture(150);
+                    Require(Note() is { IsVisible: true } note && note.ToolTip is string detail && detail.Length > 0, "an invalid expression shows its own message beside the search field, with the technical detail kept in the tooltip");
+                    Require(!logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal) && logBox.Text.Contains("alpha line one", StringComparison.Ordinal), "the log stays readable and is not reported as a read failure");
+                    queryBox.Text = "al.ha";
+                    PumpFixture(150);
+                    Require(Note() is not { IsVisible: true } && logBox.Text.Contains("alpha line one", StringComparison.Ordinal) && !logBox.Text.Contains("beta", StringComparison.Ordinal), "fixing the expression restores the regex search");
+                    queryBox.Text = "[";
+                    PumpFixture(100);
+                    regexToggle.IsChecked = false;
+                    PumpFixture(150);
+                    Require(Note() is not { IsVisible: true } && !logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal) && logBox.Text.Contains("[bracket]", StringComparison.Ordinal), "turning regex off restores the plain search (the text '[' is found literally)");
+                    journal.Close();
+                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
                     exitCode = 0;
                 }
                 finally { window.Close(); UiText.SetLanguage("vi"); UiAppearance.Apply("light", 100); app.Shutdown(); }

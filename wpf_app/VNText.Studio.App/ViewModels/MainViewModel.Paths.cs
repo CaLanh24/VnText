@@ -52,6 +52,36 @@ public sealed partial class MainViewModel
     internal const string PatchCsvPickerTitle = "Chọn CSV để tạo patch";
     internal const string ImportTranslatedCsvPickerTitle = "Chọn translation.csv đã dịch để nhập";
 
+    /// <summary>
+    /// The Patch results (badge, counts, readiness, completion/delivery text) belong to ONE source. When the CSV/package source changes
+    /// they are dropped and a fresh check is required; the old artifact on disk is never touched.
+    /// </summary>
+    private void InvalidatePatchSourceState()
+    {
+        var hadState = PatchResultsAvailable || PatchPreflightEvaluated || PatchDeliveryReady || CsvValidationOk;
+        PatchDeliveryReady = false;
+        PatchDeliveryLabel = "";
+        PatchInstallInstructions = "";
+        if (!hadState) return;
+        CsvValidationOk = false;
+        CsvValidationMessage = "";
+        ReadyForPatch = false;
+        PatchPreflightOk = false;
+        PatchPreflightEvaluated = false;
+        PatchEligibleCount = 0;
+        PatchBlockedCount = 0;
+        PatchPreflightMessage = "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch.";
+        PatchResultsAvailable = false;
+        PatchResultsExpanded = false;
+    }
+
+    internal void TestSetPatchDelivery(string label, string instructions)
+    {
+        PatchDeliveryLabel = label;
+        PatchInstallInstructions = instructions;
+        PatchDeliveryReady = true;
+    }
+
     private async void ChooseTranslationCsv()
     {
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
@@ -103,6 +133,12 @@ public sealed partial class MainViewModel
         var previousEligible = PatchEligibleCount;
         var previousBlocked = PatchBlockedCount;
         var previousPreflightMessage = PatchPreflightMessage;
+        var previousEvaluated = PatchPreflightEvaluated;
+        var previousResultsAvailable = PatchResultsAvailable;
+        var previousResultsExpanded = PatchResultsExpanded;
+        var previousDeliveryReady = PatchDeliveryReady;
+        var previousDeliveryLabel = PatchDeliveryLabel;
+        var previousInstructions = PatchInstallInstructions;
 
         TranslationCsvPath = path;
         if (!ValidateTranslationCsv(silent: false, requireTranslations: requireTranslations))
@@ -115,6 +151,12 @@ public sealed partial class MainViewModel
             PatchEligibleCount = previousEligible;
             PatchBlockedCount = previousBlocked;
             PatchPreflightMessage = previousPreflightMessage;
+            PatchPreflightEvaluated = previousEvaluated;
+            PatchResultsAvailable = previousResultsAvailable;
+            PatchResultsExpanded = previousResultsExpanded;
+            PatchDeliveryLabel = previousDeliveryLabel;
+            PatchInstallInstructions = previousInstructions;
+            PatchDeliveryReady = previousDeliveryReady;
             return;
         }
 

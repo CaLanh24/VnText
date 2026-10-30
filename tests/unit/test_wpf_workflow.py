@@ -608,6 +608,45 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Width="3*" MinWidth="220"', xaml)
         self.assertIn('Binding="{Binding IssueShort}" IsReadOnly="True" Width="140" MinWidth="120"', xaml)
 
+    def test_six_qa_findings_are_wired_without_touching_shared_styles_or_guards(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        styles = (app / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
+        main_vm = (app / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
+        paths_vm = (app / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
+        image_vm = (app / "ViewModels" / "MainViewModel.ImageText.cs").read_text(encoding="utf-8")
+        journal = (app / "JournalWindow.cs").read_text(encoding="utf-8")
+        ui_text = (app / "Services" / "UiText.cs").read_text(encoding="utf-8")
+        # (1) the Patch results follow the source; the guards and validators are not touched
+        self.assertIn("InvalidatePatchSourceState();", main_vm)
+        for member in ("PatchDeliveryReady = false;", "PatchPreflightEvaluated = false;", "PatchResultsAvailable = false;", "CsvValidationOk = false;", "ReadyForPatch = false;"):
+            self.assertIn(member, paths_vm)
+        self.assertIn('<Condition Binding="{Binding PatchPreflightEvaluated}" Value="False" />', xaml)
+        self.assertEqual(2, paths_vm.count("CsvPackageValidator.Validate(path, requireTranslations)"))      # the pre-check and the check itself are unchanged
+        # (2)+(3) OCR translation editor is the themed input; the delete button is fixed locally, the shared compact style is unchanged
+        editor = panel[panel.index('x:Key="RegionTranslationEditor"'):panel.index('<Style x:Key="FormField"')]
+        for part in ('BasedOn="{StaticResource FieldTextBoxStyle}"', 'CaretBrush" Value="{DynamicResource InkBrush}"', 'SelectionBrush" Value="{DynamicResource BlueBrush}"', 'AcceptsReturn" Value="True"', 'TextWrapping" Value="Wrap"'):
+            self.assertIn(part, editor)
+        self.assertIn('<TextBox Style="{StaticResource RegionTranslationEditor}" Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" />', panel)
+        self.assertIn('Content="Xóa" Style="{StaticResource CompactOutlineButton}" MinWidth="0" Padding="10,3"', panel)
+        compact = styles[styles.index('x:Key="CompactOutlineButton"'):styles.index("</Style>", styles.index('x:Key="CompactOutlineButton"'))]
+        self.assertNotIn("MinWidth", compact)                       # the shared style was not changed to cure one table
+        self.assertIn('Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"', panel)
+        # (4) short English sidebar label; the Vietnamese label is unchanged
+        self.assertIn('["Dịch tự động"] = "Auto translate",', ui_text)
+        self.assertIn('<TextBlock Text="Dịch tự động" />', xaml)
+        # (5) an invalid expression is its own message, the read failure keeps its own
+        self.assertIn('Biểu thức tìm kiếm không hợp lệ.', journal)
+        self.assertIn("catch(ArgumentException ex)", journal)
+        self.assertIn('_content.Text="Không đọc được nhật ký: "+ex.Message;', journal)
+        # (6) saved reviews explain the re-approval, failures keep their context, the guards are untouched
+        self.assertIn('"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', image_vm)
+        self.assertIn("TryLoadImageReview(p, fromSavedReview: true)", image_vm)
+        self.assertIn('ImageStatus = "Không mở được review: " + e.Message', image_vm)
+        for guard in ('throw new InvalidDataException("Review ảnh vượt 2 MiB.");', "document.Regions.Count > 500", "hash review không khớp", "region.Approved = false;"):
+            self.assertIn(guard, image_vm)
+
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
         import re
         app = ROOT / "wpf_app" / "VNText.Studio.App"
@@ -1221,6 +1260,9 @@ class WpfWorkflowTests(unittest.TestCase):
             csv_layout_proc = _run_harness(harness_env, artifacts_root, ["--csv-layout-fixture"])
             self.assertEqual(0, csv_layout_proc.returncode, (csv_layout_proc.stdout or "") + (csv_layout_proc.stderr or ""))
             self.assertIn("WPF CSV low-height layout fixture: PASS", csv_layout_proc.stdout)
+            region_grid_proc = _run_harness(harness_env, artifacts_root, ["--region-grid-fixture"])
+            self.assertEqual(0, region_grid_proc.returncode, (region_grid_proc.stdout or "") + (region_grid_proc.stderr or ""))
+            self.assertIn("WPF region grid fixture: PASS", region_grid_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:
                 import shutil

@@ -27,6 +27,8 @@ internal static partial class Program
             return RunImageWorkspaceFixture();
         if (args.Contains("--csv-layout-fixture", StringComparer.Ordinal))
             return RunCsvLayoutFixture();
+        if (args.Contains("--region-grid-fixture", StringComparer.Ordinal))
+            return RunRegionGridFixture();
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
@@ -232,6 +234,8 @@ internal static partial class Program
         Run("ModelStatus_PresentsThePathOnceAndKeepsFailureContext", ModelStatus_PresentsThePathOnceAndKeepsFailureContext, failures);
         Run("ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist", ImageWorkspace_EmptyStateCollapsesUntilImageOrRegionsExist, failures);
         Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
+        Run("PatchState_FollowsTheSourceAndRequiresACurrentCheck", PatchState_FollowsTheSourceAndRequiresACurrentCheck, failures);
+        Run("ImageReview_OpeningASavedReviewExplainsTheReapproval", ImageReview_OpeningASavedReviewExplainsTheReapproval, failures);
         Run("Labels_UseOneNameForAutomaticTranslationAndCsvPicking", Labels_UseOneNameForAutomaticTranslationAndCsvPicking, failures);
         Run("PatchDelivery_RoutesRenPyInstructions", PatchDelivery_RoutesRenPyInstructions, failures);
         Run("RenpySdkRecoveryFailure_DoesNotInventAReviewCount", RenpySdkRecoveryFailure_DoesNotInventAReviewCount, failures);
@@ -1930,6 +1934,114 @@ internal static partial class Program
         // Rows without a preview (a saved review) still open the grid but not an empty preview.
         vm.ImageRegions.Add(new ImageTextRegion { Id = "r2", Box = new[] { 0, 0, 2, 2 }, SourceText = "Yo" });
         Require(vm.ImageHasRegions && !vm.ImageHasPreview && !vm.ImageShowEmptyState, "loaded rows must keep the grid open without a preview");
+    }
+
+    private static string CreatePatchSourcePackage(string translation)
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, ".mt"));
+        File.WriteAllText(Path.Combine(root, "translation.csv"),
+            $"key,source_text,translation,context,file_path,import_method\r\nk1,Escort,{translation},UI:Text,game/data.unity3d,unity_ui_text\r\n", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, "manifest.json"),
+            """{"entries":[{"key":"k1","source_text":"Escort","file_path":"game/data.unity3d","import_method":"unity_ui_text"}]}""", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, ".mt", "translate_status.json"), "{\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":1}", Encoding.UTF8);
+        return root;
+    }
+
+    private static void PatchState_FollowsTheSourceAndRequiresACurrentCheck()
+    {
+        var packageA = CreatePatchSourcePackage("Hộ tống");
+        var garbage = string.Join(" ", Enumerable.Repeat("bán", 40));
+        var packageB = CreatePatchSourcePackage("Đồng " + garbage);
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(packageA, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA };
+            vm.NavigateTabCommand.Execute("patch");
+            // Source A: valid, preflight passes, a patch is "created" (the completion/delivery text carries A's artifact path).
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertTrue(vm.CsvValidationOk && vm.PatchPreflightEvaluated && vm.PatchPreflightOk);
+            AssertEqual(1, vm.PatchEligibleCount);
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            AssertTrue(vm.PatchDeliveryReady);
+            // Source B (valid CSV, but the preflight blocks it): nothing of A may make B look finished.
+            picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual(Path.Combine(packageB, "translation.csv"), vm.TranslationCsvPath);
+            AssertFalse(vm.PatchDeliveryReady);
+            AssertEqual("", vm.PatchDeliveryLabel);
+            AssertEqual("", vm.PatchInstallInstructions);
+            AssertTrue(vm.PatchPreflightEvaluated);                       // judged for B ...
+            AssertFalse(vm.PatchPreflightOk);                             // ... and blocked, so no "SẴN SÀNG"
+            AssertEqual(0, vm.PatchEligibleCount);
+            AssertTrue(vm.PatchBlockedCount >= 1);
+            AssertFalse(vm.ReadyForPatch && vm.PatchPreflightOk);
+            AssertFalse(vm.PatchPreflightMessage.Contains("Patch_A", StringComparison.Ordinal));
+            // Back to A: only a current check decides; the earlier completion text does not come back.
+            picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertEqual(Path.Combine(packageA, "translation.csv"), vm.TranslationCsvPath);
+            AssertTrue(vm.PatchPreflightEvaluated && vm.PatchPreflightOk);
+            AssertFalse(vm.PatchDeliveryReady);
+            AssertEqual("", vm.PatchInstallInstructions);
+            // A changed source with no new check yet: the old results are dropped and a fresh check is asked for.
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            picker.TranslationCsv = null;
+            vm.ChooseTranslationCsvCommand.Execute(null);                  // a cancelled pick keeps the current source and state
+            AssertTrue(vm.PatchDeliveryReady && vm.PatchPreflightOk);
+            // The artifact written for A on disk is untouched by any of this.
+            AssertTrue(File.Exists(Path.Combine(packageA, "translation.csv")));
+            // The XAML badge must not show the CSV-valid badge once the preflight has judged the source.
+            var xaml = File.ReadAllText(Path.Combine(RepoRoot(), "wpf_app", "VNText.Studio.App", "MainWindow.xaml"), Encoding.UTF8);
+            Require(xaml.Contains("<Condition Binding=\"{Binding PatchPreflightEvaluated}\" Value=\"False\" />", StringComparison.Ordinal), "CSV HỢP LỆ only before the preflight has run");
+        }
+        finally
+        {
+            Directory.Delete(packageA, true);
+            Directory.Delete(packageB, true);
+        }
+    }
+
+    private static void ImageReview_OpeningASavedReviewExplainsTheReapproval()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_review_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var png = Path.Combine(root, "ui.png");
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(300, 120, 96, 96, System.Windows.Media.PixelFormats.Bgra32, null, Enumerable.Repeat((byte)255, 300 * 120 * 4).ToArray(), 300 * 4)));
+            using (var stream = File.Create(png)) encoder.Save(stream);
+            var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(png))).ToLowerInvariant();
+            string Write(string name, string sha) {
+                var path = Path.Combine(root, name);
+                File.WriteAllText(path, JsonSerializer.Serialize(new ImageTextDocument
+                {
+                    SourcePath = png, SourceSha256 = sha, Width = 300, Height = 120, Status = "REVIEW_REQUIRED",
+                    Regions = new List<ImageTextRegion> { new() { Id = "r1", Box = new[] { 10, 10, 200, 40 }, SourceText = "Hello", Translation = "Xin chào", Approved = true, FlatBackgroundApproved = true } },
+                }, MainViewModel.ImageJson), Encoding.UTF8);
+                return path;
+            }
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+            // Opened from a saved review: data kept, approvals reset (as before), and the next step is said out loud.
+            AssertTrue(vm.TryLoadImageReview(Write("good.json", hash), fromSavedReview: true));
+            AssertEqual(MainViewModel.SavedReviewOpenedMessage, vm.ImageStatus);
+            AssertEqual("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", vm.ImageStatus);
+            AssertEqual(1, vm.ImageRegions.Count);
+            AssertEqual("Xin chào", vm.ImageRegions[0].Translation);
+            AssertEqual("10,10,200,40", string.Join(",", vm.ImageRegions[0].Box));
+            AssertFalse(vm.ImageRegions[0].Approved);
+            AssertFalse(vm.ImageRegions[0].FlatBackgroundApproved);
+            // A failing open keeps its own context and is never replaced by the success text.
+            AssertFalse(vm.TryLoadImageReview(Write("bad.json", new string('0', 64)), fromSavedReview: true));
+            Require(vm.ImageStatus.StartsWith("Không mở được review:", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở review", StringComparison.Ordinal), "the failure keeps its own message");
+            // The OCR completion path keeps its existing wording.
+            AssertTrue(vm.TryLoadImageReview(Write("ocr.json", hash)));
+            Require(vm.ImageStatus.Contains("region cần review", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở review", StringComparison.Ordinal), "the OCR path keeps its wording");
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     private static void CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue()

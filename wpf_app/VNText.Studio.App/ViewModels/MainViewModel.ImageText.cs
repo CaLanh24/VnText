@@ -212,7 +212,7 @@ public sealed partial class MainViewModel
         ChooseOcrImageCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(); if (p is not null) ImagePath = p; }, _ => !Busy);
         DiscoverImagesCommand = new RelayCommand(_ => StartImageTask("image_inventory", InputPath), _ => !Busy && Directory.Exists(InputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
-        OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p); }, _ => !Busy);
+        OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p, fromSavedReview: true); }, _ => !Busy);
         SaveImageReviewCommand = new RelayCommand(_ => SaveImageReview(), _ => !Busy && _imageDocument is not null);
         RenderImageCommand = new RelayCommand(_ => RenderReviewedImage(), _ => !Busy && _imageDocument is not null);
         AddImageRegionCommand = new RelayCommand(_ => ImageRegions.Add(new ImageTextRegion { Id = "manual-" + Guid.NewGuid().ToString("N") }), _ => !Busy && _imageDocument is not null);
@@ -249,7 +249,9 @@ public sealed partial class MainViewModel
         if (ImageRegions.Count == 0 && !string.IsNullOrWhiteSpace(ImagePath))
             ImageRegions.Add(new ImageTextRegion { Id = "restored", Box = new[] { 10, 10, 200, 40 }, SourceText = "Hello" });
     }
-    internal bool TryLoadImageReview(string path)
+    internal const string SavedReviewOpenedMessage = "Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.";
+
+    internal bool TryLoadImageReview(string path, bool fromSavedReview = false)
     {
         try
         {
@@ -275,6 +277,7 @@ public sealed partial class MainViewModel
             _imageSourcePreview = sourcePreview;
             ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
+                : fromSavedReview ? UiText.Translate(SavedReviewOpenedMessage)     // the saved text/crop are loaded, the approvals are not: say what to do next
                 : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.";
             RefreshImageCommands();
             return true;
