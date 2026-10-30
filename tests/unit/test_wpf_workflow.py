@@ -1344,6 +1344,9 @@ class WpfWorkflowTests(unittest.TestCase):
             region_grid_proc = _run_harness(harness_env, artifacts_root, ["--region-grid-fixture"])
             self.assertEqual(0, region_grid_proc.returncode, (region_grid_proc.stdout or "") + (region_grid_proc.stderr or ""))
             self.assertIn("WPF region grid fixture: PASS", region_grid_proc.stdout)
+            english_pages_proc = _run_harness(harness_env, artifacts_root, ["--english-pages-fixture"])
+            self.assertEqual(0, english_pages_proc.returncode, (english_pages_proc.stdout or "") + (english_pages_proc.stderr or ""))
+            self.assertIn("WPF English pages fixture: PASS", english_pages_proc.stdout)
             fixture_out = os.environ.get("VNTEXT_UPDATER_PRESENTATION_FIXTURE_OUT")
             if fixture_out:
                 import shutil

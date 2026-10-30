@@ -27,8 +27,8 @@ public sealed record PatchPreflightResult(
                 return Summary;
             var parts = ReasonCounts
                 .OrderByDescending(kv => kv.Value)
-                .Select(kv => $"{FormatReason(kv.Key)}: {kv.Value}");
-            return Summary + Environment.NewLine + string.Join(Environment.NewLine, parts);
+                .Select(kv => UiText.Msg("{0}: {1}", UiText.Key(FormatReason(kv.Key)), kv.Value));
+            return UiText.Lines(new[] { Summary }.Concat(parts).ToArray());
         }
     }
 

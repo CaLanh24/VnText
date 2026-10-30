@@ -119,9 +119,7 @@ public sealed partial class MainViewModel
         var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
         ImageWorkspaceSummary = images.Total == 0
             ? "Chưa có báo cáo OCR trong gói. Bấm “Tìm ảnh từ thư mục game”, chọn ảnh rồi OCR."
-            : $"Gói có {images.Total:N0} ảnh: {images.OcrReady:N0} đã OCR, {images.TranslatedDrafts:N0} bản dịch nháp, " +
-              $"{images.Total - images.OcrReady - images.TranslatedDrafts:N0} chưa OCR được (cần xem tay). " +
-              "Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói).";
+            : UiText.Msg("Gói có {0:N0} ảnh: {1:N0} đã OCR, {2:N0} bản dịch nháp, {3:N0} chưa OCR được (cần xem tay). Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói).", images.Total, images.OcrReady, images.TranslatedDrafts, images.Total - images.OcrReady - images.TranslatedDrafts);
     }
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()

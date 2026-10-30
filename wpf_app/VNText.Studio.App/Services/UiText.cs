@@ -171,6 +171,7 @@ public static class UiText
         ["Ước tính còn: {0}"] = "Estimated remaining: {0}",
         ["Đã chạy {0}"] = "Ran {0}",
         ["Trước: {0}"] = "Before: {0}",
+        ["Gói có {0:N0} ảnh: {1:N0} đã OCR, {2:N0} bản dịch nháp, {3:N0} chưa OCR được (cần xem tay). Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói)."] = "This package has {0:N0} images: {1:N0} OCR-ready, {2:N0} translation drafts, {3:N0} not OCR-ready (manual review needed). To review and install, select the real image in the game folder (not the copy inside the package).",
         ["Đã hủy {0}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất."] = "Cancelled {0}. The original image is untouched; the cancelled result is not applied to this screen, but anything already written safely (if any) may remain in the output folder.",
         ["{0} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render."] = "{0} regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.",
         ["Chưa thể {0}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước."] = "Cannot {0}: there is no rendered image/package matching the current review. Render again from the approved review first.",

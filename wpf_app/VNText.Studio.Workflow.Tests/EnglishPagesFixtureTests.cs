@@ -124,9 +124,9 @@ internal static partial class Program
                 foreach (var (message, caption, buttons) in new[]
                 {
                     ("CSV có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?", "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel),
-                    ("Thay thế 4 lần trong 3 dòng?\n\nTìm: cửa\nThay bằng: cổng\nChỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.\nỨng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu.", "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo),
+                    (UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", 4, 3), "", UiText.Msg("Tìm: {0}\nThay bằng: {1}", "door", "gate"), "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.", "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu."), "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo),
                     ("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo),
-                    ("Xóa tệp nhật ký app.log.2026-10-31?", "Nhật ký", MessageBoxButton.YesNo),
+                    (UiText.Msg("Xóa tệp nhật ký {0}?", "app.log.2026-10-31"), "Nhật ký", MessageBoxButton.YesNo),
                 })
                 {
                     var dialog = AppDialogService.Build(message, caption, buttons, MessageBoxImage.Question, window, _ => { });
