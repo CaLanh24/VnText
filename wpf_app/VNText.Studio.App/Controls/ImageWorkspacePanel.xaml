@@ -173,11 +173,13 @@
                     <TextBlock Text="Chế độ nền — chọn đúng một" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,2,0,6" />
                     <TextBlock x:Name="NoModeHint" Text="Chưa chọn chế độ nền — hãy chọn một chế độ trước khi duyệt." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
                                Visibility="{Binding NoModeChosen, Converter={StaticResource PanelBoolToVis}}" />
+                    <TextBlock x:Name="ModeAmbiguousHint" Text="Review cũ có nhiều chế độ nền — hãy chọn đúng một chế độ." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
+                               Visibility="{Binding ModeAmbiguous, Converter={StaticResource PanelBoolToVis}}" />
                     <WrapPanel>
-                        <RadioButton x:Name="FlatModeBox" GroupName="RegionBackgroundMode" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
-                        <RadioButton x:Name="TransparentModeBox" GroupName="RegionBackgroundMode" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
-                        <RadioButton x:Name="SolidModeBox" GroupName="RegionBackgroundMode" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
-                        <RadioButton x:Name="CloneModeBox" GroupName="RegionBackgroundMode" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
+                        <RadioButton x:Name="FlatModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
+                        <RadioButton x:Name="TransparentModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
+                        <RadioButton x:Name="SolidModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
+                        <RadioButton x:Name="CloneModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
                     </WrapPanel>
                     <WrapPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding DonorX, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="X nền mẫu" /></StackPanel>

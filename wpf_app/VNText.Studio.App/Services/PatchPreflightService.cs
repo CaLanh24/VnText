@@ -123,7 +123,7 @@ public static class PatchPreflightService
         }
         catch (Exception ex)
         {
-            return PatchPreflightResult.Fail(csv, $"Lỗi kiểm tra patch: {ex.Message}");
+            return PatchPreflightResult.Fail(csv, UiText.Msg("Lỗi kiểm tra patch: {0}", ex.Message));
         }
     }
 }

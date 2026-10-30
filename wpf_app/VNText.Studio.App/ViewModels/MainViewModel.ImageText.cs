@@ -101,8 +101,8 @@ public sealed partial class MainViewModel
     /// <summary>Which task owns the worker right now; empty when idle so the panel never implies phantom work.</summary>
     public string ImageWorkspaceTaskText => !Busy ? ""
         : _runningTask?.StartsWith("image_", StringComparison.Ordinal) == true
-            ? $"Đang chạy: {ImageTaskLabel(_runningTask)}."
-            : $"Một tác vụ khác đang chạy ({ImageTaskLabel(_runningTask)}) — chờ xong hoặc bấm Hủy trước khi dùng ảnh.";
+            ? UiText.Msg("Đang chạy: {0}.", UiText.Key(ImageTaskLabel(_runningTask)))
+            : UiText.Msg("Một tác vụ khác đang chạy ({0}) — chờ xong hoặc bấm Hủy trước khi dùng ảnh.", UiText.Key(ImageTaskLabel(_runningTask)));
     /// <summary>Latest progress / cancel-acknowledgement line of the running task; empty when idle.</summary>
     public string ImageWorkspaceProgressText => Busy ? ProgressSubtitle : "";
     internal void RaiseImageWorkspaceTaskState()
@@ -163,8 +163,8 @@ public sealed partial class MainViewModel
     private void RefuseStaleImageAction(string action)
     {
         ImageStatus = Busy
-            ? $"Đang có tác vụ chạy; chưa thể {action}."
-            : $"Chưa thể {action}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước.";
+            ? UiText.Msg("Đang có tác vụ chạy; chưa thể {0}.", UiText.Key(action))
+            : UiText.Msg("Chưa thể {0}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước.", UiText.Key(action));
         StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
     }
     private void OnImageRegionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnImageReviewChanged();
@@ -284,11 +284,11 @@ public sealed partial class MainViewModel
             ImagePreview = sourcePreview;
             ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
                 : fromSavedReview ? UiText.Translate(SavedReviewOpenedMessage)     // the saved text/crop are loaded, the approvals are not: say what to do next
-                : $"{ImageRegions.Count} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.";
+                : UiText.Msg("{0} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.", ImageRegions.Count);
             RefreshImageCommands();
             return true;
         }
-        catch (Exception e) { ClearImageReviewState(); ImageStatus = "Không mở được review: " + e.Message; return false; }
+        catch (Exception e) { ClearImageReviewState(); ImageStatus = UiText.Msg("Không mở được review: {0}", e.Message); return false; }
     }
     private void ClearImageReviewState()
     {
@@ -328,9 +328,9 @@ public sealed partial class MainViewModel
                 using var preview = new FileStream(Path.Combine(root, "source-preview.png"), FileMode.CreateNew);
                 encoder.Save(preview);
             }
-            ImageStatus = "Đã lưu review riêng: " + root;
+            ImageStatus = UiText.Msg("Đã lưu review riêng: {0}", root);
         }
-        catch (Exception e) { ImageStatus = "Lưu review lỗi: " + e.Message; }
+        catch (Exception e) { ImageStatus = UiText.Msg("Lưu review lỗi: {0}", e.Message); }
     }
     private void RenderReviewedImage()
     {
@@ -351,7 +351,7 @@ public sealed partial class MainViewModel
             // Cancellation is its own state: nothing returned by the cancelled task is applied to this screen, the review and the
             // chosen source are kept, and ordinary failures below still read as errors.  No rollback is promised: files a
             // task already wrote safely (for example earlier image_batch drafts) may remain in the output folder.
-            ImageStatus = $"Đã hủy {ImageTaskLabel(task)}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất.";
+            ImageStatus = UiText.Msg("Đã hủy {0}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất.", UiText.Key(ImageTaskLabel(task)));
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
         }
@@ -377,7 +377,7 @@ public sealed partial class MainViewModel
         }
         try
         {
-            if (!evt.Ok) { ImageStatus = "Chưa hoàn tất: " + evt.Error; return; }
+            if (!evt.Ok) { ImageStatus = UiText.Msg("Chưa hoàn tất: {0}", UiText.Key(evt.Error ?? "")); return; }
             if (task == "image_inventory")
             {
                 using var index = JsonDocument.Parse(File.ReadAllText(Path.Combine(_imageTaskRoot, "image_index.json")));
@@ -388,11 +388,11 @@ public sealed partial class MainViewModel
             else if (task is "image_delivery" or "image_apply" or "image_rollback")
             {
                 if (task == "image_delivery") { _imagePackage = _imageTaskRoot; _packageReviewVersion = _renderedReviewVersion; }
-                ImageStatus = (evt.Summary ?? "Đã xử lý gói ảnh") + " " + _imageTaskRoot;
+                ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã xử lý gói ảnh"), _imageTaskRoot);
             }
-            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = (evt.Summary ?? "Đã render") + " " + _imageTaskRoot; }
+            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã render"), _imageTaskRoot); }
         }
-        catch (Exception e) { ImageStatus = "Không đọc được kết quả ảnh: " + e.Message; }
+        catch (Exception e) { ImageStatus = UiText.Msg("Không đọc được kết quả ảnh: {0}", e.Message); }
         finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; RefreshImageCommands(); }
     }
 }

@@ -52,7 +52,7 @@ public sealed partial class MainViewModel
             GlossaryEntries.Add(new GlossaryItem(item.Key, item.Value));
         GlossaryStatus = GlossaryEntries.Count == 0
             ? "Chưa có thuật ngữ. Thêm từ bạn muốn dịch thống nhất."
-            : $"Đã lưu {GlossaryEntries.Count:N0} thuật ngữ.";
+            : UiText.Msg("Đã lưu {0} thuật ngữ.", GlossaryEntries.Count.ToString("N0"));
     }
 
     private void AddGlossaryEntry()
@@ -85,12 +85,12 @@ public sealed partial class MainViewModel
             GlossaryTerm = "";
             GlossaryTranslation = "";
             LoadPackageGlossary();
-            ShowToast($"Đã lưu glossary: {term} → {translation}", "success");
+            ShowToast(UiText.Msg("Đã lưu glossary: {0} → {1}", term, translation), "success");
             AppendLog($"Glossary package updated: {PackageGlossaryService.ResolvePath(TranslationCsvPath)}");
         }
         catch (Exception ex)
         {
-            ShowToast($"Không lưu được glossary: {ex.Message}", "error");
+            ShowToast(UiText.Msg("Không lưu được glossary: {0}", ex.Message), "error");
         }
     }
 
@@ -98,7 +98,7 @@ public sealed partial class MainViewModel
     {
         if (item is null || string.IsNullOrWhiteSpace(TranslationCsvPath))
             return;
-        if (AppDialogService.Show($"Xóa thuật ngữ “{item.Term}”?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppDialogService.Show(UiText.Msg("Xóa thuật ngữ “{0}”?", item.Term), "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         var entries = PackageGlossaryService.Load(TranslationCsvPath);
         var key = entries.Keys.FirstOrDefault(k => string.Equals(k, item.Term, StringComparison.OrdinalIgnoreCase));

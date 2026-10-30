@@ -139,11 +139,11 @@ public sealed partial class MainViewModel
                     var boundedPercent = Math.Clamp(pct, 0, 99);
                     var userStep = FormatUserProgressStep(evt.Step, _runningTask);
                     var parts = new List<string> { $"{boundedPercent}%" };
-                    if (!string.IsNullOrWhiteSpace(evt.Step)) parts.Add($"Bước: {userStep}");
-                    if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add($"Mục: {evt.Item}");
+                    if (!string.IsNullOrWhiteSpace(evt.Step)) parts.Add(UiText.Msg("Bước: {0}", UiText.Key(userStep)));
+                    if (!string.IsNullOrWhiteSpace(evt.Item)) parts.Add(UiText.Msg("Mục: {0}", evt.Item));
                     var eta = ProgressEtaFormatter.Format(evt.Eta);
-                    if (!string.IsNullOrWhiteSpace(eta)) parts.Add($"ETA: {eta}");
-                    var eventSubtitle = string.Join(" • ", parts);
+                    if (!string.IsNullOrWhiteSpace(eta)) parts.Add(UiText.Msg("ETA: {0}", UiText.Key(eta)));
+                    var eventSubtitle = UiText.Join(" • ", parts);
                     AddTaskProgress(evt.Id, eventSubtitle);
                     // A queued event from an older run may update its own journal,
                     // but it cannot overwrite the active page or a terminal card.
@@ -300,7 +300,7 @@ public sealed partial class MainViewModel
                                 : isExternalTranslationImport
                                     ? manualReviewText
                                     : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}"
-                            : $"Lỗi — {evt.Error ?? "worker báo lỗi"}";
+                            : UiText.Msg("Lỗi — {0}", evt.Error ?? "worker báo lỗi");
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
                     AppendLog(cancelled
@@ -467,7 +467,7 @@ public sealed partial class MainViewModel
                 {
                     ProgressSubtitle = "Lỗi";
                     StatusText = "Lỗi";
-                    StepStatusLine = $"Lỗi — {evt.Error ?? "worker báo lỗi"}";
+                    StepStatusLine = UiText.Msg("Lỗi — {0}", evt.Error ?? "worker báo lỗi");
                 }
                 else if (fullyComplete)
                 {

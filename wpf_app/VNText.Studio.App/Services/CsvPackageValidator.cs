@@ -66,11 +66,11 @@ public static class CsvPackageValidator
                 return Fail(path, NoDataRowsMessage);
 
             if (translated == 0 && requireTranslations)
-                return Fail(path, $"CSV hợp lệ nhưng chưa có bản dịch (0/{total} dòng)");
+                return Fail(path, UiText.Msg("CSV hợp lệ nhưng chưa có bản dịch (0/{0} dòng)", total));
 
             return new CsvValidationResult(
                 true,
-                $"Hợp lệ — {translated}/{total} câu đã có bản dịch",
+                UiText.Msg("Hợp lệ — {0}/{1} câu đã có bản dịch", translated, total),
                 total,
                 translated,
                 path,
@@ -78,7 +78,7 @@ public static class CsvPackageValidator
         }
         catch (Exception ex)
         {
-            return Fail(path, $"Không đọc được CSV: {ex.Message}");
+            return Fail(path, UiText.Msg("Không đọc được CSV: {0}", ex.Message));
         }
     }
 

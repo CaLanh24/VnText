@@ -130,7 +130,7 @@ public sealed partial class MainViewModel
     {
         get
         {
-            var message = CsvEditorUserValidationMessage ?? "";
+            var message = UiText.TranslateDynamic(CsvEditorUserValidationMessage ?? "");
             var cut = message.IndexOf(" — ", StringComparison.Ordinal);
             if (cut > 0) message = message[..cut];
             else
@@ -181,8 +181,8 @@ public sealed partial class MainViewModel
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
     {
         0 => "Chọn một dòng để xem mã kỹ thuật.",
-        1 => $"Mã dòng: {_csvEditorSelectedKeys[0]}",
-        _ => $"Đã chọn {_csvEditorSelectedKeys.Count:N0} dòng · Mã đầu tiên: {_csvEditorSelectedKeys[0]}"
+        1 => UiText.Msg("Mã dòng: {0}", _csvEditorSelectedKeys[0]),
+        _ => UiText.Msg("Đã chọn {0} dòng · Mã đầu tiên: {1}", _csvEditorSelectedKeys.Count.ToString("N0"), _csvEditorSelectedKeys[0])
     };
 
     public string CsvEditorStatus
@@ -229,7 +229,7 @@ public sealed partial class MainViewModel
     {
         if (!string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase)) return;
         var text = string.IsNullOrWhiteSpace(reason) ? "không rõ lý do" : reason.Trim().TrimEnd('.');
-        CsvEditorSaveError = $"Không lưu được: {text}.{recovery}";
+        CsvEditorSaveError = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key(text), UiText.Key(recovery));
     }
 
     /// <summary>Count, reason and where to look for the rows that saved or validated with warnings.</summary>
@@ -277,7 +277,7 @@ public sealed partial class MainViewModel
         }
     }
     public string CsvEditorDirtySummary => _csvEditorEditedKeys.Count > 0
-        ? $"Chưa lưu · {_csvEditorEditedKeys.Count:N0} câu đã sửa" : "Có thay đổi chưa lưu";
+        ? UiText.Msg("Chưa lưu · {0} câu đã sửa", _csvEditorEditedKeys.Count.ToString("N0")) : "Có thay đổi chưa lưu";
 
     public string CsvEditorValidationMessage
     {
@@ -344,12 +344,12 @@ public sealed partial class MainViewModel
     /// <summary>First line of the preview: how many replacements in how many rows. Always the only preview text a collapsed tools row keeps.</summary>
     public string CsvBulkPreviewSummary
     {
-        get { var text = _csvBulkPreview ?? ""; var cut = text.IndexOf('\n'); return cut < 0 ? text : text[..cut]; }
+        get => UiText.SplitFirstLine(_csvBulkPreview ?? "").First;
     }
     /// <summary>The Trước/Sau examples (everything after the first line); shown only through the explicit toggle, in a height-bounded scroller.</summary>
     public string CsvBulkPreviewDetail
     {
-        get { var text = _csvBulkPreview ?? ""; var cut = text.IndexOf('\n'); return cut < 0 ? "" : text[(cut + 1)..]; }
+        get => UiText.SplitFirstLine(_csvBulkPreview ?? "").Remainder;
     }
     public bool CsvBulkHasPreviewDetail => CsvBulkPreviewDetail.Length > 0;
     public bool CsvBulkPreviewDetailOpen => _csvBulkPreviewDetailOpen && CsvBulkHasPreviewDetail;
@@ -399,7 +399,7 @@ public sealed partial class MainViewModel
             if (_csvEditorRows.Count == 0) return "Chưa có câu";
             var translated = 0; var review = 0;
             foreach (var row in _csvEditorRows) { if (!row.IsEmpty) translated++; if (row.HasIssue || row.IsReviewOnly) review++; }
-            return $"Hiện {CsvEditorVisibleCount:N0} / {_csvEditorRows.Count:N0} câu · Đã dịch {translated:N0} · Chưa dịch {_csvEditorRows.Count - translated:N0} · Cần xem lại {review:N0}";
+            return UiText.Msg("Hiện {0} / {1} câu · Đã dịch {2} · Chưa dịch {3} · Cần xem lại {4}", CsvEditorVisibleCount.ToString("N0"), _csvEditorRows.Count.ToString("N0"), translated.ToString("N0"), (_csvEditorRows.Count - translated).ToString("N0"), review.ToString("N0"));
         }
     }
 
@@ -469,7 +469,7 @@ public sealed partial class MainViewModel
         ? "Đang chạy tác vụ — tạm khóa chỉnh sửa CSV để tác vụ không ghi đè thay đổi của bạn."
         : "";
 
-    public string CsvEditorSavingText => $"Đang kiểm tra và lưu {_csvEditorRows.Count:N0} dòng…";
+    public string CsvEditorSavingText => UiText.Msg("Đang kiểm tra và lưu {0} dòng…", _csvEditorRows.Count.ToString("N0"));
 
     public bool CsvEditorBusy => CsvEditorLoading || CsvEditorValidating || CsvEditorSaving;
 
@@ -579,7 +579,7 @@ public sealed partial class MainViewModel
         if (CsvEditorLoading)
         {
             CsvEditorLoading = false;
-            CsvEditorStatus = $"Đã hủy tải CSV ({reason})";
+            CsvEditorStatus = UiText.Msg("Đã hủy tải CSV ({0})", UiText.Key(reason));
             AppendLog($"[csv] Hủy tải: {reason}");
         }
     }
@@ -732,11 +732,11 @@ public sealed partial class MainViewModel
     private void FailCsvEditorLoad(string rejectedPath, string reason)
     {
         CsvEditorLoading = false;
-        var rejected = string.IsNullOrWhiteSpace(rejectedPath) ? "CSV đã chọn" : Path.GetFileName(rejectedPath);
+        object rejected = string.IsNullOrWhiteSpace(rejectedPath) ? UiText.Key("CSV đã chọn") : Path.GetFileName(rejectedPath);
         var keeping = string.IsNullOrWhiteSpace(CsvEditorPath)
             ? "chưa có file nào đang mở"
-            : $"đang giữ {Path.GetFileName(CsvEditorPath)}";
-        CsvEditorLoadError = $"Không mở được {rejected}: {reason} ({keeping}).";
+            : UiText.Msg("đang giữ {0}", Path.GetFileName(CsvEditorPath));
+        CsvEditorLoadError = UiText.Msg("Không mở được {0}: {1} ({2}).", rejected, UiText.Key(reason), UiText.Key(keeping));
         CsvEditorStatus = CsvEditorLoadError;
         AppendLog($"CSV editor: {CsvEditorLoadError}");
         ShowToast(CsvEditorLoadError, "error");
@@ -753,10 +753,10 @@ public sealed partial class MainViewModel
             .GroupBy(text => text)
             .OrderByDescending(group => group.Count())
             .Take(2)
-            .Select(group => $"{group.Count():N0}× {group.Key}")
+            .Select(group => UiText.Msg("{0}× {1}", group.Count().ToString("N0"), UiText.Key(group.Key)))
             .ToList();
-        var detail = reasons.Count > 0 ? string.Join("; ", reasons) : validation.Summary;
-        return $"Cảnh báo: {validation.IssueCount:N0} dòng cần xem lại — {detail}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.";
+        object detail = reasons.Count > 0 ? UiText.Join("; ", reasons) : UiText.Key(validation.Summary);
+        return UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", validation.IssueCount.ToString("N0"), detail);
     }
 
     private void ApplyCsvDocumentSync(CsvEditorDocument doc)
@@ -799,7 +799,7 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvEditorView));
         ApplyCsvEditorFilter();
         CsvEditorLoading = false;
-        CsvEditorStatus = $"Đã mở {_csvEditorRows.Count} dòng — {Path.GetFileName(doc.CsvPath)}";
+        CsvEditorStatus = UiText.Msg("Đã mở {0} dòng — {1}", _csvEditorRows.Count, Path.GetFileName(doc.CsvPath));
         ValidateCsvEditor(showLog: false);
         SaveCsvEditorCommand.RaiseCanExecuteChanged();
     }
@@ -851,7 +851,7 @@ public sealed partial class MainViewModel
                 _csvEditorRows.AddSilent(built[i]);
                 if ((i + 1) % chunk == 0 || frameSw.ElapsedMilliseconds >= 12)
                 {
-                    CsvEditorStatus = $"Đang tải CSV… {i + 1:N0}/{built.Count:N0}";
+                    CsvEditorStatus = UiText.Msg("Đang tải CSV… {0}/{1}", (i + 1).ToString("N0"), built.Count.ToString("N0"));
                     CsvEditorVisibleCount = i + 1;
                     frameSw.Restart();
                     // Background so Send-priority UI pings (watchdog) always cut through.
@@ -872,7 +872,7 @@ public sealed partial class MainViewModel
             return;
 
         CsvEditorLoading = false;
-        CsvEditorStatus = $"Đã mở {_csvEditorRows.Count:N0} dòng — {Path.GetFileName(doc.CsvPath)} (đang kiểm tra…)";
+        CsvEditorStatus = UiText.Msg("Đã mở {0} dòng — {1} (đang kiểm tra…)", _csvEditorRows.Count.ToString("N0"), Path.GetFileName(doc.CsvPath));
         SaveCsvEditorCommand.RaiseCanExecuteChanged();
 
         LastCsvTiming = timing;
@@ -1012,13 +1012,13 @@ public sealed partial class MainViewModel
         ApplyBulkReplaceCsvCommand?.RaiseCanExecuteChanged();
         CsvBulkPreview = preview.Count == 0
             ? "Không tìm thấy chuỗi trong cột Bản dịch."
-            : $"Sẽ thay {preview.ReplacementCount:N0} lần trong {preview.Count:N0} dòng ({(keys is null ? "toàn bộ CSV" : "dòng đang lọc")}).";
+            : UiText.Msg("Sẽ thay {0} lần trong {1} dòng ({2}).", preview.ReplacementCount.ToString("N0"), preview.Count.ToString("N0"), UiText.Key(keys is null ? "toàn bộ CSV" : "dòng đang lọc"));
         if (preview.Count > 0)
         {
             var samples = rows.Where(row => row.TryGetValue("key", out var key) && preview.Keys.Contains(key))
                 .Take(3).Select(row => row.TryGetValue("translation", out var text) ? text : "")
-                .Select(text => $"Trước: {text}\nSau: {text.Replace(previewFind, previewReplace, StringComparison.Ordinal)}");
-            CsvBulkPreview += "\n" + string.Join("\n", samples);
+                .Select(text => UiText.Msg("Trước: {0}" + "\n" + "Sau: {1}", text, text.Replace(previewFind, previewReplace, StringComparison.Ordinal)));
+            CsvBulkPreview = UiText.Lines(new[] { CsvBulkPreview }.Concat(samples).ToArray());
         }
         if (preview.Count == 0)
         {
@@ -1056,11 +1056,12 @@ public sealed partial class MainViewModel
             InvalidateCsvBulkPreview(preview.Error ?? "CSV đã thay đổi — hãy xem trước thao tác lần nữa.");
             return;
         }
-        var confirm =
-            $"Thay thế {preview.ReplacementCount:N0} lần trong {preview.Count:N0} dòng?\n\n" +
-            $"Tìm: {applyFind}\nThay bằng: {applyReplace}\n" +
-            "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.\n" +
-            "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu.";
+        var confirm = UiText.Lines(
+            UiText.Msg("Thay thế {0} lần trong {1} dòng?", preview.ReplacementCount.ToString("N0"), preview.Count.ToString("N0")),
+            "",
+            UiText.Msg("Tìm: {0}" + "\n" + "Thay bằng: {1}", applyFind, applyReplace),
+            "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.",
+            "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu.");
         if (AppDialogService.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         // The confirm dialog is modal but the boxes were editable before it opened; the exact
@@ -1090,7 +1091,7 @@ public sealed partial class MainViewModel
         CsvEditorDirty = false;
         ApplyValidationFromBatch(result.IssuesByKey, result.IssuesDisplayByKey, result.Summary,
             result.PatchEligible, result.PatchBlocked, result.BatchActionable);
-        CsvBulkPreview = $"Đã thay {result.ReplacementCount:N0} lần trong {result.Count:N0} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục.";
+        CsvBulkPreview = UiText.Msg("Đã thay {0} lần trong {1} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục.", result.ReplacementCount.ToString("N0"), result.Count.ToString("N0"));
         AppendLog($"Bulk replace translation: {CsvBulkPreview} Backup={result.BackupPath}");
         ShowToast(CsvBulkPreview, result.PatchBlocked > 0 ? "warning" : "success");
         LoadCsvEditor(applyPath, reload: true);
@@ -1129,7 +1130,7 @@ public sealed partial class MainViewModel
         }
         _csvBulkLastBackup = null;
         UndoBulkReplaceCsvCommand.RaiseCanExecuteChanged();
-        CsvBulkPreview = $"Đã hoàn tác — khôi phục {result.RowCount:N0} dòng từ bản lưu khôi phục.";
+        CsvBulkPreview = UiText.Msg("Đã hoàn tác — khôi phục {0} dòng từ bản lưu khôi phục.", result.RowCount.ToString("N0"));
         AppendLog(CsvBulkPreview);
         ShowToast(CsvBulkPreview, "success");
         LoadCsvEditor(CsvEditorPath, reload: true);
@@ -1371,15 +1372,15 @@ public sealed partial class MainViewModel
         {
             var duplicateMessage = CsvEditorDiagnostics.FormatDuplicateMessage(duplicates);
             CsvEditorValidationMessage = duplicateMessage;
-            CsvEditorStatus = $"Chưa lưu — {duplicates.Count} key trùng";
-            SetCsvEditorSaveError(path, $"{duplicates.Count} key trùng — {duplicateMessage}", CsvSaveFixRecovery);
+            CsvEditorStatus = UiText.Msg("Chưa lưu — {0} key trùng", duplicates.Count);
+            SetCsvEditorSaveError(path, UiText.Msg("{0} key trùng — {1}", duplicates.Count, duplicateMessage), CsvSaveFixRecovery);
             AppendLog(duplicateMessage);
             ShowToast(duplicateMessage, "error");
             return false;
         }
 
         CsvEditorSaving = true;
-        CsvEditorStatus = $"Đang kiểm tra và lưu {rows.Count:N0} dòng…";
+        CsvEditorStatus = UiText.Msg("Đang kiểm tra và lưu {0} dòng…", rows.Count.ToString("N0"));
         CsvEditorValidationMessage = "Đang kiểm tra CSV trước khi lưu…";
         try
         {
@@ -1392,7 +1393,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception ex)
         {
-            CsvEditorStatus = $"Lưu thất bại: {ex.Message}";
+            CsvEditorStatus = UiText.Msg("Lưu thất bại: {0}", ex.Message);
             CsvEditorValidationMessage = CsvEditorStatus;
             SetCsvEditorSaveError(path, ex.Message, CsvSaveKeepsDraftRecovery);
             AppendLog(CsvEditorStatus);
@@ -1467,10 +1468,10 @@ public sealed partial class MainViewModel
             && string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase);
         if (unchanged)
             CsvEditorDirty = false;
-        var savedMsg = $"Đã lưu {save.RowCount:N0} dòng — {Path.GetFileName(path)}";
+        var savedMsg = UiText.Msg("Đã lưu {0} dòng — {1}", save.RowCount.ToString("N0"), Path.GetFileName(path));
         CsvEditorStatus = unchanged
-            ? $"{savedMsg} (UTF-8 BOM, giữ nguyên cột)"
-            : $"{savedMsg}; còn chỉnh sửa mới chưa lưu";
+            ? UiText.Msg("{0} (UTF-8 BOM, giữ nguyên cột)", savedMsg)
+            : UiText.Msg("{0}; còn chỉnh sửa mới chưa lưu", savedMsg);
         if (unchanged)
             ApplyValidationFromBatch(validation.IssuesByKey, validation.IssuesDisplayByKey, validation.Summary,
                 validation.PatchEligible, validation.PatchBlocked, validation.BatchActionable);
@@ -1481,8 +1482,8 @@ public sealed partial class MainViewModel
         if (validation.HasWarnings)
             AppendLog($"Cảnh báo trước khi lưu: {validation.Summary}");
         if (CsvEditorWarningSummary.Length > 0)
-            CsvEditorStatus = $"{CsvEditorStatus} — {CsvEditorWarningSummary}";
-        ShowToast(CsvEditorWarningSummary.Length > 0 ? $"{savedMsg}. {CsvEditorWarningSummary}" : savedMsg,
+            CsvEditorStatus = UiText.Compose(CsvEditorStatus, " — ", CsvEditorWarningSummary);
+        ShowToast(CsvEditorWarningSummary.Length > 0 ? UiText.Compose(savedMsg, ". ", CsvEditorWarningSummary) : savedMsg,
             validation.HasWarnings ? "warning" : "success");
         LogExpanded = true;
         SaveCsvEditorCommand.RaiseCanExecuteChanged();
@@ -1530,10 +1531,11 @@ public sealed partial class MainViewModel
             return;
         }
 
-        var msg =
-            $"Xóa cột translation của {preview.Count:N0} dòng bị Patch Gate chặn?\n\n" +
-            "Chỉ xóa bản dịch — giữ nguyên key và source.\n" +
-            "File backup sẽ được tạo trước khi ghi.";
+        var msg = UiText.Lines(
+            UiText.Msg("Xóa cột translation của {0} dòng bị Patch Gate chặn?", preview.Count.ToString("N0")),
+            "",
+            "Chỉ xóa bản dịch — giữ nguyên key và source.",
+            "File backup sẽ được tạo trước khi ghi.");
         if (AppDialogService.Show(msg, "Xác nhận xóa bản dịch lỗi", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
@@ -1547,7 +1549,7 @@ public sealed partial class MainViewModel
 
         var backupNote = string.IsNullOrWhiteSpace(result.BackupPath) ? "" : $" Backup: {result.BackupPath}";
         AppendLog($"Đã xóa bản dịch {result.Count:N0} dòng lỗi.{backupNote}");
-        ShowToast($"Đã xóa bản dịch {result.Count:N0} dòng — {result.Summary}", "success");
+        ShowToast(UiText.Msg("Đã xóa bản dịch {0} dòng — {1}", result.Count.ToString("N0"), UiText.Key(result.Summary)), "success");
         LoadCsvEditor(CsvEditorPath, reload: true);
     }
 
@@ -1580,10 +1582,11 @@ public sealed partial class MainViewModel
         }
 
         const string engineLabel = "CT2";
-        var msg =
-            $"Dịch lại {preview.Count:N0} dòng bằng {engineLabel}?\n\n" +
-            "Chỉ các dòng đã chọn hoặc đang bị gate chặn (cấu trúc).\n" +
-            "Backup CSV sẽ được tạo trước khi ghi. Validation chạy sau khi dịch.";
+        var msg = UiText.Lines(
+            UiText.Msg("Dịch lại {0} dòng bằng {1}?", preview.Count.ToString("N0"), engineLabel),
+            "",
+            "Chỉ các dòng đã chọn hoặc đang bị gate chặn (cấu trúc).",
+            "Backup CSV sẽ được tạo trước khi ghi. Validation chạy sau khi dịch.");
         if (CsvEditorMessageBox(msg, "Xác nhận dịch lại dòng lỗi", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
@@ -1609,7 +1612,7 @@ public sealed partial class MainViewModel
             human_review_required = HumanReviewRequired,
             model = "ct2",
             model_dir = TranslationModelDir,
-        }, $"Đang dịch lại {preview.Count:N0} dòng lỗi…");
+        }, UiText.Msg("Đang dịch lại {0} dòng lỗi…", preview.Count.ToString("N0")));
     }
 
     private bool _csvEditorStaleOnDisk;

@@ -517,7 +517,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string ExtractProgressEta => _extractProgressEta;
     public bool ExtractProgressHasEta => !string.IsNullOrWhiteSpace(_extractProgressEta);
     public bool ExtractProgressActive => Busy && _runningTask is "extract" or "analyze" or "image_inventory" or "image_extract";
-    public string ExtractProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_extractTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public string ExtractProgressElapsed => UiText.Msg("Đã chạy {0}", UiText.Key(ProgressEtaFormatter.Format(_extractTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))));
     public string TranslateProgressSubtitle => _translateProgressText;
     public string TranslateWorkflowStatusText => Busy && OwnsTranslateProgressTask(_runningTask)
         ? (string.IsNullOrWhiteSpace(_translateProgressText) ? "Đang xử lý…" : _translateProgressText)
@@ -527,14 +527,14 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public string TranslateProgressEta => _translateProgressEta;
     public bool TranslateProgressHasEta => !string.IsNullOrWhiteSpace(_translateProgressEta);
     public bool TranslateProgressActive => Busy && OwnsTranslateProgressTask(_runningTask);
-    public string TranslateProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_translateTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public string TranslateProgressElapsed => UiText.Msg("Đã chạy {0}", UiText.Key(ProgressEtaFormatter.Format(_translateTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))));
     public string PatchProgressSubtitle => _patchProgressText;
     public string PatchProgressStep => _patchProgressStep;
     public string PatchProgressItem => string.IsNullOrWhiteSpace(_patchProgressItem) ? "—" : _patchProgressItem;
     public string PatchProgressEta => _patchProgressEta;
     public bool PatchProgressHasEta => !string.IsNullOrWhiteSpace(_patchProgressEta);
     public bool PatchProgressActive => Busy && _runningTask is "patch" or "image_delivery" or "image_apply" or "image_rollback";
-    public string PatchProgressElapsed => $"Đã chạy {ProgressEtaFormatter.Format(_patchTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
+    public string PatchProgressElapsed => UiText.Msg("Đã chạy {0}", UiText.Key(ProgressEtaFormatter.Format(_patchTaskStopwatch.Elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture))));
     public int ExtractProgressPercent { get => _extractProgressPercent; private set => Set(ref _extractProgressPercent, value); }
     public int TranslateProgressPercent { get => _translateProgressPercent; private set => Set(ref _translateProgressPercent, value); }
     public int PatchProgressPercent { get => _patchProgressPercent; private set => Set(ref _patchProgressPercent, value); }
@@ -930,7 +930,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
         catch (Exception ex)
         {
-            AppDialogService.Show($"Không thể khởi chạy updater: {ex.Message}", "Cập nhật VNText Studio",
+            AppDialogService.Show(UiText.Msg("Không thể khởi chạy updater: {0}", ex.Message), "Cập nhật VNText Studio",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1042,7 +1042,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         if (state is GitHubUpdateState.Offline or GitHubUpdateState.Timeout or GitHubUpdateState.RateLimited)
             return string.IsNullOrWhiteSpace(message) ? "Chưa thể kiểm tra. Hãy thử lại sau." : message;
         if (state is GitHubUpdateState.InvalidMetadata or GitHubUpdateState.InvalidPackage)
-            return string.IsNullOrWhiteSpace(message) ? "Không thể kiểm tra bản cập nhật." : $"Không thể kiểm tra bản cập nhật: {message}";
+            return string.IsNullOrWhiteSpace(message) ? "Không thể kiểm tra bản cập nhật." : UiText.Msg("Không thể kiểm tra bản cập nhật: {0}", message);
         return state switch
         {
             GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
@@ -1093,7 +1093,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Busy || CsvEditorDirty || !GitHubApplyEnabled || _githubUpdateChecking)
             return;
-        if (AppDialogService.Show($"Đóng VNText Studio và áp dụng bản cập nhật WPF ổn định v{_githubUpdateResult.Version}?",
+        if (AppDialogService.Show(UiText.Msg("Đóng VNText Studio và áp dụng bản cập nhật WPF ổn định v{0}?", _githubUpdateResult.Version),
                 "VNText Studio update", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         try
@@ -1105,7 +1105,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         }
         catch (Exception ex)
         {
-            AppDialogService.Show($"Không thể khởi chạy updater đã xác minh: {ex.Message}", "Cập nhật VNText Studio",
+            AppDialogService.Show(UiText.Msg("Không thể khởi chạy updater đã xác minh: {0}", ex.Message), "Cập nhật VNText Studio",
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

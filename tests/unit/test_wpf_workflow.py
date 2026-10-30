@@ -701,7 +701,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # a language switch refreshes the bound OCR text
         self.assertIn("RaiseImageLanguageText();", (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8"))
         # the Vietnamese UI strings themselves are unchanged
-        for exact in ('"Chọn ảnh để xem trước và OCR"', '"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', '"Không mở được review: "'):
+        for exact in ('"Chọn ảnh để xem trước và OCR"', '"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', '"Không mở được review: {0}"'):
             self.assertIn(exact, image_vm)
 
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):

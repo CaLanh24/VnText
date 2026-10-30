@@ -271,7 +271,7 @@ public sealed partial class MainViewModel
                 HeroTitle = "Tạo patch";
                 HeroIcon = "patch";
                 HeroHint = PatchPreflightOk
-                    ? $"Sẵn sàng đóng gói {PatchEligibleCount} dòng; {PatchBlockedCount} dòng bị chặn."
+                    ? UiText.Msg("Sẵn sàng đóng gói {0} dòng; {1} dòng bị chặn.", PatchEligibleCount, PatchBlockedCount)
                     : ReadyForPatch
                         ? "Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."
                         : "Chọn game và bản dịch để kiểm tra rồi đóng gói patch.";
@@ -691,7 +691,7 @@ public sealed partial class MainViewModel
             _runningTask = null;
             AppendLog($"Lỗi gửi task: {ex.Message}");
             StatusText = "Lỗi";
-            StepStatusLine = $"Lỗi — {ex.Message}";
+            StepStatusLine = UiText.Msg("Lỗi — {0}", ex.Message);
             RefreshWorkflow();
         }
     }

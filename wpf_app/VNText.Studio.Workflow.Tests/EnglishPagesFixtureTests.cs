@@ -95,8 +95,8 @@ internal static partial class Program
                     new() { Index = 2, Key = "k2", SourceText = "Bye.", Translation = "Tạm biệt.", IssueLabel = "review_only", IssueDisplay = "Trong review_only.csv (cần xem lại thủ công)" },
                     new() { Index = 3, Key = "k3", SourceText = "Thanks.", Translation = "Cảm ơn." },
                 };
-                vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, "Cảnh báo: 2 dòng cần xem lại — 1× Mất/sai placeholder {...}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.");
-                vm.TestSetCsvBulkPreview("Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).\nTrước: Open the door.\nSau: Open the gate.");
+                vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", 2, UiText.Msg("{0}× {1}", 1, UiText.Key("Mất/sai placeholder {…}"))));
+                vm.TestSetCsvBulkPreview(UiText.Lines(UiText.Msg("Sẽ thay {0} lần trong {1} dòng ({2}).", 4, 3, UiText.Key("dòng đang lọc")), UiText.Msg("Trước: {0}\nSau: {1}", "Open the door.", "Open the gate.")));
                 Scan("csv loaded + preview", CsvScope());
                 vm.ToggleCsvBulkPreviewDetailCommand.Execute(null); vm.ToggleCsvBulkCommand.Execute(null); Scan("csv tools open + examples", CsvScope());
                 rows[2].Translation = "Cảm ơn nhiều."; Scan("csv dirty", CsvScope());

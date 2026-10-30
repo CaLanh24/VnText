@@ -174,12 +174,12 @@ public static class WorkflowStatus
 
         if (current == "translate" && hasTranslate && !translateComplete && !statusKnown)
         {
-            return $"Bước 2/3: Trạng thái dịch chưa được xác minh — pending {pending}, review {reviewOnly}; chưa thể Patch";
+            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể Patch", pending, reviewOnly);
         }
 
         if (current == "translate" && hasTranslate && !translateComplete)
         {
-            return $"Bước 2/3: Dịch một phần — pending {pending}, review {reviewOnly}, blocked {blocked}";
+            return UiText.Msg("Bước 2/3: Dịch một phần — pending {0}, review {1}, blocked {2}", pending, reviewOnly, blocked);
         }
 
         return current switch

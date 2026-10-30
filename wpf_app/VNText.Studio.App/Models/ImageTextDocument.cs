@@ -19,6 +19,8 @@ public sealed class ImageTextDocument
     public List<ImageTextRegion> Regions { get; set; } = new();
 }
 
+public enum RegionBackgroundMode { Flat, Transparent, Solid, Clone }
+
 public sealed class ImageTextRegion : NotifyBase
 {
     public string Id { get; set; } = "";
@@ -30,17 +32,31 @@ public sealed class ImageTextRegion : NotifyBase
     private bool _cloneBackgroundApproved;
     public int DonorX { get => _donorX; set { if (Set(ref _donorX, value)) { Approved = false; CloneBackgroundApproved = false; } } }
     public int DonorY { get => _donorY; set { if (Set(ref _donorY, value)) { Approved = false; CloneBackgroundApproved = false; } } }
-    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set { if (Set(ref _cloneBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
+    public bool CloneBackgroundApproved { get => _cloneBackgroundApproved; set { if (Set(ref _cloneBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); Raise(nameof(ModeAmbiguous)); } } }
     public string SourceText { get => _sourceText; set { if (Set(ref _sourceText, value)) Approved = false; } }
     public string Translation { get => _translation; set { if (Set(ref _translation, value)) Approved = false; } }
     public string Background { get => _background; set { if (Set(ref _background, value)) { Approved = false; FlatBackgroundApproved = false; ReplacementBackgroundApproved = false; TransparentTextApproved = false; CloneBackgroundApproved = false; } } }
     public string Foreground { get => _foreground; set { if (Set(ref _foreground, value)) Approved = false; } }
     public int FontSize { get => _fontSize; set { if (Set(ref _fontSize, value)) Approved = false; } }
     public bool Approved { get => _approved; set => Set(ref _approved, value); }
-    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
-    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
-    public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); } } }
+    public bool FlatBackgroundApproved { get => _flatBackgroundApproved; set { if (Set(ref _flatBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); Raise(nameof(ModeAmbiguous)); } } }
+    public bool ReplacementBackgroundApproved { get => _replacementBackgroundApproved; set { if (Set(ref _replacementBackgroundApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); Raise(nameof(ModeAmbiguous)); } } }
+    public bool TransparentTextApproved { get => _transparentTextApproved; set { if (Set(ref _transparentTextApproved, value)) { Approved = false; Raise(nameof(ModeSummary)); Raise(nameof(NoModeChosen)); Raise(nameof(ModeAmbiguous)); } } }
     internal void RaiseLanguageText() => Raise(nameof(ModeSummary));
+
+    /// <summary>The one explicit human choice: exactly this mode, every other mode off, approval dropped.</summary>
+    public void ChooseBackgroundMode(RegionBackgroundMode mode)
+    {
+        FlatBackgroundApproved = mode == RegionBackgroundMode.Flat;
+        TransparentTextApproved = mode == RegionBackgroundMode.Transparent;
+        ReplacementBackgroundApproved = mode == RegionBackgroundMode.Solid;
+        CloneBackgroundApproved = mode == RegionBackgroundMode.Clone;
+        Approved = false;
+    }
+
+    /// <summary>More than one mode flag is set (a legacy review): nothing is inferred, a human has to choose.</summary>
+    [JsonIgnore]
+    public bool ModeAmbiguous => (_flatBackgroundApproved ? 1 : 0) + (_transparentTextApproved ? 1 : 0) + (_replacementBackgroundApproved ? 1 : 0) + (_cloneBackgroundApproved ? 1 : 0) > 1;
     /// <summary>True while none of the four background modes is chosen (the initial state; nothing is chosen for the user).</summary>
     [JsonIgnore]
     public bool NoModeChosen => !_flatBackgroundApproved && !_transparentTextApproved && !_replacementBackgroundApproved && !_cloneBackgroundApproved;

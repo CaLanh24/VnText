@@ -104,7 +104,7 @@ public sealed partial class MainViewModel
     public string WorkerStatus
     {
         get { try { return UiText.Translate(File.Exists(WorkerPaths.PythonExecutable()) ? "Python worker có sẵn" : "Thiếu Python worker"); }
-              catch (Exception ex) { return "Worker chưa sẵn sàng: " + ex.Message; } }
+              catch (Exception ex) { return UiText.Msg("Worker chưa sẵn sàng: {0}", ex.Message); } }
     }
     public RelayCommand OpenDataFolderCommand => new(_ => OpenSettingsFolder(DataFolder));
     public RelayCommand OpenModelFolderCommand => new(_ => OpenSettingsFolder(ModelFolder));
@@ -149,7 +149,7 @@ public sealed partial class MainViewModel
     private void OpenSettingsLink(string url)
     {
         try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
-        catch (Exception ex) { SettingsStatus = "Không mở được liên kết: " + ex.Message; }
+        catch (Exception ex) { SettingsStatus = UiText.Msg("Không mở được liên kết: {0}", ex.Message); }
     }
     private async Task LoadModelStatusAsync()
     {
@@ -172,7 +172,7 @@ public sealed partial class MainViewModel
             var error = process.StandardError.ReadToEndAsync();
             try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15)); }
             catch (TimeoutException) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync(); throw; }
-            if (process.ExitCode != 0) throw new InvalidOperationException($"Kiểm tra model exit {process.ExitCode}: {await error}");
+            if (process.ExitCode != 0) throw new InvalidOperationException(UiText.Msg("Kiểm tra model exit {0}: {1}", process.ExitCode, await error));
             using var result = System.Text.Json.JsonDocument.Parse(await output);
             _modelFolder = result.RootElement.GetProperty("path").GetString() ?? "";
             var modelReady = result.RootElement.GetProperty("ready").GetBoolean();
@@ -189,7 +189,7 @@ public sealed partial class MainViewModel
         {
             _translationModelChecked = true;
             _translationModelUnavailable = true;
-            _modelStatus = "Không kiểm tra được mô hình dịch: " + ex.Message;
+            _modelStatus = UiText.Msg("Không kiểm tra được mô hình dịch: {0}", ex.Message);
         }
         if (_disposed != 0) return;
         Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText));
@@ -198,12 +198,12 @@ public sealed partial class MainViewModel
     private void OpenSettingsFolder(string path)
     {
         try { if (!Directory.Exists(path)) throw new DirectoryNotFoundException("Thư mục chưa có."); Process.Start(new ProcessStartInfo(path) { UseShellExecute = true }); }
-        catch (Exception ex) { SettingsStatus = "Không mở được thư mục: " + ex.Message; }
+        catch (Exception ex) { SettingsStatus = UiText.Msg("Không mở được thư mục: {0}", ex.Message); }
     }
     private void SaveSettings()
     {
         try { AppSettingsStore.Save(_settings); SettingsStatus = ""; }
-        catch (Exception ex) { SettingsStatus = "Không lưu được cài đặt; file hiện có được giữ nguyên: " + ex.Message; }
+        catch (Exception ex) { SettingsStatus = UiText.Msg("Không lưu được cài đặt; file hiện có được giữ nguyên: {0}", ex.Message); }
     }
     internal void RestoreWindow(Window window)
     {

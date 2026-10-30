@@ -2150,9 +2150,9 @@ internal static partial class Program
         {
             UiText.SetLanguage("vi");
             AssertEqual("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", UiText.TranslateDynamic("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."));
-            AssertEqual("Không mở được review: Review rỗng.", UiText.TranslateDynamic("Không mở được review: Review rỗng."));   // Vietnamese is exact
+            AssertEqual("Không mở được review: Review rỗng.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", UiText.Key("Review rỗng."))));   // Vietnamese is exact
             UiText.SetLanguage("en");
-            AssertEqual("Could not open the review: The review is empty.", UiText.TranslateDynamic("Không mở được review: Review rỗng."));
+            AssertEqual("Could not open the review: The review is empty.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", UiText.Key("Review rỗng."))));
             AssertEqual("Running: OCR images.", UiText.TranslateDynamic("Đang chạy: OCR ảnh."));
             AssertEqual("3 regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.",
                 UiText.TranslateDynamic("3 region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render."));
@@ -2161,17 +2161,29 @@ internal static partial class Program
             foreach (var userText in new[] { "Xin chào, nhà thám hiểm", @"C:\Trò chơi\Ảnh\ui_01.png", "System.IO.IOException: The process cannot access the file", "Hello", "Nền phẳng của tôi" })
                 AssertEqual(userText, UiText.TranslateDynamic(userText));
             AssertEqual("Flat background", UiText.TranslateDynamic("Nền phẳng"));
+            // A format key is translated BEFORE raw arguments are inserted. Raw content equal to a UI key,
+            // a path containing Vietnamese UI words, braces and multiline data must remain untouched.
+            foreach (var raw in new[] { "Xóa", "Chưa bắt đầu", @"C:\Xóa\Chưa bắt đầu\a{0}.csv", "Xóa\nChưa bắt đầu {1}" })
+            {
+                AssertEqual("Before: " + raw, UiText.Format("Trước: {0}", raw));
+                var produced = UiText.Msg("Trước: {0}", raw);
+                AssertEqual("Before: " + raw, UiText.TranslateDynamic(produced));
+                AssertEqual("Trước: " + raw, UiText.TranslateDynamic(new string(produced.ToCharArray())));
+                UiText.SetLanguage("vi"); AssertEqual("Trước: " + raw, UiText.TranslateDynamic(produced));
+                UiText.SetLanguage("en"); AssertEqual("Before: " + raw, UiText.TranslateDynamic(produced));
+            }
+
             // worker-owned image phrases: progress line, errors, prefixed raw technical tails
             AssertEqual("45% • Step: OCR images • Item: Trò chơi.png • ETA: 2 minutes", UiText.TranslateDynamic("45% • Bước: OCR ảnh • Mục: Trò chơi.png • ETA: 2 phút"));
             AssertEqual("10% • Step: Translate image", UiText.TranslateDynamic("10% • Bước: Dịch ảnh"));
             AssertEqual("99% • Step: OCR images • ETA: 1 hour 5 minutes", UiText.TranslateDynamic("99% • Bước: OCR ảnh • ETA: 1 giờ 5 phút"));
             AssertEqual("5% • Step: OCR images • ETA: 12 seconds", UiText.TranslateDynamic("5% • Bước: OCR ảnh • ETA: 12 giây"));
-            AssertEqual("Not finished: The translation overflows the region; fix the line breaks/font/region and approve again.", UiText.TranslateDynamic("Chưa hoàn tất: Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại."));
+            AssertEqual("Not finished: The translation overflows the region; fix the line breaks/font/region and approve again.", UiText.TranslateDynamic(UiText.Msg("Chưa hoàn tất: {0}", UiText.Key("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại."))));
             AssertEqual("Approve the text/crop before rendering.", UiText.TranslateDynamic("Cần duyệt text/crop trước render."));
             AssertEqual("Windows OCR failed: 0x80070005 Access is denied", UiText.TranslateDynamic("Windows OCR thất bại: 0x80070005 Access is denied"));      // the technical tail stays raw
             AssertEqual("Images: 3 draft translations, 1 untranslated. C:\\Out\\Ảnh", UiText.TranslateDynamic("Ảnh: 3 bản dịch nháp, 1 chưa dịch. C:\\Out\\Ảnh"));   // the path stays raw
             AssertEqual("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG", UiText.TranslateDynamic("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG"));
-            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic("Không mở được review: Access to the path 'C:\\x' is denied."));
+            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", "Access to the path 'C:\\x' is denied."))));
         }
         finally { UiText.SetLanguage(previous); }
     }

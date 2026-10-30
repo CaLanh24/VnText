@@ -76,7 +76,7 @@ internal sealed class UpdateWindow : Window
             FontSize = AppDialogWindow.HeaderTitleSize, FontWeight = FontWeights.Bold, Foreground = Brush("InkBrush"), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         Grid.SetColumn(heading, 1); header.Children.Add(heading);
         var close = new Button { Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center }, Style = (Style)owner.FindResource("DialogCloseButton") };
-        AutomationProperties.SetName(close, UiText.TranslateDynamic("Đóng " + Title)); close.ToolTip = "Đóng (Esc)";
+        AutomationProperties.SetName(close, UiText.Format("Đóng {0}", Title)); close.ToolTip = "Đóng (Esc)";
         close.Click += (_, _) => Close(); Grid.SetColumn(close, 2); header.Children.Add(close);
         grid.Children.Add(new Border { Child = header, BorderBrush = Brush("LineBrush"), BorderThickness = new Thickness(0, 0, 0, 1) });
         var body = new Grid { Margin = AppDialogWindow.BodyPadding }; Grid.SetRow(body, 1); grid.Children.Add(body);
@@ -124,7 +124,7 @@ internal sealed class UpdateWindow : Window
             if (_starting || source.Downloading || !source.CanStart) return;
             if (source.Ready) { try { source.Restart(); } catch (Exception ex) { _status.Text = ex.Message; } return; }
             _starting = true; _primary.IsEnabled = false;
-            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = UiText.TranslateDynamic("Không tải được cập nhật: " + ex.Message); }
+            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = UiText.Format("Không tải được cập nhật: {0}", ex.Message); }
             finally { _starting = false; if (IsVisible) Refresh(); }
         };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { e.Handled = true; Close(); } };
@@ -168,14 +168,14 @@ internal sealed class UpdateWindow : Window
         var releaseVersion = _successVersion ?? state.Version;
         _version.Text = string.IsNullOrWhiteSpace(releaseVersion) ? "" : "v" + releaseVersion;
         _versionBadge.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
-        _date.Text = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? "" : UiText.TranslateDynamic("Phát hành " + _source.ReleaseDate);
+        _date.Text = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? "" : UiText.Format("Phát hành {0}", _source.ReleaseDate);
         _dateBadge.Visibility = string.IsNullOrWhiteSpace(_source.ReleaseDate) ? Visibility.Collapsed : Visibility.Visible;
         _current.Visibility = _notesOnly ? Visibility.Collapsed : Visibility.Visible;
         _notesHeading.Visibility = _notesOnly && string.IsNullOrWhiteSpace(releaseVersion) ? Visibility.Collapsed : Visibility.Visible;
         var updateCompleted = !string.IsNullOrWhiteSpace(_successVersion);
-        _current.Text = UiText.TranslateDynamic(_notesOnly ? "Ghi chú phiên bản"
-            : updateCompleted ? $"Đã cập nhật thành công lên phiên bản v{_successVersion}."
-            : $"Phiên bản hiện tại {state.Current}, " + (state.Ready ? "gói mới đã được kiểm tra." : "đã có phiên bản mới."));
+        _current.Text = _notesOnly ? UiText.Translate("Ghi chú phiên bản")
+            : updateCompleted ? UiText.Format("Đã cập nhật thành công lên phiên bản v{0}.", _successVersion)
+            : UiText.Format(state.Ready ? "Phiên bản hiện tại {0}, gói mới đã được kiểm tra." : "Phiên bản hiện tại {0}, đã có phiên bản mới.", state.Current);
         var notesText = _successVersion is not null && Owner.DataContext is MainViewModel vm ? vm.VerifiedSuccessNotes : state.Notes;
         if (string.IsNullOrWhiteSpace(notesText)) notesText = UiText.Translate("Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất.");
         if (_notesOnly && Owner.DataContext is MainViewModel historyVm)
@@ -187,11 +187,11 @@ internal sealed class UpdateWindow : Window
         else if (_renderedNotes != notesText) { _renderedNotes = notesText; _notes.Content = RenderNotes(notesText); }
         _progressArea.Visibility = state.Downloading && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
         _progress.IsIndeterminate = state.Indeterminate; _progress.Maximum = 100; _progress.Value = state.Percent;
-        _progressText.Text = UiText.TranslateDynamic(state.Indeterminate ? "Đang tải xuống..." : $"Đang tải xuống... {state.Percent:0}%");
+        _progressText.Text = state.Indeterminate ? UiText.Translate("Đang tải xuống...") : UiText.Format("Đang tải xuống... {0}%", state.Percent.ToString("0"));
         _success.Visibility = (state.Ready || updateCompleted) && !_notesOnly ? Visibility.Visible : Visibility.Collapsed;
-        _banner.Text = UiText.TranslateDynamic(updateCompleted
-            ? $"✓  VNText Studio đã cập nhật lên v{_successVersion} và sẵn sàng sử dụng."
-            : $"✓  Phiên bản v{state.Version} đã sẵn sàng. Hãy khởi động lại để áp dụng.");
+        _banner.Text = updateCompleted
+            ? UiText.Format("✓  VNText Studio đã cập nhật lên v{0} và sẵn sàng sử dụng.", _successVersion)
+            : UiText.Format("✓  Phiên bản v{0} đã sẵn sàng. Hãy khởi động lại để áp dụng.", state.Version);
         _status.Text = UiText.TranslateDynamic(_notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status);
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.
@@ -253,7 +253,7 @@ internal sealed class UpdateWindow : Window
             {
                 var download = MakeButton(owner, "Tải xuống", false);
                 download.VerticalAlignment = VerticalAlignment.Top;
-                AutomationProperties.SetName(download, UiText.TranslateDynamic("Tải phiên bản " + entry.Version));
+                AutomationProperties.SetName(download, UiText.Format("Tải phiên bản {0}", entry.Version));
                 download.Click += (_, _) =>
                 {
                     try { Process.Start(new ProcessStartInfo(entry.DownloadUrl) { UseShellExecute = true }); }

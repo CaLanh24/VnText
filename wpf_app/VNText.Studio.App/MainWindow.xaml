@@ -19,6 +19,7 @@
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
         <conv:UiTextConverter x:Key="UiTextDynamic" />
         <conv:UiTextFormatConverter x:Key="UiTextFormat" />
+        <conv:UiTextFormatConverter x:Key="UiTextFormatLabel" SemanticArgument="True" />
         <conv:StepStateToDotBrushConverter x:Key="StepDot" />
         <conv:StepStateToFontWeightConverter x:Key="StepWeight" />
         <conv:StepStateToTitleForegroundConverter x:Key="StepTitleFg" />
@@ -490,7 +491,7 @@
                                                                                         <TextBlock Text="{Binding ExtractProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding ExtractProgressItem}" />
                                             <TextBlock Text="{Binding ExtractProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                         </StackPanel>
-                                        <TextBlock Text="{Binding ExtractProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Text="{Binding ExtractProgressEta, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
                                     <Button x:Name="ExtractImageTextButton" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,12,0,0"
                                             Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh trong game." AutomationProperties.Name="Mở Text trong ảnh"
@@ -638,11 +639,11 @@
                                                      Value="{Binding TranslateProgressPercent, Mode=OneWay}" Style="{StaticResource BlueProgressBarStyle}"
                                                      Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}" />
                                         <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="{Binding TranslateProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" />
+                                            <TextBlock Text="{Binding TranslateProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" />
                                             <TextBlock Text="{Binding TranslateProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" TextTrimming="CharacterEllipsis" MaxWidth="460" ToolTip="{Binding TranslateProgressItem}" />
                                             <TextBlock Text="{Binding TranslateProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
                                         </StackPanel>
-                                        <TextBlock Grid.Row="3" Text="{Binding TranslateProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding TranslateProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                        <TextBlock Grid.Row="3" Text="{Binding TranslateProgressEta, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding TranslateProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </Grid>
                                 </Border>
 
@@ -806,11 +807,11 @@
                                     <ProgressBar x:Name="PatchProgressBar" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding PatchProgressPercent, Mode=OneWay}"
                                                  Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
                                     <StackPanel Grid.Row="2" Margin="0,7,0,0">
-                                        <TextBlock Text="{Binding PatchProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
+                                        <TextBlock Text="{Binding PatchProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                         <TextBlock Text="{Binding PatchProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding PatchProgressItem}" />
                                         <TextBlock Text="{Binding PatchProgressElapsed, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                     </StackPanel>
-                                    <TextBlock Grid.Row="3" Text="{Binding PatchProgressEta, Converter={StaticResource UiTextFormat}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}" />
+                                    <TextBlock Grid.Row="3" Text="{Binding PatchProgressEta, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                 </Grid>
 
                                 <Grid Grid.Row="3" Margin="0,22,0,0">

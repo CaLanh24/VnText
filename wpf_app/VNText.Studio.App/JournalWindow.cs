@@ -110,7 +110,7 @@ internal sealed class JournalWindow : Window
         footer.Children.Add(Button("Đóng",Close));footer.Children.Add(Button("Làm mới",Refresh));
         footer.Children.Add(Button("Xóa",()=>
         {
-            if(_files.SelectedItem is string name && AppDialogService.Show($"Xóa tệp nhật ký {name}?","Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question,this)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
+            if(_files.SelectedItem is string name && AppDialogService.Show(UiText.Msg("Xóa tệp nhật ký {0}?", name),"Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question,this)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
         }));
         footer.Children.Add(Button("Mở nhật ký",()=>
         {
@@ -135,7 +135,7 @@ internal sealed class JournalWindow : Window
     }
     private void Safe(Action action)
     {
-        try{action();}catch(Exception ex){_status.Text=ex.Message;_content.Text=UiText.TranslateDynamic("Không đọc được nhật ký: "+ex.Message);}
+        try{action();}catch(Exception ex){_status.Text=ex.Message;_content.Text=UiText.Format("Không đọc được nhật ký: {0}",ex.Message);}
     }
     private void Refresh()
     {
@@ -149,7 +149,7 @@ internal sealed class JournalWindow : Window
         if(_loading)return;
         if(_files.SelectedItem is not string file){_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text=UiText.Translate("Chưa có tệp nhật ký");return;}
         var levels=new[]{"ALL","INFO","WARN","ERROR","DEBUG"};var size=_size.SelectedItem is int value ? value : 200;
-        _pageSizeLabel.Text=UiText.TranslateDynamic($"{size} bản ghi/trang");
+        _pageSizeLabel.Text=UiText.Format("{0} bản ghi/trang", size);
         // An invalid search expression is the user's input, not a log read failure: say so beside the field and keep the log readable (level filter only).
         var regexOn=_regex.IsChecked==true;var query=_query.Text;var expressionError="";var expressionDetail="";
         if(regexOn && query.Length>0 && query.Length<=500)
@@ -165,6 +165,6 @@ internal sealed class JournalWindow : Window
         if(_nextPage is not null){_nextPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_nextPage.IsEnabled=_page<pages-1;}
         var start=Math.Max(0,lines.Length-(_page+1)*size);
         _content.Text=string.Join(Environment.NewLine,lines.Skip(start).Take(Math.Min(size,lines.Length-_page*size)));_content.ScrollToEnd();
-        _status.Text=UiText.TranslateDynamic($"{lines.Length} bản ghi · {_page+1}/{pages}");_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));
+        _status.Text=UiText.Format("{0} bản ghi · {1}/{2}", lines.Length, _page+1, pages);_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));
     }
 }

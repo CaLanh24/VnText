@@ -311,10 +311,14 @@ public sealed class UiTextConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
 }
 
-/// <summary>Applies the Vietnamese format in ConverterParameter to the bound value, then localizes the result (the format and the value are catalog keys, not the interpolated text).</summary>
+/// <summary>The XAML carries the catalog FORMAT KEY (ConverterParameter, e.g. "Bước: {0}") and the bound value is the raw argument: the key is translated
+/// first, then formatted with the argument as it is. Set <see cref="SemanticArgument"/> only when the bound value is itself a UI label/duration (a catalog key);
+/// file names, paths and user text are bound with the default and are never looked up.</summary>
 public sealed class UiTextFormatConverter : IValueConverter
 {
+    public bool SemanticArgument { get; set; }
     public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
-        VNText.Studio.App.Services.UiText.TranslateDynamic(string.Format(System.Globalization.CultureInfo.InvariantCulture, parameter as string ?? "{0}", value));
+        VNText.Studio.App.Services.UiText.Format(parameter as string ?? "{0}",
+            SemanticArgument && value is string text ? VNText.Studio.App.Services.UiText.Key(text) : value);
     public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
 }

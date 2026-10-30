@@ -94,6 +94,14 @@ public static class UiText
         ["Chọn file CSV"] = "Choose CSV file",
         ["Chọn CSV"] = "Choose CSV",
         ["Mở công cụ"] = "Open tools",
+        ["ETA: {0}"] = "ETA: {0}",
+        ["{0} {1}"] = "{0} {1}",
+        ["Không mở được review: {0}"] = "Could not open the review: {0}",
+        ["Đã lưu review riêng: {0}"] = "Review saved separately: {0}",
+        ["Lưu review lỗi: {0}"] = "Saving the review failed: {0}",
+        ["Chưa hoàn tất: {0}"] = "Not finished: {0}",
+        ["Không đọc được kết quả ảnh: {0}"] = "Could not read the image result: {0}",
+        ["{0}× {1}"] = "{0}× {1}",
         ["Sẵn sàng đóng gói {0} dòng; {1} dòng bị chặn."] = "Ready to package {0} rows; {1} rows are blocked.",
         ["Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."] = "Check the CSV to see eligible / blocked rows before patching.",
         ["Có thay đổi chưa lưu — bấm «Lưu CSV» trước khi patch."] = "Unsaved changes — press «Save CSV» before patching.",
@@ -163,6 +171,12 @@ public static class UiText
         ["Ước tính còn: {0}"] = "Estimated remaining: {0}",
         ["Đã chạy {0}"] = "Ran {0}",
         ["Trước: {0}"] = "Before: {0}",
+        ["Đã hủy {0}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất."] = "Cancelled {0}. The original image is untouched; the cancelled result is not applied to this screen, but anything already written safely (if any) may remain in the output folder.",
+        ["{0} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render."] = "{0} regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.",
+        ["Chưa thể {0}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước."] = "Cannot {0}: there is no rendered image/package matching the current review. Render again from the approved review first.",
+        ["Đang có tác vụ chạy; chưa thể {0}."] = "A task is running; cannot {0} yet.",
+        ["Một tác vụ khác đang chạy ({0}) — chờ xong hoặc bấm Hủy trước khi dùng ảnh."] = "Another task is running ({0}) — wait for it to finish or press Cancel before using images.",
+        ["Đang chạy: {0}."] = "Running: {0}.",
         ["Sau: {0}"] = "After: {0}",
         ["Thay thế {0} lần trong {1} dòng?"] = "Replace {0} times in {1} rows?",
         ["Tìm: {0}"] = "Find: {0}",
@@ -374,18 +388,18 @@ public static class UiText
         ["Cloud Repair ZIP (*.zip)|*.zip|Tất cả (*.*)|*.*"] = "Cloud Repair ZIP (*.zip)|*.zip|All files (*.*)|*.*",
         ["Tiếng Việt"] = "Vietnamese",
         ["Đang kiểm tra mô hình dịch…"] = "Checking the translation model…",
-        ["Worker chưa sẵn sàng: "] = "The worker is not ready: ",
+        ["Worker chưa sẵn sàng: {0}"] = "The worker is not ready: {0}",
         ["Đang tải lịch sử phát hành…"] = "Loading the release history…",
         ["Chưa có ghi chú được lưu. Hãy kết nối mạng và kiểm tra cập nhật để lưu ghi chú phát hành."] = "No saved notes yet. Connect to the network and check for updates to save the release notes.",
-        ["Không mở được liên kết: "] = "Could not open the link: ",
+        ["Không mở được liên kết: {0}"] = "Could not open the link: {0}",
         ["Không khởi chạy được kiểm tra model."] = "The model check could not be started.",
         ["Kiểm tra model exit {0}: {1}"] = "Model check exit {0}: {1}",
         ["Mô hình dịch đã sẵn sàng."] = "The translation model is ready.",
         ["Chưa có mô hình dịch trên máy."] = "No translation model on this computer yet.",
-        ["Không kiểm tra được mô hình dịch: "] = "Could not check the translation model: ",
+        ["Không kiểm tra được mô hình dịch: {0}"] = "Could not check the translation model: {0}",
         ["Thư mục chưa có."] = "The folder does not exist yet.",
-        ["Không mở được thư mục: "] = "Could not open the folder: ",
-        ["Không lưu được cài đặt; file hiện có được giữ nguyên: "] = "Could not save the settings; the existing file is kept: ",
+        ["Không mở được thư mục: {0}"] = "Could not open the folder: {0}",
+        ["Không lưu được cài đặt; file hiện có được giữ nguyên: {0}"] = "Could not save the settings; the existing file is kept: {0}",
         ["Mô hình dịch"] = "Translation model",
         ["Mô hình OPUS-MT · INT8 · CTranslate2."] = "OPUS-MT model · INT8 · CTranslate2.",
         ["Khi bật, bản dịch cần được bạn xem và lưu xác nhận trước khi đưa vào gói dịch."] = "When on, translations must be reviewed and confirmed by you before they go into the package.",
@@ -411,7 +425,7 @@ public static class UiText
         ["Tìm trong nhật ký"] = "Search the journal",
         ["Làm mới"] = "Refresh",
         ["Xóa tệp nhật ký {0}?"] = "Delete the journal file {0}?",
-        ["Không đọc được nhật ký: "] = "Could not read the journal: ",
+        ["Không đọc được nhật ký: {0}"] = "Could not read the journal: {0}",
         ["Chưa có tệp nhật ký"] = "No journal file yet",
         ["{0} bản ghi/trang"] = "{0} entries/page",
         ["{0} bản ghi · {1}/{2}"] = "{0} entries · {1}/{2}",
@@ -420,16 +434,15 @@ public static class UiText
         ["Cập nhật ngay"] = "Update now",
         ["Có bản cập nhật mới"] = "A new update is available",
         ["Cập nhật thành công"] = "Update successful",
-        ["Đóng "] = "Close ",
+        ["Đóng {0}"] = "Close {0}",
         ["Hủy tải cập nhật"] = "Cancel the update download",
         ["Có gì mới"] = "What's new",
         ["Tính năng mới"] = "New features",
         ["Bỏ qua phiên bản này"] = "Skip this version",
-        ["Không tải được cập nhật: "] = "Could not download the update: ",
-        ["Phát hành "] = "Released ",
+        ["Không tải được cập nhật: {0}"] = "Could not download the update: {0}",
+        ["Phát hành {0}"] = "Released {0}",
         ["Ghi chú phiên bản"] = "Release notes",
         ["Đã cập nhật thành công lên phiên bản v{0}."] = "Successfully updated to version v{0}.",
-        ["Phiên bản hiện tại {0}, "] = "Current version {0}, ",
         [" gói mới đã được kiểm tra."] = " the new package has been verified.",
         [" đã có phiên bản mới."] = " a newer version is available.",
         ["Chưa có ghi chú phát hành. Kiểm tra cập nhật để xem thông tin mới nhất."] = "No release notes yet. Check for updates to see the latest information.",
@@ -437,7 +450,7 @@ public static class UiText
         ["✓  VNText Studio đã cập nhật lên v{0} và sẵn sàng sử dụng."] = "✓  VNText Studio was updated to v{0} and is ready to use.",
         ["✓  Phiên bản v{0} đã sẵn sàng. Hãy khởi động lại để áp dụng."] = "✓  Version v{0} is ready. Restart to apply it.",
         ["Để sau"] = "Later",
-        ["Tải phiên bản "] = "Download version ",
+        ["Tải phiên bản {0}"] = "Download version {0}",
         ["Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng."] = "The download page could not be opened. Try again when the browser is ready.",
         ["Mở trang tải"] = "Open the download page",
         ["Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến."] = "No saved notes yet. Connect to the network and check for updates to load the history; you can then read it offline.",
@@ -534,6 +547,7 @@ public static class UiText
         ["Màu chữ (RGB)"] = "Text color (RGB)",
         ["Màu chữ RGB"] = "Text color RGB",
         ["Chế độ nền — chọn đúng một"] = "Background mode — choose exactly one",
+        ["Review cũ có nhiều chế độ nền — hãy chọn đúng một chế độ."] = "This older review has several background modes — choose exactly one.",
         ["Chế độ nền phẳng đã kiểm"] = "Flat background mode, checked",
         ["Chế độ thay chữ trong suốt"] = "Replace transparent text mode",
         ["Thay region bằng màu đặc"] = "Replace region with solid color",
@@ -818,16 +832,7 @@ public static class UiText
 
     private static readonly (string Vi, string En)[] DynamicPrefixes =
     [
-        ("Không mở được review: ", "Could not open the review: "), ("Đã lưu review riêng: ", "Review saved separately: "), ("Lưu review lỗi: ", "Saving the review failed: "),
-        ("Chưa hoàn tất: ", "Not finished: "), ("Không đọc được kết quả ảnh: ", "Could not read the image result: "),
         ("Windows OCR thất bại: ", "Windows OCR failed: "),
-    ];
-    private static readonly string[] SentenceKeys =
-    [
-        "Đã tạo gói ảnh locale Vietnamese. Cài vào bản sao game; cần chọn ngôn ngữ vietnamese trong game.",
-        "Đã cài ảnh vào bản sao game và kiểm hash đọc lại. Chưa xác nhận game đang chọn Vietnamese.",
-        "Đã gỡ đúng ảnh của giao dịch; giữ nguyên ảnh nguồn.", "Đã xử lý gói ảnh",
-        "Đã dựng ảnh từ bản dịch duyệt; mở preview để kiểm trước khi dùng. Ảnh nguồn giữ nguyên.",
     ];
     // (regex, English template, groups that are themselves app messages/labels)
     private static readonly (System.Text.RegularExpressions.Regex Pattern, string English, int[] Nested)[] DynamicPatterns =
@@ -845,40 +850,75 @@ public static class UiText
         (new(@"^OCR (\d+) region — cần sửa text/tọa độ, duyệt nền phẳng và bản dịch trước render\.$"), "OCR found {1} regions — edit the text/coordinates, approve the flat background and the translation before rendering.", []),
     ];
 
-    private static (System.Text.RegularExpressions.Regex Pattern, string English, int Holes)[]? _formatEntries;
-    private static (string Vi, string En)[]? _prefixEntries;
-    private static readonly object TableGate = new();
+    // ---- App-owned dynamic messages: a catalog FORMAT KEY + the raw arguments, never a lookup of the interpolated sentence ----
+    // The producer (view model/service) builds the visible Vietnamese text with Msg/Compose. The produced string instance is remembered
+    // together with its format key and raw arguments (by reference, so a user string that merely looks the same is never matched).
+    // At display time the format key is translated and formatted with the SAME raw arguments: paths, file names, user text, exception text
+    // and numbers are inserted as they are and are never searched in the catalog. Only an argument explicitly typed Key(...) is a catalog key.
+    private sealed record Produced(string Format, object?[]? Args, string[]? Parts);
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<string, Produced> ProducedMessages = new();
 
-    private static void EnsureDynamicTables()
+    /// <summary>An argument that is itself a catalog key (a UI label/state word), translated on its own before it is inserted.</summary>
+    public readonly record struct SemanticKey(string Vi);
+    public static SemanticKey Key(string vi) => new(vi);
+
+    // an argument is a catalog key only when typed Key(...), or itself a produced message (localized by its own format key); everything else is shown as it is
+    private static object? Shown(object? argument) => argument switch
     {
-        if (_formatEntries is not null) return;
-        lock (TableGate)
-        {
-            if (_formatEntries is not null) return;
-            var formats = new List<(string Key, System.Text.RegularExpressions.Regex Pattern, string English, int Holes)>();
-            var prefixes = new List<(string Vi, string En)>();
-            var hole = new System.Text.RegularExpressions.Regex(@"\{(\d+)\}");
-            foreach (var (key, english) in English)
-            {
-                var matches = hole.Matches(key);
-                if (matches.Count > 0)
-                {
-                    var pattern = new System.Text.StringBuilder("^");
-                    var last = 0;
-                    foreach (System.Text.RegularExpressions.Match m in matches)
-                    {
-                        pattern.Append(System.Text.RegularExpressions.Regex.Escape(key[last..m.Index])).Append("(.*?)");
-                        last = m.Index + m.Length;
-                    }
-                    pattern.Append(System.Text.RegularExpressions.Regex.Escape(key[last..])).Append('$');
-                    formats.Add((key, new System.Text.RegularExpressions.Regex(pattern.ToString(), System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.CultureInvariant), english, matches.Count));
-                }
-                else if (key.EndsWith(": ", StringComparison.Ordinal) || key.EndsWith(' '))
-                    prefixes.Add((key, english));
-            }
-            _prefixEntries = prefixes.OrderByDescending(p => p.Vi.Length).ToArray();
-            _formatEntries = formats.OrderByDescending(f => f.Key.Length).Select(f => (f.Pattern, f.English, f.Holes)).ToArray();
-        }
+        SemanticKey key => TranslateDynamic(key.Vi),
+        string text when ProducedMessages.TryGetValue(text, out _) => TranslateDynamic(text),
+        _ => argument,
+    };
+
+    /// <summary>Builds the Vietnamese text for <paramref name="format"/> (a catalog key with {n} holes) and remembers format + raw arguments.</summary>
+    public static string Msg(string format, params object?[] args)
+    {
+        var text = string.Format(System.Globalization.CultureInfo.CurrentCulture, format, args.Select(a => a is SemanticKey key ? key.Vi : a).ToArray());
+        if (text.Length > 0) ProducedMessages.AddOrUpdate(text, new Produced(format, args, null));
+        return text;
+    }
+
+    /// <summary>Concatenates message parts (each a Msg/Compose/catalog text) and remembers them, so each part is localized by its own format key.</summary>
+    public static string Compose(params string[] parts)
+    {
+        var text = string.Concat(parts);
+        if (text.Length > 0) ProducedMessages.AddOrUpdate(text, new Produced("", null, parts));
+        return text;
+    }
+
+    /// <summary>Joins message lines (each a Msg/Compose/catalog text); every line is localized by its own key.</summary>
+    public static string Lines(params string[] lines) => Join("\n", lines);
+
+    /// <summary>Joins parts with a separator and remembers the parts, so each is localized by its own format key.</summary>
+    public static string Join(string separator, IEnumerable<string> parts)
+    {
+        var list = new List<string>();
+        foreach (var part in parts) { if (list.Count > 0) list.Add(separator); list.Add(part); }
+        return Compose(list.ToArray());
+    }
+
+    /// <summary>First line and the rest of a message. A Lines/Join message splits at its own line parts, so both halves stay localizable; any other text splits at the first newline.</summary>
+    public static (string First, string Remainder) SplitFirstLine(string text)
+    {
+        if (ProducedMessages.TryGetValue(text, out var produced) && produced.Parts is { Length: >= 3 } parts && parts[1] == "\n" && parts[0].IndexOf('\n') < 0)
+            return (parts[0], Compose(parts[2..]));
+        var cut = text.IndexOf('\n');
+        return cut < 0 ? (text, "") : (text[..cut], text[(cut + 1)..]);
+    }
+
+    /// <summary>Localized text of a format key and its raw arguments (for bindings that carry the key in XAML and the arguments in the view model).</summary>
+    public static string Format(string format, params object?[] args)
+    {
+        var template = Language == "en" && English.TryGetValue(format, out var english) ? english : format;
+        return string.Format(System.Globalization.CultureInfo.CurrentCulture, template, args.Select(Shown).ToArray());
+    }
+
+    /// <summary>Exact catalog key, or an app-formatted duration ("2 giờ 5 phút"); anything else (user data) is returned untouched.</summary>
+    public static string TranslateSemantic(string text)
+    {
+        if (Language != "en" || string.IsNullOrEmpty(text)) return text;
+        if (English.TryGetValue(text, out var exact)) return exact;
+        return DurationText.IsMatch(text) ? TranslateEta(text) : text;
     }
 
     // ETA text is produced by ProgressEtaFormatter: "12 giây", "3 phút", "2 giờ 5 phút", "1 ngày 2 giờ 5 phút".
@@ -896,55 +936,44 @@ public static class UiText
         return converted;
     }
 
-    /// <summary>Display-time translation of app messages that contain numbers/labels. Vietnamese is returned untouched; user data, paths and
-    /// unknown (technical/Windows) text pass through unchanged because only whole known messages, known prefixes and anchored patterns match.</summary>
+    /// <summary>Display-time translation of app messages. Order: a message produced with Msg/Compose (format key + raw arguments) → whole catalog key →
+    /// app-formatted duration → the few anchored worker-protocol phrases below. Nothing else is touched: there is no substring, prefix or hole matching
+    /// of free text, and captured user data/paths/file names/technical text are never looked up in the catalog.</summary>
     public static string TranslateDynamic(string text)
     {
         if (Language != "en" || string.IsNullOrEmpty(text)) return text;
+        if (ProducedMessages.TryGetValue(text, out var produced))
+            return produced.Parts is { } parts ? string.Concat(parts.Select(TranslateDynamic)) : Format(produced.Format, produced.Args ?? []);
         if (English.TryGetValue(text, out var exact)) return exact;
         if (DurationText.IsMatch(text)) return TranslateEta(text);          // "12 giây", "2 giờ 5 phút" (elapsed/ETA values)
         foreach (var (vi, en) in DynamicPrefixes)
-            if (text.StartsWith(vi, StringComparison.Ordinal)) return en + TranslateDynamic(text[vi.Length..]);
-        foreach (var key in SentenceKeys)
-            if (text.Length > key.Length && text.StartsWith(key + " ", StringComparison.Ordinal)) return English[key] + text[key.Length..];
+            if (text.StartsWith(vi, StringComparison.Ordinal)) return en + text[vi.Length..];     // the tail (exception/worker text) stays as it is
         if (TranslateGateSummary(text) is { } gateSummary) return gateSummary;
-        EnsureDynamicTables();
-        foreach (var (pattern, english, holes) in _formatEntries!)
-        {
-            var found = pattern.Match(text);
-            if (!found.Success) continue;
-            var filled = english;
-            for (var hole = 0; hole < holes; hole++)
-                filled = filled.Replace("{" + hole + "}", TranslateDynamic(found.Groups[hole + 1].Value));
-            return filled;
-        }
-        foreach (var (viPrefix, enPrefix) in _prefixEntries!)
-            if (text.Length > viPrefix.Length && text.StartsWith(viPrefix, StringComparison.Ordinal))
-                return enPrefix + TranslateDynamic(text[viPrefix.Length..]);
         foreach (var (pattern, english, nested) in DynamicPatterns)
         {
             var match = pattern.Match(text);
             if (!match.Success) continue;
-            var result = english;
+            var values = new string[match.Groups.Count];
             for (var group = 1; group < match.Groups.Count; group++)
             {
                 var value = match.Groups[group].Value;
-                if (Array.IndexOf(nested, group) >= 0) value = TranslateDynamic(value);
+                if (Array.IndexOf(nested, group) >= 0) value = TranslateSemantic(value);
                 else if (english.StartsWith("{1}% • Step: ", StringComparison.Ordinal) && group >= 3)
                     value = group == 3 ? (value.Length > 0 ? " • Item: " + value : "") : (value.Length > 0 ? " • ETA: " + TranslateEta(value) : "");
                 else if (group == 2 && english.Contains("not confirmed{2}")) value = value.Length > 0 ? $"; inventory incomplete because {value} archives failed or are unsupported" : "";
-                result = result.Replace("{" + group + "}", value);
+                values[group] = value;
             }
-            return result.Trim();
+            // one pass over the template: a captured value that itself contains "{2}" is never substituted again
+            return System.Text.RegularExpressions.Regex.Replace(english, @"\{(\d+)\}", hole => int.Parse(hole.Groups[1].Value) < values.Length ? values[int.Parse(hole.Groups[1].Value)] : hole.Value).Trim();
         }
         if (text.Contains('\n'))
         {
-            // a multi-line message with no entry of its own is translated line by line (each line by exact entry, format key or prefix)
+            // a multi-line message made of known whole lines (each line an exact key or a produced message) is translated line by line
             var lines = text.Split('\n');
             var changed = false;
             for (var i = 0; i < lines.Length; i++)
             {
-                var translated = TranslateDynamic(lines[i]);
+                var translated = ProducedMessages.TryGetValue(lines[i], out _) ? TranslateDynamic(lines[i]) : TranslateSemantic(lines[i]);
                 if (!string.Equals(translated, lines[i], StringComparison.Ordinal)) { lines[i] = translated; changed = true; }
             }
             if (changed) return string.Join('\n', lines);
@@ -971,7 +1000,7 @@ public static class UiText
         var items = m.Groups[11].Value.Split("; ").Select(item =>
         {
             var colon = item.LastIndexOf(": ", StringComparison.Ordinal);
-            if (colon > 0) return TranslateDynamic(item[..colon]) + item[colon..];
+            if (colon > 0) return TranslateSemantic(item[..colon]) + item[colon..];
             var more = System.Text.RegularExpressions.Regex.Match(item, @"^… \(\+(\d+) nhóm\)$");
             return more.Success ? $"… (+{more.Groups[1].Value} groups)" : item;
         });

@@ -138,6 +138,7 @@ internal static partial class Program
                 AssertTrue(((FrameworkElement)panel.FindName("RegionDetailsForm")).IsVisible);
                 AssertFalse(((FrameworkElement)panel.FindName("RegionDetailsHint")).IsVisible);
                 System.Windows.Controls.Primitives.ToggleButton C(string name) => (System.Windows.Controls.Primitives.ToggleButton)panel.FindName(name);
+                void Pick(string name) => C(name).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));   // the user's click on a mode
                 TextBox T(string name) => (TextBox)panel.FindName(name);
                 AssertEqual("10", T("RegionXBox").Text);
                 AssertEqual("200", T("RegionWidthBox").Text);
@@ -145,12 +146,12 @@ internal static partial class Program
                 AssertTrue(region.NoModeChosen);
                 AssertTrue(((FrameworkElement)panel.FindName("NoModeHint")).IsVisible);
                 foreach (var m in new[] { "FlatModeBox", "TransparentModeBox", "SolidModeBox", "CloneModeBox" }) AssertFalse(C(m).IsChecked == true);
-                C("FlatModeBox").IsChecked = true;
+                Pick("FlatModeBox");
                 C("ApproveBox").IsChecked = true;
                 AssertTrue(region.FlatBackgroundApproved && region.Approved);
                 AssertEqual("Nền phẳng", region.ModeSummary);
                 AssertFalse(((FrameworkElement)panel.FindName("NoModeHint")).IsVisible);
-                C("CloneModeBox").IsChecked = true;                      // changing the mode switches (never two) and drops the approval
+                Pick("CloneModeBox");                      // changing the mode switches (never two) and drops the approval
                 AssertTrue(region.CloneBackgroundApproved);
                 AssertFalse(region.FlatBackgroundApproved || region.TransparentTextApproved || region.ReplacementBackgroundApproved);
                 AssertFalse(region.Approved);
@@ -159,7 +160,7 @@ internal static partial class Program
                 foreach (var (box, check) in new (string, Func<bool>)[] { ("FlatModeBox", () => region.FlatBackgroundApproved), ("TransparentModeBox", () => region.TransparentTextApproved), ("SolidModeBox", () => region.ReplacementBackgroundApproved), ("CloneModeBox", () => region.CloneBackgroundApproved) })
                 {
                     C("ApproveBox").IsChecked = false;
-                    C(box).IsChecked = true;
+                    Pick(box);
                     AssertTrue(check());
                     AssertEqual(1, new[] { region.FlatBackgroundApproved, region.TransparentTextApproved, region.ReplacementBackgroundApproved, region.CloneBackgroundApproved }.Count(x => x));
                     C("ApproveBox").IsChecked = true;
@@ -175,13 +176,32 @@ internal static partial class Program
                 AssertEqual("Chọn nhiều chế độ — cần đúng một", legacy.ModeSummary);
                 AssertFalse(legacy.NoModeChosen);
                 region.FlatBackgroundApproved = false; region.TransparentTextApproved = false; region.ReplacementBackgroundApproved = false; region.CloneBackgroundApproved = false;
+                // The SAME ambiguous state bound to the real controls: selecting such a region (and switching between regions) must not
+                // uncheck/auto-choose anything through the radio group, and must keep the approval off until a human chooses.
+                var ambiguous = new ImageTextRegion { Id = "legacy-two-modes", Box = new[] { 5, 5, 60, 20 }, SourceText = "Hello" };
+                ambiguous.FlatBackgroundApproved = true; ambiguous.CloneBackgroundApproved = true;
+                vm.ImageRegions.Add(ambiguous);
+                vm.SelectedImageRegion = ambiguous; panel.UpdateLayout();
+                AssertTrue(ambiguous.FlatBackgroundApproved && ambiguous.CloneBackgroundApproved);         // binding did not mutate the loaded flags
+                AssertFalse(ambiguous.TransparentTextApproved || ambiguous.ReplacementBackgroundApproved || ambiguous.Approved);
+                AssertEqual("Chọn nhiều chế độ — cần đúng một", ambiguous.ModeSummary);
+                AssertTrue(((FrameworkElement)panel.FindName("ModeAmbiguousHint")).IsVisible);
+                vm.SelectedImageRegion = region; panel.UpdateLayout();                                      // switch away and back
+                vm.SelectedImageRegion = ambiguous; panel.UpdateLayout();
+                AssertTrue(ambiguous.FlatBackgroundApproved && ambiguous.CloneBackgroundApproved && !ambiguous.Approved);
+                Pick("SolidModeBox");   // the human's explicit choice
+                AssertTrue(ambiguous.ReplacementBackgroundApproved && !ambiguous.FlatBackgroundApproved && !ambiguous.CloneBackgroundApproved && !ambiguous.TransparentTextApproved);
+                AssertFalse(ambiguous.Approved);
+                AssertFalse(((FrameworkElement)panel.FindName("ModeAmbiguousHint")).IsVisible);
+                AssertTrue(C("SolidModeBox").IsChecked == true && C("FlatModeBox").IsChecked != true && C("CloneModeBox").IsChecked != true);
+                vm.ImageRegions.Remove(ambiguous); vm.SelectedImageRegion = region; panel.UpdateLayout();
                 // Editing any reviewed value through the form clears approval and every mode choice.
                 T("RegionXBox").Text = "20";
                 AssertEqual(20, region.X);
                 AssertFalse(region.Approved);
                 AssertFalse(region.FlatBackgroundApproved);
                 AssertEqual("Chưa chọn chế độ nền", region.ModeSummary);
-                C("FlatModeBox").IsChecked = true; C("ApproveBox").IsChecked = true;
+                Pick("FlatModeBox"); C("ApproveBox").IsChecked = true;
                 AssertTrue(region.Approved);
                 region.Translation = "Trò chơi mới";                   // translation edit (grid cell) also invalidates
                 AssertFalse(region.Approved);

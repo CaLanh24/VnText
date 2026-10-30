@@ -283,7 +283,7 @@ public sealed partial class MainViewModel
         catch (Exception ex)
         {
             CsvValidationOk = false;
-            CsvValidationMessage = $"Không thể cập nhật trạng thái CSV: {ex.Message}";
+            CsvValidationMessage = UiText.Msg("Không thể cập nhật trạng thái CSV: {0}", ex.Message);
             ReadyForPatch = false;
             return;
         }
@@ -311,7 +311,7 @@ public sealed partial class MainViewModel
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
         var progress = WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(csv)!);
         var result = !progress.IsComplete
-            ? PatchPreflightResult.Fail(csv, $"Dịch chưa hoàn tất — pending {progress.Pending}, review {progress.ReviewOnly}, blocked {progress.Blocked}. Chưa thể tạo Patch.")
+            ? PatchPreflightResult.Fail(csv, UiText.Msg("Dịch chưa hoàn tất — pending {0}, review {1}, blocked {2}. Chưa thể tạo Patch.", progress.Pending, progress.ReviewOnly, progress.Blocked))
             : PatchPreflightService.Run(csv, manifest);
         _patchSourceStale = false;
         PatchPreflightOk = result.Ok;
