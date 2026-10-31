@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -109,7 +109,7 @@ internal static partial class Program
                 Scan("csv loaded + preview", CsvScope());
                 vm.ToggleCsvBulkPreviewDetailCommand.Execute(null); vm.ToggleCsvBulkCommand.Execute(null); Scan("csv tools open + examples", CsvScope());
                 rows[2].Translation = "Cảm ơn nhiều."; Scan("csv dirty", CsvScope());
-                vm.TestSetCsvSaveError("file đã đổi bên ngoài"); Scan("csv save error", CsvScope());
+                vm.TestSetCsvSaveError("file đã đổi bên ngoài"); vm.ShowCompletionToast(new CompletionNotification("Lưu thất bại", vm.CsvEditorSaveError, "error")); Scan("csv save error", CsvScope());
                 vm.Language = "vi"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Không lưu được:", StringComparison.Ordinal), "Vietnamese save-error toast updates in place");
                 vm.Language = "en"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Could not save:", StringComparison.Ordinal), "English save-error toast updates in place");
                 Scan("csv toast hot language switch", CsvScope());
@@ -136,6 +136,21 @@ internal static partial class Program
                 Scan("release notes", notes);
                 vm.Language = "vi"; PumpFixture(150); AssertEqual("Ghi chú phát hành", notes.Title);
                 vm.Language = "en"; PumpFixture(150); Scan("release notes hot language switch", notes);
+                vm.ReleaseNotesHistory.Clear();
+                var rawNotesEntry = new ReleaseNotesCacheEntry { Version = "0.1.14", Notes = "Xóa\nChưa bắt đầu\n**Xóa**" };
+                vm.ReleaseNotesHistory.Add(rawNotesEntry); PumpFixture(150);
+                void CheckRawNotes()
+                {
+                    var blocks = FindVisualChildren<TextBlock>(notes).ToArray();
+                    string BodyText(TextBlock block) => string.Concat(block.Inlines.OfType<System.Windows.Documents.Run>().Select(run => run.Text));
+                    Require(blocks.Count(b => BodyText(b) == "Xóa") == 2, "raw notes content: " + string.Join(" | ", blocks.Select(b => BodyText(b)).Take(20)));
+                    AssertEqual(1, blocks.Count(b => BodyText(b) == "Chưa bắt đầu"));
+                    Require(blocks.Any(b => BodyText(b) == "Xóa" && b.Inlines.OfType<System.Windows.Documents.Run>().Any(r => r.FontWeight == FontWeights.SemiBold)), "raw notes keep emphasis");
+                    AssertEqual("Xóa\nChưa bắt đầu\n**Xóa**", rawNotesEntry.Notes);
+                }
+                CheckRawNotes();
+                vm.Language = "vi"; PumpFixture(120); CheckRawNotes();
+                vm.Language = "en"; PumpFixture(120); CheckRawNotes(); states++;
                 notes.Close();
                 foreach (var (message, caption, buttons) in new[]
                 {
