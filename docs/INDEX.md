@@ -41,7 +41,7 @@
 | [docs/RELEASE_0.1.11.md](RELEASE_0.1.11.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.12.md](RELEASE_0.1.12.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ĐÃ PHÁT HÀNH v0.1.13 (đã đóng; lịch sử) |
-| [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ĐÃ PHÁT HÀNH v0.1.14 (triage 9 finding UI QA, acceptance, native, cleanup); xem AI_STATE |
+| [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ĐÃ PHÁT HÀNH v0.1.14 không đổi; test-only style-fixed10 sửa F1–F7 fixed8, QA pending; xem AI_STATE và ledger |
 | [docs/RELEASE_0.1.6.md](RELEASE_0.1.6.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.7.md](RELEASE_0.1.7.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.8.md](RELEASE_0.1.8.md) | HISTORY — release/authority cũ, không tự mở lại |
