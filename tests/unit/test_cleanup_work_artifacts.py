@@ -2493,7 +2493,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertIn("8cdeeecae1db837ea5f71ba39e653ea18493b9b8", auth_text)
         self.assertIn("no push, release, tag or updater change", auth_text)
         self.assertEqual((task_id, "0.1.14", auth_text), cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[auth_id])
-        earlier = [key for key in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS if key not in {auth_id, cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID, cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3}]
+        earlier = [key for key in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS if key not in {auth_id, cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID, cleanup.RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2}]
         self.assertTrue(all(cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[key][0] != task_id for key in earlier))
         mine = {"owner_rebaseline_authorization_id": auth_id, "owner_rebaseline_authorization": auth_text}
 
