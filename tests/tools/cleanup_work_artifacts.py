@@ -398,8 +398,20 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2 = (
     "All prior approvals remain consumed, full chain history/CAS/inventory/rollback/no-writer guards stay, "
     "no files are deleted and no validator or protection is relaxed; the ordinary eight-hop limit is unchanged."
 )
+# Third, independent single-use authority for release 0.1.14 (the second chain ended at epoch-20261031-fixed10-014-9248f97 after the eighth
+# ordinary hop).  The Owner's DIRECT reply is recorded verbatim; it never reuses an earlier 0.1.13 or 0.1.14 approval.
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3 = "owner-direct-20261031-cho-phep-reset-metadata-fixed11-014"
+RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
+    "Owner 2026-10-31 answered directly 'cho phep' to the question 'reset metadata một lần để build app fixed11; không xóa dữ liệu, không nới guard, "
+    "không release', authorizing ONE additional no-delete release-0.1.14 epoch metadata rebaseline, bounded to the four fixed10 native-QA findings R1-R4 "
+    "(source 8cdeeecae1db837ea5f71ba39e653ea18493b9b8 and its authority/focused-prerequisite descendants), the standard focused gate and ONE local "
+    "DEV candidate build (style-fixed11-0.1.14). Version stays 0.1.14; no push, release, tag or updater change. All prior approvals remain consumed, "
+    "full chain history/CAS/inventory/rollback/clean-source/no-writer guards stay, no files are deleted, no validator or protection is relaxed, "
+    "and the ordinary eight-hop limit and the approval-history depth bound are unchanged."
+)
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2),
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
         RELEASE_TASK_BUDGET_ID, "0.1.5", RELEASE_TASK_EPOCH_REBASELINE_APPROVAL
