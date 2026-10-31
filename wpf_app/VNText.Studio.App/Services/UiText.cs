@@ -181,6 +181,7 @@ public static class UiText
         ["Sau: {0}"] = "After: {0}",
         ["Thay thế {0} lần trong {1} dòng?"] = "Replace {0} times in {1} rows?",
         ["Tìm: {0}"] = "Find: {0}",
+        ["Tìm: {0}\nThay bằng: {1}"] = "Find: {0}\nReplace with: {1}",
         ["Thay bằng: {0}"] = "Replace with: {0}",
         ["Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên."] = "Only the Translation column is edited; the Source/key columns stay unchanged.",
         ["Xóa cột translation của {0} dòng bị Patch Gate chặn?"] = "Clear the translation column of {0} rows blocked by the Patch Gate?",
@@ -875,7 +876,7 @@ public static class UiText
     public static string Msg(string format, params object?[] args)
     {
         var text = string.Format(System.Globalization.CultureInfo.CurrentCulture, format, args.Select(a => a is SemanticKey key ? key.Vi : a).ToArray());
-        if (text.Length > 0) ProducedMessages.AddOrUpdate(text, new Produced(format, args, null));
+        if (text.Length > 0) { text = new string(text.AsSpan()); ProducedMessages.Add(text, new Produced(format, args, null)); }
         return text;
     }
 
@@ -883,7 +884,7 @@ public static class UiText
     public static string Compose(params string[] parts)
     {
         var text = string.Concat(parts);
-        if (text.Length > 0) ProducedMessages.AddOrUpdate(text, new Produced("", null, parts));
+        if (text.Length > 0) { text = new string(text.AsSpan()); ProducedMessages.Add(text, new Produced("", null, parts)); }
         return text;
     }
 
@@ -1008,7 +1009,19 @@ public static class UiText
         return head + ". " + string.Join("; ", items);
     }
 
-    public static void SetLanguage(string language) => Language = language == "en" ? "en" : "vi";
+    /// <summary>Registers an application-owned message for a property; user editors and report bodies are never registered.</summary>
+    public static void SetAppText(DependencyObject element, DependencyProperty property, string message)
+    {
+        AppMessages.GetOrCreateValue(element)[property] = message;
+        element.SetCurrentValue(property, TranslateDynamic(message));
+    }
+    private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> AppMessages = new();
+    public static void SetLanguage(string language)
+    {
+        Language = language == "en" ? "en" : "vi";
+        if (Application.Current is { } app && app.Dispatcher.CheckAccess() && !app.Dispatcher.HasShutdownStarted)
+            foreach (var window in app.Windows.OfType<Window>().ToArray()) Apply(window);
+    }
     public static void Install()
     {
         if (_installed) return;
@@ -1029,6 +1042,8 @@ public static class UiText
     }
     private static void ApplyElement(DependencyObject element)
     {
+        if (AppMessages.TryGetValue(element, out var messages))
+            foreach (var (property, message) in messages) element.SetCurrentValue(property, TranslateDynamic(message));
         if (element is TextBlock) Literal(element, TextBlock.TextProperty);
         if (element is ContentControl) Literal(element, ContentControl.ContentProperty);
         if (element is HeaderedContentControl) Literal(element, HeaderedContentControl.HeaderProperty);
@@ -1058,6 +1073,7 @@ public static class UiText
     private static readonly ConditionalWeakTable<DataGrid, object> RowHooked = new();
     private static void Literal(DependencyObject element, DependencyProperty property)
     {
+        if (AppMessages.TryGetValue(element, out var messages) && messages.ContainsKey(property)) return;
         if (System.Windows.Data.BindingOperations.IsDataBound(element, property)) return;
         var originals = Originals.GetOrCreateValue(element);
         if (!originals.TryGetValue(property, out var original))

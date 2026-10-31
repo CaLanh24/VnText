@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
@@ -2173,6 +2173,13 @@ internal static partial class Program
                 UiText.SetLanguage("en"); AssertEqual("Before: " + raw, UiText.TranslateDynamic(produced));
             }
 
+            // A one-part composition must not overwrite the provenance of the same string and point to itself.
+            var original = UiText.Msg("Trước: {0}", "Xóa");
+            var composed = UiText.Compose(original);
+            AssertFalse(ReferenceEquals(original, composed));
+            AssertEqual("Before: Xóa", UiText.TranslateDynamic(composed));
+            AssertEqual("Before: Xóa", UiText.TranslateDynamic(UiText.SplitFirstLine(UiText.Lines("Header", composed)).Remainder));
+
             // worker-owned image phrases: progress line, errors, prefixed raw technical tails
             AssertEqual("45% • Step: OCR images • Item: Trò chơi.png • ETA: 2 minutes", UiText.TranslateDynamic("45% • Bước: OCR ảnh • Mục: Trò chơi.png • ETA: 2 phút"));
             AssertEqual("10% • Step: Translate image", UiText.TranslateDynamic("10% • Bước: Dịch ảnh"));
@@ -2183,7 +2190,7 @@ internal static partial class Program
             AssertEqual("Windows OCR failed: 0x80070005 Access is denied", UiText.TranslateDynamic("Windows OCR thất bại: 0x80070005 Access is denied"));      // the technical tail stays raw
             AssertEqual("Images: 3 draft translations, 1 untranslated. C:\\Out\\Ảnh", UiText.TranslateDynamic("Ảnh: 3 bản dịch nháp, 1 chưa dịch. C:\\Out\\Ảnh"));   // the path stays raw
             AssertEqual("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG", UiText.TranslateDynamic("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG"));
-            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", "Access to the path 'C:\\x' is denied."))));
+            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", "Access to the path 'C:\\x' is denied.")));
         }
         finally { UiText.SetLanguage(previous); }
     }

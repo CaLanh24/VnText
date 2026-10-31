@@ -67,6 +67,15 @@ internal static partial class Program
                 var window = new MainWindow(vm, new FixtureUpdatePresentation());
                 window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 720; window.Show(); window.UpdateLayout(); PumpFixture(250);
                 vm.Language = "en"; window.UpdateLayout(); PumpFixture(300);
+                void VerifySidebarNames()
+                {
+                    foreach (var (route, label) in new[] { ("extract", "Lấy text"), ("translate", "Dịch tự động"), ("editcsv", "Sửa CSV"), ("patch", "Tạo patch"), ("journal", "Nhật ký"), ("settings", "Cài đặt") })
+                    {
+                        var button = FindVisualChildren<Button>(window).Single(b => ReferenceEquals(b.Command, vm.NavigateTabCommand) && b.CommandParameter as string == route);
+                        AssertEqual(UiText.Translate(label), new System.Windows.Automation.Peers.ButtonAutomationPeer(button).GetName());
+                    }
+                }
+                VerifySidebarNames();
                 var offenders = new SortedDictionary<string, SortedSet<string>>();
                 var states = 0;
                 void Scan(string state, DependencyObject scope)
@@ -117,9 +126,13 @@ internal static partial class Program
                 var regexToggle = FindVisualChildren<ToggleButton>(journal).First(b => b.Content is string);
                 var query = FindVisualChildren<TextBox>(journal).First(b => !b.IsReadOnly);
                 query.Text = "["; regexToggle.IsChecked = true; PumpFixture(150); Scan("journal regex error", journal);
+                vm.Language = "vi"; PumpFixture(150); AssertEqual("Nhật ký — Khắc phục lỗi", journal.Title);
+                vm.Language = "en"; PumpFixture(150); Scan("journal hot language switch", journal);
                 journal.Close();
                 var notes = new UpdateWindow(window, new FixtureUpdatePresentation(), notesOnly: true); notes.Show(); notes.UpdateLayout(); PumpFixture(200);
                 Scan("release notes", notes);
+                vm.Language = "vi"; PumpFixture(150); AssertEqual("Ghi chú phát hành", notes.Title);
+                vm.Language = "en"; PumpFixture(150); Scan("release notes hot language switch", notes);
                 notes.Close();
                 foreach (var (message, caption, buttons) in new[]
                 {
@@ -132,12 +145,27 @@ internal static partial class Program
                     var dialog = AppDialogService.Build(message, caption, buttons, MessageBoxImage.Question, window, _ => { });
                     dialog.Show(); dialog.UpdateLayout(); PumpFixture(120);
                     Scan("dialog: " + (caption.Length > 24 ? caption[..24] : caption), dialog);
+                    var dialogBody = FindVisualChildren<TextBox>(dialog).Single();
+                    vm.Language = "vi"; PumpFixture(120);
+                    AssertEqual(caption, dialog.Title); AssertEqual(message, dialogBody.Text);
+                    vm.Language = "en"; PumpFixture(120);
+                    AssertEqual(UiText.TranslateDynamic(caption), dialog.Title); AssertEqual(UiText.TranslateDynamic(message), dialogBody.Text);
+                    Scan("dialog hot switch: " + caption, dialog);
                     dialog.Close();
                 }
+                var rawMessage = UiText.Msg("Tìm: {0}\nThay bằng: {1}", "Xóa", "Chưa bắt đầu");
+                var rawDialog = AppDialogService.Build(rawMessage, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question, window, _ => { });
+                rawDialog.Show(); PumpFixture(100);
+                var rawBody = FindVisualChildren<TextBox>(rawDialog).Single();
+                AssertEqual("Find: Xóa\nReplace with: Chưa bắt đầu", rawBody.Text);
+                vm.Language = "vi"; PumpFixture(100); AssertEqual("Tìm: Xóa\nThay bằng: Chưa bắt đầu", rawBody.Text);
+                vm.Language = "en"; PumpFixture(100); AssertEqual("Find: Xóa\nReplace with: Chưa bắt đầu", rawBody.Text);
+                rawDialog.Close();
                 // Vietnamese stays the original text after switching back
                 vm.Language = "vi"; window.UpdateLayout(); PumpFixture(250);
                 var statusText = FindVisualChildren<TextBlock>(window).Select(b => b.Text).ToList();
                 Require(statusText.Contains("Tìm và thay thế bản dịch") || statusText.Contains("Dịch tự động"), "Vietnamese labels are back after switching language");
+                VerifySidebarNames();
                 var first = new SortedDictionary<string, string>(StringComparer.Ordinal);
                 foreach (var (state, set) in offenders) foreach (var s in set) first.TryAdd(s, state);
                 var summary = string.Join("\n", first.Select(kv => "[" + kv.Value + "] " + kv.Key.Replace("\n", "\\n")));

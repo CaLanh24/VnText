@@ -44,8 +44,6 @@ internal static class AppDialogService
         Window? owner,
         Action<MessageBoxResult> setResult)
     {
-        message = UiText.TranslateDynamic(message);
-        caption = UiText.TranslateDynamic(caption);
         var app = Application.Current;
         var ink = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black;
         var muted = app?.TryFindResource("MutedBrush") as Brush ?? Brushes.DimGray;
@@ -55,7 +53,7 @@ internal static class AppDialogService
         var accent = app?.TryFindResource(accentKey) as Brush ?? Brushes.SteelBlue;
         var body = new StackPanel();
         body.Children.Add(new Border { Height = 3, Width = 40, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(2), Background = accent, Margin = new Thickness(0, 0, 0, 12) });
-        body.Children.Add(new TextBox
+        var messageBox = new TextBox
         {
             Text = message,
             IsReadOnly = true,
@@ -67,12 +65,14 @@ internal static class AppDialogService
             BorderBrush = Brushes.Transparent,
             CaretBrush = muted,
             IsTabStop = true,
-        });
+        };
+        UiText.SetAppText(messageBox, TextBox.TextProperty, message);
+        body.Children.Add(messageBox);
         var dialog = new AppDialogWindow(owner, caption, body);
         dialog.OnDismiss = () => setResult(SafeDismissResult(buttons));
         foreach (var (specLabel, result, primary, isDefault) in ButtonSpecs(buttons))
         {
-            var label = UiText.Translate(specLabel);
+            var label = specLabel;
             var captured = result;
             dialog.AddButton(label, () => setResult(captured), primary, isDefault);
         }

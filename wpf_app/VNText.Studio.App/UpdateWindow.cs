@@ -44,7 +44,7 @@ internal sealed class UpdateWindow : Window
     internal UpdateWindow(MainWindow owner, IUpdatePresentation source, bool notesOnly = false, string? successVersion = null)
     {
         _source = source; _notesOnly = notesOnly; _successVersion = successVersion;
-        Owner = owner; Title = UiText.Translate(notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio");
+        Owner = owner; UiText.SetAppText(this, TitleProperty, notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio");
         Width = notesOnly ? 880 : 620; SizeToContent = SizeToContent.Height;
         if (notesOnly) { Height = Math.Max(280, Math.Min(720, owner.ActualHeight - 24)); SizeToContent = SizeToContent.Manual; }
         MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = Math.Max(300, owner.ActualHeight - 24);
@@ -159,6 +159,7 @@ internal sealed class UpdateWindow : Window
     }
     private void Changed(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainViewModel.Language)) _renderedNotes = null;
         if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(Refresh)); return; } Refresh();
     }
     private void HistoryChanged(object? sender, NotifyCollectionChangedEventArgs e) { _renderedNotes = null; Changed(sender, new PropertyChangedEventArgs("ReleaseNotesHistory")); }
@@ -257,7 +258,7 @@ internal sealed class UpdateWindow : Window
                 download.Click += (_, _) =>
                 {
                     try { Process.Start(new ProcessStartInfo(entry.DownloadUrl) { UseShellExecute = true }); }
-                    catch { AppDialogService.Show(UiText.Translate("Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng."), UiText.Translate("Mở trang tải"), MessageBoxButton.OK, MessageBoxImage.Information); }
+                    catch { AppDialogService.Show("Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng.", "Mở trang tải", MessageBoxButton.OK, MessageBoxImage.Information); }
                 };
                 Grid.SetColumn(download, 1); header.Children.Add(download);
             }

@@ -27,7 +27,7 @@ internal sealed class JournalWindow : Window
     private bool _loading;
     internal JournalWindow(MainWindow owner,MainViewModel vm)
     {
-        _store=vm.JournalStore;_vm=vm;Owner=owner;Title=UiText.Translate("Nhật ký — Khắc phục lỗi");
+        _store=vm.JournalStore;_vm=vm;Owner=owner;UiText.SetAppText(this,TitleProperty,"Nhật ký — Khắc phục lỗi");
         Width=956;Height=500;MaxWidth=Math.Max(600,owner.ActualWidth-30);MaxHeight=Math.Max(400,owner.ActualHeight-30);
         WindowStartupLocation=WindowStartupLocation.CenterOwner;WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.NoResize;
         AllowsTransparency=true;Background=Brushes.Transparent;ShowInTaskbar=false;FontFamily=owner.FontFamily;FontSize=13;
@@ -130,7 +130,16 @@ internal sealed class JournalWindow : Window
             if(panel is not null){overlay=new Border{Background=new SolidColorBrush(AppDialogWindow.BackdropColor),IsHitTestVisible=false};Grid.SetRowSpan(overlay,20);Grid.SetColumnSpan(overlay,20);Panel.SetZIndex(overlay,int.MaxValue);panel.Children.Add(overlay);}
             Safe(Refresh);
         };
-        Closed+=(_,_)=>{if(overlay is not null)panel?.Children.Remove(overlay);owner.Effect=previous;};
+        void LanguageChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName!=nameof(MainViewModel.Language))return;
+            var selectedLevel=_level.SelectedIndex;var previousPage=_page;_loading=true;
+            try{_level.ItemsSource=new[]{"Tất cả","Thông tin","Cảnh báo","Lỗi","Debug"}.Select(UiText.Translate).ToArray();_level.SelectedIndex=selectedLevel;}
+            finally{_loading=false;}
+            _page=previousPage;UiText.Apply(this);Safe(Render);
+        }
+        vm.PropertyChanged+=LanguageChanged;
+        Closed+=(_,_)=>{vm.PropertyChanged-=LanguageChanged;if(overlay is not null)panel?.Children.Remove(overlay);owner.Effect=previous;};
         PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape){Close();e.Handled=true;}};
     }
     private void Safe(Action action)

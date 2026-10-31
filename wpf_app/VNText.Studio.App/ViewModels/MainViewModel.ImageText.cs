@@ -121,7 +121,7 @@ public sealed partial class MainViewModel
             ? "Chưa có báo cáo OCR trong gói. Bấm “Tìm ảnh từ thư mục game”, chọn ảnh rồi OCR."
             : UiText.Msg("Gói có {0:N0} ảnh: {1:N0} đã OCR, {2:N0} bản dịch nháp, {3:N0} chưa OCR được (cần xem tay). Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói).", images.Total, images.OcrReady, images.TranslatedDrafts, images.Total - images.OcrReady - images.TranslatedDrafts);
     }
-    private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException("Chọn thư mục xuất trước.") : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
+    private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException(UiText.Msg("Chọn thư mục xuất trước.")) : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
     {
         Raise(nameof(ImageGridEnabled));
@@ -259,21 +259,21 @@ public sealed partial class MainViewModel
     {
         try
         {
-            if (new FileInfo(path).Length > 2 * 1024 * 1024) throw new InvalidDataException("Review ảnh vượt 2 MiB.");
-            var document = JsonSerializer.Deserialize<ImageTextDocument>(File.ReadAllText(path), ImageJson) ?? throw new InvalidDataException("Review rỗng.");
+            if (new FileInfo(path).Length > 2 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Review ảnh vượt 2 MiB."));
+            var document = JsonSerializer.Deserialize<ImageTextDocument>(File.ReadAllText(path), ImageJson) ?? throw new InvalidDataException(UiText.Msg("Review rỗng."));
             if (document.Schema != 1 || document.Width <= 0 || document.Height <= 0 || document.Regions is null || document.Regions.Count > 500
                 || document.Regions.Any(r => r.Box is null || r.Box.Length != 4 || r.Box[0] < 0 || r.Box[1] < 0 || r.Box[2] <= 0 || r.Box[3] <= 0
                     || (long)r.Box[0] + r.Box[2] > document.Width || (long)r.Box[1] + r.Box[3] > document.Height))
-                throw new InvalidDataException("Schema/region không hợp lệ.");
+                throw new InvalidDataException(UiText.Msg("Schema/region không hợp lệ."));
             var sourcePath = Path.GetFullPath(document.SourcePath);
             if (!File.Exists(sourcePath) || new FileInfo(sourcePath).Length > 32 * 1024 * 1024)
-                throw new InvalidDataException("Ảnh nguồn không tồn tại hoặc vượt 32 MiB.");
+                throw new InvalidDataException(UiText.Msg("Ảnh nguồn không tồn tại hoặc vượt 32 MiB."));
             var sourceBytes = File.ReadAllBytes(sourcePath);
             if (sourceBytes.Length > 32 * 1024 * 1024 || !Convert.ToHexString(SHA256.HashData(sourceBytes)).Equals(document.SourceSha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("Ảnh nguồn đã đổi hoặc hash review không khớp.");
+                throw new InvalidDataException(UiText.Msg("Ảnh nguồn đã đổi hoặc hash review không khớp."));
             var sourcePreview = LoadImagePreview(sourceBytes);
             if (sourcePreview.PixelWidth != document.Width || sourcePreview.PixelHeight != document.Height)
-                throw new InvalidDataException("Kích thước ảnh nguồn không khớp review.");
+                throw new InvalidDataException(UiText.Msg("Kích thước ảnh nguồn không khớp review."));
             ClearImageReviewState();
             ImagePath = sourcePath;
             _imageDocument = document;
@@ -295,15 +295,15 @@ public sealed partial class MainViewModel
     }
     private static BitmapSource LoadImagePreview(string path)
     {
-        if (!File.Exists(path)) throw new FileNotFoundException("Không tìm thấy ảnh nguồn/preview.", path);
-        if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException("Preview vượt 32 MiB.");
+        if (!File.Exists(path)) throw new FileNotFoundException(UiText.Msg("Không tìm thấy ảnh nguồn/preview."), path);
+        if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Preview vượt 32 MiB."));
         return LoadImagePreview(File.ReadAllBytes(path));
     }
     private static BitmapSource LoadImagePreview(byte[] bytes)
     {
         using var stream = new MemoryStream(bytes, writable: false);
         var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-        if (decoder.Frames.Count == 0 || (long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException("Preview không hợp lệ hoặc quá 16 triệu pixel.");
+        if (decoder.Frames.Count == 0 || (long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException(UiText.Msg("Preview không hợp lệ hoặc quá 16 triệu pixel."));
         stream.Position = 0;
         var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
         bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); return bitmap;

@@ -49,7 +49,7 @@ internal sealed class AppDialogWindow : Window
     {
         _shellOwner = owner;
         _previousFocus = owner is null ? null : Keyboard.FocusedElement;
-        Title = title;
+        UiText.SetAppText(this, TitleProperty, title);
         Width = width + CardMargin * 2;
         SizeToContent = SizeToContent.Height;
         WindowStyle = WindowStyle.None;
@@ -96,14 +96,15 @@ internal sealed class AppDialogWindow : Window
             Text = title, FontSize = HeaderTitleSize, FontWeight = FontWeights.Bold, Foreground = ink,
             VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap,
         };
+        UiText.SetAppText(heading, TextBlock.TextProperty, title);
         header.Children.Add(heading);
         _close = new Button
         {
             Content = new TextBlock { Text = "×", FontSize = 20, VerticalAlignment = VerticalAlignment.Center },
-            ToolTip = UiText.Translate("Đóng (Esc)"),
+            ToolTip = "Đóng (Esc)",
             Style = Application.Current?.TryFindResource("DialogCloseButton") as Style,
         };
-        AutomationProperties.SetName(_close, UiText.Translate("Đóng") + " " + title);
+        UiText.SetAppText(_close, AutomationProperties.NameProperty, UiText.Msg("{0} {1}", UiText.Key("Đóng"), UiText.Key(title)));
         _close.Click += (_, _) => Dismiss();
         Grid.SetColumn(_close, 1);
         header.Children.Add(_close);
@@ -205,7 +206,8 @@ internal sealed class AppDialogWindow : Window
             Style = Application.Current?.TryFindResource(primary ? "PrimaryButton" : "OutlineButton") as Style,
             IsDefault = isDefault,
         };
-        AutomationProperties.SetName(button, label);
+        UiText.SetAppText(button, Button.ContentProperty, label);
+        UiText.SetAppText(button, AutomationProperties.NameProperty, label);
         button.Click += (_, _) => { _dismissRaised = true; onClick(); Close(); };
         _buttons.Children.Add(button);
         return button;

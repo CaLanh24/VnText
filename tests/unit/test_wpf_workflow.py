@@ -644,12 +644,12 @@ class WpfWorkflowTests(unittest.TestCase):
         # (5) an invalid expression is its own message, the read failure keeps its own
         self.assertIn('Biểu thức tìm kiếm không hợp lệ.', journal)
         self.assertIn("catch(ArgumentException ex)", journal)
-        self.assertIn('_content.Text=UiText.TranslateDynamic("Không đọc được nhật ký: "+ex.Message);', journal)
+        self.assertIn('_content.Text=UiText.Format("Không đọc được nhật ký: {0}",ex.Message);', journal)
         # (6) saved reviews explain the re-approval, failures keep their context, the guards are untouched
         self.assertIn('"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', image_vm)
         self.assertIn("TryLoadImageReview(p, fromSavedReview: true)", image_vm)
-        self.assertIn('ImageStatus = "Không mở được review: " + e.Message', image_vm)
-        for guard in ('throw new InvalidDataException("Review ảnh vượt 2 MiB.");', "document.Regions.Count > 500", "hash review không khớp", "region.Approved = false;"):
+        self.assertIn('ImageStatus = UiText.Msg("Không mở được review: {0}", e.Message)', image_vm)
+        for guard in ('throw new InvalidDataException(UiText.Msg("Review ảnh vượt 2 MiB."));', "document.Regions.Count > 500", "hash review không khớp", "region.Approved = false;"):
             self.assertIn(guard, image_vm)
 
     def test_ocr_workspace_text_is_fully_covered_by_the_english_catalog_without_touching_user_data(self):
@@ -772,7 +772,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('ToolTipService.IsEnabled', xaml)
         self.assertIn('Text="{Binding CsvEditorSelectionDetails, Converter={StaticResource UiTextDynamic}}"', xaml)
         self.assertIn('Text="{Binding ExtractProgressStep}"', xaml)
-        self.assertIn("Text=\"{Binding PatchProgressStep, Converter={StaticResource UiTextFormat}, ConverterParameter='Bước: {0}'}\"", xaml)
+        self.assertIn("Text=\"{Binding PatchProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}\"", xaml)
         self.assertIn('Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Style="{StaticResource BlueProgressBarStyle}"', xaml)
@@ -1005,8 +1005,11 @@ class WpfWorkflowTests(unittest.TestCase):
         for binding in ("ImageCandidates", "ImagePath", "ImagePreview", "ImageRegions", "ImageStatus", "ImageWorkspaceSummary", "ImageGridEnabled"):
             with self.subTest(binding=binding):
                 self.assertIn("{Binding " + binding, panel)
-        for approval in ("FlatBackgroundApproved", "ReplacementBackgroundApproved", "TransparentTextApproved", "CloneBackgroundApproved", "Approved"):
-            self.assertIn("IsChecked=\"{Binding " + approval + "}\"", panel)
+        for approval in ("FlatBackgroundApproved", "ReplacementBackgroundApproved", "TransparentTextApproved", "CloneBackgroundApproved"):
+            self.assertIn("IsChecked=\"{Binding " + approval + ", Mode=OneWay}\"", panel)
+        self.assertIn('IsChecked="{Binding Approved}"', panel)
+        self.assertEqual(4, panel.count('GroupName="RegionBackgroundMode"'))
+        self.assertEqual(4, panel.count('Click="OnBackgroundModeClick"'))
         # The workspace is opened through the shared themed dialog shell from both entry points.
         self.assertGreaterEqual(len(re.findall(r"Command=\"\{Binding OpenImageWorkspaceCommand\}\"", window)), 2)
         self.assertIn("new AppDialogWindow(this", window_code)
@@ -1027,7 +1030,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # The candidate source cannot change while a task runs, cancellation is its own state, and a cancelled/failed OCR keeps the source.
         self.assertRegex(panel, r'x:Name="CandidateCombo"[^>]*IsEnabled="\{Binding ImageGridEnabled\}"')
         complete = image_vm[image_vm.index("private void CompleteImageTask"):]
-        self.assertIn("Đã hủy {ImageTaskLabel(task)}", complete)
+        self.assertIn("Đã hủy {0}", complete)
         self.assertIn("kết quả cũ bị bỏ", complete)
         prepare = image_vm[image_vm.index("internal void PrepareImageExtractState"):image_vm.index("private string _imageTaskImagePath")]
         self.assertNotIn('ImagePath = ""', prepare)

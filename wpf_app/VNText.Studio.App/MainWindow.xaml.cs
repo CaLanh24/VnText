@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -37,7 +37,7 @@ public partial class MainWindow : Window
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
             vm.ImageWorkspaceRequested += () =>
             {
-                var dialog = new AppDialogWindow(this, UiText.Translate("Text trong ảnh"), new VNText.Studio.App.Controls.ImageWorkspacePanel { DataContext = vm }, 1040);
+                var dialog = new AppDialogWindow(this, "Text trong ảnh", new VNText.Studio.App.Controls.ImageWorkspacePanel { DataContext = vm }, 1040);
                 dialog.AddButton(UiText.Translate("Đóng"), () => { });
                 dialog.ShowDialog();
             };
