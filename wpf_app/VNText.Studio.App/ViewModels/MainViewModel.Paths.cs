@@ -76,7 +76,19 @@ public sealed partial class MainViewModel
         _ => "CẦN XEM LẠI",
     };
 
-    private void RaisePatchBadge() { Raise(nameof(PatchBadgeKind)); Raise(nameof(PatchBadgeText)); }
+    /// <summary>The CSV this Patch page uses was saved after the last Build: an artifact on disk exists, but it is NOT proof that it matches the current CSV.
+    /// Only a successful Build of the current revision clears this; Validate/preflight update counts and readiness only.</summary>
+    private bool _patchArtifactBehindCsv;
+    public bool PatchArtifactBehindCsv => _patchArtifactBehindCsv;
+    /// <summary>A source change dropped the old results and no new check ran yet: the page shows a neutral "check again" cue instead of nothing.</summary>
+    public bool PatchRecheckNeeded => _patchSourceStale && !PatchResultsAvailable;
+    public bool PatchCheckCardVisible => PatchResultsAvailable || PatchRecheckNeeded;
+
+    private void RaisePatchBadge()
+    {
+        Raise(nameof(PatchBadgeKind)); Raise(nameof(PatchBadgeText));
+        Raise(nameof(PatchRecheckNeeded)); Raise(nameof(PatchCheckCardVisible)); Raise(nameof(PatchArtifactBehindCsv));
+    }
 
     internal void TestSetTranslationCsvPath(string path) => TranslationCsvPath = path;
 
@@ -86,13 +98,14 @@ public sealed partial class MainViewModel
         catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
     }
 
-    private void InvalidatePatchSourceState()
+    private void InvalidatePatchSourceState(bool csvRevisionChanged = false)
     {
         var hadState = PatchResultsAvailable || PatchPreflightEvaluated || PatchDeliveryReady || CsvValidationOk;
         PatchDeliveryReady = false;
         PatchDeliveryLabel = "";
         PatchInstallInstructions = "";
-        if (!hadState) return;
+        if (csvRevisionChanged) _patchArtifactBehindCsv = true;
+        if (!hadState && !csvRevisionChanged) return;
         _patchSourceStale = true;
         CsvValidationOk = false;
         CsvValidationMessage = "";
@@ -101,7 +114,9 @@ public sealed partial class MainViewModel
         PatchPreflightEvaluated = false;
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
-        PatchPreflightMessage = "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch.";
+        PatchPreflightMessage = csvRevisionChanged
+            ? "CSV vừa được lưu — hãy kiểm tra lại. Patch cũ còn trên đĩa là của bản trước; cần đóng gói lại cho bản này."
+            : "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch.";
         PatchResultsAvailable = false;
         PatchResultsExpanded = false;
         RaisePatchBadge();
@@ -200,10 +215,11 @@ public sealed partial class MainViewModel
 
     private string? PickCloudRepairPackagePath()
     {
+        var (zipTitle, zipFilter) = WpfPathPickerService.CloudRepairSaveDialogSpec();
         var dialog = new SaveFileDialog
         {
-            Title = "Lưu gói Cloud Repair",
-            Filter = "Cloud Repair ZIP (*.zip)|*.zip|Tất cả (*.*)|*.*",
+            Title = zipTitle,
+            Filter = zipFilter,
             DefaultExt = ".zip",
             AddExtension = true,
             FileName = "cloud-repair-package.zip",

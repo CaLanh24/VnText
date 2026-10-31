@@ -209,7 +209,8 @@ internal static partial class Program
                             Badge("SẴN SÀNG", "GreenSoftBrush", "GreenDarkBrush", "A ready");
                             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));
                             Badge("CẦN KIỂM TRA LẠI", "SubtlePanelBrush", "MutedBrush", "B invalidated");
-                            Require(!Named("PatchBadge").IsVisible, $"{badgeTheme}: nothing is claimed while the new source is unchecked");
+                            Require(((FrameworkElement)Named("PatchCheckCard")).IsVisible && ((FrameworkElement)Named("PatchBadge")).IsVisible, "the neutral recheck badge is VISIBLE after the source changed (not hidden with the results)");
+                            Require(((FrameworkElement)Named("PatchRecheckNote")).IsVisible && !((FrameworkElement)Named("PatchDiagnosticsExpander")).IsVisible && !((FrameworkElement)Named("PatchSummaryCard")).IsVisible, "a one-line recheck cue replaces the old results");
                             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Badge("CẦN XEM LẠI", "ToastWarningBackgroundBrush", "ToastWarningForegroundBrush", "B blocked");
@@ -279,7 +280,74 @@ internal static partial class Program
                     regexToggle.IsChecked = false;
                     PumpFixture(150);
                     Require(Note() is not { IsVisible: true } && !logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal) && logBox.Text.Contains("[bracket]", StringComparison.Ordinal), "turning regex off restores the plain search (the text '[' is found literally)");
+                    // English footer actions (UI scale 120%) are fully painted: each button is at least as wide as its real label plus padding.
+                    vm.Language = "en";
+                    journal.UpdateLayout();
+                    PumpFixture(200);
+                    var footerButtons = FindVisualChildren<Button>(journal).Where(b => b.Content is string text && text.Length > 0 && b.Padding.Left == 8).ToList();
+                    Require(footerButtons.Count >= 5, $"the Journal footer actions are realised ({footerButtons.Count})");
+                    foreach (var footerButton in footerButtons)
+                    {
+                        var label = (string)footerButton.Content;
+                        var ink = new System.Windows.Media.FormattedText(label, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                            new System.Windows.Media.Typeface(footerButton.FontFamily, footerButton.FontStyle, footerButton.FontWeight, footerButton.FontStretch), footerButton.FontSize, System.Windows.Media.Brushes.Black, System.Windows.Media.VisualTreeHelper.GetDpi(footerButton).PixelsPerDip);
+                        var room = footerButton.ActualWidth - footerButton.Padding.Left - footerButton.Padding.Right - footerButton.BorderThickness.Left - footerButton.BorderThickness.Right;
+                        Require(room >= ink.WidthIncludingTrailingWhitespace - 0.5, $"English Journal action \"{label}\" is fully painted at UI120% (text {Math.Round(ink.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(room, 1)})");
+                    }
+                    Require(footerButtons.Any(b => (string)b.Content == "Copy file location"), "the localized Copy file location action is present");
+                    vm.Language = "vi";
+                    journal.UpdateLayout();
+                    PumpFixture(100);
                     journal.Close();
+                    // ---- Finding R1: a cell edit is a transaction on the REAL DataGrid editing path (Escape restores, Enter/Tab commit) ----
+                    vm.NavigateTabCommand.Execute("editcsv");
+                    window.UpdateLayout();
+                    PumpFixture(200);
+                    var translationColumn = grid.Columns.First(c => c.Header as string == "BẢN DỊCH TIẾNG VIỆT");
+                    TextBox EditWith(CsvEditorRow row, string text)
+                    {
+                        grid.CurrentCell = new DataGridCellInfo(row, translationColumn);
+                        Require(grid.BeginEdit(), "the translation cell enters edit mode");
+                        window.UpdateLayout();
+                        var editor = (TextBox)translationColumn.GetCellContent(row);
+                        editor.Text = text;                                   // the binding writes through on every keystroke
+                        return editor;
+                    }
+                    var originalFirst = rows[0].Translation;
+                    var dirtyBefore = vm.CsvEditorDirty;
+                    var summaryBefore = vm.CsvEditorDirtySummary;
+                    EditWith(rows[0], "Escape probe");
+                    AssertEqual("Escape probe", rows[0].Translation);
+                    grid.CancelEdit();                                        // what Escape does
+                    window.UpdateLayout();
+                    AssertEqual(originalFirst, rows[0].Translation);
+                    AssertEqual(dirtyBefore, vm.CsvEditorDirty);
+                    AssertEqual(summaryBefore, vm.CsvEditorDirtySummary);
+                    AssertFalse(vm.CsvEditorDirty);                          // nothing was committed, so nothing is unsaved and Save stays disabled
+                    AssertFalse(vm.SaveCsvEditorCommand.CanExecute(null));
+                    EditWith(rows[1], "Giữ lại");
+                    Require(grid.CommitEdit(DataGridEditingUnit.Cell, true), "Enter/Tab commit the cell");
+                    AssertEqual("Giữ lại", rows[1].Translation);
+                    AssertTrue(vm.CsvEditorDirty);
+                    var oneEdited = vm.CsvEditorDirtySummary;
+                    EditWith(rows[0], "Another escape");
+                    grid.CancelEdit();                                        // a later cancel keeps the earlier, committed edit and the dirty state
+                    window.UpdateLayout();
+                    AssertEqual(originalFirst, rows[0].Translation);
+                    AssertEqual("Giữ lại", rows[1].Translation);
+                    AssertTrue(vm.CsvEditorDirty);
+                    AssertEqual(oneEdited, vm.CsvEditorDirtySummary);
+                    EditWith(rows[1], "Giữ lại — sửa lần hai");               // cancelling a second edit of an already edited row restores ITS committed value
+                    grid.CancelEdit();
+                    AssertEqual("Giữ lại", rows[1].Translation);
+                    AssertEqual(oneEdited, vm.CsvEditorDirtySummary);
+                    EditWith(rows[0], "Đã commit");
+                    Require(grid.CommitEdit(DataGridEditingUnit.Cell, true), "commit");
+                    AssertEqual("Đã commit", rows[0].Translation);
+                    AssertTrue(vm.CsvEditorDirty);
+                    Require(vm.CsvEditorDirtySummary != oneEdited, "a second committed row raises the unsaved count");
+                    AssertTrue(vm.SaveCsvEditorCommand.CanExecute(null) || vm.Busy);
+                    vm.TestClearCsvDirty();                                   // the fixture's own pending edits must not raise the unsaved-changes prompt when the window closes
                     Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Patch badge states (" + string.Join("/", badgeReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
                     exitCode = 0;
                 }

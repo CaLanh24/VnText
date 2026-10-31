@@ -1202,7 +1202,15 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn('AutomationProperties.Name="%s"' % label, xaml)
         # F3: only a save of the CURRENT Patch csv drops the old results; another csv never re-points or resets them
         self.assertIn("SameCsvPath(patchSource, path)", csv_vm)
-        self.assertIn("if (savedCurrentPatchCsv) InvalidatePatchSourceState();", csv_vm)
+        self.assertIn("if (savedCurrentPatchCsv) InvalidatePatchSourceState(csvRevisionChanged: true);", csv_vm)
+        # R1/R2/R3: cell edit transaction, visible recheck cue + artifact freshness, action labels sized by their real content
+        self.assertIn("BeginningEdit=\"CsvEditorGrid_BeginningEdit\"", xaml)
+        self.assertIn("EndCsvCellEdit(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow, e.EditAction == DataGridEditAction.Cancel)", (app / "MainWindow.xaml.cs").read_text(encoding="utf-8"))
+        self.assertIn("PatchCheckCardVisible", xaml)
+        self.assertIn("x:Name=\"PatchRecheckNote\"", xaml)
+        self.assertIn("patchArtifactCurrent && Directory.Exists(patchDir)", (app / "Services" / "WorkflowStatus.cs").read_text(encoding="utf-8"))
+        self.assertIn("void FitFooter()", (app / "JournalWindow.cs").read_text(encoding="utf-8"))
+        self.assertIn("<DataGridTemplateColumn Header=\"XÓA\" Width=\"96\">", panel)
         self.assertNotRegex(csv_vm, r"\n\s{8}TranslationCsvPath = path;\s*\n\s*var unchanged")
 
     def test_wpf_workflow_harness_passes(self):

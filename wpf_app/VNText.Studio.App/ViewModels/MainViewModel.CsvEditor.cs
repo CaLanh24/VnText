@@ -161,6 +161,7 @@ public sealed partial class MainViewModel
     }
 
     internal void TestSetCsvEditorPath(string path) => CsvEditorPath = path;
+    internal void TestClearCsvDirty() => CsvEditorDirty = false;
 
     /// <summary>Layout fixture hook: shows these rows in the real grid without running the worker.</summary>
     internal void TestLoadCsvRows(string path, IEnumerable<CsvEditorRow> rows, string validationMessage)
@@ -1136,6 +1137,41 @@ public sealed partial class MainViewModel
         LoadCsvEditor(CsvEditorPath, reload: true);
     }
 
+    // ---- One cell edit is a transaction: Enter/Tab commit it, Escape restores the value the cell had before the edit began ----
+    // The translation binding writes through on every keystroke, so the row already holds the typed text when the grid reports the cancel.
+    // The snapshot lets the cancel put the previous text back and leave every other pending edit (and the dirty state) exactly as it was.
+    private CsvEditorRow? _cellEditRow;
+    private string _cellEditOriginal = "";
+    private bool _cellEditWasDirty, _cellEditKeyWasEdited;
+
+    internal void BeginCsvCellEdit(CsvEditorRow? row)
+    {
+        if (row is null) return;
+        _cellEditRow = row;
+        _cellEditOriginal = row.Translation;
+        _cellEditWasDirty = CsvEditorDirty;
+        _cellEditKeyWasEdited = _csvEditorEditedKeys.Contains(row.Key);
+    }
+
+    internal void EndCsvCellEdit(CsvEditorRow? row, bool canceled)
+    {
+        var transaction = ReferenceEquals(row, _cellEditRow);
+        var original = _cellEditOriginal;
+        var wasDirty = _cellEditWasDirty;
+        var keyWasEdited = _cellEditKeyWasEdited;
+        _cellEditRow = null;
+        if (!canceled || !transaction || row is null)
+        {
+            OnCsvEditorTranslationChanged(row);
+            return;
+        }
+        if (!string.Equals(row.Translation, original, StringComparison.Ordinal)) row.Translation = original;
+        if (!keyWasEdited) _csvEditorEditedKeys.Remove(row.Key);
+        if (!wasDirty && CsvEditorDirty && _csvEditorEditedKeys.Count == 0) CsvEditorDirty = false;
+        Raise(nameof(CsvEditorDirtySummary));
+        Raise(nameof(CsvEditorGateStats));
+    }
+
     internal void OnCsvEditorTranslationChanged(CsvEditorRow? row = null)
     {
         if (row is not null) _csvEditorEditedKeys.Add(row.Key);
@@ -1461,8 +1497,9 @@ public sealed partial class MainViewModel
         var savedCurrentPatchCsv = !string.IsNullOrWhiteSpace(patchSource) && SameCsvPath(patchSource, path);
         if (string.IsNullOrWhiteSpace(patchSource) || savedCurrentPatchCsv)
         {
-            if (savedCurrentPatchCsv) InvalidatePatchSourceState();
+            if (savedCurrentPatchCsv) InvalidatePatchSourceState(csvRevisionChanged: true);
             TranslationCsvPath = path;
+            if (savedCurrentPatchCsv) RefreshWorkflow();      // an older Patch folder no longer reads as "finished" for this revision
         }
         var unchanged = editGeneration == Volatile.Read(ref _csvEditorEditGeneration)
             && string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase);

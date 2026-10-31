@@ -236,10 +236,16 @@ public partial class MainWindow : Window
             page.VerticalAlignment = VerticalAlignment.Top;
     }
 
+    private void CsvEditorGrid_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
+    {
+        if (!e.Cancel && DataContext is MainViewModel vm)
+            vm.BeginCsvCellEdit(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow);
+    }
+
     private void CsvEditorGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
         if (DataContext is MainViewModel vm)
-            vm.OnCsvEditorTranslationChanged(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow);
+            vm.EndCsvCellEdit(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow, e.EditAction == DataGridEditAction.Cancel);
     }
 
     private void CsvEditorGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)

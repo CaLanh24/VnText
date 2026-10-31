@@ -133,10 +133,14 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="CHẾ ĐỘ NỀN" Binding="{Binding ModeSummary, Mode=OneWay, Converter={StaticResource UiTextDynamic}}" IsReadOnly="True" Width="*" MinWidth="130" />
                 <DataGridCheckBoxColumn Header="DUYỆT" Binding="{Binding Approved}" Width="80" />
-                <DataGridTemplateColumn Header="XÓA" Width="80">
+                <DataGridTemplateColumn Header="XÓA" Width="96">
+                    <DataGridTemplateColumn.CellStyle>
+                        <!-- The shared cell keeps 12 DIP padding each side, which left the action only 55 DIP: English "Delete" painted as "Dele". This column reserves room for its real labels. -->
+                        <Style TargetType="DataGridCell" BasedOn="{StaticResource CsvDataGridCell}"><Setter Property="Padding" Value="4,6" /></Style>
+                    </DataGridTemplateColumn.CellStyle>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Button Content="Xóa" Style="{StaticResource CompactOutlineButton}" MinWidth="0" Padding="10,3" Margin="4,0" HorizontalAlignment="Center" AutomationProperties.Name="Xóa vùng"
+                            <Button Content="Xóa" Style="{StaticResource CompactOutlineButton}" MinWidth="0" Padding="10,3" Margin="0" HorizontalAlignment="Center" AutomationProperties.Name="Xóa vùng"
                                     Command="{Binding DataContext.RemoveImageRegionCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

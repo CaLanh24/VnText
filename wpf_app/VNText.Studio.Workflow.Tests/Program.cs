@@ -238,6 +238,7 @@ internal static partial class Program
         Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
         Run("PatchState_FollowsTheSourceAndRequiresACurrentCheck", PatchState_FollowsTheSourceAndRequiresACurrentCheck, failures);
         Run("PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource", PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource, failures);
+        Run("UiText_FormatKeyFirstWithRawArgumentsAndLocalizedPickers", UiText_FormatKeyFirstWithRawArgumentsAndLocalizedPickers, failures);
         Run("PatchBadge_KindFollowsTheCurrentReadiness", PatchBadge_KindFollowsTheCurrentReadiness, failures);
         Run("UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone", UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone, failures);
         Run("ImageReview_OpeningASavedReviewExplainsTheReapproval", ImageReview_OpeningASavedReviewExplainsTheReapproval, failures);
@@ -657,6 +658,16 @@ internal static partial class Program
                 () => vm.TranslateReadinessText.Contains("lần dịch trước đã hủy", StringComparison.Ordinal),
                 TimeSpan.FromSeconds(5)));
             AssertTrue(vm.TranslateReadinessText.Contains("đã có bản dịch 2", StringComparison.Ordinal));
+            {
+                var restoreLanguage = UiText.Language;
+                try
+                {
+                    UiText.SetLanguage("en");
+                    var shown = UiText.TranslateDynamic(vm.TranslateReadinessText);
+                    Require(shown.StartsWith("Ready to translate · ", StringComparison.Ordinal) && shown.Contains("translated so far 2", StringComparison.Ordinal) && shown.Contains("the previous run was cancelled", StringComparison.Ordinal) && !shown.Any(c => c > 0x7f && c != '·'), "the Translate readiness line is English: " + shown);
+                }
+                finally { UiText.SetLanguage(restoreLanguage); }
+            }
             // A cancellation is an INFO outcome, never an ERROR journal line.
             AssertTrue(vm.LogLines.Any(line => line.Contains("Đã hủy tác vụ", StringComparison.Ordinal)));
             AssertFalse(vm.LogLines.Any(line => AppJournalStore.Level(line) == "ERROR"
@@ -2059,9 +2070,24 @@ internal static partial class Program
             AssertEqual("ready", vm.PatchBadgeKind);
             vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
 
+            // An older Patch artifact exists on disk for package A (a Build ran for the previous revision).
+            var artifactA = Path.Combine(packageA, "Patch_Viet_Hoa");
+            Directory.CreateDirectory(artifactA);
+            File.WriteAllText(Path.Combine(artifactA, "old-build.marker"), "previous revision");
+            vm.InputPath = packageA;
+            vm.TestRefreshWorkflow();
+            AssertEqual("done", vm.CurrentWorkflowStep);          // before any save the existing artifact still reads as this package's patch
+            AssertFalse(vm.PatchArtifactBehindCsv);
+
             // valid -> invalid: saving the CURRENT Patch csv drops the old readiness; the artifact files stay.
             EditAndSave(csvA, garbage);
             AssertEqual("stale", vm.PatchBadgeKind);
+            AssertTrue(vm.PatchRecheckNeeded && vm.PatchCheckCardVisible);                  // a neutral "check again" cue is shown, not an empty page
+            AssertFalse(vm.PatchResultsAvailable);
+            Require(vm.PatchPreflightMessage.StartsWith("CSV vừa được lưu", StringComparison.Ordinal), "the cue says the CSV was just saved and the old patch is the previous version");
+            AssertTrue(vm.PatchArtifactBehindCsv);
+            AssertTrue(File.Exists(Path.Combine(artifactA, "old-build.marker")));         // the old artifact stays on disk
+            Require(vm.CurrentWorkflowStep != "done", "an artifact that exists is not proof the current CSV was built: workflow is not finished (" + vm.CurrentWorkflowStep + ")");
             AssertFalse(vm.PatchPreflightOk || vm.PatchPreflightEvaluated || vm.PatchDeliveryReady);   // the saved file is only re-judged by a fresh check
             AssertEqual("", vm.PatchInstallInstructions);
             AssertEqual(0, vm.PatchEligibleCount);
@@ -2077,6 +2103,23 @@ internal static partial class Program
             picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
             AssertTrue(vm.PatchPreflightOk);
+            // Validate updated counts/readiness only: it does not revive "finished" or the delivery card from the older artifact.
+            AssertTrue(vm.PatchArtifactBehindCsv);
+            Require(vm.CurrentWorkflowStep != "done", "validate must not certify the old artifact as current (" + vm.CurrentWorkflowStep + ")");
+            AssertFalse(vm.PatchDeliveryReady);
+            AssertFalse(vm.PatchRecheckNeeded);
+            AssertTrue(File.Exists(Path.Combine(artifactA, "old-build.marker")));
+            // A successful Build of THIS revision makes the artifact current again.
+            vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "patch-rev2", Ok = true, Complete = true, PatchEngine = "unity", PatchDelivery = "unity_installer", PatchPayloadPath = Path.Combine(artifactA, "COPY_TO_GAME_ROOT"), PatchInstallInstructions = "Mở VNTextPatchInstaller.exe để cài/gỡ." });
+            AssertFalse(vm.PatchArtifactBehindCsv);
+            AssertEqual("done", vm.CurrentWorkflowStep);
+            vm.TestMarkTaskTerminal("patch-rev2");
+            // Saving again after that Build makes the artifact older again.
+            EditAndSave(csvA, "Hộ tống lần ba");
+            AssertTrue(vm.PatchArtifactBehindCsv && vm.PatchRecheckNeeded);
+            Require(vm.CurrentWorkflowStep != "done", "a later save makes the artifact older again");
+            EditAndSave(csvA, "Hộ tống");
+            picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);
 
             // A failed save (external change refused) keeps the draft and leaves the Patch results alone.
             picker.TranslationCsv = csvA; vm.OutputPath = packageA; vm.ChooseTranslationCsvCommand.Execute(null);
@@ -2096,6 +2139,54 @@ internal static partial class Program
         {
             foreach (var d in new[] { packageA, packageB, packageC }) try { Directory.Delete(d, true); } catch { /* best effort */ }
         }
+    }
+
+    private static void UiText_FormatKeyFirstWithRawArgumentsAndLocalizedPickers()
+    {
+        var previous = UiText.Language;
+        try
+        {
+            UiText.SetLanguage("en");
+            // The picker titles/filters of the CSV edit, Patch, import and ZIP flows follow the language.
+            foreach (var (title, english) in new[] { (MainViewModel.CsvEditorPickerTitle, "Choose a CSV to edit"), (MainViewModel.PatchCsvPickerTitle, "Choose the CSV to build the patch from"), (MainViewModel.ImportTranslatedCsvPickerTitle, "Choose the translated translation.csv to import"), (MainViewModel.TranslateCsvPickerTitle, "Choose the CSV to translate") })
+            {
+                var (shownTitle, filter) = WpfPathPickerService.TranslationCsvDialogSpec(title);
+                AssertEqual(UiText.Translate(title), shownTitle);
+                Require(shownTitle != title && !shownTitle.Any(c => c > 0x7f), "the picker title is English: " + shownTitle + " (" + english + ")");
+                AssertEqual("CSV (*.csv)|*.csv|All (*.*)|*.*", filter);
+            }
+            var (zipTitle, zipFilter) = WpfPathPickerService.CloudRepairSaveDialogSpec();
+            Require(zipTitle != "Lưu gói Cloud Repair" && !zipTitle.Any(c => c > 0x7f) && zipFilter == "Cloud Repair ZIP (*.zip)|*.zip|All (*.*)|*.*", "the ZIP picker title/filter are English: " + zipTitle);
+            UiText.SetLanguage("vi");
+            AssertEqual("Chọn CSV để sửa", WpfPathPickerService.TranslationCsvDialogSpec(MainViewModel.CsvEditorPickerTitle).Title);
+            AssertEqual("CSV (*.csv)|*.csv|Tất cả (*.*)|*.*", WpfPathPickerService.TranslationCsvDialogSpec(null).Filter.Replace("Tất cả", "Tất cả"));
+            UiText.SetLanguage("en");
+
+            // Known structured external-change reason is mapped; an unknown technical reason is shown as it is.
+            var known = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key("CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"), UiText.Key(" Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại."));
+            Require(UiText.TranslateDynamic(known).StartsWith("Could not save: The CSV was changed outside the app", StringComparison.Ordinal) && !UiText.TranslateDynamic(known).Any(c => c > 0x7f && c != '—'), "the known external-change reason is English: " + UiText.TranslateDynamic(known));
+            var unknown = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key("PermissionError: [WinError 5] Từ chối truy cập 'C:\\Dữ liệu\\a.csv'"), UiText.Key(""));
+            Require(UiText.TranslateDynamic(unknown).Contains("PermissionError: [WinError 5] Từ chối truy cập 'C:\\Dữ liệu\\a.csv'", StringComparison.Ordinal), "an unknown technical reason stays raw");
+
+            // Raw arguments are never looked up, even when they equal a catalog key or contain format markers/newlines/paths.
+            AssertEqual("Opened 3 rows — Xóa", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 3, "Xóa")));
+            AssertEqual("Opened 3 rows — Chưa bắt đầu", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 3, "Chưa bắt đầu")));
+            var awkward = "C:\\Chọn thư mục game\\{0}\\{name}\n  Xóa  {1}";
+            AssertEqual("Row key: " + awkward, UiText.TranslateDynamic(UiText.Msg("Mã dòng: {0}", awkward)));
+            AssertEqual("Opened 12 rows — {0} {{1}} %s", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 12, "{0} {{1}} %s")));
+            // The same text built by hand (not produced from a format key) is not an interpolated lookup: it is left alone.
+            AssertEqual("Đã mở 3 dòng — Xóa", UiText.TranslateDynamic("Đã mở 3 dòng — Xóa"));
+            // A Key(...) argument is the only argument that is translated, and a nested produced message is localized by its own key.
+            AssertEqual("Opened 5 rows — Delete", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 5, UiText.Key("Xóa"))));
+            var nested = UiText.Msg("Không mở được {0}: {1} ({2}).", "Xóa.csv", UiText.Key("CSV trống"), UiText.Msg("đang giữ {0}", "a.csv"));
+            AssertEqual("Could not open Xóa.csv: The CSV is empty (keeping a.csv).", UiText.TranslateDynamic(nested));
+            // Multi-line composite: each part by its own key, user text raw.
+            var lines = UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", "4", "3"), "", UiText.Msg("Tìm: {0}" + "\n" + "Thay bằng: {1}", "Xóa", "Chưa bắt đầu"));
+            AssertEqual("Replace 4 times in 3 rows?\n\nFind: Xóa\nReplace with: Chưa bắt đầu", UiText.TranslateDynamic(lines));
+            UiText.SetLanguage("vi");
+            AssertEqual("Đã mở 3 dòng — Xóa", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 3, "Xóa")));
+        }
+        finally { UiText.SetLanguage(previous); }
     }
 
     private static void PatchBadge_KindFollowsTheCurrentReadiness()

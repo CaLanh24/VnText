@@ -15,12 +15,15 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    internal void TestRefreshWorkflow() => RefreshWorkflow();
+
     private void RefreshWorkflow()
     {
         RefreshTranslateReadiness();
         var input = InputPath;
         var output = _csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath)
             ? Path.GetDirectoryName(TranslationCsvPath)! : OutputPath;
+        var patchArtifactCurrent = !_patchArtifactBehindCsv;      // an artifact older than the saved CSV does not make the workflow "finished"
         var epoch = Interlocked.Increment(ref _refreshEpoch);
         var dispatcher = Application.Current?.Dispatcher;
 
@@ -35,7 +38,7 @@ public sealed partial class MainViewModel
         // Only offload when already on the UI thread (worker complete → refresh).
         if (dispatcher is null || !dispatcher.CheckAccess())
         {
-            Apply(WorkflowStatus.Evaluate(input, output));
+            Apply(WorkflowStatus.Evaluate(input, output, patchArtifactCurrent));
             return;
         }
 
@@ -44,7 +47,7 @@ public sealed partial class MainViewModel
         {
             try
             {
-                var snap = WorkflowStatus.Evaluate(input, output);
+                var snap = WorkflowStatus.Evaluate(input, output, patchArtifactCurrent);
                 dispatcher.BeginInvoke(() => Apply(snap));
             }
             catch
@@ -79,7 +82,7 @@ public sealed partial class MainViewModel
             if (_translationModelUnavailable)
                 return string.IsNullOrWhiteSpace(_modelStatus)
                     ? "Không xác minh được runtime dịch; Dịch tự động đang bị khóa. Xem Cài đặt để biết chi tiết."
-                    : $"Dịch tự động đang bị khóa — {_modelStatus}";
+                    : UiText.Msg("Dịch tự động đang bị khóa — {0}", UiText.Key(_modelStatus));
             if (_translatePackageChecking)
                 return "Đang kiểm tra translation.csv và manifest…";
             if (!_translatePackageReady && _translatePackageMessage == CsvPackageValidator.NoDataRowsMessage)
@@ -88,17 +91,18 @@ public sealed partial class MainViewModel
                 // The image report is read by the async readiness refresh, never in this getter.
                 var images = _translatePackageImages;
                 if (images.OcrReady + images.TranslatedDrafts > 0)
-                    return $"Không có dòng text để dịch • {images.OcrReady:N0} ảnh đã OCR" +
-                           (images.TranslatedDrafts > 0 ? $", {images.TranslatedDrafts:N0} bản dịch nháp" : "") +
-                           " — bấm “Dịch ảnh…”, rồi duyệt, dựng và cài ảnh trong mục Text trong ảnh.";
+                    return UiText.Compose(
+                        UiText.Msg("Không có dòng text để dịch • {0} ảnh đã OCR", images.OcrReady.ToString("N0")),
+                        images.TranslatedDrafts > 0 ? UiText.Msg(", {0} bản dịch nháp", images.TranslatedDrafts.ToString("N0")) : "",
+                        " — bấm “Dịch ảnh…”, rồi duyệt, dựng và cài ảnh trong mục Text trong ảnh.");
             }
             if (!_translatePackageReady)
                 return string.IsNullOrWhiteSpace(_translatePackageMessage)
                     ? "Chọn gói dịch có translation.csv và manifest.json hợp lệ."
                     : _translatePackageMessage;
-            var count = _translatePackageRowCount == 1 ? "1 dòng" : $"{_translatePackageRowCount:N0} dòng";
-            var ready = $"Sẵn sàng dịch · {count} · đã có bản dịch {_translatePackageTranslatedCount:N0}";
-            return _translateLastRunCancelled ? $"{ready} · lần dịch trước đã hủy; chạy lại để dịch tiếp" : ready;
+            var count = _translatePackageRowCount == 1 ? UiText.Key("1 dòng") : (object)UiText.Msg("{0} dòng", _translatePackageRowCount.ToString("N0"));
+            var ready = UiText.Msg("Sẵn sàng dịch · {0} · đã có bản dịch {1}", count, _translatePackageTranslatedCount.ToString("N0"));
+            return _translateLastRunCancelled ? UiText.Msg("{0} · lần dịch trước đã hủy; chạy lại để dịch tiếp", ready) : ready;
         }
     }
 

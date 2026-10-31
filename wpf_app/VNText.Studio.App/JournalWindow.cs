@@ -120,10 +120,19 @@ internal sealed class JournalWindow : Window
         footer.Children.Add(Button("Chép thông tin lỗi",()=>Clipboard.SetText($"VNText Studio {vm.Version}\n{System.Runtime.InteropServices.RuntimeInformation.OSDescription}\n.NET {Environment.Version}\nLog: {_files.SelectedItem}\n\n{(_files.SelectedItem is string file ? _store.Read(file) : _content.Text)}"),true));
         var footerWidths=new[]{68d,88d,60d,116d,122d,172d};
         for(var i=0;i<footer.Children.Count;i++) if(footer.Children[i] is Button item){item.Width=footerWidths[i];item.Padding=new Thickness(8,7,8,7);}
+        // The widths above are the Vietnamese minimums; after localization each action grows to its real label (never clipped, never smaller than before).
+        void FitFooter()
+        {
+            for(var i=0;i<footer.Children.Count;i++) if(footer.Children[i] is Button item)
+            {
+                item.Width=double.NaN;item.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));
+                item.Width=Math.Max(footerWidths[i],Math.Ceiling(item.DesiredSize.Width));
+            }
+        }
         _files.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_level.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};_size.SelectionChanged+=(_,_)=>{_page=0;Safe(Render);};
         _query.TextChanged+=(_,_)=>{_page=0;Safe(Render);};_regex.Checked+=(_,_)=>Safe(Render);_regex.Unchecked+=(_,_)=>Safe(Render);
         var previous=owner.Effect;Border? overlay=null;var panel=owner.Content as Panel;
-        Loaded+=(_,_)=>UiText.Apply(this);
+        Loaded+=(_,_)=>{UiText.Apply(this);FitFooter();};
         Loaded+=(_,_)=>
         {
             owner.Effect=new BlurEffect{Radius=AppDialogWindow.BackdropBlur};
@@ -136,7 +145,7 @@ internal sealed class JournalWindow : Window
             var selectedLevel=_level.SelectedIndex;var previousPage=_page;_loading=true;
             try{_level.ItemsSource=new[]{"Tất cả","Thông tin","Cảnh báo","Lỗi","Debug"}.Select(UiText.Translate).ToArray();_level.SelectedIndex=selectedLevel;}
             finally{_loading=false;}
-            _page=previousPage;UiText.Apply(this);Safe(Render);
+            _page=previousPage;UiText.Apply(this);FitFooter();Safe(Render);
         }
         vm.PropertyChanged+=LanguageChanged;
         Closed+=(_,_)=>{vm.PropertyChanged-=LanguageChanged;if(overlay is not null)panel?.Children.Remove(overlay);owner.Effect=previous;};

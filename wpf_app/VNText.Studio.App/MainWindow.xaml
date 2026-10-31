@@ -833,7 +833,7 @@
                         </Border>
 
                         <Border x:Name="PatchCheckCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0"
-                                VerticalAlignment="Top" Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}">
+                                VerticalAlignment="Top" Visibility="{Binding PatchCheckCardVisible, Converter={StaticResource BoolToVis}}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -850,7 +850,7 @@
                                         <TextBlock Text="Kiểm tra trước khi build" Style="{StaticResource UiSectionTitleTextStyle}" />
                                     </StackPanel>
                                     <Border x:Name="PatchBadge" Grid.Column="1" CornerRadius="8" Padding="9,5"
-                                            Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}">
+                                            Visibility="{Binding PatchCheckCardVisible, Converter={StaticResource BoolToVis}}">
                                         <!-- Colours are STYLE values bound to the same PatchBadgeKind as the text: ready = success green, review/blocked = amber, csvok/stale = neutral -->
                                         <Border.Style>
                                             <Style TargetType="Border">
@@ -878,6 +878,10 @@
                                         </TextBlock>
                                     </Border>
                                 </Grid>
+
+                                <TextBlock x:Name="PatchRecheckNote" Grid.Row="1" Margin="0,16,0,0" TextWrapping="Wrap" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}"
+                                           Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}"
+                                           Visibility="{Binding PatchRecheckNeeded, Converter={StaticResource BoolToVis}}" />
 
                                 <Expander x:Name="PatchDiagnosticsExpander" Foreground="{DynamicResource InkBrush}" Grid.Row="1" Header="Kết quả kiểm tra" Margin="0,24,0,0"
                                           Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"
@@ -1506,6 +1510,7 @@
                                           CanUserResizeRows="False"
                                           FontSize="{StaticResource UiBodySize}"
                                           SelectionChanged="CsvEditorGrid_SelectionChanged"
+                                          BeginningEdit="CsvEditorGrid_BeginningEdit"
                                           CellEditEnding="CsvEditorGrid_CellEditEnding">
                                     <DataGrid.Resources>
                                         <!-- Belt-and-suspenders scoped override (same as CsvDataGridStyle.Resources). -->

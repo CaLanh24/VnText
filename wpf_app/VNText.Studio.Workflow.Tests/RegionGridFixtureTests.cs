@@ -76,6 +76,11 @@ internal static partial class Program
                             var left = button.TranslatePoint(new Point(0, 0), cell).X;
                             var right = button.TranslatePoint(new Point(button.ActualWidth, 0), cell).X;
                             Require(left >= 1 && right <= cell.ActualWidth - 1, $"{label} {state}: the delete button fits its cell (button {Math.Round(left, 1)}..{Math.Round(right, 1)} of {Math.Round(cell.ActualWidth, 1)})");
+                            var shown = button.Content as string ?? "";
+                            var ink = new FormattedText(shown, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                                new Typeface(button.FontFamily, button.FontStyle, button.FontWeight, button.FontStretch), button.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(button).PixelsPerDip);
+                            var room = button.ActualWidth - button.Padding.Left - button.Padding.Right - button.BorderThickness.Left - button.BorderThickness.Right;
+                            Require(room >= ink.WidthIncludingTrailingWhitespace - 0.5, $"{label} {state}: the delete label \"{shown}\" is fully painted (text {Math.Round(ink.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(room, 1)} of a {Math.Round(button.ActualWidth, 1)} wide button)");
                             Require(button.ActualWidth >= 40 && button.ActualHeight >= 28, $"{label} {state}: the delete button keeps a usable target ({button.ActualWidth}x{button.ActualHeight})");
                         }
                     }

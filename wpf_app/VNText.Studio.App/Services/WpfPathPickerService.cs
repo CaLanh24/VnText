@@ -18,7 +18,7 @@ public sealed class WpfPathPickerService : IPathPickerService
     {
         var folderDlg = new OpenFolderDialog
         {
-            Title = "Chọn thư mục game",
+            Title = UiText.Translate("Chọn thư mục game"),
             Multiselect = false,
         };
         if (folderDlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(folderDlg.FolderName))
@@ -26,7 +26,7 @@ public sealed class WpfPathPickerService : IPathPickerService
 
         var fileDlg = new OpenFileDialog
         {
-            Title = "Hoặc chọn file asset / bundle",
+            Title = UiText.Translate("Hoặc chọn file asset / bundle"),
             CheckFileExists = true,
         };
         return fileDlg.ShowDialog() == true ? fileDlg.FileName : null;
@@ -36,7 +36,7 @@ public sealed class WpfPathPickerService : IPathPickerService
     {
         var dlg = new OpenFolderDialog
         {
-            Title = "Chọn thư mục xuất gói dịch",
+            Title = UiText.Translate("Chọn thư mục xuất gói dịch"),
             Multiselect = false,
         };
         return dlg.ShowDialog() == true ? dlg.FolderName : null;
@@ -44,18 +44,27 @@ public sealed class WpfPathPickerService : IPathPickerService
 
     public string? PickTranslationCsvFile(string? title = null)
     {
+        var (dialogTitle, filter) = TranslationCsvDialogSpec(title);
         var dlg = new OpenFileDialog
         {
-            Title = string.IsNullOrWhiteSpace(title) ? "Chọn tệp CSV" : title,
-            Filter = "CSV (*.csv)|*.csv|Tất cả (*.*)|*.*",
+            Title = dialogTitle,
+            Filter = filter,
             CheckFileExists = true,
         };
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
 
+    /// <summary>Title and filter of the CSV picker in the current language (catalog keys; the file pattern itself is not text).</summary>
+    internal static (string Title, string Filter) TranslationCsvDialogSpec(string? title) =>
+        (UiText.Translate(string.IsNullOrWhiteSpace(title) ? "Chọn tệp CSV" : title), "CSV (*.csv)|*.csv|" + UiText.Translate("Tất cả") + " (*.*)|*.*");
+
+    /// <summary>Title and filter of the Cloud Repair package save dialog in the current language.</summary>
+    internal static (string Title, string Filter) CloudRepairSaveDialogSpec() =>
+        (UiText.Translate("Lưu gói Cloud Repair"), "Cloud Repair ZIP (*.zip)|*.zip|" + UiText.Translate("Tất cả") + " (*.*)|*.*");
+
     public string? PickRenpySdkFolder()
     {
-        var dlg = new OpenFolderDialog { Title = "Chọn thư mục Ren'Py 8.5.3 đã cài", Multiselect = false };
+        var dlg = new OpenFolderDialog { Title = UiText.Translate("Chọn thư mục Ren'Py 8.5.3 đã cài"), Multiselect = false };
         return dlg.ShowDialog() == true ? dlg.FolderName : null;
     }
 

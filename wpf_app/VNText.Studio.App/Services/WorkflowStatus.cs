@@ -28,7 +28,7 @@ public sealed record TranslateProgress(
 
 public static class WorkflowStatus
 {
-    public static WorkflowSnapshot Evaluate(string inputPath, string outputPath)
+    public static WorkflowSnapshot Evaluate(string inputPath, string outputPath, bool patchArtifactCurrent = true)
     {
         var hasGame = !string.IsNullOrWhiteSpace(inputPath);
         var package = ResolvePackageDir(outputPath);
@@ -42,7 +42,8 @@ public static class WorkflowStatus
             : new TranslateProgress(false, false, 0, 0, 0, false);
         var hasTranslate = translateProgress.HasTranslations;
         var translateComplete = translateProgress.IsComplete;
-        var hasPatch = Directory.Exists(patchDir) && Directory.EnumerateFileSystemEntries(patchDir).Any();
+        // A non-empty Patch folder is only an artifact; it counts as this package patch only while no later CSV save made it older than the CSV.
+        var hasPatch = patchArtifactCurrent && Directory.Exists(patchDir) && Directory.EnumerateFileSystemEntries(patchDir).Any();
         var readyForPatch = hasExtract && translateComplete;
 
         var extractState = hasExtract ? WorkflowStepState.Done : WorkflowStepState.Pending;

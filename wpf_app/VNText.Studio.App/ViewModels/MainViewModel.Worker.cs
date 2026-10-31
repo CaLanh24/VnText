@@ -417,6 +417,11 @@ public sealed partial class MainViewModel
                     _csvEditorRetranslatePending = false;
                 }
 
+                if (completedTask == "patch" && evt.Ok && !cancelled)
+                {
+                    _patchArtifactBehindCsv = false;          // a Build of the CURRENT CSV revision succeeded: its artifact is fresh again
+                    RaisePatchBadge();
+                }
                 if (completedTask == "translate")
                 {
                     if (!retranslateOwnsEditorReload)

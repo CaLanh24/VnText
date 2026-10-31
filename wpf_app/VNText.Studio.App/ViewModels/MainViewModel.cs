@@ -267,8 +267,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         get => _translationCsvPath;
         private set
         {
+            var previousPath = _translationCsvPath;
             if (Set(ref _translationCsvPath, value))
             {
+                if (!SameCsvPath(previousPath ?? "", value ?? "")) _patchArtifactBehindCsv = false;   // another package has its own artifact
                 InvalidatePatchSourceState();
                 _translateLastRunCancelled = false;
                 Raise(nameof(TranslationCsvDisplay));

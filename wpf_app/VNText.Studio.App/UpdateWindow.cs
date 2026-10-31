@@ -252,7 +252,7 @@ internal sealed class UpdateWindow : Window
             header.Children.Add(label);
             if (!string.IsNullOrWhiteSpace(entry.DownloadUrl))
             {
-                var download = MakeButton(owner, "Tải xuống", false);
+                var download = MakeButton(owner, UiText.Translate("Tải xuống"), false);
                 download.VerticalAlignment = VerticalAlignment.Top;
                 AutomationProperties.SetName(download, UiText.Format("Tải phiên bản {0}", entry.Version));
                 download.Click += (_, _) =>
