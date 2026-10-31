@@ -27,7 +27,7 @@ public sealed partial class MainViewModel
 
     public string ToastMessage
     {
-        get => _toastMessage;
+        get => UiText.TranslateDynamic(_toastMessage);
         private set => Set(ref _toastMessage, value);
     }
 
@@ -53,7 +53,7 @@ public sealed partial class MainViewModel
         {
             if (kind is "error" or "warning") AppendLog($"[{kind}] {message}");
             _toastTimer?.Stop();
-            ToastMessage = UiText.TranslateDynamic(message.Trim());   // app-owned messages follow the language; user data/paths pass through
+            ToastMessage = message;   // keep the original format provenance; localize at display time without altering raw arguments
             ToastKind = kind;
             ToastVisible = true;
 

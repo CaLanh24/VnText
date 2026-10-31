@@ -110,6 +110,9 @@ internal static partial class Program
                 vm.ToggleCsvBulkPreviewDetailCommand.Execute(null); vm.ToggleCsvBulkCommand.Execute(null); Scan("csv tools open + examples", CsvScope());
                 rows[2].Translation = "Cảm ơn nhiều."; Scan("csv dirty", CsvScope());
                 vm.TestSetCsvSaveError("file đã đổi bên ngoài"); Scan("csv save error", CsvScope());
+                vm.Language = "vi"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Không lưu được:", StringComparison.Ordinal), "Vietnamese save-error toast updates in place");
+                vm.Language = "en"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Could not save:", StringComparison.Ordinal), "English save-error toast updates in place");
+                Scan("csv toast hot language switch", CsvScope());
                 vm.TestSetCsvLoadError(Path.Combine(packageA, "translation.csv"), "CSV trống"); Scan("csv load error", CsvScope());
                 // Patch: idle / valid / blocked / delivery
                 vm.NavigateTabCommand.Execute("patch"); picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
