@@ -94,7 +94,7 @@ internal sealed class UpdateWindow : Window
         _progressArea = new Grid { Margin = new Thickness(0, 0, 0, 12) };
         _progressArea.ColumnDefinitions.Add(new ColumnDefinition()); _progressArea.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         _progressArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); _progressArea.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        _progress = new ProgressBar { Style = (Style)owner.FindResource("BlueProgressBarStyle"), Foreground = Gradient(false), Height = 3, VerticalAlignment = VerticalAlignment.Center };
+        _progress = new ProgressBar { Style = (Style)owner.FindResource("GreenThinProgressBarStyle"), Height = 4, VerticalAlignment = VerticalAlignment.Center };
         _progressArea.Children.Add(_progress); _cancel = MakeIconButton(owner, "⊗", 20); _cancel.Margin = new Thickness(8, 0, 0, 0);
         AutomationProperties.SetName(_cancel, "Hủy tải cập nhật"); _cancel.Click += (_, _) => source.Cancel(); Grid.SetColumn(_cancel, 1); _progressArea.Children.Add(_cancel);
         _progressText = new TextBlock { HorizontalAlignment = HorizontalAlignment.Center, FontSize = 10, Foreground = Brush("MutedBrush"), Margin = new Thickness(0, 4, 0, 0) };

@@ -62,7 +62,8 @@ public static class UiAppearance
         Set("ToastInfoForegroundBrush", C("#111827", "#EDF1F7"));
         Set("ToastInfoBorderBrush", C("#2868E8", "#8CB5FF"));
         Set("ToastSuccessBackgroundBrush", C("#E6FAEF", "#173D32"));
-        Set("ToastSuccessForegroundBrush", C("#111827", "#EDF1F7"));
+        Set("ToastSuccessForegroundBrush", C("#087C42", "#7BDEA7"));
+        Set("ProgressFillBrush", C("#22C55E", "#4ADE80"));
         Set("ToastSuccessBorderBrush", C("#16A34A", "#7BDEA7"));
         Set("ToastWarningBackgroundBrush", C("#FFF4DF", "#4A3410"));
         Set("ToastWarningForegroundBrush", C("#111827", "#FFF1D6"));

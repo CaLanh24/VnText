@@ -241,7 +241,7 @@
 
     <Style x:Key="ExtractionProgressBarStyle" TargetType="{x:Type ProgressBar}">
 
-        <Setter Property="Height" Value="8" />
+        <Setter Property="Height" Value="4" />
 
         <Setter Property="Background" Value="{DynamicResource ProgressTrackBrush}" />
 
@@ -281,6 +281,11 @@
 
         <Setter Property="Foreground" Value="{DynamicResource BlueBrush}" />
 
+    </Style>
+
+    <Style x:Key="GreenThinProgressBarStyle" TargetType="{x:Type ProgressBar}" BasedOn="{StaticResource ExtractionProgressBarStyle}">
+        <Setter Property="Height" Value="4" />
+        <Setter Property="Foreground" Value="{DynamicResource ProgressFillBrush}" />
     </Style>
 
 

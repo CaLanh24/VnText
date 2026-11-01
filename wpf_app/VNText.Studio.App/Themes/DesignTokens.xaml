@@ -248,7 +248,8 @@
     <SolidColorBrush x:Key="ToastInfoForegroundBrush" Color="#111827" />
     <SolidColorBrush x:Key="ToastInfoBorderBrush" Color="#2868E8" />
     <SolidColorBrush x:Key="ToastSuccessBackgroundBrush" Color="#E6FAEF" />
-    <SolidColorBrush x:Key="ToastSuccessForegroundBrush" Color="#111827" />
+    <SolidColorBrush x:Key="ToastSuccessForegroundBrush" Color="#087C42" />
+    <SolidColorBrush x:Key="ProgressFillBrush" Color="#22C55E" />
     <SolidColorBrush x:Key="ToastSuccessBorderBrush" Color="#16A34A" />
     <SolidColorBrush x:Key="ToastWarningBackgroundBrush" Color="#FFF4DF" />
     <SolidColorBrush x:Key="ToastWarningForegroundBrush" Color="#111827" />

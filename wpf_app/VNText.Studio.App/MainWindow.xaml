@@ -454,7 +454,7 @@
                                                    Foreground="{DynamicResource MutedBrush}" />
                                     </Grid>
                                     <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding ExtractProgressPercent, Mode=OneWay}"
-                                                 Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
+                                                 Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,8,0,0" />
                                 </Grid>
 
                                 <Grid Grid.Row="7" Margin="0,24,0,0">
@@ -634,8 +634,8 @@
                                                 <Button Content="Bắt đầu dịch" Style="{StaticResource PrimaryButton}" Command="{Binding RunTranslateCommand}" />
                                             </StackPanel>
                                         </Grid>
-                                        <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Height="6" Margin="0,12,0,0"
-                                                     Value="{Binding TranslateProgressPercent, Mode=OneWay}" Style="{StaticResource BlueProgressBarStyle}"
+                                        <ProgressBar Grid.Row="1" Minimum="0" Maximum="100" Height="4" Margin="0,12,0,0"
+                                                     Value="{Binding TranslateProgressPercent, Mode=OneWay}" Style="{StaticResource GreenThinProgressBarStyle}"
                                                      Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}" />
                                         <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding TranslateProgressActive, Converter={StaticResource BoolToVis}}">
                                             <TextBlock Text="{Binding TranslateProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,18,0" />
@@ -804,7 +804,7 @@
                                                    Foreground="{DynamicResource MutedBrush}" />
                                     </Grid>
                                     <ProgressBar x:Name="PatchProgressBar" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding PatchProgressPercent, Mode=OneWay}"
-                                                 Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,0,0" />
+                                                 Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,8,0,0" />
                                     <StackPanel Grid.Row="2" Margin="0,7,0,0">
                                         <TextBlock Text="{Binding PatchProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" />
                                         <TextBlock Text="{Binding PatchProgressItem, Converter={StaticResource UiTextFormat}, ConverterParameter='Mục: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,14,0" TextTrimming="CharacterEllipsis" MaxWidth="560" ToolTip="{Binding PatchProgressItem}" />
@@ -1220,12 +1220,32 @@
                                                 <StackPanel Orientation="Horizontal"><ctrl:IconView Icon="journal" Width="14" Height="14" StrokeBrush="{DynamicResource MutedBrush}" Margin="0,0,6,0" /><TextBlock Text="Ghi chú phát hành" /></StackPanel>
                                             </Button>
                                         </StackPanel>
-                                        <TextBlock Grid.Row="2" Text="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}"
+                                        <Border Grid.Row="2" HorizontalAlignment="Center" MaxWidth="560" Margin="0,8,0,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="CornerRadius" Value="12" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
+                                                            <Setter Property="Background" Value="{DynamicResource GreenSoftBrush}" />
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource GreenBrush}" />
+                                                            <Setter Property="BorderThickness" Value="1" />
+                                                            <Setter Property="Padding" Value="18,12" />
+                                                            <Setter Property="MinWidth" Value="420" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                        <TextBlock Text="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}"
                                                    MaxWidth="560" TextWrapping="Wrap" TextAlignment="Center"
-                                                   HorizontalAlignment="Center" Margin="0,8,0,0">
+                                                   HorizontalAlignment="Center">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource UiSecondaryTextStyle}">
                                                     <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
+                                                            <Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                            <Setter Property="FontSize" Value="15" />
+                                                        </DataTrigger>
                                                         <DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng.">
                                                             <Setter Property="Visibility" Value="Collapsed" />
                                                         </DataTrigger>
@@ -1236,6 +1256,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
+                                        </Border>
                                         <TextBlock Grid.Row="3" Text="VNText hỗ trợ quy trình lấy text, chỉnh CSV và đóng gói patch."
                                                    Style="{StaticResource UiBodyTextStyle}" Foreground="{DynamicResource MutedBrush}"
                                                    TextAlignment="Center" HorizontalAlignment="Center" Margin="0,14,0,0" />

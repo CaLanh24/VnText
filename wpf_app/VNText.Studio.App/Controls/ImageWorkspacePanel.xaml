@@ -65,7 +65,7 @@
                                AutomationProperties.Name="Tác vụ đang chạy" />
                     <TextBlock x:Name="ProgressText" Text="{Binding ImageWorkspaceProgressText, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0"
                                AutomationProperties.Name="Tiến trình và xác nhận hủy" />
-                    <ProgressBar x:Name="TaskSpinner" Height="6" IsIndeterminate="True" Style="{StaticResource BlueProgressBarStyle}" Margin="0,8,12,0" />
+                    <ProgressBar x:Name="TaskSpinner" Height="4" IsIndeterminate="True" Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,8,12,0" />
                 </StackPanel>
                 <Button x:Name="CancelButton" Grid.Column="1" Content="Hủy tác vụ" Command="{Binding CancelCommand}" Style="{StaticResource OutlineButton}"
                         VerticalAlignment="Center" AutomationProperties.Name="Hủy tác vụ đang chạy" />
