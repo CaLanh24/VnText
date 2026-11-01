@@ -3920,6 +3920,47 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("DISPOSABLE", {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}["test:one"])
             self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name)))   # no temp/lock left behind
 
+    def test_registry_lock_is_never_stolen_by_age_and_never_unlinks_a_foreign_lock(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            one = work / "one"
+            one.mkdir()
+            record = {"artifact_id": "test:one", "path": one, "kind": "test_fixture", "created_by": "t", "owner": "t", "purpose": "p", "lifecycle": "RETAINED"}
+            lock = manifest.with_name(manifest.name + ".lock")
+            lock.write_bytes(b"live-writer")
+            old = time.time() - 3600
+            os.utime(lock, (old, old))                                            # old but still held by a live writer
+            with patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 0.2):
+                with self.assertRaises(TimeoutError):
+                    paths.register_artifacts([record])
+            self.assertEqual(b"live-writer", lock.read_bytes())                   # not stolen, not deleted
+            self.assertFalse(manifest.exists())
+            lock.unlink()
+            original = paths._load_manifest
+
+            def replaced_lock():
+                lock.unlink()
+                lock.write_bytes(b"successor")                                    # another writer owns the lock by release time
+                return original()
+
+            with patch.object(paths, "_load_manifest", side_effect=replaced_lock):
+                paths.register_artifacts([record])
+            self.assertEqual(b"successor", lock.read_bytes())                     # release did not unlink the successor's lock
+            lock.unlink()
+
+    def test_failed_atomic_registry_write_preserves_the_old_registry(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            one = work / "one"
+            one.mkdir()
+            self._register(one, lifecycle="RETAINED")
+            before = manifest.read_bytes()
+            two = work / "two"
+            two.mkdir()
+            with patch.object(paths.os, "replace", side_effect=OSError("disk failure")):
+                with self.assertRaises(OSError):
+                    self._register(two, lifecycle="RETAINED")
+            self.assertEqual(before, manifest.read_bytes())
+            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name)))   # no temp or lock left
+
     def test_integrity_memo_reuses_unchanged_snapshots_within_a_transaction_and_never_a_stale_pass(self):
         with self.isolated_workspace() as (root, _work, _game, manifest):
             self._active_release_epoch_for_transition(root, manifest)

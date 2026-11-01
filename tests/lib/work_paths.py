@@ -327,33 +327,39 @@ class RegistryChanged(RuntimeError):
     """The registry bytes differ from the snapshot a caller classified against."""
 
 
+REGISTRY_LOCK_TIMEOUT_SECONDS = 60
+
+
 @contextmanager
 def _registry_lock():
-    """Exclusive registry write lock (create-exclusive file beside the registry); a lock older than 5 minutes is a dead writer's."""
+    """Exclusive registry write lock: a create-exclusive file beside the registry holding this writer's token.
+
+    A held lock is never stolen by age: a writer that cannot get it within 60 s fails closed with TimeoutError and a leftover lock
+    from a dead writer needs a human to remove it.  Release unlinks only a lock that still carries this writer's token."""
 
     ensure_work_root()
     lock = MANIFEST_PATH.with_name(MANIFEST_PATH.name + ".lock")
-    deadline = time.monotonic() + 60
+    token = uuid.uuid4().hex.encode("ascii")
+    deadline = time.monotonic() + REGISTRY_LOCK_TIMEOUT_SECONDS
     while True:
         try:
             descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(descriptor)
-            break
         except FileExistsError:
-            try:
-                if time.time() - lock.stat().st_mtime > 300:
-                    lock.unlink()
-                    continue
-            except OSError:
-                pass
             if time.monotonic() > deadline:
                 raise TimeoutError(f"artifact registry is locked: {lock}")
             time.sleep(0.05)
+            continue
+        try:
+            os.write(descriptor, token)
+        finally:
+            os.close(descriptor)
+        break
     try:
         yield
     finally:
         try:
-            lock.unlink()
+            if lock.read_bytes() == token:
+                lock.unlink()
         except OSError:
             pass
 
