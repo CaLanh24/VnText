@@ -192,6 +192,19 @@ RELEASE_TASK_015_BUDGET_APPROVAL = (
     "coordinator records a temporary 11 GiB non-exempt ceiling for the exact registered candidate-0.1.15 after a complete 146k-entry inventory "
     "measured 7.83 GiB of existing non-exempt history and baselines (the verified public baseline trees kept for the supported direct updater "
     "routes), the new 0.1.14 predecessor baseline tree needs about 0.5 GiB, the candidate build/package about 0.3 GiB and the isolated "
+    "Setup/updater validation copies about 1.5 GiB at peak; the 3 GiB start cannot hold the existing history. Terminal cleanup returns to at most "
+    "1 GiB, shared .dev-env stays at most 6 GiB, and all history, cache and user data are preserved (protected history that cannot be removed "
+    "is reported REVIEW_REQUIRED, never waived or redefined). No epoch rebaseline authority of an earlier release is inherited."
+)
+# Wording recorded in the epochs created before the terminal-cleanup sentence was restored to the canonical "at most 1 GiB" rule; the same
+# 11 GiB measured ceiling, accepted only so those already recorded epochs stay verifiable.
+RELEASE_TASK_015_PREVIOUS_BUDGET_APPROVAL = (
+    "Owner 2026-11-01 answered 'Cho phép, lên 0.1.15 rồi kiểm Setup/updater và release luôn đi. Xong nhớ clean up. đừng dừng lại cho đến khi release' "
+    "and authorized version 0.1.15, its Setup/updater validation, publication after Brain ACCEPT, post-publication readback and owned cleanup. "
+    "Under the standing 2026-10-24 measured release-allocation authorization (start at 3 GiB, raise to the measured need plus reserve), the "
+    "coordinator records a temporary 11 GiB non-exempt ceiling for the exact registered candidate-0.1.15 after a complete 146k-entry inventory "
+    "measured 7.83 GiB of existing non-exempt history and baselines (the verified public baseline trees kept for the supported direct updater "
+    "routes), the new 0.1.14 predecessor baseline tree needs about 0.5 GiB, the candidate build/package about 0.3 GiB and the isolated "
     "Setup/updater validation copies about 1.5 GiB at peak; the 3 GiB start cannot hold the existing history. Terminal cleanup returns to the "
     "pre-release level, shared .dev-env stays at most 6 GiB, and all history, cache and user data are preserved. No epoch rebaseline authority "
     "of an earlier release is inherited."
@@ -308,6 +321,10 @@ def _release_budget_record_is_valid(
         task_id == RELEASE_TASK_014_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_014_PREVIOUS_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_014_PREVIOUS_BUDGET_APPROVAL
+    ) or (
+        task_id == RELEASE_TASK_015_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_015_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_015_PREVIOUS_BUDGET_APPROVAL
     )
 
 RELEASE_TASK_EPOCH_TRANSITION_APPROVAL = RELEASE_TASK_BUDGET_APPROVAL

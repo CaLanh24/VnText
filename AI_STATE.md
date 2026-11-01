@@ -17,7 +17,7 @@
 ## Git/epoch và cleanup
 
 - Epoch 0.1.14 hiện tại `epoch-20261101-fixed11-014-bb5c355` (đã tiêu thụ 3 quyền rebaseline 0.1.14; không còn). Release 0.1.15 dùng chuyển thường sang epoch 0.1.15, không kế thừa rebaseline cũ, giữ 8 hop/CAS. Tránh vòng docs→epoch: docs chỉ commit cùng đợt hoặc ở boundary terminal.
-- Cleanup: đã dọn có đăng ký fixed6/fixed8 app (dữ liệu giữ ở `style-fixed*-audit-data-014`), p14o, source clone, scratch. Sau 0.1.15 dọn payload candidate/baseline mới về mức trước release; giữ audit/Owner data/history/cache và app test của người dùng trừ khi có quyền rõ.
+- Cleanup: đã dọn có đăng ký fixed6/fixed8 app (dữ liệu giữ ở `style-fixed*-audit-data-014`), p14o, source clone, scratch. Sau upload/readback dọn có đăng ký payload/baseline sở hữu hướng về trần chuẩn ≤ 1 GiB; phần lịch sử được bảo vệ không xóa được thì ghi REVIEW_REQUIRED chính xác (không waive, không định nghĩa lại). Giữ audit/Owner data/history/cache và app test của người dùng trừ khi có quyền rõ.
 
 ## Tra cứu
 

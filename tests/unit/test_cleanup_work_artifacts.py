@@ -1552,6 +1552,15 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertEqual(("release-0.1.15", "0.1.15", cleanup.RELEASE_TASK_015_BUDGET_APPROVAL), cleanup._release_budget_spec("release-0.1.15"))
         self.assertEqual(cleanup.RELEASE_TASK_015_BUDGET_LIMIT_BYTES, cleanup._release_task_budget_limit("release-0.1.15"))
         self.assertIn("Cho phép, lên 0.1.15", cleanup.RELEASE_TASK_015_BUDGET_APPROVAL)
+        # the standing rule stays "terminal cleanup returns to at most 1 GiB"; the earlier wording is accepted only as a previously recorded budget record
+        self.assertIn("Terminal cleanup returns to at most 1 GiB", cleanup.RELEASE_TASK_015_BUDGET_APPROVAL)
+        self.assertNotIn("pre-release level", cleanup.RELEASE_TASK_015_BUDGET_APPROVAL)
+        self.assertIn("pre-release level", cleanup.RELEASE_TASK_015_PREVIOUS_BUDGET_APPROVAL)
+        task = cleanup.RELEASE_TASK_015_BUDGET_ID
+        limit = cleanup.RELEASE_TASK_015_BUDGET_LIMIT_BYTES
+        self.assertTrue(cleanup._release_budget_record_is_valid({"limit_bytes": limit, "owner_approval": cleanup.RELEASE_TASK_015_BUDGET_APPROVAL}, task, cleanup.RELEASE_TASK_015_BUDGET_APPROVAL))
+        self.assertTrue(cleanup._release_budget_record_is_valid({"limit_bytes": limit, "owner_approval": cleanup.RELEASE_TASK_015_PREVIOUS_BUDGET_APPROVAL}, task, cleanup.RELEASE_TASK_015_BUDGET_APPROVAL))
+        self.assertFalse(cleanup._release_budget_record_is_valid({"limit_bytes": limit + 1, "owner_approval": cleanup.RELEASE_TASK_015_PREVIOUS_BUDGET_APPROVAL}, task, cleanup.RELEASE_TASK_015_BUDGET_APPROVAL))
         # no earlier rebaseline grant is inherited by the new release task
         self.assertTrue(all(cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[key][0] != cleanup.RELEASE_TASK_015_BUDGET_ID for key in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS))
         self.assertFalse(cleanup._epoch_transition_tasks_compatible(cleanup.RELEASE_TASK_013_BUDGET_ID, cleanup.RELEASE_TASK_015_BUDGET_ID))
