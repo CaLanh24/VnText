@@ -72,7 +72,7 @@ def safe_output(relative):
     path = ROOT / relative
     if Path(relative).is_absolute() or len(Path(relative).parts) != 2 or Path(relative).parts[0] != "DEV_RUN":
         raise ValueError("output must be a direct DEV_RUN child")
-    if Path(relative).name != "bootstrap-build":
+    if Path(relative).name not in {"bootstrap-build", "resources-dev15"}:
         raise ValueError("only DEV_RUN/bootstrap-build is owned by this tool")
     for part in (ROOT / "DEV_RUN", path):
         if part.is_symlink() or (part.exists() and getattr(part.stat(), "st_file_attributes", 0) & 0x400):
@@ -263,6 +263,7 @@ def build_identity(output, result, runtime_root):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--action", choices=("check", "build", "smoke"), default="check")
+    parser.add_argument("--output-scope", choices=("bootstrap-build", "resources-dev15"), default="bootstrap-build")
     parser.add_argument("--gate", choices=("dev", "smoke"), default="dev")
     parser.add_argument("--python")
     parser.add_argument("--dotnet")
@@ -273,7 +274,7 @@ def main(argv=None):
     try:
         shared = Path(args.shared_root).resolve() if args.shared_root else ROOT
         if args.action != "check":
-            output = safe_output("DEV_RUN/bootstrap-build")
+            output = safe_output("DEV_RUN/" + args.output_scope)
             # Shared resources remain within the containing DEV checkout.
             inventory, _ = quota()
             if not shared.is_relative_to(Path(inventory["root"]).resolve()):

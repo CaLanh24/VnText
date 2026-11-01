@@ -14,6 +14,17 @@ WORK = work_temp_dir('resource-setup-tests')
 
 
 class ResourceSetupTests(unittest.TestCase):
+    def test_dev_authority_is_one_exact_handoff_and_a_separate_bounded_scope(self):
+        from tests.tools import cleanup_work_artifacts as c
+        task=c.DEV_RESOURCES_TASK_ID; grant=c.DEV_RESOURCES_REBASELINE_ID
+        self.assertTrue(c._rebaseline_prior_task_allowed('release-0.1.15',task,grant))
+        self.assertFalse(c._rebaseline_prior_task_allowed('release-0.1.14',task,grant))
+        self.assertFalse(c._rebaseline_prior_task_allowed('release-0.1.15',task,'wrong-grant'))
+        self.assertFalse(c._rebaseline_prior_task_allowed(task,'release-0.1.15',grant))
+        self.assertEqual(c._release_task_budget_limit(task),3*1024**3)
+        self.assertEqual(c._task_scope_path(Path('C:/v'),task,'0.1.15'),Path('C:/v/DEV_RUN/resources-dev15'))
+        self.assertEqual(c.EPOCH_REBASELINE_AUTHORIZATIONS[grant],(task,'0.1.15',c.DEV_RESOURCES_BUDGET_APPROVAL))
+
     def test_renpy_inventory_does_not_scan_engine_artwork(self):
         from vntext.image_text import discover_images
         with TemporaryDirectory(dir=WORK) as temp:

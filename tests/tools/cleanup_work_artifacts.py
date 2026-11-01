@@ -223,8 +223,23 @@ RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL = (
     ".dev-env stays at most 6 GiB, and all history, cache and user data are preserved."
 )
 
+DEV_RESOURCES_TASK_ID = "dev-resources-0.1.15"
+DEV_RESOURCES_BUDGET_APPROVAL = "Owner call_d07908f4c24b4411b3e2a35c409d6634: Cho phép, hoàn tất gate và app DEV; one no-delete metadata rebaseline and a separate DEV scope, 3 GiB, SDK/OCR/green-style batch only; CAS/rollback/eight hops unchanged, preserve user data, no push/release."
+DEV_RESOURCES_REBASELINE_ID = "call_d07908f4c24b4411b3e2a35c409d6634"
+
+
+def _task_scope_path(root, task_id, version):
+    return (root / "DEV_RUN/resources-dev15").resolve() if task_id == DEV_RESOURCES_TASK_ID else (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
+
+
+def _rebaseline_prior_task_allowed(previous_task, target_task, authorization_id):
+    return previous_task == target_task or (authorization_id == DEV_RESOURCES_REBASELINE_ID and previous_task == RELEASE_TASK_015_BUDGET_ID and target_task == DEV_RESOURCES_TASK_ID)
+
+
 def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     task_id = task_id or str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip() or RELEASE_TASK_BUDGET_ID
+    if task_id == DEV_RESOURCES_TASK_ID:
+        return task_id, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_010_BUDGET_ID:
         return task_id, "0.1.10", RELEASE_TASK_010_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_011_BUDGET_ID:
@@ -253,7 +268,7 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
 def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
     """Allow same-release continuation and the Owner-authorized 0.1.12 -> 0.1.13 and 0.1.13 -> 0.1.14 handoffs."""
 
-    return previous_task_id == target_task_id or (
+    return previous_task_id == target_task_id or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
         previous_task_id == RELEASE_TASK_012_BUDGET_ID
         and target_task_id == RELEASE_TASK_013_BUDGET_ID
     ) or (
@@ -284,6 +299,8 @@ def _epoch_transition_versions_valid(
 
 
 def _release_task_budget_limit(task_id: str) -> int:
+    if task_id == DEV_RESOURCES_TASK_ID:
+        return 3 * 1024 ** 3
     if task_id == RELEASE_TASK_012_BUDGET_ID:
         return RELEASE_TASK_012_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_013_BUDGET_ID:
@@ -449,6 +466,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    DEV_RESOURCES_REBASELINE_ID: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2),
     RELEASE_TASK_EPOCH_REBASELINE_APPROVAL_ID: (
@@ -2338,7 +2356,7 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
     budget = epoch.get("release_task_budget")
     if not isinstance(budget, dict):
         return PROJECT_SIZE_LIMIT_BYTES, "release_task_budget_missing", "default"
-    expected_scope = (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
+    expected_scope = _task_scope_path(root, task_id, version)
     state = _git_repository_state()
     if (
         budget.get("task_id") != task_id
@@ -2446,7 +2464,7 @@ def register_release_task_scope() -> dict:
     if not isinstance(epoch, dict) or _epoch_verify_files(epoch, manifest=manifest):
         return {"ok": False, "reasons": ["release_task_epoch_invalid"]}
     budget = epoch.get("release_task_budget")
-    scope = (ROOT / "RELEASE_RUN" / f"candidate-{version}").resolve()
+    scope = _task_scope_path(ROOT, task_id, version)
     state = _git_repository_state()
     if (
         not isinstance(budget, dict)
@@ -2528,7 +2546,7 @@ def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state:
     """Internal profile resolver when a strict manifest and Git state are already read."""
     task_id, version, approval = _release_budget_spec()
 
-    expected_scope = (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
+    expected_scope = _task_scope_path(root, task_id, version)
     epoch = manifest.get("prospective_epoch")
     budget = epoch.get("release_task_budget") if isinstance(epoch, dict) else None
     if not isinstance(budget, dict):
@@ -3229,7 +3247,7 @@ def _epoch_provenance(
         provenance["release_task_budget"] = {
             "task_id": task_id,
             "limit_bytes": _release_task_budget_limit(task_id),
-            "scope_path": str((ROOT / "RELEASE_RUN" / f"candidate-{version}").resolve()),
+            "scope_path": str(_task_scope_path(ROOT, task_id, version)),
             "source_sha": source_sha,
             "owner_approval": approval,
             "terminal_limit_bytes": PROJECT_SIZE_LIMIT_BYTES,
@@ -3353,7 +3371,7 @@ def _epoch_verify_files(
         or not _release_budget_record_is_valid(release_budget, budget_task, budget_approval)
         or release_budget.get("terminal_limit_bytes") != PROJECT_SIZE_LIMIT_BYTES
         or release_budget.get("source_sha") != epoch.get("source_sha")
-        or release_budget.get("scope_path") != str((ROOT / "RELEASE_RUN" / f"candidate-{budget_version}").resolve())
+        or release_budget.get("scope_path") != str(_task_scope_path(ROOT, budget_task, budget_version))
     ):
         failures.append("release_task_budget_invalid")
     rollback_value = epoch.get("rollback")
@@ -3617,7 +3635,7 @@ def _epoch_rebaseline_provenance_failures(
         or previous_epoch.get("original_incident_identity") != epoch.get("original_incident_identity")
         or record.get("incident_identity") != epoch.get("original_incident_identity")
         or _incident_identity() != record.get("incident_identity")
-        or (previous_epoch.get("release_task_budget") or {}).get("task_id") != authority[0]
+        or not _rebaseline_prior_task_allowed((previous_epoch.get("release_task_budget") or {}).get("task_id"), authority[0], authorization_id)
     ):
         failures.append("epoch_rebaseline_previous_identity_mismatch")
         return failures
@@ -3842,7 +3860,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID):
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -3851,7 +3869,7 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID):
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
@@ -3919,7 +3937,7 @@ def activate_prospective_epoch(
             if incident != active.get("original_incident_identity"):
                 reasons.append("transition_incident_identity_changed")
             if rebaseline_requested:
-                if previous_task_id != rebaseline_task_id:
+                if not _rebaseline_prior_task_allowed(previous_task_id, rebaseline_task_id, owner_rebaseline_authorization_id):
                     reasons.append("epoch_rebaseline_active_task_mismatch")
                 if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
                     reasons.append("epoch_rebaseline_source_not_descendant")
@@ -5533,7 +5551,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",
