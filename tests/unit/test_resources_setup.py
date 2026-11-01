@@ -14,6 +14,15 @@ WORK = work_temp_dir('resource-setup-tests')
 
 
 class ResourceSetupTests(unittest.TestCase):
+    def test_renpy_inventory_does_not_scan_engine_artwork(self):
+        from vntext.image_text import discover_images
+        with TemporaryDirectory(dir=WORK) as temp:
+            root=Path(temp);(root/'game').mkdir();(root/'renpy/common').mkdir(parents=True)
+            (root/'game/menu.png').write_bytes(b'game-image')
+            (root/'renpy/common/logo.png').write_bytes(b'engine-image')
+            inventory=discover_images(root)
+            self.assertEqual(inventory['image_paths'],[str(root/'game/menu.png')])
+
     def test_disposed_scope_history_does_not_conflict_with_one_current_registration(self):
         from tests.tools import cleanup_work_artifacts as cleanup
         with TemporaryDirectory(dir=WORK) as temp, patch.dict('os.environ', {'VNTEXT_RELEASE_TASK_ID':'release-0.1.15'}):

@@ -23,6 +23,8 @@ public static class UiText
         ["Chọn ảnh để sửa riêng"] = "Choose an image to edit",
         ["Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả."] = "Find text-bearing images and translate them automatically. Edit only results you want to improve.",
         ["Nhật ký — lịch sử đầy đủ ở mục Nhật ký bên trái"] = "Log — full history is available from Journal in the sidebar",
+        ["Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối."] = "Static PNG/JPEG/WebP images. Detect English text, translate and render previews automatically. Only images with detected text are exported; estimated backgrounds are labelled for inspection. OCR and rendering preserve source images and write separate output. Only Install into a game copy writes to the copy you select, with backup and hash verification. The original game and overlapping source/copy paths are protected.",
+        ["Vùng chữ phủ toàn ảnh; không đủ nền để dựng bản nháp an toàn."] = "The text region covers the whole image; there is not enough surrounding background for a safe preview.",
         ["Chạy trên máy"] = "On-device processing",
         ["Mở nhật ký"] = "Open log",
         ["Model OPUS-MT INT8 sẵn sàng."] = "OPUS-MT INT8 model ready.",

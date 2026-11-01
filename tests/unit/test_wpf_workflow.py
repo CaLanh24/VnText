@@ -536,9 +536,9 @@ class WpfWorkflowTests(unittest.TestCase):
         # (N3) OCR: short lead + one safety sentence, the complete original text unchanged inside Details
         self.assertIn('x:Name="LeadText"', panel)
         self.assertIn('x:Name="SafetyText"', panel)
-        self.assertIn('<Expander x:Name="IntroDetails" Header="Chi tiết" IsExpanded="False"', panel)
-        details = panel[panel.index('x:Name="IntroDetails"'):panel.index("</Expander>")]
-        for phrase in ("OCR tiếng Anh luôn cần bạn xem lại", "BẢN SAO game do bạn chọn", "bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối"):
+        self.assertIn('<Border x:Name="IntroDetails"', panel)
+        details = panel[panel.index('x:Name="IntroDetails"'):panel.index("</Border>", panel.index('x:Name="IntroDetails"'))]
+        for phrase in ("Tự nhận diện chữ tiếng Anh", "BẢN SAO game do bạn chọn", "bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối"):
             self.assertIn(phrase, details)
         # (N4) selects use the two shared sizes
         self.assertNotIn('Width="150" Height="34"', xaml)

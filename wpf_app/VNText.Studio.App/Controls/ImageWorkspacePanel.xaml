@@ -52,7 +52,7 @@
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
         <Border x:Name="IntroDetails" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp được báo riêng để sửa nếu cần. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
         </Border>
 
         <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->

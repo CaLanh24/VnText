@@ -186,8 +186,11 @@ def render_image(document, output, font_path):
 def discover_images(root, *, is_cancelled=None, exclude_roots=()):
     root = _regular(root)
     if not root.is_dir(): raise ValueError("Chọn thư mục game/ảnh để tìm ảnh.")
+    # A Ren'Py distribution ships engine artwork beside game/. Do not offer
+    # SDK/common icons and launcher images as game translation work.
+    scan_root = root / 'game' if (root/'game').is_dir() and (root/'renpy').is_dir() else root
     paths = []; errors = []; seen = 0; deadline = time.monotonic() + 30
-    for base, dirs, names in os.walk(root, followlinks=False):
+    for base, dirs, names in os.walk(scan_root, followlinks=False):
         dirs[:] = [name for name in dirs if not any((Path(base)/name).resolve() == Path(excluded).resolve() for excluded in exclude_roots)]
         for name in dirs + names:
             seen += 1
