@@ -442,9 +442,9 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             self.assertIn("private const string IntelEulaPath", setup_source)
             self.assertIn("View original Intel agreement", setup_source)
             self.assertIn("ShowOriginalIntelEula(eula)", setup_source)
-            install_source = setup_source[setup_source.index("private static int Install()"):setup_source.index("private static Form CreateProgressWindow")]
+            install_source = setup_source[setup_source.index("private static int Install(string[] args)"):setup_source.index("private const string ShortcutRecordName")]
             self.assertIn("try { accepted = ConfirmIntelTerms(); }", install_source)
-            self.assertLess(install_source.index("ConfirmIntelTerms()"), install_source.index("new FolderBrowserDialog()"))
+            self.assertLess(install_source.index("ConfirmIntelTerms()"), install_source.index("new SetupWizard("))      # terms first, then the wizard; nothing is written by either before Install
             self.assertIn("if (!accepted) return 1;", install_source)
             self.assertIn("Setup could not verify the Intel terms in its payload:", install_source)
             self.assertIn("return 2;", install_source)
@@ -653,7 +653,7 @@ internal static class UninstallHarness
         int result;
         try
         {
-            result = (int)install.Invoke(null, null);
+            result = (int)install.Invoke(null, new object[] { new string[0] });
         }
         finally
         {
@@ -661,7 +661,7 @@ internal static class UninstallHarness
             timer.Stop();
             timer.Dispose();
         }
-        Require(clicked, "Install did not present the Intel terms before opening the destination picker.");
+        Require(clicked, "Install did not present the Intel terms before opening the setup wizard.");
         return result;
     }
 
