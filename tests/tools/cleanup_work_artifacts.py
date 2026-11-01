@@ -5884,7 +5884,7 @@ def dispose_stale_batch(
     result: dict = {"ok": False, "disposed": [], "refused": refused, "reasons": []}
     before = protected_snapshot()
     if eligible:
-        document = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        document = json.loads(MANIFEST_PATH.read_text(encoding="utf-8")) if MANIFEST_PATH.is_file() else {"artifacts": []}
         lowered = [str(p).lower() for p in eligible]
         upserts: dict[str, dict] = {}
         covered: set[str] = set()

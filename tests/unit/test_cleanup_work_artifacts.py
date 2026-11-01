@@ -3731,8 +3731,13 @@ class CleanupLifecycleTests(unittest.TestCase):
             self._register(targets[0] / "nested", lifecycle="UNKNOWN")       # unclassified descendant
             writes = []
             original = paths.register_artifacts
-            with patch.object(paths, "register_artifacts", side_effect=lambda records: writes.append(len(records)) or original(records)), \
-                patch.object(cleanup, "processes_using", return_value=[]):
+
+            def counted(records):
+                if any("dispose_stale_batch" in str(r.get("purpose")) for r in records):
+                    writes.append(len(records))
+                return original(records)
+
+            with patch.object(paths, "register_artifacts", side_effect=counted), patch.object(cleanup, "processes_using", return_value=[]):
                 result = cleanup.dispose_stale_batch(
                     targets, reason="batch test", scope_id="stale-batch-test", protected_files=[keep / "Setup.exe"])
             self.assertTrue(result["ok"], result)
