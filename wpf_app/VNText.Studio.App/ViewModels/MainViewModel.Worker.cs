@@ -192,7 +192,10 @@ public sealed partial class MainViewModel
                 _cancelWatchdog = null;
 
                 var completedTask = _runningTask;
-                if (!string.IsNullOrWhiteSpace(evt.Error)) AddTaskProgress(evt.Id, evt.Error, completedTask);
+                if (!string.IsNullOrWhiteSpace(evt.Error))
+                    AddTaskProgress(evt.Id, completedTask == "extract" && evt.Error.IndexOf("cancel", StringComparison.OrdinalIgnoreCase) < 0
+                        ? (evt.Severity == "warning" ? "[cảnh báo] " : "[lỗi] ") + evt.Error
+                        : evt.Error, completedTask);
                 if (!evt.Ok && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
                     RecordPersistentError(completedTask, evt.Error);
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
@@ -372,10 +375,20 @@ public sealed partial class MainViewModel
                 }
                 else if (partialOk)
                 {
+                    // A partial extract keeps ONE persistent, readable banner: a neutral review warning for expected limits,
+                    // the red error banner only when the worker reports a genuine discovery/extract failure alongside the package.
+                    var genuineExtractFailure = completedTask == "extract" && evt.Severity == "error";
                     RequestCompletion(
-                        renpySdkIncomplete ? "VNText Studio — Lấy text chưa đầy đủ" : "VNText Studio — Chưa hoàn tất",
+                        genuineExtractFailure ? "VNText Studio — Lỗi lấy text"
+                        : renpySdkIncomplete ? "VNText Studio — Lấy text chưa đầy đủ" : "VNText Studio — Chưa hoàn tất",
                         manualReviewText,
-                        "warning");
+                        genuineExtractFailure ? "error" : "warning");
+                    if (completedTask == "extract")
+                    {
+                        var persistentText = string.IsNullOrWhiteSpace(evt.Error) ? manualReviewText : evt.Error!;
+                        if (genuineExtractFailure) RecordPersistentError("extract", persistentText);
+                        else RecordPersistentNotice("extract", persistentText);
+                    }
                     LogExpanded = true;
                 }
 

@@ -1303,15 +1303,12 @@ def run_extract_task(
                 f"Ren'Py native accounting mismatch: native={native_units}, package={native_accounted} "
                 "(main+review+technical-skipped+engine-common-excluded)."
             )
+        # Expected limits of static extraction (dynamic runtime expressions, archive source with unproven runtime) are review warnings,
+        # never discovery errors; only genuine failures stay in extract_errors.
+        limitations = [dict(item) for item in (stats.get("limitations") or []) if isinstance(item, dict) and str(item.get("message") or "").strip()]
         runtime_dynamic = [item for item in (stats.get("renpy_static_ui_runtime_unresolved") or []) if isinstance(item, dict)]
-        dynamic_note = ""
+        dynamic_note = " ".join(str(item["message"]) for item in limitations)
         if runtime_dynamic:
-            sample = ", ".join(f"{item.get('file_path')}:{item.get('line')}" for item in runtime_dynamic[:3])
-            dynamic_note = (
-                f"{len(runtime_dynamic)} biểu thức động chỉ có giá trị lúc chạy game ({sample}"
-                f"{'…' if len(runtime_dynamic) > 3 else ''}) không thể trích tĩnh; đã ghi vào renpy_runtime_dynamic.json để xem lại, "
-                "không chạy mã game và không tạo text giả."
-            )
             (Path(out) / "renpy_runtime_dynamic.json").write_text(json.dumps(
                 {"count": len(runtime_dynamic), "policy": "diagnostic only: never evaluated, never promoted to MAIN", "entries": runtime_dynamic},
                 ensure_ascii=False, indent=2), encoding="utf-8")
@@ -1336,7 +1333,7 @@ def run_extract_task(
                 f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
             )
         empty = not (main_count or review_count)
-        completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty or runtime_dynamic)
+        completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty or limitations)
         completion_error = ""
         if extract_errors:
             completion_error = (
@@ -1354,7 +1351,7 @@ def run_extract_task(
                 f"{review_count} dòng REVIEW/UNSUPPORTED cần xử lý trước khi dịch."
                 + (" Ngoài ra " + dynamic_note if dynamic_note else "")
             )
-        elif runtime_dynamic and not empty:
+        elif limitations and not empty:
             completion_error = "Đã lấy xong text tĩnh nhưng chưa đầy đủ: " + dynamic_note
         elif empty:
             completion_error = "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét."
@@ -1385,6 +1382,8 @@ def run_extract_task(
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
+            "limitations": limitations,
+            "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
         }
         (Path(out) / "extract_status.json").write_text(json.dumps({
             "complete": not completion_blockers, "status": extract_status,
@@ -1395,6 +1394,8 @@ def run_extract_task(
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
+            "limitations": limitations,
+            "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
             "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         if extract_errors or review_count:

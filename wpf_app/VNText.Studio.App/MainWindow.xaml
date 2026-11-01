@@ -474,10 +474,32 @@
                         </Border>
 
                         <StackPanel Grid.Row="1">
-                        <Border x:Name="ExtractErrorBanner" Style="{StaticResource CardShadowBorder}" Margin="0,0,0,16" Visibility="{Binding HasPersistentError, Converter={StaticResource BoolToVis}}"
-                                BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1" AutomationProperties.Name="Lỗi chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
+                        <Border x:Name="ExtractErrorBanner" Margin="0,0,0,16" Visibility="{Binding HasPersistentError, Converter={StaticResource BoolToVis}}"
+                                AutomationProperties.Name="Thông báo lấy text chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <StackPanel>
-                                <TextBlock Text="{Binding PersistentErrorHeading}" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource ErrorBrush}" TextWrapping="Wrap" />
+                                <TextBlock x:Name="ExtractBannerHeading" Text="{Binding PersistentErrorHeading}" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                                 <TextBox x:Name="ExtractErrorText" Text="{Binding PersistentErrorText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" BorderThickness="0" Background="Transparent"
                                          FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" MaxHeight="150" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" AutomationProperties.Name="Nội dung lỗi đầy đủ" />
                                 <TextBlock Text="{Binding PersistentErrorHint}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />

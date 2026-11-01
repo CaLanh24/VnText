@@ -88,7 +88,7 @@ public sealed partial class MainViewModel
 
     public bool CsvEditorHasDocument => !string.IsNullOrWhiteSpace(_csvEditorPath);
 
-    private bool _csvBulkExpanded, _csvBulkUserChoice, _csvLowHeight;
+    private bool _csvBulkExpanded, _csvLowHeight;
     /// <summary>The bulk find/replace tools are open. Collapsed it is still one visible row with an explicit open button; the typed find/replace/preview state is never reset by toggling.</summary>
     public bool CsvBulkExpanded
     {

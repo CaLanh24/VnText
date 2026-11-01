@@ -214,6 +214,85 @@ class RenPyExtractTaskTests(unittest.TestCase):
             self.assertIn('"native_id": "native_only"', manifest)
             self.assertNotIn("Only code", manifest)
 
+    def _run_sdk_extract(self, files, template_text, *, archive=None):
+        """Run the SDK route on a synthetic game; returns (completed payload, extract_status.json, package dir contents)."""
+        nl = chr(10)
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp) / "gamecopy"; (root / "game").mkdir(parents=True)
+            for name, text in files.items():
+                (root / "game" / name).write_text(text, encoding="utf-8")
+            if archive is not None:
+                from tests.unit.test_renpy_archive import write_rpa
+                write_rpa(root / "game" / "scripts.rpa", archive)
+            out = Path(temp) / "out"; completed = []
+
+            def generate(_sdk, workspace, **_kwargs):
+                template = workspace / "game" / "tl" / "vietnamese"
+                template.mkdir(parents=True)
+                (template / "script.rpy").write_text(template_text, encoding="utf-8")
+
+            roomy = {"complete": True, "within_limit": True, "non_exempt_bytes": 0, "limit_bytes": 1 << 40}
+            with (
+                patch("vntext.app_tasks._run_unity_preflight"),
+                patch("vntext.renpy_toolchain.validate_sdk", return_value=SimpleNamespace(version="8.5.3")),
+                patch("vntext.renpy_toolchain.generate_empty_vietnamese_template", side_effect=generate),
+                patch("tests.tools.cleanup_work_artifacts._project_size_snapshot", return_value=roomy),
+            ):
+                run_extract_task(str(root), str(out), "safe", "balanced", True, renpy_sdk_path="C:/sdk", renpy_sdk_action="existing",
+                                 progress=lambda _x: None, log=lambda _x: None, complete=completed.append)
+            status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
+        return completed[-1], status
+
+    def test_archive_recovery_and_dynamic_text_are_one_neutral_partial_warning_not_errors(self):
+        nl = chr(10)
+        archived = ("label start:" + nl + '    e "Archive line"' + nl + "screen s():" + nl + "    text runtime_name" + nl).encode("utf-8")
+        template = ("# game/archived.rpy:2" + nl + "translate vietnamese archive_line:" + nl + nl + '    # e "Archive line"' + nl + '    e ""' + nl)
+        result, status = self._run_sdk_extract({"script.rpy": 'label x:' + nl + '    "x"' + nl}, template, archive={"game/archived.rpy": archived})
+        self.assertEqual("PARTIAL", result["extract_status"])
+        self.assertFalse(result["complete"])                                  # never promoted to a clean PASS
+        self.assertFalse(result["ok"])
+        self.assertEqual(0, status["errors"])                                 # expected limits are NOT discovery errors
+        self.assertEqual("warning", result["severity"])
+        self.assertEqual("warning", status["severity"])
+        codes = {item["code"] for item in status["limitations"]}
+        self.assertEqual({"ARCHIVE_SOURCE_RUNTIME_UNPROVEN", "RUNTIME_DYNAMIC_UNRESOLVED"}, codes)
+        self.assertNotIn("lỗi discovery/extract", result["error"])
+        self.assertNotIn("lỗi discovery/extract", result["summary"])
+        self.assertIn("chưa được chứng minh", result["error"])                # the unproven-runtime limitation is stated, not hidden
+        self.assertIn("không chạy mã game", result["error"])
+
+    def test_genuine_discovery_failure_stays_an_error_even_beside_a_partial_package(self):
+        nl = chr(10)
+        template = ("# game/script.rpy:2" + nl + "translate vietnamese native_only:" + nl + nl + '    # "Native only"' + nl + '    ""' + nl)
+        result, status = self._run_sdk_extract(
+            {"script.rpy": 'label start:' + nl + '    "Native only"' + nl, "broken.rpy": "screen s():" + nl + '    text "unterminated' + nl}, template)
+        self.assertEqual("PARTIAL", result["extract_status"])
+        self.assertEqual("error", result["severity"])
+        self.assertGreaterEqual(status["errors"], 1)
+        self.assertIn("lỗi discovery/extract", result["error"])
+
+    def test_corrupt_archive_is_a_real_failure_not_a_limitation(self):
+        nl = chr(10)
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp) / "gamecopy"; (root / "game").mkdir(parents=True)
+            (root / "game" / "script.rpy").write_text('label x:' + nl + '    "x"' + nl, encoding="utf-8")
+            (root / "game" / "scripts.rpa").write_bytes(b"RPA-3.0 not-a-valid-archive")
+            roomy = {"complete": True, "within_limit": True, "non_exempt_bytes": 0, "limit_bytes": 1 << 40}
+            completed = []
+            with (
+                patch("vntext.app_tasks._run_unity_preflight"),
+                patch("vntext.renpy_toolchain.validate_sdk", return_value=SimpleNamespace(version="8.5.3")),
+                patch("tests.tools.cleanup_work_artifacts._project_size_snapshot", return_value=roomy),
+            ):
+                run_extract_task(str(root), str(Path(temp) / "out"), "safe", "balanced", True, renpy_sdk_path="C:/sdk",
+                                 renpy_sdk_action="existing", progress=lambda _x: None, log=lambda _x: None, complete=completed.append)
+        result = completed[-1]
+        self.assertFalse(result["ok"])
+        self.assertNotIn("extract_status", result)            # no partial package is claimed: the worker maps this to the red failure banner
+        self.assertNotIn("severity", result)
+        self.assertIn("unsupported RPA format", result["error"])
+        self.assertEqual("FAILED", result["diagnostic_status"])
+
     def test_runtime_dynamic_screen_text_gives_an_honest_partial_not_a_discovery_error(self):
         # Owner screenshot (achievements.rpy dynamic `text` expressions): the static text is extracted, the runtime-only expressions are
         # reported as a review diagnostic; nothing is evaluated or invented and the run is neither a fake error nor a fake complete.

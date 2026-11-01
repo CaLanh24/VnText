@@ -198,8 +198,55 @@ internal static partial class Program
             AssertTrue(largeBlock < firstBlock*6+500);                                     // 3x the events must not cost quadratically more
             AssertTrue(largeBlock < 30000);
         }, failures);
+        Run("PartialExtractWithLimitationsIsANeutralPersistentWarningNotARedError", () =>
+        {
+            ResetExtractRuns();
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            vm.TestSetActiveTask("ext-warn","extract");
+            vm.TestBeginTaskLog("ext-warn","extract");
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="ext-warn",Done=5,Total=10,Step="scan",Item="a"});
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="ext-warn",Ok=false,Complete=false,ExtractStatus="PARTIAL",Severity="warning",ReviewOnly=0,
+                Error="Đã lấy xong text tĩnh nhưng chưa đầy đủ: Mã .rpy trong archive đã được khôi phục; 3 biểu thức động chỉ có giá trị lúc chạy game."});
+            AssertTrue(vm.HasPersistentError);                                       // persistent and readable, not just a toast
+            AssertTrue(vm.PersistentErrorIsWarning);
+            AssertFalse(vm.PersistentErrorHeading.StartsWith("Lỗi",StringComparison.Ordinal));
+            AssertTrue(vm.PersistentErrorHeading.StartsWith("Cảnh báo",StringComparison.Ordinal));
+            AssertTrue(vm.PersistentErrorText.Contains("biểu thức động"));
+            AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("[cảnh báo]")&&s.Contains("biểu thức động")));   // the same text sits in the inline journal
+            AssertFalse(vm.ExtractLogLines.Any(s=>s.Contains("[lỗi]")));
+            vm.TestMarkTaskTerminal("ext-warn");
+            vm.AcknowledgePersistentError();
+            AssertFalse(vm.HasPersistentError);
+        }, failures);
+        Run("GenuineExtractFailureBesideAPartialPackageStaysARedError", () =>
+        {
+            ResetExtractRuns();
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            vm.TestSetActiveTask("ext-err","extract");
+            vm.TestBeginTaskLog("ext-err","extract");
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="ext-err",Ok=false,Complete=false,ExtractStatus="PARTIAL",Severity="error",
+                Error="Extract chưa hoàn tất do lỗi discovery/extract: game/broken.rpy:2: malformed"});
+            AssertTrue(vm.HasPersistentError);
+            AssertFalse(vm.PersistentErrorIsWarning);
+            AssertTrue(vm.PersistentErrorHeading.StartsWith("Lỗi",StringComparison.Ordinal));
+            AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("[lỗi]")&&s.Contains("malformed")));
+            vm.TestMarkTaskTerminal("ext-err");
+            // a later clean run of the same task resolves the banner
+            vm.TestSetActiveTask("ext-ok","extract");
+            vm.TestBeginTaskLog("ext-ok","extract");
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="ext-ok",Ok=true,Complete=true,ExtractStatus="COMPLETE",Severity="ok",Summary="done"});
+            AssertFalse(vm.HasPersistentError);
+            vm.TestMarkTaskTerminal("ext-ok");
+        }, failures);
+        Run("WorkerCompleteEventCarriesSeverity", () =>
+        {
+            var evt=WorkerEvent.FromJson("{\"type\":\"complete\",\"id\":\"x\",\"ok\":false,\"extract_status\":\"PARTIAL\",\"severity\":\"warning\",\"error\":\"limit\"}");
+            AssertTrue(evt is not null);
+            AssertEqual("warning",evt!.Severity);
+            AssertEqual("PARTIAL",evt.ExtractStatus);
+        }, failures);
         foreach(var failure in failures) Console.Error.WriteLine(failure);
-        Console.WriteLine($"Resource flow checks: {9-failures.Count}/9 PASS");
+        Console.WriteLine($"Resource flow checks: {12-failures.Count}/12 PASS");
         return failures.Count==0?0:1;
     }
 }

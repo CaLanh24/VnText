@@ -92,8 +92,11 @@ class RenPyNativeExtractionTests(unittest.TestCase):
             (templates/"archive.rpy").write_text(
                 "# game/archived.rpy:2\ntranslate vietnamese archive_line:\n\n"
                 '    # e "Archive line"\n    e ""\n',encoding="utf-8")
-            main,review,_stats=extract_native_template_entries(root,templates,archive_sources=inventory["archive_sources"])
+            main,review,stats=extract_native_template_entries(root,templates,archive_sources=inventory["archive_sources"])
             self.assertEqual(review,[]);self.assertEqual(len(main),1)
+            self.assertEqual([],stats["errors"])                                   # recovered archive source is a limitation, not an error
+            self.assertEqual(["ARCHIVE_SOURCE_RUNTIME_UNPROVEN"],[item["code"] for item in stats["limitations"]])
+            self.assertFalse(stats["renpy_archive_source_recovery"]["runtime_execution_proven"])
             entry=main[0];container=entry.native_contract["provenance"]["source_container"]
             self.assertEqual(container["member_name"],"game/archived.rpy")
             self.assertEqual(container["member_sha256"],entry.native_contract["precondition"]["source_sha256"])
@@ -334,6 +337,7 @@ class RenPyNativeExtractionTests(unittest.TestCase):
                 "translate vietnamese strings:" + nl + nl + "    # game/achievements.rpy:2" + nl + '    old "Other"' + nl + '    new ""' + nl, encoding="utf-8")
             main, review, stats = extract_native_template_entries(root, template)
         self.assertEqual([], stats["errors"])
+        self.assertEqual(["RUNTIME_DYNAMIC_UNRESOLVED"], [item["code"] for item in stats["limitations"]])
         dynamic = stats["renpy_static_ui_runtime_unresolved"]
         self.assertEqual(3, len(dynamic))
         self.assertEqual({3, 4, 5}, {item["line"] for item in dynamic})

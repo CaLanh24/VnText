@@ -418,6 +418,31 @@ class WpfWorkflowTests(unittest.TestCase):
         harness = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
         self.assertIn("--scroll-routing-fixture", harness)
 
+    def test_limitations_map_to_a_neutral_warning_and_only_failures_to_the_red_error(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        worker = (app / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
+        persistent = (app / "ViewModels" / "MainViewModel.PersistentError.cs").read_text(encoding="utf-8")
+        event = (app / "Models" / "WorkerEvent.cs").read_text(encoding="utf-8")
+        banner = xaml[xaml.index('x:Name="ExtractErrorBanner"'):xaml.index('x:Name="ExtractLogCard"')]
+        self.assertIn('Binding PersistentErrorIsWarning', banner)
+        self.assertIn('WarningBrush', banner)                                       # the warning is amber, the error stays red
+        self.assertIn('ErrorBrush', banner)
+        self.assertNotIn('BorderBrush="{DynamicResource ErrorBrush}"', banner)      # a local value would beat the warning trigger
+        self.assertIn('evt.Severity == "error"', worker)
+        self.assertIn("RecordPersistentNotice(\"extract\"", worker)
+        self.assertIn("RecordPersistentError(\"extract\"", worker)
+        self.assertIn('"[cảnh báo] "', worker)
+        self.assertIn('Cảnh báo {0} lúc {1}', persistent)
+        self.assertIn('public string Severity', event)
+        protocol = (ROOT / "vntext_worker" / "protocol.py").read_text(encoding="utf-8")
+        runners = (ROOT / "vntext_worker" / "task_runners.py").read_text(encoding="utf-8")
+        self.assertIn('severity in ("ok", "warning", "error")', protocol)
+        self.assertIn('"severity",', runners)
+        extract = (ROOT / "vntext" / "renpy_extract.py").read_text(encoding="utf-8")
+        self.assertNotIn('stats["errors"].append("Archived', extract)               # expected limits never enter the error list
+        self.assertIn("ARCHIVE_SOURCE_RUNTIME_UNPROVEN", extract)
+
     def test_release_0114_ui_fixes_stay_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")

@@ -1148,14 +1148,23 @@ def extract_native_template_entries(
         "renpy_static_ui_runtime_unresolved":[{'file_path':item['file_path'],'line':item['line'],'end_line':item['end_line'],'reason':item['reason'],
             'raw_expression':str(item.get('raw_expression') or '')[:300]}for item in ui_unresolved if item.get('classification')=='RUNTIME_GENERATED'],
         "renpy_static_ui_engine_framework_excluded":ui_engine_excluded,
+        # Expected, documented limits of static extraction (NOT discovery failures): they keep the run PARTIAL with a review warning.
+        "limitations":[],
         "renpy_static_ui_inventory_scope":"Single-line literal slots use native global mapping at Text display time when substitution is proven enabled; block/dynamic/disabled substitution remains review.",
     }
+    runtime_dynamic=stats["renpy_static_ui_runtime_unresolved"]
+    if runtime_dynamic:
+        sample=", ".join(f"{item['file_path']}:{item['line']}" for item in runtime_dynamic[:3])
+        stats["limitations"].append({"code":"RUNTIME_DYNAMIC_UNRESOLVED","count":len(runtime_dynamic),
+            "message":f"{len(runtime_dynamic)} biểu thức động chỉ có giá trị lúc chạy game ({sample}{'…' if len(runtime_dynamic)>3 else ''}) không thể trích tĩnh; "
+                      "đã ghi vào renpy_runtime_dynamic.json để xem lại, không chạy mã game và không tạo text giả."})
     recovered_archives=[record for record in unit_archive_sources if record]
     if recovered_archives:
         stats["renpy_archive_source_recovery"]={"runtime_execution_proven":False,
             "reason":"Readable archived source was materialized for SDK source discovery; runtime loading/execution of archive .rpy is not established.",
             "sources":list({record["resolved_game_path"]if "resolved_game_path"in record else record["member_name"]:record for record in recovered_archives}.values())}
-        stats["errors"].append("Archived .rpy source recovered; actual runtime script execution remains unproven (PARTIAL).")
+        stats["limitations"].append({"code":"ARCHIVE_SOURCE_RUNTIME_UNPROVEN","count":len(stats["renpy_archive_source_recovery"]["sources"]),
+            "message":"Mã .rpy trong archive đã được khôi phục để đọc text; việc game thật nạp/chạy các script này chưa được chứng minh (PARTIAL)."})
     # Keep target state visible without importing it as source text or approving
     # arbitrary translations. Unknown/orphan mappings remain explicit evidence.
     stats["renpy_existing_translations"] = {

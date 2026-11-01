@@ -15,14 +15,18 @@ public sealed partial class MainViewModel
     private string _persistentErrorTask = "";
     private string _persistentErrorTime = "";
     private string _persistentErrorHint = "";
+    private bool _persistentIsWarning;
 
     internal string LastErrorFilePath => Path.Combine(WorkerPaths.AppDataRoot(), "last_error.json");
 
     public bool HasPersistentError => _persistentErrorText.Length > 0;
     public string PersistentErrorText => _persistentErrorText;
-    public string PersistentErrorHeading => HasPersistentError
-        ? UiText.Msg("Lỗi {0} lúc {1}", PersistentErrorStage(_persistentErrorTask), _persistentErrorTime)
-        : "";
+    // A limitation of a SUCCESSFUL run (PARTIAL) is a neutral review warning, never the red "Lỗi" of an actual failure.
+    public bool PersistentErrorIsWarning => _persistentIsWarning;
+    public string PersistentErrorHeading => !HasPersistentError ? ""
+        : _persistentIsWarning
+            ? UiText.Msg("Cảnh báo {0} lúc {1}", PersistentErrorStage(_persistentErrorTask), _persistentErrorTime)
+            : UiText.Msg("Lỗi {0} lúc {1}", PersistentErrorStage(_persistentErrorTask), _persistentErrorTime);
     public string PersistentErrorHint => _persistentErrorHint;
 
     public RelayCommand CopyErrorCommand { get; private set; } = null!;
@@ -48,7 +52,11 @@ public sealed partial class MainViewModel
     };
 
     /// <summary>Called for every terminal failure; the text is stored in full (the journal line is written by the normal log path).</summary>
-    internal void RecordPersistentError(string? task, string message, string hint = "")
+    internal void RecordPersistentNotice(string? task, string message, string hint = "") => RecordPersistent(task, message, hint, warning: true);
+
+    internal void RecordPersistentError(string? task, string message, string hint = "") => RecordPersistent(task, message, hint, warning: false);
+
+    private void RecordPersistent(string? task, string message, string hint, bool warning)
     {
         var text = (message ?? "").Trim();
         if (text.Length == 0) return;
@@ -56,6 +64,7 @@ public sealed partial class MainViewModel
         _persistentErrorTask = task ?? "";
         _persistentErrorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         _persistentErrorHint = hint;
+        _persistentIsWarning = warning;
         WriteLastErrorFile();
         RaisePersistentError();
     }
@@ -75,6 +84,7 @@ public sealed partial class MainViewModel
         _persistentErrorTask = "";
         _persistentErrorTime = "";
         _persistentErrorHint = "";
+        _persistentIsWarning = false;
         try { if (File.Exists(LastErrorFilePath)) File.Delete(LastErrorFilePath); }
         catch (IOException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
         catch (UnauthorizedAccessException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
@@ -98,6 +108,7 @@ public sealed partial class MainViewModel
         Raise(nameof(HasPersistentError));
         Raise(nameof(PersistentErrorText));
         Raise(nameof(PersistentErrorHeading));
+        Raise(nameof(PersistentErrorIsWarning));
         Raise(nameof(PersistentErrorHint));
         CopyErrorCommand?.RaiseCanExecuteChanged();
         DismissErrorCommand?.RaiseCanExecuteChanged();
@@ -109,7 +120,7 @@ public sealed partial class MainViewModel
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LastErrorFilePath)!);
             var temp = LastErrorFilePath + ".tmp";
-            File.WriteAllText(temp, JsonSerializer.Serialize(new { task = _persistentErrorTask, time = _persistentErrorTime, text = _persistentErrorText, hint = _persistentErrorHint }));
+            File.WriteAllText(temp, JsonSerializer.Serialize(new { task = _persistentErrorTask, time = _persistentErrorTime, text = _persistentErrorText, hint = _persistentErrorHint, severity = _persistentIsWarning ? "warning" : "error" }));
             File.Move(temp, LastErrorFilePath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -129,6 +140,7 @@ public sealed partial class MainViewModel
             _persistentErrorTask = root.TryGetProperty("task", out var task) ? task.GetString() ?? "" : "";
             _persistentErrorTime = root.TryGetProperty("time", out var time) ? time.GetString() ?? "" : "";
             _persistentErrorHint = root.TryGetProperty("hint", out var hint) ? hint.GetString() ?? "" : "";
+            _persistentIsWarning = root.TryGetProperty("severity", out var severity) && severity.GetString() == "warning";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
