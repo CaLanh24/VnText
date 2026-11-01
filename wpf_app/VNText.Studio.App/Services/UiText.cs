@@ -13,6 +13,16 @@ public static class UiText
     private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["Tài nguyên xử lý trên máy"] = "On-device resources",
+        ["Chuẩn bị tài nguyên sau khi cài ứng dụng"] = "Prepare resources after installation",
+        ["Tải tất cả tài nguyên"] = "Download all resources",
+        ["Kiểm tra tài nguyên"] = "Check resources",
+        ["Chọn SDK đã cài…"] = "Choose installed SDK…",
+        ["Mở tài nguyên trong Cài đặt"] = "Open resources in Settings",
+        ["Tìm ảnh có chữ và dịch tất cả"] = "Find text images and translate all",
+        ["Chọn ảnh để sửa riêng"] = "Choose an image to edit",
+        ["Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả."] = "Find text-bearing images and translate them automatically. Edit only results you want to improve.",
+        ["Nhật ký — lịch sử đầy đủ ở mục Nhật ký bên trái"] = "Log — full history is available from Journal in the sidebar",
         ["Chạy trên máy"] = "On-device processing",
         ["Mở nhật ký"] = "Open log",
         ["Model OPUS-MT INT8 sẵn sàng."] = "OPUS-MT INT8 model ready.",

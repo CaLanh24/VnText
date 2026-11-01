@@ -137,13 +137,22 @@ class AutomaticImageTests(unittest.TestCase):
         for label in ('failed','no_text'):
             with self.subTest(label=label),patch('vntext.image_batch.recognize_image',side_effect=ValueError('OCR unavailable') if label=='failed' else lambda path,**kw:{**self.ocr(path),'regions':[]}):
                 result=run_image_batch(self.source,self.package)
-                self.assertEqual(result['untranslated'],1);self.assertTrue(self.report(result)['items'][0]['reason'])
+                self.assertEqual(result['untranslated'],1 if label=='failed' else 0)
+                self.assertTrue(self.report(result)['items'][0]['reason'])
+                if label=='no_text':
+                    root=Path(result['output'])
+                    self.assertEqual(self.report(result)['no_text'],1)
+                    self.assertFalse(any((root/'original').iterdir()))
+                    self.assertFalse(any((root/'untranslated').iterdir()))
+                    self.assertFalse(list(root.glob('.probe-*')))
 
-    def test_complex_background_not_destroyed_or_mislabelled(self):
+    def test_complex_background_produces_labelled_preview_without_changing_source(self):
         Image.effect_noise((400,120),70).convert('RGBA').save(self.source)
         self.data=self.source.read_bytes();self.doc['source_sha256']=hashlib.sha256(self.data).hexdigest()
-        result=self.run_batch();self.assertEqual(result['translated'],0)
-        self.assertIn('Nền phức tạp',self.report(result)['items'][0]['reason'])
+        result=self.run_batch();self.assertEqual(result['translated'],1)
+        item=self.report(result)['items'][0]
+        self.assertTrue(item['background_estimated'])
+        self.assertFalse(item['human_approved'])
         self.assertEqual(self.source.read_bytes(),self.data)
 
     def test_duplicate_filenames_safe_and_report_maps_sources(self):
@@ -211,15 +220,15 @@ class AutomaticImageTests(unittest.TestCase):
             run_extract_task(str(game),str(self.package),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=completed.append)
         return completed
 
-    def test_extract_does_not_translate_or_render_images(self):
+    def test_extract_automatically_translates_text_bearing_images(self):
         image_batch=Mock(return_value={'total':1,'ocr_ready':1,'translated':0,'untranslated':0,'output':'image-ocr'})
         batch=patch('vntext.image_batch.run_image_batch', image_batch)
         completed=self._extract(batch)
         self.assertTrue(completed[0]['ok'],completed)
         self.assertTrue((self.package/'translation.csv').exists())
         image_batch.assert_called_once()
-        self.assertFalse(image_batch.call_args.kwargs['translate'])
-        self.assertIn('dịch ảnh ở bước Dịch',completed[0]['summary'])
+        self.assertTrue(image_batch.call_args.kwargs['translate'])
+        self.assertIn('bản dịch tự động',completed[0]['summary'])
 
     def _extract_raw(self, game, batch=None):
         from vntext.app_tasks import run_extract_task
@@ -248,8 +257,8 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertFalse(completed[0]['ok'])
         self.assertEqual(completed[0]['extract_status'],'EMPTY')
         self.assertIn('Không có text sử dụng được',completed[0]['error'])
-        self.assertIn('OCR được 2/3 ảnh',completed[0]['error'])
-        self.assertFalse(batch.call_args.kwargs['translate'])
+        self.assertIn('Ảnh có chữ: 0/3',completed[0]['error'])
+        self.assertTrue(batch.call_args.kwargs['translate'])
 
     def test_real_worker_image_retry_protocol_twice(self):
         if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')

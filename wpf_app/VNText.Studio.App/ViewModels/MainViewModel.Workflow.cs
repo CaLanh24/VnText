@@ -359,6 +359,7 @@ public sealed partial class MainViewModel
 
     private async void RunExtract()
     {
+        if (Busy && _runningTask == "analyze") { DeferExtractUntilDetected(); return; }
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
         if (Busy) return;
@@ -375,6 +376,7 @@ public sealed partial class MainViewModel
             StatusText = "Chưa chọn thư mục xuất";
             return;
         }
+        if (DeferExtractUntilDetected()) return;
         var existingPackage = WorkflowStatus.ResolvePackageDir(OutputPath);
         if (File.Exists(Path.Combine(existingPackage, "translation.csv")) || File.Exists(Path.Combine(existingPackage, "manifest.json")))
         {

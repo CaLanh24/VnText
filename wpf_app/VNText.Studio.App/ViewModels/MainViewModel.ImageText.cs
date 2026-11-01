@@ -56,6 +56,7 @@ public sealed partial class MainViewModel
     public ObservableCollection<ImageTextRegion> ImageRegions { get; } = new();
     public RelayCommand ChooseOcrImageCommand { get; private set; } = null!;
     public RelayCommand DiscoverImagesCommand { get; private set; } = null!;
+    public RelayCommand TranslateAllImagesCommand { get; private set; } = null!;
     public RelayCommand RunImageOcrCommand { get; private set; } = null!;
     public RelayCommand OpenImageReviewCommand { get; private set; } = null!;
     public RelayCommand SaveImageReviewCommand { get; private set; } = null!;
@@ -125,7 +126,7 @@ public sealed partial class MainViewModel
     private void RefreshImageCommands()
     {
         Raise(nameof(ImageGridEnabled));
-        foreach (var command in new[] { OpenImageWorkspaceCommand, ChooseOcrImageCommand, DiscoverImagesCommand, RunImageOcrCommand,
+        foreach (var command in new[] { OpenImageWorkspaceCommand, ChooseOcrImageCommand, DiscoverImagesCommand, TranslateAllImagesCommand, RunImageOcrCommand,
             OpenImageReviewCommand, SaveImageReviewCommand, RenderImageCommand, AddImageRegionCommand,
             RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand, RetryImageCommand })
             command?.RaiseCanExecuteChanged();
@@ -215,6 +216,11 @@ public sealed partial class MainViewModel
         }, _ => !Busy && !string.IsNullOrWhiteSpace(OutputPath));
         ChooseOcrImageCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(); if (p is not null) ImagePath = p; }, _ => !Busy);
         DiscoverImagesCommand = new RelayCommand(_ => StartImageTask("image_inventory", InputPath), _ => !Busy && Directory.Exists(InputPath));
+        TranslateAllImagesCommand = new RelayCommand(_ =>
+        {
+            if (Busy || !Directory.Exists(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
+            BeginTask("image_batch", new { src = InputPath, @out = OutputPath }, "Đang tìm ảnh có chữ và dịch tự động…");
+        }, _ => !Busy && Directory.Exists(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
         OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p, fromSavedReview: true); }, _ => !Busy);
         SaveImageReviewCommand = new RelayCommand(_ => SaveImageReview(), _ => !Busy && _imageDocument is not null);

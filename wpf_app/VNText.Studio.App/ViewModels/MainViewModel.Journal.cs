@@ -26,8 +26,9 @@ public sealed partial class MainViewModel
 
     private static string LogOwner(string? task) => task switch
     {
-        "extract" or "analyze" or "image_inventory" or "image_extract" => WorkflowTabs.Extract,
-        "translate" or "image_batch" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
+        "extract" or "analyze" or "resources" or "image_inventory" or "image_extract" => WorkflowTabs.Extract,
+        "image_batch" => WorkflowTabs.Extract,
+        "translate" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
         "patch" or "image_delivery" or "image_apply" or "image_rollback" => WorkflowTabs.Patch,
         _ => ""
     };
@@ -45,6 +46,7 @@ public sealed partial class MainViewModel
         var lines = owner switch { WorkflowTabs.Extract => ExtractLogLines, WorkflowTabs.Translate => TranslateLogLines, WorkflowTabs.Patch => PatchLogLines, _ => null };
         if (lines is null || string.IsNullOrWhiteSpace(message)) return;
         var content = message.Trim();
+        PersistJournal($"[task {id} / {owner}] {content}");
         if (content.Length > 1000) content = content[..1000];
         if (lines.Count > 0 && lines[^1].EndsWith("] " + content,StringComparison.Ordinal)) return;
         lines.Add($"[{DateTime.Now:HH:mm:ss}] {content}");

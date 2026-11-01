@@ -7,7 +7,8 @@ namespace VNText.Studio.App.Services;
 internal sealed class AppJournalStore
 {
     internal const long MaxFileBytes = 1024 * 1024;
-    private static readonly Regex OwnedName = new(@"^app\.log\.\d{4}-\d{2}-\d{2}(?:\.\d{2})?$",RegexOptions.CultureInvariant);
+    internal const int MaxMessageChars = 60000;
+    private static readonly Regex OwnedName = new(@"^app\.log\.\d{4}-\d{2}-\d{2}(?:\.\d{2,})?$",RegexOptions.CultureInvariant);
     private readonly object _gate = new();
     internal string Root { get; }
     internal AppJournalStore(string root) { Root=Path.GetFullPath(root); }
@@ -26,22 +27,21 @@ internal sealed class AppJournalStore
     internal string[] Files()
     {
         Check(Path.Combine(Root,"placeholder"));
-        return Directory.Exists(Root) ? Directory.EnumerateFiles(Root).Select(Path.GetFileName).Where(n=>n is not null && OwnedName.IsMatch(n)).Select(n=>n!).OrderDescending(StringComparer.Ordinal).Take(30).ToArray() : [];
+        return Directory.Exists(Root) ? Directory.EnumerateFiles(Root).Select(Path.GetFileName).Where(n=>n is not null && OwnedName.IsMatch(n)).Select(n=>n!).OrderDescending(StringComparer.Ordinal).ToArray() : [];
     }
     internal void Append(string message)
     {
         lock(_gate)
         {
-            var text=message.Length>4000 ? message[..4000] : message;
+            var text=message.Length>MaxMessageChars ? message[..MaxMessageChars]+$" […đã cắt {message.Length-MaxMessageChars} ký tự vượt giới hạn một dòng nhật ký]" : message;
             var line=$"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} {Level(text)} {text.Replace("\r","").Replace("\n"," ↵ ")}{Environment.NewLine}";
             var bytes=Encoding.UTF8.GetBytes(line);
             Check(Path.Combine(Root,"placeholder"));Directory.CreateDirectory(Root);
             var stem=$"app.log.{DateTime.Now:yyyy-MM-dd}";
-            for(var i=0;i<30;i++)
+            for(var i=0;i<10000;i++)
             {
                 var path=FilePath(i==0 ? stem : $"{stem}.{i:00}");
                 if(File.Exists(path) && new FileInfo(path).Length+bytes.Length>MaxFileBytes) continue;
-                if(!File.Exists(path) && Files().Length>=30) throw new IOException("Đã đủ 30 tệp nhật ký; xóa tệp cũ trong Nhật ký để ghi tiếp.");
                 using var stream=new FileStream(path,FileMode.Append,FileAccess.Write,FileShare.ReadWrite);
                 stream.Write(bytes);return;
             }

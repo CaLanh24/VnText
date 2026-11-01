@@ -246,12 +246,18 @@ def _present(value: Any) -> bool:
     return True
 
 
+def is_renpy_engine_framework_path(source_file: Any) -> bool:
+    """True for the Ren'Py engine/SDK tree (``renpy/**``: common scripts, translation, vendored python); game text lives under ``game/``."""
+
+    relative = str(source_file or "").replace("\\", "/").strip("/")
+    return relative.casefold() == "renpy" or relative.casefold().startswith("renpy/")
+
+
 def classify_renpy_provenance(source_file: Any, *, source_available: bool) -> dict[str, Any]:
     """Classify native source ownership without guessing from translated text."""
 
     relative = str(source_file or "").replace("\\", "/").strip("/")
-    common = relative.casefold() == "renpy/common" or relative.casefold().startswith("renpy/common/")
-    if common:
+    if is_renpy_engine_framework_path(relative):
         return {
             "owner": RENPY_COMMON,
             "source_available": bool(source_available),

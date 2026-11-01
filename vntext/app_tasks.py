@@ -1400,9 +1400,9 @@ def run_extract_task(
         # and rendering stay behind the explicit Translate action.
         try:
             from vntext.image_batch import run_image_batch
-            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=False)
+            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=True)
             if images['total']:
-                note = f"Ảnh: OCR được {images['ocr_ready']}/{images['total']} ảnh; dịch ảnh ở bước Dịch."
+                note = f"Ảnh có chữ: {images['translated']}/{images['total']} bản dịch tự động; {images['untranslated']} cần xem lại. {images['output']}"
                 log(note)
                 payload['summary'] += " " + note
                 # A text-less container whose images were OCR'd must not read as "nothing happened".

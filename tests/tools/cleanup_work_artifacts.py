@@ -2359,7 +2359,7 @@ def _release_task_budget_profile(root: Path) -> tuple[int, str | None, str]:
             item_path = _entry_path(item)
         except (KeyError, TypeError, ValueError, OSError):
             return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
-        if _path_key(item_path) == _path_key(expected_scope):
+        if _path_key(item_path) == _path_key(expected_scope) and str(item.get("lifecycle") or "").upper() != "MISSING":
             scope_records.append(item)
     if not scope_records:
         return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"
@@ -2551,7 +2551,7 @@ def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state:
             item_path = _entry_path(item)
         except (KeyError, TypeError, ValueError, OSError):
             return PROJECT_SIZE_LIMIT_BYTES, "release_task_registry_invalid", "default"
-        if _path_key(item_path) == _path_key(expected_scope):
+        if _path_key(item_path) == _path_key(expected_scope) and str(item.get("lifecycle") or "").upper() != "MISSING":
             scope_records.append(item)
     if not scope_records:
         return PROJECT_SIZE_LIMIT_BYTES, None, "terminal-default"

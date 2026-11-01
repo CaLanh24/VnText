@@ -110,7 +110,7 @@ def install_managed_sdk(archive: str | Path) -> RenPySdk:
     return validate_sdk(destination)
 
 
-def download_and_install_managed_sdk(
+def _download_and_install_managed_sdk_once(
     download: str | Path,
     *,
     is_cancelled: Callable[[], bool] | None = None,
@@ -176,6 +176,23 @@ def download_and_install_managed_sdk(
     finally:
         if partial is not None:
             partial.unlink(missing_ok=True)
+
+
+def download_and_install_managed_sdk(download, *, is_cancelled=None, progress=None):
+    """Retry interrupted network transfers, never retry cancellation or an integrity failure."""
+    for attempt in range(3):
+        if is_cancelled and is_cancelled():
+            raise RenPyToolchainError('cancelled')
+        try:
+            return _download_and_install_managed_sdk_once(download, is_cancelled=is_cancelled, progress=progress)
+        except RenPyToolchainError as exc:
+            transient = isinstance(exc.__cause__, (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError)) or str(exc).startswith('Tải SDK bị gián đoạn')
+            if not transient or attempt == 2 or (is_cancelled and is_cancelled()):
+                raise
+            for _ in range(10 * (attempt + 1)):
+                if is_cancelled and is_cancelled():
+                    raise RenPyToolchainError('cancelled') from exc
+                time.sleep(.1)
 
 
 def validate_sdk(path: str | Path) -> RenPySdk:

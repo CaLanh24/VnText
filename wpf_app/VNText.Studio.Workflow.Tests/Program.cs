@@ -21,6 +21,8 @@ internal static partial class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--resource-flow-only", StringComparer.Ordinal))
+            return RunResourceFlows();
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
             return RunAppDialogFixture(args);
         if (args.Contains("--image-workspace-fixture", StringComparer.Ordinal))

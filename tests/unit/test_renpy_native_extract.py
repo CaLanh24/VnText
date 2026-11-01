@@ -9,7 +9,7 @@ from tests.lib.work_paths import work_temp_dir
 
 from vntext.entry import make_key
 from vntext.package_io import read_csv_rows_file, write_package
-from vntext.patchability import REVIEW_REQUIRED, SUPPORTED_AND_PATCHABLE, assess_entry, validate_renpy_contract
+from vntext.patchability import REVIEW_REQUIRED, SUPPORTED_AND_PATCHABLE, assess_entry, enforce_main_flow, validate_renpy_contract
 from vntext.renpy_extract import RenPyTemplateParseError, extract_native_template_entries
 
 WORK = work_temp_dir("renpy-native-extract")
@@ -286,6 +286,37 @@ class RenPyNativeExtractionTests(unittest.TestCase):
         sdk_entry = next(entry for entry in stats["renpy_engine_common_exclusion_entries"] if entry["source_text"] == "SDK-only 1")
         self.assertEqual(sdk_entry["native_contract"]["provenance"]["disposition"], "sdk_only")
         self.assertFalse(sdk_entry["native_contract"]["provenance"]["source_available"])
+
+    def test_engine_framework_scripts_never_become_static_ui_game_candidates(self):
+        # Real-app failure: a game shipping loose renpy/common scripts had their screens scanned as game UI, so engine strings
+        # reached the main flow with engine provenance and the symmetry gate (correctly) refused the whole extract.
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp)
+            nl = chr(10)
+            (root / "game").mkdir()
+            (root / "game" / "screens.rpy").write_text('screen hud():' + nl + '    text "Game HUD"' + nl, encoding="utf-8")
+            engine = root / "renpy" / "common"
+            engine.mkdir(parents=True)
+            (engine / "00screens.rpy").write_text('screen engine():' + nl + '    text "Engine static"' + nl, encoding="utf-8")
+            template = root / "generated"
+            template.mkdir()
+            (template / "strings.rpy").write_text(
+                "translate vietnamese strings:" + nl + nl
+                + '    # game/screens.rpy:2' + nl + '    old "Other game text"' + nl + '    new ""' + nl
+                + '    # renpy/common/00screens.rpy:2' + nl + '    old "Other engine text"' + nl + '    new ""' + nl,
+                encoding="utf-8",
+            )
+            main, review, stats = extract_native_template_entries(root, template)
+            package = root / "package"
+            write_package(str(package), main, review, stats, separate_review=True, enforce_symmetry=True)      # the gate stays strict and passes
+        texts = {entry.source_text for entry in main}
+        self.assertIn("Game HUD", texts)                                           # genuine game UI is still extracted
+        self.assertNotIn("Engine static", texts)
+        self.assertEqual(1, stats["renpy_static_ui_engine_framework_excluded"])
+        forced = next(entry for entry in main if entry.source_text == "Game HUD")
+        forced.native_contract["provenance"]["owner"] = "renpy_common"           # an engine-owned row in MAIN is still refused
+        with self.assertRaises(ValueError):
+            enforce_main_flow([forced], require_proof=True)
 
     def test_native_identity_keeps_player_text_and_only_skips_control_or_punctuation(self):
         with tempfile.TemporaryDirectory(dir=WORK) as temp:

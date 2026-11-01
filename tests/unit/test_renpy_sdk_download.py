@@ -72,14 +72,14 @@ class RenPySdkDownloadTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             destination = Path(temp) / "sdk.zip"
             with patch.object(
-                renpy_toolchain.urllib.request, "urlopen", return_value=_Response(b"short", declared_length=20)
+                renpy_toolchain.urllib.request, "urlopen", side_effect=lambda *a, **k: _Response(b"short", declared_length=20)
             ):
                 with self.assertRaisesRegex(renpy_toolchain.RenPyToolchainError, "bị gián đoạn"):
                     renpy_toolchain.download_and_install_managed_sdk(destination, is_cancelled=lambda: False)
             self.assertFalse(destination.exists())
             self.assertEqual([], list(Path(temp).iterdir()))
 
-    def test_timeout_removes_partial_and_user_retry_can_succeed(self):
+    def test_timeout_removes_partial_and_automatic_retry_can_succeed(self):
         payload = b"retryable-sdk-archive"
         with tempfile.TemporaryDirectory() as temp:
             destination = (Path(temp) / "sdk.zip").resolve()
@@ -92,9 +92,6 @@ class RenPySdkDownloadTests(unittest.TestCase):
                 patch.object(renpy_toolchain, "SDK_SHA256", hashlib.sha256(payload).hexdigest()),
                 patch.object(renpy_toolchain, "install_managed_sdk", return_value="installed") as install,
             ):
-                with self.assertRaisesRegex(renpy_toolchain.RenPyToolchainError, "Không tải được"):
-                    renpy_toolchain.download_and_install_managed_sdk(destination, is_cancelled=lambda: False)
-                self.assertEqual([], list(Path(temp).iterdir()))
                 result = renpy_toolchain.download_and_install_managed_sdk(destination, is_cancelled=lambda: False)
             self.assertEqual("installed", result)
             self.assertEqual(payload, destination.read_bytes())

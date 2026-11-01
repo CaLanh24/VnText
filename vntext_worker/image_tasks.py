@@ -11,7 +11,7 @@ def run_image_worker(task_id, task, params, is_cancelled):
     if task == 'image_batch':
         from vntext.image_batch import run_image_batch
         from vntext_worker.protocol import emit_progress
-        result = run_image_batch(params['src'], params['out'], sources=[params['src']],
+        result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
             is_cancelled=is_cancelled,
             progress=lambda info: emit_progress(task_id, **info))
         summary = f"Ảnh: {result['translated']} bản dịch nháp, {result['untranslated']} chưa dịch. {result['output']}"
@@ -36,11 +36,16 @@ def run_image_worker(task_id, task, params, is_cancelled):
             summary = "Đã gỡ đúng ảnh của giao dịch; giữ nguyên ảnh nguồn."
         (root / "delivery_result.json").write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding="utf-8")
     elif task == "image_inventory":
-        inventory = discover_images(params["src"], is_cancelled=is_cancelled)
-        root.mkdir(parents=True)
+        from vntext.image_batch import run_image_batch
+        result = run_image_batch(params['src'], root, translate=False, is_cancelled=is_cancelled)
+        report_path = Path(result['output']) / 'report.json' if result['output'] else None
+        report = json.loads(report_path.read_text(encoding='utf-8')) if report_path else {'items': []}
+        inventory = {'image_paths': [item['source'] for item in report['items'] if item.get('text_detected')],
+                     'complete': not result['cancelled'] and not result['ocr_failed'], 'errors': report.get('inventory_errors', [])}
+        root.mkdir(parents=True, exist_ok=True)
         (root / "image_index.json").write_text(json.dumps(inventory,ensure_ascii=False,indent=2),encoding="utf-8")
         qualifier = f"; inventory chưa đầy đủ do {len(inventory['errors'])} archive lỗi/không hỗ trợ" if not inventory["complete"] else ""
-        summary = f"Tìm thấy {len(inventory['image_paths'])} ảnh ứng viên; chưa xác nhận có chữ{qualifier}. Chọn ảnh để OCR."
+        summary = f"Tìm thấy {len(inventory['image_paths'])} ảnh có chữ{qualifier}. Các ảnh không phát hiện chữ không được xuất."
     elif task == "image_extract":
         archive_ref = parse_member_reference(params["src"])
         try:

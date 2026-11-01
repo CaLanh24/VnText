@@ -146,6 +146,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         _pathPicker = pathPicker;
         _worker = worker;
+        _autoAnalyzeEnabled = startWorker;
         _githubHttpHandler = githubHttpHandler;
         _updateInstallRoot = updateInstallRoot;
         _settings = AppSettingsStore.Load(out var settingsError);
@@ -166,8 +167,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         if (!string.IsNullOrWhiteSpace(settingsError)) AppendLog(settingsError);
         LoadVersion();
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
+        InitializePersistentError();
+        InitResourceCommands();
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
-        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
+        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => (!Busy || _runningTask == "analyze") && !CsvEditorSaving && !CsvEditorDirty);
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
@@ -235,6 +238,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 Raise(nameof(InputDisplay));
                 Raise(nameof(ExtractStatusText));
                 InvalidateAnalyzeIfInputsChanged();
+                ScheduleAutoAnalyze();
                 RefreshWorkflow();
                 RefreshRenpySdkOptionsVisibility(value);
                 OpenInputCommand?.RaiseCanExecuteChanged();
@@ -253,6 +257,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             {
                 Raise(nameof(OutputDisplay));
                 InvalidateAnalyzeIfInputsChanged();
+                ScheduleAutoAnalyze();
                 RefreshWorkflow();
                 RefreshTranslateReadiness();
                 OpenOutputCommand?.RaiseCanExecuteChanged();
@@ -768,12 +773,15 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 ChooseOutputCommand.RaiseCanExecuteChanged();
                 ChooseRenpySdkCommand.RaiseCanExecuteChanged();
                 AnalyzeCommand.RaiseCanExecuteChanged();
+                if (!value) Application.Current?.Dispatcher.BeginInvoke(new Action(ResumeAutoAnalyzeWhenIdle));
                 RunTranslateCommand.RaiseCanExecuteChanged();
                 ExportCloudRepairPackageCommand.RaiseCanExecuteChanged();
                 ImportExistingTranslationCommand.RaiseCanExecuteChanged();
                 RunPatchCommand.RaiseCanExecuteChanged();
                 DownloadRenpySdkCommand.RaiseCanExecuteChanged();
                 ContinueWithoutRenpySdkCommand.RaiseCanExecuteChanged();
+                CheckResourcesCommand?.RaiseCanExecuteChanged();
+                DownloadResourcesCommand?.RaiseCanExecuteChanged();
                 CancelCommand.RaiseCanExecuteChanged();
                 CancelAndExitCommand.RaiseCanExecuteChanged();
                 RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
@@ -907,6 +915,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             await _worker.StartAsync().ConfigureAwait(true);
             AppendLog("Python worker sẵn sàng (JSON stdin/stdout).");
+            if (WorkerPaths.IsReleaseLayout() && !File.Exists(Path.Combine(WorkerPaths.AppDataRoot(), "resource-status.json")))
+                SelectedTab = WorkflowTabs.Settings;
         }
         catch (Exception ex)
         {
@@ -1161,7 +1171,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         if (string.IsNullOrWhiteSpace(line))
             return;
         var content = line.Trim();
-        if (content.Length > 4000) content = content[..4000];
+        if (content.Length > AppJournalStore.MaxMessageChars)
+            content = content[..AppJournalStore.MaxMessageChars] + $" […đã cắt {content.Length - AppJournalStore.MaxMessageChars} ký tự vượt giới hạn một dòng nhật ký]";
         var stamped = $"[{DateTime.Now:HH:mm:ss}] {content}";
         LogLines.Add(stamped);
         PersistJournal(content);

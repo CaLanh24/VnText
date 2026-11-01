@@ -160,8 +160,96 @@ public sealed partial class MainViewModel
         private set => Set(ref _analyzeScanErrorCount, value);
     }
 
-    private void RunAnalyze()
+    // Engine detection is automatic: choosing the source (or output) schedules one debounced analysis.  Every schedule bumps the
+    // revision, so a stale delay, a stale run or a stale result of an older input can never apply; Extract waits for the detection
+    // of the CURRENT input and then runs under the same readiness guards.
+    internal const int AutoAnalyzeDebounceMilliseconds = 350;
+    private bool _autoAnalyzeEnabled;
+    private int _autoAnalyzeRevision;
+    private bool _autoAnalyzeDebouncing;
+    private bool _autoAnalyzeWaitsForIdle;
+    private bool _analyzeAuto;
+    private bool _extractAfterAnalyze;
+
+    internal bool AnalysisInFlightOrPending => _autoAnalyzeDebouncing || _autoAnalyzeWaitsForIdle || (Busy && _runningTask == "analyze");
+
+    private async void ScheduleAutoAnalyze()
     {
+        if (!_autoAnalyzeEnabled) return;
+        var revision = ++_autoAnalyzeRevision;
+        _autoAnalyzeWaitsForIdle = false;
+        _extractAfterAnalyze = false;
+        _extractReadyAfterAnalyze = false;
+        if (string.IsNullOrWhiteSpace(InputPath))
+        {
+            _autoAnalyzeDebouncing = false;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(OutputPath))
+        {
+            _autoAnalyzeDebouncing = false;
+            AnalyzeStatusText = "Chọn thư mục xuất để tự nhận diện engine";
+            return;
+        }
+        _autoAnalyzeDebouncing = true;
+        AnalyzeStatusText = "Đang nhận diện engine…";
+        await Task.Delay(AutoAnalyzeDebounceMilliseconds);
+        if (revision != _autoAnalyzeRevision || _disposed != 0) return;
+        _autoAnalyzeDebouncing = false;
+        StartAutoAnalyze();
+    }
+
+    private void StartAutoAnalyze()
+    {
+        if (string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
+        if (Busy)
+        {
+            _autoAnalyzeWaitsForIdle = true;
+            return;
+        }
+        _autoAnalyzeWaitsForIdle = false;
+        RunAnalyze(auto: true);
+    }
+
+    private bool _extractReadyAfterAnalyze;
+
+    private void ResumeAutoAnalyzeWhenIdle()
+    {
+        if (Busy) return;
+        if (_extractReadyAfterAnalyze)
+        {
+            _extractReadyAfterAnalyze = false;
+            RunExtract();
+            return;
+        }
+        if (_autoAnalyzeWaitsForIdle) StartAutoAnalyze();
+    }
+
+    /// <summary>Extract pressed while detection of this input is pending or running: start/finish it, then extract exactly once.</summary>
+    private bool DeferExtractUntilDetected()
+    {
+        if (!AnalysisInFlightOrPending) return false;
+        _extractAfterAnalyze = true;
+        StatusText = "Đang nhận diện engine; sẽ lấy text ngay sau đó";
+        if (_autoAnalyzeDebouncing)
+        {
+            _autoAnalyzeRevision++;
+            _autoAnalyzeDebouncing = false;
+            StartAutoAnalyze();
+        }
+        return true;
+    }
+
+    private void AfterAnalyzeTerminal(bool lateOrCancelled)
+    {
+        var extract = _extractAfterAnalyze && !lateOrCancelled && !_analyzeRejectLate;
+        _extractAfterAnalyze = false;
+        _extractReadyAfterAnalyze = extract;      // runs when the analyze task has released Busy
+    }
+
+    private void RunAnalyze(bool auto = false)
+    {
+        _analyzeAuto = auto;
         AnalyzeResultsExpanded = false;
         AnalyzeHasReport = false;
         AnalyzeReportPath = "";

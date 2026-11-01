@@ -46,14 +46,14 @@
     </UserControl.Resources>
     <StackPanel>
         <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,4"
-                   Text="Chọn ảnh, chạy OCR, sửa và duyệt từng vùng rồi dựng ảnh." />
+                   Text="Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả." />
         <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
                    Text="Game gốc không bị ghi: chỉ bước cài mới ghi vào một bản sao game do bạn chọn." />
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
-        <Expander x:Name="IntroDetails" Header="Chi tiết" IsExpanded="False" Margin="0,0,0,12" Foreground="{DynamicResource InkBrush}" AutomationProperties.Name="Chi tiết an toàn và quy trình">
+        <Border x:Name="IntroDetails" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       Text="Ảnh tĩnh PNG/JPEG/WebP. OCR tiếng Anh luôn cần bạn xem lại: sửa text, nhập bản dịch, chọn đúng một chế độ nền rồi tick Duyệt. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
-        </Expander>
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp được báo riêng để sửa nếu cần. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+        </Border>
 
         <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->
         <Border x:Name="TaskBanner" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12"
@@ -79,7 +79,8 @@
 
         <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <WrapPanel Margin="0,0,0,8">
-            <Button x:Name="DiscoverButton" Content="Tìm ảnh từ thư mục game" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button Content="Tìm ảnh có chữ và dịch tất cả" Command="{Binding TranslateAllImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="DiscoverButton" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />

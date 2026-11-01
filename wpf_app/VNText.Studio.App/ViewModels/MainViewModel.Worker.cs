@@ -128,7 +128,11 @@ public sealed partial class MainViewModel
                 break;
             case "log":
                 if (!string.IsNullOrWhiteSpace(evt.Text))
+                {
                     AppendLog(evt.Text);
+                    if (evt.Text.Contains("error", StringComparison.OrdinalIgnoreCase) || evt.Text.Contains("lỗi", StringComparison.OrdinalIgnoreCase))
+                        AddTaskProgress(evt.Id, evt.Text);
+                }
                 break;
             case "progress":
                 if (!string.IsNullOrWhiteSpace(evt.Id) && _terminalTaskIds.Contains(evt.Id))
@@ -186,6 +190,9 @@ public sealed partial class MainViewModel
                 _cancelWatchdog = null;
 
                 var completedTask = _runningTask;
+                if (!string.IsNullOrWhiteSpace(evt.Error)) AddTaskProgress(evt.Id, evt.Error, completedTask);
+                if (!evt.Ok && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
+                    RecordPersistentError(completedTask, evt.Error);
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
                 if (completedTask == "cloud_export")
                     CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
@@ -209,8 +216,16 @@ public sealed partial class MainViewModel
                     _pendingExternalTranslationImportTargetPath = "";
                 Busy = false;
                 _runningTask = null;
+                if (completedTask == "resources")
+                {
+                    CompleteResources(evt);
+                    AddTaskProgress(evt.Id, evt.Ok ? "Tài nguyên sẵn sàng" : evt.Error ?? "Tài nguyên chưa sẵn sàng", completedTask);
+                    break;
+                }
                 if (completedTask is "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback")
                 {
+                    if (!evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) != true)
+                        RecordPersistentError(completedTask, evt.Error ?? "Xử lý ảnh chưa hoàn tất.");
                     var imageCancelled = !evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                     SetOwnedProgress(completedTask, evt.Ok ? 100 : null, evt.Ok ? "Hoàn tất" : imageCancelled ? "Đã hủy" : "Đã dừng — xem Nhật ký");
                     CompleteImageTask(completedTask, evt);
@@ -324,10 +339,12 @@ public sealed partial class MainViewModel
                 {
                     var errMsg = string.IsNullOrWhiteSpace(evt.Error) ? "Tác vụ thất bại" : evt.Error!;
                     RequestCompletion("VNText Studio — Lỗi", errMsg, "error");
+                    RecordPersistentError(completedTask, errMsg);      // the toast is transient; this stays until acknowledged
                     LogExpanded = true;
                 }
                 else if (fullyComplete)
                 {
+                    ResolvePersistentErrorIfSameTask(completedTask);
                     var doneMsg = completedTask switch
                     {
                         "extract" => "Lấy text hoàn tất",
@@ -341,8 +358,11 @@ public sealed partial class MainViewModel
                         "analyze" => "Phân tích game hoàn tất",
                         _ => string.IsNullOrWhiteSpace(evt.Summary) ? "Hoàn tất" : evt.Summary!,
                     };
-                    RequestCompletion("VNText Studio — Hoàn tất", doneMsg, "success");
-                    LogExpanded = true;
+                    if (!(completedTask == "analyze" && _analyzeAuto))      // automatic detection is silent: no toast, no log pop-up
+                    {
+                        RequestCompletion("VNText Studio — Hoàn tất", doneMsg, "success");
+                        LogExpanded = true;
+                    }
                 }
                 else if (partialOk)
                 {
@@ -353,6 +373,7 @@ public sealed partial class MainViewModel
                     LogExpanded = true;
                 }
 
+                if (completedTask == "analyze" && (cancelled || _analyzeRejectLate)) _extractAfterAnalyze = false;
                 if (!cancelled && completedTask == "analyze" && _analyzeRejectLate)
                 {
                     // The inputs changed while this analysis ran: its report describes the OLD input.
@@ -363,10 +384,14 @@ public sealed partial class MainViewModel
                 else if (!cancelled && completedTask == "analyze")
                 {
                     ApplyAnalyzeResult(evt);
-                    SelectedTab = WorkflowTabs.Extract;
-                    AppendLog(evt.Ok
-                        ? "Phân tích game xong — xem coverage rồi quyết định Lấy text."
-                        : "Phân tích game chưa đủ inventory — xem lỗi quét trước khi Lấy text.");
+                    if (!_analyzeAuto)
+                    {
+                        SelectedTab = WorkflowTabs.Extract;
+                        AppendLog(evt.Ok
+                            ? "Phân tích game xong — xem coverage rồi quyết định Lấy text."
+                            : "Phân tích game chưa đủ inventory — xem lỗi quét trước khi Lấy text.");
+                    }
+                    AfterAnalyzeTerminal(!evt.Ok);
                 }
                 else if (!cancelled && evt.Ok && completedTask is not null)
                 {

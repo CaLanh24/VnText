@@ -18,6 +18,7 @@ from vntext.patchability import (
     RENPY_STRING_UNIT,
     RENPY_GAME_OWNED,
     classify_renpy_provenance,
+    is_renpy_engine_framework_path,
     is_technical_skip_entry,
     make_renpy_contract,
     validate_renpy_contract,
@@ -1066,7 +1067,10 @@ def extract_native_template_entries(
                     source_files.add(path)
     string_entries = [entry for entry in entries if entry.import_method == "renpy_string"]
     ui_candidates=[];ui_errors=[];ui_unresolved=[];ui_bytes=0
+    ui_engine_excluded=0
     for path in sorted(source_files|set(source_lines)):
+        if is_renpy_engine_framework_path(path.relative_to(game_root).as_posix()):
+            ui_engine_excluded+=1;continue   # engine/SDK scripts are never game text candidates
         if path in source_lines and source_lines[path] is not None:
             script='\n'.join(source_lines[path])
             digest=source_hashes.get(path,'')
@@ -1139,6 +1143,7 @@ def extract_native_template_entries(
             'disposition':'NATIVE_GLOBAL_DISPLAY'if not ui_emitted[entry.context].review_only else 'REVIEW',
             'emitted_key':ui_emitted[entry.context].key}for entry in ui_candidates],
         "renpy_static_ui_unresolved":ui_unresolved,
+        "renpy_static_ui_engine_framework_excluded":ui_engine_excluded,
         "renpy_static_ui_inventory_scope":"Single-line literal slots use native global mapping at Text display time when substitution is proven enabled; block/dynamic/disabled substitution remains review.",
     }
     recovered_archives=[record for record in unit_archive_sources if record]

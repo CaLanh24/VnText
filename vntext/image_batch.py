@@ -51,8 +51,21 @@ def _render_draft(document, output, font_path, is_cancelled):
         flat = sum(max(abs(a-b) for a,b in zip(p[:3],bg))<=8 for p in pixels)/(w*h)
         # OCR boxes are tight around glyphs: a flat background may occupy only
         # half the crop. Random/textured artwork has no dominant RGB cluster.
+        estimated_background = None
         if not transparent and (alpha[0] < 255 or flat < .50):
-            raise ValueError('Nền phức tạp: chưa thể tự xóa chữ mà giữ hình nền.')
+            # A separate, explicitly unapproved preview may estimate the covered
+            # background from neighbouring pixels. Never call this restoration
+            # of the original artwork, and never mutate the source image.
+            samples=[]
+            if y>0: samples.append(image.crop((x,y-1,x+w,y)).resize((w,h)))
+            if y+h<image.height: samples.append(image.crop((x,y+h,x+w,y+h+1)).resize((w,h)))
+            if x>0: samples.append(image.crop((x-1,y,x,y+h)).resize((w,h)))
+            if x+w<image.width: samples.append(image.crop((x+w,y,x+w+1,y+h)).resize((w,h)))
+            if not samples:
+                raise ValueError('Vùng chữ phủ toàn ảnh; không đủ nền để dựng bản nháp an toàn.')
+            estimated_background=samples[0]
+            for sample in samples[1:]: estimated_background=Image.blend(estimated_background,sample,.5)
+            region['automatic_background_estimate']=True
         visible = [p for p in pixels if p[3]>128]
         if not visible:
             raise ValueError('Vùng OCR không có chữ nhìn thấy.')
@@ -76,7 +89,10 @@ def _render_draft(document, output, font_path, is_cancelled):
         if fitted is None:
             raise ValueError('Bản dịch không vừa vùng chữ, cần thử lại ảnh rõ/lớn hơn.')
         font,text,bounds=fitted
-        draw.rectangle((x,y,x+w-1,y+h-1),fill=(0,0,0,0) if transparent else (*bg,255))
+        if estimated_background is not None:
+            image.paste(estimated_background,(x,y))
+        else:
+            draw.rectangle((x,y,x+w-1,y+h-1),fill=(0,0,0,0) if transparent else (*bg,255))
         draw.multiline_text((x-bounds[0],y-bounds[1]),text,font=font,fill=(*fg,255),spacing=1)
     output = _regular(output)
     output.parent.mkdir(parents=True,exist_ok=True)
@@ -133,13 +149,28 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                 if used_bytes+len(data)*2+MAX_BATCH_PIXELS_BYTES>MAX_BATCH_BYTES:
                     raise ValueError('Đã chạm giới hạn 512 MiB cho lần xử lý ảnh này.')
                 key=hashlib.sha256(reference.encode()).hexdigest()[:16]+'-'+re.sub(r'[^\w.\-]','_',filename)[:96]
-                original=root/'original'/key
+                # Decode/OCR in a temporary probe. Only confirmed text-bearing images
+                # enter the exported original/translated/untranslated folders.
+                original=root/('.probe-'+key)
                 with original.open('xb') as stream: stream.write(data)
                 used_bytes+=len(data); item.update(original=str(original.relative_to(root)),source_sha256=hashlib.sha256(data).hexdigest())
                 document=recognize_image(original,is_cancelled=cancelled)
                 regions=document['regions']
-                if not regions: raise ValueError('Không nhận diện được chữ tiếng Anh trong ảnh.')
+                if not regions:
+                    item.update(status='NO_TEXT', reason='Không phát hiện chữ; không xuất ảnh.')
+                    item.pop('original',None)
+                    original.unlink()
+                    used_bytes-=len(data)
+                    original=None
+                    if progress:
+                        progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Lọc ảnh không có chữ','item':filename})
+                    continue
                 if len(regions)>500: raise ValueError('Ảnh có quá 500 vùng chữ.')
+                confirmed=root/'original'/key
+                original.replace(confirmed)
+                original=confirmed
+                document['source_path']=str(original)
+                item.update(original=str(original.relative_to(root)),text_detected=True)
                 if not translate:
                     ocr_path=(root/'ocr'/key).with_suffix('.json')
                     with ocr_path.open('x',encoding='utf-8') as stream:
@@ -157,20 +188,29 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                         if not isinstance(text,str) or not text.strip() or text.strip().casefold()==region['source_text'].strip().casefold():
                             raise ValueError('Model chưa dịch được đầy đủ chữ trong ảnh.')
                         region['translation']=text
+                    ocr_path=(root/'ocr'/key).with_suffix('.json')
                     target=(root/'translated'/key).with_suffix('.png')
                     _render_draft(document,target,_font_path(),cancelled)
+                    with ocr_path.open('x',encoding='utf-8') as stream:
+                        json.dump(document,stream,ensure_ascii=False,indent=2)
+                    item['ocr_result']=str(ocr_path.relative_to(root))
+                    item['background_estimated']=any(r.get('automatic_background_estimate') for r in regions)
                     if used_bytes+target.stat().st_size>MAX_BATCH_BYTES:
                         target.unlink(); raise ValueError('Output ảnh vượt giới hạn 512 MiB.')
                     used_bytes+=target.stat().st_size
                     item.update(status='TRANSLATED_DRAFT',translated=str(target.relative_to(root)),translated_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),regions=[{'box':r['box'],'text':r['source_text'],'translation':r['translation']} for r in regions])
             except Exception as exc:
                 item['reason']=str(exc)[:1000]
-                if original is not None and original.exists():
+                if item.get('text_detected') and original is not None and original.exists():
                     unchanged=root/'untranslated'/original.name
                     with original.open('rb') as src,unchanged.open('xb') as dst: shutil.copyfileobj(src,dst)
                     used_bytes+=unchanged.stat().st_size; item['untranslated']=str(unchanged.relative_to(root))
                 if cancelled(): report['status']='CANCELLED'
-            finally: save()
+            finally:
+                if original is not None and original.name.startswith('.probe-'):
+                    original.unlink(missing_ok=True)
+                    item.pop('original',None)
+                save()
             if progress:
                 event={'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'OCR ảnh','item':Path(reference).name}
                 # Advisory ETA (seconds, the convention of the other stages): elapsed/done * remaining; omitted while unknown or finished.
@@ -189,7 +229,11 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
         report['ocr_ready']=sum(i['status']=='OCR_READY' for i in report['items'])
         report['ocr_failed']=sum(i['status']=='UNTRANSLATED' for i in report['items']) if not translate else 0
         report['untranslated']=report['ocr_failed'] if not translate else sum(i['status']=='UNTRANSLATED' for i in report['items'])
-        report['total']=len(inventory['image_paths']); save()
+        report['scanned']=len(report['items'])
+        report['no_text']=sum(i['status']=='NO_TEXT' for i in report['items'])
+        report['total']=sum(bool(i.get('text_detected')) for i in report['items'])
+        report['candidates']=len(inventory['image_paths'])
+        save()
         if translate:
             lines=['KẾT QUẢ DỊCH ẢNH',
                    f"Đã tạo {report['translated']} ảnh dịch nháp; {report['untranslated']} ảnh chưa dịch.",
