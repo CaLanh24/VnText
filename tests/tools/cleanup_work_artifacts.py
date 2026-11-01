@@ -2908,12 +2908,66 @@ def _prospective_epoch_incident_path() -> Path:
     return WORK_ROOT / INCIDENT_SCOPE_ID / "artifacts_manifest.before-recovery.json"
 
 
+# Transaction-scoped integrity memo.  Verifying the epoch chain re-hashes and re-parses the same immutable rollback snapshots once per link
+# and again for every recursion (~880 hashes / ~1300 parses of 26 MB manifests for one cleanup call).  A result is reused only inside one
+# transaction (the wrappers at the end of this module clear it on entry and exit) and only while the file's (size, mtime_ns) is unchanged,
+# so a modified snapshot is always re-read.  The live registry manifest is never memoised.  Cached JSON objects are read-only by contract.
+_INTEGRITY_CACHE: dict = {}
+INTEGRITY_STATS = {"hash_misses": 0, "json_misses": 0, "hits": 0}
+
+
+def _clear_integrity_cache() -> None:
+    _INTEGRITY_CACHE.clear()
+
+
+def _file_signature(path: Path):
+    try:
+        stat = path.stat()
+    except OSError:
+        return None
+    return (str(path), stat.st_size, stat.st_mtime_ns)
+
+
+def _memo_allowed(path: Path) -> bool:
+    try:
+        return path != MANIFEST_PATH and path.resolve() != MANIFEST_PATH.resolve()
+    except OSError:
+        return False
+
+
 def _sha256_file(path: Path) -> str:
+    signature = _file_signature(path) if _memo_allowed(path) else None
+    if signature is not None:
+        cached = _INTEGRITY_CACHE.get(("sha", signature))
+        if cached is not None:
+            INTEGRITY_STATS["hits"] += 1
+            return cached
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
-    return digest.hexdigest().upper()
+    result = digest.hexdigest().upper()
+    INTEGRITY_STATS["hash_misses"] += 1
+    if signature is not None and signature == _file_signature(path):
+        _INTEGRITY_CACHE[("sha", signature)] = result
+    return result
+
+
+def _read_json_cached(path: Path):
+    """Parse an immutable snapshot once per transaction; raises like ``json.loads(path.read_text())`` (callers must not mutate the result)."""
+
+    path = Path(path)
+    signature = _file_signature(path) if _memo_allowed(path) else None
+    if signature is not None:
+        key = ("json", signature)
+        if key in _INTEGRITY_CACHE:
+            INTEGRITY_STATS["hits"] += 1
+            return _INTEGRITY_CACHE[key]
+    document = json.loads(path.read_text(encoding="utf-8"))
+    INTEGRITY_STATS["json_misses"] += 1
+    if signature is not None and signature == _file_signature(path):
+        _INTEGRITY_CACHE[("json", signature)] = document
+    return document
 
 
 def _git_repository_state() -> dict:
@@ -3319,7 +3373,7 @@ def _epoch_verify_files(
         try:
             if _sha256_file(rollback_metadata_path) != str(epoch.get("rollback_metadata_sha256") or "").upper():
                 failures.append("rollback_metadata_hash_mismatch")
-            rollback_metadata = json.loads(rollback_metadata_path.read_text(encoding="utf-8"))
+            rollback_metadata = _read_json_cached(rollback_metadata_path)
             if rollback_metadata.get("rollback") != rollback:
                 failures.append("rollback_metadata_record_mismatch")
             if rollback_metadata.get("reset_provenance") != epoch.get("reset_provenance"):
@@ -3365,7 +3419,7 @@ def _epoch_verify_files(
             failures.append("owner_reset_rollback_metadata_invalid")
         try:
             policy_path = Path(str(epoch.get("policy_path") or ""))
-            policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+            policy_doc = _read_json_cached(policy_path)
             if _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
                 failures.append("epoch_policy_hash_mismatch")
             if policy_doc.get("reset_provenance") != reset:
@@ -3396,10 +3450,10 @@ def _epoch_verify_files(
             ):
                 failures.append("fresh_public_clone_record_invalid")
             try:
-                policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+                policy_doc = _read_json_cached(policy_path)
                 if policy_doc.get("fresh_public_clone_provenance") != fresh_clone:
                     failures.append("epoch_policy_fresh_clone_record_mismatch")
-                rollback_meta = json.loads(rollback_metadata_path.read_text(encoding="utf-8"))
+                rollback_meta = _read_json_cached(rollback_metadata_path)
                 if rollback_meta.get("fresh_public_clone_provenance") != fresh_clone:
                     failures.append("rollback_metadata_fresh_clone_record_mismatch")
             except (OSError, json.JSONDecodeError):
@@ -3460,7 +3514,7 @@ def _epoch_transition_provenance_failures(
         failures.append("epoch_transition_provenance_invalid")
         return failures
     try:
-        previous_manifest = json.loads(rollback_path.read_text(encoding="utf-8"))
+        previous_manifest = _read_json_cached(rollback_path)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return ["epoch_transition_previous_manifest_invalid"]
     previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
@@ -3488,7 +3542,7 @@ def _epoch_transition_provenance_failures(
         failures.extend(f"epoch_transition_previous_invalid:{item}" for item in old_failures)
     try:
         policy_path = Path(str(epoch.get("policy_path") or ""))
-        policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+        policy_doc = _read_json_cached(policy_path)
         if _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
             failures.append("epoch_policy_hash_mismatch")
         if policy_doc.get("transition_provenance") != transition:
@@ -3545,7 +3599,7 @@ def _epoch_rebaseline_provenance_failures(
         failures.append("epoch_rebaseline_provenance_invalid")
         return failures
     try:
-        previous_manifest = json.loads(rollback_path.read_text(encoding="utf-8"))
+        previous_manifest = _read_json_cached(rollback_path)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return ["epoch_rebaseline_previous_manifest_invalid"]
     previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
@@ -3582,7 +3636,7 @@ def _epoch_rebaseline_provenance_failures(
         failures.extend(f"epoch_rebaseline_previous_invalid:{item}" for item in old_failures)
     try:
         policy_path = Path(str(epoch.get("policy_path") or ""))
-        policy_doc = json.loads(policy_path.read_text(encoding="utf-8"))
+        policy_doc = _read_json_cached(policy_path)
         if _sha256_file(policy_path) != str(epoch.get("policy_sha256") or "").upper():
             failures.append("epoch_policy_hash_mismatch")
         if policy_doc.get("rebaseline_provenance") != record:
@@ -3648,7 +3702,7 @@ def _epoch_rebaseline_approval_used(
     if not isinstance(rollback, dict) or rollback.get("manifest_absent") is not False:
         return True
     try:
-        old_manifest = json.loads(Path(str(rollback.get("path") or "")).read_text(encoding="utf-8"))
+        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return True
     old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
@@ -3678,7 +3732,7 @@ def _epoch_rebaseline_authorization_consumed(
     if not isinstance(rollback, dict) or rollback.get("manifest_absent") is not False:
         return True
     try:
-        old_manifest = json.loads(Path(str(rollback.get("path") or "")).read_text(encoding="utf-8"))
+        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return True
     old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
@@ -5745,6 +5799,205 @@ def main() -> int:
         "inventory_reason": result.get("inventory", {}).get("budget", {}).get("reason"),
     }, indent=2), flush=True)
     return 0 if result["ok"] else 1
+
+
+
+def dispose_stale_batch(
+    paths,
+    *,
+    reason: str,
+    scope_id: str,
+    protected_files=(),
+    protected_trees=(),
+    allowed_roots=None,
+) -> dict:
+    """Owner stale-artifact cleanup as ONE transaction (plan -> classify -> one registry write -> one disposal -> readback -> protected proof).
+
+    Each target must be an absolute, fully resolved path under an allowed root (default RELEASE_RUN/DEV_RUN/TEST_RUN), contain no
+    link/junction, hold no protected file, not be the epoch history or the registry, and have no running consumer.  Eligible targets
+    and every RETAINED/UNKNOWN record beneath them are reclassified DISPOSABLE with a single registry write, then removed by one
+    ``cleanup_after_test`` call.  ``protected_files``/``protected_trees`` are hashed before and after; any difference fails the result.
+    Refused targets are reported and left untouched; they never block the eligible ones.
+    """
+
+    roots = [Path(r).resolve() for r in (allowed_roots or [ROOT / "RELEASE_RUN", ROOT / "DEV_RUN", ROOT / "TEST_RUN"])]
+    history = (ROOT / "TEST_RUN" / "artifact-registry-epochs").resolve()
+    manifest_file = MANIFEST_PATH.resolve()
+
+    def protected_snapshot() -> dict:
+        found: dict[str, str] = {}
+        for item in protected_files:
+            item = Path(item)
+            if item.is_file():
+                found[str(item)] = _sha256_uncached(item)
+        for tree in protected_trees:
+            for current, _dirs, files in os.walk(tree):
+                for name in files:
+                    member = Path(current) / name
+                    found[str(member)] = _sha256_uncached(member)
+        return found
+
+    def scope_root_for(path: Path) -> str:
+        for root in roots:
+            if root == path or root in path.parents:
+                return str(root)
+        return str(ROOT)
+
+    protected_keys = {str(Path(p)).lower() for p in protected_files}
+    protected_roots = [str(Path(t)).lower() for t in protected_trees]
+    refused: list[dict] = []
+    eligible: list[Path] = []
+    for raw in paths:
+        target = Path(raw)
+        why = None
+        try:
+            resolved = target.resolve()
+        except OSError:
+            resolved = None
+        if not target.is_absolute() or resolved is None or resolved != target:
+            why = "target_not_absolute_resolved"
+        elif not any(root in resolved.parents for root in roots):
+            why = "outside_allowed_roots"
+        elif resolved == history or history in resolved.parents or resolved == manifest_file or resolved in manifest_file.parents:
+            why = "epoch_history_or_registry"
+        elif is_protected_path(resolved):
+            why = "protected_path"
+        elif not resolved.exists():
+            why = "absent"
+        else:
+            low = str(resolved).lower()
+            if any(k == low or k.startswith(low + os.sep) for k in protected_keys) or any(
+                r == low or r.startswith(low + os.sep) or low.startswith(r + os.sep) for r in protected_roots
+            ):
+                why = "contains_protected_data"
+            else:
+                for current, dirs, files in os.walk(resolved, followlinks=False):
+                    if any(os.lstat(Path(current) / n).st_file_attributes & 0x400 for n in dirs + files):
+                        why = "link_or_junction_inside"
+                        break
+                if why is None and resolved.is_dir() and processes_using(resolved):
+                    why = "active_consumer"
+        if why:
+            refused.append({"path": str(target), "reason": why})
+        else:
+            eligible.append(resolved)
+    result: dict = {"ok": False, "disposed": [], "refused": refused, "reasons": []}
+    before = protected_snapshot()
+    if eligible:
+        document = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        lowered = [str(p).lower() for p in eligible]
+        upserts: dict[str, dict] = {}
+        covered: set[str] = set()
+        for entry in document.get("artifacts", []):
+            entry_path = str(entry.get("path") or "")
+            low = entry_path.lower()
+            owner_target = next((t for t in lowered if low == t or low.startswith(t + os.sep)), None)
+            if owner_target is None:
+                continue
+            lifecycle = str(entry.get("lifecycle") or "").upper()
+            if lifecycle == "PROTECTED":
+                result["reasons"].append("protected_record_inside_target:" + entry_path)
+                break
+            if low == owner_target:
+                covered.add(owner_target)
+            if lifecycle in ("DISPOSABLE", "MISSING"):
+                continue
+            upserts[str(entry["id"])] = {
+                "artifact_id": entry["id"], "path": entry_path, "kind": entry.get("kind"),
+                "created_by": entry.get("created_by") or "cleanup_work_artifacts.py", "owner": entry.get("owner") or "cleanup",
+                "purpose": (entry.get("purpose") or "stale artifact") + " | reclassified DISPOSABLE by dispose_stale_batch",
+                "lifecycle": "DISPOSABLE", "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(Path(entry_path)),
+                "size_bytes": int(entry.get("bytes") or 0),
+            }
+        if not result["reasons"]:
+            for target, low in zip(eligible, lowered):
+                if low not in covered:
+                    upserts[f"batch:{scope_id}:{target}"] = {
+                        "artifact_id": f"batch:{scope_id}:{target}", "path": str(target), "kind": "stale_artifact", "created_by": "cleanup_work_artifacts.py",
+                        "owner": scope_id, "purpose": "stale artifact disposed by dispose_stale_batch: " + reason, "lifecycle": "DISPOSABLE",
+                        "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(target), "size_bytes": 0,
+                    }
+            if upserts:
+                from work_paths import register_artifacts
+
+                register_artifacts(list(upserts.values()))          # the only registry write of the classification
+            previous = {k: os.environ.get(k) for k in ("VNTEXT_ARTIFACT_SCOPE_ID", "VNTEXT_ARTIFACT_RUN_ID", "VNTEXT_ARTIFACT_SCOPE_ROOT")}
+            os.environ.update({"VNTEXT_ARTIFACT_SCOPE_ID": scope_id, "VNTEXT_ARTIFACT_RUN_ID": scope_id, "VNTEXT_ARTIFACT_SCOPE_ROOT": str(ROOT)})
+            try:
+                report = cleanup_after_test(eligible, reason=reason, outcome="PASS")
+            finally:
+                for key, value in previous.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
+            result["cleanup_status"] = report.get("cleanup_status")
+            result["disposed"] = [str(p) for p in eligible if not p.exists()]
+            result["left"] = [str(p) for p in eligible if p.exists()]
+            result["reclassified_records"] = len(upserts)
+    after = protected_snapshot()
+    result["protected_files"] = len(before)
+    result["protected_unchanged"] = before == after
+    if not result["protected_unchanged"]:
+        result["reasons"].append("protected_data_changed")
+    result["ok"] = bool(result["protected_unchanged"]) and not result["reasons"] and not result.get("left")
+    return result
+
+
+def _sha256_uncached(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest().upper()
+
+
+def _transaction(function):
+    """Run ``function`` as one integrity transaction: the memo starts empty and never outlives the call."""
+
+    import functools
+
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        _clear_integrity_cache()
+        try:
+            return function(*args, **kwargs)
+        finally:
+            _clear_integrity_cache()
+
+    return wrapper
+
+
+def _commit_fact_memo(function):
+    """Facts about a full 40-hex commit id (its VERSION.txt, ancestry) are immutable, so one transaction asks git once per distinct commit."""
+
+    import functools
+    import re
+
+    full = re.compile(r"[0-9a-fA-F]{40}")
+
+    @functools.wraps(function)
+    def wrapper(*args):
+        if not all(isinstance(a, str) and full.fullmatch(a) for a in args):
+            return function(*args)
+        key = ("git", function.__name__) + tuple(a.lower() for a in args)
+        if key in _INTEGRITY_CACHE:
+            INTEGRITY_STATS["hits"] += 1
+            return _INTEGRITY_CACHE[key]
+        result = function(*args)
+        _INTEGRITY_CACHE[key] = result
+        return result
+
+    return wrapper
+
+
+_git_version_at = _commit_fact_memo(_git_version_at)
+_git_is_ancestor = _commit_fact_memo(_git_is_ancestor)
+
+cleanup_after_test = _transaction(cleanup_after_test)
+dispose_stale_batch = _transaction(dispose_stale_batch)
+activate_prospective_epoch = _transaction(activate_prospective_epoch)
+verify_prospective_epoch = _transaction(verify_prospective_epoch)
 
 
 if __name__ == "__main__":

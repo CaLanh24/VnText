@@ -3715,6 +3715,148 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("pass-test", entry["deletion_provenance"]["reason"])
             self.assertEqual(str(artifact), entry["deletion_provenance"]["path"])
 
+    def test_stale_batch_is_one_transaction_with_one_registry_write_and_a_protected_data_proof(self):
+        with self.isolated_workspace() as (root, work, _game, manifest):
+            dev = root / "DEV_RUN"
+            keep = dev / "owner-setup"
+            keep.mkdir(parents=True)
+            (keep / "Setup.exe").write_bytes(b"owner file")
+            targets = []
+            for index, base in enumerate((work, work, dev, dev, work)):
+                target = base / f"stale-{index}"
+                (target / "nested").mkdir(parents=True)
+                (target / "nested" / "payload.bin").write_bytes(bytes([index]) * 64)
+                targets.append(target)
+            self._register(targets[0], lifecycle="RETAINED")                 # stale retained claim
+            self._register(targets[0] / "nested", lifecycle="UNKNOWN")       # unclassified descendant
+            writes = []
+            original = paths.register_artifacts
+            with patch.object(paths, "register_artifacts", side_effect=lambda records: writes.append(len(records)) or original(records)), \
+                patch.object(cleanup, "processes_using", return_value=[]):
+                result = cleanup.dispose_stale_batch(
+                    targets, reason="batch test", scope_id="stale-batch-test", protected_files=[keep / "Setup.exe"])
+            self.assertTrue(result["ok"], result)
+            self.assertEqual(1, len(writes))                                 # one classification write for every target and descendant
+            self.assertTrue(len(targets) <= writes[0])
+            self.assertEqual(sorted(str(t) for t in targets), sorted(result["disposed"]))
+            self.assertTrue(all(not t.exists() for t in targets))
+            self.assertEqual(b"owner file", (keep / "Setup.exe").read_bytes())
+            self.assertTrue(result["protected_unchanged"] and result["protected_files"] == 1)
+            records = json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]
+            self.assertEqual({"MISSING"}, {r["lifecycle"] for r in records if str(r["path"]).startswith(str(targets[0]))})
+
+    def test_stale_batch_refuses_unsafe_targets_but_still_disposes_the_eligible_ones(self):
+        with self.isolated_workspace() as (root, work, _game, manifest):
+            dev = root / "DEV_RUN"
+            dev.mkdir()
+            good = work / "good"
+            good.mkdir()
+            (good / "a.txt").write_text("x", encoding="utf-8")
+            outside = Path(tempfile.mkdtemp(prefix="vntext-outside-"))
+            (outside / "o.txt").write_text("outside", encoding="utf-8")
+            holder = work / "holds-protected"
+            holder.mkdir()
+            (holder / "Setup.exe").write_bytes(b"owner")
+            busy = work / "busy"
+            busy.mkdir()
+            guarded = work / "guarded"
+            guarded.mkdir()
+            self._register(guarded, lifecycle="PROTECTED")
+            link = work / "link-target"
+            link.mkdir()
+            junction = work / "has-junction"
+            junction.mkdir()
+            made = subprocess.run(["cmd", "/c", "mklink", "/J", str(junction / "j"), str(link)], capture_output=True, text=True)
+            history = work / "artifact-registry-epochs"
+            history.mkdir()
+            (history / "epoch.json").write_text("{}", encoding="utf-8")
+            calls = []
+
+            def consumers(path):
+                calls.append(path)
+                return [{"pid": 1}] if Path(path).name == "busy" else []
+
+            try:
+                with patch.object(cleanup, "processes_using", side_effect=consumers):
+                    result = cleanup.dispose_stale_batch(
+                        [good, outside, Path("relative-dir"), holder, busy, junction, history, manifest, work / "missing"],
+                        reason="refusal test", scope_id="stale-batch-refusals", protected_files=[holder / "Setup.exe"])
+                    guarded_result = cleanup.dispose_stale_batch([guarded], reason="protected record", scope_id="stale-batch-protected")
+                reasons = {Path(r["path"]).name: r["reason"] for r in result["refused"]}
+                self.assertEqual("outside_allowed_roots", reasons[outside.name])
+                self.assertEqual("target_not_absolute_resolved", reasons["relative-dir"])
+                self.assertEqual("contains_protected_data", reasons["holds-protected"])
+                self.assertEqual("active_consumer", reasons["busy"])
+                self.assertEqual("epoch_history_or_registry", reasons["artifact-registry-epochs"])
+                self.assertEqual("epoch_history_or_registry", reasons[manifest.name])
+                self.assertEqual("absent", reasons["missing"])
+                if made.returncode == 0:
+                    self.assertEqual("link_or_junction_inside", reasons["has-junction"])
+                self.assertEqual([str(good)], result["disposed"])
+                self.assertFalse(good.exists())
+                for kept in (outside, holder, busy, history, junction):
+                    self.assertTrue(kept.exists(), kept)
+                self.assertTrue((link).exists())                                      # the junction target was never followed
+                self.assertFalse(guarded_result["ok"], guarded_result)
+                self.assertTrue(guarded.exists())
+            finally:
+                subprocess.run(["cmd", "/c", "rmdir", str(junction / "j")], capture_output=True)
+                shutil.rmtree(outside, ignore_errors=True)
+
+    def test_stale_batch_reports_a_changed_protected_file_instead_of_claiming_success(self):
+        with self.isolated_workspace() as (root, work, _game, _manifest):
+            keep = root / "DEV_RUN" / "owner"
+            keep.mkdir(parents=True)
+            owner_file = keep / "Setup.exe"
+            owner_file.write_bytes(b"original")
+            target = work / "stale"
+            target.mkdir()
+            real = cleanup.cleanup_after_test.__wrapped__
+
+            def tamper(paths_, **kwargs):
+                owner_file.write_bytes(b"changed")
+                return real(paths_, **kwargs)
+
+            with patch.object(cleanup, "cleanup_after_test", side_effect=tamper), patch.object(cleanup, "processes_using", return_value=[]):
+                result = cleanup.dispose_stale_batch([target], reason="tamper", scope_id="stale-batch-tamper", protected_files=[owner_file])
+            self.assertFalse(result["ok"])
+            self.assertFalse(result["protected_unchanged"])
+            self.assertIn("protected_data_changed", result["reasons"])
+
+    def test_integrity_memo_reuses_unchanged_snapshots_within_a_transaction_and_never_a_stale_pass(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            self._active_release_epoch_for_transition(root, manifest)
+            for hop in range(1, 4):
+                before = manifest.read_bytes()
+                old = json.loads(before)["prospective_epoch"]
+                target_sha = f"{hop + 40:040x}"
+                _, _, ancestry, version, incident = self._transition_guards()
+                with patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": False, "error": ""}), ancestry, version, incident:
+                    done = cleanup.activate_prospective_epoch(
+                        dry_run=False, epoch_id=f"epoch-memo-{hop}", source_sha=target_sha, release_task_id=cleanup.RELEASE_TASK_BUDGET_ID,
+                        transition_from_epoch_id=old["epoch_id"], expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(),
+                        owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL)
+                    self.assertTrue(done["ok"], done)
+            _, _, ancestry, version, incident = self._transition_guards()
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": "a" * 40, "dirty": False, "error": ""}), ancestry, version, incident:
+                epoch = json.loads(manifest.read_bytes())["prospective_epoch"]
+                cleanup._clear_integrity_cache()
+                cold = dict(cleanup.INTEGRITY_STATS)
+                self.assertEqual([], cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes())))
+                first = dict(cleanup.INTEGRITY_STATS)
+                self.assertTrue(first["hash_misses"] > cold["hash_misses"] and first["json_misses"] > cold["json_misses"])
+                self.assertEqual([], cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes())))
+                second = dict(cleanup.INTEGRITY_STATS)
+                self.assertEqual(first["hash_misses"], second["hash_misses"])              # nothing re-hashed or re-parsed in the same transaction
+                self.assertEqual(first["json_misses"], second["json_misses"])
+                self.assertTrue(second["hits"] > first["hits"])
+                rollback = Path(epoch["rollback"]["path"])
+                rollback.write_bytes(rollback.read_bytes() + b" ")                         # same transaction, snapshot changed on disk
+                failures = cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes()))
+                self.assertTrue(any("rollback_snapshot" in f for f in failures), failures)  # the stale cached PASS is not reused
+            cleanup._clear_integrity_cache()
+            self.assertEqual({}, cleanup._INTEGRITY_CACHE)
+
     def test_pass_cleanup_marks_registered_descendants_missing(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             artifact = work / "nested-pass-output"
