@@ -12,8 +12,31 @@ public sealed partial class MainViewModel
     public RelayCommand DownloadResourcesCommand { get; private set; } = null!;
     public RelayCommand OpenResourcesCommand { get; private set; } = null!;
     public int SelectedSettingsTab { get; set; } = 1;
+    private int _resourceProgressPercent;
+    private string _resourceProgressText = "";
+    // Resource progress/cancel belong to the resources task ONLY; any other busy task may disable the buttons but never shows here.
+    public bool ResourcesActive => Busy && _runningTask == "resources";
+    public int ResourceProgressPercent { get => _resourceProgressPercent; private set => Set(ref _resourceProgressPercent, value); }
+    public string ResourceProgressText => UiText.Translate(_resourceProgressText);
+    public RelayCommand CancelResourcesCommand { get; private set; } = null!;
+    internal void RefreshResourcesActive()
+    {
+        Raise(nameof(ResourcesActive));
+        CancelResourcesCommand?.RaiseCanExecuteChanged();
+    }
+    private void SetResourceProgress(int? percent, string? text)
+    {
+        if (percent.HasValue) ResourceProgressPercent = percent.Value;
+        if (text is not null) { _resourceProgressText = text; Raise(nameof(ResourceProgressText)); }
+    }
+    private void CancelResources()
+    {
+        if (!ResourcesActive) return;
+        CancelTask();
+    }
     private void InitResourceCommands()
     {
+        CancelResourcesCommand = new RelayCommand(_ => CancelResources(), _ => ResourcesActive);
         CheckResourcesCommand = new RelayCommand(_ => StartResources(false), _ => !Busy);
         DownloadResourcesCommand = new RelayCommand(_ => StartResources(true), _ => !Busy);
         OpenResourcesCommand = new RelayCommand(_ => { SelectedSettingsTab = 1; Raise(nameof(SelectedSettingsTab)); SelectedTab = WorkflowTabs.Settings; });

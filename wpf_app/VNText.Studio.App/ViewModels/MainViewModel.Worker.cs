@@ -215,7 +215,7 @@ public sealed partial class MainViewModel
                 if (completedTask == "external_translation_import")
                     _pendingExternalTranslationImportTargetPath = "";
                 Busy = false;
-                _runningTask = null;
+                _runningTask = null; RefreshResourcesActive();
                 if (completedTask == "resources")
                 {
                     CompleteResources(evt);
@@ -339,7 +339,9 @@ public sealed partial class MainViewModel
                 {
                     var errMsg = string.IsNullOrWhiteSpace(evt.Error) ? "Tác vụ thất bại" : evt.Error!;
                     RequestCompletion("VNText Studio — Lỗi", errMsg, "error");
-                    RecordPersistentError(completedTask, errMsg);      // the toast is transient; this stays until acknowledged
+                    RecordPersistentError(completedTask, errMsg, RenpySdkAction is "missing" or "error"
+                        ? "Mở Cài đặt › Dữ liệu để chuẩn bị hoặc chọn Ren'Py SDK, rồi lấy text lại."
+                        : "");      // the toast is transient; this stays until acknowledged
                     LogExpanded = true;
                 }
                 else if (fullyComplete)

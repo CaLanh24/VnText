@@ -48,8 +48,50 @@ internal static partial class Program
             AssertEqual(1,vm.SelectedSettingsTab);
             vm.TestSetBusy(true);AssertFalse(vm.DownloadResourcesCommand.CanExecute(null));vm.TestSetBusy(false);
         }, failures);
+        Run("ResourceProgressAndCancelBelongOnlyToTheResourcesTask", () =>
+        {
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            foreach(var other in new[]{"extract","image_batch","image_extract","analyze"})
+            {
+                vm.TestSetActiveTask("other-"+other,other);
+                vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="other-"+other,Done=23,Total=100,Step="filtering image"});
+                AssertFalse(vm.ResourcesActive);
+                AssertEqual(0,vm.ResourceProgressPercent);
+                AssertEqual("",vm.ResourceProgressText);
+                AssertFalse(vm.CancelResourcesCommand.CanExecute(null));
+                AssertFalse(vm.DownloadResourcesCommand.CanExecute(null));      // an unrelated task may disable the buttons...
+                vm.CancelResourcesCommand.Execute(null);                        // ...but never cancels on their behalf
+                AssertFalse(vm.ResourcesActive);
+                vm.TestMarkTaskTerminal("other-"+other);
+            }
+            var statusBefore=vm.ResourceStatus;
+            vm.TestSetActiveTask("res-1","resources");
+            AssertTrue(vm.ResourcesActive);
+            AssertTrue(vm.CancelResourcesCommand.CanExecute(null));
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="res-1",Done=50,Total=100,Step="Tải Ren'Py SDK 8.5.3"});
+            AssertTrue(vm.ResourceProgressPercent>0);
+            AssertTrue(vm.ResourceProgressText.Length>0);
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="res-1",Ok=false,Error="cancelled"});
+            AssertFalse(vm.ResourcesActive);
+            AssertFalse(vm.CancelResourcesCommand.CanExecute(null));
+            var statusAfter=vm.ResourceStatus;
+            AssertTrue(statusAfter!=statusBefore);                                // the resources task owns and wrote its terminal status
+            vm.TestSetActiveTask("ext-2","extract");
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="res-1",Done=90,Total=100,Step="stale resources event"});
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="res-1",Ok=true,Summary="stale"});
+            AssertFalse(vm.ResourcesActive);
+            AssertEqual(statusAfter,vm.ResourceStatus);                           // a stale completion cannot overwrite the finished status
+            vm.TestMarkTaskTerminal("ext-2");
+        }, failures);
+        Run("SeparateReviewIsAlwaysOnEvenForAnOldFalsePreference", () =>
+        {
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            AssertTrue(vm.SeparateReview);
+            vm.SeparateReview=false;
+            AssertTrue(vm.SeparateReview);
+        }, failures);
         foreach(var failure in failures) Console.Error.WriteLine(failure);
-        Console.WriteLine($"Resource flow checks: {3-failures.Count}/3 PASS");
+        Console.WriteLine($"Resource flow checks: {5-failures.Count}/5 PASS");
         return failures.Count==0?0:1;
     }
 }

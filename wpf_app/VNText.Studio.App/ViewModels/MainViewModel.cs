@@ -158,7 +158,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 Notes = _settings.DownloadedUpdateNotes[..Math.Min(16000, _settings.DownloadedUpdateNotes.Length)] });
         _selectedReleaseNotesEntry = ReleaseNotesHistory.FirstOrDefault();
         _settingsStatus = settingsError;
-        _separateReview = _settings.SeparateReview;
+        _separateReview = true;
+        _settings.SeparateReview = true;
         _overwriteTranslation = _settings.OverwriteTranslation;
         _humanReviewRequired = _settings.HumanReviewRequired;
         // Owner-selected product default: exhaustive extraction. Older persisted choices are ignored.
@@ -589,9 +590,10 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         get => _separateReview;
         set
         {
-            if (Set(ref _separateReview, value))
+            // Always on (Owner 2026-11-02): review rows stay separate from MAIN; the option is no longer exposed.
+            if (Set(ref _separateReview, true))
             {
-                _settings.SeparateReview = value;
+                _settings.SeparateReview = true;
                 SaveSettings();
             }
         }
@@ -759,6 +761,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             if (Set(ref _busy, value))
             {
+                RefreshResourcesActive();
                 Raise(nameof(ExtractProgressActive));
                 Raise(nameof(ImageGridEnabled));
                 RaiseImageWorkspaceTaskState();
@@ -806,7 +809,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                     if (_extractTaskStopwatch.IsRunning) { _extractTaskStopwatch.Stop(); Raise(nameof(ExtractProgressElapsed)); }
                     if (_patchTaskStopwatch.IsRunning) { _patchTaskStopwatch.Stop(); Raise(nameof(PatchProgressElapsed)); }
                     ResumeDeferredOffer();
-                    _runningTask = null;
+                    _runningTask = null; RefreshResourcesActive();
                     RefreshWorkflow();
                 }
                 RaiseGitHubUpdateCard();
@@ -849,6 +852,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             case "translate": case "image_batch": case "image_render": case "cloud_export": case "cloud_import": case "external_translation_import":
                 if (percent.HasValue) TranslateProgressPercent = percent.Value;
                 if (text is not null) { _translateProgressText = text; Raise(nameof(TranslateProgressSubtitle)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText)); }
+                break;
+            case "resources":
+                SetResourceProgress(percent, text);
                 break;
             case "patch": case "image_delivery": case "image_apply": case "image_rollback":
                 if (percent.HasValue) PatchProgressPercent = percent.Value;

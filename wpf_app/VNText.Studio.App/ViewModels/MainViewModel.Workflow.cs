@@ -391,7 +391,7 @@ public sealed partial class MainViewModel
             @out = OutputPath,
             mode = "deep",
             level = ExtractLevel,
-            separate_review = SeparateReview,
+            separate_review = true,   // always on, whatever an older preference stored
             renpy_sdk_path = RenpySdkPath,
             renpy_sdk_action = RenpySdkAction,
         }, RenpySdkAction == "download" ? "Đang tải Ren'Py SDK rồi lấy text…" : "Đang extract text…");
@@ -641,6 +641,7 @@ public sealed partial class MainViewModel
         _completionHandledKey = null;
         _translateLastRunCancelled = false;
         _runningTask = task;
+        RefreshResourcesActive();
         BeginTaskLog(_activeTaskId, task, statusLabel);
         _lastCompletedTask = null;
         ClearDiagnostic();
@@ -694,7 +695,7 @@ public sealed partial class MainViewModel
         catch (Exception ex)
         {
             Busy = false;
-            _runningTask = null;
+            _runningTask = null; RefreshResourcesActive();
             AppendLog($"Lỗi gửi task: {ex.Message}");
             StatusText = "Lỗi";
             StepStatusLine = UiText.Msg("Lỗi — {0}", ex.Message);

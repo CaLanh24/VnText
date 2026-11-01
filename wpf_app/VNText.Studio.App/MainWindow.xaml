@@ -404,29 +404,6 @@
                                     </Grid>
                                 </StackPanel>
 
-                                <Border x:Name="ExtractOptionsPanel" Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Text="Tuỳ chọn trích xuất" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                        <CheckBox Grid.Row="1" Content="Tách dòng cần duyệt" IsChecked="{Binding SeparateReview, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" Margin="0,13,0,0" />
-                                        <StackPanel x:Name="RenpySdkOptionsPanel" Grid.Row="2" Margin="0,13,0,0"
-                                                    Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}">
-                                            <TextBlock Text="Game Ren'Py được nhận diện" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBlock Text="Chuẩn bị SDK 8.5.3 trong Cài đặt → Dữ liệu trước khi lấy lời thoại. Tiếp tục khi chưa có SDK chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch và luôn chưa đầy đủ." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
-                                            <TextBlock Text="{Binding RenpySdkStatus}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
-                                            <WrapPanel Margin="0,8,0,0">
-                                                <Button Style="{StaticResource OutlineButton}" Command="{Binding OpenResourcesCommand}"><TextBlock Text="Mở tài nguyên trong Cài đặt" /></Button>
-                                                <Button Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseRenpySdkCommand}"><TextBlock Text="Chọn công cụ đã cài" /></Button>
-                                                <Button Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ContinueWithoutRenpySdkCommand}"><TextBlock Text="Tiếp tục, chỉ xuất để xem lại" /></Button>
-                                            </WrapPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-
                                 <StackPanel Grid.Row="5" Margin="0,21,0,0" Visibility="Collapsed">
                                     <TextBlock Text="Mức lọc văn bản thô" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
@@ -1155,12 +1132,12 @@
                                                     <Button Content="Tải tất cả tài nguyên" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
                                                     <Button Content="Kiểm tra tài nguyên" Command="{Binding CheckResourcesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                     <Button Content="Chọn SDK đã cài…" Command="{Binding ChooseRenpySdkCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-                                                    <Button Content="Hủy" Command="{Binding CancelCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                    <Button x:Name="ResourceCancelButton" Content="Hủy" Command="{Binding CancelResourcesCommand}" Visibility="{Binding ResourcesActive, Converter={StaticResource BoolToVis}}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                 </WrapPanel>
-                                                <ProgressBar x:Name="ResourceProgressBar" Minimum="0" Maximum="100" Value="{Binding ProgressPercent, Mode=OneWay}"
-                                                             Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}"
+                                                <ProgressBar x:Name="ResourceProgressBar" Minimum="0" Maximum="100" Value="{Binding ResourceProgressPercent, Mode=OneWay}"
+                                                             Visibility="{Binding ResourcesActive, Converter={StaticResource BoolToVis}}"
                                                              Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,0,0,8" />
-                                                <TextBlock Text="{Binding ProgressSubtitle, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" />
+                                                <TextBlock x:Name="ResourceProgressText" Text="{Binding ResourceProgressText}" Visibility="{Binding ResourcesActive, Converter={StaticResource BoolToVis}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" />
                                             </StackPanel>
                                         </Border>
                                         <Border Style="{StaticResource SettingsCardStyle}" Padding="0">

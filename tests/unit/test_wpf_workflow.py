@@ -303,7 +303,6 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         glossary_probe = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "BulkGlossaryUiProbe.cs").read_text(encoding="utf-8")
         for option in (
-            'Content="Tách dòng cần duyệt"',
             'Content="Ghi đè bản dịch cũ"',
             'Content="Duyệt bản dịch trước khi đóng gói"',
         ):
@@ -321,10 +320,16 @@ class WpfWorkflowTests(unittest.TestCase):
         recovery = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "RenpySdkRecovery.cs").read_text(encoding="utf-8")
         workflow_tests = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
         worker = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Worker.cs").read_text(encoding="utf-8")
-        self.assertIn('Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}"', xaml)
+        # Owner 2026-11-02: no duplicated SDK explanation/action block on Extract; resources live in Settings > Data.
+        self.assertNotIn('x:Name="RenpySdkOptionsPanel"', xaml)
+        self.assertNotIn("Game Ren'Py được nhận diện", xaml)
+        self.assertNotIn("Tiếp tục, chỉ xuất để xem lại", xaml)
+        self.assertNotIn('x:Name="ExtractOptionsPanel"', xaml)
+        self.assertNotIn("Tuỳ chọn trích xuất", xaml)
+        self.assertNotIn("Tách dòng cần duyệt", xaml)
         self.assertIn("RenpyGameDetector.HasSdkRecoveryEvidence", view_model)
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
-        self.assertIn("Mở tài nguyên trong Cài đặt", xaml)      # prerequisites are prepared in Settings > Data; Extract no longer downloads implicitly
+        self.assertIn("Chọn SDK đã cài…", xaml)      # choosing an installed SDK is a Settings > Data action
         self.assertNotIn("Tải công cụ rồi lấy text", xaml)
         self.assertIn("Tiếp tục, chỉ xuất để xem lại", xaml)
         self.assertIn("chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch và luôn chưa đầy đủ", xaml)
@@ -333,6 +338,23 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', recovery)
         self.assertIn("RenpySdkRecovery.ResolveAction", worker)
         self.assertIn("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", workflow_tests)
+
+    def test_resources_card_owns_its_progress_and_cancel(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        resources = (app / "ViewModels" / "MainViewModel.Resources.cs").read_text(encoding="utf-8")
+        card = xaml[xaml.index('Text="Chuẩn bị tài nguyên sau khi cài ứng dụng"'):xaml.index('x:Name="ResourceProgressText"')]
+        self.assertIn('Command="{Binding CancelResourcesCommand}"', card)
+        self.assertNotIn('Command="{Binding CancelCommand}"', card)
+        self.assertIn("Value=\"{Binding ResourceProgressPercent, Mode=OneWay}\"", card)
+        self.assertNotIn("Binding ProgressPercent", card)
+        self.assertNotIn("Binding ProgressSubtitle", card)
+        self.assertEqual(3, card.count("ResourcesActive"))     # cancel, bar and text show only for the resources task
+        self.assertIn('public bool ResourcesActive => Busy && _runningTask == "resources";', resources)
+        self.assertIn("if (!ResourcesActive) return;", resources)
+        main = (app / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
+        self.assertIn("separate_review = true,", main)
+        self.assertNotIn("separate_review = SeparateReview", main)
 
     def test_release_0114_ui_fixes_stay_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
@@ -934,19 +956,12 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("await vm.TrySaveCsvEditorForExitAsync()", window_code)
         self.assertIn("MessageBoxButton.YesNoCancel", window_code)
         delivery_panel = named["PatchDeliveryInstructionsPanel"]
-        extract_options = named["ExtractOptionsPanel"]
-        renpy_options = named["RenpySdkOptionsPanel"]
         self.assertEqual(
             "{Binding PatchDeliveryReady, Converter={StaticResource BoolToVis}}",
             delivery_panel.attrib.get("Visibility"),
         )
-        self.assertNotIn("PatchDeliveryReady", extract_options.attrib.get("Visibility", ""))
-        self.assertIn("Tách dòng cần duyệt", "".join(element.attrib.get("Content", "") for element in extract_options.iter()))
-        self.assertEqual(
-            "{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}",
-            renpy_options.attrib.get("Visibility"),
-        )
-        self.assertIs(parents.get(parents.get(renpy_options)), extract_options)
+        self.assertNotIn("ExtractOptionsPanel", named)
+        self.assertNotIn("RenpySdkOptionsPanel", named)
         self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', xaml)
         self.assertIn('ToolTip="Chỉ nhập dòng khớp mã và câu gốc; dòng khác được giữ để sửa."', xaml)
         self.assertIn('ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2."', xaml)
