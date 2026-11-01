@@ -775,7 +775,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("Text=\"{Binding PatchProgressStep, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Bước: {0}'}\"", xaml)
         self.assertIn('Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding PatchProgressHasEta, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn('Style="{StaticResource BlueProgressBarStyle}"', xaml)
+        self.assertIn('Style="{StaticResource GreenThinProgressBarStyle}"', xaml)
         styles = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
         self.assertIn('<Setter Property="GridLinesVisibility" Value="All" />', styles)
         for command in ("ClearBlockedCsvCommand", "ValidateCsvEditorCommand", "RetranslateBlockedCsvCommand", "ApproveCsvMemoryCommand"):
