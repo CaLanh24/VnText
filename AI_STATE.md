@@ -7,7 +7,7 @@
 - **Authority hiện hành (Owner 2026-11-01):** “Cho phép, lên 0.1.15 rồi kiểm Setup/updater và release luôn đi. Xong nhớ clean up. đừng dừng lại cho đến khi release.” Cho phép version 0.1.15, tải/cài tiên quyết trên bản sao đã đăng ký, kiểm Setup/updater, publication SAU KHI Brain ACCEPT (Brain làm bước accept/publication), đọc lại sau phát hành và dọn tài nguyên sở hữu. Không cài vào Desktop/game Owner; không đổi model/engine/guard. Ledger: [0.1.15](docs/RELEASE_0.1.15.md).
 - QA fixed11 ĐÃ ACCEPT (Brain/QA receipt `VNTextReviewTools/fixed11-qa/receipt.json`: R1–R4 LIVE PASS có phạm vi, không finding mới); EXE `740ad632b1b29c7da7821065f292df39d1865d36c1cb3917806afaf6c1185355`, payload source `bb5c3557d727e906ff5714ef73944ad20f73cfb2`. Hành vi đã chấp nhận bị đóng băng, không polish thêm.
 - Brain Codex `01a17d30-bc24-7940-a814-f172fe463e3e`; Claude DEV cố định `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26` là sole writer; không còn quota/Codex tạm writer, không writer khác.
-- NEXT: Release 0.1.15 HOÀN TẤT và ACCEPT (Setup GUI + updater GitHub UI native LIVE PASS có phạm vi; rollback/tamper chỉ headless 12/12). Không còn việc DEV mở. Cleanup đã chạy: non-exempt 6.96 GiB (mục tiêu ≤ 1 GiB: REVIEW_REQUIRED vì lịch sử/baseline được bảo vệ ở `candidate-0.1.13/14`, epoch history, Setup Owner — xem ledger 0.1.15). Task mới cần Owner/Brain giao.
+- NEXT: Không có việc DEV mở. Release 0.1.15 hoàn tất và ACCEPT; cleanup baseline/artifact cũ (Owner 2026-11-01) đã làm: non-exempt 6.96 → 2.47 GiB, 129,945 → 8,499 mục; phần dư là chuỗi epoch bắt buộc (1.77 GB) + Setup Owner 0.445 GB + evidence được trích dẫn — xem ledger 0.1.15. Bản build tuyến update sau này dựng lại baseline từ Setup/update công khai theo công thức giữ trong `RELEASE_RUN/candidate-0.1.13/baselines/public-*`. Task mới cần Owner/Brain giao.
 
 ## Source, candidate và evidence
 
@@ -18,7 +18,7 @@
 ## Git/epoch và cleanup
 
 - Epoch 0.1.14 hiện tại `epoch-20261101-fixed11-014-bb5c355` (đã tiêu thụ 3 quyền rebaseline 0.1.14; không còn). Release 0.1.15 dùng chuyển thường sang epoch 0.1.15, không kế thừa rebaseline cũ, giữ 8 hop/CAS. Tránh vòng docs→epoch: docs chỉ commit cùng đợt hoặc ở boundary terminal.
-- Cleanup: đã dọn có đăng ký fixed6/fixed8 app (dữ liệu giữ ở `style-fixed*-audit-data-014`), p14o, source clone, scratch. Sau upload/readback dọn có đăng ký payload/baseline sở hữu hướng về trần chuẩn ≤ 1 GiB; phần lịch sử được bảo vệ không xóa được thì ghi REVIEW_REQUIRED chính xác (không waive, không định nghĩa lại). Giữ audit/Owner data/history/cache và app test của người dùng trừ khi có quyền rõ.
+- Cleanup (2026-11-01): baseline/artifact cũ đã dispose có đăng ký theo quyền Owner; dữ liệu user, Setup Owner 0.1.13/0.1.14, audit data, Desktop, Git, `.dev-env` giữ nguyên (hash 349 file khớp trước/sau). Epoch history 1.77 GB là chuỗi bắt buộc, giữ. Mục tiêu ≤ 1 GiB: REVIEW_REQUIRED đo được (2.47 GiB), chi tiết ở ledger.
 
 ## Tra cứu
 
