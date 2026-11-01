@@ -21,6 +21,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -309,7 +310,52 @@ def _save_manifest(doc: dict) -> None:
     doc.setdefault("version", MANIFEST_SCHEMA_VERSION)
     doc.setdefault("schema_version", MANIFEST_SCHEMA_VERSION)
     doc["updated_at"] = utc_now()
-    MANIFEST_PATH.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    payload = (json.dumps(doc, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    temporary = MANIFEST_PATH.with_name(f"{MANIFEST_PATH.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with open(temporary, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, MANIFEST_PATH)    # a killed writer leaves the old registry, never a torn one
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+class RegistryChanged(RuntimeError):
+    """The registry bytes differ from the snapshot a caller classified against."""
+
+
+@contextmanager
+def _registry_lock():
+    """Exclusive registry write lock (create-exclusive file beside the registry); a lock older than 5 minutes is a dead writer's."""
+
+    ensure_work_root()
+    lock = MANIFEST_PATH.with_name(MANIFEST_PATH.name + ".lock")
+    deadline = time.monotonic() + 60
+    while True:
+        try:
+            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(descriptor)
+            break
+        except FileExistsError:
+            try:
+                if time.time() - lock.stat().st_mtime > 300:
+                    lock.unlink()
+                    continue
+            except OSError:
+                pass
+            if time.monotonic() > deadline:
+                raise TimeoutError(f"artifact registry is locked: {lock}")
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        try:
+            lock.unlink()
+        except OSError:
+            pass
 
 
 def register_artifact(
@@ -347,9 +393,12 @@ def register_artifact(
     )[0]
 
 
-def register_artifacts(registrations: list[dict]) -> list[dict]:
-    """Upsert related artifact records with one registry read and write."""
+def register_artifacts(registrations: list[dict], *, expected_manifest_sha256: str | None = None) -> list[dict]:
+    """Upsert related artifact records with one registry read and write.
 
+    ``expected_manifest_sha256`` is a compare-and-swap: under the write lock the registry bytes must still hash to it,
+    otherwise ``RegistryChanged`` is raised and nothing is written.
+    """
     if not registrations:
         return []
     ambient = ambient_scope()
@@ -424,26 +473,31 @@ def register_artifacts(registrations: list[dict]) -> list[dict]:
             "provenance": provenance,
         }
 
-    doc = _load_manifest()
-    existing = list(doc.get("artifacts", []))
-    existing_by_id: dict[str, list[dict]] = {}
-    for item in existing:
-        if item.get("id"):
-            existing_by_id.setdefault(str(item["id"]), []).append(item)
-    for artifact_id, entry in prepared.items():
-        previous = existing_by_id.get(artifact_id, [])
-        for item in previous:
-            old_path = str(item.get("path") or "").strip()
-            if old_path and Path(old_path).expanduser().resolve() != Path(entry["path"]):
-                raise ValueError(f"artifact id already belongs to another path: {artifact_id}")
-        if previous:
-            entry["created_at"] = previous[0].get("created_at") or entry["created_at"]
+    with _registry_lock():
+        if expected_manifest_sha256 is not None:
+            current = MANIFEST_PATH.read_bytes() if MANIFEST_PATH.is_file() else b""
+            if hashlib.sha256(current).hexdigest() != str(expected_manifest_sha256).lower():
+                raise RegistryChanged("artifact registry changed after the classification snapshot")
+        doc = _load_manifest()
+        existing = list(doc.get("artifacts", []))
+        existing_by_id: dict[str, list[dict]] = {}
+        for item in existing:
+            if item.get("id"):
+                existing_by_id.setdefault(str(item["id"]), []).append(item)
+        for artifact_id, entry in prepared.items():
+            previous = existing_by_id.get(artifact_id, [])
+            for item in previous:
+                old_path = str(item.get("path") or "").strip()
+                if old_path and Path(old_path).expanduser().resolve() != Path(entry["path"]):
+                    raise ValueError(f"artifact id already belongs to another path: {artifact_id}")
+            if previous:
+                entry["created_at"] = previous[0].get("created_at") or entry["created_at"]
 
-    doc["artifacts"] = [
-        prepared.get(str(item.get("id")), item)
-        for item in existing
-    ] + [prepared[artifact_id] for artifact_id in order if artifact_id not in existing_by_id]
-    _save_manifest(doc)
+        doc["artifacts"] = [
+            prepared.get(str(item.get("id")), item)
+            for item in existing
+        ] + [prepared[artifact_id] for artifact_id in order if artifact_id not in existing_by_id]
+        _save_manifest(doc)
     return [prepared[artifact_id] for artifact_id in order]
 
 

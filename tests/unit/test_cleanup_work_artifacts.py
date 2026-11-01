@@ -74,14 +74,16 @@ class CleanupLifecycleTests(unittest.TestCase):
             # the real fixture teardown belongs to the caller's release scope.
             if cls._prior_release_task_id is not None:
                 os.environ["VNTEXT_RELEASE_TASK_ID"] = cls._prior_release_task_id
-            result = cleanup.cleanup_after_test(
-                [cls._fixture_temp_path],
-                reason="test_cleanup_work_artifacts fixture teardown",
-                outcome="PASS",
-            )
-            if not result.get("ok"):
-                raise RuntimeError(f"cleanup lifecycle test fixture teardown failed: {result}")
+            # The fixture owns only its own temp directory: remove it and close its records.  It must not run the
+            # project-wide budget/epoch cleanup, whose verdict depends on the live release state and not on these tests.
             cls._fixture_tempdir.cleanup()
+            paths.mark_artifacts_missing_under(
+                cls._fixture_temp_path,
+                purpose="test_cleanup_work_artifacts fixture teardown",
+                deletion_provenance={"deleted_by": "test_cleanup_work_artifacts", "reason": "fixture teardown"},
+            )
+            if cls._fixture_temp_path.exists():
+                raise RuntimeError(f"cleanup lifecycle test fixture was not removed: {cls._fixture_temp_path}")
         finally:
             if cls._prior_release_task_id is not None:
                 os.environ["VNTEXT_RELEASE_TASK_ID"] = cls._prior_release_task_id
@@ -3715,6 +3717,12 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual("pass-test", entry["deletion_provenance"]["reason"])
             self.assertEqual(str(artifact), entry["deletion_provenance"]["path"])
 
+    def _review(self, *targets, reclassify=()):
+        return {
+            str(t): {"ownership_proof": "created by the focused test; no other owner", "consumer_closed": True, "reclassify": list(reclassify)}
+            for t in targets
+        }
+
     def test_stale_batch_is_one_transaction_with_one_registry_write_and_a_protected_data_proof(self):
         with self.isolated_workspace() as (root, work, _game, manifest):
             dev = root / "DEV_RUN"
@@ -3729,17 +3737,22 @@ class CleanupLifecycleTests(unittest.TestCase):
                 targets.append(target)
             self._register(targets[0], lifecycle="RETAINED")                 # stale retained claim
             self._register(targets[0] / "nested", lifecycle="UNKNOWN")       # unclassified descendant
+            plan = self._review(*targets, reclassify=["test:stale-0", "test:nested"])
             writes = []
             original = paths.register_artifacts
 
-            def counted(records):
+            def counting(records, **kwargs):
                 if any("dispose_stale_batch" in str(r.get("purpose")) for r in records):
                     writes.append(len(records))
-                return original(records)
+                return original(records, **kwargs)
 
-            with patch.object(paths, "register_artifacts", side_effect=counted), patch.object(cleanup, "processes_using", return_value=[]):
+            with (
+                patch.object(paths, "register_artifacts", side_effect=counting),
+                patch.object(cleanup, "processes_using", return_value=[]),
+                patch.object(cleanup, "_running_executables", return_value=[]),
+            ):
                 result = cleanup.dispose_stale_batch(
-                    targets, reason="batch test", scope_id="stale-batch-test", protected_files=[keep / "Setup.exe"])
+                    targets, reason="batch test", scope_id="stale-batch-test", plan=plan, protected_files=[keep / "Setup.exe"])
             self.assertTrue(result["ok"], result)
             self.assertEqual(1, len(writes))                                 # one classification write for every target and descendant
             self.assertTrue(len(targets) <= writes[0])
@@ -3750,10 +3763,9 @@ class CleanupLifecycleTests(unittest.TestCase):
             records = json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]
             self.assertEqual({"MISSING"}, {r["lifecycle"] for r in records if str(r["path"]).startswith(str(targets[0]))})
 
-    def test_stale_batch_refuses_unsafe_targets_but_still_disposes_the_eligible_ones(self):
+    def test_stale_batch_refuses_unsafe_or_unreviewed_targets_one_by_one_and_still_disposes_the_eligible_ones(self):
         with self.isolated_workspace() as (root, work, _game, manifest):
-            dev = root / "DEV_RUN"
-            dev.mkdir()
+            (root / "DEV_RUN").mkdir()
             good = work / "good"
             good.mkdir()
             (good / "a.txt").write_text("x", encoding="utf-8")
@@ -3764,9 +3776,16 @@ class CleanupLifecycleTests(unittest.TestCase):
             (holder / "Setup.exe").write_bytes(b"owner")
             busy = work / "busy"
             busy.mkdir()
+            busy_file = work / "running.exe"
+            busy_file.write_bytes(b"MZ")
             guarded = work / "guarded"
             guarded.mkdir()
             self._register(guarded, lifecycle="PROTECTED")
+            unreviewed = work / "no-plan"
+            unreviewed.mkdir()
+            claimed = work / "claimed"
+            claimed.mkdir()
+            self._register(claimed, lifecycle="RETAINED")               # nondisposable record the plan does not list
             link = work / "link-target"
             link.mkdir()
             junction = work / "has-junction"
@@ -3775,38 +3794,54 @@ class CleanupLifecycleTests(unittest.TestCase):
             history = work / "artifact-registry-epochs"
             history.mkdir()
             (history / "epoch.json").write_text("{}", encoding="utf-8")
-            calls = []
 
             def consumers(path):
-                calls.append(path)
                 return [{"pid": 1}] if Path(path).name == "busy" else []
 
+            reviewed = [good, outside, holder, busy, busy_file, guarded, claimed, junction, history, manifest, work / "missing"]
+            plan = self._review(*reviewed, Path("relative-dir"))
             try:
-                with patch.object(cleanup, "processes_using", side_effect=consumers):
+                with (
+                    patch.object(cleanup, "processes_using", side_effect=consumers),
+                    patch.object(cleanup, "_running_executables", return_value=[str(busy_file).lower()]),
+                ):
                     result = cleanup.dispose_stale_batch(
-                        [good, outside, Path("relative-dir"), holder, busy, junction, history, manifest, work / "missing"],
-                        reason="refusal test", scope_id="stale-batch-refusals", protected_files=[holder / "Setup.exe"])
-                    guarded_result = cleanup.dispose_stale_batch([guarded], reason="protected record", scope_id="stale-batch-protected")
+                        [good, outside, Path("relative-dir"), holder, busy, busy_file, guarded, unreviewed, claimed, junction, history, manifest, work / "missing"],
+                        reason="refusal test", scope_id="stale-batch-refusals", plan=plan, protected_files=[holder / "Setup.exe"])
                 reasons = {Path(r["path"]).name: r["reason"] for r in result["refused"]}
                 self.assertEqual("outside_allowed_roots", reasons[outside.name])
                 self.assertEqual("target_not_absolute_resolved", reasons["relative-dir"])
                 self.assertEqual("contains_protected_data", reasons["holds-protected"])
                 self.assertEqual("active_consumer", reasons["busy"])
+                self.assertEqual("active_consumer", reasons["running.exe"])           # the process guard covers file targets too
+                self.assertEqual("protected_record_inside_target", reasons["guarded"])
+                self.assertEqual("unreviewed_target", reasons["no-plan"])
+                self.assertEqual("unreviewed_nondisposable_records", reasons["claimed"])
                 self.assertEqual("epoch_history_or_registry", reasons["artifact-registry-epochs"])
                 self.assertEqual("epoch_history_or_registry", reasons[manifest.name])
                 self.assertEqual("absent", reasons["missing"])
                 if made.returncode == 0:
                     self.assertEqual("link_or_junction_inside", reasons["has-junction"])
-                self.assertEqual([str(good)], result["disposed"])
+                self.assertEqual([str(good)], result["disposed"])                    # one bad target does not block the eligible one
                 self.assertFalse(good.exists())
-                for kept in (outside, holder, busy, history, junction):
+                for kept in (outside, holder, busy, busy_file, guarded, unreviewed, claimed, history, junction):
                     self.assertTrue(kept.exists(), kept)
-                self.assertTrue((link).exists())                                      # the junction target was never followed
-                self.assertFalse(guarded_result["ok"], guarded_result)
-                self.assertTrue(guarded.exists())
+                self.assertTrue(link.exists())                                       # the junction target was never followed
+                lifecycles = {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}
+                self.assertEqual("PROTECTED", lifecycles["test:guarded"])
+                self.assertEqual("RETAINED", lifecycles["test:claimed"])
             finally:
                 subprocess.run(["cmd", "/c", "rmdir", str(junction / "j")], capture_output=True)
                 shutil.rmtree(outside, ignore_errors=True)
+
+    def test_stale_batch_fails_closed_when_the_running_process_probe_fails(self):
+        with self.isolated_workspace() as (_root, work, _game, _manifest):
+            target = work / "stale"
+            target.mkdir()
+            with patch.object(cleanup, "_running_executables", side_effect=OSError("probe failed")):
+                result = cleanup.dispose_stale_batch([target], reason="probe", scope_id="stale-batch-probe", plan=self._review(target))
+            self.assertEqual("consumer_probe_failed", result["refused"][0]["reason"])
+            self.assertTrue(target.exists())
 
     def test_stale_batch_reports_a_changed_protected_file_instead_of_claiming_success(self):
         with self.isolated_workspace() as (root, work, _game, _manifest):
@@ -3822,11 +3857,68 @@ class CleanupLifecycleTests(unittest.TestCase):
                 owner_file.write_bytes(b"changed")
                 return real(paths_, **kwargs)
 
-            with patch.object(cleanup, "cleanup_after_test", side_effect=tamper), patch.object(cleanup, "processes_using", return_value=[]):
-                result = cleanup.dispose_stale_batch([target], reason="tamper", scope_id="stale-batch-tamper", protected_files=[owner_file])
+            with (
+                patch.object(cleanup, "cleanup_after_test", side_effect=tamper),
+                patch.object(cleanup, "processes_using", return_value=[]),
+                patch.object(cleanup, "_running_executables", return_value=[]),
+            ):
+                result = cleanup.dispose_stale_batch(
+                    [target], reason="tamper", scope_id="stale-batch-tamper", plan=self._review(target), protected_files=[owner_file])
             self.assertFalse(result["ok"])
             self.assertFalse(result["protected_unchanged"])
             self.assertIn("protected_data_changed", result["reasons"])
+
+    def test_stale_batch_refuses_everything_when_the_registry_changes_after_the_snapshot(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            target = work / "stale"
+            target.mkdir()
+            self._register(target, lifecycle="RETAINED")
+            other = work / "competitor"
+            other.mkdir()
+            original = paths.register_artifacts
+            disposal = []
+
+            def racing(records, **kwargs):
+                if kwargs.get("expected_manifest_sha256"):                    # a competing writer lands between snapshot and write
+                    original([{
+                        "artifact_id": "test:competitor", "path": other, "kind": "test_fixture", "created_by": "competitor",
+                        "owner": "competitor", "purpose": "competing lifecycle change", "lifecycle": "RETAINED",
+                    }])
+                return original(records, **kwargs)
+
+            with (
+                patch.object(paths, "register_artifacts", side_effect=racing),
+                patch.object(cleanup, "processes_using", return_value=[]),
+                patch.object(cleanup, "_running_executables", return_value=[]),
+                patch.object(cleanup, "cleanup_after_test", side_effect=lambda *a, **k: disposal.append(a) or {}),
+            ):
+                result = cleanup.dispose_stale_batch(
+                    [target], reason="cas", scope_id="stale-batch-cas", plan=self._review(target, reclassify=["test:stale"]))
+            self.assertFalse(result["ok"])
+            self.assertIn("registry_changed_during_plan", result["reasons"])
+            self.assertEqual([], disposal)                                    # zero disposal
+            self.assertTrue(target.exists())
+            records = {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}
+            self.assertEqual("RETAINED", records["test:stale"])               # the stale classification did not overwrite anything
+            self.assertEqual("RETAINED", records["test:competitor"])
+
+    def test_register_artifacts_compare_and_swap_and_atomic_write(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            one = work / "one"
+            one.mkdir()
+            self._register(one, lifecycle="RETAINED")
+            digest = cleanup.hashlib.sha256(manifest.read_bytes()).hexdigest()
+            two = work / "two"
+            two.mkdir()
+            self._register(two, lifecycle="RETAINED")                         # registry moves on
+            before = manifest.read_bytes()
+            record = {"artifact_id": "test:one", "path": one, "kind": "test_fixture", "created_by": "t", "owner": "t", "purpose": "p", "lifecycle": "DISPOSABLE"}
+            with self.assertRaises(paths.RegistryChanged):
+                paths.register_artifacts([record], expected_manifest_sha256=digest)
+            self.assertEqual(before, manifest.read_bytes())
+            paths.register_artifacts([record], expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest())
+            self.assertEqual("DISPOSABLE", {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}["test:one"])
+            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name)))   # no temp/lock left behind
 
     def test_integrity_memo_reuses_unchanged_snapshots_within_a_transaction_and_never_a_stale_pass(self):
         with self.isolated_workspace() as (root, _work, _game, manifest):
@@ -3843,24 +3935,92 @@ class CleanupLifecycleTests(unittest.TestCase):
                         owner_transition_authorization=cleanup.RELEASE_TASK_EPOCH_TRANSITION_APPROVAL)
                     self.assertTrue(done["ok"], done)
             _, _, ancestry, version, incident = self._transition_guards()
-            with patch.object(cleanup, "_git_repository_state", return_value={"head": "a" * 40, "dirty": False, "error": ""}), ancestry, version, incident:
-                epoch = json.loads(manifest.read_bytes())["prospective_epoch"]
+            epoch = json.loads(manifest.read_bytes())["prospective_epoch"]
+            rollback = Path(epoch["rollback"]["path"])
+
+            def verify():
+                return cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes()))
+
+            def in_transaction():
                 cleanup._clear_integrity_cache()
                 cold = dict(cleanup.INTEGRITY_STATS)
-                self.assertEqual([], cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes())))
+                self.assertEqual([], verify())
                 first = dict(cleanup.INTEGRITY_STATS)
                 self.assertTrue(first["hash_misses"] > cold["hash_misses"] and first["json_misses"] > cold["json_misses"])
-                self.assertEqual([], cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes())))
+                self.assertEqual([], verify())
                 second = dict(cleanup.INTEGRITY_STATS)
                 self.assertEqual(first["hash_misses"], second["hash_misses"])              # nothing re-hashed or re-parsed in the same transaction
                 self.assertEqual(first["json_misses"], second["json_misses"])
                 self.assertTrue(second["hits"] > first["hits"])
-                rollback = Path(epoch["rollback"]["path"])
                 rollback.write_bytes(rollback.read_bytes() + b" ")                         # same transaction, snapshot changed on disk
-                failures = cleanup._epoch_verify_files(epoch, manifest=json.loads(manifest.read_bytes()))
+                failures = verify()
                 self.assertTrue(any("rollback_snapshot" in f for f in failures), failures)  # the stale cached PASS is not reused
-            cleanup._clear_integrity_cache()
+
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": "a" * 40, "dirty": False, "error": ""}), ancestry, version, incident:
+                cleanup._transaction(in_transaction)()
             self.assertEqual({}, cleanup._INTEGRITY_CACHE)
+            self.assertEqual(0, cleanup._TXN_DEPTH)
+
+    def test_integrity_memo_is_off_outside_a_transaction_and_for_the_live_registry(self):
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            snapshot = cleanup._prospective_epoch_root() / "snapshot.json"
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            snapshot.write_text('{"a": 1}', encoding="utf-8")
+            outside = work / "not-a-snapshot.json"
+            outside.write_text("{}", encoding="utf-8")
+            cleanup._clear_integrity_cache()
+            self.assertFalse(cleanup._memo_allowed(snapshot))                     # direct call outside a transaction
+            first = cleanup._sha256_file(snapshot)
+            before = cleanup.INTEGRITY_STATS["hash_misses"]
+            self.assertEqual(first, cleanup._sha256_file(snapshot))
+            self.assertEqual(before + 1, cleanup.INTEGRITY_STATS["hash_misses"])  # re-read every time
+            self.assertEqual({}, cleanup._INTEGRITY_CACHE)
+
+            def inside():
+                self.assertTrue(cleanup._memo_allowed(snapshot))
+                self.assertFalse(cleanup._memo_allowed(manifest))                 # the live registry is never memoised
+                self.assertFalse(cleanup._memo_allowed(outside))                  # neither is anything but an epoch snapshot
+
+            cleanup._transaction(inside)()
+
+    def test_integrity_memo_detects_a_metadata_preserving_replacement(self):
+        with self.isolated_workspace():
+            snapshot = cleanup._prospective_epoch_root() / "snapshot.bin"
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            snapshot.write_bytes(b"A" * 64)
+            original = snapshot.stat()
+
+            def inside():
+                first = cleanup._sha256_file(snapshot)
+                self.assertEqual(first, cleanup._sha256_file(snapshot))
+                replacement = snapshot.with_name("replacement.tmp")
+                replacement.write_bytes(b"B" * 64)                                # same size
+                os.utime(replacement, ns=(original.st_atime_ns, original.st_mtime_ns))   # same mtime
+                os.replace(replacement, snapshot)
+                self.assertNotEqual(first, cleanup._sha256_file(snapshot))        # new file identity: re-read, not the cached hash
+
+            cleanup._transaction(inside)()
+
+    def test_a_nested_transaction_keeps_the_outer_memo(self):
+        with self.isolated_workspace():
+            snapshot = cleanup._prospective_epoch_root() / "snapshot.bin"
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            snapshot.write_bytes(b"C" * 32)
+
+            def inner():
+                self.assertEqual(2, cleanup._TXN_DEPTH)
+
+            def outer():
+                cleanup._sha256_file(snapshot)
+                misses = cleanup.INTEGRITY_STATS["hash_misses"]
+                cleanup._transaction(inner)()
+                cleanup._sha256_file(snapshot)
+                self.assertEqual(misses, cleanup.INTEGRITY_STATS["hash_misses"])  # the nested call did not clear the outer cache
+                self.assertTrue(cleanup._INTEGRITY_CACHE)
+
+            cleanup._transaction(outer)()
+            self.assertEqual({}, cleanup._INTEGRITY_CACHE)
+            self.assertEqual(0, cleanup._TXN_DEPTH)
 
     def test_pass_cleanup_marks_registered_descendants_missing(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):

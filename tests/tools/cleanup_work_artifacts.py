@@ -2909,10 +2909,14 @@ def _prospective_epoch_incident_path() -> Path:
 
 
 # Transaction-scoped integrity memo.  Verifying the epoch chain re-hashes and re-parses the same immutable rollback snapshots once per link
-# and again for every recursion (~880 hashes / ~1300 parses of 26 MB manifests for one cleanup call).  A result is reused only inside one
-# transaction (the wrappers at the end of this module clear it on entry and exit) and only while the file's (size, mtime_ns) is unchanged,
-# so a modified snapshot is always re-read.  The live registry manifest is never memoised.  Cached JSON objects are read-only by contract.
+# and again for every recursion (~880 hashes / ~1300 parses of 26 MB manifests for one cleanup call).  A result is reused only while a
+# transaction wrapper is active (depth > 0; the outermost one clears the memo on entry and exit, nested ones leave it alone), only for files
+# under the immutable epoch-snapshot directory, and only while the file identity (size, mtime_ns, ctime_ns, file id, volume) is unchanged.
+# A replacement file gets a new file id; the one thing identity cannot see is an in-place rewrite that keeps size and mtime and does not
+# change the file id, which is outside this tool's threat model (snapshots are written once, atomically, and never edited).  Direct calls
+# outside a transaction and the live registry are never memoised.  Cached JSON objects are read-only by contract.
 _INTEGRITY_CACHE: dict = {}
+_TXN_DEPTH = 0
 INTEGRITY_STATS = {"hash_misses": 0, "json_misses": 0, "hits": 0}
 
 
@@ -2922,15 +2926,18 @@ def _clear_integrity_cache() -> None:
 
 def _file_signature(path: Path):
     try:
-        stat = path.stat()
+        info = path.stat()
     except OSError:
         return None
-    return (str(path), stat.st_size, stat.st_mtime_ns)
+    return (str(path), info.st_size, info.st_mtime_ns, info.st_ctime_ns, info.st_ino, info.st_dev)
 
 
 def _memo_allowed(path: Path) -> bool:
+    if _TXN_DEPTH <= 0:
+        return False
     try:
-        return path != MANIFEST_PATH and path.resolve() != MANIFEST_PATH.resolve()
+        resolved = Path(path).resolve()
+        return _prospective_epoch_root().resolve() in resolved.parents and resolved != MANIFEST_PATH.resolve()
     except OSError:
         return False
 
@@ -5802,27 +5809,47 @@ def main() -> int:
 
 
 
+def _running_executables() -> list[str]:
+    """Lower-case executable paths of every running process (one query per batch); raises when the probe itself fails."""
+
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-Command", "Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath } | ForEach-Object { $_.ExecutablePath }"],
+        capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=120, check=False,
+    )
+    if result.returncode != 0:
+        raise OSError("running-process probe failed")
+    return [line.strip().lower() for line in result.stdout.splitlines() if line.strip()]
+
+
 def dispose_stale_batch(
     paths,
     *,
     reason: str,
     scope_id: str,
+    plan: dict,
     protected_files=(),
     protected_trees=(),
     allowed_roots=None,
 ) -> dict:
-    """Owner stale-artifact cleanup as ONE transaction (plan -> classify -> one registry write -> one disposal -> readback -> protected proof).
+    """Owner stale-artifact cleanup as ONE transaction: reviewed plan -> classify -> one CAS registry write -> one disposal -> readback -> protected proof.
 
-    Each target must be an absolute, fully resolved path under an allowed root (default RELEASE_RUN/DEV_RUN/TEST_RUN), contain no
-    link/junction, hold no protected file, not be the epoch history or the registry, and have no running consumer.  Eligible targets
-    and every RETAINED/UNKNOWN record beneath them are reclassified DISPOSABLE with a single registry write, then removed by one
-    ``cleanup_after_test`` call.  ``protected_files``/``protected_trees`` are hashed before and after; any difference fails the result.
-    Refused targets are reported and left untouched; they never block the eligible ones.
+    ``plan`` is the reviewed record per target: ``{str(path): {"ownership_proof": <text>, "consumer_closed": True, "reclassify": "all_under_target" | [record ids]}}``.
+    A target without a plan entry, without an ownership proof or with a still-open consumer is refused.  RETAINED/UNKNOWN records beneath a
+    target are reclassified only when its plan entry says so (explicit ids, or ``all_under_target``); a PROTECTED record, a link/junction, an
+    absolute-path/root violation, epoch history/registry, protected data or a running executable (file or directory target) refuses THAT target only.
+    The registry write carries the sha256 of the bytes the classification was computed from: any competing change refuses the whole write and nothing is disposed.
+    ``protected_files``/``protected_trees`` are hashed before and after; a difference fails the result.
     """
 
     roots = [Path(r).resolve() for r in (allowed_roots or [ROOT / "RELEASE_RUN", ROOT / "DEV_RUN", ROOT / "TEST_RUN"])]
-    history = (ROOT / "TEST_RUN" / "artifact-registry-epochs").resolve()
+    history = _prospective_epoch_root().resolve()
     manifest_file = MANIFEST_PATH.resolve()
+
+    def scope_root_for(path: Path) -> str:
+        for root in roots:
+            if root == path or root in path.parents:
+                return str(root)
+        return str(ROOT)
 
     def protected_snapshot() -> dict:
         found: dict[str, str] = {}
@@ -5837,14 +5864,13 @@ def dispose_stale_batch(
                     found[str(member)] = _sha256_uncached(member)
         return found
 
-    def scope_root_for(path: Path) -> str:
-        for root in roots:
-            if root == path or root in path.parents:
-                return str(root)
-        return str(ROOT)
-
     protected_keys = {str(Path(p)).lower() for p in protected_files}
     protected_roots = [str(Path(t)).lower() for t in protected_trees]
+    try:
+        running = _running_executables()
+        probe_failed = False
+    except (OSError, subprocess.SubprocessError):
+        running, probe_failed = [], True
     refused: list[dict] = []
     eligible: list[Path] = []
     for raw in paths:
@@ -5854,6 +5880,7 @@ def dispose_stale_batch(
             resolved = target.resolve()
         except OSError:
             resolved = None
+        entry = (plan or {}).get(str(raw))
         if not target.is_absolute() or resolved is None or resolved != target:
             why = "target_not_absolute_resolved"
         elif not any(root in resolved.parents for root in roots):
@@ -5864,19 +5891,23 @@ def dispose_stale_batch(
             why = "protected_path"
         elif not resolved.exists():
             why = "absent"
+        elif not isinstance(entry, dict) or not str(entry.get("ownership_proof") or "").strip() or entry.get("consumer_closed") is not True:
+            why = "unreviewed_target"
+        elif probe_failed:
+            why = "consumer_probe_failed"
         else:
             low = str(resolved).lower()
             if any(k == low or k.startswith(low + os.sep) for k in protected_keys) or any(
                 r == low or r.startswith(low + os.sep) or low.startswith(r + os.sep) for r in protected_roots
             ):
                 why = "contains_protected_data"
+            elif any(exe == low or exe.startswith(low + os.sep) for exe in running) or (resolved.is_dir() and processes_using(resolved)):
+                why = "active_consumer"
             else:
                 for current, dirs, files in os.walk(resolved, followlinks=False):
                     if any(os.lstat(Path(current) / n).st_file_attributes & 0x400 for n in dirs + files):
                         why = "link_or_junction_inside"
                         break
-                if why is None and resolved.is_dir() and processes_using(resolved):
-                    why = "active_consumer"
         if why:
             refused.append({"path": str(target), "reason": why})
         else:
@@ -5884,43 +5915,61 @@ def dispose_stale_batch(
     result: dict = {"ok": False, "disposed": [], "refused": refused, "reasons": []}
     before = protected_snapshot()
     if eligible:
-        document = json.loads(MANIFEST_PATH.read_text(encoding="utf-8")) if MANIFEST_PATH.is_file() else {"artifacts": []}
-        lowered = [str(p).lower() for p in eligible]
+        raw_registry = MANIFEST_PATH.read_bytes() if MANIFEST_PATH.is_file() else b""
+        digest = hashlib.sha256(raw_registry).hexdigest()
+        document = json.loads(raw_registry.decode("utf-8")) if raw_registry else {"artifacts": []}
         upserts: dict[str, dict] = {}
-        covered: set[str] = set()
-        for entry in document.get("artifacts", []):
-            entry_path = str(entry.get("path") or "")
-            low = entry_path.lower()
-            owner_target = next((t for t in lowered if low == t or low.startswith(t + os.sep)), None)
-            if owner_target is None:
+        accepted: list[Path] = []
+        for target in eligible:
+            low_target = str(target).lower()
+            review = plan[str(target)]
+            allowed = review.get("reclassify")
+            problem = None
+            local: dict[str, dict] = {}
+            has_exact = False
+            for entry in document.get("artifacts", []):
+                entry_path = str(entry.get("path") or "")
+                low = entry_path.lower()
+                if not (low == low_target or low.startswith(low_target + os.sep)):
+                    continue
+                lifecycle = str(entry.get("lifecycle") or "").upper()
+                has_exact = has_exact or low == low_target
+                if lifecycle == "PROTECTED":
+                    problem = "protected_record_inside_target"
+                    break
+                if lifecycle in ("DISPOSABLE", "MISSING"):
+                    continue
+                if not (allowed == "all_under_target" or (isinstance(allowed, list) and str(entry.get("id")) in allowed)):
+                    problem = "unreviewed_nondisposable_records"
+                    break
+                local[str(entry["id"])] = {
+                    "artifact_id": entry["id"], "path": entry_path, "kind": entry.get("kind"),
+                    "created_by": entry.get("created_by") or "cleanup_work_artifacts.py", "owner": entry.get("owner") or "cleanup",
+                    "purpose": (entry.get("purpose") or "stale artifact") + " | reclassified DISPOSABLE by dispose_stale_batch: " + str(review.get("ownership_proof"))[:200],
+                    "lifecycle": "DISPOSABLE", "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(Path(entry_path)),
+                    "size_bytes": int(entry.get("bytes") or 0),
+                }
+            if problem:
+                refused.append({"path": str(target), "reason": problem})
                 continue
-            lifecycle = str(entry.get("lifecycle") or "").upper()
-            if lifecycle == "PROTECTED":
-                result["reasons"].append("protected_record_inside_target:" + entry_path)
-                break
-            if low == owner_target:
-                covered.add(owner_target)
-            if lifecycle in ("DISPOSABLE", "MISSING"):
-                continue
-            upserts[str(entry["id"])] = {
-                "artifact_id": entry["id"], "path": entry_path, "kind": entry.get("kind"),
-                "created_by": entry.get("created_by") or "cleanup_work_artifacts.py", "owner": entry.get("owner") or "cleanup",
-                "purpose": (entry.get("purpose") or "stale artifact") + " | reclassified DISPOSABLE by dispose_stale_batch",
-                "lifecycle": "DISPOSABLE", "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(Path(entry_path)),
-                "size_bytes": int(entry.get("bytes") or 0),
-            }
-        if not result["reasons"]:
-            for target, low in zip(eligible, lowered):
-                if low not in covered:
-                    upserts[f"batch:{scope_id}:{target}"] = {
-                        "artifact_id": f"batch:{scope_id}:{target}", "path": str(target), "kind": "stale_artifact", "created_by": "cleanup_work_artifacts.py",
-                        "owner": scope_id, "purpose": "stale artifact disposed by dispose_stale_batch: " + reason, "lifecycle": "DISPOSABLE",
-                        "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(target), "size_bytes": 0,
-                    }
-            if upserts:
-                from work_paths import register_artifacts
+            if not has_exact:
+                local[f"batch:{scope_id}:{target}"] = {
+                    "artifact_id": f"batch:{scope_id}:{target}", "path": str(target), "kind": "stale_artifact", "created_by": "cleanup_work_artifacts.py",
+                    "owner": scope_id, "purpose": "stale artifact disposed by dispose_stale_batch: " + reason, "lifecycle": "DISPOSABLE",
+                    "scope_id": scope_id, "run_id": scope_id, "scope_root": scope_root_for(target), "size_bytes": 0,
+                }
+            upserts.update(local)
+            accepted.append(target)
+        eligible = accepted
+        if eligible and upserts:
+            from work_paths import RegistryChanged, register_artifacts
 
-                register_artifacts(list(upserts.values()))          # the only registry write of the classification
+            try:
+                register_artifacts(list(upserts.values()), expected_manifest_sha256=digest)     # the only registry write of the classification
+            except RegistryChanged:
+                result["reasons"].append("registry_changed_during_plan")
+                eligible = []
+        if eligible:
             previous = {k: os.environ.get(k) for k in ("VNTEXT_ARTIFACT_SCOPE_ID", "VNTEXT_ARTIFACT_RUN_ID", "VNTEXT_ARTIFACT_SCOPE_ROOT")}
             os.environ.update({"VNTEXT_ARTIFACT_SCOPE_ID": scope_id, "VNTEXT_ARTIFACT_RUN_ID": scope_id, "VNTEXT_ARTIFACT_SCOPE_ROOT": str(ROOT)})
             try:
@@ -5953,17 +6002,22 @@ def _sha256_uncached(path: Path) -> str:
 
 
 def _transaction(function):
-    """Run ``function`` as one integrity transaction: the memo starts empty and never outlives the call."""
+    """Run ``function`` as an integrity transaction: the memo is on only while a wrapper is active and the outermost one starts and ends it empty."""
 
     import functools
 
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
-        _clear_integrity_cache()
+        global _TXN_DEPTH
+        if _TXN_DEPTH == 0:
+            _clear_integrity_cache()
+        _TXN_DEPTH += 1
         try:
             return function(*args, **kwargs)
         finally:
-            _clear_integrity_cache()
+            _TXN_DEPTH -= 1
+            if _TXN_DEPTH == 0:
+                _clear_integrity_cache()
 
     return wrapper
 
@@ -5978,7 +6032,7 @@ def _commit_fact_memo(function):
 
     @functools.wraps(function)
     def wrapper(*args):
-        if not all(isinstance(a, str) and full.fullmatch(a) for a in args):
+        if _TXN_DEPTH <= 0 or not all(isinstance(a, str) and full.fullmatch(a) for a in args):
             return function(*args)
         key = ("git", function.__name__) + tuple(a.lower() for a in args)
         if key in _INTEGRITY_CACHE:
