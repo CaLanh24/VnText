@@ -107,7 +107,7 @@ internal static partial class Program
                 vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", 2, UiText.Msg("{0}× {1}", 1, UiText.Key("Mất/sai placeholder {…}"))));
                 vm.TestSetCsvBulkPreview(UiText.Lines(UiText.Msg("Sẽ thay {0} lần trong {1} dòng ({2}).", 4, 3, UiText.Key("dòng đang lọc")), UiText.Msg("Trước: {0}\nSau: {1}", "Open the door.", "Open the gate.")));
                 Scan("csv loaded + preview", CsvScope());
-                vm.ToggleCsvBulkPreviewDetailCommand.Execute(null); vm.ToggleCsvBulkCommand.Execute(null); Scan("csv tools open + examples", CsvScope());
+                 Scan("csv tools open + examples", CsvScope());
                 rows[2].Translation = "Cảm ơn nhiều."; Scan("csv dirty", CsvScope());
                 vm.TestSetCsvSaveError("file đã đổi bên ngoài"); vm.ShowCompletionToast(new CompletionNotification("Lưu thất bại", vm.CsvEditorSaveError, "error")); Scan("csv save error", CsvScope());
                 vm.Language = "vi"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Không lưu được:", StringComparison.Ordinal), "Vietnamese save-error toast updates in place");

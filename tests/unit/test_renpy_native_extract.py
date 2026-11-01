@@ -318,6 +318,45 @@ class RenPyNativeExtractionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             enforce_main_flow([forced], require_proof=True)
 
+    def test_runtime_dynamic_screen_text_is_a_review_diagnostic_not_an_extract_failure(self):
+        # Owner screenshot: achievements.rpy `text <expression>` has no static value. That is expected for runtime-generated UI text:
+        # never evaluated, never invented, never MAIN, and not a discovery error; malformed syntax still fails.
+        nl = chr(10)
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp)
+            (root / "game").mkdir()
+            (root / "game" / "achievements.rpy").write_text(
+                "screen ach():" + nl + '    text "Static title"' + nl + "    text achievement_name" + nl
+                + '    text "Prefix " + player_name' + nl + '    text get_title(1)' + nl, encoding="utf-8")
+            template = root / "generated"
+            template.mkdir()
+            (template / "strings.rpy").write_text(
+                "translate vietnamese strings:" + nl + nl + "    # game/achievements.rpy:2" + nl + '    old "Other"' + nl + '    new ""' + nl, encoding="utf-8")
+            main, review, stats = extract_native_template_entries(root, template)
+        self.assertEqual([], stats["errors"])
+        dynamic = stats["renpy_static_ui_runtime_unresolved"]
+        self.assertEqual(3, len(dynamic))
+        self.assertEqual({3, 4, 5}, {item["line"] for item in dynamic})
+        self.assertTrue(all(item["file_path"] == "game/achievements.rpy" for item in dynamic))
+        self.assertTrue(all("no complete static source string" in item["reason"] for item in dynamic))
+        texts = {entry.source_text for entry in main + review}
+        self.assertNotIn("achievement_name", texts)
+        self.assertFalse(any("player_name" in text or "get_title" in text for text in texts))      # nothing manufactured from code
+        self.assertIn("Static title", texts)
+
+    def test_malformed_screen_syntax_still_fails_discovery(self):
+        nl = chr(10)
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp)
+            (root / "game").mkdir()
+            (root / "game" / "broken.rpy").write_text("screen s():" + nl + '    text "unterminated' + nl, encoding="utf-8")
+            template = root / "generated"
+            template.mkdir()
+            (template / "strings.rpy").write_text(
+                "translate vietnamese strings:" + nl + nl + "    # game/broken.rpy:1" + nl + '    old "Other"' + nl + '    new ""' + nl, encoding="utf-8")
+            _main, _review, stats = extract_native_template_entries(root, template)
+        self.assertTrue(stats["errors"])                      # genuine parse failure stays a discovery error
+
     def test_native_identity_keeps_player_text_and_only_skips_control_or_punctuation(self):
         with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root = Path(temp)

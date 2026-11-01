@@ -1135,7 +1135,9 @@ def extract_native_template_entries(
         "native_string_ledger_counts": string_reconciliation["ledger_counts"],
         "native_string_reconciliation": string_reconciliation,
         "files_scanned": len(source_files),
-        "errors":ui_errors+[f"{item['file_path']}:{item['line']}: {item['reason']}"for item in ui_unresolved]
+        # A value that exists only at runtime (variable/call/branch) is EXPECTED to be statically unresolvable: it is kept as a diagnostic
+        # (never evaluated, never invented as text) and is not a discovery failure.  Malformed/oversized/unsupported syntax stays an error.
+        "errors":ui_errors+[f"{item['file_path']}:{item['line']}: {item['reason']}"for item in ui_unresolved if item.get('classification')!='RUNTIME_GENERATED']
             +[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
         "renpy_native_unresolved":unresolved,
         "renpy_non_native_review_entries":len(ui_review),
@@ -1143,6 +1145,8 @@ def extract_native_template_entries(
             'disposition':'NATIVE_GLOBAL_DISPLAY'if not ui_emitted[entry.context].review_only else 'REVIEW',
             'emitted_key':ui_emitted[entry.context].key}for entry in ui_candidates],
         "renpy_static_ui_unresolved":ui_unresolved,
+        "renpy_static_ui_runtime_unresolved":[{'file_path':item['file_path'],'line':item['line'],'end_line':item['end_line'],'reason':item['reason'],
+            'raw_expression':str(item.get('raw_expression') or '')[:300]}for item in ui_unresolved if item.get('classification')=='RUNTIME_GENERATED'],
         "renpy_static_ui_engine_framework_excluded":ui_engine_excluded,
         "renpy_static_ui_inventory_scope":"Single-line literal slots use native global mapping at Text display time when substitution is proven enabled; block/dynamic/disabled substitution remains review.",
     }

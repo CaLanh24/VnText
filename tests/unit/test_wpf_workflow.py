@@ -374,6 +374,50 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("IsLiveExtractRun(id)", runs)
         self.assertIn("FileShare.ReadWrite", runs)
 
+    def test_app_has_no_collapsible_disclosures_and_journals_are_titled_nhat_ky(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
+        for name, text in (("MainWindow.xaml", xaml), ("ImageWorkspacePanel.xaml", panel)):
+            self.assertNotIn("<Expander", text, name)
+            self.assertNotIn("IsExpanded=", text, name)
+        for card in ("TranslateLogCard", "PatchLogCard"):
+            block = xaml[xaml.index(f'x:Name="{card}"'):xaml.index(f'x:Name="{card}"') + 900]
+            self.assertIn('Text="Nhật ký"', block)
+        self.assertNotIn("Nhật ký lấy text", xaml)
+        ui_text = (app / "Services" / "UiText.cs").read_text(encoding="utf-8")
+        self.assertNotIn("Nhật ký lấy text", ui_text)
+        self.assertIn('["Nhật ký"] = "Journal"', ui_text)
+        runs = (app / "ViewModels" / "MainViewModel.ExtractRunLog.cs").read_text(encoding="utf-8")
+        self.assertIn('UiText.Translate("Nhật ký")', runs)
+        # content that used to hide behind a header is still reachable and bounded
+        self.assertIn('x:Name="PatchDiagnosticsPanel"', xaml)
+        self.assertIn('x:Name="TranslateLogScrollViewer"', xaml)
+        self.assertIn('x:Name="PatchLogScrollViewer"', xaml)
+        # About: author/license keep the destination cards' hover and keyboard-focus language but remain non-clickable
+        style = xaml[xaml.index('x:Key="AboutInfoSurfaceStyle"'):xaml.index("</Window.Resources>")]
+        self.assertIn('<Trigger Property="IsMouseOver" Value="True">', style)
+        self.assertIn('<Trigger Property="IsKeyboardFocused" Value="True">', style)
+        self.assertIn('ctrl:HoverMotion.Kind" Value="AboutCard"', style)
+        for label in ("Tác giả: Calanh", "Giấy phép: Apache-2.0"):
+            card = xaml[xaml.index(f'AutomationProperties.Name="{label}"') - 260:xaml.index(f'AutomationProperties.Name="{label}"') + 40]
+            self.assertIn("AboutInfoSurfaceStyle", card)
+            self.assertNotIn("<Button", card)           # no invented link or command
+
+    def test_nested_log_wheel_and_follow_never_trap_or_pull_the_page(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        router = (app / "Services" / "NestedScrollRouter.cs").read_text(encoding="utf-8")
+        window = (app / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        self.assertIn("NestedScrollRouter.Attach(ExtractLogList)", window)
+        self.assertIn("NestedScrollRouter.Attach(TranslateLogScrollViewer)", window)
+        self.assertIn("NestedScrollRouter.Attach(PatchLogScrollViewer)", window)
+        self.assertIn("ScrollToBottom()", router)            # follow scrolls the log itself
+        self.assertNotIn("ScrollIntoView", router + window)  # ScrollIntoView/BringIntoView would drag the outer page
+        self.assertIn("RequestBringIntoView", router)
+        self.assertIn("MouseWheelEvent", router)             # the wheel step continues to the page at the log's boundary
+        harness = (ROOT / "wpf_app" / "VNText.Studio.Workflow.Tests" / "Program.cs").read_text(encoding="utf-8")
+        self.assertIn("--scroll-routing-fixture", harness)
+
     def test_release_0114_ui_fixes_stay_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
@@ -465,11 +509,12 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"))', appearance)
         # (3) the bulk action buttons size to their content
         self.assertEqual(3, xaml.count('MinWidth="96"'))
-        # (4) static About cards carry no interactive hover; the destination cards keep it
+        # (4) Owner 2026-11-02: the author/license cards share the destination cards' hover and keyboard-focus language (they stay non-clickable)
         info = xaml[xaml.index('x:Key="AboutInfoSurfaceStyle"'):xaml.index("</Window.Resources>")]
-        self.assertNotIn("HoverMotion", info)
-        self.assertNotIn("IsMouseOver", info)
-        self.assertNotIn("DropShadowEffect", info)
+        self.assertIn("HoverMotion", info)
+        self.assertIn("IsMouseOver", info)
+        self.assertIn("IsKeyboardFocused", info)
+        self.assertIn("DropShadowEffect", info)
         destination = xaml[xaml.index('x:Key="AboutDestinationStyle"'):xaml.index('x:Key="AboutInfoSurfaceStyle"')]
         self.assertIn("HoverMotion.Kind", destination)
         self.assertIn("IsMouseOver", destination)
@@ -555,15 +600,15 @@ class WpfWorkflowTests(unittest.TestCase):
         vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
         panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
         journal = (app / "JournalWindow.cs").read_text(encoding="utf-8")
-        # (N1) collapsible bulk tools: an explicit summary row + open/close buttons, state kept in the view model
-        self.assertIn('x:Name="CsvBulkSummary"', xaml)
-        self.assertIn('Content="Mở công cụ"', xaml)
-        self.assertIn('Content="Thu gọn"', xaml)
+        # (N1) Owner 2026-11-02: no collapsible disclosure; the find/replace tools are visible whenever a CSV is open
+        self.assertNotIn('x:Name="CsvBulkSummary"', xaml)
+        self.assertNotIn('Content="Mở công cụ"', xaml)
+        self.assertNotIn('Content="Thu gọn"', xaml)
         self.assertIn('Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn("public bool CsvBulkExpanded", vm)
-        self.assertIn("_csvBulkUserChoice", vm)
+        self.assertIn("public bool CsvBulkPanelVisible => CsvEditorHasDocument;", vm)
+        self.assertNotIn("ToggleCsvBulkCommand", vm)
+        self.assertNotIn("ToggleCsvBulkCommand", xaml)
         self.assertIn("SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 760)", code)
-        self.assertNotIn("CsvBulkFind = \"\"", vm.split("ToggleCsvBulkCommand = ")[1].split("\n")[0])   # toggling never resets the typed text
         grid_start = xaml.index('x:Name="CsvEditorGrid"')
         self.assertIn("ScrollViewer.CanContentScroll=\"True\"", xaml[grid_start:grid_start + 1800])     # the table keeps its own virtualized viewport
         # (N2) CSV and glossary empty states
@@ -594,14 +639,14 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
         vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
         row = (app / "Models" / "CsvEditorRow.cs").read_text(encoding="utf-8")
-        # preview: summary line always, examples only behind an explicit, bounded toggle; never reopened by a new preview or by the collapse
+        # preview: summary line and the Trước/Sau examples are always visible (bounded scroller); no show/hide button
         self.assertIn('x:Name="CsvBulkPreviewSummaryText"', xaml)
-        self.assertIn('x:Name="CsvBulkPreviewDetailButton"', xaml)
+        self.assertNotIn('x:Name="CsvBulkPreviewDetailButton"', xaml)
+        self.assertNotIn("ToggleCsvBulkPreviewDetailCommand", xaml)
         scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
         self.assertIn('MaxHeight="120"', scroll)
         self.assertIn("CsvBulkPreviewDetailOpen", scroll)
-        self.assertIn("_csvBulkPreviewDetailOpen = false;       // a new preview never opens its examples by surprise", vm)
-        self.assertIn("if (!value && _csvBulkPreviewDetailOpen)", vm)
+        self.assertIn("public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;", vm)
         # the stored preview, the Apply guard and its signature are untouched
         self.assertIn("public bool CsvBulkCanApply => _csvBulkPendingPreview is { Ok: true, Count: > 0 } &&", vm)
         self.assertIn("string.Equals(_csvBulkPendingSignature, CsvBulkSignature(), StringComparison.Ordinal);", vm)
@@ -641,7 +686,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # the short summary keeps the meaning (cut at the first dash/sentence) and never replaces the stored message
         self.assertIn('message.IndexOf(" — ", StringComparison.Ordinal)', vm)
         # low-height gaps are bound values, with no literal margin left on those elements
-        for binding in ("CsvBannerMargin", "CsvBulkAreaMargin", "CsvBulkSummaryMargin", "CsvPreviewAreaMargin", "CsvGridMargin"):
+        for binding in ("CsvBannerMargin", "CsvBulkAreaMargin", "CsvPreviewAreaMargin", "CsvGridMargin"):
             self.assertIn("Margin=\"{Binding %s}\"" % binding, xaml)
             self.assertIn("public Thickness %s" % binding, vm)
         # columns fit the small card: minimum widths 150 + 220 + status 120 stay under the ~560 DIP card of a 1043 px window at UI 120%
@@ -947,7 +992,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
         self.assertIn('GetRenpyEvidenceKind(InputPath', analyze)
-        self.assertIn('IsExpanded="{Binding PatchResultsExpanded, Mode=TwoWay}"', xaml)
+        self.assertNotIn('IsExpanded="{Binding PatchResultsExpanded', xaml)
         self.assertIn('Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding PatchPreflightEvaluated, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Visibility="{Binding CloudRepairPackageReady, Converter={StaticResource BoolToVis}}"', xaml)
@@ -1225,8 +1270,8 @@ class WpfWorkflowTests(unittest.TestCase):
         panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
         csv_vm = (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8")
         # F1: the summary card and the diagnostics expander own separate Auto rows (no overlay in Grid.Row=1)
-        self.assertIn('x:Name="PatchDiagnosticsExpander"', xaml)
-        self.assertRegex(xaml, r'x:Name="PatchDiagnosticsExpander"[^>]*Grid\.Row="1"')
+        self.assertIn('x:Name="PatchDiagnosticsPanel"', xaml)
+        self.assertRegex(xaml, r'x:Name="PatchDiagnosticsPanel" Grid\.Row="1"')
         self.assertRegex(xaml, r'x:Name="PatchSummaryCard" Grid\.Row="2"')
         # F2: the CSV translation cell editor is themed, wraps, and is not a global row-height change
         self.assertIn('x:Key="CsvCellEditor"', xaml)
@@ -1387,6 +1432,9 @@ class WpfWorkflowTests(unittest.TestCase):
             workspace_proc = _run_harness(harness_env, artifacts_root, ["--image-workspace-fixture"])
             self.assertEqual(0, workspace_proc.returncode, (workspace_proc.stdout or "") + (workspace_proc.stderr or ""))
             self.assertIn("WPF image workspace fixture: PASS", workspace_proc.stdout)
+            scroll_proc = _run_harness(harness_env, artifacts_root, ["--scroll-routing-fixture"])
+            self.assertEqual(0, scroll_proc.returncode, (scroll_proc.stdout or "") + (scroll_proc.stderr or ""))
+            self.assertIn("WPF scroll routing fixture: PASS", scroll_proc.stdout)
             csv_layout_proc = _run_harness(harness_env, artifacts_root, ["--csv-layout-fixture"])
             self.assertEqual(0, csv_layout_proc.returncode, (csv_layout_proc.stdout or "") + (csv_layout_proc.stderr or ""))
             self.assertIn("WPF CSV low-height layout fixture: PASS", csv_layout_proc.stdout)

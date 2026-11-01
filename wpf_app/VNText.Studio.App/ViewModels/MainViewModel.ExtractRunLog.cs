@@ -54,7 +54,7 @@ public sealed partial class MainViewModel
     public ObservableCollection<ExtractRunInfo> ExtractRuns { get; } = new();
     internal string ExtractRunsRoot => Path.Combine(WorkerPaths.AppDataRoot(), "extract-runs");
     public bool ExtractRunSelectorVisible => ExtractRuns.Count > 1;
-    public string ExtractLogTitle => UiText.Translate("Nhật ký lấy text");
+    public string ExtractLogTitle => UiText.Translate("Nhật ký");
     public string ExtractLogSummary => UiText.Format("{0} dòng nhật ký", ExtractLogShown.Count);
     public System.Collections.IList ExtractLogShown =>
         _selectedExtractRun is null || ReferenceEquals(_selectedExtractRun, _liveRun) ? ExtractLogLines : _extractHistoryLines;

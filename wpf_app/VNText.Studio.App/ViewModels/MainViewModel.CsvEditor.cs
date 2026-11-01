@@ -102,9 +102,9 @@ public sealed partial class MainViewModel
             Raise(nameof(CsvEditorValidationCompact));
         }
     }
-    public bool CsvBulkPanelVisible => CsvEditorHasDocument && _csvBulkExpanded;
-    public bool CsvBulkSummaryVisible => CsvEditorHasDocument && !_csvBulkExpanded;
-    public RelayCommand ToggleCsvBulkCommand { get; private set; } = null!;
+    // Owner 2026-11-02: the find/replace tools are never a collapsible disclosure; they are visible whenever a CSV is open.
+    public bool CsvBulkPanelVisible => CsvEditorHasDocument;
+    public bool CsvBulkSummaryVisible => false;
 
     /// <summary>Low window heights leave the table fewer than ~3 rows; until the user chooses, the tools start collapsed there (and when no CSV is open).</summary>
     internal void SetCsvLowHeight(bool low)
@@ -119,12 +119,11 @@ public sealed partial class MainViewModel
     // Low-height presentation: tighter vertical gaps only (controls keep their 36/30 DIP sizes) and a one-line validation summary.
     public Thickness CsvBannerMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
     public Thickness CsvBulkAreaMargin => new(0, _csvLowHeight ? 2 : 5, 0, 0);
-    public Thickness CsvBulkSummaryMargin => new(0, _csvLowHeight ? 0 : 3, 0, 0);
     public Thickness CsvPreviewAreaMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
     public Thickness CsvGridMargin => new(0, _csvLowHeight ? 4 : 8, 0, 0);
 
     /// <summary>With the tools collapsed (or at a low height) the validation message is ONE line; the whole message stays in the tooltip and the accessible help text.</summary>
-    public bool CsvEditorValidationCompact => CsvBulkSummaryVisible || _csvLowHeight;
+    public bool CsvEditorValidationCompact => _csvLowHeight;
 
     public string CsvEditorUserValidationShort
     {
@@ -146,7 +145,6 @@ public sealed partial class MainViewModel
     {
         Raise(nameof(CsvBannerMargin));
         Raise(nameof(CsvBulkAreaMargin));
-        Raise(nameof(CsvBulkSummaryMargin));
         Raise(nameof(CsvPreviewAreaMargin));
         Raise(nameof(CsvGridMargin));
         Raise(nameof(CsvEditorValidationCompact));
@@ -154,7 +152,7 @@ public sealed partial class MainViewModel
 
     private void ApplyCsvBulkDefault()
     {
-        if (!_csvBulkUserChoice) CsvBulkExpanded = CsvEditorHasDocument && !_csvLowHeight;
+        CsvBulkExpanded = CsvEditorHasDocument;
         Raise(nameof(CsvBulkPanelVisible));
         Raise(nameof(CsvBulkSummaryVisible));
         Raise(nameof(CsvEditorValidationCompact));
@@ -353,9 +351,8 @@ public sealed partial class MainViewModel
         get => UiText.SplitFirstLine(_csvBulkPreview ?? "").Remainder;
     }
     public bool CsvBulkHasPreviewDetail => CsvBulkPreviewDetail.Length > 0;
-    public bool CsvBulkPreviewDetailOpen => _csvBulkPreviewDetailOpen && CsvBulkHasPreviewDetail;
+    public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;      // the examples are always shown (bounded scroller), never behind a button
     public string CsvBulkPreviewDetailButtonText => CsvBulkPreviewDetailOpen ? "Ẩn ví dụ" : "Xem ví dụ";
-    public RelayCommand ToggleCsvBulkPreviewDetailCommand { get; private set; } = null!;
 
     private void RaiseCsvBulkPreviewParts()
     {
@@ -519,8 +516,6 @@ public sealed partial class MainViewModel
             if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort));
             if (e.PropertyName is nameof(PatchPreflightOk) or nameof(PatchPreflightEvaluated) or nameof(CsvValidationOk) or nameof(PatchResultsAvailable)) RaisePatchBadge();
         };
-        ToggleCsvBulkCommand = new RelayCommand(_ => { _csvBulkUserChoice = true; CsvBulkExpanded = !CsvBulkExpanded; });
-        ToggleCsvBulkPreviewDetailCommand = new RelayCommand(_ => { _csvBulkPreviewDetailOpen = !_csvBulkPreviewDetailOpen; RaiseCsvBulkPreviewParts(); });
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),
             _ => !string.IsNullOrWhiteSpace(CsvEditorPath) && !CsvEditorLoading && !CsvEditorSaving);

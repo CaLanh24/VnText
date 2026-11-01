@@ -1303,6 +1303,18 @@ def run_extract_task(
                 f"Ren'Py native accounting mismatch: native={native_units}, package={native_accounted} "
                 "(main+review+technical-skipped+engine-common-excluded)."
             )
+        runtime_dynamic = [item for item in (stats.get("renpy_static_ui_runtime_unresolved") or []) if isinstance(item, dict)]
+        dynamic_note = ""
+        if runtime_dynamic:
+            sample = ", ".join(f"{item.get('file_path')}:{item.get('line')}" for item in runtime_dynamic[:3])
+            dynamic_note = (
+                f"{len(runtime_dynamic)} biểu thức động chỉ có giá trị lúc chạy game ({sample}"
+                f"{'…' if len(runtime_dynamic) > 3 else ''}) không thể trích tĩnh; đã ghi vào renpy_runtime_dynamic.json để xem lại, "
+                "không chạy mã game và không tạo text giả."
+            )
+            (Path(out) / "renpy_runtime_dynamic.json").write_text(json.dumps(
+                {"count": len(runtime_dynamic), "policy": "diagnostic only: never evaluated, never promoted to MAIN", "entries": runtime_dynamic},
+                ensure_ascii=False, indent=2), encoding="utf-8")
         if separate_review:
             summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv, {review_count} review/extract-only. Xuất tại: {out}"
         else:
@@ -1311,6 +1323,8 @@ def run_extract_task(
             summary += f"; đã loại {excluded_engine_common} chuỗi Ren'Py common khỏi phạm vi text của game"
         if technical_skipped:
             summary += f"; {technical_skipped} dòng kỹ thuật được ghi riêng"
+        if dynamic_note:
+            summary += "; " + dynamic_note
         if extract_errors:
             summary = (
                 f"Extract chưa hoàn tất: đã tạo partial package tại {out}; "
@@ -1322,7 +1336,7 @@ def run_extract_task(
                 f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
             )
         empty = not (main_count or review_count)
-        completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty)
+        completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty or runtime_dynamic)
         completion_error = ""
         if extract_errors:
             completion_error = (
@@ -1338,7 +1352,10 @@ def run_extract_task(
             completion_error = (
                 "Extract chưa hoàn tất vì còn "
                 f"{review_count} dòng REVIEW/UNSUPPORTED cần xử lý trước khi dịch."
+                + (" Ngoài ra " + dynamic_note if dynamic_note else "")
             )
+        elif runtime_dynamic and not empty:
+            completion_error = "Đã lấy xong text tĩnh nhưng chưa đầy đủ: " + dynamic_note
         elif empty:
             completion_error = "Không có text sử dụng được. Xem extract_report.txt và coverage; kiểm lại input hoặc mức quét."
             summary = completion_error
@@ -1367,6 +1384,7 @@ def run_extract_task(
             "native_units": native_units,
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
+            "runtime_dynamic_unresolved": len(runtime_dynamic),
         }
         (Path(out) / "extract_status.json").write_text(json.dumps({
             "complete": not completion_blockers, "status": extract_status,
@@ -1376,6 +1394,7 @@ def run_extract_task(
             "native_units": native_units,
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
+            "runtime_dynamic_unresolved": len(runtime_dynamic),
             "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         if extract_errors or review_count:

@@ -16,36 +16,20 @@ public partial class MainWindow : Window
     private bool _closeDecisionPending;
     private bool _pendingUpdateOffer;
 
-    // The Extract journal follows the live run until the user scrolls up; the whole run stays reachable by scrolling back to line 1.
-    private bool _extractLogFollow = true;
-    private bool _extractLogScrollQueued;
-
+    // Journals: the wheel chains to the page at the log's first/last line; the Extract journal follows the live run only until the user
+    // scrolls away, and following scrolls the log itself, never the page (see NestedScrollRouter).
     private void HookExtractLogFollow(MainViewModel vm)
     {
-        ExtractLogList.AddHandler(System.Windows.Controls.ScrollViewer.ScrollChangedEvent, new System.Windows.Controls.ScrollChangedEventHandler((_, e) =>
-        {
-            if (e.ExtentHeightChange == 0 && e.ViewportHeightChange == 0)
-                _extractLogFollow = e.VerticalOffset + e.ViewportHeight >= e.ExtentHeight - 1;
-        }));
-        void ScrollToEnd()
-        {
-            if (_extractLogScrollQueued) return;
-            _extractLogScrollQueued = true;
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                _extractLogScrollQueued = false;
-                if (ExtractLogList.Items.Count > 0) ExtractLogList.ScrollIntoView(ExtractLogList.Items[ExtractLogList.Items.Count - 1]);
-            }), System.Windows.Threading.DispatcherPriority.Background);
-        }
+        var router = NestedScrollRouter.Attach(ExtractLogList);
+        NestedScrollRouter.Attach(TranslateLogScrollViewer);
+        NestedScrollRouter.Attach(PatchLogScrollViewer);
         vm.ExtractLogLines.CollectionChanged += (_, e) =>
         {
-            if (_extractLogFollow && ReferenceEquals(vm.ExtractLogShown, vm.ExtractLogLines)) ScrollToEnd();
+            if (ReferenceEquals(vm.ExtractLogShown, vm.ExtractLogLines)) router.NotifyAppended();
         };
         vm.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName != nameof(MainViewModel.ExtractLogShown)) return;
-            _extractLogFollow = true;
-            ScrollToEnd();
+            if (e.PropertyName == nameof(MainViewModel.ExtractLogShown)) router.Reset();
         };
     }
 

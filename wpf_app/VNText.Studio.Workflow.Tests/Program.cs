@@ -27,6 +27,8 @@ internal static partial class Program
             return RunAppDialogFixture(args);
         if (args.Contains("--image-workspace-fixture", StringComparer.Ordinal))
             return RunImageWorkspaceFixture();
+        if (args.Contains("--scroll-routing-fixture", StringComparer.Ordinal))
+            return RunScrollRoutingFixture();
         if (args.Contains("--csv-layout-fixture", StringComparer.Ordinal))
             return RunCsvLayoutFixture();
         if (args.Contains("--region-grid-fixture", StringComparer.Ordinal))

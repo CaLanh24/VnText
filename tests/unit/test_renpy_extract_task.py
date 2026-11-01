@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -212,6 +213,48 @@ class RenPyExtractTaskTests(unittest.TestCase):
             manifest = (out / "manifest.json").read_text(encoding="utf-8")
             self.assertIn('"native_id": "native_only"', manifest)
             self.assertNotIn("Only code", manifest)
+
+    def test_runtime_dynamic_screen_text_gives_an_honest_partial_not_a_discovery_error(self):
+        # Owner screenshot (achievements.rpy dynamic `text` expressions): the static text is extracted, the runtime-only expressions are
+        # reported as a review diagnostic; nothing is evaluated or invented and the run is neither a fake error nor a fake complete.
+        nl = chr(10)
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp) / "gamecopy"; (root / "game").mkdir(parents=True)
+            (root / "game" / "script.rpy").write_text('label start:' + nl + '    "Native only"' + nl, encoding="utf-8")
+            (root / "game" / "achievements.rpy").write_text(
+                'screen ach():' + nl + '    text "Static title"' + nl + '    text achievement_name' + nl + '    text get_title(2)' + nl, encoding="utf-8")
+            out = Path(temp) / "out"; completed = []
+
+            def copy(source, target, **_kwargs):
+                shutil.copytree(Path(source) / "game", Path(target) / "game")
+                return {"files": 2, "bytes": 1, "archive_sources": []}
+
+            def generate(_sdk, workspace, **_kwargs):
+                template = workspace / "game" / "tl" / "vietnamese"
+                template.mkdir(parents=True)
+                (template / "script.rpy").write_text(
+                    "# game/script.rpy:2" + nl + "translate vietnamese native_only:" + nl + nl + '    # "Native only"' + nl + '    ""' + nl, encoding="utf-8")
+
+            with (
+                patch("vntext.app_tasks._run_unity_preflight"),
+                patch("vntext.renpy_toolchain.validate_sdk", return_value=SimpleNamespace(version="8.5.3")),
+                patch("vntext.renpy_toolchain.copy_template_workspace", side_effect=copy),
+                patch("vntext.renpy_toolchain.generate_empty_vietnamese_template", side_effect=generate),
+            ):
+                run_extract_task(str(root), str(out), "safe", "balanced", True, renpy_sdk_path="C:/sdk", renpy_sdk_action="existing",
+                                 progress=lambda _x: None, log=lambda _x: None, complete=completed.append)
+            result = completed[-1]
+            status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
+            diagnostic = json.loads((out / "renpy_runtime_dynamic.json").read_text(encoding="utf-8"))
+        self.assertEqual("PARTIAL", result["extract_status"])                     # honest: not COMPLETE, not FAILED
+        self.assertFalse(result["complete"])
+        self.assertEqual(0, status["errors"])                                      # not counted as a discovery/extract error
+        self.assertEqual(2, status["runtime_dynamic_unresolved"])
+        self.assertNotIn("lỗi discovery/extract", result["error"])
+        self.assertIn("không chạy mã game", result["error"])
+        self.assertEqual(2, diagnostic["count"])
+        self.assertIn("never evaluated", diagnostic["policy"])
+        self.assertEqual({3, 4}, {item["line"] for item in diagnostic["entries"]})
 
     def test_engine_common_exclusions_do_not_block_game_owned_completion(self):
         import json

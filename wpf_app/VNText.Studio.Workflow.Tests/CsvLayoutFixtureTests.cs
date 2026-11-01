@@ -43,34 +43,31 @@ internal static partial class Program
                     var grid = (DataGrid)Named("CsvEditorGrid");
 
                     Require(Named("CsvEmptyState").IsVisible && Named("CsvEmptyChooseButton").IsVisible, "empty CSV shows its instruction and the Chọn CSV action");
-                    Require(!Named("CsvBulkReplacePanel").IsVisible && !Named("CsvBulkSummary").IsVisible && !grid.IsVisible && !Named("CsvChooseHeaderButton").IsVisible,
+                    Require(!Named("CsvBulkReplacePanel").IsVisible && !grid.IsVisible && !Named("CsvChooseHeaderButton").IsVisible,
                         "no CSV: bulk tools, table and the duplicate header action stay hidden");
                     var emptyHeight = Named("CsvEmptyState").ActualHeight;
 
                     vm.TestSetCsvEditorPath(Path.Combine(Path.GetTempPath(), "translation.csv"));
                     window.UpdateLayout();
                     PumpFixture(150);
-                    Require(!vm.CsvBulkExpanded && Named("CsvBulkSummary").IsVisible && !Named("CsvBulkReplacePanel").IsVisible, "low height starts with the tools collapsed to ONE visible summary row");
-                    Require(Named("CsvBulkOpenButton").IsVisible && Named("CsvBulkOpenButton").ActualHeight >= 29.5, "the collapsed summary has an explicit open button");
+                    Require(Named("CsvBulkReplacePanel").IsVisible, "the find/replace tools are always visible once a CSV is open (no collapse)");
                     Require(grid.IsVisible && !Named("CsvEmptyState").IsVisible, "a loaded CSV shows the table, not the empty state");
                     Require(grid.ActualHeight >= 150, "the table keeps a finite viewport of at least three rows plus the header (got " + grid.ActualHeight + ")");
                     Require(Math.Abs(grid.ActualHeight - emptyHeight) <= Math.Max(60, emptyHeight * 0.5), "the table viewport does not jump against the empty state");
 
                     vm.CsvBulkFind = "cửa";
                     vm.CsvBulkReplace = "cổng";
-                    vm.ToggleCsvBulkCommand.Execute(null);
                     window.UpdateLayout();
                     PumpFixture(100);
-                    Require(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible && !Named("CsvBulkSummary").IsVisible, "the open action expands the tools");
+                    Require(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible, "the tools are open without any action");
                     Require(Named("CsvBulkScopeComboBox").Height == 36, "bulk scope select is the 36 DIP standard size");
-                    vm.ToggleCsvBulkCommand.Execute(null);
                     window.UpdateLayout();
                     PumpFixture(100);
-                    Require(!vm.CsvBulkExpanded && vm.CsvBulkFind == "cửa" && vm.CsvBulkReplace == "cổng", "collapsing keeps the typed find/replace text");
+                    Require(vm.CsvBulkFind == "cửa" && vm.CsvBulkReplace == "cổng", "the typed find/replace text stays");
                     vm.CsvFilterMode = "untranslated";
                     vm.CsvEditorSearch = "x";
                     PumpFixture(50);
-                    Require(!vm.CsvBulkExpanded && vm.CsvBulkFind == "cửa", "filtering and searching neither expand nor reset the tools");
+                    Require(vm.CsvBulkExpanded && vm.CsvBulkFind == "cửa", "filtering and searching never hide or reset the tools");
                     // ---- native stylefixed3 findings: a retained preview and a warning row at the same small size ----
                     CsvEditorRow Row(int index, string source, string translation, string label, string display) =>
                         new() { Index = index, Key = "k" + index, SourceText = source, Translation = translation, IssueLabel = label, IssueDisplay = display };
@@ -91,12 +88,12 @@ internal static partial class Program
                     vm.TestSetCsvBulkPreview(examples);
                     window.UpdateLayout();
                     PumpFixture(200);
-                    Require(!vm.CsvBulkExpanded, "the tools are still collapsed");
+                    Require(vm.CsvBulkExpanded, "the tools stay visible after loading rows");
                     // Finding 1: the collapsed state keeps ONE preview line; the examples need the explicit button.
                     var summaryText = Named("CsvBulkPreviewSummaryText");
                     Require(summaryText.IsVisible && ((TextBlock)summaryText).Text == "Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).", "the preview summary (count of replacements/rows) stays visible");
-                    Require(!Named("CsvBulkPreviewScroll").IsVisible, "the Trước/Sau examples are closed by default after a preview");
-                    Require(Named("CsvBulkPreviewDetailButton").IsVisible && vm.CsvBulkPreview == examples, "the explicit examples button exists and the preview text is untouched");
+                    Require(Named("CsvBulkPreviewScroll").IsVisible && Named("CsvBulkPreviewScroll").ActualHeight <= 120.5, "the Trước/Sau examples are always visible inside a bounded scroller");
+                    Require(vm.CsvBulkPreview == examples, "the preview text is untouched");
                     int VisibleRows()
                     {
                         var gridBottom = grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y;
@@ -154,28 +151,14 @@ internal static partial class Program
                     AssertEqual("Sai số \\n", CsvEditorRow.ShortenIssue("Sai số \\n"));            // unknown/other diagnostics pass through unchanged
                     AssertEqual("Sai tag", CsvEditorRow.ShortenIssue("Hỏng tag <…>"));
                     Require(vm.CsvEditorValidationMessage == warning, "the full validation message is untouched");
-                    // the examples open only on request, stay bounded, close with the collapse and never reopen on their own
-                    vm.ToggleCsvBulkPreviewDetailCommand.Execute(null);
-                    window.UpdateLayout();
-                    PumpFixture(100);
-                    Require(Named("CsvBulkPreviewScroll").IsVisible && Named("CsvBulkPreviewScroll").ActualHeight <= 120.5, "the examples open on the explicit action inside a bounded scroller");
+                    // the examples are always visible, bounded, and never add table rows; normal height wraps the whole message
                     var rowsWithExamples = VisibleRows();
-                    Require(rowsWithExamples <= rowsShown, "opened examples never add table rows (" + rowsWithExamples + " vs " + rowsShown + ")");
-                    vm.ToggleCsvBulkCommand.Execute(null);   // open the tools
-                    vm.ToggleCsvBulkCommand.Execute(null);   // collapse again: the examples close, the preview data stays
-                    window.UpdateLayout();
-                    PumpFixture(100);
-                    Require(!Named("CsvBulkPreviewScroll").IsVisible && vm.CsvBulkPreview == examples && vm.CsvBulkFind == "cửa", "collapsing closes the examples but keeps the preview and the typed text");
+                    Require(rowsWithExamples <= rowsShown, "visible examples never add table rows (" + rowsWithExamples + " vs " + rowsShown + ")");
                     vm.SetCsvLowHeight(false);
-                    vm.ToggleCsvBulkCommand.Execute(null);
                     window.UpdateLayout();
-                    Require(fullWarning.IsVisible && !shortWarning.IsVisible && fullWarning.TextWrapping == TextWrapping.Wrap && fullWarning.Text == vm.CsvEditorUserValidationMessage, "at a normal height with the tools open the whole message wraps again");
-                    vm.ToggleCsvBulkCommand.Execute(null);
+                    Require(fullWarning.IsVisible && !shortWarning.IsVisible && fullWarning.TextWrapping == TextWrapping.Wrap && fullWarning.Text == vm.CsvEditorUserValidationMessage, "at a normal height the whole message wraps");
                     vm.SetCsvLowHeight(true);
                     window.UpdateLayout();
-                    vm.ToggleCsvBulkPreviewDetailCommand.Execute(null);
-                    vm.TestSetCsvBulkPreview(examples + "\nTrước: x\nSau: y");
-                    Require(!vm.CsvBulkPreviewDetailOpen, "a new preview never opens its examples by surprise");
                     // ---- Patch badge: text AND local colour follow the same current readiness (Light and Dark) ----
                     var packageA = CreatePatchSourcePackage("Hộ tống");
                     var packageB = CreatePatchSourcePackage("Đồng " + string.Join(" ", Enumerable.Repeat("bán", 40)), complete: false);

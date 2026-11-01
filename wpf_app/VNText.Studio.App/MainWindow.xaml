@@ -72,8 +72,15 @@
         </Style>
         <Style x:Key="AboutInfoSurfaceStyle" TargetType="Border">
             <Setter Property="UseLayoutRounding" Value="True" /><Setter Property="SnapsToDevicePixels" Value="True" />
-            <!-- Static information card: no hover border, shadow or motion (only the destination cards signal a click). -->
-            <Setter Property="BorderThickness" Value="1" /><Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" /><Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+            <!-- Owner 2026-11-02: no link, but the same local hover/keyboard-focus response as the destination cards. -->
+            <Setter Property="Focusable" Value="True" /><Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" /><Setter Property="Effect" Value="{x:Null}" />
+            <Setter Property="ctrl:HoverMotion.Kind" Value="AboutCard" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True"><Setter Property="BorderBrush" Value="#4063ED" /><Setter Property="Effect"><Setter.Value><DropShadowEffect Color="#475569" BlurRadius="24" ShadowDepth="6" Opacity="0.12" RenderingBias="Quality" /></Setter.Value></Setter></Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True"><Setter Property="BorderBrush" Value="#4063ED" /><Setter Property="BorderThickness" Value="2" /></Trigger>
+            </Style.Triggers>
         </Style>
     </Window.Resources>
 
@@ -499,7 +506,7 @@
                                     <ListBox x:Name="ExtractLogList" ItemsSource="{Binding ExtractLogShown}" ItemTemplate="{StaticResource JournalLineTemplate}"
                                              Background="Transparent" BorderThickness="0" Padding="14,12" SelectionMode="Extended" Focusable="True"
                                              VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
-                                             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Nhật ký lấy text" />
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Nhật ký" />
                                 </Border>
                             </Grid>
                         </Border>
@@ -668,13 +675,15 @@
                         </Border>
 
                         <Border x:Name="TranslateLogCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0">
-                            <Expander  Header="Nhật ký" IsExpanded="False" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
+                            <StackPanel>
+    <TextBlock Text="Nhật ký" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
     <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
         <ScrollViewer x:Name="TranslateLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding TranslateLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
         </ScrollViewer>
     </Border>
-</Expander>
+
+</StackPanel>
                         </Border>
                     </Grid>
 
@@ -872,9 +881,8 @@
                                            Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}"
                                            Visibility="{Binding PatchRecheckNeeded, Converter={StaticResource BoolToVis}}" />
 
-                                <Expander x:Name="PatchDiagnosticsExpander" Foreground="{DynamicResource InkBrush}" Grid.Row="1" Header="Kết quả kiểm tra" Margin="0,24,0,0"
-                                          Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"
-                                          IsExpanded="{Binding PatchResultsExpanded, Mode=TwoWay}">
+                                <StackPanel x:Name="PatchDiagnosticsPanel" Grid.Row="1" Margin="0,24,0,0" Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}">
+                                  <TextBlock Text="Kết quả kiểm tra" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                   <StackPanel Margin="0,16,0,0">
                                     <Border Style="{StaticResource ChecklistPanelBorder}">
                                         <Grid>
@@ -913,7 +921,7 @@
                                         </Grid>
                                     </Border>
                                   </StackPanel>
-                                </Expander>
+                                </StackPanel>
 
 
                                 <Border x:Name="PatchSummaryCard" Grid.Row="2" Background="{DynamicResource SubtlePanelBrush}" CornerRadius="12" Padding="14,13" Margin="0,16,0,0"
@@ -940,13 +948,15 @@
                                 </Border>
                             </Grid>
                         </Border>
-<Border x:Name="PatchLogCard" Grid.Row="2" Style="{StaticResource CardShadowBorder}" Margin="0,24,0,0"><Expander  Header="Nhật ký" IsExpanded="False" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
+<Border x:Name="PatchLogCard" Grid.Row="2" Style="{StaticResource CardShadowBorder}" Margin="0,24,0,0"><StackPanel>
+    <TextBlock Text="Nhật ký" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
     <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
         <ScrollViewer x:Name="PatchLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding PatchLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
         </ScrollViewer>
     </Border>
-</Expander></Border>
+
+</StackPanel></Border>
                     </Grid>
 
                     <ScrollViewer x:Name="SettingsScrollViewer" Height="{Binding ActualHeight, ElementName=PageScrollViewer}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=settings}" Style="{StaticResource OverlayAutoHideScrollViewer}" VerticalScrollBarVisibility="Auto">
@@ -1375,18 +1385,6 @@
                                     </Border>
                                 </StackPanel>
                                 <StackPanel Grid.Row="2" Margin="{Binding CsvBulkAreaMargin}">
-<Border x:Name="CsvBulkSummary" Style="{StaticResource SubtlePanelBorder}" Margin="{Binding CsvBulkSummaryMargin}" Padding="12,4"
-                                        Visibility="{Binding CsvBulkSummaryVisible, Converter={StaticResource BoolToVis}}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Tìm và thay thế bản dịch" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                        <Button x:Name="CsvBulkOpenButton" Grid.Column="1" Content="Mở công cụ" Style="{StaticResource CompactOutlineButton}"
-                                                AutomationProperties.Name="Mở công cụ Tìm và thay thế" Command="{Binding ToggleCsvBulkCommand}" />
-                                    </Grid>
-                                </Border>
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,4"
                                         Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
                                     <Grid>
@@ -1402,8 +1400,7 @@
                                         <TextBlock Text="Tìm và thay thế bản dịch" Grid.ColumnSpan="2"
                                                    FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
-                                        <Button x:Name="CsvBulkCloseButton" Grid.Column="1" HorizontalAlignment="Right" Content="Thu gọn" Style="{StaticResource CompactOutlineButton}"
-                                                AutomationProperties.Name="Thu gọn công cụ Tìm và thay thế" Command="{Binding ToggleCsvBulkCommand}" />
+                                        
                                         <StackPanel Grid.Row="1" Margin="0,0,7,0">
                                             <TextBlock Text="Tìm trong bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                             <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Chỉ tìm trong cột Bản dịch" />
@@ -1432,7 +1429,7 @@
 
                                 </StackPanel>
 <StackPanel Grid.Row="3" Margin="{Binding CsvPreviewAreaMargin}">
-                                    <!-- The preview keeps ONE summary line; the Trước/Sau examples open only through the explicit button, in a bounded scroller. -->
+                                    <!-- The preview keeps ONE summary line; the Trước/Sau examples are always visible in a bounded scroller. -->
                                     <Grid x:Name="CsvBulkPreviewHeader">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -1450,9 +1447,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
-                                        <Button x:Name="CsvBulkPreviewDetailButton" Grid.Column="1" Style="{StaticResource CompactOutlineButton}" Margin="8,0,0,0"
-                                                Content="{Binding CsvBulkPreviewDetailButtonText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleCsvBulkPreviewDetailCommand}"
-                                                Visibility="{Binding CsvBulkHasPreviewDetail, Converter={StaticResource BoolToVis}}" />
+                                        
                                     </Grid>
                                     <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="120" Margin="0,4,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
                                                   Visibility="{Binding CsvBulkPreviewDetailOpen, Converter={StaticResource BoolToVis}}">
