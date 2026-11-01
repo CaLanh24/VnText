@@ -354,6 +354,26 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("separate_review = true,", main)
         self.assertNotIn("separate_review = SeparateReview", main)
 
+    def test_extract_journal_is_inline_complete_and_run_scoped(self):
+        app = ROOT / "wpf_app" / "VNText.Studio.App"
+        xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
+        journal = (app / "ViewModels" / "MainViewModel.Journal.cs").read_text(encoding="utf-8")
+        runs = (app / "ViewModels" / "MainViewModel.ExtractRunLog.cs").read_text(encoding="utf-8")
+        card = xaml[xaml.index('x:Name="ExtractLogCard"'):xaml.index('<!-- Translate page -->')]
+        self.assertNotIn("lịch sử đầy đủ ở mục Nhật ký bên trái", xaml)
+        self.assertIn("{Binding ExtractLogTitle}", card)
+        self.assertIn('x:Name="ExtractLogList"', card)
+        self.assertIn('VirtualizingPanel.IsVirtualizing="True"', card)                  # every line reachable, only visible rows realised
+        self.assertIn('x:Name="ExtractRunSelector"', card)                              # earlier runs inline
+        self.assertNotIn("<Expander", card)
+        self.assertNotIn("RemoveAt(0)", runs)                                           # no eviction of the run
+        self.assertNotIn("Count > 200", runs)
+        self.assertIn('"extract" => WorkflowTabs.Extract', journal)
+        for other in ('"analyze"', '"resources"', '"image_inventory"', '"image_extract"', '"image_batch"'):
+            self.assertNotIn(other + " or", journal[journal.index("LogOwner"):journal.index("BeginTaskLog")].split("WorkflowTabs.Translate")[0])
+        self.assertIn("IsLiveExtractRun(id)", runs)
+        self.assertIn("FileShare.ReadWrite", runs)
+
     def test_release_0114_ui_fixes_stay_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")

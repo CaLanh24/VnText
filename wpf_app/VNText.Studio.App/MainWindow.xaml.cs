@@ -16,6 +16,39 @@ public partial class MainWindow : Window
     private bool _closeDecisionPending;
     private bool _pendingUpdateOffer;
 
+    // The Extract journal follows the live run until the user scrolls up; the whole run stays reachable by scrolling back to line 1.
+    private bool _extractLogFollow = true;
+    private bool _extractLogScrollQueued;
+
+    private void HookExtractLogFollow(MainViewModel vm)
+    {
+        ExtractLogList.AddHandler(System.Windows.Controls.ScrollViewer.ScrollChangedEvent, new System.Windows.Controls.ScrollChangedEventHandler((_, e) =>
+        {
+            if (e.ExtentHeightChange == 0 && e.ViewportHeightChange == 0)
+                _extractLogFollow = e.VerticalOffset + e.ViewportHeight >= e.ExtentHeight - 1;
+        }));
+        void ScrollToEnd()
+        {
+            if (_extractLogScrollQueued) return;
+            _extractLogScrollQueued = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _extractLogScrollQueued = false;
+                if (ExtractLogList.Items.Count > 0) ExtractLogList.ScrollIntoView(ExtractLogList.Items[ExtractLogList.Items.Count - 1]);
+            }), System.Windows.Threading.DispatcherPriority.Background);
+        }
+        vm.ExtractLogLines.CollectionChanged += (_, e) =>
+        {
+            if (_extractLogFollow && ReferenceEquals(vm.ExtractLogShown, vm.ExtractLogLines)) ScrollToEnd();
+        };
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != nameof(MainViewModel.ExtractLogShown)) return;
+            _extractLogFollow = true;
+            ScrollToEnd();
+        };
+    }
+
     public MainWindow() : this(null) { }
 
     public IUpdatePresentation UpdatePresentation { get; }
@@ -35,6 +68,7 @@ public partial class MainWindow : Window
             vm.CompletionRequested += OnCompletionRequested;
             vm.ExitAfterTaskRequested += OnExitAfterTaskRequested;
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
+            HookExtractLogFollow(vm);
             vm.ImageWorkspaceRequested += () =>
             {
                 var dialog = new AppDialogWindow(this, "Text trong ảnh", new VNText.Studio.App.Controls.ImageWorkspacePanel { DataContext = vm }, 1040);

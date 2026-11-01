@@ -130,7 +130,8 @@ public sealed partial class MainViewModel
                 if (!string.IsNullOrWhiteSpace(evt.Text))
                 {
                     AppendLog(evt.Text);
-                    if (evt.Text.Contains("error", StringComparison.OrdinalIgnoreCase) || evt.Text.Contains("lỗi", StringComparison.OrdinalIgnoreCase))
+                    if (IsLiveExtractRun(evt.Id)) AddExtractRunLine(evt.Id, evt.Text);              // the run's whole worker log
+                    else if (evt.Text.Contains("error", StringComparison.OrdinalIgnoreCase) || evt.Text.Contains("lỗi", StringComparison.OrdinalIgnoreCase))
                         AddTaskProgress(evt.Id, evt.Text);
                 }
                 break;
@@ -148,6 +149,7 @@ public sealed partial class MainViewModel
                     var eta = ProgressEtaFormatter.Format(evt.Eta);
                     if (!string.IsNullOrWhiteSpace(eta)) parts.Add(UiText.Msg("ETA: {0}", UiText.Key(eta)));
                     var eventSubtitle = UiText.Join(" • ", parts);
+                    NoteExtractPhase(evt.Id, evt.Step, userStep);
                     AddTaskProgress(evt.Id, eventSubtitle);
                     // A queued event from an older run may update its own journal,
                     // but it cannot overwrite the active page or a terminal card.
@@ -194,6 +196,8 @@ public sealed partial class MainViewModel
                 if (!evt.Ok && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
                     RecordPersistentError(completedTask, evt.Error);
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
+                EndExtractRun(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
+                    : evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true ? "Đã hủy" : "Lỗi");
                 if (completedTask == "cloud_export")
                     CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
                 if (completedTask == "cloud_import" && evt.Ok && evt.Complete != false
@@ -537,6 +541,7 @@ public sealed partial class MainViewModel
                 break;
             case "error":
                 AppendLog($"Lỗi: {evt.Error}");
+                AddExtractRunLine(evt.Id, "[error] " + evt.Error);
                 if (!string.IsNullOrWhiteSpace(evt.Id) && _terminalTaskIds.Contains(evt.Id))
                     break;
                 if (Busy && !string.IsNullOrWhiteSpace(evt.Id)

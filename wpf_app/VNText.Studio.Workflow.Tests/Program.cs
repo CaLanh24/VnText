@@ -406,7 +406,9 @@ internal static partial class Program
         AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Extract fixture")));
         AssertTrue(vm.TranslateLogLines.Any(s=>s.Contains("Translate fixture")));
         AssertTrue(vm.PatchLogLines.Any(s=>s.Contains("Patch fixture")));
-        AssertFalse(vm.ExtractLogLines.Concat(vm.TranslateLogLines).Concat(vm.PatchLogLines).Any(s=>s.Contains("diagnostic fixture")||s.Contains("journal-error-fixture")));
+        AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("diagnostic fixture")));          // the Extract run keeps its WHOLE worker log
+        AssertFalse(vm.TranslateLogLines.Concat(vm.PatchLogLines).Any(s=>s.Contains("diagnostic fixture")));
+        AssertFalse(vm.ExtractLogLines.Concat(vm.TranslateLogLines).Concat(vm.PatchLogLines).Any(s=>s.Contains("journal-error-fixture")));
         AssertFalse(vm.TranslateLogLines.Any(s=>s.Contains("Extract fixture")));
         AssertFalse(vm.PatchLogLines.Any(s=>s.Contains("Translate fixture")));
         AssertTrue(vm.LogLines.Any(s=>s.Contains("journal-error-fixture")));
@@ -415,7 +417,8 @@ internal static partial class Program
         AssertTrue(vm.LogLines.Any(s=>s.Contains("ui-exception-fixture")));
         vm.NavigateTab(WorkflowTabs.Settings);
         for(var i=0;i<210;i++) vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="extract-log",Done=i,Total=300,Item=$"item-{i}"});
-        AssertEqual(200,vm.ExtractLogLines.Count);
+        AssertTrue(vm.ExtractLogLines.Count>=210);                                         // no 200-line eviction in the Extract journal
+        AssertTrue(vm.ExtractLogLines[0].Contains("Bắt đầu"));
         for(var i=0;i<1010;i++) vm.TestHandleWorkerEvent(new WorkerEvent {Type="log",Text=$"bounded-{i}"});
         AssertEqual(1000,vm.LogLines.Count);
         AssertFalse(vm.TranslateLogLines.Any(s=>s.Contains("item-")));

@@ -169,6 +169,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         LoadVersion();
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         InitializePersistentError();
+        InitializeExtractRuns();
         InitResourceCommands();
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => (!Busy || _runningTask == "analyze") && !CsvEditorSaving && !CsvEditorDirty);
@@ -1220,6 +1221,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
+        try { _liveRunWriter?.Dispose(); } catch (IOException) { }
+        _liveRunWriter = null;
         _translateElapsedTimer?.Stop();
         _updateReminderTimer?.Stop(); _updateCheckTimer?.Stop();
         _cancelWatchdog?.Cancel(); _cancelWatchdog?.Dispose(); _cancelWatchdog = null;

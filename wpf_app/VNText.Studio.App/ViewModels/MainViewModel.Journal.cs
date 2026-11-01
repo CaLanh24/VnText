@@ -24,10 +24,10 @@ public sealed partial class MainViewModel
     public ObservableCollection<string> PatchLogLines { get; } = new();
     private readonly Dictionary<string,string> _logTaskOwners = new();
 
+    // Only the extraction run owns the Extract journal; analyze/resources/image tasks keep their audit copy in the sidebar Journal only.
     private static string LogOwner(string? task) => task switch
     {
-        "extract" or "analyze" or "resources" or "image_inventory" or "image_extract" => WorkflowTabs.Extract,
-        "image_batch" => WorkflowTabs.Extract,
+        "extract" => WorkflowTabs.Extract,
         "translate" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
         "patch" or "image_delivery" or "image_apply" or "image_rollback" => WorkflowTabs.Patch,
         _ => ""
@@ -37,16 +37,19 @@ public sealed partial class MainViewModel
     {
         if (_logTaskOwners.Count >= 64) _logTaskOwners.Remove(_logTaskOwners.Keys.First());
         _logTaskOwners[id] = LogOwner(task);
+        if (task == "extract") StartExtractRun(id);
         AddTaskProgress(id,message);
     }
 
     private void AddTaskProgress(string id,string message,string? fallbackTask=null)
     {
         var owner = _logTaskOwners.TryGetValue(id,out var known) ? known : LogOwner(fallbackTask);
-        var lines = owner switch { WorkflowTabs.Extract => ExtractLogLines, WorkflowTabs.Translate => TranslateLogLines, WorkflowTabs.Patch => PatchLogLines, _ => null };
-        if (lines is null || string.IsNullOrWhiteSpace(message)) return;
+        if (string.IsNullOrWhiteSpace(message)) return;
         var content = message.Trim();
-        PersistJournal($"[task {id} / {owner}] {content}");
+        PersistJournal($"[task {id} / {(owner.Length == 0 ? "other" : owner)}] {content}");        // general audit copy (sidebar Journal)
+        if (owner == WorkflowTabs.Extract) { AddExtractRunLine(id, content); return; }              // complete, never truncated or evicted
+        var lines = owner switch { WorkflowTabs.Translate => TranslateLogLines, WorkflowTabs.Patch => PatchLogLines, _ => null };
+        if (lines is null) return;
         if (content.Length > 1000) content = content[..1000];
         if (lines.Count > 0 && lines[^1].EndsWith("] " + content,StringComparison.Ordinal)) return;
         lines.Add($"[{DateTime.Now:HH:mm:ss}] {content}");

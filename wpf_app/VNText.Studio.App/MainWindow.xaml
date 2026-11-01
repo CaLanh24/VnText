@@ -482,13 +482,26 @@
                             </StackPanel>
                         </Border>
                         <Border x:Name="ExtractLogCard" Style="{StaticResource CardShadowBorder}" Margin="0">
-                            <Expander x:Name="ExtractLogDetails" Header="Nhật ký — lịch sử đầy đủ ở mục Nhật ký bên trái" IsExpanded="True" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}">
-    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
-        <ScrollViewer x:Name="ExtractLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding ExtractLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
-        </ScrollViewer>
-    </Border>
-</Expander>
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock x:Name="ExtractLogHeading" Text="{Binding ExtractLogTitle}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="{Binding ExtractLogSummary}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,0,0" />
+                                    </StackPanel>
+                                    <ComboBox x:Name="ExtractRunSelector" Grid.Column="1" MinWidth="190" Margin="12,0,8,0" ItemsSource="{Binding ExtractRuns}" SelectedItem="{Binding SelectedExtractRun, Mode=TwoWay}"
+                                              DisplayMemberPath="Title" Style="{StaticResource SettingsPreferenceCombo}" AutomationProperties.Name="Lần lấy text"
+                                              Visibility="{Binding ExtractRunSelectorVisible, Converter={StaticResource BoolToVis}}" />
+                                    <Button x:Name="ExtractLogCopyButton" Grid.Column="2" Content="Chép nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding CopyExtractLogCommand}" />
+                                </Grid>
+                                <Border Grid.Row="1" Style="{StaticResource LogPanelBorderStyle}" Height="260" Margin="0,16,0,0">
+                                    <ListBox x:Name="ExtractLogList" ItemsSource="{Binding ExtractLogShown}" ItemTemplate="{StaticResource JournalLineTemplate}"
+                                             Background="Transparent" BorderThickness="0" Padding="14,12" SelectionMode="Extended" Focusable="True"
+                                             VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Nhật ký lấy text" />
+                                </Border>
+                            </Grid>
                         </Border>
                         </StackPanel>
                     </Grid>
