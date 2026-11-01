@@ -913,6 +913,163 @@ internal static class GitHubIdentityHarness
         if outcome == "PASS":
             self.assertTrue(report.get("ok"), report)
 
+    def test_setup_wizard_validation_shortcuts_pages_and_progress(self):
+        work = WORK_ROOT / f"setup-wizard-{uuid4().hex}"
+        scope = os.environ.get("VNTEXT_ARTIFACT_SCOPE_ID") or new_scope_id("setup-wizard")
+        run_id = os.environ.get("VNTEXT_ARTIFACT_RUN_ID") or scope
+        register_artifact(artifact_id=f"setup-wizard:{work.name}", path=work, kind="test_workspace", created_by="test_setup_package.py", owner="test_setup_package.py", purpose="Setup wizard validation, shortcut and progress fixture", lifecycle="DISPOSABLE", scope_id=scope, run_id=run_id)
+        outcome = "FAIL"
+        try:
+            payload = work / "payload"
+            (payload / "app").mkdir(parents=True)
+            (payload / "app" / "readme.txt").write_text("payload", encoding="utf-8")
+            (payload / "VNText Studio.exe").write_bytes(b"main app")
+            (payload / "Uninstall.exe").write_bytes(b"uninstaller")
+            archive = work / "payload.zip"
+            package_installer.build(payload, archive)
+            csc = Path(os.environ["WINDIR"]) / "Microsoft.NET" / "Framework64" / "v4.0.30319" / "csc.exe"
+            references = [f"/reference:{name}.dll" for name in ("System.Windows.Forms", "System.Web.Extensions", "System.IO.Compression", "System.IO.Compression.FileSystem")]
+            setup_exe = work / "Setup.exe"
+            built = subprocess.run([str(csc), "/nologo", "/target:winexe", f"/out:{setup_exe}", f"/resource:{archive},Payload.zip", *references, str(ROOT / "release" / "Setup.cs")], capture_output=True, text=True, timeout=90)
+            self.assertEqual(0, built.returncode, built.stdout + built.stderr)
+            harness_source = work / "wizard_harness.cs"
+            harness_source.write_text(r"""
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Windows.Forms;
+
+internal static class WizardHarness
+{
+    static void Require(bool ok, string message)
+    {
+        if (!ok) { Console.WriteLine("FAIL: " + message); Environment.Exit(1); }
+    }
+
+    static int Main(string[] args)
+    {
+        var assembly = Assembly.LoadFrom(args[0]);
+        var work = Path.GetFullPath(args[1]);
+        var setup = assembly.GetType("Setup", true);
+        var statics = BindingFlags.NonPublic | BindingFlags.Static;
+        var instance = BindingFlags.NonPublic | BindingFlags.Instance;
+        var programs = Path.Combine(work, "Programs");
+        var desktop = Path.Combine(work, "Desktop");
+        Directory.CreateDirectory(programs);
+        Directory.CreateDirectory(desktop);
+
+        var validateMenu = setup.GetMethod("ValidateMenuFolder", statics);
+        foreach (var bad in new[] { "", "..\\evil", "a\\..\\..\\b", "C:\\x", "\\\\server\\share", "a|b", ".", "name.", "x:y" })
+        {
+            var call = new object[] { bad, false, programs, null };
+            Require((string)validateMenu.Invoke(null, call) != null, "accepted menu folder: " + bad);
+        }
+        foreach (var good in new[] { "VNText Studio", "Games\\VNText Studio" })
+        {
+            var call = new object[] { good, false, programs, null };
+            Require(validateMenu.Invoke(null, call) == null && ((string)call[3]).Length > 0, "rejected menu folder: " + good);
+        }
+
+        var validateDestination = setup.GetMethod("ValidateDestination", statics);
+        var driveRoot = new object[] { Path.GetPathRoot(work), false, null, false };
+        Require((string)validateDestination.Invoke(null, driveRoot) != null, "accepted a drive root");
+        Require((string)validateDestination.Invoke(null, new object[] { "  ", false, null, false }) != null, "accepted an empty destination");
+        var occupied = Path.Combine(work, "occupied");
+        Directory.CreateDirectory(occupied);
+        File.WriteAllText(Path.Combine(occupied, "other.txt"), "not ours");
+        Require((string)validateDestination.Invoke(null, new object[] { occupied, false, null, false }) != null, "accepted a foreign non-empty folder");
+        var fresh = new object[] { Path.Combine(work, "fresh", "child"), false, null, false };
+        Require(validateDestination.Invoke(null, fresh) == null && !Directory.Exists(Path.Combine(work, "fresh")), "validation must accept a new path without creating it");
+        var existing = Path.Combine(work, "existing");
+        Directory.CreateDirectory(Path.Combine(existing, "data"));
+        File.WriteAllText(Path.Combine(existing, "data", "install-manifest.json"), "[]");
+        var existingCall = new object[] { existing, false, null, false };
+        Require(validateDestination.Invoke(null, existingCall) == null && (bool)existingCall[3], "existing install not recognised");
+
+        var installRoot = Path.Combine(work, "install");
+        var progress = new List<int>();
+        var install = setup.GetMethod("InstallPayload", statics);
+        install.Invoke(null, new object[] { installRoot, new Action<int, string>(delegate(int percent, string name) { progress.Add(percent); }) });
+        Require(File.Exists(Path.Combine(installRoot, "VNText Studio.exe")) && File.Exists(Path.Combine(installRoot, "data", "install-manifest.json")), "payload not installed");
+        Require(progress.Count > 0 && progress[progress.Count - 1] == 100, "progress did not finish at 100");
+        for (var i = 1; i < progress.Count; i++) Require(progress[i] >= progress[i - 1], "progress went backwards");
+
+        var create = setup.GetMethod("CreateShortcuts", statics);
+        var remove = setup.GetMethod("RemoveRecordedShortcuts", statics);
+        var save = setup.GetMethod("SaveShortcut", statics);
+        var target = setup.GetMethod("ShortcutTarget", statics);
+        var exe = Path.Combine(installRoot, "VNText Studio.exe");
+        var foreignExe = Path.Combine(work, "other.exe");
+        File.WriteAllBytes(foreignExe, new byte[] { 1 });
+        var foreignLink = Path.Combine(desktop, "VNText Studio.lnk");
+        save.Invoke(null, new object[] { foreignLink, foreignExe, work, "someone else" });
+        var skipped = (List<string>)create.Invoke(null, new object[] { installRoot, desktop, programs, "VNText Studio", false });
+        Require(skipped.Count == 1 && skipped[0].Contains("Skipped"), "foreign desktop shortcut was not skipped");
+        Require(String.Equals((string)target.Invoke(null, new object[] { foreignLink }), foreignExe, StringComparison.OrdinalIgnoreCase), "foreign desktop shortcut was overwritten");
+        var menuLink = Path.Combine(programs, "VNText Studio", "VNText Studio.lnk");
+        Require(File.Exists(menuLink) && String.Equals((string)target.Invoke(null, new object[] { menuLink }), exe, StringComparison.OrdinalIgnoreCase), "Start Menu shortcut missing or wrong target");
+        File.Delete(foreignLink);
+        var created = (List<string>)create.Invoke(null, new object[] { installRoot, desktop, programs, "VNText Studio", true });
+        Require(created.Count == 0 && File.Exists(foreignLink), "desktop shortcut not created");
+        Require(File.ReadAllText(Path.Combine(installRoot, "data", "shortcuts.json")).Contains("VNText Studio.lnk"), "shortcut record missing");
+
+        var bystander = Path.Combine(programs, "Other Product");
+        Directory.CreateDirectory(bystander);
+        save.Invoke(null, new object[] { Path.Combine(bystander, "VNText Studio.lnk"), foreignExe, work, "other" });
+        remove.Invoke(null, new object[] { installRoot, programs });
+        Require(!File.Exists(foreignLink) && !File.Exists(menuLink), "recorded shortcuts were not removed");
+        Require(!Directory.Exists(Path.Combine(programs, "VNText Studio")), "empty Start Menu folder was not removed");
+        Require(File.Exists(Path.Combine(bystander, "VNText Studio.lnk")), "uninstall touched an unrecorded shortcut");
+
+        var wizardType = assembly.GetType("Setup+SetupWizard", true);
+        foreach (var vietnamese in new[] { true, false })
+        {
+            var wizard = (Form)Activator.CreateInstance(wizardType, instance, null, new object[] { vietnamese }, null);
+            var destination = (TextBox)wizardType.GetField("destination", instance).GetValue(wizard);
+            var menu = (TextBox)wizardType.GetField("menuFolder", instance).GetValue(wizard);
+            var title = (Label)wizardType.GetField("title", instance).GetValue(wizard);
+            var next = (Button)wizardType.GetField("next", instance).GetValue(wizard);
+            var summary = (TextBox)wizardType.GetField("summary", instance).GetValue(wizard);
+            var desktopBox = (CheckBox)wizardType.GetField("desktopShortcut", instance).GetValue(wizard);
+            var pageField = wizardType.GetField("page", instance);
+            var advance = wizardType.GetMethod("Advance", instance);
+            var go = wizardType.GetMethod("Go", instance);
+            var chosen = Path.Combine(work, "wizard-" + vietnamese);
+            destination.Text = chosen;
+            menu.Text = "Wizard Menu";
+            Require((int)pageField.GetValue(wizard) == 0, "wizard did not start at destination");
+            Require(title.Text.Contains(vietnamese ? "Chọn thư mục cài đặt" : "Select Destination"), "destination title language");
+            advance.Invoke(wizard, null);
+            Require((int)pageField.GetValue(wizard) == 1 && title.Text.Contains(vietnamese ? "Start Menu" : "Start Menu"), "to Start Menu page");
+            advance.Invoke(wizard, null);
+            Require((int)pageField.GetValue(wizard) == 2 && desktopBox.Checked, "to additional tasks with the desktop shortcut on");
+            advance.Invoke(wizard, null);
+            Require((int)pageField.GetValue(wizard) == 3, "to Ready page");
+            Require(summary.Text.Contains(chosen) && summary.Text.Contains("Wizard Menu"), "ready summary lacks the choices");
+            Require(next.Text == (vietnamese ? "Cài đặt" : "Install"), "ready page action label");
+            go.Invoke(wizard, new object[] { 2 });
+            Require((int)pageField.GetValue(wizard) == 2, "Back did not return to the tasks page");
+            Require(!Directory.Exists(chosen), "the wizard created the destination before Install");
+            wizard.Dispose();
+        }
+        Console.WriteLine("setup wizard validation, shortcuts, pages and progress PASS");
+        return 0;
+    }
+}
+""", encoding="utf-8")
+            harness = work / "wizard_harness.exe"
+            built_harness = subprocess.run([str(csc), "/nologo", "/target:exe", f"/out:{harness}", "/reference:System.Windows.Forms.dll", "/reference:System.Web.Extensions.dll", "/reference:System.IO.Compression.dll", str(harness_source)], capture_output=True, text=True, timeout=90)
+            self.assertEqual(0, built_harness.returncode, built_harness.stdout + built_harness.stderr)
+            run = subprocess.run([str(harness), str(setup_exe), str(work)], capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL)
+            self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+            self.assertIn("setup wizard validation, shortcuts, pages and progress PASS", run.stdout)
+            outcome = "PASS"
+        finally:
+            report = cleanup_after_test([work], reason="test_setup_package.py wizard", outcome=outcome, scope_id=scope, run_id=run_id)
+        if outcome == "PASS":
+            self.assertTrue(report.get("ok"), report)
+
 
 if __name__ == "__main__":
     unittest.main()

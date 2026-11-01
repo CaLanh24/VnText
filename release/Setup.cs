@@ -40,11 +40,12 @@ public static class Setup
 #if UNINSTALLER
         return Uninstall();
 #else
-        return Install();
+        return Install(args);
 #endif
     }
 
-    private static int Install()
+#if !UNINSTALLER
+    private static int Install(string[] args)
     {
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
@@ -57,74 +58,546 @@ public static class Setup
             return 2;
         }
         if (!accepted) return 1;
-        using (var owner = new Form())
-        using (var picker = new FolderBrowserDialog())
+        using (var wizard = new SetupWizard(UseVietnamese(args)))
         {
-            owner.Text = "VNText Studio Setup";
-            owner.Width = 440;
-            owner.Height = 165;
-            owner.FormBorderStyle = FormBorderStyle.FixedDialog;
-            owner.StartPosition = FormStartPosition.CenterScreen;
-            owner.MaximizeBox = false;
-            owner.ShowInTaskbar = true;
-            owner.Controls.Add(new Label { Left = 18, Top = 18, Width = 390,
-                Text = "Choose the folder where VNText Studio will be installed." });
-            var choose = new Button { Left = 18, Top = 55, Width = 150, Height = 30,
-                Text = "Choose folder..." };
-            owner.Controls.Add(choose);
-            picker.Description = "Choose the VNText Studio install folder. App data will be kept in its data subfolder.";
-            picker.ShowNewFolderButton = true;
-            picker.SelectedPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VNText Studio");
-            choose.Click += delegate
+            Application.Run(wizard);
+            return wizard.ExitCode;
+        }
+    }
+#endif
+
+#if !UNINSTALLER
+    private const string ShortcutRecordName = "data/shortcuts.json";
+    private const string ShortcutFileName = "VNText Studio.lnk";
+    private const string AppExecutableName = "VNText Studio.exe";
+
+    private static bool UseVietnamese(string[] args)
+    {
+        if (args != null)
+            foreach (var arg in args)
             {
-                if (picker.ShowDialog(owner) != DialogResult.OK) return;
-                owner.Tag = picker.SelectedPath;
-                owner.DialogResult = DialogResult.OK;
-            };
-            if (owner.ShowDialog() != DialogResult.OK) return 1;
-            var root = Path.GetFullPath((string)owner.Tag);
+                if (String.Equals(arg, "/lang=vi", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "--lang=vi", StringComparison.OrdinalIgnoreCase)) return true;
+                if (String.Equals(arg, "/lang=en", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "--lang=en", StringComparison.OrdinalIgnoreCase)) return false;
+            }
+        return String.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "vi", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static long PayloadBytes()
+    {
+        try
+        {
+            using (var zipStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Payload.zip"))
+            {
+                if (zipStream == null) return -1;
+                using (var zip = new ZipArchive(zipStream, ZipArchiveMode.Read))
+                {
+                    long total = 0;
+                    foreach (var file in ReadManifest(zip).files.Values) total += file.size;
+                    return total;
+                }
+            }
+        }
+        catch (Exception) { return -1; }
+    }
+
+    /// <summary>Returns an error text (already localized by the caller's flag) or null; never creates anything.</summary>
+    private static string ValidateDestination(string text, bool vi, out string root, out bool existingInstall)
+    {
+        root = null;
+        existingInstall = false;
+        try
+        {
+            if (String.IsNullOrWhiteSpace(text)) return vi ? "Hãy nhập thư mục cài đặt." : "Enter the install folder.";
+            root = Path.GetFullPath(text.Trim().Trim('"'));
+            var volume = Path.GetPathRoot(root);
+            if (String.Equals(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                volume.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+                return vi ? "Hãy chọn một thư mục con, không phải thư mục gốc của ổ đĩa." : "Choose a subfolder, not the drive root.";
+            var probe = root;
+            while (!Directory.Exists(probe) && Path.GetDirectoryName(probe) != null) probe = Path.GetDirectoryName(probe);
+            EnsureSafeDirectory(probe);
+            if (!Directory.Exists(root)) return null;
+            EnsureSafeDirectory(root);
+            var existingState = SafeTarget(root, InstallManifestName);
+            existingInstall = File.Exists(existingState);
+            if (!existingInstall)
+                using (var children = Directory.EnumerateFileSystemEntries(root).GetEnumerator())
+                    if (children.MoveNext())
+                        return vi ? "Thư mục đã chọn không trống và không phải bản cài VNText Studio. Hãy chọn thư mục trống."
+                                  : "The selected folder is not empty and is not a recognized VNText Studio installation. Choose an empty folder.";
+            return null;
+        }
+        catch (Exception ex) { return ex.Message; }
+    }
+
+    private static string ProgramsFolder()
+    {
+        return Environment.GetFolderPath(Environment.SpecialFolder.Programs);
+    }
+
+    /// <summary>A Start Menu folder is a relative name under the user's Programs folder: no drive, no traversal, no invalid characters.</summary>
+    private static string ValidateMenuFolder(string text, bool vi, string programsDirectory, out string relative)
+    {
+        relative = null;
+        var raw = (text ?? "").Trim();
+        var name = raw.Trim('\\', '/');
+        if (raw.StartsWith("\\") || raw.StartsWith("/"))
+            return vi ? "Tên thư mục Start Menu không hợp lệ." : "The Start Menu folder name is not valid.";
+        if (name.Length == 0) return vi ? "Hãy nhập tên thư mục Start Menu hoặc chọn không tạo." : "Enter a Start Menu folder name or choose not to create one.";
+        if (name.Length > 120 || name.IndexOfAny(Path.GetInvalidPathChars()) >= 0 || name.IndexOf(':') >= 0)
+            return vi ? "Tên thư mục Start Menu không hợp lệ." : "The Start Menu folder name is not valid.";
+        var invalid = Path.GetInvalidFileNameChars();
+        foreach (var part in name.Replace('/', '\\').Split('\\'))
+            if (part.Length == 0 || part == "." || part == ".." || part.IndexOfAny(invalid) >= 0 || part.EndsWith(".") || part.EndsWith(" "))
+                return vi ? "Tên thư mục Start Menu không hợp lệ." : "The Start Menu folder name is not valid.";
+        var programs = Path.GetFullPath(programsDirectory).TrimEnd('\\') + "\\";
+        var full = Path.GetFullPath(Path.Combine(programs, name));
+        if (!full.StartsWith(programs, StringComparison.OrdinalIgnoreCase))
+            return vi ? "Thư mục Start Menu phải nằm trong danh sách chương trình." : "The Start Menu folder must stay inside the Programs list.";
+        relative = name.Replace('/', '\\');
+        return null;
+    }
+
+    private static void SaveShortcut(string linkPath, string target, string workDirectory, string description)
+    {
+        var shellType = Type.GetTypeFromProgID("WScript.Shell");
+        if (shellType == null) throw new InvalidOperationException("WScript.Shell is unavailable.");
+        var shell = Activator.CreateInstance(shellType);
+        var link = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { linkPath });
+        var linkType = link.GetType();
+        linkType.InvokeMember("TargetPath", BindingFlags.SetProperty, null, link, new object[] { target });
+        linkType.InvokeMember("WorkingDirectory", BindingFlags.SetProperty, null, link, new object[] { workDirectory });
+        linkType.InvokeMember("Description", BindingFlags.SetProperty, null, link, new object[] { description });
+        linkType.InvokeMember("IconLocation", BindingFlags.SetProperty, null, link, new object[] { target + ",0" });
+        linkType.InvokeMember("Save", BindingFlags.InvokeMethod, null, link, null);
+    }
+
+    private static string ShortcutTarget(string linkPath)
+    {
+        var shellType = Type.GetTypeFromProgID("WScript.Shell");
+        if (shellType == null) return null;
+        var shell = Activator.CreateInstance(shellType);
+        var link = shellType.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { linkPath });
+        return Convert.ToString(link.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, link, null));
+    }
+
+    /// <summary>Creates only shortcuts the user chose; never overwrites a shortcut that is neither ours nor pointing at this install. Returns notes for the completion page.</summary>
+    private static List<string> CreateShortcuts(string root, string desktopDirectory, string programsDirectory, string menuRelative, bool vi)
+    {
+        var notes = new List<string>();
+        var exe = Path.Combine(root, AppExecutableName);
+        var recordPath = SafeTarget(root, ShortcutRecordName);
+        var recorded = new List<string>();
+        string menuDirectory = null;
+        var targets = new List<string>();
+        if (desktopDirectory != null) targets.Add(Path.Combine(desktopDirectory, ShortcutFileName));
+        if (menuRelative != null)
+        {
+            menuDirectory = Path.Combine(programsDirectory, menuRelative);
+            targets.Add(Path.Combine(menuDirectory, ShortcutFileName));
+        }
+        foreach (var link in targets)
+        {
             try
             {
-                Directory.CreateDirectory(root);
-                EnsureSafeDirectory(root);
-                var existingState = SafeTarget(root, InstallManifestName);
-                if (File.Exists(existingState) && MessageBox.Show(
-                    "This folder already has a VNText Studio install. Program files will be repaired or upgraded; its data folder will be preserved. Continue?",
-                    "VNText Studio Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-                    return 1;
-                if (!File.Exists(existingState))
+                var directory = Path.GetDirectoryName(link);
+                if (Directory.Exists(directory) && (File.GetAttributes(directory) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException("shortcut folder is a link");
+                if (File.Exists(link))
                 {
-                    using (var children = Directory.EnumerateFileSystemEntries(root).GetEnumerator())
-                        if (children.MoveNext())
-                            throw new InvalidDataException("The selected folder is not empty and is not a recognized VNText Studio installation. Choose an empty folder.");
+                    var existing = ShortcutTarget(link);
+                    if (!String.Equals(existing, exe, StringComparison.OrdinalIgnoreCase))
+                    {
+                        notes.Add(vi ? "Bỏ qua lối tắt đã có của ứng dụng khác: " + link : "Skipped an existing shortcut that is not ours: " + link);
+                        continue;
+                    }
                 }
+                Directory.CreateDirectory(directory);
+                SaveShortcut(link, exe, root, "VNText Studio");
+                recorded.Add(link);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Setup could not install VNText Studio:\n" + ex.Message, "VNText Studio Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return 2;
+                notes.Add((vi ? "Không tạo được lối tắt " : "Could not create shortcut ") + link + ": " + ex.Message);
             }
+        }
+        var record = new Dictionary<string, object>();
+        record["shortcuts"] = recorded;
+        record["menu_folder"] = recorded.Count > 0 && menuDirectory != null ? menuDirectory : "";
+        File.WriteAllText(recordPath, new JavaScriptSerializer().Serialize(record), Encoding.UTF8);
+        return notes;
+    }
+#endif
 
-            string error = null;
-            using (var progress = CreateProgressWindow("VNText Studio Setup", "Verifying and installing files. This may take a few minutes; please wait."))
-            {
-                progress.Shown += async delegate
+    /// <summary>Uninstall removes only the shortcuts Setup recorded and only while they still point at this install.</summary>
+    private static void RemoveRecordedShortcuts(string root, string programsDirectory)
+    {
+        try
+        {
+            var recordPath = SafeTarget(root, "data/shortcuts.json");
+            if (!IsRegularFileNoLink(recordPath)) return;
+            var record = new JavaScriptSerializer { MaxJsonLength = 1024 * 1024 }.Deserialize<Dictionary<string, object>>(File.ReadAllText(recordPath, Encoding.UTF8));
+            var exe = Path.Combine(root, "VNText Studio.exe");
+            object listValue;
+            if (record != null && record.TryGetValue("shortcuts", out listValue) && listValue is System.Collections.IEnumerable)
+                foreach (var item in (System.Collections.IEnumerable)listValue)
                 {
-                    try { await Task.Run(() => InstallPayload(root)); }
-                    catch (Exception ex) { error = ex.Message; }
-                    progress.Close();
-                };
-                Application.Run(progress);
-            }
-            if (error != null)
+                    var link = item as string;
+                    if (link == null || !String.Equals(Path.GetFileName(link), "VNText Studio.lnk", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!IsRegularFileNoLink(link)) continue;
+                    var type = Type.GetTypeFromProgID("WScript.Shell");
+                    if (type == null) continue;
+                    var shell = Activator.CreateInstance(type);
+                    var shortcut = type.InvokeMember("CreateShortcut", BindingFlags.InvokeMethod, null, shell, new object[] { link });
+                    var target = Convert.ToString(shortcut.GetType().InvokeMember("TargetPath", BindingFlags.GetProperty, null, shortcut, null));
+                    if (String.Equals(target, exe, StringComparison.OrdinalIgnoreCase)) File.Delete(link);
+                }
+            object menu;
+            if (record != null && record.TryGetValue("menu_folder", out menu) && menu is string && ((string)menu).Length > 0)
             {
-                MessageBox.Show("Setup could not install VNText Studio:\n" + error, "VNText Studio Setup", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return 2;
+                var programs = Path.GetFullPath(programsDirectory).TrimEnd('\\') + "\\";
+                var folder = Path.GetFullPath((string)menu);
+                if (folder.StartsWith(programs, StringComparison.OrdinalIgnoreCase) && Directory.Exists(folder)
+                    && (File.GetAttributes(folder) & FileAttributes.ReparsePoint) == 0)
+                {
+                    using (var children = Directory.EnumerateFileSystemEntries(folder).GetEnumerator())
+                        if (!children.MoveNext()) Directory.Delete(folder);
+                }
             }
-            MessageBox.Show("VNText Studio was installed to:\n" + root, "VNText Studio Setup", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return 0;
+        }
+        catch (Exception) { /* shortcut cleanup is best effort; the install folder removal below is authoritative */ }
+    }
+
+    private static bool IsRegularFileNoLink(string path)
+    {
+        return File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+    }
+
+#if !UNINSTALLER
+    private sealed class SetupWizard : Form
+    {
+        private readonly bool vi;
+        private readonly long payloadBytes;
+        private readonly Label title = new Label(), subtitle = new Label();
+        private readonly Panel body = new Panel();
+        private readonly Panel[] pages = new Panel[6];
+        private readonly Button back = new Button(), next = new Button(), cancel = new Button();
+        private readonly TextBox destination = new TextBox(), menuFolder = new TextBox(), summary = new TextBox();
+        private readonly CheckBox menuNone = new CheckBox(), desktopShortcut = new CheckBox(), launch = new CheckBox();
+        private readonly Label diskNote = new Label(), installStatus = new Label(), installFile = new Label(), doneText = new Label(), doneNotes = new Label();
+        private readonly ProgressBar bar = new ProgressBar();
+        private int page;
+        private bool installing;
+        private string root, menuRelative;
+        private bool existingInstall;
+        internal int ExitCode = 1;
+
+        private string T(string vietnamese, string english) { return vi ? vietnamese : english; }
+
+        internal SetupWizard(bool vietnamese)
+        {
+            vi = vietnamese;
+            payloadBytes = PayloadBytes();
+            Text = T("Cài đặt — VNText Studio", "Setup — VNText Studio");
+            Font = new System.Drawing.Font("Segoe UI", 9F);
+            ClientSize = new System.Drawing.Size(640, 450);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            StartPosition = FormStartPosition.CenterScreen;
+            MaximizeBox = false;
+            MinimizeBox = true;
+            ShowInTaskbar = true;
+            try { Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
+            var header = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = System.Drawing.Color.White };
+            title.Font = new System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold);
+            title.Left = 24; title.Top = 12; title.Width = 580; title.Height = 22;
+            subtitle.Left = 40; subtitle.Top = 38; subtitle.Width = 570; subtitle.Height = 22;
+            header.Controls.Add(title);
+            header.Controls.Add(subtitle);
+            var headerLine = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = System.Drawing.Color.FromArgb(0xD0, 0xD0, 0xD0) };
+            var footer = new Panel { Dock = DockStyle.Bottom, Height = 58, BackColor = System.Drawing.Color.FromArgb(0xF0, 0xF0, 0xF0) };
+            var footerLine = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = System.Drawing.Color.FromArgb(0xD0, 0xD0, 0xD0) };
+            footer.Controls.Add(footerLine);
+            foreach (var button in new[] { back, next, cancel })
+            {
+                button.Width = 96; button.Height = 30; button.Top = 14; button.UseVisualStyleBackColor = true;
+                footer.Controls.Add(button);
+            }
+            cancel.Left = 530; next.Left = 426; back.Left = 322;
+            back.Text = T("‹ Quay lại", "< Back");
+            cancel.Text = T("Hủy", "Cancel");
+            body.Dock = DockStyle.Fill;
+            body.BackColor = System.Drawing.Color.FromArgb(0xF0, 0xF0, 0xF0);
+            Controls.Add(body);
+            Controls.Add(footer);
+            Controls.Add(headerLine);
+            Controls.Add(header);
+            BuildPages();
+            back.Click += delegate { Go(page - 1); };
+            next.Click += delegate { Advance(); };
+            cancel.Click += delegate { Close(); };
+            AcceptButton = next;
+            FormClosing += delegate(object sender, FormClosingEventArgs e)
+            {
+                if (installing) { e.Cancel = true; return; }
+                if (page < 4 && e.CloseReason == CloseReason.UserClosing && ExitCode != 0 &&
+                    MessageBox.Show(T("Thoát Setup? VNText Studio chưa được cài đặt.", "Exit Setup? VNText Studio has not been installed yet."),
+                        T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                    e.Cancel = true;
+            };
+            Go(0);
+        }
+
+        private Panel NewPage(int index)
+        {
+            var panel = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = System.Drawing.Color.FromArgb(0xF0, 0xF0, 0xF0) };
+            pages[index] = panel;
+            body.Controls.Add(panel);
+            return panel;
+        }
+
+        private Label AddLabel(Panel panel, string text, int left, int top, int width, int height)
+        {
+            var label = new Label { Left = left, Top = top, Width = width, Height = height, Text = text, AutoSize = false };
+            panel.Controls.Add(label);
+            return label;
+        }
+
+        private void BuildPages()
+        {
+            var p0 = NewPage(0);
+            AddLabel(p0, T("Setup sẽ cài VNText Studio vào thư mục sau.", "Setup will install VNText Studio into the following folder."), 24, 28, 580, 22);
+            AddLabel(p0, T("Để tiếp tục, nhấn Tiếp tục. Muốn chọn thư mục khác, nhấn Duyệt.", "To continue, click Next. If you would like to select a different folder, click Browse."), 24, 64, 580, 22);
+            destination.Left = 24; destination.Top = 96; destination.Width = 480;
+            destination.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "VNText Studio");
+            var browse = new Button { Left = 516, Top = 94, Width = 90, Height = 27, Text = T("Duyệt…", "Browse…"), UseVisualStyleBackColor = true };
+            browse.Click += delegate
+            {
+                using (var picker = new FolderBrowserDialog())
+                {
+                    picker.Description = T("Chọn thư mục cài đặt VNText Studio. Dữ liệu ứng dụng nằm trong thư mục con data.", "Choose the VNText Studio install folder. App data stays in its data subfolder.");
+                    picker.ShowNewFolderButton = true;
+                    if (Directory.Exists(destination.Text)) picker.SelectedPath = destination.Text;
+                    if (picker.ShowDialog(this) == DialogResult.OK) destination.Text = picker.SelectedPath;
+                }
+            };
+            p0.Controls.Add(destination);
+            p0.Controls.Add(browse);
+            diskNote.Left = 24; diskNote.Top = 380; diskNote.Width = 580; diskNote.Height = 22;
+            diskNote.Text = payloadBytes > 0
+                ? String.Format(T("Cần ít nhất {0:N1} MB dung lượng trống.", "At least {0:N1} MB of free disk space is required."), payloadBytes * 1.1 / (1024.0 * 1024.0))
+                : "";
+            p0.Controls.Add(diskNote);
+
+            var p1 = NewPage(1);
+            AddLabel(p1, T("Setup sẽ tạo lối tắt của chương trình trong thư mục Start Menu sau.", "Setup will create the program's shortcuts in the following Start Menu folder."), 24, 28, 580, 22);
+            AddLabel(p1, T("Để tiếp tục, nhấn Tiếp tục. Muốn chọn thư mục khác, nhấn Duyệt.", "To continue, click Next. If you would like to select a different folder, click Browse."), 24, 64, 580, 22);
+            menuFolder.Left = 24; menuFolder.Top = 96; menuFolder.Width = 480; menuFolder.Text = "VNText Studio";
+            var browseMenu = new Button { Left = 516, Top = 94, Width = 90, Height = 27, Text = T("Duyệt…", "Browse…"), UseVisualStyleBackColor = true };
+            browseMenu.Click += delegate
+            {
+                using (var picker = new FolderBrowserDialog())
+                {
+                    picker.Description = T("Chọn thư mục trong Start Menu.", "Choose a folder inside the Start Menu.");
+                    picker.ShowNewFolderButton = true;
+                    picker.SelectedPath = ProgramsFolder();
+                    if (picker.ShowDialog(this) != DialogResult.OK) return;
+                    var programs = Path.GetFullPath(ProgramsFolder()).TrimEnd('\\') + "\\";
+                    var chosen = Path.GetFullPath(picker.SelectedPath).TrimEnd('\\') + "\\";
+                    if (chosen.StartsWith(programs, StringComparison.OrdinalIgnoreCase) && chosen.Length > programs.Length)
+                        menuFolder.Text = chosen.Substring(programs.Length).TrimEnd('\\');
+                    else
+                        MessageBox.Show(T("Hãy chọn một thư mục nằm trong danh sách chương trình của Start Menu.", "Choose a folder inside the Start Menu Programs list."), Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+            };
+            menuNone.Left = 24; menuNone.Top = 140; menuNone.Width = 580; menuNone.Text = T("Không tạo thư mục trong Start Menu", "Don't create a Start Menu folder");
+            menuNone.CheckedChanged += delegate { menuFolder.Enabled = !menuNone.Checked; browseMenu.Enabled = !menuNone.Checked; };
+            p1.Controls.Add(menuFolder);
+            p1.Controls.Add(browseMenu);
+            p1.Controls.Add(menuNone);
+
+            var p2 = NewPage(2);
+            AddLabel(p2, T("Chọn các tác vụ bổ sung mà Setup sẽ thực hiện khi cài VNText Studio, rồi nhấn Tiếp tục.", "Select the additional tasks you would like Setup to perform while installing VNText Studio, then click Next."), 24, 28, 580, 40);
+            AddLabel(p2, T("Biểu tượng bổ sung:", "Additional icons:"), 24, 84, 580, 22);
+            desktopShortcut.Left = 24; desktopShortcut.Top = 112; desktopShortcut.Width = 580; desktopShortcut.Checked = true;
+            desktopShortcut.Text = T("Tạo lối tắt trên màn hình nền", "Create a desktop shortcut");
+            p2.Controls.Add(desktopShortcut);
+
+            var p3 = NewPage(3);
+            AddLabel(p3, T("Setup đã sẵn sàng cài VNText Studio vào máy của bạn.", "Setup is now ready to begin installing VNText Studio on your computer."), 24, 24, 580, 22);
+            AddLabel(p3, T("Nhấn Cài đặt để tiếp tục, hoặc Quay lại nếu muốn xem lại hay đổi lựa chọn.", "Click Install to continue, or click Back if you want to review or change any settings."), 24, 48, 580, 40);
+            summary.Left = 24; summary.Top = 96; summary.Width = 582; summary.Height = 250;
+            summary.Multiline = true; summary.ReadOnly = true; summary.ScrollBars = ScrollBars.Vertical; summary.BackColor = System.Drawing.Color.White;
+            p3.Controls.Add(summary);
+
+            var p4 = NewPage(4);
+            installStatus.Left = 24; installStatus.Top = 40; installStatus.Width = 580; installStatus.Height = 44;
+            installFile.Left = 24; installFile.Top = 130; installFile.Width = 580; installFile.Height = 22;
+            bar.Left = 24; bar.Top = 96; bar.Width = 580; bar.Height = 22; bar.Minimum = 0; bar.Maximum = 100;
+            p4.Controls.Add(installStatus);
+            p4.Controls.Add(bar);
+            p4.Controls.Add(installFile);
+
+            var p5 = NewPage(5);
+            doneText.Left = 24; doneText.Top = 28; doneText.Width = 580; doneText.Height = 66;
+            doneNotes.Left = 24; doneNotes.Top = 150; doneNotes.Width = 580; doneNotes.Height = 120;
+            launch.Left = 24; launch.Top = 110; launch.Width = 580; launch.Checked = true;
+            launch.Text = T("Mở VNText Studio", "Launch VNText Studio");
+            p5.Controls.Add(doneText);
+            p5.Controls.Add(launch);
+            p5.Controls.Add(doneNotes);
+        }
+
+        private void Go(int target)
+        {
+            page = Math.Max(0, Math.Min(5, target));
+            for (var i = 0; i < pages.Length; i++) pages[i].Visible = i == page;
+            back.Visible = page > 0 && page < 4;
+            cancel.Visible = page < 5;
+            cancel.Enabled = page < 4;
+            next.Enabled = true;
+            switch (page)
+            {
+                case 0: title.Text = T("Chọn thư mục cài đặt", "Select Destination Location"); subtitle.Text = T("VNText Studio sẽ được cài vào đâu?", "Where should VNText Studio be installed?"); next.Text = T("Tiếp tục ›", "Next >"); break;
+                case 1: title.Text = T("Chọn thư mục Start Menu", "Select Start Menu Folder"); subtitle.Text = T("Setup nên đặt lối tắt chương trình ở đâu?", "Where should Setup place the program's shortcuts?"); next.Text = T("Tiếp tục ›", "Next >"); break;
+                case 2: title.Text = T("Chọn tác vụ bổ sung", "Select Additional Tasks"); subtitle.Text = T("Cần thực hiện thêm tác vụ nào?", "Which additional tasks should be performed?"); next.Text = T("Tiếp tục ›", "Next >"); break;
+                case 3: title.Text = T("Sẵn sàng cài đặt", "Ready to Install"); subtitle.Text = T("Setup đã sẵn sàng bắt đầu cài VNText Studio.", "Setup is now ready to begin installing VNText Studio on your computer."); next.Text = T("Cài đặt", "Install"); RefreshSummary(); break;
+                case 4: title.Text = T("Đang cài đặt", "Installing"); subtitle.Text = T("Vui lòng chờ trong khi Setup cài VNText Studio.", "Please wait while Setup installs VNText Studio on your computer."); next.Enabled = false; break;
+                default: title.Text = T("Hoàn tất cài đặt VNText Studio", "Completing the VNText Studio Setup"); subtitle.Text = T("Setup đã cài xong VNText Studio.", "Setup has finished installing VNText Studio on your computer."); next.Text = T("Hoàn tất", "Finish"); break;
+            }
+        }
+
+        private void RefreshSummary()
+        {
+            var lines = new List<string>();
+            lines.Add(T("Thư mục cài đặt:", "Destination location:"));
+            lines.Add("      " + root);
+            lines.Add("");
+            lines.Add(T("Thư mục Start Menu:", "Start Menu folder:"));
+            lines.Add("      " + (menuRelative ?? T("(không tạo)", "(none)")));
+            lines.Add("");
+            lines.Add(T("Tác vụ bổ sung:", "Additional tasks:"));
+            lines.Add("      " + (desktopShortcut.Checked ? T("Tạo lối tắt trên màn hình nền", "Create a desktop shortcut") : T("(không có)", "(none)")));
+            if (existingInstall)
+            {
+                lines.Add("");
+                lines.Add(T("Thư mục này đã có VNText Studio: tệp chương trình sẽ được sửa/nâng cấp, thư mục data được giữ nguyên.", "This folder already has VNText Studio: program files will be repaired or upgraded and the data folder is preserved."));
+            }
+            summary.Text = String.Join(Environment.NewLine, lines.ToArray());
+        }
+
+        private void Advance()
+        {
+            switch (page)
+            {
+                case 0:
+                    {
+                        string full;
+                        var error = ValidateDestination(destination.Text, vi, out full, out existingInstall);
+                        if (error != null) { Warn(error); return; }
+                        if (existingInstall && MessageBox.Show(
+                            T("Thư mục này đã có bản cài VNText Studio. Tệp chương trình sẽ được sửa hoặc nâng cấp; thư mục data được giữ nguyên. Tiếp tục?",
+                              "This folder already has a VNText Studio install. Program files will be repaired or upgraded; its data folder will be preserved. Continue?"),
+                            T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                            return;
+                        try
+                        {
+                            var volume = new DriveInfo(Path.GetPathRoot(full));
+                            if (payloadBytes > 0 && volume.AvailableFreeSpace < payloadBytes * 1.1)
+                            { Warn(T("Ổ đĩa đã chọn không đủ dung lượng trống.", "The selected drive does not have enough free space.")); return; }
+                        }
+                        catch (Exception) { /* network or unusual volumes: the install itself reports a write failure */ }
+                        root = full;
+                        Go(1);
+                        return;
+                    }
+                case 1:
+                    {
+                        if (menuNone.Checked) { menuRelative = null; Go(2); return; }
+                        string relative;
+                        var error = ValidateMenuFolder(menuFolder.Text, vi, ProgramsFolder(), out relative);
+                        if (error != null) { Warn(error); return; }
+                        menuRelative = relative;
+                        Go(2);
+                        return;
+                    }
+                case 2: Go(3); return;
+                case 3: RunInstall(); return;
+                case 5:
+                    ExitCode = 0;
+                    if (launch.Checked) LaunchApp();
+                    Close();
+                    return;
+            }
+        }
+
+        private void Warn(string text)
+        {
+            MessageBox.Show(text, T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        private void LaunchApp()
+        {
+            try
+            {
+                var info = new ProcessStartInfo(Path.Combine(root, AppExecutableName)) { WorkingDirectory = root, UseShellExecute = false };
+                Process.Start(info);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(T("Không mở được VNText Studio: ", "Could not start VNText Studio: ") + ex.Message,
+                    T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private async void RunInstall()
+        {
+            installing = true;
+            ControlBox = false;
+            Go(4);
+            installStatus.Text = T("Đang xác minh và cài đặt tệp. Việc này có thể mất vài phút; vui lòng chờ.", "Verifying and installing files. This may take a few minutes; please wait.");
+            bar.Style = ProgressBarStyle.Marquee;
+            var installRoot = root;
+            var progress = new Action<int, string>(delegate(int percent, string name)
+            {
+                BeginInvoke(new Action(delegate
+                {
+                    if (bar.Style != ProgressBarStyle.Continuous) bar.Style = ProgressBarStyle.Continuous;
+                    bar.Value = Math.Max(0, Math.Min(100, percent));
+                    installStatus.Text = String.Format(T("Đang cài đặt tệp: {0}%", "Installing files: {0}%"), percent);
+                    installFile.Text = name;
+                }));
+            });
+            string failure = null;
+            try
+            {
+                await Task.Run(delegate
+                {
+                    Directory.CreateDirectory(installRoot);
+                    EnsureSafeDirectory(installRoot);
+                    InstallPayload(installRoot, progress);
+                });
+            }
+            catch (Exception ex) { failure = ex.Message; }
+            installing = false;
+            ControlBox = true;
+            if (failure != null)
+            {
+                MessageBox.Show(T("Setup không cài được VNText Studio:\n", "Setup could not install VNText Studio:\n") + failure,
+                    T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ExitCode = 2;
+                Close();
+                return;
+            }
+            List<string> notes;
+            try { notes = CreateShortcuts(installRoot, desktopShortcut.Checked ? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) : null, ProgramsFolder(), menuRelative, vi); }
+            catch (Exception ex) { notes = new List<string>(); notes.Add(T("Không ghi được bản ghi lối tắt: ", "Could not record shortcuts: ") + ex.Message); }
+            doneText.Text = String.Format(T("VNText Studio đã được cài vào:\n{0}\n\nNhấn Hoàn tất để thoát Setup.", "VNText Studio was installed to:\n{0}\n\nClick Finish to exit Setup."), installRoot);
+            doneNotes.Text = String.Join(Environment.NewLine, notes.ToArray());
+            ExitCode = 0;
+            Go(5);
         }
     }
+#endif
 
     private static bool ConfirmIntelTerms()
     {
@@ -247,7 +720,7 @@ public static class Setup
         return form;
     }
 
-    private static void InstallPayload(string root)
+    private static void InstallPayload(string root, Action<int, string> report)
     {
         using (var zipStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Payload.zip"))
         {
@@ -277,15 +750,20 @@ public static class Setup
                 foreach (var name in next)
                     if (combinedSet.Add(name)) combined.Add(name);
                 WriteInstallManifest(statePath, combined);
+                var copied = 0;
+                var totalEntries = Math.Max(1, zip.Entries.Count);
                 foreach (var entry in zip.Entries)
                 {
+                    copied++;
                     if (entry.FullName == ManifestName) continue;
+                    if (report != null) report(copied * 100 / totalEntries, entry.FullName);
                     var target = SafeTarget(root, entry.FullName);
                     Directory.CreateDirectory(Path.GetDirectoryName(target));
                     using (var input = entry.Open())
                     using (var output = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None))
                         input.CopyTo(output);
                 }
+                if (report != null) report(100, "");
                 var obsolete = new List<string>();
                 foreach (var name in previous)
                 {
@@ -572,6 +1050,7 @@ public static class Setup
         try
         {
             EnsureSafeDirectory(root);
+            RemoveRecordedShortcuts(root, Environment.GetFolderPath(Environment.SpecialFolder.Programs));
             using (var progress = CreateUninstallProgressForm(
                 root, selfPath, Process.GetCurrentProcess().Id, true, null))
             {
