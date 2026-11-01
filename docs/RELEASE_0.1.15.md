@@ -1,6 +1,6 @@
 # Release 0.1.15 — ledger
 
-Trạng thái: **ĐANG CHUẨN BỊ, CHƯA PHÁT HÀNH.** Tag/asset `v0.1.14` (source `002035a`) bất biến. Không push/tag/release trước Brain ACCEPT.
+Trạng thái: **ĐÃ PHÁT HÀNH v0.1.15** (stable/latest, source `4326abd`); updater UI live chưa chứng minh. Tag/asset `v0.1.14` (source `002035a`) bất biến.
 
 ## Authority
 
@@ -22,3 +22,11 @@ Gói các sửa đã được QA native chấp nhận sau 0.1.14: F1–F7 (giao 
 
 - DEV dispose app thử `style-fixed10-0.1.14` và `style-fixed11-0.1.14` để qua trần inventory 150,000 mục khi build 0.1.15 (không đổi guard). Hành động này NẰM NGOÀI quyền bảo toàn tường minh (Owner chỉ cho phép dọn fixed8). Dữ liệu giữ ở `DEV_RUN/style-fixed10-audit-data-014` (59 file, manifest sha256 `19d8edfaa8fa7838c3ef277f183b1065a10d387a478716e87cbd1d778b501e81`) và `DEV_RUN/style-fixed11-audit-data-014` (46 file, `784f3e0356e70a144487234cf1b55d2159ad4e828c21c038312c16377a807ded`); hai app không khôi phục được trừ khi build lại từ source `9248f97` / `bb5c355`. Không dispose thêm app được bảo vệ nào; app thử 0.1.15 (`DEV_RUN/vntext-0.1.15-candidate`) và mọi audit data được giữ.
 - Câu “Terminal cleanup” của ngân sách `release-0.1.15` đã khôi phục đúng quy tắc chuẩn ≤ 1 GiB (bản ghi epoch cũ với câu “pre-release level” chỉ được chấp nhận như bản ghi trước đó, cùng trần 11 GiB). Nếu lịch sử được bảo vệ không cho về ≤ 1 GiB thì cleanup ghi REVIEW_REQUIRED chính xác, không xóa tùy ý, không waive.
+
+## Phát hành và readback (2026-11-01)
+
+- Brain ACCEPT publication (diff không đổi UI so với fixed11 QA ACCEPT; 65 Python + 32 WPF + 2 installer đúng payload; matrix 12/12; verify + 2 smoke). Owner đã cấp quyền phát hành.
+- Tag annotated `v0.1.15` → `4326abd56d8d64e8c9024ca499d68303aa31db67` (peeled, đọc lại từ remote); `main` push fast-forward `8725ddc..27354a2`. Release stable/latest: https://github.com/CaLanh24/VnText/releases/tag/v0.1.15 (không draft, không prerelease), ghi chú tiếng Việt.
+- Readback GitHub: 17 asset, tên/kích thước/sha256 khớp 100% receipt (`DEV_RUN/gatec/readback-015.txt`); Setup.exe 222,514,176 B `fc98d13fea08de94cf6cffe611f6f37787ddb2691bb1c1e3974af263fa861694`; latest API trả `v0.1.15`. Bất biến 0.1.14: tag `v0.1.14^{}` vẫn `002035a`, 15 asset không đổi.
+- Native Setup (Brain, Sky UI, có phạm vi): Intel terms chấp nhận, Setup GUI cài vào `C:\v\TEST_RUN\setup15-install`, hoàn tất đúng đường dẫn; exe `7d70100eac4acde9066c7f5d16e2f0217a3a389ae3805e4ac192b5081562cf05`, `app\RELEASE.json` 0.1.15 / source 4326abd, install manifest đúng; mở app, Cài đặt → Giới thiệu hiện 0.1.15, đóng bình thường, không còn process dưới thư mục cài. **Updater UI vẫn NOT PROVEN** (chờ feed công khai; Brain chạy `updater15-public014` sau publication; file `.vntext-update-source.json` đã đổi tên inert `.inert-backup`).
+- Cleanup đã làm (helper có đăng ký, receipt giữ hash): `setup15-install` (`setup15-install-dispose-receipt.json`), unpack ứng dụng thử 0.1.15 (`cand015-app-dispose-receipt.json`). Cleanup còn chờ sau updater UI: `updater15-public014`, `p15a/release` (asset đã lên GitHub), baseline trees, clone nguồn, inputs; mục tiêu ≤ 1 GiB; lịch sử được bảo vệ không về được thì ghi REVIEW_REQUIRED.
