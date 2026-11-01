@@ -25,6 +25,24 @@ class ResourceSetupTests(unittest.TestCase):
         self.assertEqual(c._task_scope_path(Path('C:/v'),task,'0.1.15'),Path('C:/v/DEV_RUN/resources-dev15'))
         self.assertEqual(c.EPOCH_REBASELINE_AUTHORIZATIONS[grant],(task,'0.1.15',c.DEV_RESOURCES_BUDGET_APPROVAL))
 
+    def test_second_dev_authority_is_distinct_single_use_and_same_task_only(self):
+        from tests.tools import cleanup_work_artifacts as c
+        task = c.DEV_RESOURCES_TASK_ID
+        first, second = c.DEV_RESOURCES_REBASELINE_ID, c.DEV_RESOURCES_REBASELINE_ID_2
+        self.assertNotEqual(first, second)
+        self.assertEqual(second, "call_b9ffa8fad6e54e7ca17ff1e9e5f6480f")
+        self.assertEqual(c.EPOCH_REBASELINE_AUTHORIZATIONS[second], (task, "0.1.15", c.DEV_RESOURCES_REBASELINE_APPROVAL_2))
+        self.assertEqual(c.EPOCH_REBASELINE_AUTHORIZATIONS[first], (task, "0.1.15", c.DEV_RESOURCES_BUDGET_APPROVAL))   # first grant unchanged
+        self.assertNotEqual(c.DEV_RESOURCES_REBASELINE_APPROVAL_2, c.DEV_RESOURCES_BUDGET_APPROVAL)
+        self.assertIn("e7d479354c09a10adeea844716803ff767afc7e5", c.DEV_RESOURCES_REBASELINE_APPROVAL_2)
+        self.assertIn("no push, release, tag or version", c.DEV_RESOURCES_REBASELINE_APPROVAL_2.lower())
+        # same-task continuation only: no other task may use it, and the temporary scope/limit are unchanged
+        self.assertTrue(c._rebaseline_prior_task_allowed(task, task, second))
+        self.assertFalse(c._rebaseline_prior_task_allowed("release-0.1.14", task, second))
+        self.assertFalse(c._rebaseline_prior_task_allowed(task, "release-0.1.15", second))
+        self.assertEqual(c._release_task_budget_limit(task), 3 * 1024 ** 3)
+        self.assertEqual(c._task_scope_path(Path("C:/v"), task, "0.1.15"), Path("C:/v/DEV_RUN/resources-dev15"))
+
     def test_renpy_inventory_does_not_scan_engine_artwork(self):
         from vntext.image_text import discover_images
         with TemporaryDirectory(dir=WORK) as temp:

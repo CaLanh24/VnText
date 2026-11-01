@@ -226,6 +226,17 @@ RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL = (
 DEV_RESOURCES_TASK_ID = "dev-resources-0.1.15"
 DEV_RESOURCES_BUDGET_APPROVAL = "Owner call_d07908f4c24b4411b3e2a35c409d6634: Cho phép, hoàn tất gate và app DEV; one no-delete metadata rebaseline and a separate DEV scope, 3 GiB, SDK/OCR/green-style batch only; CAS/rollback/eight hops unchanged, preserve user data, no push/release."
 DEV_RESOURCES_REBASELINE_ID = "call_d07908f4c24b4411b3e2a35c409d6634"
+# Second, independent single-use authority for the same DEV task (the first chain ended after the eighth ordinary hop).  The Owner's DIRECT reply
+# is recorded verbatim; it never reuses the first DEV grant, which stays consumed.
+DEV_RESOURCES_REBASELINE_ID_2 = "call_b9ffa8fad6e54e7ca17ff1e9e5f6480f"
+DEV_RESOURCES_REBASELINE_APPROVAL_2 = (
+    "Owner call_b9ffa8fad6e54e7ca17ff1e9e5f6480f answered 'Cho phép một lần rebaseline và hoàn tất app DEV', authorizing ONE additional no-delete "
+    "dev-resources-0.1.15 epoch metadata rebaseline, bounded to the prepared source e7d479354c09a10adeea844716803ff767afc7e5 and its "
+    "authority/focused-prerequisite descendants, the focused Ren'Py archive/dynamic/protocol/WPF-severity gates and ONE local DEV rebuild of "
+    "DEV_RUN/resources-dev15 inside the temporary 3 GiB scope. No push, release, tag or version change. The first DEV grant and every earlier approval "
+    "remain consumed; full chain history/CAS/inventory/rollback/clean-source/no-writer guards, the eight-hop limit and the approval-history depth bound "
+    "are unchanged; no history or user data is deleted and no validator or protection is relaxed."
+)
 
 
 def _task_scope_path(root, task_id, version):
@@ -466,6 +477,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    DEV_RESOURCES_REBASELINE_ID_2: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_REBASELINE_APPROVAL_2),
     DEV_RESOURCES_REBASELINE_ID: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_2: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_2),
