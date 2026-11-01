@@ -234,11 +234,11 @@ internal static partial class Program
             vm.TestMarkTaskTerminal("scan-task");
             // Vietnamese is exact again after a live switch, and English returns on the way back.
             UiText.SetLanguage("vi"); UiText.Apply(dialog); vm.RaiseImageLanguageText(); dialog.UpdateLayout(); PumpFixture(80);
-            AssertEqual("Chọn ảnh, chạy OCR, sửa và duyệt từng vùng rồi dựng ảnh.", ((TextBlock)panel.FindName("LeadText")).Text);
+            AssertEqual("Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả.", ((TextBlock)panel.FindName("LeadText")).Text);
             Require(((TextBlock)panel.FindName("StatusLine")).Text.StartsWith("Không mở được review:", StringComparison.Ordinal), "Vietnamese status is exact after switching back");
             Require(grid.Columns[0].Header as string == "TEXT OCR" && grid.Columns[1].Header as string == "BẢN DỊCH", "Vietnamese grid headers are exact");
             UiText.SetLanguage("en"); UiText.Apply(dialog); vm.RaiseImageLanguageText(); dialog.UpdateLayout(); PumpFixture(80);
-            Require(grid.Columns[0].Header as string == "OCR TEXT" && ((TextBlock)panel.FindName("LeadText")).Text.StartsWith("Choose an image", StringComparison.Ordinal), "English returns after the round trip");
+            Require(grid.Columns[0].Header as string == "OCR TEXT" && ((TextBlock)panel.FindName("LeadText")).Text.StartsWith("Find text-bearing images", StringComparison.Ordinal), "English returns after the round trip");
             Scan("after the language round trip");
             dialog.Close();
             owner.Close();

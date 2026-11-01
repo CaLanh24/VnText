@@ -39,6 +39,7 @@ public sealed partial class MainViewModel
         Raise(nameof(LocalProcessingLabel)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(ToastMessage));
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
+        Raise(nameof(ResourceStatus)); Raise(nameof(ProgressSubtitle));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
         foreach (var option in CsvFilterModes.Options.Concat(CsvBulkScopeOptions)) option.RefreshLabel();
         Raise(nameof(HeroTitle)); Raise(nameof(HeroHint)); Raise(nameof(SelectedTab));

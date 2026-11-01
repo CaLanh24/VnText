@@ -1157,7 +1157,10 @@
                                                     <Button Content="Chọn SDK đã cài…" Command="{Binding ChooseRenpySdkCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                     <Button Content="Hủy" Command="{Binding CancelCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                 </WrapPanel>
-                                                <TextBlock Text="{Binding ProgressSubtitle}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" />
+                                                <ProgressBar x:Name="ResourceProgressBar" Minimum="0" Maximum="100" Value="{Binding ProgressPercent, Mode=OneWay}"
+                                                             Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}"
+                                                             Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,0,0,8" />
+                                                <TextBlock Text="{Binding ProgressSubtitle, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" />
                                             </StackPanel>
                                         </Border>
                                         <Border Style="{StaticResource SettingsCardStyle}" Padding="0">

@@ -324,7 +324,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Visibility="{Binding RenpySdkOptionsVisible, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn("RenpyGameDetector.HasSdkRecoveryEvidence", view_model)
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
-        self.assertIn("Tải công cụ rồi lấy text", xaml)
+        self.assertIn("Mở tài nguyên trong Cài đặt", xaml)      # prerequisites are prepared in Settings > Data; Extract no longer downloads implicitly
+        self.assertNotIn("Tải công cụ rồi lấy text", xaml)
         self.assertIn("Tiếp tục, chỉ xuất để xem lại", xaml)
         self.assertIn("chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch và luôn chưa đầy đủ", xaml)
         self.assertNotIn("không dùng parser thay thế", xaml)
@@ -898,7 +899,11 @@ class WpfWorkflowTests(unittest.TestCase):
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
         analyze = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Analyze.cs").read_text(encoding="utf-8")
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
-        self.assertIn('IsExpanded="{Binding AnalyzeResultsExpanded, Mode=TwoWay}"', xaml)
+        # Owner 2026-11-01: engine analysis details are always visible (no Details dropdown) and detection is automatic (no manual Analyze button).
+        self.assertIn('x:Name="AnalyzeDetailsHeading"', xaml)
+        self.assertNotIn('Header="Chi tiết phân tích"', xaml)
+        self.assertNotIn('IsExpanded="{Binding AnalyzeResultsExpanded', xaml)
+        self.assertNotIn('x:Name="AnalyzeButton"', xaml)
         self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
         self.assertIn('GetRenpyEvidenceKind(InputPath', analyze)
