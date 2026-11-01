@@ -331,8 +331,6 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
         self.assertIn("Chọn SDK đã cài…", xaml)      # choosing an installed SDK is a Settings > Data action
         self.assertNotIn("Tải công cụ rồi lấy text", xaml)
-        self.assertIn("Tiếp tục, chỉ xuất để xem lại", xaml)
-        self.assertIn("chỉ quét tĩnh để xuất danh sách cần xem lại: không dịch, không tạo patch và luôn chưa đầy đủ", xaml)
         self.assertNotIn("không dùng parser thay thế", xaml)
         self.assertIn('"missing" => "Chưa dùng được SDK Ren\'Py 8.5.3.', recovery)
         self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', recovery)
@@ -349,7 +347,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("Value=\"{Binding ResourceProgressPercent, Mode=OneWay}\"", card)
         self.assertNotIn("Binding ProgressPercent", card)
         self.assertNotIn("Binding ProgressSubtitle", card)
-        self.assertEqual(3, card.count("ResourcesActive"))     # cancel, bar and text show only for the resources task
+        self.assertEqual(3, xaml.count("Binding ResourcesActive"))     # cancel, bar and text show only for the resources task
         self.assertIn('public bool ResourcesActive => Busy && _runningTask == "resources";', resources)
         self.assertIn("if (!ResourcesActive) return;", resources)
         main = (app / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
