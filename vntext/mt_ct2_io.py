@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import re
 import time
+
+from vntext import mt_check as _mt_check
 
 from vntext.mt_ct2_constants import (
     csv,
@@ -23,6 +26,60 @@ from vntext.mt_ct2_constants import (
 
 def _load_csv(csv_path: Path) -> tuple[list[str], list[dict]]:
     return read_csv_rows_file(csv_path)
+
+
+_SENTENCE_GAP = re.compile(r"(?<=[.!?…])([\"'”’)\]]*)\s+(?=[\"'“‘(\[]*[A-Z0-9])")
+_ABBREVIATIONS = frozenset({"mr", "mrs", "ms", "dr", "st", "vs", "prof", "sr", "jr", "no", "etc"})
+
+
+def split_sentences(text: str) -> list[str]:
+    """Split one text fragment at sentence ends (``. ! ? …`` followed by an upper-case/digit/quote start); abbreviations such as ``Mr.`` do not split."""
+    pieces: list[str] = []
+    start = 0
+    for match in _SENTENCE_GAP.finditer(text):
+        head = text[start:match.start() + len(match.group(1))]
+        words = head.rstrip(".!?…\"'”’)]").split()
+        if text[match.start() - 1:match.start()] == "." and words and words[-1].casefold() in _ABBREVIATIONS:
+            continue
+        pieces.append(head)
+        start = match.end()
+    pieces.append(text[start:])
+    return [piece for piece in pieces if piece.strip()]
+
+
+def translate_many_by_sentence(translator, cores: list[str]) -> list[str]:
+    """The MT model drops whole sentences when handed a multi-sentence fragment; translate sentence by sentence and rejoin.
+
+    Single-sentence fragments (UI strings, short lines) go through unchanged.  An empty model answer for a sentence keeps that source sentence, so
+    nothing is silently lost.
+    """
+    split = [split_sentences(core) for core in cores]
+    flat: list[str] = []
+    index: dict[str, int] = {}
+    for sentences in split:
+        if len(sentences) < 2:
+            continue
+        for sentence in sentences:
+            if sentence not in index:
+                index[sentence] = len(flat)
+                flat.append(sentence)
+    whole = [core for core, sentences in zip(cores, split) if len(sentences) < 2]
+    outputs = list(translator.translate_many(whole + flat)) if (whole or flat) else []
+    if len(outputs) != len(whole) + len(flat):
+        return list(translator.translate_many(cores))
+    whole_out, flat_out = outputs[:len(whole)], outputs[len(whole):]
+    result: list[str] = []
+    whole_iter = iter(whole_out)
+    for core, sentences in zip(cores, split):
+        if len(sentences) < 2:
+            result.append(next(whole_iter))
+            continue
+        joined = []
+        for sentence in sentences:
+            translated = str(flat_out[index[sentence]] or "").strip()
+            joined.append(translated if translated else sentence.strip())
+        result.append(" ".join(joined))
+    return result
 
 
 def _join_pieces(pieces: list[str]) -> str:
@@ -104,6 +161,8 @@ def _batch_translate_chunk(
 
     for ri, row in enumerate(work_rows):
         src = row["source_text"]
+        if src.strip():
+            _mt_check.ensure_runtime_common_words()                 # first row that really goes to the model: probe the model once
         variants = split_randpick_variants(src)
         if variants:
             variant_parts: list[list[tuple[str, str]]] = []
@@ -143,7 +202,7 @@ def _batch_translate_chunk(
                 seen[core] = len(unique)
                 unique.append(core)
             index_map.append(seen[core])
-        unique_out = translator.translate_many(unique)
+        unique_out = translate_many_by_sentence(translator, unique)
         preserve = moan_preserve_indices(unique)
         for idx in preserve:
             unique_out[idx] = unique[idx]

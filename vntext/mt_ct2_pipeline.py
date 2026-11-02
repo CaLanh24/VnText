@@ -588,8 +588,63 @@ def _cache_validated_candidate(
 
 
 
+_VIETNAMESE_MARK = re.compile("[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]")
+_TITLE_WORD = re.compile(r"\b[A-Z][a-z]{2,}\b")
+
+
+def _discover_common_words(translator, rows, user_glossary) -> set[str]:
+    """Title-case words that are ordinary vocabulary, proven by the CT2 model itself, not by a bundled word list.
+
+    The name guard keeps Title-case tokens byte-for-byte; sentence-initial adverbs ("Clearly", "Naturally") and common nouns ("Tavern",
+    "Americans") were mistaken for names and left in English.  A real name is returned unchanged by the model; a common word is translated
+    consistently in both letter cases.  Package/user glossary terms are never touched.
+    """
+    glossary_text = " ".join(str(key) for key in (user_glossary or {})).casefold()
+    tokens = sorted({
+        word for row in rows for word in _TITLE_WORD.findall(str(row.get("source_text") or ""))
+        if word.casefold() not in glossary_text
+    })
+    if not tokens or len(tokens) > 2000:
+        return set()
+    try:
+        capital = translator.translate_many(tokens)
+        lower = translator.translate_many([word.lower() for word in tokens])
+    except Exception:
+        return set()
+    common: set[str] = set()
+    for word, up, low in zip(tokens, capital, lower):
+        up, low = str(up or "").strip().strip(".,!?").casefold(), str(low or "").strip().strip(".,!?").casefold()
+        if (
+            up and low and up != word.casefold() and low != word.casefold()
+            and len(up.split()) <= 4 and len(low.split()) <= 4
+            # both letter cases agree on a word, or the lower-case form is a real Vietnamese word (diacritics) while the capitalised form was also
+            # changed; names stay unchanged in at least one case (Chang, Jacob, Nin) and garbled unknowns (Bambi) have neither.
+            and (up == low or set(up.split()) & set(low.split()) or _VIETNAMESE_MARK.search(low))
+        ):
+            common.add(word.casefold())
+    return common
+
+
+def run_ct2_translate(*args, **kwargs) -> dict:
+    from vntext import mt_check as _mt_check
+
+    try:
+        return _run_ct2_translate_impl(*args, **kwargs)
+    finally:
+        _mt_check.set_runtime_common_words(())
+
+
+def run_ct2_translate_keys(*args, **kwargs) -> dict:
+    from vntext import mt_check as _mt_check
+
+    try:
+        return _run_ct2_translate_keys_impl(*args, **kwargs)
+    finally:
+        _mt_check.set_runtime_common_words(())
+
+
 @_close_caches_on_error
-def run_ct2_translate(
+def _run_ct2_translate_impl(
     csv_path: str | Path,
     *,
     model_dir: str | Path | None = None,
@@ -830,6 +885,9 @@ def run_ct2_translate(
         translator = adapt_ct2_translator(get_translator(explicit_model), explicit_model)
     else:
         translator = model_adapter
+    from vntext import mt_check as _mt_check_names
+
+    _mt_check_names.set_runtime_common_words_provider(lambda: _discover_common_words(translator, rows, user_glossary))
     cfg = dict(getattr(translator, "config", {}) or {})
     batch_size = max(1, int(cfg.get("batch_size", 4) or 4))
     inter_threads = max(1, int(cfg.get("inter_threads", 1) or 1))
@@ -1272,7 +1330,7 @@ def run_ct2_translate(
 
 
 @_close_caches_on_error
-def run_ct2_translate_keys(
+def _run_ct2_translate_keys_impl(
     csv_path: str | Path,
     keys: list[str],
     *,
@@ -1386,6 +1444,9 @@ def run_ct2_translate_keys(
         translator = adapt_ct2_translator(get_translator(explicit_model), explicit_model)
     else:
         translator = model_adapter
+    from vntext import mt_check as _mt_check_names
+
+    _mt_check_names.set_runtime_common_words_provider(lambda: _discover_common_words(translator, rows, user_glossary))
     cfg = dict(getattr(translator, "config", {}) or {})
     batch_size = max(1, int(cfg.get("batch_size", 4) or 4))
     metadata = dict(getattr(translator, "metadata", lambda: {})() or {})

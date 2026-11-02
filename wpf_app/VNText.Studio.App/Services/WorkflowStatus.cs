@@ -112,9 +112,10 @@ public static class WorkflowStatus
             using var doc = JsonDocument.Parse(File.ReadAllText(path));
             var status = doc.RootElement;
             var ready = status.GetProperty("main").GetInt32() > 0
-                && status.GetProperty("review").GetInt32() == 0
                 && status.GetProperty("errors").GetInt32() == 0;
             if (!ready) return false;
+            var review = status.GetProperty("review").GetInt32();
+            if (review != 0 && !(status.GetProperty("complete").GetBoolean() == false && ScopedPatchEligible(status))) return false;
             if (status.GetProperty("complete").GetBoolean() && status.GetProperty("status").GetString() == "COMPLETE") return true;
             return ScopedPatchEligible(status);
         }
@@ -128,13 +129,15 @@ public static class WorkflowStatus
         if (status.GetProperty("status").GetString() != "PARTIAL" || status.GetProperty("complete").GetBoolean()) return false;
         if (!status.TryGetProperty("patch_scope", out var scope) || scope.GetString() != "VERIFIED_MAIN_SUBSET") return false;
         if (!status.TryGetProperty("native_accounting_complete", out var accounted) || accounted.ValueKind != JsonValueKind.True) return false;
+        var unpromoted = 0;
         if (!status.TryGetProperty("limitations", out var limits) || limits.ValueKind != JsonValueKind.Array || limits.GetArrayLength() == 0) return false;
         foreach (var item in limits.EnumerateArray())
         {
             var code = item.TryGetProperty("code", out var c) ? c.GetString() : null;
-            if (code != "RUNTIME_DYNAMIC_UNRESOLVED" && code != "ARCHIVE_SOURCE_RUNTIME_UNPROVEN") return false;
+            if (code != "RUNTIME_DYNAMIC_UNRESOLVED" && code != "ARCHIVE_SOURCE_RUNTIME_UNPROVEN" && code != "REVIEW_SCREEN_CANDIDATES_UNPROMOTED") return false;
+            if (code == "REVIEW_SCREEN_CANDIDATES_UNPROMOTED" && item.TryGetProperty("count", out var n) && n.ValueKind == JsonValueKind.Number) unpromoted += n.GetInt32();
         }
-        return true;
+        return status.GetProperty("review").GetInt32() == unpromoted;
     }
 
     public static TranslateProgress EvaluateTranslateProgress(string packageDir)

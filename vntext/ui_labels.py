@@ -57,6 +57,17 @@ UI_LABEL_CATALOG: dict[str, str] = {
     "equipment": "Trang bị",
     "skills": "Kỹ năng",
     "status": "Trạng thái",
+    "display": "Hiển thị",
+    "window": "Cửa sổ",
+    "keyboard": "Bàn phím",
+    "mouse": "Chuột",
+    "gamepad": "Tay cầm",
+    "calibrate": "Hiệu chỉnh",
+    "skipping": "Đang bỏ qua",
+    "menu": "Menu",
+    "video": "Video",
+    "mute all": "Tắt tiếng tất cả",
+    "your name": "Tên của bạn",
 }
 
 _TOKENS = re.compile(r"[\[\]{}<>%\\]|\bUI:")
@@ -76,7 +87,8 @@ def is_ui_label_context(context: str) -> bool:
     lowered = context.lower()
     if "choice" in lowered or "dialog" in lowered:
         return False
-    return context.startswith("UI:") or "textbutton" in lowered or lowered.startswith("screen") or ":screen" in lowered
+    # ``:string:`` is the Ren'Py translatable-string table (``_("...")`` in screens/gui); story dialogue and menu choices never use it.
+    return context.startswith("UI:") or "textbutton" in lowered or lowered.startswith("screen") or ":screen" in lowered or ":string:" in lowered
 
 
 def resolve_ui_label_translation(src: str, context: str = "") -> str | None:

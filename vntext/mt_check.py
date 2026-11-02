@@ -330,6 +330,31 @@ _FRAME_PREPOSITIONS = frozenset('to at in on for with from into onto up down out
 _SENTENCE_END_BEFORE = re.compile(r"(?:^|[.!?…])[\s\"'“‘(\[]*$")
 
 
+_RUNTIME_COMMON_WORDS: set[str] = set()
+
+
+_RUNTIME_COMMON_PROVIDER = []
+
+
+def set_runtime_common_words(words) -> None:
+    """Per-run set of Title-case words the translation model itself proves to be common vocabulary (see mt_ct2_pipeline); never persisted."""
+    _RUNTIME_COMMON_PROVIDER.clear()
+    _RUNTIME_COMMON_WORDS.clear()
+    _RUNTIME_COMMON_WORDS.update(str(word).casefold() for word in (words or ()))
+
+
+def set_runtime_common_words_provider(provider) -> None:
+    """Defer the model probe until the first row that really goes to the model (memory/glossary hits never call it)."""
+    set_runtime_common_words(())
+    _RUNTIME_COMMON_PROVIDER.append(provider)
+
+
+def ensure_runtime_common_words() -> None:
+    if _RUNTIME_COMMON_PROVIDER:
+        provider = _RUNTIME_COMMON_PROVIDER.pop()
+        _RUNTIME_COMMON_WORDS.update(str(word).casefold() for word in (provider() or ()))
+
+
 def source_proper_name_tokens(src, whitelist=None):
     """Return conservative source name-like tokens safe to retain in MT output.
 
@@ -338,7 +363,7 @@ def source_proper_name_tokens(src, whitelist=None):
     tokens and a lowercase location name in an explicit ``in/at ... city``
     context are eligible; ordinary unknown lowercase prose is not.
     """
-    known = set(whitelist or ()) | ENG_STRONG | ENG_WEAK
+    known = set(whitelist or ()) | ENG_STRONG | ENG_WEAK | _RUNTIME_COMMON_WORDS
     out = set()
     from vntext.mt_translation_constants import generic_term_translation
 

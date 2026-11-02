@@ -1307,6 +1307,11 @@ def run_extract_task(
         # never discovery errors; only genuine failures stay in extract_errors.
         limitations = [dict(item) for item in (stats.get("limitations") or []) if isinstance(item, dict) and str(item.get("message") or "").strip()]
         runtime_dynamic = [item for item in (stats.get("renpy_static_ui_runtime_unresolved") or []) if isinstance(item, dict)]
+        # Review rows that are ONLY unpromoted static screen candidates are excluded coverage of the verified subset, not a blocker for it.
+        screen_review = sum(1 for item in (review or []) if (item.get("import_method") if isinstance(item, dict) else getattr(item, "import_method", "")) == "renpy_screen_candidate")
+        if review_count and screen_review == review_count and not renpy_sdk_missing:
+            limitations.append({"code": "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", "count": review_count,
+                                "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) chỉ nằm trong review_only.csv, không dịch và không patch."})
         dynamic_note = " ".join(str(item["message"]) for item in limitations)
         if runtime_dynamic:
             (Path(out) / "renpy_runtime_dynamic.json").write_text(json.dumps(
@@ -1362,8 +1367,10 @@ def run_extract_task(
         # keeps the verified MAIN subset patchable; the PARTIAL coverage and the excluded items stay on record.
         from vntext.patch_gate import EXPECTED_PATCH_LIMITATIONS
 
+        screen_review_allowed = sum(int(item.get("count") or 0) for item in limitations if item.get("code") == "REVIEW_SCREEN_CANDIDATES_UNPROMOTED")
+
         scoped_patch = bool(
-            limitations and not extract_errors and not renpy_sdk_missing and not review_count and not empty
+            limitations and not extract_errors and not renpy_sdk_missing and review_count == screen_review_allowed and not empty
             and native_accounting_complete and main_count > 0
             and all(item.get("code") in EXPECTED_PATCH_LIMITATIONS for item in limitations)
         )

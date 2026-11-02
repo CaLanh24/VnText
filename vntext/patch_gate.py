@@ -514,7 +514,10 @@ def load_review_only_issue_reasons(package_dir: Path) -> dict[str, str]:
 
 # Owner decision (2026-11-02, scoped): coverage completeness and per-entry patch eligibility are separate facts.  A PARTIAL extraction whose ONLY
 # open items are the expected static-extraction limitations may patch the already verified MAIN rows; the PARTIAL coverage stays on record.
-EXPECTED_PATCH_LIMITATIONS = frozenset({"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN"})
+EXPECTED_PATCH_LIMITATIONS = frozenset({"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN", "REVIEW_SCREEN_CANDIDATES_UNPROMOTED"})
+# Real-game finding (2026-11-02): static screen text candidates (``renpy_screen_candidate``: formats such as "[page]", "<", "{#auto_page}A") stay review-only
+# evidence, are never MAIN and never patched; when they are the ONLY review rows they count as excluded coverage, not as a reason to block the verified subset.
+REVIEW_SCREEN_LIMITATION = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED"
 
 
 def scoped_patch_eligible(status: dict) -> bool:
@@ -530,9 +533,10 @@ def scoped_patch_eligible(status: dict) -> bool:
     counts = (status.get("main"), status.get("review"), status.get("errors"))
     if any(isinstance(value, bool) or not isinstance(value, int) for value in counts):
         return False
+    unpromoted = sum(int(item.get("count") or 0) for item in limitations if item.get("code") == REVIEW_SCREEN_LIMITATION)
     return (
         status.get("patch_scope") == "VERIFIED_MAIN_SUBSET"
-        and counts[0] > 0 and counts[1] == 0 and counts[2] == 0
+        and counts[0] > 0 and counts[1] == unpromoted and counts[2] == 0
         and status.get("native_accounting_complete") is True
         and status.get("severity") == "warning"
     )

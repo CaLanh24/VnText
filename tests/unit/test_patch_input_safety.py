@@ -116,6 +116,12 @@ class PatchInputSafetyTests(unittest.TestCase):
         for name, change in broken.items():
             with self.subTest(name):
                 self.assertFalse(scoped_patch_eligible({**self.SCOPED, **change}))
+        unpromoted = [{"code": "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", "count": 8, "message": "8 static screen candidates"}]
+        screen_only = {**self.SCOPED, "review": 8, "limitations": self.SCOPED["limitations"] + unpromoted}
+        self.assertTrue(scoped_patch_eligible(screen_only))                                  # review rows that are ONLY unpromoted screen candidates
+        self.assertFalse(scoped_patch_eligible({**screen_only, "review": 9}))                # one other review row blocks
+        self.assertFalse(scoped_patch_eligible({**screen_only, "review": 7}))                # the count must match exactly
+        self.assertFalse(scoped_patch_eligible({**self.SCOPED, "review": 8}))                # review rows without the evidence limitation
         (self.package / "extract_status.json").write_text(json.dumps({**self.SCOPED, "errors": 1, "severity": "error"}), encoding="utf-8")
         before = (self.source.read_bytes(), self.csv.read_bytes())
         done = self.run_worker_patch()

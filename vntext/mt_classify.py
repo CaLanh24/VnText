@@ -641,6 +641,7 @@ def classify_row(row: dict) -> tuple[str, str]:
     if (
         len(src.strip().split()) == 1
         and mt_check.source_proper_name_tokens(src)
+        and resolve_ui_label_translation(src, ctx) is None          # a catalog UI label (Back, Exit, Keyboard) is not a name
         and not str(ctx).lower().endswith(":choice")
         and str(row.get("import_method") or "") != "naninovel_choice"
     ):
