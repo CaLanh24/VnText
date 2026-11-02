@@ -3502,6 +3502,28 @@ class CleanupLifecycleTests(unittest.TestCase):
             tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
         ))
 
+    def test_release_0_1_16_budget_is_a_measured_separate_task_not_the_dev_cap_nor_the_0_1_15_cap(self):
+        task = cleanup.RELEASE_TASK_0116_BUDGET_ID
+        self.assertEqual("release-0.1.16", task)
+        self.assertNotEqual(task, cleanup.RELEASE_TASK_016_BUDGET_ID)            # the historical 0.1.6 task keeps its own id
+        self.assertEqual(("release-0.1.16", "0.1.16", cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL), cleanup._release_budget_spec(task))
+        self.assertEqual(6400 * 1024 ** 2, cleanup._release_task_budget_limit(task))
+        self.assertLess(cleanup._release_task_budget_limit(task), cleanup.RELEASE_TASK_015_BUDGET_LIMIT_BYTES)     # 11 GiB is not inherited
+        self.assertGreater(cleanup._release_task_budget_limit(task), cleanup.DEV_RESOURCES_BUDGET_LIMIT_BYTES)
+        self.assertIn("Terminal cleanup returns to at most 1 GiB", cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL)
+        self.assertIn("No epoch rebaseline authority", cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL)
+        self.assertTrue(cleanup._epoch_transition_tasks_compatible(cleanup.DEV_RESOURCES_TASK_ID, task))
+        self.assertFalse(cleanup._epoch_transition_tasks_compatible(task, cleanup.DEV_RESOURCES_TASK_ID))
+        self.assertFalse(cleanup._epoch_transition_tasks_compatible(cleanup.RELEASE_TASK_015_BUDGET_ID, task))
+        self.assertEqual(Path(cleanup.ROOT / "RELEASE_RUN" / "candidate-0.1.16").resolve(), cleanup._task_scope_path(cleanup.ROOT, task, "0.1.16"))
+        self.assertTrue(cleanup._release_budget_record_is_valid(
+            {"limit_bytes": cleanup.RELEASE_TASK_0116_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL}, task, cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL))
+
+    def test_terminal_state_accepts_pre_owner_epoch_directories_but_not_other_retained_payload(self):
+        source = Path(cleanup.__file__).read_text(encoding="utf-8")
+        self.assertIn('owner in {"artifact_registry_epoch", "cleanup_work_artifacts.py"}', source)
+        self.assertIn('relative.startswith("artifact-registry-epochs/")', source)
+
     def test_dev_resources_expanded_budget_is_3_25_gib_and_preserves_old_epoch_verifiability(self):
         task_id = cleanup.DEV_RESOURCES_TASK_ID
         previous = {"limit_bytes": 3 * 1024 ** 3, "owner_approval": cleanup.DEV_RESOURCES_BUDGET_APPROVAL}

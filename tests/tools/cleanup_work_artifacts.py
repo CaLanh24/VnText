@@ -184,6 +184,19 @@ RELEASE_TASK_014_BUDGET_APPROVAL = (
 )
 
 RELEASE_TASK_015_BUDGET_ID = "release-0.1.15"
+# Release 0.1.16 (NOT 0.1.6: RELEASE_TASK_016_BUDGET_ID below is the historical 0.1.6 task).
+RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
+RELEASE_TASK_0116_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2  # 6.25 GiB, measured below; Brain/Owner confirm before the first allocation
+RELEASE_TASK_0116_BUDGET_APPROVAL = (
+    "Owner 2026-11-02 answered 'nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release' and authorized version 0.1.16 (next patch after the "
+    "immutable public 0.1.15), its Setup/updater validation and publication only after Brain ACCEPT. The DEV 3.25 GiB expansion is not inherited "
+    "and neither is the 11 GiB of 0.1.15. DEV measured: 3.07 GiB existing non-exempt (3,292,380,983 B at the DEV build), about 0.06 GiB for two "
+    "ordinary epoch hops, about 0.75 GiB for the verified public 0.1.15 baseline (Setup 222.5 MB plus unpacked tree), about 0.3 GiB for the "
+    "candidate build/package and about 1.5 GiB of isolated Setup/updater validation copies at peak, plus a 0.5 GiB reserve: a temporary "
+    "6.25 GiB non-exempt ceiling for the exact registered candidate-0.1.16. Terminal cleanup returns to at most 1 GiB, shared .dev-env stays at "
+    "most 6 GiB, and all history, cache and user data are preserved (protected history that cannot be removed is reported REVIEW_REQUIRED, "
+    "never waived or redefined). No epoch rebaseline authority of an earlier release is inherited."
+)
 RELEASE_TASK_015_BUDGET_LIMIT_BYTES = 11 * 1024 ** 3
 RELEASE_TASK_015_BUDGET_APPROVAL = (
     "Owner 2026-11-01 answered 'Cho phép, lên 0.1.15 rồi kiểm Setup/updater và release luôn đi. Xong nhớ clean up. đừng dừng lại cho đến khi release' "
@@ -270,6 +283,8 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
         return task_id, "0.1.12", RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_013_BUDGET_ID:
         return task_id, "0.1.13", RELEASE_TASK_013_BUDGET_APPROVAL
+    if task_id == RELEASE_TASK_0116_BUDGET_ID:
+        return task_id, "0.1.16", RELEASE_TASK_0116_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_015_BUDGET_ID:
         return task_id, "0.1.15", RELEASE_TASK_015_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_014_BUDGET_ID:
@@ -290,7 +305,7 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
 def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
     """Allow same-release continuation and the Owner-authorized 0.1.12 -> 0.1.13 and 0.1.13 -> 0.1.14 handoffs."""
 
-    return previous_task_id == target_task_id or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
+    return previous_task_id == target_task_id or (previous_task_id == DEV_RESOURCES_TASK_ID and target_task_id == RELEASE_TASK_0116_BUDGET_ID) or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
         previous_task_id == RELEASE_TASK_012_BUDGET_ID
         and target_task_id == RELEASE_TASK_013_BUDGET_ID
     ) or (
@@ -329,6 +344,8 @@ def _release_task_budget_limit(task_id: str) -> int:
         return RELEASE_TASK_013_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_014_BUDGET_ID:
         return RELEASE_TASK_014_BUDGET_LIMIT_BYTES
+    if task_id == RELEASE_TASK_0116_BUDGET_ID:
+        return RELEASE_TASK_0116_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_015_BUDGET_ID:
         return RELEASE_TASK_015_BUDGET_LIMIT_BYTES
     return RELEASE_TASK_BUDGET_LIMIT_BYTES
@@ -1051,7 +1068,13 @@ def _retained_epoch_metadata_terminal_state(before: dict | None) -> dict:
         kind = str(item.get("kind") or "")
         allowed = (
             relative == "artifacts_manifest.json"
-            or (relative.startswith("artifact-registry-epochs/") and owner == "artifact_registry_epoch")
+            or (
+                relative.startswith("artifact-registry-epochs/")
+                # Epochs created before the registry epoch owner existed are registered RETAINED by cleanup_work_artifacts.py itself; the
+                # chain (policy, ledger, rollback, hashes, approval history) was verified above, so their owner is accepted read-only.
+                and owner in {"artifact_registry_epoch", "cleanup_work_artifacts.py"}
+                and kind in {"file", "directory"}
+            )
             or (relative == "artifact-registry-epochs" and owner == "cleanup_work_artifacts.py")
             or (
                 relative == "cleanup_post_test.jsonl"
@@ -3897,7 +3920,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID):
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -3906,7 +3929,7 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID):
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
@@ -5594,7 +5617,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",
