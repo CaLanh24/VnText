@@ -28,7 +28,7 @@ def _font_path():
 def _is_all_caps(text):
     """UI art is usually ALL CAPS (NEW GAME); the MT model leaves such text unchanged or mistranslates it."""
     letters = [ch for ch in text if ch.isalpha()]
-    return len(letters) >= 2 and all(ch.isupper() for ch in letters)
+    return len(letters) >= 3 and all(ch.isupper() for ch in letters)      # 2-letter tokens (HP, MP, OK) are abbreviations, left as they are
 
 
 def translate_region_texts(translator, texts):

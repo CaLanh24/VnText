@@ -22,7 +22,7 @@ class ResourceSetupTests(unittest.TestCase):
         self.assertFalse(c._rebaseline_prior_task_allowed('release-0.1.15',task,'wrong-grant'))
         self.assertFalse(c._rebaseline_prior_task_allowed(task,'release-0.1.15',grant))
         self.assertEqual(c._release_task_budget_limit(task),3*1024**3)
-        self.assertEqual(c._task_scope_path(Path('C:/v'),task,'0.1.15'),Path('C:/v/DEV_RUN/resources-dev15'))
+        self.assertEqual(c._task_scope_path(c.ROOT,task,'0.1.15'),(c.ROOT/'DEV_RUN'/'resources-dev15').resolve())
         self.assertEqual(c.EPOCH_REBASELINE_AUTHORIZATIONS[grant],(task,'0.1.15',c.DEV_RESOURCES_BUDGET_APPROVAL))
 
     def test_second_dev_authority_is_distinct_single_use_and_same_task_only(self):
@@ -41,7 +41,7 @@ class ResourceSetupTests(unittest.TestCase):
         self.assertFalse(c._rebaseline_prior_task_allowed("release-0.1.14", task, second))
         self.assertFalse(c._rebaseline_prior_task_allowed(task, "release-0.1.15", second))
         self.assertEqual(c._release_task_budget_limit(task), 3 * 1024 ** 3)
-        self.assertEqual(c._task_scope_path(Path("C:/v"), task, "0.1.15"), Path("C:/v/DEV_RUN/resources-dev15"))
+        self.assertEqual(c._task_scope_path(c.ROOT, task, "0.1.15"), (c.ROOT / "DEV_RUN" / "resources-dev15").resolve())
 
     def test_renpy_inventory_does_not_scan_engine_artwork(self):
         from vntext.image_text import discover_images
