@@ -525,6 +525,9 @@ PROJECT_SIZE_EXEMPTIONS = {
     ".dev-env": "shared DEV Python/SDK/NuGet/model cache (6 GiB cap; Owner 2026-10-19 R&D approval)",
 }
 
+# The registry's OS-held lock guard (tests/lib/work_paths.py): a persistent, always empty control file next to the manifest.
+REGISTRY_LOCK_GUARD_NAME = "artifacts_manifest.json.lock.guard"
+
 # Keep relative to WORK_ROOT
 KEEP_PATHS = {
     "game-copy",
@@ -1035,6 +1038,8 @@ def _retained_epoch_metadata_terminal_state(before: dict | None) -> dict:
     retained_paths = []
     for item in classified:
         relative = str(item.get("relative_path") or "").replace("\\", "/")
+        if relative == REGISTRY_LOCK_GUARD_NAME and item.get("kind") == "file" and int(item.get("bytes") or 0) == 0:
+            continue                                                    # empty registry lock guard: control file, never evidence
         if item.get("lifecycle") != "RETAINED":
             return {"ok": False, "reason": "terminal_content_not_registered_retained"}
         if relative not in prior_paths:
@@ -1769,6 +1774,9 @@ def _reconcile_registry_impl(
         root_key = str(root_path)
         if root_key == str(manifest_path):
             known_roots.add(root_rel)
+            continue
+        if root_rel == REGISTRY_LOCK_GUARD_NAME and path["kind"] == "file" and int(path.get("bytes") or 0) == 0:
+            known_roots.add(root_rel)                                   # registry control file, not an unregistered artifact
             continue
         if root_key in by_path:
             known_roots.add(root_rel)
@@ -3334,7 +3342,9 @@ def _classify_prospective_inventory(inventory: dict, reconciled: dict) -> list[d
         elif path == _absolute_path(E2E_GAME_COPY) or _path_is_under(path, E2E_GAME_COPY):
             lifecycle, source, owner, purpose = "PROTECTED", "protected_scope_rule", "cleanup_work_artifacts.py", "canonical game fixture"
             artifact_id, provenance = f"inventory:{relative}", None
-        elif path == _absolute_path(MANIFEST_PATH) or _is_explicit_keep(path):
+        elif path == _absolute_path(MANIFEST_PATH) or _is_explicit_keep(path) or (
+            path.name == REGISTRY_LOCK_GUARD_NAME and item.get("kind") == "file" and int(item.get("bytes") or 0) == 0
+        ):
             lifecycle, source, owner, purpose = "RETAINED", "scope_rule", "cleanup_work_artifacts.py", "retained control-plane or evidence path"
             artifact_id, provenance = f"inventory:{relative}", None
         else:
@@ -4584,6 +4594,12 @@ def _finalize_scope_impl(
         budget.check_deadline(Path(str(item.get("path") or scope_root)), phase="scope_reconciliation")
         if _path_key(Path(item["path"])) in ignored:
             continue
+        if (
+            Path(item["path"]).name == REGISTRY_LOCK_GUARD_NAME
+            and item.get("kind") == "file"
+            and int(item.get("bytes") or 0) == 0
+        ):
+            continue                                                    # the registry's own empty OS lock guard, created by every registration
         registered = _scope_entry_for_path(
             scoped_entries,
             Path(item["path"]),
