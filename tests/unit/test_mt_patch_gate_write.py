@@ -117,9 +117,13 @@ class PatchGateWriteTests(unittest.TestCase):
         self.assertEqual("player-visible text", reason)
 
     def test_classify_short_ui_without_glossary_stays_a_candidate(self):
-        row = self._row("k1", "Options")
+        row = self._row("k1", "Brightness")                                  # not in the curated catalog: still a model candidate
         action, _reason = classify_row(row)
         self.assertEqual("translate", action)
+
+    def test_classify_standard_menu_label_uses_the_curated_catalog_only_in_a_ui_context(self):
+        self.assertEqual(("ui_label_fixed", "Tùy chọn"), classify_row(self._row("k1", "Options")))
+        self.assertEqual("translate", classify_row(self._row("k2", "Options", ctx="TextAsset:story:line:3"))[0])
 
     def test_classify_sound_effect_copy_literal(self):
         row = self._row("k1", "Ah...! Nnh...!♡", ctx="TextAsset:x:line:1")

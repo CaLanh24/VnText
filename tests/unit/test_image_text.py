@@ -191,6 +191,51 @@ class ImageTextTests(unittest.TestCase):
         Image.new('RGB',(300,120),'white').save(self.source);empty=recognize_image(self.source)
         self.assertEqual(empty['status'],'NO_TEXT');self.assertEqual(empty['regions'],[])
 
+    def _button(self, text, size=(520, 160), angle=0):
+        image = Image.new('RGB', size, (20, 30, 60))
+        ImageDraw.Draw(image).text((40, 60), text, fill=(255, 255, 255), font=ImageFont.truetype(str(FONT.with_name('arialbd.ttf')), 40))
+        if angle:
+            image = image.rotate(angle, resample=Image.BICUBIC, fillcolor=(20, 30, 60))
+        image.save(self.source)
+        return hashlib.sha256(self.source.read_bytes()).hexdigest()
+
+    @unittest.skipUnless(os.name=='nt','Windows native OCR requires installed English recognizer')
+    def test_short_clear_horizontal_ui_text_with_a_false_ocr_angle_is_accepted_with_independent_proof(self):
+        """Windows OCR reports TextAngle 5.4 for this perfectly horizontal 'OPTIONS' button; the ink geometry is measured independently."""
+        digest = self._button('OPTIONS')
+        result = recognize_image(self.source)
+        self.assertEqual(['OPTIONS'], [region['source_text'] for region in result['regions']])
+        self.assertEqual('REVIEW_REQUIRED', result['status'])
+        self.assertGreater(abs(result['skew']['ocr_text_angle']), 2)            # the false positive really occurred (else this test proves nothing)
+        self.assertLessEqual(abs(result['skew']['measured_ink_angle']), 1.0)
+        self.assertTrue(result['skew']['horizontal_proven'])
+        x, y, w, h = result['regions'][0]['box']
+        self.assertTrue(0 <= x and 0 <= y and x + w <= 520 and y + h <= 160)     # exact box stays inside the image
+        self.assertEqual(digest, hashlib.sha256(self.source.read_bytes()).hexdigest())   # source bytes untouched
+
+    @unittest.skipUnless(os.name=='nt','Windows native OCR requires installed English recognizer')
+    def test_truly_rotated_text_is_still_refused_by_the_skew_guard(self):
+        for text, angle in (('OPTIONS', 8), ('OPTIONS', 12), ('OPTIONS', 25), ('Save game', 5), ('Save game', 12)):
+            with self.subTest(text=text, angle=angle):
+                digest = self._button(text, angle=angle)
+                with self.assertRaisesRegex(ValueError, 'Chữ nghiêng'):
+                    recognize_image(self.source)
+                self.assertEqual(digest, hashlib.sha256(self.source.read_bytes()).hexdigest())
+
+    def test_horizontal_proof_is_bounded_and_never_trusts_unmeasurable_or_extreme_angles(self):
+        from vntext.image_text import _horizontal_proof, _measured_skew
+        flat = Image.new('RGBA', (300, 100), (255, 255, 255, 255))
+        ImageDraw.Draw(flat).text((20, 30), 'HELLO WORLD', fill='black', font=ImageFont.truetype(str(FONT), 30))
+        raw = {'angle': 5.0, 'lines': [{'text': 'HELLO WORLD', 'words': [{'text': 'HELLO', 'x': 20, 'y': 30, 'width': 160, 'height': 36}]}]}
+        self.assertIsNotNone(_horizontal_proof(flat, raw))
+        self.assertIsNone(_horizontal_proof(flat, {**raw, 'angle': 40.0}))        # beyond the limit: never second-guessed
+        self.assertIsNone(_horizontal_proof(flat, {**raw, 'angle': None}))
+        self.assertIsNone(_horizontal_proof(flat, {'angle': 5.0, 'lines': []}))
+        blank = Image.new('RGBA', (300, 100), (255, 255, 255, 255))
+        self.assertIsNone(_measured_skew(blank, [(0, 0, 300, 100)]))              # no ink = no proof
+        turned = flat.rotate(9, resample=Image.BICUBIC, fillcolor=(255, 255, 255, 255))
+        self.assertIsNone(_horizontal_proof(turned, {**raw, 'lines': [{'text': 'x', 'words': [{'text': 'x', 'x': 0, 'y': 0, 'width': 300, 'height': 100}]}]}))
+
     @unittest.skipUnless(os.name=='nt','Windows native image worker requires installed English recognizer')
     def test_real_worker_ocr_review_render_and_source_preservation(self):
         from tests.lib.worker_test_lib import start_worker, read_ready, run_task, complete_for, stop_worker

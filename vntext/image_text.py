@@ -46,6 +46,63 @@ def _box(raw, size):
     return x, y, w, h
 
 
+HORIZONTAL_PROOF_DEGREES = 1.0       # measured ink skew allowed to override a bad OCR TextAngle
+OCR_ANGLE_PROOF_LIMIT = 10.0         # a reported angle beyond this is never second-guessed
+_MIN_INK_POINTS = 150
+
+
+def _measured_skew(image, boxes):
+    """Independent skew (degrees, 0.5 steps) of the dark/light ink inside the given boxes by maximising row-projection sharpness; None if unprovable."""
+    from PIL import Image
+    gray = Image.alpha_composite(Image.new("RGBA", image.size, (255, 255, 255, 255)), image).convert("L")
+    width, height = gray.size
+    pixels = gray.load()
+    points = []
+    for x0, y0, x1, y1 in boxes:
+        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(width, x1), min(height, y1)
+        if x1 <= x0 or y1 <= y0:
+            continue
+        ring = [pixels[x, y] for x in range(x0, x1) for y in (y0, y1 - 1)] + [pixels[x, y] for y in range(y0, y1) for x in (x0, x1 - 1)]
+        background = sorted(ring)[len(ring) // 2]
+        points += [(x, y) for y in range(y0, y1) for x in range(x0, x1) if abs(pixels[x, y] - background) > 48]
+    if len(points) < _MIN_INK_POINTS:
+        return None
+    if len(points) > 20000:
+        points = points[::len(points) // 20000 + 1]
+    best = None
+    for step in range(-20, 21):                       # -10.0 .. +10.0 degrees
+        angle = step / 2
+        sin, cos = math.sin(math.radians(angle)), math.cos(math.radians(angle))
+        rows = {}
+        for x, y in points:
+            row = round(y * cos - x * sin)
+            rows[row] = rows.get(row, 0) + 1
+        sharpness = sum(count * count for count in rows.values())
+        # strictly better wins; an exact tie keeps the angle closest to horizontal
+        if best is None or sharpness > best[1] or (sharpness == best[1] and abs(angle) < abs(best[0])):
+            best = (angle, sharpness)
+    return best[0]
+
+
+def _horizontal_proof(image, raw):
+    """Evidence dict when the text is provably horizontal despite a large OCR TextAngle, else None."""
+    reported = raw.get("angle")
+    if not isinstance(reported, (int, float)) or abs(reported) > OCR_ANGLE_PROOF_LIMIT:
+        return None
+    boxes = []
+    for line in raw.get("lines", []):
+        for word in line.get("words") or []:
+            boxes.append((math.floor(word["x"]) - 2, math.floor(word["y"]) - 2,
+                          math.ceil(word["x"] + word["width"]) + 2, math.ceil(word["y"] + word["height"]) + 2))
+    if not boxes:
+        return None
+    measured = _measured_skew(image, boxes)
+    if measured is None or abs(measured) > HORIZONTAL_PROOF_DEGREES:
+        return None
+    return {"ocr_text_angle": float(reported), "measured_ink_angle": float(measured), "horizontal_proven": True,
+            "method": "row-projection sharpness over OCR word boxes"}
+
+
 def recognize_image(source, *, is_cancelled=None):
     source, image, digest = _image(source)
     if os.name != "nt":
@@ -72,8 +129,13 @@ def recognize_image(source, *, is_cancelled=None):
     if proc.returncode:
         raise ValueError("Windows OCR thất bại: " + stderr.decode("utf-8", "replace")[-1500:])
     raw = json.loads(stdout.decode("utf-8-sig"))
+    skew = None
     if raw.get("angle") is not None and abs(raw["angle"]) > 2:
-        raise ValueError("Chữ nghiêng cần xoay/crop và review thủ công trước OCR.")
+        # Windows OCR TextAngle is unreliable on short UI art.  The guard stays: it is lifted ONLY when the ink of the OCR line boxes is
+        # independently measured as horizontal (|angle| <= HORIZONTAL_PROOF_DEGREES); rotated / unmeasurable text still needs a manual crop.
+        skew = _horizontal_proof(image, raw)
+        if skew is None:
+            raise ValueError("Chữ nghiêng cần xoay/crop và review thủ công trước OCR.")
     regions = []
     for line in raw.get("lines", []):
         words = line["words"]
@@ -88,7 +150,8 @@ def recognize_image(source, *, is_cancelled=None):
                         "background": "#FFFFFF", "foreground": "#000000", "font_size": 24})
     return {"schema": 1, "source_path": str(source), "source_sha256": digest, "width": image.width,
             "height": image.height, "backend": "Windows.Media.Ocr/en-US", "confidence": None,
-            "status": "REVIEW_REQUIRED" if regions else "NO_TEXT", "regions": regions}
+            "status": "REVIEW_REQUIRED" if regions else "NO_TEXT", "regions": regions,
+            **({"skew": skew} if skew else {})}
 
 
 def render_image(document, output, font_path):

@@ -512,6 +512,42 @@ def load_review_only_issue_reasons(package_dir: Path) -> dict[str, str]:
     return reasons
 
 
+# Owner decision (2026-11-02, scoped): coverage completeness and per-entry patch eligibility are separate facts.  A PARTIAL extraction whose ONLY
+# open items are the expected static-extraction limitations may patch the already verified MAIN rows; the PARTIAL coverage stays on record.
+EXPECTED_PATCH_LIMITATIONS = frozenset({"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN"})
+
+
+def scoped_patch_eligible(status: dict) -> bool:
+    """True only for: PARTIAL, no error, SDK-backed (no review-only rows), native accounting complete, non-empty MAIN, and at least one
+    limitation, all from the expected set.  Anything else (errors, no-SDK/review rows, EMPTY/FAILED, unknown limitation) stays blocked."""
+    if not isinstance(status, dict) or status.get("status") != "PARTIAL" or status.get("complete") is not False:
+        return False
+    limitations = status.get("limitations")
+    if not isinstance(limitations, list) or not limitations:
+        return False
+    if any(not isinstance(item, dict) or item.get("code") not in EXPECTED_PATCH_LIMITATIONS for item in limitations):
+        return False
+    counts = (status.get("main"), status.get("review"), status.get("errors"))
+    if any(isinstance(value, bool) or not isinstance(value, int) for value in counts):
+        return False
+    return (
+        status.get("patch_scope") == "VERIFIED_MAIN_SUBSET"
+        and counts[0] > 0 and counts[1] == 0 and counts[2] == 0
+        and status.get("native_accounting_complete") is True
+        and status.get("severity") == "warning"
+    )
+
+
+def excluded_coverage(status: dict) -> list[dict]:
+    """The explicit, non-patched coverage of a scoped patch (one record per limitation)."""
+    if not isinstance(status, dict):
+        return []
+    return [
+        {"code": str(item.get("code") or ""), "count": int(item.get("count") or 0), "message": str(item.get("message") or "")}
+        for item in (status.get("limitations") or []) if isinstance(item, dict)
+    ]
+
+
 def validate_patch_package_identity(csv_path: str | Path, manifest: dict) -> None:
     translations = read_translation_rows(str(csv_path))
     entries = manifest.get("entries")
@@ -533,7 +569,7 @@ def validate_patch_package_identity(csv_path: str | Path, manifest: dict) -> Non
     sidecar = Path(csv_path).parent / "extract_status.json"
     if sidecar.is_file():
         status = json.loads(sidecar.read_text(encoding="utf-8-sig"))
-        if status.get("status") != "COMPLETE" or status.get("complete") is not True:
+        if not (status.get("status") == "COMPLETE" and status.get("complete") is True) and not scoped_patch_eligible(status):
             raise ValueError("Extraction is incomplete; final Patch is blocked")
 
 

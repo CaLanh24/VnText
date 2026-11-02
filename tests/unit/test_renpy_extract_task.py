@@ -206,7 +206,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
                     complete=completed.append,
                 )
 
-            self.assertTrue(completed[-1]["complete"])
+            self.assertTrue(completed[-1]["complete"], completed[-1])
             self.assertEqual(len(workspaces), 1)
             self.assertFalse(workspaces[0].exists())
             self.assertEqual(completed[-1]["review_only"], 0)
@@ -260,6 +260,11 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertNotIn("lỗi discovery/extract", result["summary"])
         self.assertIn("chưa được chứng minh", result["error"])                # the unproven-runtime limitation is stated, not hidden
         self.assertIn("không chạy mã game", result["error"])
+        # Owner decision 2026-11-02: PARTIAL coverage, but the SDK-verified MAIN subset is patch-eligible (and only through the gate's scoped rule)
+        from vntext.patch_gate import scoped_patch_eligible
+        self.assertEqual("VERIFIED_MAIN_SUBSET", status["patch_scope"])
+        self.assertEqual("VERIFIED_MAIN_SUBSET", result["patch_scope"])
+        self.assertTrue(scoped_patch_eligible(status))
 
     def test_genuine_discovery_failure_stays_an_error_even_beside_a_partial_package(self):
         nl = chr(10)
@@ -270,6 +275,9 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertEqual("error", result["severity"])
         self.assertGreaterEqual(status["errors"], 1)
         self.assertIn("lỗi discovery/extract", result["error"])
+        from vntext.patch_gate import scoped_patch_eligible
+        self.assertEqual("NONE", status["patch_scope"])                       # a real error never becomes a scoped patch
+        self.assertFalse(scoped_patch_eligible(status))
 
     def test_corrupt_archive_is_a_real_failure_not_a_limitation(self):
         nl = chr(10)
@@ -457,6 +465,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
             status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
             self.assertFalse(status["complete"])
             self.assertEqual((status["status"], status["main"], status["review"]), ("PARTIAL", 0, 8))
+            self.assertEqual("NONE", status["patch_scope"])                   # no SDK: review-only evidence, MAIN empty, still blocked
             # the package exists, but translation.csv has no data row to translate
             with (out / "translation.csv").open(encoding="utf-8-sig", newline="") as stream:
                 self.assertEqual(list(csv_module.DictReader(stream)), [])

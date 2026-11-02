@@ -111,13 +111,30 @@ public static class WorkflowStatus
         {
             using var doc = JsonDocument.Parse(File.ReadAllText(path));
             var status = doc.RootElement;
-            return status.GetProperty("complete").GetBoolean()
-                && status.GetProperty("status").GetString() == "COMPLETE"
-                && status.GetProperty("main").GetInt32() > 0
+            var ready = status.GetProperty("main").GetInt32() > 0
                 && status.GetProperty("review").GetInt32() == 0
                 && status.GetProperty("errors").GetInt32() == 0;
+            if (!ready) return false;
+            if (status.GetProperty("complete").GetBoolean() && status.GetProperty("status").GetString() == "COMPLETE") return true;
+            return ScopedPatchEligible(status);
         }
         catch { return false; }
+    }
+
+    // Owner decision (2026-11-02): a PARTIAL extraction whose only open items are the expected static limitations may patch its verified MAIN subset
+    // (mirror of vntext.patch_gate.scoped_patch_eligible; the Python gate stays the authority).
+    private static bool ScopedPatchEligible(JsonElement status)
+    {
+        if (status.GetProperty("status").GetString() != "PARTIAL" || status.GetProperty("complete").GetBoolean()) return false;
+        if (!status.TryGetProperty("patch_scope", out var scope) || scope.GetString() != "VERIFIED_MAIN_SUBSET") return false;
+        if (!status.TryGetProperty("native_accounting_complete", out var accounted) || accounted.ValueKind != JsonValueKind.True) return false;
+        if (!status.TryGetProperty("limitations", out var limits) || limits.ValueKind != JsonValueKind.Array || limits.GetArrayLength() == 0) return false;
+        foreach (var item in limits.EnumerateArray())
+        {
+            var code = item.TryGetProperty("code", out var c) ? c.GetString() : null;
+            if (code != "RUNTIME_DYNAMIC_UNRESOLVED" && code != "ARCHIVE_SOURCE_RUNTIME_UNPROVEN") return false;
+        }
+        return true;
     }
 
     public static TranslateProgress EvaluateTranslateProgress(string packageDir)

@@ -71,11 +71,20 @@ def _recapitalise(original, value):
 
 def translate_region_texts(translator, texts):
     """Translate OCR region texts; ALL-CAPS regions are translated in sentence case and the result is set back in capitals."""
-    normalized = [_sentence_case(text.strip()) if _is_all_caps(text) else text for text in texts]
-    translations = translator.translate_many(normalized)
-    if len(translations) != len(texts):
+    from vntext.ui_labels import resolve_ui_label_translation
+
+    # An exact standalone menu label (Inventory, Save, Options ...) takes the curated catalog; everything else goes through the model.
+    fixed = [resolve_ui_label_translation(text, "UI:image") for text in texts]
+    pending = [index for index, hit in enumerate(fixed) if hit is None]
+    normalized = [_sentence_case(texts[i].strip()) if _is_all_caps(texts[i]) else texts[i] for i in pending]
+    translations = translator.translate_many(normalized) if pending else []
+    if len(translations) != len(pending):
         return translations
-    return [_recapitalise(original, value) if isinstance(value, str) and _is_all_caps(original) else value for original, value in zip(texts, translations)]
+    results = list(fixed)
+    for index, value in zip(pending, translations):
+        original = texts[index]
+        results[index] = _recapitalise(original, value) if isinstance(value, str) and _is_all_caps(original) else value
+    return results
 
 
 def _render_draft(document, output, font_path, is_cancelled):

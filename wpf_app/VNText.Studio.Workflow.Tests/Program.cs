@@ -256,6 +256,7 @@ internal static partial class Program
         Run("ImageText_ReviewAndApprovalStayIndependent", ImageText_ReviewAndApprovalStayIndependent, failures);
         Run("ImageText_EditInvalidatesApproval", ImageText_EditInvalidatesApproval, failures);
         Run("ExtractPartialAndEmpty_DoNotAdvance", ExtractPartialAndEmpty_DoNotAdvance, failures);
+        Run("ExtractScopedPartial_AdvancesOnlyForExpectedLimitations", ExtractScopedPartial_AdvancesOnlyForExpectedLimitations, failures);
         Run("ExternalCsv_ValidatesReadyForPatch", ExternalCsv_ValidatesReadyForPatch, failures);
         Run("CsvValidator_RejectsEmptyTranslation", CsvValidator_RejectsEmptyTranslation, failures);
         Run("TranslateComplete_NavigatesToPatch", TranslateComplete_NavigatesToPatch, failures);
@@ -1469,6 +1470,35 @@ internal static partial class Program
                 vm.RunExtractCommand.Execute(null);
                 AssertEqual("Chọn thư mục xuất mới", vm.StatusText);
                 AssertFalse(vm.Busy);
+            }
+            finally { Directory.Delete(root, true); }
+        }
+    }
+
+    private static void ExtractScopedPartial_AdvancesOnlyForExpectedLimitations()
+    {
+        var expected = new object[] { new { code = "RUNTIME_DYNAMIC_UNRESOLVED", count = 2 }, new { code = "ARCHIVE_SOURCE_RUNTIME_UNPROVEN", count = 1 } };
+        var cases = new (string Name, object Status, bool Advances)[]
+        {
+            ("scoped", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = expected }, true),
+            ("error", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 1, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = expected }, false),
+            ("review-only", new { complete = false, status = "PARTIAL", main = 0, review = 4, errors = 0, native_accounting_complete = true, patch_scope = "NONE", limitations = expected }, false),
+            ("no scope", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = true, patch_scope = "NONE", limitations = expected }, false),
+            ("accounting", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = false, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = expected }, false),
+            ("unknown limit", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = new object[] { new { code = "OTHER", count = 1 } } }, false),
+        };
+        foreach (var (name, status, advances) in cases)
+        {
+            var root = Path.Combine(TestTempRoot(), "extract_scoped_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(root);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation
+k,Hello,
+");
+                File.WriteAllText(Path.Combine(root, "manifest.json"), "{}");
+                File.WriteAllText(Path.Combine(root, "extract_status.json"), JsonSerializer.Serialize(status));
+                AssertEqual(advances, WorkflowStatus.Evaluate("synthetic-game", root).HasExtract);
             }
             finally { Directory.Delete(root, true); }
         }

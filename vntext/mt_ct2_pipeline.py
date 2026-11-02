@@ -267,6 +267,18 @@ def _row_uses_user_glossary(row: dict, user_glossary: dict[str, str]) -> bool:
     return bool(restore)
 
 
+def _glossary_owns_label(row: dict, user_glossary: dict[str, str], glossary_v2: dict | None) -> bool:
+    """A curated catalog label (``ui_label_fixed``) whose exact source is owned by the user/package glossary goes through the glossary stage, not the catalog."""
+    from vntext.glossary_v2 import resolve_exact
+    from vntext.package_glossary import lookup_user_phrase
+
+    source = str(row.get("source_text") or "")
+    return (
+        classify_row_authoritative(row)[0] == "ui_label_fixed"
+        and (resolve_exact(source, row, glossary_v2).get("status") in {"match", "conflict"} or lookup_user_phrase(source, user_glossary) is not None)
+    )
+
+
 def _select_ct2_targets(
     rows: list[dict],
     user_glossary: dict[str, str],
@@ -300,7 +312,7 @@ def _select_ct2_targets(
         and (
             str(row.get("key") or "") in forced
         or (
-            classify_row_authoritative(row)[0] in ("translate", "translate_synonym")
+            (classify_row_authoritative(row)[0] in ("translate", "translate_synonym") or _glossary_owns_label(row, user_glossary, glossary_v2))
             and not is_v2_keep(row)
         )
         )
@@ -697,6 +709,9 @@ def run_ct2_translate(
         if action == "copy_source":
             copy_map[row["key"]] = row["source_text"]
         elif action == "ui_label_fixed":
+            # The curated catalog ranks below every user/package glossary: those entries are applied in the translate stage.
+            if _glossary_owns_label(row, user_glossary, glossary_v2):
+                continue
             copy_map[row["key"]] = reason
         elif action == "copy_literal":
             copy_map[row["key"]] = row["source_text"]
@@ -840,6 +855,7 @@ def run_ct2_translate(
         r for r in targets
         if str(r.get("key") or "") in forced_keys
         or classify_row_authoritative(r)[0] == "translate"
+        or _glossary_owns_label(r, user_glossary, glossary_v2)
     ]
     flush_every = _flush_every_rows()
     fast_retry = _fast_retry_default(len(mt_targets))

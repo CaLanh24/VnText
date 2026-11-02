@@ -1358,6 +1358,15 @@ def run_extract_task(
             summary = completion_error
         # Owner decision (2026-10-27): a no-SDK static export is always PARTIAL, even when the scan found no row;
         # real extract errors stay FAILED and an empty extraction with the SDK stays EMPTY.
+        # Owner decision (2026-11-02): only expected limitations + an SDK-backed, fully accounted, non-empty MAIN with nothing left to review
+        # keeps the verified MAIN subset patchable; the PARTIAL coverage and the excluded items stay on record.
+        from vntext.patch_gate import EXPECTED_PATCH_LIMITATIONS
+
+        scoped_patch = bool(
+            limitations and not extract_errors and not renpy_sdk_missing and not review_count and not empty
+            and native_accounting_complete and main_count > 0
+            and all(item.get("code") in EXPECTED_PATCH_LIMITATIONS for item in limitations)
+        )
         extract_status = (
             "FAILED" if empty and extract_errors
             else "PARTIAL" if renpy_sdk_missing
@@ -1384,6 +1393,7 @@ def run_extract_task(
             "runtime_dynamic_unresolved": len(runtime_dynamic),
             "limitations": limitations,
             "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
+            "patch_scope": "VERIFIED_MAIN_SUBSET" if scoped_patch else "NONE",
         }
         (Path(out) / "extract_status.json").write_text(json.dumps({
             "complete": not completion_blockers, "status": extract_status,
@@ -1396,6 +1406,7 @@ def run_extract_task(
             "runtime_dynamic_unresolved": len(runtime_dynamic),
             "limitations": limitations,
             "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
+            "patch_scope": "VERIFIED_MAIN_SUBSET" if scoped_patch else "NONE",
             "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         if extract_errors or review_count:
@@ -2349,6 +2360,17 @@ def _cancelled_patch_output_statement(patch_out: Path | None) -> str:
     )
 
 
+def _scoped_patch_excluded_coverage(package_dir: Path) -> list[dict]:
+    """Excluded coverage of a scoped (PARTIAL-but-eligible) package; [] for a COMPLETE/legacy package."""
+    from vntext.patch_gate import excluded_coverage, scoped_patch_eligible
+
+    sidecar = Path(package_dir) / "extract_status.json"
+    if not sidecar.is_file():
+        return []
+    status = json.loads(sidecar.read_text(encoding="utf-8-sig"))
+    return excluded_coverage(status) if scoped_patch_eligible(status) else []
+
+
 def run_patch_task(
     csv_path: Path,
     manifest_path: Path,
@@ -2410,6 +2432,7 @@ def run_patch_task(
         from vntext.patch_gate import validate_patch_package_identity
         from vntext.patch_safety import validate_patch_output
         validate_patch_package_identity(csv_path, manifest_for_delivery)
+        patch_excluded = _scoped_patch_excluded_coverage(Path(csv_path).parent)
         patch_out = (
             Path(patch_out_override)
             if patch_out_override is not None
@@ -2483,6 +2506,13 @@ def run_patch_task(
             )
             log("Ren'Py: overlay hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc native này để cài.")
             summary = f"Xong: Ren'Py native overlay nằm tại {patch_out}. Copy nội dung COPY_TO_GAME_ROOT vào game root."
+        if patch_excluded:
+            (patch_out / "patch_coverage.json").write_text(json.dumps({
+                "scope": "VERIFIED_MAIN_SUBSET",
+                "statement": "Patch covers the verified MAIN rows only; this is NOT a full-game PASS. The coverage below was excluded and is unpatched.",
+                "excluded_coverage": patch_excluded,
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
+            summary += f" Phạm vi: chỉ các dòng MAIN đã xác minh; {len(patch_excluded)} nhóm chưa phủ được ghi trong patch_coverage.json (không phải PASS toàn game)."
         if late_cancel:
             # The cancel arrived after the output was complete and verified: say so instead of
             # reporting a cancellation over a finished patch.

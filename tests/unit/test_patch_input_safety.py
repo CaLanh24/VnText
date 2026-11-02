@@ -60,6 +60,76 @@ class PatchInputSafetyTests(unittest.TestCase):
         (self.package / "extract_status.json").write_text(json.dumps({"status": "PARTIAL", "complete": False}))
         with self.assertRaises(ValueError): self.apply(self.root / "patch")
 
+    SCOPED = {
+        "status": "PARTIAL", "complete": False, "main": 1, "review": 0, "errors": 0, "severity": "warning",
+        "native_accounting_complete": True, "patch_scope": "VERIFIED_MAIN_SUBSET",
+        "limitations": [{"code": "RUNTIME_DYNAMIC_UNRESOLVED", "count": 2, "message": "2 dynamic expressions"},
+                        {"code": "ARCHIVE_SOURCE_RUNTIME_UNPROVEN", "count": 1, "message": "archive source"}],
+    }
+
+    def run_worker_patch(self):
+        from vntext.app_tasks import run_patch_task
+        completed = []
+        run_patch_task(self.csv, self.manifest, str(self.game), str(self.package), progress=lambda _: None, log=lambda _: None,
+                       complete=completed.append, patch_out_override=self.package / "Patch_Viet_Hoa")
+        self.assertEqual(len(completed), 1)
+        return completed[0]
+
+    def test_scoped_partial_with_only_expected_limitations_patches_the_verified_subset_with_excluded_coverage(self):
+        (self.package / "extract_status.json").write_text(json.dumps(self.SCOPED), encoding="utf-8")
+        original = (self.source.read_bytes(), self.csv.read_bytes(), self.manifest.read_bytes())
+        done = self.run_worker_patch()
+        self.assertTrue(done["ok"], done)
+        output = self.package / "Patch_Viet_Hoa"
+        self.assertEqual("Xin chào" + chr(10), (output / "COPY_TO_GAME_ROOT/dialogue.txt").read_text(encoding="utf-8"))   # exact read-back of the verified row
+        coverage = json.loads((output / "patch_coverage.json").read_text(encoding="utf-8"))
+        self.assertEqual("VERIFIED_MAIN_SUBSET", coverage["scope"])
+        self.assertIn("NOT a full-game PASS", coverage["statement"])
+        self.assertEqual(["RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN"], [item["code"] for item in coverage["excluded_coverage"]])
+        self.assertEqual(original, (self.source.read_bytes(), self.csv.read_bytes(), self.manifest.read_bytes()))
+        self.assertEqual("PARTIAL", json.loads((self.package / "extract_status.json").read_text(encoding="utf-8"))["status"])   # coverage stays PARTIAL
+
+    def test_complete_package_patches_without_excluded_coverage(self):
+        (self.package / "extract_status.json").write_text(json.dumps({"status": "COMPLETE", "complete": True}), encoding="utf-8")
+        done = self.run_worker_patch()
+        self.assertTrue(done["ok"], done)
+        self.assertFalse((self.package / "Patch_Viet_Hoa" / "patch_coverage.json").exists())
+
+    def test_scoped_eligibility_never_widens_beyond_the_expected_limitations(self):
+        from vntext.patch_gate import scoped_patch_eligible
+        self.assertTrue(scoped_patch_eligible(self.SCOPED))
+        unexpected = [{"code": "SOMETHING_ELSE", "count": 1, "message": "x"}]
+        broken = {
+            "actual error": {"errors": 1, "severity": "error"},
+            "review rows": {"review": 3},
+            "no-SDK / empty MAIN": {"main": 0, "review": 4},
+            "accounting mismatch": {"native_accounting_complete": False},
+            "unknown limitation": {"limitations": self.SCOPED["limitations"] + unexpected},
+            "no limitation": {"limitations": []},
+            "no scope marker": {"patch_scope": "NONE"},
+            "failed": {"status": "FAILED"},
+            "empty": {"status": "EMPTY"},
+            "claims complete while partial": {"complete": True},
+            "string count": {"main": "1"},
+            "bool count": {"errors": False, "main": True},
+        }
+        for name, change in broken.items():
+            with self.subTest(name):
+                self.assertFalse(scoped_patch_eligible({**self.SCOPED, **change}))
+        (self.package / "extract_status.json").write_text(json.dumps({**self.SCOPED, "errors": 1, "severity": "error"}), encoding="utf-8")
+        before = (self.source.read_bytes(), self.csv.read_bytes())
+        done = self.run_worker_patch()
+        self.assertFalse(done["ok"], done)
+        self.assertFalse((self.package / "Patch_Viet_Hoa" / "COPY_TO_GAME_ROOT").exists())
+        self.assertEqual(before, (self.source.read_bytes(), self.csv.read_bytes()))
+
+    def test_scoped_patch_still_refuses_an_unverified_entry_or_identity_mismatch(self):
+        (self.package / "extract_status.json").write_text(json.dumps(self.SCOPED), encoding="utf-8")
+        write_csv_rows_file(self.csv, CSV_FIELDS, [{**self.row, "source_text": "Changed source"}])
+        done = self.run_worker_patch()
+        self.assertFalse(done["ok"], done)
+        self.assertEqual("Hello" + chr(10), self.source.read_text())
+
     def test_existing_output_and_source_are_preserved(self):
         output = self.root / "patch"
         output.mkdir()

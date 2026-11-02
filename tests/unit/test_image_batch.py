@@ -294,11 +294,11 @@ class AllCapsRegionTranslationTests(unittest.TestCase):
     def test_all_caps_ui_text_is_translated_in_sentence_case_and_restored_to_capitals(self):
         from vntext.image_batch import translate_region_texts
 
-        translator = self.Translator({"New game": "Trò chơi mới", "Options": "Tùy chọn", "Hello there": "Xin chào", "NEW GAME": "NEW GAME"})
-        result = translate_region_texts(translator, ["NEW GAME", "OPTIONS", "Hello there", "HP"])
-        self.assertEqual(["New game", "Options", "Hello there", "HP"], translator.seen)          # only ALL-CAPS regions are normalised
-        self.assertEqual(["TRÒ CHƠI MỚI", "TÙY CHỌN", "Xin chào", "HP"], result)
-        self.assertEqual(2, len(translate_region_texts(translator, ["NEW GAME", "Hello there"])))
+        translator = self.Translator({"Game over": "Trò chơi kết thúc", "Pause menu": "Menu tạm dừng", "Hello there": "Xin chào", "GAME OVER": "GAME OVER"})
+        result = translate_region_texts(translator, ["GAME OVER", "PAUSE MENU", "Hello there", "HP"])
+        self.assertEqual(["Game over", "Pause menu", "Hello there", "HP"], translator.seen)          # only ALL-CAPS regions are normalised
+        self.assertEqual(["TRÒ CHƠI KẾT THÚC", "MENU TẠM DỪNG", "Xin chào", "HP"], result)
+        self.assertEqual(2, len(translate_region_texts(translator, ["GAME OVER", "Hello there"])))
 
     def test_placeholders_and_tags_are_never_case_changed_on_the_way_to_the_model_or_back(self):
         from vntext.image_batch import translate_region_texts
@@ -308,15 +308,22 @@ class AllCapsRegionTranslationTests(unittest.TestCase):
             "[Player] Save": "lưu [player]",                             # ...and changed a token's case on the way back
             "{b}Hello{/b} there": "{b}xin chào{/b}",
             "You have %s coins": "Bạn có %s xu",
-            "New game": "Trò chơi mới",
+            "Game over": "Trò chơi kết thúc",
         })
-        sources = ["[PLAYER] SAVE {NAME}", "[Player] SAVE", "{b}HELLO{/b} THERE", "YOU HAVE %s COINS", "NEW GAME"]
+        sources = ["[PLAYER] SAVE {NAME}", "[Player] SAVE", "{b}HELLO{/b} THERE", "YOU HAVE %s COINS", "GAME OVER"]
         result = translate_region_texts(translator, sources)
-        self.assertEqual(["[PLAYER] Save {NAME}", "[Player] Save", "{b}Hello{/b} there", "You have %s coins", "New game"], translator.seen)
-        self.assertEqual(["[PLAYER] LƯU {NAME}", "LƯU [Player]", "{b}XIN CHÀO{/b}", "BẠN CÓ %s XU", "TRÒ CHƠI MỚI"], result)   # exact source tokens restored
+        self.assertEqual(["[PLAYER] Save {NAME}", "[Player] Save", "{b}Hello{/b} there", "You have %s coins", "Game over"], translator.seen)
+        self.assertEqual(["[PLAYER] LƯU {NAME}", "LƯU [Player]", "{b}XIN CHÀO{/b}", "BẠN CÓ %s XU", "TRÒ CHƠI KẾT THÚC"], result)   # exact source tokens restored
         for source, value in zip(sources, result):
             from vntext.image_batch import _PROTECTED
             self.assertEqual(sorted(_PROTECTED.findall(source)), sorted(_PROTECTED.findall(value)), (source, value))
+
+    def test_catalog_labels_in_capitals_bypass_the_model_but_keep_their_capitals(self):
+        from vntext.image_batch import translate_region_texts
+
+        translator = self.Translator({})
+        self.assertEqual(["TRÒ CHƠI MỚI", "TÙY CHỌN"], translate_region_texts(translator, ["NEW GAME", "OPTIONS"]))
+        self.assertEqual([], translator.seen)                              # exact menu labels never reach the model
 
     def test_a_translation_that_drops_or_invents_a_token_is_returned_untouched_for_the_existing_guards(self):
         from vntext.image_batch import translate_region_texts
