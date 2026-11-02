@@ -1493,9 +1493,7 @@ internal static partial class Program
             Directory.CreateDirectory(root);
             try
             {
-                File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation
-k,Hello,
-");
+                File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation\nk,Hello,\n");
                 File.WriteAllText(Path.Combine(root, "manifest.json"), "{}");
                 File.WriteAllText(Path.Combine(root, "extract_status.json"), JsonSerializer.Serialize(status));
                 AssertEqual(advances, WorkflowStatus.Evaluate("synthetic-game", root).HasExtract);
