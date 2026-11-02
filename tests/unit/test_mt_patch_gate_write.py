@@ -117,7 +117,7 @@ class PatchGateWriteTests(unittest.TestCase):
         self.assertEqual("player-visible text", reason)
 
     def test_classify_short_ui_without_glossary_stays_a_candidate(self):
-        row = self._row("k1", "Brightness")                                  # not in the curated catalog: still a model candidate
+        row = self._row("k1", "Text speed")                                  # not in the curated catalog: still a model candidate
         action, _reason = classify_row(row)
         self.assertEqual("translate", action)
 
