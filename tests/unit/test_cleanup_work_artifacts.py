@@ -4086,6 +4086,22 @@ class CleanupLifecycleTests(unittest.TestCase):
 
             cleanup._transaction(inside)()
 
+    def test_a_quota_snapshot_is_one_integrity_transaction(self):
+        # Regression found by the full-suite audit: direct callers of the quota snapshot (the DEV workspace copy check) ran outside any
+        # transaction, so the whole epoch chain was re-verified uncached (~85 s instead of ~25 s) and a 70 s worker test timed out.
+        with self.isolated_workspace() as (_root, _work, _game, _manifest):
+            seen = []
+
+            def profile(_root_path):
+                seen.append(cleanup._TXN_DEPTH)
+                return cleanup.PROJECT_SIZE_LIMIT_BYTES, None, "default"
+
+            with patch.object(cleanup, "_release_task_budget_profile", side_effect=profile):
+                cleanup._project_size_snapshot()
+            self.assertTrue(seen and all(depth >= 1 for depth in seen), seen)       # the memo is available while the snapshot runs
+            self.assertEqual(0, cleanup._TXN_DEPTH)                                  # and gone afterwards
+            self.assertEqual({}, cleanup._INTEGRITY_CACHE)
+
     def test_a_nested_transaction_keeps_the_outer_memo(self):
         with self.isolated_workspace():
             snapshot = cleanup._prospective_epoch_root() / "snapshot.bin"

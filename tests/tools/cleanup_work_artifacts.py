@@ -6078,6 +6078,8 @@ def _commit_fact_memo(function):
 _git_version_at = _commit_fact_memo(_git_version_at)
 _git_is_ancestor = _commit_fact_memo(_git_is_ancestor)
 
+# One quota snapshot is one integrity transaction: direct callers (the DEV workspace copy check) would otherwise re-verify the whole epoch chain uncached.
+_project_size_snapshot = _transaction(_project_size_snapshot)
 cleanup_after_test = _transaction(cleanup_after_test)
 dispose_stale_batch = _transaction(dispose_stale_batch)
 activate_prospective_epoch = _transaction(activate_prospective_epoch)
