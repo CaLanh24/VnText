@@ -3918,7 +3918,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(before, manifest.read_bytes())
             paths.register_artifacts([record], expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest())
             self.assertEqual("DISPOSABLE", {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}["test:one"])
-            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name)))   # no temp/lock left behind
+            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name) and not p.name.endswith('.lock.guard')))   # no temp/lock left behind
 
     def test_registry_lock_is_never_stolen_by_age_and_never_unlinks_a_foreign_lock(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
@@ -3967,7 +3967,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertLess(time.monotonic() - started, 5)                             # recovered at once, no timeout stall
             self.assertEqual("RETAINED", {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}["test:one"])
             self.assertFalse(lock.exists())
-            self.assertEqual([], list(manifest.parent.glob("*.lock.dead-*")))          # no dead-lock leftovers
+            self.assertEqual([], list(manifest.parent.glob("*.new")))                    # no staging leftovers
 
             alive = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
             try:
@@ -3991,6 +3991,138 @@ class CleanupLifecycleTests(unittest.TestCase):
                     paths.register_artifacts([record])
             self.assertEqual(b"foreign-format-lock", lock.read_bytes())
 
+    def test_two_recoverers_of_one_dead_lock_never_overlap(self):
+        # Brain review: waiter A recovers a dead lock and publishes its LIVE lock; waiter B, which decided on the same dead lock BEFORE that,
+        # resumes afterwards and must not replace A's live lock.  The two decisions are forced to interleave exactly that way with events.
+        import threading
+
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            lock = manifest.with_name(manifest.name + ".lock")
+            dead = subprocess.Popen([sys.executable, "-c", "pass"])
+            dead.wait()
+            lock.write_bytes(self._lock_text(dead.pid, time.time() - 5))
+            real_state = paths._process_state
+            b_decided = threading.Event()
+            a_holds = threading.Event()
+
+            def interleaved_state(pid, written_at):
+                answer = real_state(pid, written_at)
+                if pid == dead.pid and threading.current_thread().name == "B":
+                    b_decided.set()
+                    a_holds.wait(3)                     # B's decision is stale by the time it resumes: A already holds the live lock
+                elif pid == dead.pid:
+                    b_decided.wait(3)                   # A decides only after B did
+                return answer
+
+            holders, overlap, errors = [], [], []
+
+            def writer(name):
+                try:
+                    with paths._registry_lock():
+                        if holders and holders[-1] != "left":
+                            overlap.append(list(holders) + [name])
+                        holders.append(name)
+                        if name == "A":
+                            a_holds.set()
+                        time.sleep(0.4)
+                        holders.append("left")
+                except Exception as exc:                                       # pragma: no cover - reported below
+                    errors.append(repr(exc))
+
+            with patch.object(paths, "_process_state", side_effect=interleaved_state), patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 30):
+                threads = [threading.Thread(target=writer, args=(name,), name=name) for name in ("B", "A")]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join(40)
+            self.assertEqual([], errors)
+            self.assertEqual([], overlap, holders)                             # never two holders at once
+            self.assertEqual(4, len(holders), holders)
+            self.assertEqual(["left", "left"], [holders[1], holders[3]])
+            self.assertEqual({"A", "B"}, {holders[0], holders[2]})
+            self.assertFalse(lock.exists())
+
+    def test_process_state_is_definite_only_for_death_and_unknown_counts_as_alive(self):
+        import ctypes
+        from ctypes import wintypes
+
+        class Kernel:
+            def __init__(self, open_result=0x1_0000_0001, last_error=0, exit_ok=True, code=259, times_ok=True, created=0):
+                self.open_result, self.last_error, self.exit_ok, self.code, self.times_ok, self.created = open_result, last_error, exit_ok, code, times_ok, created
+                self.handles = []
+
+            def OpenProcess(self, access, inherit, pid):
+                ctypes.set_last_error(self.last_error)
+                return self.open_result
+
+            def GetExitCodeProcess(self, handle, out):
+                self.handles.append(("exit", handle))
+                out._obj.value = self.code
+                return self.exit_ok
+
+            def GetProcessTimes(self, handle, created, exited, kernel_time, user_time):
+                self.handles.append(("times", handle))
+                ticks = int((self.created + 11_644_473_600) * 10_000_000)
+                created._obj.dwLowDateTime = ticks & 0xFFFFFFFF
+                created._obj.dwHighDateTime = ticks >> 32
+                return self.times_ok
+
+            def CloseHandle(self, handle):
+                self.handles.append(("close", handle))
+                return True
+
+        state = paths._win_process_state
+        now = time.time()
+        self.assertEqual("dead", state(4242, now, Kernel(open_result=0, last_error=87)))          # no such process
+        self.assertEqual("unknown", state(4242, now, Kernel(open_result=0, last_error=5)))        # access denied: NOT dead
+        self.assertEqual("unknown", state(4242, now, Kernel(open_result=0, last_error=0)))        # any other failure: NOT dead
+        self.assertEqual("unknown", state(4242, now, Kernel(exit_ok=False)))                      # exit-code query failed
+        self.assertEqual("dead", state(4242, now, Kernel(code=1)))                                # exited
+        self.assertEqual("unknown", state(4242, now, Kernel(times_ok=False)))                     # start-time query failed
+        self.assertEqual("dead", state(4242, now - 3600, Kernel(created=now)))                    # pid reborn after the lock was written
+        kernel = Kernel(created=now - 7200)
+        self.assertEqual("alive", state(4242, now, kernel))
+        # a 64-bit HANDLE value reaches every later call and the close unchanged (no 32-bit truncation in the call path)
+        self.assertEqual({0x1_0000_0001}, {handle for _name, handle in kernel.handles})
+        self.assertEqual(["exit", "times", "close"], [name for name, _ in kernel.handles])
+
+    def test_real_kernel_prototypes_carry_pointer_sized_handles_and_report_real_processes(self):
+        if os.name != "nt":
+            self.skipTest("Windows process query")
+        from ctypes import wintypes
+
+        kernel = paths._kernel32()
+        self.assertIs(wintypes.HANDLE, kernel.OpenProcess.restype)
+        self.assertIs(wintypes.HANDLE, kernel.GetExitCodeProcess.argtypes[0])
+        self.assertIs(wintypes.HANDLE, kernel.GetProcessTimes.argtypes[0])
+        self.assertEqual([wintypes.HANDLE], list(kernel.CloseHandle.argtypes))
+        sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            time.sleep(0.4)
+            self.assertEqual("alive", paths._win_process_state(sleeper.pid, time.time()))
+        finally:
+            sleeper.kill()
+            sleeper.wait()
+        self.assertEqual("dead", paths._win_process_state(sleeper.pid, time.time()))
+
+    def test_a_failing_or_denied_process_query_never_lets_a_live_lock_be_stolen(self):
+        if os.name != "nt":
+            self.skipTest("Windows process query")
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            one = work / "one"
+            one.mkdir()
+            record = {"artifact_id": "test:one", "path": one, "kind": "test_fixture", "created_by": "t", "owner": "t", "purpose": "p", "lifecycle": "RETAINED"}
+            lock = manifest.with_name(manifest.name + ".lock")
+            text = self._lock_text(999999, time.time() - 10)
+            lock.write_bytes(text)
+            for outcome in ("unknown", RuntimeError):
+                side = (lambda *_a: "unknown") if outcome == "unknown" else RuntimeError("query failed")
+                with patch.object(paths, "_win_process_state", side_effect=side), patch.object(paths, "_process_state", wraps=paths._process_state), \
+                        patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 0.4), patch.object(paths.os, "name", "nt"):
+                    with self.assertRaises(TimeoutError):
+                        paths.register_artifacts([record])
+                self.assertEqual(text, lock.read_bytes())                      # untouched
+
     def test_failed_atomic_registry_write_preserves_the_old_registry(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             one = work / "one"
@@ -4003,7 +4135,7 @@ class CleanupLifecycleTests(unittest.TestCase):
                 with self.assertRaises(OSError):
                     self._register(two, lifecycle="RETAINED")
             self.assertEqual(before, manifest.read_bytes())
-            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name)))   # no temp or lock left
+            self.assertEqual([manifest.name], sorted(p.name for p in work.iterdir() if p.name.startswith(manifest.name) and not p.name.endswith('.lock.guard')))   # no temp or lock left
 
     def test_integrity_memo_reuses_unchanged_snapshots_within_a_transaction_and_never_a_stale_pass(self):
         with self.isolated_workspace() as (root, _work, _game, manifest):

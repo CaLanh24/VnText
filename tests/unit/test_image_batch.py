@@ -282,21 +282,48 @@ class AutomaticImageTests(unittest.TestCase):
 
 
 class AllCapsRegionTranslationTests(unittest.TestCase):
+    class Translator:
+        def __init__(self, table):
+            self.table = table
+            self.seen = []
+
+        def translate_many(self, texts):
+            self.seen = list(texts)
+            return [self.table.get(text, text) for text in texts]
+
     def test_all_caps_ui_text_is_translated_in_sentence_case_and_restored_to_capitals(self):
         from vntext.image_batch import translate_region_texts
 
-        class Translator:
-            seen = []
-            table = {"New game": "Trò chơi mới", "Options": "Tùy chọn", "Hello there": "Xin chào", "NEW GAME": "NEW GAME"}
-
-            def translate_many(self, texts):
-                Translator.seen = list(texts)
-                return [self.table.get(text, text) for text in texts]
-
-        result = translate_region_texts(Translator(), ["NEW GAME", "OPTIONS", "Hello there", "HP"])
-        self.assertEqual(["New game", "Options", "Hello there", "HP"], Translator.seen)          # only ALL-CAPS regions are normalised
+        translator = self.Translator({"New game": "Trò chơi mới", "Options": "Tùy chọn", "Hello there": "Xin chào", "NEW GAME": "NEW GAME"})
+        result = translate_region_texts(translator, ["NEW GAME", "OPTIONS", "Hello there", "HP"])
+        self.assertEqual(["New game", "Options", "Hello there", "HP"], translator.seen)          # only ALL-CAPS regions are normalised
         self.assertEqual(["TRÒ CHƠI MỚI", "TÙY CHỌN", "Xin chào", "HP"], result)
-        self.assertEqual(2, len(translate_region_texts(Translator(), ["NEW GAME", "Hello there"])))
+        self.assertEqual(2, len(translate_region_texts(translator, ["NEW GAME", "Hello there"])))
+
+    def test_placeholders_and_tags_are_never_case_changed_on_the_way_to_the_model_or_back(self):
+        from vntext.image_batch import translate_region_texts
+
+        translator = self.Translator({
+            "[PLAYER] Save {NAME}": "[PLAYER] lưu {NAME}",               # the model got the tokens byte-identical
+            "[Player] Save": "lưu [player]",                             # ...and changed a token's case on the way back
+            "{b}Hello{/b} there": "{b}xin chào{/b}",
+            "You have %s coins": "Bạn có %s xu",
+            "New game": "Trò chơi mới",
+        })
+        sources = ["[PLAYER] SAVE {NAME}", "[Player] SAVE", "{b}HELLO{/b} THERE", "YOU HAVE %s COINS", "NEW GAME"]
+        result = translate_region_texts(translator, sources)
+        self.assertEqual(["[PLAYER] Save {NAME}", "[Player] Save", "{b}Hello{/b} there", "You have %s coins", "New game"], translator.seen)
+        self.assertEqual(["[PLAYER] LƯU {NAME}", "LƯU [Player]", "{b}XIN CHÀO{/b}", "BẠN CÓ %s XU", "TRÒ CHƠI MỚI"], result)   # exact source tokens restored
+        for source, value in zip(sources, result):
+            from vntext.image_batch import _PROTECTED
+            self.assertEqual(sorted(_PROTECTED.findall(source)), sorted(_PROTECTED.findall(value)), (source, value))
+
+    def test_a_translation_that_drops_or_invents_a_token_is_returned_untouched_for_the_existing_guards(self):
+        from vntext.image_batch import translate_region_texts
+
+        translator = self.Translator({"[PLAYER] Save {NAME}": "lưu {NAME}", "Save [GOLD]": "Lưu [GOLD] [MORE]"})
+        result = translate_region_texts(translator, ["[PLAYER] SAVE {NAME}", "SAVE [GOLD]"])
+        self.assertEqual(["lưu {NAME}", "Lưu [GOLD] [MORE]"], result)      # no forged repair: the batch's own checks still see what the model said
 
 
 if __name__=='__main__':unittest.main()

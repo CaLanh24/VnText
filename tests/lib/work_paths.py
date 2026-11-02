@@ -328,90 +328,180 @@ class RegistryChanged(RuntimeError):
 
 
 REGISTRY_LOCK_TIMEOUT_SECONDS = 60
+_STILL_ACTIVE = 259
+_ERROR_INVALID_PARAMETER = 87            # OpenProcess: no process has this id
 
 
-def _process_alive_since(pid: int, written_at: float) -> bool:
-    """True while ``pid`` is the same live process that wrote a lock at ``written_at`` (a reused pid, created later, is a different process)."""
+def _kernel32():
+    """kernel32 with explicit 64-bit-safe prototypes: a HANDLE must never travel as a 32-bit int."""
 
-    if pid == os.getpid():
-        return True
-    if os.name != "nt":
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return False
-        except PermissionError:
-            return True
-        return True
     import ctypes
     from ctypes import wintypes
 
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
     kernel.OpenProcess.restype = wintypes.HANDLE
-    handle = kernel.OpenProcess(0x1000, False, pid)         # PROCESS_QUERY_LIMITED_INFORMATION
+    kernel.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+    kernel.GetExitCodeProcess.restype = wintypes.BOOL
+    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+    kernel.GetProcessTimes.restype = wintypes.BOOL
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.CloseHandle.restype = wintypes.BOOL
+    return kernel
+
+
+def _win_process_state(pid: int, written_at: float, kernel=None) -> str:
+    """'alive' | 'dead' | 'unknown' for the process that wrote a lock at ``written_at``.
+
+    Only a DEFINITE death is 'dead' (no such pid, an exit code other than STILL_ACTIVE, or a pid reborn after the lock was written).
+    Any query that fails or is denied is 'unknown', which callers treat as alive: a live writer's lock must never be stolen."""
+
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = kernel or _kernel32()
+    handle = kernel.OpenProcess(0x1000, False, pid)                  # PROCESS_QUERY_LIMITED_INFORMATION
     if not handle:
-        return ctypes.get_last_error() != 87                # 87 = invalid parameter: no such process; anything else (e.g. access denied) = alive
+        return "dead" if ctypes.get_last_error() == _ERROR_INVALID_PARAMETER else "unknown"
     try:
         code = wintypes.DWORD()
-        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)) or code.value != 259:
-            return False                                    # exited (259 = STILL_ACTIVE)
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)):
+            return "unknown"
+        if code.value != _STILL_ACTIVE:
+            return "dead"
         created, exited, kernel_time, user_time = (wintypes.FILETIME() for _ in range(4))
-        if kernel.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(exited), ctypes.byref(kernel_time), ctypes.byref(user_time)):
-            ticks = (created.dwHighDateTime << 32) | created.dwLowDateTime
-            created_at = ticks / 10_000_000 - 11_644_473_600  # FILETIME -> unix seconds
-            if created_at > written_at + 2:
-                return False                                # the pid now belongs to a process born after the lock was written
-        return True
+        if not kernel.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(exited), ctypes.byref(kernel_time), ctypes.byref(user_time)):
+            return "unknown"
+        created_at = ((created.dwHighDateTime << 32) | created.dwLowDateTime) / 10_000_000 - 11_644_473_600
+        return "dead" if created_at > written_at + 2 else "alive"    # a pid born after the lock was written is another process
     finally:
         kernel.CloseHandle(handle)
+
+
+def _process_state(pid: int, written_at: float) -> str:
+    if pid == os.getpid():
+        return "alive"
+    if os.name == "nt":
+        try:
+            return _win_process_state(pid, written_at)
+        except Exception:                                  # any failing query is "unknown", which callers treat as alive
+            return "unknown"
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return "dead"
+    except OSError:
+        return "unknown"
+    return "alive"
 
 
 def _lock_owner(lock: Path) -> tuple[int, float] | None:
     """(pid, written_at) of a lock written by this module, or None when the owner cannot be established."""
 
     try:
-        token, pid_text, written_text = lock.read_text(encoding="ascii").split()[:3]
+        _token, pid_text, written_text = lock.read_text(encoding="ascii").split()[:3]
         return int(pid_text), float(written_text)
     except (OSError, ValueError, UnicodeDecodeError):
         return None
+
+
+def _os_lock(descriptor: int) -> None:
+    if os.name == "nt":
+        import msvcrt
+
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def _os_unlock(descriptor: int) -> None:
+    if os.name == "nt":
+        import msvcrt
+
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+
+@contextmanager
+def _registry_guard(guard_path: Path, deadline: float):
+    """OS-held mutual exclusion for every lock decision (acquire AND recover). The OS drops it if its holder dies, so it can never go stale."""
+
+    descriptor = os.open(guard_path, os.O_CREAT | os.O_RDWR)
+    try:
+        while True:
+            try:
+                _os_lock(descriptor)
+                break
+            except OSError:
+                if time.monotonic() > deadline:
+                    raise TimeoutError(f"artifact registry is locked: {guard_path}")
+                time.sleep(0.02)
+        try:
+            yield
+        finally:
+            _os_unlock(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _publish_lock(lock: Path, payload: bytes) -> bool:
+    """Create-exclusive publication of a COMPLETE lock file (content and existence appear together); False when a lock exists."""
+
+    staging = lock.with_name(f"{lock.name}.{uuid.uuid4().hex}.new")
+    staging.write_bytes(payload)
+    try:
+        try:
+            os.link(staging, lock)                      # atomic and exclusive: fails when the lock exists
+            return True
+        except FileExistsError:
+            return False
+        except OSError:                                 # filesystem without hard links: exclusive create (still serialized by the guard)
+            try:
+                descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            except FileExistsError:
+                return False
+            try:
+                os.write(descriptor, payload)
+            finally:
+                os.close(descriptor)
+            return True
+    finally:
+        staging.unlink(missing_ok=True)
 
 
 @contextmanager
 def _registry_lock():
     """Exclusive registry write lock: a create-exclusive file beside the registry holding this writer's token, pid and start time.
 
-    A LIVE writer's lock is never stolen, however slow it is (no age-based theft): a waiter that cannot get it within the timeout fails
-    closed with TimeoutError.  A lock whose writing process has exited (killed mid-write) is recovered by atomically moving it aside, so a
-    dead writer can no longer block every later registration.  A lock with no readable owner (legacy/foreign) is never touched.
-    Release unlinks only a lock that still carries this writer's token."""
+    Every acquisition and every dead-owner recovery runs inside an OS-held guard, so two waiters can never both act on the same dead lock
+    (the loser re-reads the winner's LIVE lock and waits).  A live writer's lock is never stolen, however slow it is (no age-based theft);
+    only a DEFINITELY dead owner (see ``_win_process_state``) is recovered; a failing or denied process query counts as alive; a lock with
+    no readable owner (legacy/foreign) is never touched.  Release unlinks only a lock that still carries this writer's token."""
 
     ensure_work_root()
     lock = MANIFEST_PATH.with_name(MANIFEST_PATH.name + ".lock")
-    token = uuid.uuid4().hex
-    payload = f"{token} {os.getpid()} {time.time():.3f}".encode("ascii")
+    guard_path = MANIFEST_PATH.with_name(MANIFEST_PATH.name + ".lock.guard")
+    payload = f"{uuid.uuid4().hex} {os.getpid()} {time.time():.3f}".encode("ascii")
     deadline = time.monotonic() + REGISTRY_LOCK_TIMEOUT_SECONDS
     while True:
-        try:
-            descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
+        with _registry_guard(guard_path, deadline):
+            if _publish_lock(lock, payload):
+                break
             owner = _lock_owner(lock)
-            if owner is not None and not _process_alive_since(*owner):
-                try:
-                    os.replace(lock, lock.with_name(f"{lock.name}.dead-{uuid.uuid4().hex}"))   # atomic: one recoverer wins
-                    for leftover in lock.parent.glob(lock.name + ".dead-*"):
-                        leftover.unlink(missing_ok=True)
-                except OSError:
-                    pass
-                continue
-            if time.monotonic() > deadline:
-                raise TimeoutError(f"artifact registry is locked: {lock}")
-            time.sleep(0.05)
-            continue
-        try:
-            os.write(descriptor, payload)
-        finally:
-            os.close(descriptor)
-        break
+            if owner is not None and _process_state(*owner) == "dead":
+                lock.unlink(missing_ok=True)            # safe: nobody else can act on the lock while we hold the guard
+                if _publish_lock(lock, payload):
+                    break
+        if time.monotonic() > deadline:
+            raise TimeoutError(f"artifact registry is locked: {lock}")
+        time.sleep(0.05)
     try:
         yield
     finally:

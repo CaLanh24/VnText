@@ -25,19 +25,57 @@ def _font_path():
     return Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'Fonts/arial.ttf'
 
 
+_PROTECTED = re.compile(r'\[[^\[\]]*\]|\{[^{}]*\}|%\([A-Za-z_]\w*\)[sdif]|%[sdif]|\\n', re.IGNORECASE)   # IGNORECASE: the translation is upper-cased before its tokens are matched and restored
+
+
 def _is_all_caps(text):
-    """UI art is usually ALL CAPS (NEW GAME); the MT model leaves such text unchanged or mistranslates it."""
-    letters = [ch for ch in text if ch.isalpha()]
+    """UI art is usually ALL CAPS (NEW GAME); the MT model leaves such text unchanged or mistranslates it. Placeholders/tags are not text."""
+    letters = [ch for ch in _PROTECTED.sub('', text) if ch.isalpha()]
     return len(letters) >= 3 and all(ch.isupper() for ch in letters)      # 2-letter tokens (HP, MP, OK) are abbreviations, left as they are
+
+
+def _sentence_case(text):
+    """Lower-case the PLAIN text only (first letter capitalised); every [placeholder], {tag} and %s stays byte-identical."""
+    pieces, position, first = [], 0, True
+    for match in _PROTECTED.finditer(text):
+        plain = text[position:match.start()].lower()
+        if first and any(ch.isalpha() for ch in plain):
+            plain = plain.capitalize() if plain[:1].isalpha() else plain[:1] + plain[1:].capitalize()
+            first = False
+        pieces += [plain, match.group(0)]
+        position = match.end()
+    tail = text[position:].lower()
+    if first and any(ch.isalpha() for ch in tail):
+        tail = tail.capitalize() if tail[:1].isalpha() else tail[:1] + tail[1:].capitalize()
+    return ''.join(pieces) + tail
+
+
+def _recapitalise(original, value):
+    """Upper-case the translation but put the SOURCE tokens back exactly; if the model changed/dropped a token the answer is returned untouched
+    so the existing downstream guards decide (no forged repair)."""
+    sources = _PROTECTED.findall(original)
+    upper = value.upper()
+    found = _PROTECTED.findall(upper)
+    if sorted(token.upper() for token in sources) != sorted(found):
+        return value
+    pool = list(sources)
+
+    def restore(match):
+        token = match.group(0)
+        for index, candidate in enumerate(pool):
+            if candidate.upper() == token:
+                return pool.pop(index)
+        return token
+    return _PROTECTED.sub(restore, upper)
 
 
 def translate_region_texts(translator, texts):
     """Translate OCR region texts; ALL-CAPS regions are translated in sentence case and the result is set back in capitals."""
-    normalized = [text.strip().capitalize() if _is_all_caps(text) else text for text in texts]
+    normalized = [_sentence_case(text.strip()) if _is_all_caps(text) else text for text in texts]
     translations = translator.translate_many(normalized)
     if len(translations) != len(texts):
         return translations
-    return [value.upper() if isinstance(value, str) and _is_all_caps(original) else value for original, value in zip(texts, translations)]
+    return [_recapitalise(original, value) if isinstance(value, str) and _is_all_caps(original) else value for original, value in zip(texts, translations)]
 
 
 def _render_draft(document, output, font_path, is_cancelled):
