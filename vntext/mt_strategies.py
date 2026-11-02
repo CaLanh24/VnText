@@ -140,6 +140,11 @@ def candidate_quality_issues(
             match.group(1).casefold()
             for match in re.finditer(r"\b([^\W\d_]{3,})\s+\1\b", candidate_visible, re.IGNORECASE)
         }
+        # A Vietnamese reduplication ("chằm chằm", "dần dần") is a valid word pair; only a plain-ASCII (English/garbage) pair or 3+ repeats is a fault.
+        repeated_tokens = {
+            token for token in repeated_tokens
+            if not mt_check.has_vietnamese_diacritic(token) or re.search(rf"\b{re.escape(token)}(?:\s+{re.escape(token)}){{2,}}\b", candidate_visible, re.IGNORECASE)
+        }
         issues.extend(f"quality: repeated token: {token}" for token in sorted(repeated_tokens))
         if (
             re.search(r"\s+[,.!?…]", value)

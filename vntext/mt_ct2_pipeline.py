@@ -8,6 +8,7 @@ import json
 import hashlib
 import re
 import sqlite3
+import time
 import uuid
 from typing import Any
 
@@ -589,6 +590,7 @@ def _cache_validated_candidate(
 
 
 _VIETNAMESE_MARK = re.compile("[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]")
+_PROBE_SECONDS = 90.0
 _TITLE_WORD = re.compile(r"\b[A-Z][a-z]{2,}\b")
 
 
@@ -600,17 +602,30 @@ def _discover_common_words(translator, rows, user_glossary) -> set[str]:
     consistently in both letter cases.  Package/user glossary terms are never touched.
     """
     glossary_text = " ".join(str(key) for key in (user_glossary or {})).casefold()
-    tokens = sorted({
-        word for row in rows for word in _TITLE_WORD.findall(str(row.get("source_text") or ""))
-        if word.casefold() not in glossary_text
-    })
-    if not tokens or len(tokens) > 2000:
-        return set()
-    try:
-        capital = translator.translate_many(tokens)
-        lower = translator.translate_many([word.lower() for word in tokens])
-    except Exception:
-        return set()
+    counts: dict[str, int] = {}
+    for row in rows:
+        for word in _TITLE_WORD.findall(str(row.get("source_text") or "")):
+            if word.casefold() not in glossary_text:
+                counts[word] = counts.get(word, 0) + 1
+    # Most frequent first and a wall-clock budget: a one-word model call is slow, so a big package is probed only as far as the budget reaches;
+    # every word not reached keeps the old name protection (conservative, never less safe than before).
+    ordered = sorted(counts, key=lambda word: (-counts[word], word))[:1200]
+    capital: list[str] = []
+    lower: list[str] = []
+    deadline = time.monotonic() + _PROBE_SECONDS
+    tokens: list[str] = []
+    for start in range(0, len(ordered), 24):
+        if time.monotonic() > deadline:
+            break
+        chunk = ordered[start:start + 24]
+        try:
+            capital_part = translator.translate_many(chunk)
+            lower_part = translator.translate_many([word.lower() for word in chunk])
+        except Exception:
+            break
+        tokens += chunk
+        capital += list(capital_part)
+        lower += list(lower_part)
     common: set[str] = set()
     for word, up, low in zip(tokens, capital, lower):
         up, low = str(up or "").strip().strip(".,!?").casefold(), str(low or "").strip().strip(".,!?").casefold()
@@ -623,6 +638,14 @@ def _discover_common_words(translator, rows, user_glossary) -> set[str]:
         ):
             common.add(word.casefold())
     return common
+
+
+def _model_keeps_word_probe(translator):
+    """callable(word) -> bool: the model returns the lower-case word unchanged even when asked alone (loanword/technical term)."""
+    def probe(word: str) -> bool:
+        out = translator.translate_many([word])
+        return bool(out) and str(out[0] or "").strip().strip(".,!?").casefold() == word.casefold()
+    return probe
 
 
 def run_ct2_translate(*args, **kwargs) -> dict:
@@ -887,7 +910,7 @@ def _run_ct2_translate_impl(
         translator = model_adapter
     from vntext import mt_check as _mt_check_names
 
-    _mt_check_names.set_runtime_common_words_provider(lambda: _discover_common_words(translator, rows, user_glossary))
+    _mt_check_names.set_runtime_common_words_provider(lambda: {"common": _discover_common_words(translator, rows, user_glossary), "kept_probe": _model_keeps_word_probe(translator)})
     cfg = dict(getattr(translator, "config", {}) or {})
     batch_size = max(1, int(cfg.get("batch_size", 4) or 4))
     inter_threads = max(1, int(cfg.get("inter_threads", 1) or 1))
@@ -1446,7 +1469,7 @@ def _run_ct2_translate_keys_impl(
         translator = model_adapter
     from vntext import mt_check as _mt_check_names
 
-    _mt_check_names.set_runtime_common_words_provider(lambda: _discover_common_words(translator, rows, user_glossary))
+    _mt_check_names.set_runtime_common_words_provider(lambda: {"common": _discover_common_words(translator, rows, user_glossary), "kept_probe": _model_keeps_word_probe(translator)})
     cfg = dict(getattr(translator, "config", {}) or {})
     batch_size = max(1, int(cfg.get("batch_size", 4) or 4))
     metadata = dict(getattr(translator, "metadata", lambda: {})() or {})

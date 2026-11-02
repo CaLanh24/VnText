@@ -1481,6 +1481,8 @@ internal static partial class Program
         var cases = new (string Name, object Status, bool Advances)[]
         {
             ("scoped", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = expected }, true),
+            ("screen-only review", new { complete = false, status = "PARTIAL", main = 3, review = 8, errors = 0, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = new object[] { new { code = "RUNTIME_DYNAMIC_UNRESOLVED", count = 2 }, new { code = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", count = 8 } } }, true),
+            ("review count mismatch", new { complete = false, status = "PARTIAL", main = 3, review = 9, errors = 0, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = new object[] { new { code = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", count = 8 } } }, false),
             ("error", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 1, native_accounting_complete = true, patch_scope = "VERIFIED_MAIN_SUBSET", limitations = expected }, false),
             ("review-only", new { complete = false, status = "PARTIAL", main = 0, review = 4, errors = 0, native_accounting_complete = true, patch_scope = "NONE", limitations = expected }, false),
             ("no scope", new { complete = false, status = "PARTIAL", main = 3, review = 0, errors = 0, native_accounting_complete = true, patch_scope = "NONE", limitations = expected }, false),

@@ -50,7 +50,7 @@ def apply_exact_labels(source, text):
 
 
 
-def collect_spans(text, *, protect_lexical=True, key_prefix=True):
+def collect_spans(text, *, protect_lexical=True, key_prefix=True, inline_names=False):
     spans = []
     # File/path literals in help text are user-facing instructions.  Protect
     # the complete slash/backslash-delimited token before lexical fallbacks so
@@ -76,6 +76,8 @@ def collect_spans(text, *, protect_lexical=True, key_prefix=True):
             continue
         if any(start <= m.start() < end for start, end in protected_ranges):
             continue
+        if inline_names:
+            continue                       # the name stays inside its sentence; the caller verifies it survived
         spans.append((m.start(), m.end(), m.group(0), 'name'))
     if protect_lexical:
         # Restore a bounded generic lexical fallback before CT2 sees the token.
@@ -152,10 +154,10 @@ def restore_text(masked, tokens, kinds):
     return SENTINEL_RX.sub(repl, masked)
 
 
-def split_parts(text, *, protect_lexical=True, key_prefix=True):
+def split_parts(text, *, protect_lexical=True, key_prefix=True, inline_names=False):
     """Separate opaque spans from translatable text without altering either."""
     prepared = strip_lexical_suffixes(text)
-    spans = collect_spans(prepared, protect_lexical=protect_lexical, key_prefix=key_prefix)
+    spans = collect_spans(prepared, protect_lexical=protect_lexical, key_prefix=key_prefix, inline_names=inline_names)
     parts = []
     position = 0
     for start, end, original, kind in spans:

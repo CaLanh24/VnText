@@ -687,6 +687,9 @@ def classify_row(row: dict) -> tuple[str, str]:
     ):
         return "copy_literal", "NaninovelScript chrome — giữ EN (ổn định Script)"
 
+    if mt_check.is_date_format_string(src):
+        return "copy_literal", "date/time format string — giữ nguyên"
+
     fixed = resolve_ui_label_translation(src, ctx)
     if fixed is not None and fixed.strip():
         if fixed.strip() == src.strip():

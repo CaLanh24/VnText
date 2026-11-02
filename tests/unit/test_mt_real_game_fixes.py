@@ -90,5 +90,88 @@ class CatalogBeforeNameGuardTests(unittest.TestCase):
         self.assertEqual("copy_literal", classify_row_authoritative(self.row("Back", "RenPy:game/script.rpy:21:start_a4a14dc7"))[0])
 
 
+class DateFormatAndNumberedLabelTests(unittest.TestCase):
+    FORMAT = "%b %d, %Y @ %I:%M %p{#achievement_timestamp}"
+
+    def test_a_translation_that_loses_any_strftime_directive_or_punctuation_is_rejected_by_the_preflight(self):
+        for broken in ("%b %d%Y %p{#achievement_timestamp}", "%b %d, %Y @ %I %p{#achievement_timestamp}", "%b %d, %Y %I:%M %p{#achievement_timestamp}",
+                       "%b %d, %Y @ %I:%M{#achievement_timestamp}", "Tháng %d, %Y @ %I:%M %p{#achievement_timestamp}"):
+            with self.subTest(broken):
+                self.assertTrue(mt_check.typed_carrier_problems(self.FORMAT, broken))
+        self.assertEqual([], mt_check.typed_carrier_problems(self.FORMAT, self.FORMAT))
+        self.assertEqual([], mt_check.typed_carrier_problems("Hello 100% sure", "Xin chào chắc 100%"))        # prose percent is not a directive
+
+    def test_pure_date_format_strings_are_technical_copy_literal_never_sent_to_the_model(self):
+        row = {"key": "k", "source_text": self.FORMAT, "translation": "", "context": "RenPy:game/x.rpy:3:string:y", "file_path": "game/x.rpy", "import_method": "renpy_string"}
+        self.assertEqual(("copy_literal", "date/time format string — giữ nguyên"), classify_row_authoritative(row)[:2])
+        self.assertFalse(mt_check.is_date_format_string("Saved on %d"))
+        self.assertFalse(mt_check.is_date_format_string("You have %d days and %s hours left"))
+
+    def test_numbered_labels_use_an_exact_pattern_in_ui_contexts_only(self):
+        from vntext.ui_labels import resolve_ui_label_translation as resolve
+        ctx = "RenPy:game/x.rpy:3:string:y"
+        self.assertEqual("Thành tựu 3", resolve("Achievement3", ctx))
+        self.assertEqual("Thành tựu 12", resolve("achievement 12", ctx))
+        self.assertIsNone(resolve("Achievement3 unlocked", ctx))
+        self.assertIsNone(resolve("Achievement3", "RenPy:game/x.rpy:3:start_abc"))
+
+
+class QualityGateFalsePositiveTests(unittest.TestCase):
+    def issues(self, source, value):
+        from vntext.mt_strategies import candidate_quality_issues
+        row = {"key": "k", "source_text": source, "translation": "", "context": "RenPy:x:start_a", "file_path": "x", "import_method": "renpy_dialogue"}
+        return candidate_quality_issues(row, value, set())
+
+    def test_vietnamese_reduplication_is_not_a_repeated_token_fault_but_triples_and_ascii_pairs_are(self):
+        self.assertNotIn("quality: repeated token: chằm", self.issues("I stared at them from afar.", "Tôi nhìn chằm chằm vào họ từ xa."))
+        self.assertIn("quality: repeated token: chằm", self.issues("I stared at them from afar.", "Tôi nhìn chằm chằm chằm vào họ."))
+        self.assertIn("quality: repeated token: very", self.issues("It was so very bad today.", "Nó very very tệ."))
+
+    def test_a_loanword_the_model_keeps_even_alone_is_not_a_translation_failure_for_that_run(self):
+        src, out = "I could smell the cheap tequila.", "Tôi có thể ngửi thấy mùi tequila rẻ tiền."
+        self.assertTrue(any("english-token" in issue for issue in self.issues(src, out)))
+        try:
+            asked = []
+            mt_check.set_runtime_common_words_provider(lambda: {"common": (), "kept_probe": lambda word: asked.append(word) or word == "tequila"})
+            mt_check.ensure_runtime_common_words()
+            self.assertFalse(any("english-token" in issue for issue in self.issues(src, out)))
+            self.assertEqual(["tequila"], asked)                                       # the model is asked once, only about the flagged word
+            self.issues(src, out)
+            self.assertEqual(["tequila"], asked)
+        finally:
+            mt_check.set_runtime_common_words(())
+        self.assertTrue(any("english-token" in issue for issue in self.issues(src, out)))
+
+
+class NameInsideSentenceTests(unittest.TestCase):
+    ROW = {"key": "k1", "source_text": "Chang did not notice the cold. He asked about the job.", "translation": "", "context": "RenPy:x:start_a", "file_path": "x",
+           "import_method": "renpy_dialogue"}
+
+    class Model:
+        def __init__(self, mutate_name=False):
+            self.seen = []
+            self.mutate_name = mutate_name
+
+        def translate_many(self, texts):
+            self.seen.append(list(texts))
+            return [("T[" + text + "]").replace("Chang", "Chàng" if self.mutate_name else "Chang") for text in texts]
+
+    def test_a_name_stays_inside_its_sentence_instead_of_cutting_the_sentence_into_orphan_fragments(self):
+        from vntext.mt_ct2_io import _batch_translate_chunk
+        model = self.Model()
+        out = _batch_translate_chunk(model, [dict(self.ROW)])
+        sent = [text for batch in model.seen for text in batch]
+        self.assertIn("Chang did not notice the cold.", sent)                       # whole sentence, name inside
+        self.assertNotIn(" did not notice the cold.", sent)                         # no orphan fragment
+        self.assertIn("Chang", out["k1"])
+
+    def test_if_the_model_changes_the_name_the_row_is_translated_again_with_the_name_protected(self):
+        from vntext.mt_ct2_io import _batch_translate_chunk
+        model = self.Model(mutate_name=True)
+        out = _batch_translate_chunk(model, [dict(self.ROW)])
+        self.assertIn("Chang", out["k1"])
+        self.assertNotIn("Chàng", out["k1"])                                  # the protected route restored the exact name
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -97,6 +97,16 @@ def _join_pieces(pieces: list[str]) -> str:
     return "".join(out)
 
 
+def _names_lost(source: str, value: str) -> bool:
+    """True when a protected source name (Chang, Tia) is missing from a non-empty translation."""
+    if not str(value or "").strip():
+        return False
+    for name in _mt_check.source_proper_name_tokens(source):
+        if not re.search(rf"(?<![^\W_]){re.escape(name)}(?![^\W_])", str(value), re.IGNORECASE):
+            return True
+    return False
+
+
 def _batch_translate_chunk(
     translator: Ct2Translator,
     rows: list[dict],
@@ -105,6 +115,27 @@ def _batch_translate_chunk(
     *,
     v2_glossary: dict | None = None,
     glossary_conflicts: set[str] | None = None,
+) -> dict[str, str]:
+    """Names stay INSIDE their sentence (cutting a sentence at every name made the model translate orphan fragments: "Chang Không nhận thấy...");
+    a row whose name did not survive is translated again with the name cut out, the original protected route."""
+    out = _batch_translate_chunk_core(translator, rows, user_glossary, translation_memory, v2_glossary=v2_glossary,
+                                      glossary_conflicts=glossary_conflicts, inline_names=True)
+    retry = [row for row in rows if _names_lost(str(row.get("source_text") or ""), out.get(str(row.get("key")), ""))]
+    if retry:
+        out.update(_batch_translate_chunk_core(translator, retry, user_glossary, translation_memory, v2_glossary=v2_glossary,
+                                               glossary_conflicts=glossary_conflicts, inline_names=False))
+    return out
+
+
+def _batch_translate_chunk_core(
+    translator: Ct2Translator,
+    rows: list[dict],
+    user_glossary: dict[str, str] | None = None,
+    translation_memory: dict | None = None,
+    *,
+    v2_glossary: dict | None = None,
+    glossary_conflicts: set[str] | None = None,
+    inline_names: bool = False,
 ) -> dict[str, str]:
     """Translate a chunk: batch all text fragments (incl. tag/placeholder rows) in few CT2 calls."""
     from vntext.package_glossary import (
@@ -167,7 +198,7 @@ def _batch_translate_chunk(
         if variants:
             variant_parts: list[list[tuple[str, str]]] = []
             for vi, variant in enumerate(variants):
-                _prepared, parts = split_parts(variant, protect_lexical=protect_lexical)
+                _prepared, parts = split_parts(variant, protect_lexical=protect_lexical, inline_names=inline_names)
                 variant_parts.append(parts)
                 for pi, (kind, val) in enumerate(parts):
                     if kind != "text" or not val.strip():
@@ -180,7 +211,7 @@ def _batch_translate_chunk(
                     frag_refs.append((ri, vi, pi, fi, lead, trail))
             row_structs.append(("randpick", variant_parts))
         else:
-            _prepared, parts = split_parts(src, protect_lexical=protect_lexical)
+            _prepared, parts = split_parts(src, protect_lexical=protect_lexical, inline_names=inline_names)
             row_structs.append(("single", parts))
             for pi, (kind, val) in enumerate(parts):
                 if kind != "text" or not val.strip():

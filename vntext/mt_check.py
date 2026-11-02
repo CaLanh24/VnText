@@ -35,6 +35,9 @@ PRINTF_RX = re.compile(
     r'|(?<![\d%])%(?:\d+\$)?[-+#0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?'
     r'(?:hh|h|ll|l|L|z|j|t)?[diuoxXeEfFgGaAcsp](?![^\W\d_])'
 )
+# strftime/date-format directives (%b %d, %Y @ %I:%M %p): engine format carriers exactly like printf conversions.  A leading digit or "%" means a
+# literal percent in prose ("100%b") and a following letter means the "%" is not a directive.
+STRFTIME_RX = re.compile(r'(?<![\d%])%[-#]?[aAbBcdHIjmMpSUwWxXyYZ](?![^\W\d_])')
 # Scheme URLs only; trailing sentence punctuation is not part of the URL.
 URL_RX = re.compile(
     r'(?<![A-Za-z0-9])(?:https?|ftp)://[^\s<>"\'{}\[\]\x5c]*[^\s<>"\'{}\[\]\x5c.,;:!?)]'
@@ -54,6 +57,24 @@ PERCENT_RX = re.compile(r'(?<![\w%.,])\d+(?:[.,]\d+)?\s?%(?![A-Za-z%])')
 def numeric_carriers(text):
     s = str(text or '')
     return [m.group(0) for rx in (CURRENCY_RX, PERCENT_RX) for m in rx.finditer(s)]
+
+
+def strftime_directives(text):
+    return [m.group(0) for m in STRFTIME_RX.finditer(str(text or ''))]
+
+
+def is_date_format_string(text):
+    """True for a pure strftime format ("%b %d, %Y @ %I:%M %p{#tag}"): >= 2 directives and no prose word left once directives, tags and punctuation go."""
+    s = str(text or '')
+    if len(strftime_directives(s)) < 2:
+        return False
+    rest = STRFTIME_RX.sub(' ', re.sub(r'\{[^{}]*\}', ' ', s))
+    return not re.search(r'[^\W\d_]', rest)
+
+
+def format_skeleton(text):
+    """Directive sequence plus the punctuation between them (", @ :"), which a format string must keep byte for byte."""
+    return re.findall(r"%[-#]?[aAbBcdHIjmMpSUwWxXyYZ]|[^\w\s{}]", re.sub(r"\{[^{}]*\}", "", str(text or "")))
 
 
 def printf_specifiers(text):
@@ -147,6 +168,10 @@ def typed_carrier_problems(src, new):
         out.append('question mark lost')
     if inline_urls(src) != inline_urls(new):
         out.append('url mismatch')
+    if strftime_directives(src) != strftime_directives(new):
+        out.append('date/time format directive mismatch')
+    elif is_date_format_string(src) and format_skeleton(src) != format_skeleton(new):
+        out.append('date/time format punctuation mismatch')
     return out
 
 
@@ -334,11 +359,17 @@ _RUNTIME_COMMON_WORDS: set[str] = set()
 
 
 _RUNTIME_COMMON_PROVIDER = []
+_RUNTIME_KEPT_WORDS: set[str] = set()      # lower-case words the model keeps even in isolation (loanwords: tequila, adrenaline); per run
+_RUNTIME_KEPT_PROBE = []                    # one callable(word) -> bool asking the model; consulted lazily, only for a word about to be flagged
+_KEPT_CACHE: dict[str, bool] = {}
 
 
 def set_runtime_common_words(words) -> None:
     """Per-run set of Title-case words the translation model itself proves to be common vocabulary (see mt_ct2_pipeline); never persisted."""
     _RUNTIME_COMMON_PROVIDER.clear()
+    _RUNTIME_KEPT_WORDS.clear()
+    _RUNTIME_KEPT_PROBE.clear()
+    _KEPT_CACHE.clear()
     _RUNTIME_COMMON_WORDS.clear()
     _RUNTIME_COMMON_WORDS.update(str(word).casefold() for word in (words or ()))
 
@@ -349,10 +380,30 @@ def set_runtime_common_words_provider(provider) -> None:
     _RUNTIME_COMMON_PROVIDER.append(provider)
 
 
+def _model_keeps_word(low: str, source: str) -> bool:
+    """True when the word is in the source and the model returns it unchanged even alone (a loanword); asked lazily, once per word."""
+    if low in _RUNTIME_KEPT_WORDS:
+        return True
+    if not _RUNTIME_KEPT_PROBE or low not in str(source or "").casefold():
+        return False
+    if low not in _KEPT_CACHE:
+        try:
+            _KEPT_CACHE[low] = bool(_RUNTIME_KEPT_PROBE[0](low))
+        except Exception:
+            _KEPT_CACHE[low] = False
+    return _KEPT_CACHE[low]
+
+
 def ensure_runtime_common_words() -> None:
     if _RUNTIME_COMMON_PROVIDER:
         provider = _RUNTIME_COMMON_PROVIDER.pop()
-        _RUNTIME_COMMON_WORDS.update(str(word).casefold() for word in (provider() or ()))
+        found = provider() or ()
+        if isinstance(found, dict):
+            _RUNTIME_KEPT_WORDS.update(str(word).casefold() for word in (found.get("kept") or ()))
+            if found.get("kept_probe"):
+                _RUNTIME_KEPT_PROBE[:] = [found["kept_probe"]]
+            found = found.get("common") or ()
+        _RUNTIME_COMMON_WORDS.update(str(word).casefold() for word in found)
 
 
 def source_proper_name_tokens(src, whitelist=None):
@@ -650,6 +701,8 @@ def english_report(src, trans, whitelist):
             continue
         if not is_plain_ascii_word(tok):
             continue
+        if low not in ENG_STRONG and low not in ENG_WEAK and _model_keeps_word(low, src):
+            continue                                                  # the model keeps this word even alone: a loanword, not a translation failure
         bare += 1
         if low in ENG_STRONG:
             strong += 1
