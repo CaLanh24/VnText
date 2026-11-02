@@ -3947,6 +3947,50 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(b"successor", lock.read_bytes())                     # release did not unlink the successor's lock
             lock.unlink()
 
+    def _lock_text(self, pid, written):
+        return f"{'a' * 32} {pid} {written:.3f}".encode("ascii")
+
+    def test_registry_lock_of_a_killed_writer_is_recovered_but_a_live_writers_never(self):
+        # Regression found by the full-suite audit: a writer killed mid-registration left the lock behind and every later
+        # registration stalled for the whole timeout and failed, so one dead process crippled the whole run.
+        with self.isolated_workspace() as (_root, work, _game, manifest):
+            one = work / "one"
+            one.mkdir()
+            record = {"artifact_id": "test:one", "path": one, "kind": "test_fixture", "created_by": "t", "owner": "t", "purpose": "p", "lifecycle": "RETAINED"}
+            lock = manifest.with_name(manifest.name + ".lock")
+            dead = subprocess.Popen([sys.executable, "-c", "pass"])
+            dead.wait()
+            lock.write_bytes(self._lock_text(dead.pid, time.time() - 5))                # its writer exited
+            started = time.monotonic()
+            with patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 20):
+                paths.register_artifacts([record])
+            self.assertLess(time.monotonic() - started, 5)                             # recovered at once, no timeout stall
+            self.assertEqual("RETAINED", {r["id"]: r["lifecycle"] for r in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]}["test:one"])
+            self.assertFalse(lock.exists())
+            self.assertEqual([], list(manifest.parent.glob("*.lock.dead-*")))          # no dead-lock leftovers
+
+            alive = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+            try:
+                time.sleep(0.5)
+                lock.write_bytes(self._lock_text(alive.pid, time.time()))               # a live (even slow) writer is never stolen
+                with patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 0.3):
+                    with self.assertRaises(TimeoutError):
+                        paths.register_artifacts([record])
+                self.assertEqual(self._lock_text(alive.pid, 0)[:33], lock.read_bytes()[:33])
+                # the pid is alive but was started AFTER the lock was written: a reused pid is not the writer
+                lock.write_bytes(self._lock_text(alive.pid, time.time() - 3600))
+                with patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 5):
+                    paths.register_artifacts([record])
+                self.assertFalse(lock.exists())
+            finally:
+                alive.kill()
+                alive.wait()
+            lock.write_bytes(b"foreign-format-lock")                                   # an owner that cannot be established is never touched
+            with patch.object(paths, "REGISTRY_LOCK_TIMEOUT_SECONDS", 0.3):
+                with self.assertRaises(TimeoutError):
+                    paths.register_artifacts([record])
+            self.assertEqual(b"foreign-format-lock", lock.read_bytes())
+
     def test_failed_atomic_registry_write_preserves_the_old_registry(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             one = work / "one"

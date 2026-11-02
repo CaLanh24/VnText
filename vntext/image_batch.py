@@ -25,6 +25,21 @@ def _font_path():
     return Path(os.environ.get('SystemRoot', 'C:/Windows')) / 'Fonts/arial.ttf'
 
 
+def _is_all_caps(text):
+    """UI art is usually ALL CAPS (NEW GAME); the MT model leaves such text unchanged or mistranslates it."""
+    letters = [ch for ch in text if ch.isalpha()]
+    return len(letters) >= 2 and all(ch.isupper() for ch in letters)
+
+
+def translate_region_texts(translator, texts):
+    """Translate OCR region texts; ALL-CAPS regions are translated in sentence case and the result is set back in capitals."""
+    normalized = [text.strip().capitalize() if _is_all_caps(text) else text for text in texts]
+    translations = translator.translate_many(normalized)
+    if len(translations) != len(texts):
+        return translations
+    return [value.upper() if isinstance(value, str) and _is_all_caps(original) else value for original, value in zip(texts, translations)]
+
+
 def _render_draft(document, output, font_path, is_cancelled):
     """Infer appearance without forging manual approval flags."""
     from collections import Counter
@@ -182,7 +197,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                         except Exception as exc: model_error=str(exc)
                     if model_error: raise ValueError(model_error)
                     if cancelled(): raise InterruptedError('cancelled')
-                    translations=translator.translate_many([r['source_text'] for r in regions])
+                    translations=translate_region_texts(translator,[r['source_text'] for r in regions])
                     if len(translations)!=len(regions): raise ValueError('Số dòng bản dịch không khớp OCR.')
                     for region,text in zip(regions,translations):
                         if not isinstance(text,str) or not text.strip() or text.strip().casefold()==region['source_text'].strip().casefold():

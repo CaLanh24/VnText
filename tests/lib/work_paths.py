@@ -330,27 +330,85 @@ class RegistryChanged(RuntimeError):
 REGISTRY_LOCK_TIMEOUT_SECONDS = 60
 
 
+def _process_alive_since(pid: int, written_at: float) -> bool:
+    """True while ``pid`` is the same live process that wrote a lock at ``written_at`` (a reused pid, created later, is a different process)."""
+
+    if pid == os.getpid():
+        return True
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
+    import ctypes
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    handle = kernel.OpenProcess(0x1000, False, pid)         # PROCESS_QUERY_LIMITED_INFORMATION
+    if not handle:
+        return ctypes.get_last_error() != 87                # 87 = invalid parameter: no such process; anything else (e.g. access denied) = alive
+    try:
+        code = wintypes.DWORD()
+        if not kernel.GetExitCodeProcess(handle, ctypes.byref(code)) or code.value != 259:
+            return False                                    # exited (259 = STILL_ACTIVE)
+        created, exited, kernel_time, user_time = (wintypes.FILETIME() for _ in range(4))
+        if kernel.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(exited), ctypes.byref(kernel_time), ctypes.byref(user_time)):
+            ticks = (created.dwHighDateTime << 32) | created.dwLowDateTime
+            created_at = ticks / 10_000_000 - 11_644_473_600  # FILETIME -> unix seconds
+            if created_at > written_at + 2:
+                return False                                # the pid now belongs to a process born after the lock was written
+        return True
+    finally:
+        kernel.CloseHandle(handle)
+
+
+def _lock_owner(lock: Path) -> tuple[int, float] | None:
+    """(pid, written_at) of a lock written by this module, or None when the owner cannot be established."""
+
+    try:
+        token, pid_text, written_text = lock.read_text(encoding="ascii").split()[:3]
+        return int(pid_text), float(written_text)
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
+
+
 @contextmanager
 def _registry_lock():
-    """Exclusive registry write lock: a create-exclusive file beside the registry holding this writer's token.
+    """Exclusive registry write lock: a create-exclusive file beside the registry holding this writer's token, pid and start time.
 
-    A held lock is never stolen by age: a writer that cannot get it within 60 s fails closed with TimeoutError and a leftover lock
-    from a dead writer needs a human to remove it.  Release unlinks only a lock that still carries this writer's token."""
+    A LIVE writer's lock is never stolen, however slow it is (no age-based theft): a waiter that cannot get it within the timeout fails
+    closed with TimeoutError.  A lock whose writing process has exited (killed mid-write) is recovered by atomically moving it aside, so a
+    dead writer can no longer block every later registration.  A lock with no readable owner (legacy/foreign) is never touched.
+    Release unlinks only a lock that still carries this writer's token."""
 
     ensure_work_root()
     lock = MANIFEST_PATH.with_name(MANIFEST_PATH.name + ".lock")
-    token = uuid.uuid4().hex.encode("ascii")
+    token = uuid.uuid4().hex
+    payload = f"{token} {os.getpid()} {time.time():.3f}".encode("ascii")
     deadline = time.monotonic() + REGISTRY_LOCK_TIMEOUT_SECONDS
     while True:
         try:
             descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
+            owner = _lock_owner(lock)
+            if owner is not None and not _process_alive_since(*owner):
+                try:
+                    os.replace(lock, lock.with_name(f"{lock.name}.dead-{uuid.uuid4().hex}"))   # atomic: one recoverer wins
+                    for leftover in lock.parent.glob(lock.name + ".dead-*"):
+                        leftover.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                continue
             if time.monotonic() > deadline:
                 raise TimeoutError(f"artifact registry is locked: {lock}")
             time.sleep(0.05)
             continue
         try:
-            os.write(descriptor, token)
+            os.write(descriptor, payload)
         finally:
             os.close(descriptor)
         break
@@ -358,7 +416,7 @@ def _registry_lock():
         yield
     finally:
         try:
-            if lock.read_bytes() == token:
+            if lock.read_bytes() == payload:
                 lock.unlink()
         except OSError:
             pass

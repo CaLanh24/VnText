@@ -281,4 +281,22 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertEqual(report['status'],'PARTIAL')
 
 
+class AllCapsRegionTranslationTests(unittest.TestCase):
+    def test_all_caps_ui_text_is_translated_in_sentence_case_and_restored_to_capitals(self):
+        from vntext.image_batch import translate_region_texts
+
+        class Translator:
+            seen = []
+            table = {"New game": "Trò chơi mới", "Options": "Tùy chọn", "Hello there": "Xin chào", "NEW GAME": "NEW GAME"}
+
+            def translate_many(self, texts):
+                Translator.seen = list(texts)
+                return [self.table.get(text, text) for text in texts]
+
+        result = translate_region_texts(Translator(), ["NEW GAME", "OPTIONS", "Hello there", "HP"])
+        self.assertEqual(["New game", "Options", "Hello there", "HP"], Translator.seen)          # only ALL-CAPS regions are normalised
+        self.assertEqual(["TRÒ CHƠI MỚI", "TÙY CHỌN", "Xin chào", "HP"], result)
+        self.assertEqual(2, len(translate_region_texts(Translator(), ["NEW GAME", "Hello there"])))
+
+
 if __name__=='__main__':unittest.main()
