@@ -226,6 +226,17 @@ RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL = (
 DEV_RESOURCES_TASK_ID = "dev-resources-0.1.15"
 DEV_RESOURCES_BUDGET_APPROVAL = "Owner call_d07908f4c24b4411b3e2a35c409d6634: Cho phép, hoàn tất gate và app DEV; one no-delete metadata rebaseline and a separate DEV scope, 3 GiB, SDK/OCR/green-style batch only; CAS/rollback/eight hops unchanged, preserve user data, no push/release."
 DEV_RESOURCES_REBASELINE_ID = "call_d07908f4c24b4411b3e2a35c409d6634"
+# Owner-approved temporary expansion of the SAME dev-resources-0.1.15 scope (2026-11-02).  The earlier 3 GiB record stays a valid previous record
+# so every existing epoch remains verifiable; no rebaseline, hop-limit, CAS, rollback or validator change is implied.
+DEV_RESOURCES_PREVIOUS_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
+DEV_RESOURCES_BUDGET_LIMIT_BYTES = 3328 * 1024 ** 2  # 3.25 GiB
+DEV_RESOURCES_EXPANDED_BUDGET_APPROVAL_ID = "call_d1d6fdd910bb432e837ee4298665b833"
+DEV_RESOURCES_EXPANDED_BUDGET_APPROVAL = (
+    "Owner call_d1d6fdd910bb432e837ee4298665b833 answered 'Cho phép 3,25 GiB, hoàn tất gate và app DEV': temporary total non-exempt budget of "
+    "3.25 GiB for dev-resources-0.1.15 / DEV_RUN/resources-dev15 ONLY, for the prepared source 51105bd (scoped patch, OCR skew proof, UI catalog) plus "
+    "the pending lock-fix validation gate and ONE local DEV build. No new rebaseline, no ninth hop, no CAS/rollback/validator relaxation, no necessary "
+    "user/evidence deletion, no push/release/version change."
+)
 # Second, independent single-use authority for the same DEV task (the first chain ended after the eighth ordinary hop).  The Owner's DIRECT reply
 # is recorded verbatim; it never reuses the first DEV grant, which stays consumed.
 DEV_RESOURCES_REBASELINE_ID_2 = "call_b9ffa8fad6e54e7ca17ff1e9e5f6480f"
@@ -250,7 +261,7 @@ def _rebaseline_prior_task_allowed(previous_task, target_task, authorization_id)
 def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     task_id = task_id or str(os.environ.get("VNTEXT_RELEASE_TASK_ID") or "").strip() or RELEASE_TASK_BUDGET_ID
     if task_id == DEV_RESOURCES_TASK_ID:
-        return task_id, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL
+        return task_id, "0.1.15", DEV_RESOURCES_EXPANDED_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_010_BUDGET_ID:
         return task_id, "0.1.10", RELEASE_TASK_010_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_011_BUDGET_ID:
@@ -311,7 +322,7 @@ def _epoch_transition_versions_valid(
 
 def _release_task_budget_limit(task_id: str) -> int:
     if task_id == DEV_RESOURCES_TASK_ID:
-        return 3 * 1024 ** 3
+        return DEV_RESOURCES_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_012_BUDGET_ID:
         return RELEASE_TASK_012_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_013_BUDGET_ID:
@@ -334,6 +345,10 @@ def _release_budget_record_is_valid(
     ):
         return True
     return (
+        task_id == DEV_RESOURCES_TASK_ID
+        and release_budget.get("limit_bytes") == DEV_RESOURCES_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == DEV_RESOURCES_BUDGET_APPROVAL
+    ) or (
         task_id == RELEASE_TASK_012_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_012_INITIAL_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_012_INITIAL_BUDGET_APPROVAL

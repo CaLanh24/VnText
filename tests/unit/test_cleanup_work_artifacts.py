@@ -3502,6 +3502,22 @@ class CleanupLifecycleTests(unittest.TestCase):
             tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
         ))
 
+    def test_dev_resources_expanded_budget_is_3_25_gib_and_preserves_old_epoch_verifiability(self):
+        task_id = cleanup.DEV_RESOURCES_TASK_ID
+        previous = {"limit_bytes": 3 * 1024 ** 3, "owner_approval": cleanup.DEV_RESOURCES_BUDGET_APPROVAL}
+        expanded = {"limit_bytes": cleanup.DEV_RESOURCES_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.DEV_RESOURCES_EXPANDED_BUDGET_APPROVAL}
+        approval = cleanup._release_budget_spec(task_id)[2]
+        self.assertEqual(cleanup.DEV_RESOURCES_EXPANDED_BUDGET_APPROVAL, approval)
+        self.assertIn("call_d1d6fdd910bb432e837ee4298665b833", approval)
+        self.assertEqual(int(3.25 * 1024 ** 3), cleanup._release_task_budget_limit(task_id))
+        self.assertEqual(3 * 1024 ** 3, cleanup._release_task_budget_limit(cleanup.RELEASE_TASK_011_BUDGET_ID))   # no other task widened
+        self.assertTrue(cleanup._release_budget_record_is_valid(previous, task_id, approval))
+        self.assertTrue(cleanup._release_budget_record_is_valid(expanded, task_id, approval))
+        for bad in ({**expanded, "owner_approval": "unrecognized"}, {**previous, "limit_bytes": 4 * 1024 ** 3},
+                    {"limit_bytes": cleanup.DEV_RESOURCES_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.DEV_RESOURCES_BUDGET_APPROVAL}):
+            self.assertFalse(cleanup._release_budget_record_is_valid(bad, task_id, approval))
+        self.assertFalse(cleanup._release_budget_record_is_valid(previous, cleanup.RELEASE_TASK_011_BUDGET_ID, approval))
+
     def test_release_013_expanded_budget_preserves_old_epoch_verifiability(self):
         task_id = cleanup.RELEASE_TASK_013_BUDGET_ID
         initial = {
