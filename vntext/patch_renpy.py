@@ -742,12 +742,31 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         raise RenPyPatchError("Ren'Py patch output must be outside the original game")
     _validate_overlay_pair(target, activation)
     try:
+        from vntext.renpy_font_support import prepare_font_support
+        font_support = prepare_font_support(root, source_snapshots, archive_cache)
+        initial_font_support = font_support
+        prior_inventory_check = verify_target_inventory
+
+        def verify_target_inventory():
+            prior_inventory_check()
+            # Also detect added/shadowing assets and changed compatibility
+            # source, before and after publication. Existing hashes alone do
+            # not detect a newly introduced asset with the fallback's name.
+            if prepare_font_support(root, {}, {}) != initial_font_support:
+                raise RenPyPatchError("Ren'Py font/language support source inventory changed")
+
         payload = _render_overlay(new_dialogues, strings)
         prior_overlay = root / "game/tl/vietnamese/vntext.rpy"
         if prior_overlay in existing_snapshots:
             # The delivered file replaces this exact path. Preserve all earlier
             # mappings, including those not selected by the current package.
-            payload = prior_overlay.read_text(encoding="utf-8") + "\n" + payload
+            prior_payload = prior_overlay.read_text(encoding="utf-8")
+            if "# VNText language-scoped text font support v1" in prior_payload:
+                if not font_support or not prior_payload.startswith(font_support):
+                    raise RenPyPatchError("Ren'Py generated font support changed; inspect the existing overlay before replacing it")
+                font_support = ""
+            payload = prior_payload + "\n" + payload
+        payload = font_support + payload
     except RenPyPatchError:
         raise
     except Exception as exc:  # noqa: BLE001 - fail closed at the patch boundary.
