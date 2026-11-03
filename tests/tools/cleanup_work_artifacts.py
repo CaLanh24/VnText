@@ -264,6 +264,15 @@ DEV_RESOURCES_REBASELINE_APPROVAL_2 = (
     "are unchanged; no history or user data is deleted and no validator or protection is relaxed."
 )
 
+RELEASE_TASK_0116_REBASELINE_ID = "call_e90de61d52e64bfe9839197a3ffef14d"
+RELEASE_TASK_0116_REBASELINE_APPROVAL = (
+    "Owner call_e90de61d52e64bfe9839197a3ffef14d answered 'Cho phép một lần rebaseline và tiếp tục hoàn tất', authorizing ONE no-delete "
+    "release-0.1.16 epoch metadata rebaseline for prepared source ac8c84137058f6f21b82840b7885f17ec23a1a43 and its authority/focused-prerequisite "
+    "descendants, to finish the gate, build the app and validate the declared game copy. Keep the current scope/budget, CAS, rollback, complete "
+    "history verification, clean-source/no-writer protections and ordinary eight-hop limit. No user-data deletion, model change or push/release "
+    "before acceptance; all earlier single-use approvals remain consumed."
+)
+
 
 def _task_scope_path(root, task_id, version):
     return (root / "DEV_RUN/resources-dev15").resolve() if task_id == DEV_RESOURCES_TASK_ID else (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
@@ -511,6 +520,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_0116_REBASELINE_ID: (RELEASE_TASK_0116_BUDGET_ID, "0.1.16", RELEASE_TASK_0116_REBASELINE_APPROVAL),
     DEV_RESOURCES_REBASELINE_ID_2: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_REBASELINE_APPROVAL_2),
     DEV_RESOURCES_REBASELINE_ID: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL),
     RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_ID_3: (RELEASE_TASK_014_BUDGET_ID, "0.1.14", RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3),
