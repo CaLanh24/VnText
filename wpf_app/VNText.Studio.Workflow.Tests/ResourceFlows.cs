@@ -205,7 +205,7 @@ internal static partial class Program
             vm.TestSetActiveTask("ext-warn","extract");
             vm.TestBeginTaskLog("ext-warn","extract");
             vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="ext-warn",Done=5,Total=10,Step="scan",Item="a"});
-            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="ext-warn",Ok=false,Complete=false,ExtractStatus="PARTIAL",Severity="warning",ReviewOnly=0,
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="ext-warn",Ok=false,Complete=false,ExtractStatus="PARTIAL",Severity="warning",PatchScope="VERIFIED_MAIN_SUBSET",ReviewOnly=8,
                 Error="Đã lấy xong text tĩnh nhưng chưa đầy đủ: Mã .rpy trong archive đã được khôi phục; 3 biểu thức động chỉ có giá trị lúc chạy game."});
             AssertTrue(vm.HasPersistentError);                                       // persistent and readable, not just a toast
             AssertTrue(vm.PersistentErrorIsWarning);
@@ -214,6 +214,9 @@ internal static partial class Program
             AssertTrue(vm.PersistentErrorText.Contains("biểu thức động"));
             AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("[cảnh báo]")&&s.Contains("biểu thức động")));   // the same text sits in the inline journal
             AssertFalse(vm.ExtractLogLines.Any(s=>s.Contains("[lỗi]")));
+            AssertFalse(vm.ExtractLogLines.Any(s=>s.Contains("Đã dừng") || s.Contains("— Lỗi —")));
+            AssertTrue(vm.ExtractLogLines.Last().Contains("Lấy text một phần"));
+            AssertTrue(vm.StepStatusLine.Contains("biểu thức động"));
             vm.TestMarkTaskTerminal("ext-warn");
             vm.AcknowledgePersistentError();
             AssertFalse(vm.HasPersistentError);
@@ -230,6 +233,8 @@ internal static partial class Program
             AssertFalse(vm.PersistentErrorIsWarning);
             AssertTrue(vm.PersistentErrorHeading.StartsWith("Lỗi",StringComparison.Ordinal));
             AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("[lỗi]")&&s.Contains("malformed")));
+            AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Đã dừng")));
+            AssertTrue(vm.ExtractLogLines.Last().Contains("Lỗi"));
             vm.TestMarkTaskTerminal("ext-err");
             // a later clean run of the same task resolves the banner
             vm.TestSetActiveTask("ext-ok","extract");

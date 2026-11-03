@@ -17,6 +17,7 @@ public sealed class WorkerEvent
     public bool? Complete { get; set; }
     public bool RenpySdkMissing { get; set; }
     public string ExtractStatus { get; set; } = "";
+    public string PatchScope { get; set; } = "";
     /// <summary>"ok" | "warning" (expected limits: PARTIAL review warning) | "error" (a genuine discovery/extract failure); empty from older workers.</summary>
     public string Severity { get; set; } = "";
     public int Pending { get; set; }
@@ -75,6 +76,7 @@ public sealed class WorkerEvent
             if (root.TryGetProperty("human_review_required_count", out var hrEl)) evt.HumanReviewRequiredCount = hrEl.GetInt32();
             if (root.TryGetProperty("summary", out var sumEl)) evt.Summary = sumEl.GetString() ?? "";
             if (root.TryGetProperty("extract_status", out var extractEl)) evt.ExtractStatus = extractEl.GetString() ?? "";
+            if (root.TryGetProperty("patch_scope", out var scopeEl)) evt.PatchScope = scopeEl.GetString() ?? "";
             if (root.TryGetProperty("severity", out var severityEl)) evt.Severity = severityEl.GetString() ?? "";
             if (root.TryGetProperty("error", out var errEl)) evt.Error = errEl.GetString() ?? "";
             if (root.TryGetProperty("diagnostic_path", out var diagPathEl)) evt.DiagnosticPath = diagPathEl.GetString();

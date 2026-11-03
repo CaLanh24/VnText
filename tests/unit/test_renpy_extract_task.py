@@ -265,6 +265,9 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertEqual("VERIFIED_MAIN_SUBSET", status["patch_scope"])
         self.assertEqual("VERIFIED_MAIN_SUBSET", result["patch_scope"])
         self.assertTrue(scoped_patch_eligible(status))
+        self.assertIn("có đủ bằng chứng để dịch", result["error"])
+        self.assertNotIn("cần xử lý trước khi dịch", result["error"])
+        self.assertIn("PARTIAL", result["error"])
 
     def test_genuine_discovery_failure_stays_an_error_even_beside_a_partial_package(self):
         nl = chr(10)

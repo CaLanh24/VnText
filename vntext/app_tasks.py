@@ -1374,6 +1374,13 @@ def run_extract_task(
             and native_accounting_complete and main_count > 0
             and all(item.get("code") in EXPECTED_PATCH_LIMITATIONS for item in limitations)
         )
+        if scoped_patch:
+            completion_error = (
+                f"Đã lấy {main_count} dòng text có đủ bằng chứng để dịch; "
+                f"{review_count} dòng chỉ để xem lại được giữ riêng, không dịch và không patch. "
+                "Kết quả chưa bao phủ toàn bộ game (PARTIAL). "
+                + dynamic_note
+            )
         extract_status = (
             "FAILED" if empty and extract_errors
             else "PARTIAL" if renpy_sdk_missing
@@ -1428,6 +1435,8 @@ def run_extract_task(
                         if extract_errors
                         else "Chọn công cụ Ren'Py và thư mục xuất mới rồi lấy text lại để nhận dạng lời thoại đầy đủ."
                         if renpy_sdk_missing
+                        else "Translate only verified MAIN rows; excluded coverage remains PARTIAL."
+                        if scoped_patch
                         else "Review REVIEW rows before treating Extract as ready for translation."
                     ),
                 )

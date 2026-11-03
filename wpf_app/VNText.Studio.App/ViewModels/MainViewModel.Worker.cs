@@ -192,14 +192,18 @@ public sealed partial class MainViewModel
                 _cancelWatchdog = null;
 
                 var completedTask = _runningTask;
+                var extractWarning = completedTask == "extract" && evt.ExtractStatus == "PARTIAL"
+                    && evt.Severity == "warning" && evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) != true;
                 if (!string.IsNullOrWhiteSpace(evt.Error))
                     AddTaskProgress(evt.Id, completedTask == "extract" && evt.Error.IndexOf("cancel", StringComparison.OrdinalIgnoreCase) < 0
                         ? (evt.Severity == "warning" ? "[cảnh báo] " : "[lỗi] ") + evt.Error
                         : evt.Error, completedTask);
-                if (!evt.Ok && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
+                if (!evt.Ok && !extractWarning && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
                     RecordPersistentError(completedTask, evt.Error);
-                AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất" : "Đã dừng — xem Nhật ký", completedTask);
+                AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
+                    : extractWarning ? "Lấy text một phần — xem cảnh báo" : "Đã dừng — xem Nhật ký", completedTask);
                 EndExtractRun(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
+                    : extractWarning ? "Lấy text một phần"
                     : evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true ? "Đã hủy" : "Lỗi");
                 if (completedTask == "cloud_export")
                     CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
@@ -281,6 +285,8 @@ public sealed partial class MainViewModel
                     : extractionIncomplete
                     ? evt.ExtractStatus == "EMPTY"
                         ? "Không có text sử dụng được — xem report, kiểm input hoặc mức quét."
+                        : evt.PatchScope == "VERIFIED_MAIN_SUBSET" && !string.IsNullOrWhiteSpace(evt.Error)
+                        ? evt.Error
                         : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở CSV/report và xử lý lỗi trước khi dịch."
                     : isExternalTranslationImport
                     ? $"Đã nhập {evt.Applied} dòng an toàn; còn {externalRemaining} dòng cần sửa trong CSV"
