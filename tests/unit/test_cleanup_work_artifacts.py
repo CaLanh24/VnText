@@ -3524,6 +3524,12 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertIn('owner in {"artifact_registry_epoch", "cleanup_work_artifacts.py"}', source)
         self.assertIn('relative.startswith("artifact-registry-epochs/")', source)
 
+    def test_shared_dev_env_cap_is_11_gib_by_owner_grant_and_does_not_touch_the_non_exempt_budgets(self):
+        self.assertEqual(11 * 1024 ** 3, cleanup.PROJECT_EXEMPT_SIZE_LIMIT_BYTES)
+        self.assertIn("call_4a1f654ae2e3411daf215456e67807d7", cleanup.PROJECT_SIZE_EXEMPTIONS[".dev-env"])
+        self.assertEqual(1024 ** 3, cleanup.PROJECT_SIZE_LIMIT_BYTES)                                   # default non-exempt checkout cap unchanged
+        self.assertEqual(6400 * 1024 ** 2, cleanup.RELEASE_TASK_0116_BUDGET_LIMIT_BYTES)                # release budget proposal untouched
+
     def test_dev_resources_expanded_budget_is_3_25_gib_and_preserves_old_epoch_verifiability(self):
         task_id = cleanup.DEV_RESOURCES_TASK_ID
         previous = {"limit_bytes": 3 * 1024 ** 3, "owner_approval": cleanup.DEV_RESOURCES_BUDGET_APPROVAL}

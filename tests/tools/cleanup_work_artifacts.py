@@ -69,7 +69,9 @@ CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
 PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
-PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 6 * 1024 ** 3
+# Owner call_4a1f654ae2e3411daf215456e67807d7 (2026-11-03) "Cho phép thử 7B có giới hạn": shared .dev-env cap 6 -> 11 GiB for ONE bounded local test of the official
+# Hy-MT2-7B Q4_K_M GGUF (one model copy, no duplicate).  It does not widen the non-exempt checkout or any release budget.
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 11 * 1024 ** 3
 RELEASE_TASK_BUDGET_ID = "release-0.1.5"
 RELEASE_TASK_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
 RELEASE_TASK_BUDGET_APPROVAL = (
@@ -539,7 +541,7 @@ EPOCH_REBASELINE_AUTHORIZATIONS = {
     ),
 }
 PROJECT_SIZE_EXEMPTIONS = {
-    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (6 GiB cap; Owner 2026-10-19 R&D approval)",
+    ".dev-env": "shared DEV Python/SDK/NuGet/model cache (11 GiB cap; Owner 2026-10-19 R&D approval, raised from 6 GiB by Owner call_4a1f654ae2e3411daf215456e67807d7 2026-11-03 for the bounded Hy-MT2-7B test)",
 }
 
 # The registry's OS-held lock guard (tests/lib/work_paths.py): a persistent, always empty control file next to the manifest.
