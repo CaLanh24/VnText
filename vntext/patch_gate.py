@@ -26,6 +26,7 @@ REASON_LABELS_VI: dict[str, str] = {
     "synonym prefix mismatch": "Synonym sai tiền tố",
     "synonym variant count": "Synonym sai số biến thể",
     "literal newline count": "Sai số \\n",
+    "actual newline mismatch": "Sai xuống dòng",
     "heart glyph count": "Sai số ký hiệu ♡",
     "RandPick variant count": "Sai số biến thể RandPick",
     "english suffix after placeholder": "Hậu tố Anh sau placeholder",

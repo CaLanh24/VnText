@@ -2,6 +2,8 @@
 
 Trạng thái: **ĐANG CHUẨN BỊ (chưa phát hành)**. `v0.1.15` (source `4326abd`) và mọi tag/asset cũ là bất biến, không bị đụng.
 
+2026-11-03 bounded continuation: real-game semantic quality remains NOT ACCEPTED (7B comparison and RAM limitations: `C:/vnrg/evidence/brain-hy7-final-receipt.json`). Actual CSV CR/LF/CRLF are now protected independently from literal `\\n`; flattened/reencoded line breaks fail the shared structural/Patch gate. Focused in-memory regression: 97 tests PASS (actual-newline, real-game-fixes, strategies, quality-routing, classifier); no model load, build, native or release verdict follows from this. Font and custom-language fixes remain test-copy only. Ren'Py's documented per-language style translations are the font route to investigate; the game's fixed dictionary lookup is a custom script compatibility issue, not a generic engine defect. Do not ship a title-specific wrapper or profile as general support.
+
 ## Authority
 
 Owner 2026-11-02: “nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release” — ghi đè lệnh “không release” trước đó; phiên bản kế tiếp suy ra là 0.1.16 (patch sau 0.1.15 công khai). Phạm vi cho phép: bump version owners, ledger/scope, gate, build candidate đầy đủ ở scope Release riêng, kiểm Setup/updater, chuẩn bị asset/ghi chú/lệnh phát hành. **Chưa push/tag/release trước khi Brain ACCEPT.** Không cài vào Desktop của Owner, không ghi game gốc, không đổi/tải model. Không ngụ ý rebaseline epoch.

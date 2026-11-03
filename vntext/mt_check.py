@@ -808,6 +808,11 @@ def structural_problems(row, new):
     if src.count('\\n') != new.count('\\n'):
         out.append('literal newline count %d -> %d'
                    % (src.count('\\n'), new.count('\\n')))
+    # CSV can carry real line breaks as well as the two-character \\n token.
+    # Keep their exact sequence: silently flattening a warning changes its
+    # layout, and substituting a literal escape is not equivalent CSV content.
+    if re.findall(r'\r\n|\r|\n', src) != re.findall(r'\r\n|\r|\n', new):
+        out.append('actual newline mismatch')
     out.extend(typed_carrier_problems(src, new))
     # Narrow semantic guards cover only explicit commerce surfaces observed in
     # the real-model probe. Strip placeholders, tags, printf spans, hashtags and

@@ -20,6 +20,7 @@ from vntext.mt_translation_constants import (
 )
 
 BRACKET_MARKER_RX = re.compile(r"\[QZEL\d{4}\]")
+LINE_BREAK_RX = re.compile(r"\\n|\r\n|\r|\n")
 
 
 def strip_lexical_suffixes(text):
@@ -65,7 +66,7 @@ def collect_spans(text, *, protect_lexical=True, key_prefix=True, inline_names=F
         for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG, mt_check.COND_EXPR, INTERNAL_SENTINEL_RX)
         for m in rx.finditer(text)
     ]
-    protected_ranges.extend((m.start(), m.end()) for m in re.finditer(r'\\n', text))
+    protected_ranges.extend((m.start(), m.end()) for m in LINE_BREAK_RX.finditer(text))
     # Protect title-case source names through the same span mechanism as tags
     # and placeholders. This prevents CT2 from silently mutating SampleName
     # while keeping common mapped words such as Shower translatable.
@@ -100,7 +101,7 @@ def collect_spans(text, *, protect_lexical=True, key_prefix=True, inline_names=F
     for rx in (BRACKET, HASHTAG, STAR_SFX, EW_AW_RX, mt_check.URL_RX, mt_check.PRINTF_RX, mt_check.CURRENCY_RX, mt_check.PERCENT_RX, mt_check.PH, mt_check.TAG):
         for m in rx.finditer(text):
             spans.append((m.start(), m.end(), m.group(0), 'tech'))
-    for m in re.finditer(r'\\n', text):
+    for m in LINE_BREAK_RX.finditer(text):
         spans.append((m.start(), m.end(), m.group(0), 'tech'))
     if mt_check.HEART in text:
         i = 0

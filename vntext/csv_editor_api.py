@@ -39,6 +39,7 @@ BATCH_STRUCTURAL_BUCKETS = frozenset(
         "synonym prefix mismatch",
         "synonym variant count",
         "literal newline count",
+        "actual newline mismatch",
         "heart glyph count",
         "RandPick variant count",
         "english suffix after placeholder",

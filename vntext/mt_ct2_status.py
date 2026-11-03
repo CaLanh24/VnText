@@ -375,6 +375,7 @@ def _clear_known_bad_translations(
         "placeholder mismatch",
         "tag mismatch",
         "literal newline count",
+        "actual newline mismatch",
         "heart glyph count",
         "RandPick variant count",
         "english suffix after placeholder",
