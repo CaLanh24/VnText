@@ -48,6 +48,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         cls._prior_release_task_id = os.environ.pop("VNTEXT_RELEASE_TASK_ID", None)
         cls._prior_tempdir = tempfile.tempdir
         ambient = paths.ambient_scope()
+        cls._fixture_scope = dict(ambient)
         cls._fixture_tempdir = tempfile.TemporaryDirectory(
             prefix="cleanup-lifecycle-", dir=str(paths.WORK_ROOT)
         )
@@ -77,13 +78,21 @@ class CleanupLifecycleTests(unittest.TestCase):
             # The fixture owns only its own temp directory: remove it and close its records.  It must not run the
             # project-wide budget/epoch cleanup, whose verdict depends on the live release state and not on these tests.
             cls._fixture_tempdir.cleanup()
+            if cls._fixture_temp_path.exists():
+                raise RuntimeError(f"cleanup lifecycle test fixture was not removed: {cls._fixture_temp_path}")
             paths.mark_artifacts_missing_under(
                 cls._fixture_temp_path,
                 purpose="test_cleanup_work_artifacts fixture teardown",
-                deletion_provenance={"deleted_by": "test_cleanup_work_artifacts", "reason": "fixture teardown"},
+                deletion_provenance=paths.make_deletion_provenance(
+                    path=cls._fixture_temp_path,
+                    deleted_by="test_cleanup_work_artifacts",
+                    reason="fixture teardown",
+                    evidence_source="test_fixture_teardown_readback",
+                    scope_id=cls._fixture_scope["scope_id"],
+                    run_id=cls._fixture_scope["run_id"],
+                    scope_root=cls._fixture_scope["scope_root"],
+                ),
             )
-            if cls._fixture_temp_path.exists():
-                raise RuntimeError(f"cleanup lifecycle test fixture was not removed: {cls._fixture_temp_path}")
         finally:
             if cls._prior_release_task_id is not None:
                 os.environ["VNTEXT_RELEASE_TASK_ID"] = cls._prior_release_task_id
