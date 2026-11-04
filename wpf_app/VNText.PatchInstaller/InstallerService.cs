@@ -34,7 +34,14 @@ public sealed record InstalledFile(
 public sealed record InstallState(
     [property: JsonPropertyName("game_root")] string GameRoot,
     [property: JsonPropertyName("patch_version")] string PatchVersion,
-    [property: JsonPropertyName("files")] List<InstalledFile> Files);
+    [property: JsonPropertyName("files")] List<InstalledFile> Files,
+    [property: JsonPropertyName("compiled_caches")] List<CompiledCache>? CompiledCaches = null);
+
+public sealed record CompiledCache(
+    [property: JsonPropertyName("path")] string Path,
+    [property: JsonPropertyName("original_exists")] bool OriginalExists,
+    [property: JsonPropertyName("original_sha256")] string OriginalSha256,
+    [property: JsonPropertyName("source_digests")] List<string> SourceDigests);
 
 public sealed class InstallerService
 {
@@ -111,8 +118,28 @@ public sealed class InstallerService
         if (Directory.Exists(BackupDirectory)) throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
         Directory.CreateDirectory(BackupDirectory);
         var prepared = new List<InstalledFile>();
+        var caches = new List<CompiledCache>();
         try
         {
+            if (manifest.Engine == "renpy")
+                foreach (var file in manifest.Files.Where(f => f.Path.EndsWith(".rpy", StringComparison.OrdinalIgnoreCase)))
+                {
+                    var relative = file.Path + "c";
+                    var cache = ResolveSafe(root, relative);
+                    var exists = File.Exists(cache);
+                    if (exists)
+                    {
+                        var backup = ResolveSafe(BackupDirectory, relative);
+                        Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+                        File.Copy(cache, backup, false);
+                    }
+                    var source = File.ReadAllBytes(ResolveSafe(PayloadDirectory, file.Path));
+                    // Ren'Py 8.3 hashes raw source; 8.5 adds RPYC_MAGIC. Never
+                    // deserialize a cache: only the compiler's header/trailer.
+                    caches.Add(new CompiledCache(relative, exists, exists ? HashFile(cache) : "",
+                        new List<string> { Convert.ToHexString(MD5.HashData(source)),
+                            Convert.ToHexString(MD5.HashData(source.Concat(System.Text.Encoding.ASCII.GetBytes("_2025-07-06")).ToArray())) }));
+                }
             foreach (var file in manifest.Files)
             {
                 var target = ResolveSafe(root, file.Path);
@@ -138,7 +165,7 @@ public sealed class InstallerService
                 if (!string.Equals(HashFile(target), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Kiểm hash sau khi cài thất bại: {file.Path}");
             }
-            var state = new InstallState(root, manifest.Version, prepared);
+            var state = new InstallState(root, manifest.Version, prepared, caches);
             WriteJsonAtomic(StatePath, state);
             return state;
         }
@@ -154,6 +181,17 @@ public sealed class InstallerService
     {
         var state = ValidateInstalledState(gameRoot);
         var root = NormalizeGameRoot(state.GameRoot);
+        foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
+        {
+            var target = ResolveSafe(root, cache.Path);
+            if (cache.OriginalExists)
+            {
+                File.Copy(ResolveSafe(BackupDirectory, cache.Path), target, true);
+                if (!string.Equals(HashFile(target), cache.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Khôi phục cache thất bại: {cache.Path}");
+            }
+            else if (File.Exists(target)) File.Delete(target);
+        }
         foreach (var file in state.Files)
         {
             var target = ResolveSafe(root, file.Path);
@@ -171,6 +209,19 @@ public sealed class InstallerService
             }
         }
         File.Delete(StatePath);
+        // Remove only our consumed backups. Foreign additions are preserved.
+        var consumed = state.Files.Where(f => f.OriginalExists).Select(f => f.BackupPath)
+            .Concat((state.CompiledCaches ?? new List<CompiledCache>()).Where(c => c.OriginalExists).Select(c => c.Path));
+        foreach (var relative in consumed)
+        {
+            var backup = ResolveSafe(BackupDirectory, relative);
+            File.Delete(backup);
+            for (var directory = Path.GetDirectoryName(backup); directory is not null
+                && directory.StartsWith(BackupDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+                directory = Path.GetDirectoryName(directory))
+                if (!Directory.EnumerateFileSystemEntries(directory).Any()) Directory.Delete(directory);
+        }
+        if (!Directory.EnumerateFileSystemEntries(BackupDirectory).Any()) Directory.Delete(BackupDirectory);
     }
 
     /// <summary>
@@ -205,6 +256,30 @@ public sealed class InstallerService
                 if (!File.Exists(backup) || !string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}");
             }
+        }
+        foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
+        {
+            if (!state.Files.Any(f => string.Equals(f.Path + "c", cache.Path, StringComparison.OrdinalIgnoreCase)
+                && f.Path.EndsWith(".rpy", StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("Cache không thuộc file patch đã cài.");
+            var target = ResolveSafe(root, cache.Path);
+            if (cache.OriginalExists)
+            {
+                var backup = ResolveSafe(BackupDirectory, cache.Path);
+                if (!File.Exists(backup) || !string.Equals(HashFile(backup), cache.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Backup cache thiếu hoặc đã thay đổi: {cache.Path}");
+            }
+            if (!File.Exists(target)) continue;
+            if (cache.OriginalExists && string.Equals(HashFile(target), cache.OriginalSha256, StringComparison.OrdinalIgnoreCase)) continue;
+            using var stream = File.OpenRead(target);
+            var header = new byte[10];
+            var digest = new byte[16];
+            if (stream.Length < 62 || stream.Read(header) != 10 || System.Text.Encoding.ASCII.GetString(header) != "RENPY RPC2")
+                throw new InvalidOperationException($"Cache đã thay đổi ngoài patch, không tự xóa: {cache.Path}");
+            stream.Seek(-16, SeekOrigin.End);
+            if (stream.Read(digest) != 16 || cache.SourceDigests is null
+                || !cache.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Cache không khớp nguồn patch, không tự xóa: {cache.Path}");
         }
         return state;
     }

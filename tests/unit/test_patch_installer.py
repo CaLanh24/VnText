@@ -84,6 +84,59 @@ class PatchInstallerTests(unittest.TestCase):
             self.assertFalse((patch / "install_state.json").exists())
             self.assertFalse((game / "game/zzz_vntext_vietnamese.rpy").exists())
 
+    def test_renpy_uninstall_tracks_compiler_caches_and_refuses_unknown_cache(self):
+        import tempfile
+        from tests.lib.work_paths import work_temp_dir
+        from vntext.patch_output import write_renpy_patch_manifest
+        installer = next((p for p in self._installer_candidates() if p.is_file()), None)
+        self.assertIsNotNone(installer, "Build the current installer before this regression")
+        for magic in (b"", b"_2025-07-06"):
+            with self.subTest(compiler_magic=magic), tempfile.TemporaryDirectory(dir=work_temp_dir("renpy-cache-installer")) as temp:
+                game, patch = Path(temp) / "game", Path(temp) / "patch"
+                for name in ("game", "renpy", "lib"):
+                    (game / name).mkdir(parents=True, exist_ok=True)
+                (game / "Game.exe").write_bytes(b"fixture executable")
+                (game / "game/script.rpy").write_bytes(b'label start:\n    "Hello"\n')
+                paths = ("game/tl/vietnamese/vntext.rpy", "game/zzz_vntext_vietnamese.rpy")
+                originals = (b"old locale", None)
+                for relative, original in zip(paths, originals):
+                    payload = patch / "COPY_TO_GAME_ROOT" / relative
+                    payload.parent.mkdir(parents=True, exist_ok=True)
+                    payload.write_bytes(b'translate vietnamese strings:\n    old "Hello"\n    new "Xin chao"\n')
+                    target = game / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    if original is not None:
+                        target.write_bytes(original)
+                        Path(str(target) + "c").write_bytes(b"original compiler cache")
+                write_renpy_patch_manifest(patch, game, "test", {"entries": [{"file_path": "game/script.rpy"}]})
+                def invoke(action):
+                    return subprocess.run([str(installer), action, str(game), str(patch)], capture_output=True, timeout=30)
+                result = invoke("--install")
+                self.assertEqual(0, result.returncode, result.stderr)
+                for relative in paths:
+                    target = game / relative
+                    # Compiler header and source digest trailer, not an executable AST.
+                    Path(str(target) + "c").write_bytes(b"RENPY RPC2" + bytes(48) + hashlib.md5(target.read_bytes() + magic).digest())
+                cache = Path(str(game / paths[1]) + "c")
+                matching = cache.read_bytes()
+                cache.write_bytes(b"unknown external cache")
+                self.assertNotEqual(0, invoke("--uninstall").returncode)
+                self.assertTrue((patch / "install_state.json").exists())
+                self.assertTrue((game / paths[1]).exists())
+                self.assertEqual(b"unknown external cache", cache.read_bytes())
+                cache.write_bytes(matching)
+                result = invoke("--uninstall")
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(b"old locale", (game / paths[0]).read_bytes())
+                self.assertEqual(b"original compiler cache", Path(str(game / paths[0]) + "c").read_bytes())
+                self.assertFalse((game / paths[1]).exists())
+                self.assertFalse(cache.exists())
+                self.assertFalse((patch / "install_state.json").exists())
+                self.assertFalse((patch / "install_backup").exists())
+                # A successful uninstall must permit installing the same patch again.
+                self.assertEqual(0, invoke("--install").returncode)
+                self.assertEqual(0, invoke("--uninstall").returncode)
+
     def _register_case(self, case: Path, *, name: str) -> None:
         ambient = ambient_scope()
         register_artifact(
