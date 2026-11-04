@@ -1098,7 +1098,7 @@ if (-not $SkipBuild) {
     & $dotnet restore $installerProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $targetsArg $installerObjArg $installerExtensionsArg $installerOutputArg
     if ($LASTEXITCODE -ne 0) { throw "Patch installer restore failed" }
     & $dotnet publish $installerProj `
-        -c Release -r win-x64 --self-contained false `
+        -c Release -r win-x64 --self-contained true `
         -p:PublishSingleFile=true `
         -p:PublishTrimmed=false $targetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
     if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
