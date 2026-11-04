@@ -3539,6 +3539,18 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertEqual(1024 ** 3, cleanup.PROJECT_SIZE_LIMIT_BYTES)                                   # default non-exempt checkout cap unchanged
         self.assertEqual(6400 * 1024 ** 2, cleanup.RELEASE_TASK_0116_BUDGET_LIMIT_BYTES)                # release budget proposal untouched
 
+    def test_second_release_0_1_16_rebaseline_authority_is_distinct_single_use_and_keeps_budget_and_earlier_grants(self):
+        second, first = cleanup.RELEASE_TASK_0116_REBASELINE_ID_2, cleanup.RELEASE_TASK_0116_REBASELINE_ID
+        self.assertNotEqual(second, first)
+        task = cleanup.RELEASE_TASK_0116_BUDGET_ID
+        self.assertEqual((task, "0.1.16", cleanup.RELEASE_TASK_0116_REBASELINE_APPROVAL_2), cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[second])
+        self.assertEqual((task, "0.1.16", cleanup.RELEASE_TASK_0116_REBASELINE_APPROVAL), cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[first])   # earlier grant unchanged
+        self.assertNotEqual(cleanup.RELEASE_TASK_0116_REBASELINE_APPROVAL_2, cleanup.RELEASE_TASK_0116_REBASELINE_APPROVAL)
+        for needle in ("af0d059fb396e6d607b8a918ebed3f6c676d1713", "epoch-20261104-setup-f7b6cfc", "6.25 GiB", "11 GiB", "eight-hop", "No user-data deletion"):
+            self.assertIn(needle, cleanup.RELEASE_TASK_0116_REBASELINE_APPROVAL_2)
+        self.assertEqual(6400 * 1024 ** 2, cleanup._release_task_budget_limit(task))                   # no cap increase
+        self.assertEqual(11 * 1024 ** 3, cleanup.PROJECT_EXEMPT_SIZE_LIMIT_BYTES)
+
     def test_dev_resources_expanded_budget_is_3_25_gib_and_preserves_old_epoch_verifiability(self):
         task_id = cleanup.DEV_RESOURCES_TASK_ID
         previous = {"limit_bytes": 3 * 1024 ** 3, "owner_approval": cleanup.DEV_RESOURCES_BUDGET_APPROVAL}

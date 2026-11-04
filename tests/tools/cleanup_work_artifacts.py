@@ -273,6 +273,16 @@ RELEASE_TASK_0116_REBASELINE_APPROVAL = (
     "before acceptance; all earlier single-use approvals remain consumed."
 )
 
+RELEASE_TASK_0116_REBASELINE_ID_2 = "owner-20261105-af0d059"
+RELEASE_TASK_0116_REBASELINE_APPROVAL_2 = (
+    "Owner 2026-11-05 answered 'Cho phép rebaseline một lần cho af0d059, giữ nguyên scope và ngân sách. Làm tiếp cho xong, kiểm đạt rồi release luôn, "
+    "đừng dừng hỏi lại từng bước.', authorizing ONE additional no-delete release-0.1.16 epoch metadata rebaseline from epoch-20261104-setup-f7b6cfc "
+    "for prepared source af0d059fb396e6d607b8a918ebed3f6c676d1713 and its authority descendants. Keep the release-0.1.16 scope and 6.25 GiB cap and the "
+    "shared 11 GiB cache cap unchanged, plus CAS, rollback, complete history verification, clean-source/no-writer protections and the ordinary "
+    "eight-hop limit. No user-data deletion, no model change, no push/tag/release before Brain acceptance; call_e90de61d52e64bfe9839197a3ffef14d "
+    "and every earlier single-use approval remain consumed."
+)
+
 
 def _task_scope_path(root, task_id, version):
     return (root / "DEV_RUN/resources-dev15").resolve() if task_id == DEV_RESOURCES_TASK_ID else (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
@@ -520,6 +530,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_0116_REBASELINE_ID_2: (RELEASE_TASK_0116_BUDGET_ID, "0.1.16", RELEASE_TASK_0116_REBASELINE_APPROVAL_2),
     RELEASE_TASK_0116_REBASELINE_ID: (RELEASE_TASK_0116_BUDGET_ID, "0.1.16", RELEASE_TASK_0116_REBASELINE_APPROVAL),
     DEV_RESOURCES_REBASELINE_ID_2: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_REBASELINE_APPROVAL_2),
     DEV_RESOURCES_REBASELINE_ID: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_BUDGET_APPROVAL),
