@@ -27,6 +27,35 @@ public sealed partial class MainViewModel
     // result and makes the still-running analysis of the OLD input ignorable (late event).
     private string? _analyzeIdentity;
     private bool _analyzeRejectLate;
+    private string? _nestedRuntimePath;
+    private bool _gameFolderReadError;
+    private string _gameFolderBoundaryMessage => _gameFolderReadError
+        ? UiText.Translate("Không thể kiểm tra thư mục game. Hãy chọn lại thư mục có thể đọc.")
+        : _nestedRuntimePath is null ? ""
+        : UiText.Msg("Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {0}", _nestedRuntimePath);
+
+    private void RefreshGameFolderBoundary()
+    {
+        try
+        {
+            _nestedRuntimePath = GameFolderBoundary.FindNestedRuntime(InputPath);
+            _gameFolderReadError = false;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException)
+        {
+            _nestedRuntimePath = null;
+            _gameFolderReadError = true;
+        }
+        if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage))
+        {
+            AnalyzeStatusText = _gameFolderBoundaryMessage;
+            AnalyzeEngineSummary = "Chưa xác định engine";
+            AnalyzeInventoryComplete = false;
+        }
+        Raise(nameof(ExtractStatusText));
+        RunExtractCommand?.RaiseCanExecuteChanged();
+        AnalyzeCommand?.RaiseCanExecuteChanged();
+    }
 
     internal static string AnalyzeIdentityOf(string? input, string? output)
     {
@@ -66,7 +95,7 @@ public sealed partial class MainViewModel
 
     public string AnalyzeStatusText
     {
-        get => UiText.Translate(_analyzeStatusText);
+        get => !string.IsNullOrEmpty(_gameFolderBoundaryMessage) ? _gameFolderBoundaryMessage : UiText.Translate(_analyzeStatusText);
         private set => Set(ref _analyzeStatusText, value);
     }
 
@@ -180,6 +209,11 @@ public sealed partial class MainViewModel
         _autoAnalyzeWaitsForIdle = false;
         _extractAfterAnalyze = false;
         _extractReadyAfterAnalyze = false;
+        if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage))
+        {
+            _autoAnalyzeDebouncing = false;
+            return;
+        }
         if (string.IsNullOrWhiteSpace(InputPath))
         {
             _autoAnalyzeDebouncing = false;
@@ -249,6 +283,8 @@ public sealed partial class MainViewModel
 
     private void RunAnalyze(bool auto = false)
     {
+        RefreshGameFolderBoundary();
+        if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage)) return;
         _analyzeAuto = auto;
         AnalyzeResultsExpanded = false;
         AnalyzeHasReport = false;

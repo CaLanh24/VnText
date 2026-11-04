@@ -13,6 +13,8 @@ public static class UiText
     private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {0}"] = "This folder contains a game. Select the specific game folder, for example: {0}",
+        ["Không thể kiểm tra thư mục game. Hãy chọn lại thư mục có thể đọc."] = "Cannot inspect the game folder. Select a readable folder.",
         ["Tài nguyên xử lý trên máy"] = "On-device resources",
         ["Chuẩn bị tài nguyên sau khi cài ứng dụng"] = "Prepare resources after installation",
         ["Tải tất cả tài nguyên"] = "Download all resources",

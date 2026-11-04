@@ -125,6 +125,15 @@ def run_analyze_worker(
         return
 
     import json
+    from vntext.renpy_adapter import find_nested_runtime
+    try:
+        nested = find_nested_runtime(src)
+        if nested is not None:
+            emit_complete(task_id, ok=False, error=f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
+            return
+    except OSError as exc:
+        emit_complete(task_id, ok=False, error=f"Không thể kiểm tra thư mục game: {exc}")
+        return
 
     from vntext.unity_analyzer import AnalyzerOptions, UnityAnalysisCancelled, analyze_unity_game
 

@@ -11,6 +11,34 @@ from vntext.renpy_adapter import detect_engine
 
 
 class RenPyEngineDetectionTests(unittest.TestCase):
+    def test_collection_is_not_a_game_root_and_worker_does_not_scan_or_write(self):
+        from unittest.mock import patch
+        from vntext.renpy_adapter import find_nested_runtime
+        from vntext_worker.task_runners import run_analyze_worker
+        with self._folder() as temp:
+            root = Path(temp)
+            game = root / "Example"
+            for name in ("game", "renpy", "lib"):
+                (game / name).mkdir(parents=True)
+            (game / "Example.exe").write_bytes(b"fixture")
+            self.assertEqual(game, find_nested_runtime(root))
+            self.assertIsNone(find_nested_runtime(game))
+            output = root / "output"
+            with patch("vntext_worker.task_runners.analyze_unity_game") as scan, patch("vntext_worker.task_runners.emit_complete") as done:
+                run_analyze_worker("parent", {"src": str(root), "report_out": str(output)}, lambda: False)
+            scan.assert_not_called()
+            self.assertFalse(output.exists())
+            self.assertFalse(done.call_args.kwargs["ok"])
+            self.assertIn(str(game), done.call_args.kwargs["error"])
+
+    def test_valid_runtime_root_is_not_rejected_for_nested_tools(self):
+        from vntext.renpy_adapter import find_nested_runtime
+        with self._folder() as temp:
+            root = Path(temp)
+            (root / "Game_Data").mkdir()
+            (root / "tools/Other_Data").mkdir(parents=True)
+            self.assertIsNone(find_nested_runtime(root))
+
     @classmethod
     def setUpClass(cls):
         cls._prior_tempdir = tempfile.tempdir

@@ -359,6 +359,8 @@ public sealed partial class MainViewModel
 
     private async void RunExtract()
     {
+        RefreshGameFolderBoundary();
+        if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage)) return;
         if (Busy && _runningTask == "analyze") { DeferExtractUntilDetected(); return; }
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;

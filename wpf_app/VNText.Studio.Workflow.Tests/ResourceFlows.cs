@@ -23,6 +23,22 @@ internal static partial class Program
     private static int RunResourceFlows()
     {
         var failures = new List<string>();
+        Run("GameCollectionBlocksExtractAndSwitchingToGameClearsBoundary", () =>
+        {
+            var parent=Path.Combine(TestTempRoot(),"game-collection");
+            var game=Path.Combine(parent,"Example");
+            foreach(var name in new[]{"game","renpy","lib"}) Directory.CreateDirectory(Path.Combine(game,name));
+            File.WriteAllText(Path.Combine(game,"Example.exe"),"fixture");
+            using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false);
+            vm.InputPath=parent;
+            AssertFalse(vm.RunExtractCommand.CanExecute(null));
+            AssertFalse(vm.AnalyzeInventoryComplete);
+            AssertTrue(vm.ExtractStatusText.Contains(game));
+            AssertFalse(vm.ExtractStatusText.Contains("Sẵn sàng lấy text"));
+            vm.InputPath=game;
+            AssertTrue(vm.RunExtractCommand.CanExecute(null));
+            AssertFalse(vm.ExtractStatusText.Contains("thư mục chứa game"));
+        }, failures);
         Run("PersistentErrorSurvivesProgressWindowAndRestart", () =>
         {
             using (var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false))
@@ -251,7 +267,7 @@ internal static partial class Program
             AssertEqual("PARTIAL",evt.ExtractStatus);
         }, failures);
         foreach(var failure in failures) Console.Error.WriteLine(failure);
-        Console.WriteLine($"Resource flow checks: {12-failures.Count}/12 PASS");
+        Console.WriteLine($"Resource flow checks: {13-failures.Count}/13 PASS");
         return failures.Count==0?0:1;
     }
 }

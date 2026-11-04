@@ -14,6 +14,25 @@ from vntext.renpy_archive import RenPyArchive, RenPyArchiveError
 UNITY_MARKERS = ("*_Data",)
 
 
+def find_nested_runtime(path: str | Path) -> Path | None:
+    """Bounded immediate runtime check, not recursive engine discovery."""
+    root = Path(path)
+    def runtime(candidate: Path) -> bool:
+        if candidate.is_symlink() or getattr(candidate.stat(), "st_file_attributes", 0) & 0x400:
+            return False
+        children = list(candidate.iterdir())
+        return (all((candidate / name).is_dir() for name in ("game", "renpy", "lib"))
+                and any(p.is_file() and p.suffix.casefold() == ".exe" for p in children)
+                or any(p.is_dir() and p.name.casefold().endswith("_data") for p in children))
+    if not root.is_dir() or root.is_symlink() or getattr(root.stat(), "st_file_attributes", 0) & 0x400 or runtime(root):
+        return None
+    from itertools import islice
+    for child in islice(root.iterdir(), 128):
+        if child.is_dir() and runtime(child):
+            return child
+    return None
+
+
 @dataclass(frozen=True)
 class EngineDetection:
     engine: str

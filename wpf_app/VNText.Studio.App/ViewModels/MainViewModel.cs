@@ -172,7 +172,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         InitializeExtractRuns();
         InitResourceCommands();
         AnalyzeCommand = new RelayCommand(_ => RunAnalyze(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
-        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => (!Busy || _runningTask == "analyze") && !CsvEditorSaving && !CsvEditorDirty);
+        RunExtractCommand = new RelayCommand(_ => RunExtract(), _ => string.IsNullOrEmpty(_gameFolderBoundaryMessage) && (!Busy || _runningTask == "analyze") && !CsvEditorSaving && !CsvEditorDirty);
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
@@ -240,6 +240,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 Raise(nameof(InputDisplay));
                 Raise(nameof(ExtractStatusText));
                 InvalidateAnalyzeIfInputsChanged();
+                RefreshGameFolderBoundary();
                 ScheduleAutoAnalyze();
                 RefreshWorkflow();
                 RefreshRenpySdkOptionsVisibility(value);
@@ -548,7 +549,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public int TranslateProgressPercent { get => _translateProgressPercent; private set => Set(ref _translateProgressPercent, value); }
     public int PatchProgressPercent { get => _patchProgressPercent; private set => Set(ref _patchProgressPercent, value); }
 
-    public string ExtractStatusText => Busy && _runningTask is not ("extract" or "analyze" or "image_inventory" or "image_extract")
+    public string ExtractStatusText => !string.IsNullOrEmpty(_gameFolderBoundaryMessage) ? _gameFolderBoundaryMessage
+        : Busy && _runningTask is not ("extract" or "analyze" or "image_inventory" or "image_extract")
         ? ""
         : StatusText == "Sẵn sàng"
             ? (string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text")
