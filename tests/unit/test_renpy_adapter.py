@@ -24,12 +24,21 @@ class RenPyEngineDetectionTests(unittest.TestCase):
             self.assertEqual(game, find_nested_runtime(root))
             self.assertIsNone(find_nested_runtime(game))
             output = root / "output"
-            with patch("vntext_worker.task_runners.analyze_unity_game") as scan, patch("vntext_worker.task_runners.emit_complete") as done:
+            with patch("vntext.unity_analyzer.analyze_unity_game") as scan, patch("vntext_worker.task_runners.emit_complete") as done:
                 run_analyze_worker("parent", {"src": str(root), "report_out": str(output)}, lambda: False)
             scan.assert_not_called()
             self.assertFalse(output.exists())
             self.assertFalse(done.call_args.kwargs["ok"])
             self.assertIn(str(game), done.call_args.kwargs["error"])
+            from vntext.app_tasks import run_extract_task
+            completed = []
+            with patch("vntext.app_tasks._run_unity_preflight") as preflight:
+                run_extract_task(str(root), str(output), "safe", "balanced", True,
+                                 progress=lambda _: None, log=lambda _: None, complete=completed.append)
+            preflight.assert_not_called()
+            self.assertFalse(output.exists())
+            self.assertFalse(completed[-1]["ok"])
+            self.assertIn(str(game), completed[-1]["error"])
 
     def test_valid_runtime_root_is_not_rejected_for_nested_tools(self):
         from vntext.renpy_adapter import find_nested_runtime

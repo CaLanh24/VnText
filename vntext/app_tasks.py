@@ -1140,7 +1140,10 @@ def run_extract_task(
 
     renpy_sdk_missing = False
     try:
-        from vntext.renpy_adapter import detect_engine
+        from vntext.renpy_adapter import detect_engine, find_nested_runtime
+        nested = find_nested_runtime(src)
+        if nested is not None:
+            raise ValueError(f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
         engine = detect_engine(src)
         if not Path(src).exists():
             raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
