@@ -66,8 +66,13 @@ def _take_lock(lock: Path) -> int:
                 raise ValueError("Output lock changed externally")
             lock.unlink()
             continue
-        os.write(fd, json.dumps({"pid": os.getpid()}).encode())
-        os.fsync(fd)
+        try:
+            os.write(fd, json.dumps({"pid": os.getpid()}).encode())
+            os.fsync(fd)
+        except Exception:
+            os.close(fd)
+            lock.unlink(missing_ok=True)
+            raise
         return fd
     raise ValueError("Cannot acquire extraction output lock")
 

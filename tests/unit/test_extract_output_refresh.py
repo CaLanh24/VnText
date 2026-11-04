@@ -148,3 +148,11 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             self.assertEqual(b"user data", (out / "notes.txt").read_bytes())
             self.assertTrue(results[-1]["ok"])
         self.run_case(run)
+
+    def test_lock_write_failure_does_not_leak_a_lock_or_change_csv(self):
+        def run(source, out, results):
+            with patch("vntext.extract_output.os.write", side_effect=OSError("disk full")), self.assertRaises(OSError):
+                refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+            self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
+        self.run_case(run)
