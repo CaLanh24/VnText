@@ -1093,14 +1093,20 @@ if (-not $SkipBuild) {
     $installerObjArg = "-p:BaseIntermediateOutputPath=$installerObj\"
     $installerExtensionsArg = "-p:MSBuildProjectExtensionsPath=$installerObj\"
     $installerOutputArg = "-p:OutputPath=$(Join-Path $DevRunRoot 'obj\VNText.PatchInstaller\bin\Release\net8.0-windows\win-x64')\"
+    $installerHostPacks = @(Get-ChildItem -LiteralPath (Join-Path $nugetPackages "microsoft.netcore.app.host.win-x64") -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^8\.' -and (Test-Path -LiteralPath (Join-Path $_.FullName "runtimes\win-x64\native\singlefilehost.exe")) } | Sort-Object { [version]$_.Name } -Descending)
+    if ($installerHostPacks.Count -eq 0) { throw "Self-contained patch installer needs a cached .NET 8 apphost pack (singlefilehost); the SDK 10 host cannot start the .NET 8 runtime" }
+    $installerTargets = Join-Path $DevRunRoot "installer.layout.targets"
+    Set-Content -LiteralPath $installerTargets -Value $targets.Replace("AppHostPackVersion=`"$appHostPackVersion`"", "AppHostPackVersion=`"$($installerHostPacks[0].Name)`"") -Encoding utf8
+    $installerTargetsArg = "-p:DirectoryBuildTargetsPath=$installerTargets"
     $installerBuiltExe = Join-Path $installerPublish "VNTextPatchInstaller.exe"
     if (Test-Path $installerPublish) { Remove-Item -LiteralPath $installerPublish -Recurse -Force }
-    & $dotnet restore $installerProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $targetsArg $installerObjArg $installerExtensionsArg $installerOutputArg
+    & $dotnet restore $installerProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg
     if ($LASTEXITCODE -ne 0) { throw "Patch installer restore failed" }
     & $dotnet publish $installerProj `
         -c Release -r win-x64 --self-contained true `
         -p:PublishSingleFile=true `
-        -p:PublishTrimmed=false $targetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
+        -p:PublishTrimmed=false $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
     if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
     if (-not (Test-Path $installerBuiltExe)) { throw "Patch installer missing: $installerBuiltExe" }
     Write-Host "Built installer: $installerBuiltExe" -ForegroundColor Green

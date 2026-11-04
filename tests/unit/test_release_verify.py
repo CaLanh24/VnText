@@ -168,6 +168,10 @@ class ReleaseVerifyTests(unittest.TestCase):
             "        -c Release -r win-x64 --self-contained true `",
             publish,
         )
+        # self-contained single-file installer: the SDK 10 singlefilehost cannot start the .NET 8 runtime (0x80131522)
+        self.assertIn('$installerTargetsArg', publish)
+        self.assertIn('singlefilehost.exe', publish)
+        self.assertIn('"AppHostPackVersion=`"$($installerHostPacks[0].Name)`""', publish)
         self.assertIn('$CandidateRoot', release_e2e)
         self.assertIn('-ReleaseRoot $CandidateRoot', release_e2e)
         self.assertIn('-WpfUpdateVersion $nextVersion', release_e2e)
