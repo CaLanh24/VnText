@@ -83,7 +83,9 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
         _no_links(path)
         if not path.resolve().is_relative_to(game_base.resolve()) or not path.is_file():
             raise ValueError("Ren'Py installer source identity missing or outside game")
-        digest = _sha256_file(path)
+        digest = sources.get(path)
+        if digest is None:
+            digest = _sha256_file(path)
         expected = container.get("container_sha256") or precondition.get("source_sha256")
         if expected and expected != digest:
             raise ValueError("Ren'Py source changed after extraction")

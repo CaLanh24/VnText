@@ -13,10 +13,10 @@ WORK = work_temp_dir("extract-output-refresh")
 class ExtractOutputRefreshTests(unittest.TestCase):
     def test_worker_preserves_verified_subset_scope_in_terminal_event(self):
         from vntext_worker.task_runners import _make_callbacks
-        with patch("vntext_worker.task_runners.emit_complete") as emitted:
+        with patch("vntext_worker.protocol.emit") as emitted:
             _, _, done = _make_callbacks("extract", lambda: False)
             done({"ok": False, "complete": False, "extract_status": "PARTIAL", "severity": "warning", "patch_scope": "VERIFIED_MAIN_SUBSET"})
-        self.assertEqual("VERIFIED_MAIN_SUBSET", emitted.call_args.kwargs["patch_scope"])
+        self.assertEqual("VERIFIED_MAIN_SUBSET", emitted.call_args.args[0]["patch_scope"])
 
     def run_case(self, producer, setup=None):
         with tempfile.TemporaryDirectory(dir=WORK) as temp:
@@ -93,4 +93,58 @@ class ExtractOutputRefreshTests(unittest.TestCase):
                 refresh_extract(source, out, self.generated, results.append, lambda _: None)
             self.assertEqual(b"external edit", (out / "translation.csv").read_bytes())
             self.assertFalse(json.loads((out / "extract_status.json").read_text())["complete"])
+        self.run_case(run)
+
+    def test_csv_changed_while_producing_is_preserved(self):
+        def run(source, out, results):
+            def generate(stage, done, log):
+                self.generated(stage, done, log)
+                (out / "translation.csv").write_bytes(b"edit during extract")
+            with self.assertRaisesRegex(ValueError, "externally"):
+                refresh_extract(source, out, generate, results.append, lambda _: None)
+            self.assertEqual(b"edit during extract", (out / "translation.csv").read_bytes())
+        self.run_case(run)
+
+    def test_completion_is_after_releasing_package_lock(self):
+        def run(source, out, results):
+            def done(result):
+                self.assertFalse((out / ".vntext-extract.lock").exists())
+                results.append(result)
+            refresh_extract(source, out, self.generated, done, lambda _: None)
+        self.run_case(run)
+
+    def test_trace_writer_refuses_an_active_extraction(self):
+        from vntext.traceability import TraceStore, TraceStoreError
+        def run(source, out, results):
+            def generate(stage, done, log):
+                with self.assertRaisesRegex(TraceStoreError, "extraction"):
+                    TraceStore(out, "fixture")
+                self.generated(stage, done, log)
+            refresh_extract(source, out, generate, results.append, lambda _: None)
+            self.assertFalse((out / ".mt/traceability.lock").exists())
+        self.run_case(run)
+
+    def test_renpy_installer_hashes_each_source_file_once(self):
+        import vntext.patch_output as output
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root = Path(temp)
+            game = root / "game"
+            (game / "game").mkdir(parents=True)
+            source = game / "game/script.rpy"
+            source.write_bytes(b"fixture")
+            patch_root = root / "patch"
+            payload = patch_root / "COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy"
+            payload.parent.mkdir(parents=True)
+            payload.write_bytes(b"overlay")
+            entry = {"file_path": "game/script.rpy"}
+            with patch.object(output, "_sha256_file", wraps=output._sha256_file) as hashed:
+                output.write_renpy_patch_manifest(patch_root, game, "test", {"entries": [entry] * 100})
+            self.assertEqual(1, sum(call.args[0] == source for call in hashed.call_args_list))
+
+    def test_stale_extract_lock_recovered_without_removing_user_files(self):
+        def run(source, out, results):
+            (out / ".vntext-extract.lock").write_text('{"pid": 999999999}', encoding="utf-8")
+            refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertEqual(b"user data", (out / "notes.txt").read_bytes())
+            self.assertTrue(results[-1]["ok"])
         self.run_case(run)

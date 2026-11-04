@@ -364,6 +364,9 @@ class TraceStore:
         return self._connection
 
     def _acquire_lock(self) -> None:
+        extract_lock = self.package_dir / ".vntext-extract.lock"
+        if extract_lock.exists():
+            raise TraceStoreError("package extraction is in progress")
         owner = {
             "owner_id": self._owner_id,
             "pid": os.getpid(),
@@ -394,6 +397,9 @@ class TraceStore:
             except OSError as exc:
                 raise TraceStoreError(f"cannot create trace lock: {self.lock_path}") from exc
             try:
+                if extract_lock.exists():
+                    self.lock_path.unlink()
+                    raise TraceStoreError("package extraction is in progress")
                 os.write(fd, encoded)
             finally:
                 os.close(fd)

@@ -65,6 +65,7 @@ def emit_complete(
     renpy_sdk_missing: bool | None = None,
     extract_status: str | None = None,
     severity: str | None = None,
+    patch_scope: str | None = None,
     pipeline_liveness: bool | None = None,
     diagnostic_path: str | None = None,
     diagnostic_stage: str | None = None,
@@ -102,6 +103,8 @@ def emit_complete(
         msg["extract_status"] = extract_status
     if severity in ("ok", "warning", "error"):
         msg["severity"] = severity
+    if patch_scope in ("NONE", "VERIFIED_MAIN_SUBSET"):
+        msg["patch_scope"] = patch_scope
     if pipeline_liveness is not None:
         msg["pipeline_liveness"] = bool(pipeline_liveness)
     diagnostic_fields = {
