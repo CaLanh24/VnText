@@ -71,7 +71,7 @@ class PatchInstallerTests(unittest.TestCase):
             target.write_bytes(b"existing locale")
             write_renpy_patch_manifest(patch, game, "test", {"entries": [{"file_path": "game/script.rpy"}]})
             def invoke(action):
-                return subprocess.run([str(installer), action, str(game), str(patch)], capture_output=True, text=True, timeout=30)
+                return subprocess.run([str(installer), action, str(game), str(patch)], capture_output=True, timeout=30)
             self.assertEqual(0, invoke("--install").returncode)
             self.assertEqual(payload.read_bytes(), target.read_bytes())
             self.assertEqual(b'label start:\n    "Hello"\n', source.read_bytes())

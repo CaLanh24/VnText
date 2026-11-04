@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import csv
 import json
 import os
 from pathlib import Path
@@ -130,9 +129,10 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
                 write_csv(stage / name, [])
         meta = stage / ".mt"
         meta.mkdir(exist_ok=True)
-        with (stage / "translation.csv").open(encoding="utf-8-sig", newline="") as stream:
-            pending = sum(1 for _ in csv.DictReader(stream))
-        (meta / "translate_status.json").write_text(json.dumps({"complete": False, "translated": 0, "pending": pending}), encoding="utf-8")
+        from vntext.mt_ct2_status import snapshot_translate_status
+        translation_status = snapshot_translate_status(stage)
+        translation_status["complete"] = False
+        (meta / "translate_status.json").write_text(json.dumps(translation_status), encoding="utf-8")
         if (root / "images/report.json").exists() and not (stage / "images/report.json").exists():
             (stage / "images").mkdir(exist_ok=True)
             (stage / "images/report.json").write_text(json.dumps({"schema": 1, "status": "EMPTY", "items": [], "total": 0, "translated": 0, "ocr_ready": 0}), encoding="utf-8")

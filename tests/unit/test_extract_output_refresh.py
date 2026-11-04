@@ -48,6 +48,8 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             self.assertEqual(str(out), results[-1]["summary"])
             self.assertFalse(any(p.name.startswith(".vntext-") or p.suffix == ".bak" for p in out.iterdir()))
             self.assertFalse(json.loads((out / ".mt/translate_status.json").read_text())["complete"])
+            from vntext.mt_ct2_status import snapshot_translate_status
+            self.assertEqual(1, snapshot_translate_status(out)["pending"])
         self.run_case(run)
 
     def test_failed_generation_preserves_csv_and_never_leaves_ready_status(self):
