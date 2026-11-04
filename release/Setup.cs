@@ -332,6 +332,13 @@ public static class Setup
             Controls.Add(headerLine);
             Controls.Add(header);
             BuildPages();
+            body.Resize += delegate
+            {
+                diskNote.Top = Math.Max(180, body.ClientSize.Height - diskNote.Height - 20);
+                summary.Height = Math.Max(100, body.ClientSize.Height - summary.Top - 24);
+            };
+            diskNote.Top = Math.Max(180, body.ClientSize.Height - diskNote.Height - 20);
+            summary.Height = Math.Max(100, body.ClientSize.Height - summary.Top - 24);
             back.Click += delegate { Go(page - 1); };
             next.Click += delegate { Advance(); };
             cancel.Click += delegate { Close(); };

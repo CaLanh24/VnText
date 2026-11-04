@@ -2,9 +2,10 @@
 
 ## Current delta — Owner 2026-11-04
 
-- Live source/candidate and gate receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (supersedes stale source/epoch/candidate fields below). Claude quota is still exhausted; Codex temporary sole writer, same DEV/session.
-- Completed fixes: partial Extract journal/verified-subset wording; collection-folder rejection before Analyze/Extract. Candidate `RELEASE_RUN/candidate-0.1.16/dev-app-folder-fix`, source517c386; scoped tests/build/live parent-folder rejection PASS. Original game1433 and Owner appdata483 hashes unchanged. Cleanup wrapper childPASS but REVIEW_REQUIRED protected history, no waiver. No publication.
-- New Owner scope: reuse nonempty Extract output by overwriting generated files, preserving unrelated data, with no retained old-output backup. Separate explicit installer may write directly into game, backing up only modified files for uninstall; no mandatory full game copy. Canonical decisions in CONTRACTS sections2/7. Test installer on fixtures/copies only. Current source work/gates pending; do not claim DEV done or release-ready yet.
+- Live source/candidate/epoch/gates: `C:/vnrg/evidence/brain-current-checkpoint.json`. Same persistent DEV quota-exhausted; Codex temporary sole writer. Owner requests continuing until release; do not publish before mandatory acceptance.
+- Source `1b79085`: nonempty output refresh overwrites generated results, preserves unrelated data, no old-output backup; Unity/RenPy direct game install/uninstall with affected-file backup, exact hash checks and paired RPYC cache lifecycle. Installer4 PASS, focused Python34 + prior74/WPF26/worker5 reused with unchanged inputs; native WPF output reuse PASS, fixture disposed. Original game not patched. Candidate `RELEASE_RUN/candidate-0.1.16/dev-app-direct-cache/Start-DEV.cmd`.
+- Current fix: Setup disk-space note was below body viewport (live screenshot); bind disk note/summary height to available body. VI/EN geometry regression and release preparation next. Current release check14 Setup/updater tests PASS; two installer tests failed solely missing configured binary and two skipped; prior exact installer4 PASS remains valid. Preserve failed wrapper; no product PASS inferred.
+- Real-game semantic MT acceptance, full-payload Setup/updater and exact Release remain open. Cleanup REVIEW_REQUIRED for protected historical audit; no waiver/history deletion. Rebaseline grant consumed; current ordinary epoch at `epoch-20261104-cache-1b79085`, one transition left before eight-hop limit.
 
 ## Goal and authority
 

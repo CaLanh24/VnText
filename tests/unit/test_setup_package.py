@@ -1031,6 +1031,12 @@ internal static class WizardHarness
             var title = (Label)wizardType.GetField("title", instance).GetValue(wizard);
             var next = (Button)wizardType.GetField("next", instance).GetValue(wizard);
             var summary = (TextBox)wizardType.GetField("summary", instance).GetValue(wizard);
+            var diskNote = (Label)wizardType.GetField("diskNote", instance).GetValue(wizard);
+            var body = (Panel)wizardType.GetField("body", instance).GetValue(wizard);
+            wizard.Show();
+            Application.DoEvents();
+            Require(diskNote.Top >= 0 && diskNote.Bottom <= body.ClientSize.Height, "disk-space note is clipped below the wizard body");
+            Require(summary.Top >= 0 && summary.Bottom <= body.ClientSize.Height, "ready summary overlaps footer");
             var desktopBox = (CheckBox)wizardType.GetField("desktopShortcut", instance).GetValue(wizard);
             var pageField = wizardType.GetField("page", instance);
             var advance = wizardType.GetMethod("Advance", instance);
