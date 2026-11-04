@@ -1,5 +1,9 @@
 # Current checkpoint — 2026-11-03
 
+## Current delta — Owner 2026-11-05 (Claude DEV resumed after Codex)
+
+- Owner one-use rebaseline #2 `owner-20261105-af0d059` (CONTRACTS, `cleanup_work_artifacts.py`, test) for af0d059 + authority descendants; same release-0.1.16 scope/6.25 GiB cap, shared 11 GiB; eight-hop limit exhausted at `epoch-20261104-setup-f7b6cfc`, so the rebaseline epoch is applied next; then clean-source gates, portable self-contained installer proof under a private no-framework root, publish build with the baseline-015 model tree (model guard unchanged), direct 013/014/015 + legacy 017 routes, native fixtures for Brain. Semantic game quality NOT accepted; no publication before Brain ACCEPT. Live state: `C:/vnrg/evidence/brain-current-checkpoint.json`.
+
 ## Current delta — Owner 2026-11-04
 
 - Live source/candidate/epoch/gates: `C:/vnrg/evidence/brain-current-checkpoint.json`. Same persistent DEV quota-exhausted; Codex temporary sole writer. Owner requests continuing until release; do not publish before mandatory acceptance.

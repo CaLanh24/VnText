@@ -57,3 +57,5 @@ App folder tự phân tích → extract → CT2 → lưu CSV → patch read-back
 1. Baseline: lấy cache/asset `v0.1.15` (Setup `fc98d13f…1694`), kiểm hash trước.
 2. `pwsh -NoProfile -ExecutionPolicy Bypass -File .\release\publish.ps1 -SkipWpfUpdatePackage -FullAppUpdateBaselineRoot <baseline 0.1.15>` trong scope `RELEASE_RUN/candidate-0.1.16`.
 3. Sau Brain ACCEPT: `git tag -a v0.1.16 <sha>`, push fast-forward, `gh release create v0.1.16` với 17 asset (Setup + zip + feed) và ghi chú tiếng Việt (tóm tắt phạm vi ở trên), readback sha256/kích thước/latest, xác nhận `v0.1.15^{}` vẫn `4326abd`.
+
+Continuation 2026-11-05: Owner granted ONE further no-delete rebaseline `owner-20261105-af0d059` (eight hops exhausted at `epoch-20261104-setup-f7b6cfc`); recorded in CONTRACTS and `cleanup_work_artifacts.py`, scope/budget unchanged. Packaged patch installer is self-contained; proof under a private no-framework host pending. Publication only after Brain ACCEPT; semantic game quality is not accepted.
