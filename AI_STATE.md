@@ -1,5 +1,11 @@
 # Current checkpoint — 2026-11-03
 
+## Current delta — Owner 2026-11-04
+
+- Live source/candidate and gate receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (supersedes stale source/epoch/candidate fields below). Claude quota is still exhausted; Codex temporary sole writer, same DEV/session.
+- Completed fixes: partial Extract journal/verified-subset wording; collection-folder rejection before Analyze/Extract. Candidate `RELEASE_RUN/candidate-0.1.16/dev-app-folder-fix`, source517c386; scoped tests/build/live parent-folder rejection PASS. Original game1433 and Owner appdata483 hashes unchanged. Cleanup wrapper childPASS but REVIEW_REQUIRED protected history, no waiver. No publication.
+- New Owner scope: reuse nonempty Extract output by overwriting generated files, preserving unrelated data, with no retained old-output backup. Separate explicit installer may write directly into game, backing up only modified files for uninstall; no mandatory full game copy. Canonical decisions in CONTRACTS sections2/7. Test installer on fixtures/copies only. Current source work/gates pending; do not claim DEV done or release-ready yet.
+
 ## Goal and authority
 
 - Finish 0.1.16 prerequisite fixes, exact app build/smoke, app-generated patch and native validation on the declared copy of Owner game. Owner: “nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release”; subsequent real-game semantic quality is a prerequisite. NO publication before acceptance. Public0.1.15/tag/assets immutable: `4326abd56d8d64e8c9024ca499d68303aa31db67`, Setup SHA `fc98d13fea08de94cf6cffe611f6f37787ddb2691bb1c1e3974af263fa861694`. See docs/RELEASE_0.1.16.md and0.1.15 ledger.

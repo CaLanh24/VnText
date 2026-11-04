@@ -17,7 +17,12 @@ public sealed record PatchManifest(
     [property: JsonPropertyName("game_data_sha256")] string GameDataSha256,
     [property: JsonPropertyName("files")] List<PatchFile> Files,
     [property: JsonPropertyName("game_data_path")] string GameDataPath = "",
-    [property: JsonPropertyName("game_executable")] string GameExecutable = "");
+    [property: JsonPropertyName("game_executable")] string GameExecutable = "",
+    [property: JsonPropertyName("engine")] string Engine = "unity",
+    [property: JsonPropertyName("game_checks")] List<GameCheck>? GameChecks = null);
+
+public sealed record GameCheck([property: JsonPropertyName("path")] string Path,
+    [property: JsonPropertyName("sha256")] string Sha256);
 
 public sealed record InstalledFile(
     [property: JsonPropertyName("path")] string Path,
@@ -64,6 +69,20 @@ public sealed class InstallerService
         var root = NormalizeGameRoot(gameRoot);
         var manifest = LoadManifest();
         if (!Directory.Exists(root)) throw new InvalidOperationException("Thư mục game không tồn tại.");
+        if (manifest.Engine == "renpy")
+        {
+            ValidateGameIdentity(root);
+            if (manifest.GameChecks is null || manifest.GameChecks.Count == 0)
+                throw new InvalidOperationException("Thiếu bằng chứng nhận dạng game Ren'Py.");
+            foreach (var check in manifest.GameChecks)
+                if (!File.Exists(ResolveSafe(root, check.Path)) || !string.Equals(HashFile(ResolveSafe(root, check.Path)), check.Sha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Sai bản game hoặc file nguồn đã thay đổi: {check.Path}");
+            foreach (var file in manifest.Files)
+                if (!File.Exists(ResolveSafe(PayloadDirectory, file.Path)) || !string.Equals(HashFile(ResolveSafe(PayloadDirectory, file.Path)), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Payload bị thay đổi hoặc hỏng: {file.Path}");
+            return root;
+        }
+        if (manifest.Engine != "unity") throw new InvalidOperationException("Engine không được hỗ trợ.");
         var layout = DetectUnityLayout(root, manifest.GameExecutable);
         if (layout.DataDirectory is null)
             throw new InvalidOperationException("Sai thư mục game: thiếu thư mục Unity *_Data.");
@@ -89,7 +108,7 @@ public sealed class InstallerService
         var root = ValidateGame(gameRoot);
         if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
         var manifest = LoadManifest();
-        if (Directory.Exists(BackupDirectory)) Directory.Delete(BackupDirectory, true);
+        if (Directory.Exists(BackupDirectory)) throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
         Directory.CreateDirectory(BackupDirectory);
         var prepared = new List<InstalledFile>();
         try
@@ -116,6 +135,8 @@ public sealed class InstallerService
                 File.Copy(payload, temp, true);
                 File.Move(temp, target, true);
                 prepared.Add(new InstalledFile(file.Path, backupRel, exists, file.OriginalSha256, file.SourceSha256));
+                if (!string.Equals(HashFile(target), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Kiểm hash sau khi cài thất bại: {file.Path}");
             }
             var state = new InstallState(root, manifest.Version, prepared);
             WriteJsonAtomic(StatePath, state);
@@ -179,7 +200,11 @@ public sealed class InstallerService
             // Resolve the backup path during validation too, so a malformed
             // state cannot later escape the patch backup directory.
             if (file.OriginalExists)
-                _ = ResolveSafe(BackupDirectory, file.BackupPath);
+            {
+                var backup = ResolveSafe(BackupDirectory, file.BackupPath);
+                if (!File.Exists(backup) || !string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}");
+            }
         }
         return state;
     }
@@ -188,6 +213,13 @@ public sealed class InstallerService
     {
         var root = NormalizeGameRoot(gameRoot);
         if (!Directory.Exists(root)) throw new InvalidOperationException("Thư mục game không tồn tại.");
+        if (LoadManifest().Engine == "renpy")
+        {
+            if (!Directory.Exists(Path.Combine(root, "game")) || !Directory.Exists(Path.Combine(root, "renpy")) || !Directory.Exists(Path.Combine(root, "lib"))
+                || !Directory.EnumerateFiles(root, "*.exe").Any())
+                throw new InvalidOperationException("Sai thư mục game Ren'Py.");
+            return root;
+        }
         if (!Directory.EnumerateDirectories(root, "*_Data", SearchOption.TopDirectoryOnly).Any())
             throw new InvalidOperationException("Sai thư mục game: thiếu thư mục Unity *_Data.");
         if (!Directory.EnumerateFiles(root, "*.exe", SearchOption.TopDirectoryOnly).Any())
@@ -249,6 +281,9 @@ public sealed class InstallerService
         var baseFull = Path.GetFullPath(baseDirectory) + Path.DirectorySeparatorChar;
         var full = Path.GetFullPath(Path.Combine(baseFull, normalized));
         if (!full.StartsWith(baseFull, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException($"Manifest chứa đường dẫn ngoài thư mục: {relative}");
+        for (var part = full; !string.IsNullOrEmpty(part); part = Path.GetDirectoryName(part))
+            if ((File.Exists(part) || Directory.Exists(part)) && (File.GetAttributes(part) & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidOperationException($"Không cài qua link/junction: {part}");
         return full;
     }
 

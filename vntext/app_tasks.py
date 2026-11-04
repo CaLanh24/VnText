@@ -977,11 +977,19 @@ def _find_patch_installer() -> Path | None:
     return next((path for path in candidates if path.is_file()), None)
 
 
-def _validate_renpy_overlay_output(patch_out: Path) -> Path:
+def _copy_patch_installer(installer: Path, output: Path) -> None:
+    import shutil
+    for suffix in (".exe", ".dll", ".deps.json", ".runtimeconfig.json"):
+        companion = installer.with_name(installer.stem + suffix)
+        if companion.is_file():
+            shutil.copy2(companion, output / companion.name)
+
+
+def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool = False) -> Path:
     """Validate the native overlay payload before exposing install guidance."""
 
     forbidden = [patch_out / "VNTextPatchInstaller.exe", patch_out / "patch_manifest.json"]
-    stale = [str(path) for path in forbidden if path.exists()]
+    stale = [str(path) for path in forbidden if path.exists() and not installer_refresh]
     if stale:
         raise RuntimeError(
             "Ren'Py patch output contains Unity-only artifacts; use a clean patch directory: "
@@ -1123,6 +1131,29 @@ def _run_unity_preflight(
 
 
 def run_extract_task(
+    src: str, out: str, mode: str, level: str, separate_review: bool,
+    renpy_sdk_path: str = "", renpy_sdk_action: str = "auto", *,
+    progress: ProgressFn, log: LogFn, complete: CompleteFn,
+    is_cancelled: Callable[[], bool] | None = None,
+) -> None:
+    from vntext.extract_output import refresh_extract
+    from vntext.renpy_adapter import find_nested_runtime
+    try:
+        if not Path(src).exists():
+            raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
+        nested = find_nested_runtime(src)
+        if nested is not None:
+            raise ValueError(f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
+        refresh_extract(src, out, lambda stage, done, stage_log: _run_extract_task_impl(
+            src, str(stage), mode, level, separate_review, renpy_sdk_path, renpy_sdk_action,
+            progress=progress, log=stage_log, complete=done, is_cancelled=is_cancelled),
+            complete, log, is_cancelled)
+    except Exception as exc:
+        complete({"ok": False, "complete": False, "error": str(exc), "severity": "error",
+                  "extract_status": "FAILED", "patch_scope": "NONE", "pending": 1, "review_only": 0, "blocked": 1})
+
+
+def _run_extract_task_impl(
     src: str,
     out: str,
     mode: str,
@@ -1151,8 +1182,6 @@ def run_extract_task(
             raise ValueError(f"Archive Ren'Py lỗi/không hỗ trợ; không fallback sang Unity. Chi tiết: {engine.reason}")
         if engine.engine == "MIXED":
             raise ValueError("Game Ren'Py chỉ có compiled script hoặc trộn engine chưa được hỗ trợ. Hãy chọn bản loose-source hoặc tách đúng engine; không chạy route Unity.")
-        if any((Path(out) / name).exists() for name in ("translation.csv", "manifest.json")):
-            raise ValueError("Thư mục xuất đã có gói dịch; giữ nguyên dữ liệu. Hãy sao lưu hoặc chọn thư mục xuất mới.")
         preflight = _run_unity_preflight(
             src,
             out,
@@ -2490,7 +2519,7 @@ def run_patch_task(
                     target_installer.parent.mkdir(parents=True, exist_ok=True)
                     import shutil
 
-                    shutil.copy2(installer, target_installer)
+                    _copy_patch_installer(installer, patch_out)
                     log(f"Đã thêm installer: {target_installer}")
                 else:
                     log("Cảnh báo: chưa tìm thấy VNTextPatchInstaller.exe; cần publish installer trước khi phát hành patch.")
@@ -2512,7 +2541,7 @@ def run_patch_task(
                 )
                 summary = patch_install_instructions
         else:
-            payload = _validate_renpy_overlay_output(patch_out)
+            payload = _validate_renpy_overlay_output(patch_out, installer_refresh=bool(include_installer and write_manifest_file and _find_patch_installer()))
             patch_delivery = "renpy_native_overlay"
             patch_payload_path = str(payload)
             patch_install_instructions = _renpy_patch_install_instructions(
@@ -2525,6 +2554,20 @@ def run_patch_task(
             )
             log("Ren'Py: overlay hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc native này để cài.")
             summary = f"Xong: Ren'Py native overlay nằm tại {patch_out}. Copy nội dung COPY_TO_GAME_ROOT vào game root."
+            if include_installer and write_manifest_file:
+                installer = _find_patch_installer()
+                if installer is not None:
+                    from vntext.patch_output import write_renpy_patch_manifest
+                    import shutil
+                    write_renpy_patch_manifest(patch_out, Path(src).resolve(), VERSION,
+                                              json.loads(Path(manifest_path).read_text(encoding="utf-8")))
+                    _copy_patch_installer(installer, patch_out)
+                    patch_delivery = "renpy_installer"
+                    patch_install_instructions = (
+                        f"Patch tại {patch_out}. Mở VNTextPatchInstaller.exe, chọn trực tiếp thư mục game để cài/gỡ. "
+                        "Chỉ các file bị thay đổi được sao lưu; không cần tạo bản sao toàn bộ game.")
+                    summary = patch_install_instructions
+                    (patch_out / "HUONG_DAN_CAI_PATCH.txt").write_text(patch_install_instructions + "\n", encoding="utf-8")
         if patch_excluded:
             (patch_out / "patch_coverage.json").write_text(json.dumps({
                 "scope": "VERIFIED_MAIN_SUBSET",

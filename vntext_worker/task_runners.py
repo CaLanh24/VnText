@@ -79,6 +79,7 @@ def _make_callbacks(
             "diagnostic_status",
             "extract_status",
             "severity",
+            "patch_scope",
             "patch_engine",
             "patch_delivery",
             "patch_payload_path",

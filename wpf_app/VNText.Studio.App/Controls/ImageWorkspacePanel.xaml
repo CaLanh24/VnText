@@ -48,11 +48,11 @@
         <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,4"
                    Text="Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả." />
         <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
-                   Text="Game gốc không bị ghi: chỉ bước cài mới ghi vào một bản sao game do bạn chọn." />
+                   Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
         <Border x:Name="IntroDetails" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào bản sao game…” ghi vào một BẢN SAO game do bạn chọn (có bản lưu và kiểm hash đọc lại); thư mục game gốc không bị ghi, và bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối." />
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
         </Border>
 
         <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->
@@ -203,7 +203,7 @@
         <WrapPanel Margin="0,0,0,8">
             <Button x:Name="RenderButton" Content="Dựng ảnh từ bản dịch duyệt" Command="{Binding RenderImageCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
             <Button x:Name="DeliveryButton" Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="InstallButton" Content="Cài gói vào bản sao game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="InstallButton" Content="Cài gói vào game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>

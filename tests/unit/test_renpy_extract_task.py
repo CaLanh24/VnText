@@ -93,15 +93,18 @@ class RenPyExtractTaskTests(unittest.TestCase):
             self.assertEqual(completed[-1]["extract_status"], "EMPTY")
             self.assertTrue((Path(temp) / "out" / "manifest.json").is_file())
 
-    def test_extract_does_not_overwrite_existing_package(self):
+    def test_extract_refreshes_generated_files_and_preserves_unrelated_user_data(self):
         with tempfile.TemporaryDirectory(dir=WORK) as temp:
             root=Path(temp)/"input"; root.mkdir(); (root/"story.txt").write_text("Hello there.")
             out=Path(temp)/"out"; out.mkdir(); csv=out/"translation.csv"; csv.write_bytes(b"owner data")
+            private=out/"my-notes.txt"; private.write_bytes(b"keep user notes")
             completed=[]
             run_extract_task(str(root),str(out),"safe","balanced",True,
                              progress=lambda _:None,log=lambda _:None,complete=completed.append)
-            self.assertEqual(csv.read_bytes(),b"owner data")
-            self.assertFalse(completed[-1]["ok"])
+            self.assertNotEqual(csv.read_bytes(),b"owner data")
+            self.assertEqual(private.read_bytes(),b"keep user notes")
+            self.assertTrue(completed[-1]["ok"], completed[-1])
+            self.assertFalse(any(p.name.startswith(".vntext-extract-") for p in out.iterdir()))
 
     def test_sdk_failure_and_cancel_dispose_scratch_and_preserve_input(self):
         for cancelled in (False, True):

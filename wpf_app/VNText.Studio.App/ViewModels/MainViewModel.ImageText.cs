@@ -90,7 +90,7 @@ public sealed partial class MainViewModel
         "image_batch" => "dịch nháp ảnh",
         "image_render" => "dựng ảnh từ bản dịch đã duyệt",
         "image_delivery" => "tạo gói ảnh",
-        "image_apply" => "cài gói vào bản sao game",
+        "image_apply" => "cài gói vào game",
         "image_rollback" => "phục hồi giao dịch ảnh",
         "translate" => "dịch text trong CSV",
         "extract" => "lấy text",
@@ -202,11 +202,11 @@ public sealed partial class MainViewModel
         }, _ => CanCreateImageDelivery());
         InstallImageDeliveryCommand = new RelayCommand(_ =>
         {
-            // Before the folder picker: a stale or missing package must not even ask for a game copy.
-            if (!CanInstallImageDelivery()) { RefuseStaleImageAction("cài gói vào bản sao game"); return; }
+            // Before the folder picker: a stale or missing package must not even ask for a game.
+            if (!CanInstallImageDelivery()) { RefuseStaleImageAction("cài gói vào game"); return; }
             var copy = _pathPicker.PickInputPath(); if (copy is null) return;
             _imageTaskRoot = NewImageRoot();
-            BeginTask("image_apply", new { package = _imagePackage, game_copy = copy, @out = _imageTaskRoot }, "Đang cài vào bản sao game…");
+            BeginTask("image_apply", new { package = _imagePackage, game_copy = copy, @out = _imageTaskRoot }, "Đang cài vào game…");
         }, _ => CanInstallImageDelivery());
         RecoverImageDeliveryCommand = new RelayCommand(_ =>
         {

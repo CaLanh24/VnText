@@ -63,6 +63,49 @@ def write_patch_manifest(output_dir: Path, game_base: Path, version: str) -> dic
     return manifest
 
 
+def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, extraction_manifest: dict) -> dict:
+    """Installer identity for the verified native overlay, never the whole game."""
+    from vntext.extract_output import _no_links
+    output_dir, game_base = Path(output_dir), Path(game_base)
+    payload_root = output_dir / "COPY_TO_GAME_ROOT"
+    checks = []
+    sources = {}
+    for entry in extraction_manifest.get("entries", []):
+        if entry.get("review_only"):
+            continue
+        contract = entry.get("native_contract") or {}
+        container = (contract.get("provenance") or {}).get("source_container") or {}
+        precondition = contract.get("precondition") or {}
+        relative = container.get("path") or precondition.get("source_file") or entry.get("file_path")
+        if not relative:
+            continue
+        path = game_base / relative
+        _no_links(path)
+        if not path.resolve().is_relative_to(game_base.resolve()) or not path.is_file():
+            raise ValueError("Ren'Py installer source identity missing or outside game")
+        digest = _sha256_file(path)
+        expected = container.get("container_sha256") or precondition.get("source_sha256")
+        if expected and expected != digest:
+            raise ValueError("Ren'Py source changed after extraction")
+        sources[path] = digest
+    if not sources or not payload_root.is_dir():
+        raise ValueError("Missing Ren'Py source identity or verified overlay")
+    for path, digest in sources.items():
+        checks.append({"path": path.relative_to(game_base).as_posix(), "sha256": digest})
+    files = []
+    for path in sorted(p for p in payload_root.rglob("*") if p.is_file()):
+        _no_links(path)
+        relative = path.relative_to(payload_root)
+        original = game_base / relative
+        _no_links(original)
+        files.append({"path": relative.as_posix(), "source_sha256": _sha256_file(path),
+                      "original_exists": original.is_file(), "original_sha256": _sha256_file(original) if original.is_file() else ""})
+    manifest = {"format": 1, "engine": "renpy", "version": version, "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "game_data_sha256": "", "game_checks": checks, "files": files}
+    (output_dir / "patch_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    return manifest
+
+
 def _find_primary_unity_data(game_base: Path, preferred_data_dirs: set[str] | None = None) -> Path | None:
     """Find the primary Unity data file without assuming a game name."""
     base = Path(game_base)

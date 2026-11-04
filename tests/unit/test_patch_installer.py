@@ -37,10 +37,52 @@ class PatchInstallerTests(unittest.TestCase):
     @staticmethod
     def _installer_candidates() -> list[Path]:
         candidates = [ROOT / "release" / "patch_installer_publish" / "VNTextPatchInstaller.exe"]
+        configured = os.environ.get("VNTEXT_PATCH_INSTALLER")
+        if configured:
+            candidates.insert(0, Path(configured))
         release_root = os.environ.get("VNTEXT_RELEASE_ROOT")
         if release_root:
             candidates.append(Path(release_root) / "worker" / "vntext" / "tools" / "VNTextPatchInstaller.exe")
         return candidates
+
+    def test_renpy_direct_install_uninstall_and_modified_file_refusal(self):
+        import tempfile
+        from tests.lib.work_paths import work_temp_dir
+        from vntext.patch_output import write_renpy_patch_manifest
+        installer = next((p for p in self._installer_candidates() if p.is_file()), None)
+        if installer is None:
+            self.fail("Build the current patch installer before this regression")
+        with tempfile.TemporaryDirectory(dir=work_temp_dir("renpy-direct-installer")) as temp:
+            root = Path(temp)
+            game, patch = root / "game", root / "patch"
+            for name in ("game", "renpy", "lib"):
+                (game / name).mkdir(parents=True, exist_ok=True)
+            (game / "Game.exe").write_bytes(b"fixture executable")
+            source = game / "game/script.rpy"
+            source.write_bytes(b'label start:\n    "Hello"\n')
+            relative = "game/tl/vietnamese/vntext.rpy"
+            payload = patch / "COPY_TO_GAME_ROOT" / relative
+            payload.parent.mkdir(parents=True)
+            payload.write_bytes(b'translate vietnamese strings:\n    old "Hello"\n    new "Xin chao"\n')
+            activation = patch / "COPY_TO_GAME_ROOT/game/zzz_vntext_vietnamese.rpy"
+            activation.write_bytes(b'init 999 python:\n    config.language = "vietnamese"\n')
+            target = game / relative
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"existing locale")
+            write_renpy_patch_manifest(patch, game, "test", {"entries": [{"file_path": "game/script.rpy"}]})
+            def invoke(action):
+                return subprocess.run([str(installer), action, str(game), str(patch)], capture_output=True, text=True, timeout=30)
+            self.assertEqual(0, invoke("--install").returncode)
+            self.assertEqual(payload.read_bytes(), target.read_bytes())
+            self.assertEqual(b'label start:\n    "Hello"\n', source.read_bytes())
+            target.write_bytes(b"external mod")
+            self.assertNotEqual(0, invoke("--uninstall").returncode)
+            self.assertEqual(b"external mod", target.read_bytes())
+            target.write_bytes(payload.read_bytes())
+            self.assertEqual(0, invoke("--uninstall").returncode)
+            self.assertEqual(b"existing locale", target.read_bytes())
+            self.assertFalse((patch / "install_state.json").exists())
+            self.assertFalse((game / "game/zzz_vntext_vietnamese.rpy").exists())
 
     def _register_case(self, case: Path, *, name: str) -> None:
         ambient = ambient_scope()

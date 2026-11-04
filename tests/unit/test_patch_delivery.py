@@ -59,6 +59,24 @@ class PatchDeliveryTests(unittest.TestCase):
         write_csv_rows_file(package / "translation.csv", fields, rows)
         return game, package / "translation.csv", package / "manifest.json"
 
+    def test_renpy_installer_delivery_carries_exact_source_identity(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(prefix="vntext-renpy-installer-") as temp:
+            base = Path(temp)
+            game, csv_path, manifest_path = self._renpy_package(base)
+            installer = base / "VNTextPatchInstaller.exe"
+            installer.write_bytes(b"installer fixture")
+            completed = []
+            with patch("vntext.app_tasks._find_patch_installer", return_value=installer):
+                run_patch_task(csv_path, manifest_path, str(game), str(base), progress=lambda _: None,
+                               log=lambda _: None, complete=completed.append, patch_out_override=base / "patch")
+            self.assertTrue(completed[-1]["ok"], completed[-1])
+            self.assertEqual("renpy_installer", completed[-1]["patch_delivery"])
+            manifest = json.loads((base / "patch/patch_manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual("renpy", manifest["engine"])
+            self.assertTrue(manifest["game_checks"])
+            self.assertEqual(b"installer fixture", (base / "patch/VNTextPatchInstaller.exe").read_bytes())
+
     def test_run_patch_task_delivers_renpy_overlay_without_unity_installer(self):
         with tempfile.TemporaryDirectory(prefix="vntext-patch-delivery-renpy-") as temp:
             base = Path(temp)
@@ -76,6 +94,7 @@ class PatchDeliveryTests(unittest.TestCase):
                 log=logs.append,
                 complete=completed.append,
                 patch_out_override=patch_out,
+                include_installer=False,
             )
 
             self.assertEqual(len(completed), 1)

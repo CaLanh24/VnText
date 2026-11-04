@@ -61,6 +61,8 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 
 ## 2. Extract contract
 
+**Owner update 2026-11-04:** Re-extract may reuse a nonempty output directory. Overwrite generated result files without retaining old-output backups; preserve unrelated files and never clear the selected directory. Generate privately, invalidate readiness during publication, commit current readiness last, refuse source/output overlap, links and externally changed destinations. CSV editor Save/Discard/Cancel and its separate backup contract remain unchanged.
+
 **Owner:** `vntext/extract_pipeline.py::extract_project`; family ở `extract_text.py`, `extract_unity.py`, `extract_naninovel.py`, `extract_quality.py`, `extract_postprocess.py`; output ở `package_io.py`.
 
 **Invariant:**
@@ -204,6 +206,8 @@ authorization covers accepted source/test/docs only, not model integration or Re
 **Owner workflow decision for post-0.1.11 remediation (2026-10-24):** Each Extract, Translate, image-translation, and Patch run owns an independent task identity and terminal state; delayed progress cannot overwrite a newer or completed run. Extract is text/OCR only; Translate owns image MT/render. Cancel and cancel-and-exit must expose request, acknowledgement/acceptance, terminal result, timeout, and recovery while preserving safe write/rollback boundaries. UI progress is task-owned, and completion is determined by the terminal protocol event. See `docs/POST_0.1.11_UX_REMEDIATION.md` for the ordered acceptance gates and evidence limits.
 
 ## 7. Patch, UnityFS và Addressables
+
+**Owner update 2026-11-04:** User-facing installation may target the actual game directory; a full game copy is not required. Only modified files need pre-install backups for exact uninstall. Installer must validate source identity/payload hashes, read back installed bytes, refuse changed targets or tampered backups on uninstall, and prevent traversal/link writes. Ren'Py image installation is additive under `game/tl/vietnamese`, preserving original image/archive bytes, with a reversible journal. Validation runs remain on declared fixtures/copies unless Owner separately asks to install on their real game. This supersedes older mandatory-copy wording only for the explicit install/uninstall operation; Extract/Translate/Build still never modify the source game.
 
 **Owner:** `patch_gate.py`, `patch_pipeline.py::apply_translation_package`, `patch_plain.py`, `patch_unity.py`, `patch_safety.py`, `patch_output.py`, `unity_fs.py`, `addressables.py`.
 

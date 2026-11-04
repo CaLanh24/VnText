@@ -82,7 +82,7 @@ def prepare_image_delivery(document, rendered, game_root, output):
                 'relative_image': relative, 'target': 'game/tl/vietnamese/' + relative,
                 'payload': payload.name, 'sha256': _hash(payload), 'rendered_sha256': rendered_hash,
                 'width': image.width, 'height': image.height,
-                'activation': 'Requires RenPy language vietnamese; original game remains unchanged'}
+                'activation': 'Requires RenPy language vietnamese; original image/archive assets remain unchanged'}
     _save(output / 'image_delivery.json', manifest)
     return manifest
 
@@ -103,11 +103,11 @@ def install_image_delivery(package, game_copy, transaction):
     target_root = _regular(game_copy).resolve()
     original_root = _regular(manifest['source_root']).resolve()
     transaction = _regular(transaction).resolve()
-    if (target_root.is_relative_to(original_root) or original_root.is_relative_to(target_root)
+    if ((target_root != original_root and (target_root.is_relative_to(original_root) or original_root.is_relative_to(target_root)))
             or transaction.is_relative_to(target_root) or target_root.is_relative_to(transaction)
             or transaction.is_relative_to(original_root) or original_root.is_relative_to(transaction)
             or not (target_root / 'game').is_dir()):
-        raise ValueError('Install only into a separate game copy, with a separate transaction directory')
+        raise ValueError('Choose the game root and a separate transaction directory; nested game targets are refused')
     baseline = manifest['baseline']
     baseline_path = _relative(baseline['path'])
     if not baseline_path.startswith('game/') or _hash(target_root / baseline_path) != baseline['sha256']:
@@ -117,7 +117,7 @@ def install_image_delivery(package, game_copy, transaction):
         item = RenPyArchive(target_root / baseline_path).read_member(_relative(baseline['member'], image=True))
         if item['member_sha256'] != baseline['member_sha256']: raise ValueError('Archive member mismatch')
     target = _regular(target_root / target_relative)
-    if target.exists(): raise ValueError('Existing locale image preserved; choose a clean game copy')
+    if target.exists(): raise ValueError('Existing locale image preserved; uninstall the previous locale patch first')
     transaction.mkdir(parents=True, exist_ok=False)
     staged = transaction / payload.name
     with staged.open('xb') as stream:
@@ -145,7 +145,7 @@ def rollback_image_delivery(transaction):
     relative = _relative(journal['relative_image'], image=True)
     root = _regular(journal['target_root']).resolve()
     source = _regular(journal['source_root']).resolve()
-    if root.is_relative_to(source) or source.is_relative_to(root): raise ValueError('Source game is protected')
+    if root != source and (root.is_relative_to(source) or source.is_relative_to(root)): raise ValueError('Nested game targets are refused')
     target = _regular(root / 'game/tl/vietnamese' / relative)
     if target.exists():
         staged_name = _relative(journal['staged'])

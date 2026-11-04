@@ -379,14 +379,7 @@ public sealed partial class MainViewModel
             return;
         }
         if (DeferExtractUntilDetected()) return;
-        var existingPackage = WorkflowStatus.ResolvePackageDir(OutputPath);
-        if (File.Exists(Path.Combine(existingPackage, "translation.csv")) || File.Exists(Path.Combine(existingPackage, "manifest.json")))
-        {
-            StatusText = "Chọn thư mục xuất mới";
-            AppendLog("Giữ nguyên gói dịch hiện có. Để lấy lại text với SDK hoặc mức quét mới, hãy chọn thư mục xuất mới; không ghi đè CSV.");
-            SelectedTab = WorkflowTabs.Extract;
-            return;
-        }
+        InvalidatePatchSourceState(csvRevisionChanged: true);
         BeginTask("extract", new
         {
             src = InputPath,

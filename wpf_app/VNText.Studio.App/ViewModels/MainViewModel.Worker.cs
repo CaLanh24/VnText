@@ -244,6 +244,10 @@ public sealed partial class MainViewModel
                     break;
                 }
                 ApplyDiagnostic(evt);
+                if (completedTask == "extract" && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) != true
+                    && !CsvEditorDirty && SameCsvPath(CsvEditorPath, Path.Combine(OutputPath, "translation.csv"))
+                    && File.Exists(CsvEditorPath))
+                    LoadCsvEditor(CsvEditorPath, reload: true);
                 var isAnalyze = completedTask == "analyze";
                 var retranslateOwnsEditorReload = _csvEditorRetranslatePending;
                 var cancelled = evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
@@ -697,7 +701,8 @@ public sealed partial class MainViewModel
             PatchDeliveryReady = true;
             StepStatusLine = "Ren'Py overlay đã sẵn sàng — copy COPY_TO_GAME_ROOT vào game root.";
         }
-        else if (string.Equals(evt.PatchDelivery, "unity_installer", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(evt.PatchDelivery, "unity_installer", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(evt.PatchDelivery, "renpy_installer", StringComparison.OrdinalIgnoreCase))
         {
             // The installer route also delivers plain text and other supported formats: name the delivery, not an engine.
             PatchDeliveryLabel = "Gói patch có installer — VNTextPatchInstaller.exe";

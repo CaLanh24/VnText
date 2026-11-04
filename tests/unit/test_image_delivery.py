@@ -70,15 +70,24 @@ class ImageDeliveryTests(unittest.TestCase):
         self.assertEqual(delivery._hash(archive),delivery._hash(self.copy/'game/images.rpa'))
         delivery.rollback_image_delivery(self.transaction)
 
-    def test_payload_tamper_baseline_drift_and_source_install_rejected(self):
+    def test_payload_tamper_and_baseline_drift_rejected(self):
         self.prepare()
-        with self.assertRaises(ValueError): delivery.install_image_delivery(self.package,self.game,self.transaction)
         (self.copy/'game/images/background.png').write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError,'baseline'): delivery.install_image_delivery(self.package,self.copy,self.transaction)
         (self.copy/'game/images/background.png').write_bytes(self.source.read_bytes())
         Image.new('RGBA',(100,100),'red').save(self.package/'image.png')
         with self.assertRaisesRegex(ValueError,'tampered'): delivery.install_image_delivery(self.package,self.copy,self.transaction)
         self.assertFalse(self.transaction.exists())
+
+    def test_direct_game_install_is_additive_and_uninstall_preserves_original(self):
+        self.prepare()
+        before = self.source.read_bytes()
+        result = delivery.install_image_delivery(self.package, self.game, self.transaction)
+        self.assertTrue(Path(result['target']).is_file())
+        self.assertEqual(before, self.source.read_bytes())
+        delivery.rollback_image_delivery(self.transaction)
+        self.assertFalse(Path(result['target']).exists())
+        self.assertEqual(before, self.source.read_bytes())
 
     def test_existing_locale_and_user_edits_are_never_overwritten(self):
         manifest=self.prepare();target=self.copy/manifest['target']

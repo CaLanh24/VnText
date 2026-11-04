@@ -57,7 +57,7 @@ internal sealed class InstallerForm : Form
         Height = 330;
 
         var title = new Label { Text = "Cài đặt bản Việt hóa", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Dock = DockStyle.Fill };
-        var description = new Label { Text = "Chọn thư mục gốc của game (cùng cấp với file .exe và thư mục Unity *_Data). Installer sẽ kiểm tra layout, backup và hash trước khi ghi.", AutoSize = true, MaximumSize = new Size(650, 0), Dock = DockStyle.Fill };
+        var description = new Label { Text = "Chọn trực tiếp thư mục game chứa file .exe (Unity hoặc Ren'Py). Chỉ các file bị sửa được sao lưu để có thể gỡ patch; không cần sao chép toàn bộ game.", AutoSize = true, MaximumSize = new Size(650, 0), Dock = DockStyle.Fill };
         var browse = new Button { Text = "Chọn game...", AutoSize = true };
         browse.Click += (_, _) => BrowseGame();
         _gamePath.TextChanged += (_, _) => RefreshState();
