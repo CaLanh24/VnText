@@ -32,6 +32,10 @@ class GarbledNameRestoreTests(unittest.TestCase):
 
 
 class ModelArtifactRepairTests(unittest.TestCase):
+    def test_residual_ordinary_word_uses_exact_token_boundaries(self):
+        self.assertEqual("Con cá thở bằng mang.", postprocess("The fish breathes with gills.", "Con cá thở bằng gills."))
+        self.assertEqual("Gillson nói lý do.", postprocess("Gillson explains why.", "Gillson nói lý do."))
+
     def test_garbled_ordinary_word_is_restored_to_the_source_word(self):
         self.assertEqual(
             "Nhưng những người đàn ông này 'vô cùng bị tổn thương'.",
