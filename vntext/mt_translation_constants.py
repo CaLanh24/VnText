@@ -1081,3 +1081,14 @@ GENERAL_EN_VI_TERMS = {
 def generic_term_translation(token: str) -> str | None:
     """Vietnamese fallback for an exact generic source token, if defined."""
     return GENERAL_EN_VI_TERMS.get(str(token or '').casefold())
+
+
+# Dictionary keys that are ALSO ordinary Vietnamese words written without any diacritic ("lý do", "so sánh", "in ấn", "quả me", "men rượu",
+# "man rợ").  The post-translation repair rewrites a Latin token of the model output that equals a dictionary key; for these it destroyed
+# correct Vietnamese ("lý do" -> "lý làm" in 12 of 310 real-game rows; Brain repro "In trang này" -> "trong trang này", "quả me" -> "quả em").
+# Audit of all 930 keys (tests pin the <=3-letter keys): every other key is not a diacritic-free Vietnamese word, so its repair stays.
+VIETNAMESE_HOMOGRAPH_TERMS = frozenset({'do', 'so', 'in', 'me', 'men', 'man'})
+
+
+def is_vietnamese_homograph(token: str) -> bool:
+    return str(token or '').casefold() in VIETNAMESE_HOMOGRAPH_TERMS

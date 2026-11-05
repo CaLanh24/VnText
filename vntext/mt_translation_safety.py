@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import unicodedata
+
 from vntext.mt_translation_constants import (
     BRACKET,
     EW_AW_RX,
@@ -9,6 +11,7 @@ from vntext.mt_translation_constants import (
     INJECTED_COLOR_TOKEN,
     LATIN_RX,
     generic_term_translation,
+    is_vietnamese_homograph,
     SENTINEL_FMT,
     SENTINEL_LEFTOVER,
     SENTINEL_RX,
@@ -18,6 +21,17 @@ from vntext.mt_translation_constants import (
     mt_check,
     re,
 )
+
+def _letter_like(ch):
+    """A letter or a combining mark: both belong to the word they touch (decomposed Vietnamese is ``o`` + U+0301)."""
+    return bool(ch) and (ch.isalpha() or unicodedata.category(ch).startswith("M"))
+
+
+def _token_boundary_ok(text, start, end, *, check_before=True):
+    before = text[start - 1] if (check_before and start > 0) else ""
+    after = text[end] if end < len(text) else ""
+    return not (_letter_like(before) or before == "{" or _letter_like(after) or after == "}")
+
 
 BRACKET_MARKER_RX = re.compile(r"\[QZEL\d{4}\]")
 LINE_BREAK_RX = re.compile(r"\\n|\r\n|\r|\n")
@@ -492,7 +506,7 @@ def postprocess(src, text):
         source_scan,
     ))
 
-    def _replace_unprotected_token(text: str, token: str, replacement: str) -> str:
+    def _replace_unprotected_token(text: str, token: str, replacement: str, *, literal_newline_prefix: bool = False) -> str:
         """Replace a source lexical token only in translated prose.
 
         A global ``re.sub`` here used to rewrite words inside a protected
@@ -510,13 +524,23 @@ def postprocess(src, text):
             r"(?<![A-Za-z0-9_])[A-Za-z0-9_.-]+(?:(?:/|\\(?!n))[A-Za-z0-9_.-]+)+(?![A-Za-z0-9_])",
             text,
         ))
-        pattern = re.compile(rf"(?<![A-Za-z{{]){re.escape(token)}(?![A-Za-z}}])", re.I)
-        return pattern.sub(
-            lambda m: m.group(0)
-            if any(start <= m.start() < end for start, end in protected)
-            else replacement,
-            text,
-        )
+        # Unicode-aware, combining-mark-aware boundaries: ASCII-only ones rewrote the "so" inside Vietnamese "soát" ("vậyát").
+        newline_marker = "\\n"
+        pieces = []
+        last = 0
+        for m in re.finditer(re.escape(token), text, flags=re.I):
+            if literal_newline_prefix:
+                if text[max(0, m.start() - 2):m.start()] != newline_marker:
+                    continue
+            if not _token_boundary_ok(text, m.start(), m.end(), check_before=not literal_newline_prefix):
+                continue
+            if any(start <= m.start() < end for start, end in protected):
+                continue
+            pieces.append(text[last:m.start()])
+            pieces.append(replacement)
+            last = m.end()
+        pieces.append(text[last:])
+        return "".join(pieces)
 
     for token_match in re.finditer(r"[A-Za-z]+", source_scan):
         source_token = token_match.group(0)
@@ -527,19 +551,12 @@ def postprocess(src, text):
         if source_token.casefold() in {"data", "folder"}:
             continue
         translated_token = generic_term_translation(source_token)
-        if not translated_token:
+        if not translated_token or is_vietnamese_homograph(source_token):
             continue
         out = _replace_unprotected_token(out, source_token, translated_token)
-        # A literal newline is encoded as the two characters ``\\n``; replace
-        # the exact token after that separator as well (the boundary assertion
-        # above sees the trailing ``n`` as a letter).
-        for variant in {
-            source_token,
-            source_token.lower(),
-            source_token.capitalize(),
-            source_token.upper(),
-        }:
-            out = out.replace("\\n" + variant, "\\n" + translated_token)
+        # A literal newline is encoded as the two characters backslash + n; repair the token right after that separator too, with the same
+        # word-boundary and protected-span rules (a bare substring replace rewrote "soát" in "\\nsoát").
+        out = _replace_unprotected_token(out, source_token, translated_token, literal_newline_prefix=True)
     # CT2 may hallucinate one of the same bounded English vocabulary terms
     # even when that word is absent from the source (for example ``Comment``
     # in a long Tips row).  Repair only exact generic dictionary tokens in
@@ -562,11 +579,13 @@ def postprocess(src, text):
         # words as well (``so`` in ``soạng``). Never rewrite such a fragment.
         if (
             token_match.start() > 0
-            and out[token_match.start() - 1].isalpha()
+            and _letter_like(out[token_match.start() - 1])
         ) or (
             token_match.end() < len(out)
-            and out[token_match.end()].isalpha()
+            and _letter_like(out[token_match.end()])
         ):
+            continue
+        if is_vietnamese_homograph(token_match.group(0)):
             continue
         translated_token = generic_term_translation(token_match.group(0))
         if translated_token and translated_token.casefold() != token_match.group(0).casefold():
