@@ -293,12 +293,29 @@ RELEASE_TASK_0116_REBASELINE_APPROVAL_2 = (
 )
 
 
+RELEASE_TASK_0117_REBASELINE_ID = "owner-20261105-091e367-017"
+RELEASE_TASK_0117_REBASELINE_APPROVAL = (
+    "Owner 2026-11-05 answered 'cho phép' to Brain's concrete request for ONE metadata rebaseline and scope transition to 0.1.17 for prepared "
+    "source 091e367d0f35cd28e010b19fe0c32701450b4ac3, to run gates, build and verify the original game. The request retained 6.25 GiB project/owned "
+    "external and 11 GiB shared caps, no user-data deletion or guard relaxation. This single-use authority permits the exhausted 0.1.16 epoch "
+    "to transition to the registered release-0.1.17 task at that source or focused prerequisite descendants. Preserve all prior epochs, CAS, "
+    "rollback, lineage verification, cycle detection and the ordinary eight-hop bound. No publication before whole-game/Brain acceptance."
+)
+
 def _task_scope_path(root, task_id, version):
     return (root / "DEV_RUN/resources-dev15").resolve() if task_id == DEV_RESOURCES_TASK_ID else (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
 
 
 def _rebaseline_prior_task_allowed(previous_task, target_task, authorization_id):
-    return previous_task == target_task or (authorization_id == DEV_RESOURCES_REBASELINE_ID and previous_task == RELEASE_TASK_015_BUDGET_ID and target_task == DEV_RESOURCES_TASK_ID)
+    return previous_task == target_task or (authorization_id == DEV_RESOURCES_REBASELINE_ID and previous_task == RELEASE_TASK_015_BUDGET_ID and target_task == DEV_RESOURCES_TASK_ID) or (
+        authorization_id == RELEASE_TASK_0117_REBASELINE_ID and previous_task == RELEASE_TASK_0116_BUDGET_ID and target_task == RELEASE_TASK_0117_BUDGET_ID)
+
+def _rebaseline_versions_match(previous_sha, target_sha, target_version, authorization_id):
+    if authorization_id == RELEASE_TASK_0117_REBASELINE_ID:
+        return (target_version == "0.1.17" and _git_version_at(previous_sha) == "0.1.16"
+                and _git_version_at(target_sha) == "0.1.17"
+                and _git_is_ancestor("091e367d0f35cd28e010b19fe0c32701450b4ac3", target_sha))
+    return _git_version_at(previous_sha) == target_version and _git_version_at(target_sha) == target_version
 
 
 def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
@@ -543,6 +560,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_0117_REBASELINE_ID: (RELEASE_TASK_0117_BUDGET_ID, "0.1.17", RELEASE_TASK_0117_REBASELINE_APPROVAL),
     RELEASE_TASK_0116_REBASELINE_ID_2: (RELEASE_TASK_0116_BUDGET_ID, "0.1.16", RELEASE_TASK_0116_REBASELINE_APPROVAL_2),
     RELEASE_TASK_0116_REBASELINE_ID: (RELEASE_TASK_0116_BUDGET_ID, "0.1.16", RELEASE_TASK_0116_REBASELINE_APPROVAL),
     DEV_RESOURCES_REBASELINE_ID_2: (DEV_RESOURCES_TASK_ID, "0.1.15", DEV_RESOURCES_REBASELINE_APPROVAL_2),
@@ -3737,8 +3755,7 @@ def _epoch_rebaseline_provenance_failures(
         return failures
     if (
         not _git_is_ancestor(previous_sha, target_sha)
-        or _git_version_at(previous_sha) != authority[1]
-        or _git_version_at(target_sha) != authority[1]
+        or not _rebaseline_versions_match(previous_sha, target_sha, authority[1], authorization_id)
     ):
         failures.append("epoch_rebaseline_source_lineage_invalid")
     if _rebaseline_approval_consumed(
@@ -4037,7 +4054,7 @@ def activate_prospective_epoch(
                     reasons.append("epoch_rebaseline_active_task_mismatch")
                 if not _valid_git_sha(active_sha) or active_sha == expected_sha or not _git_is_ancestor(active_sha, expected_sha):
                     reasons.append("epoch_rebaseline_source_not_descendant")
-                if _git_version_at(active_sha) != rebaseline_version or _git_version_at(expected_sha) != rebaseline_version:
+                if not _rebaseline_versions_match(active_sha, expected_sha, rebaseline_version, owner_rebaseline_authorization_id):
                     reasons.append("epoch_rebaseline_source_version_mismatch")
                 rebaseline_provenance = {
                     "previous_epoch_id": active_id,

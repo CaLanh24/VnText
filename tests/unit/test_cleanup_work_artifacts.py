@@ -3519,7 +3519,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertEqual("0.1.7", cleanup._release_budget_spec(cleanup.RELEASE_TASK_017_BUDGET_ID)[1])
         self.assertTrue(cleanup._epoch_transition_tasks_compatible(cleanup.RELEASE_TASK_0116_BUDGET_ID, task))
         self.assertFalse(cleanup._epoch_transition_tasks_compatible(task, cleanup.RELEASE_TASK_0116_BUDGET_ID))
-        self.assertFalse(any(value[0] == task for value in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS.values()))
+        self.assertEqual([cleanup.RELEASE_TASK_0117_REBASELINE_ID], [key for key, value in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS.items() if value[0] == task])
 
     def test_release_0_1_16_budget_is_a_measured_separate_task_not_the_dev_cap_nor_the_0_1_15_cap(self):
         task = cleanup.RELEASE_TASK_0116_BUDGET_ID
