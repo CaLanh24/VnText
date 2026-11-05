@@ -1,37 +1,30 @@
-# Current checkpoint — 2026-11-03
+# Current checkpoint — 2026-11-05
 
-## Current delta — Owner 2026-11-05 (Claude DEV resumed after Codex)
-
-- Owner one-use rebaseline #2 `owner-20261105-af0d059` (CONTRACTS, `cleanup_work_artifacts.py`, test) for af0d059 + authority descendants; same release-0.1.16 scope/6.25 GiB cap, shared 11 GiB; eight-hop limit exhausted at `epoch-20261104-setup-f7b6cfc`, so the rebaseline epoch is applied next; then clean-source gates, portable self-contained installer proof under a private no-framework root, publish build with the baseline-015 model tree (model guard unchanged), direct 013/014/015 + legacy 017 routes, native fixtures for Brain. Semantic game quality NOT accepted; no publication before Brain ACCEPT. Live state: `C:/vnrg/evidence/brain-current-checkpoint.json`.
-
-## Current delta — Owner 2026-11-04
-
-- Live source/candidate/epoch/gates: `C:/vnrg/evidence/brain-current-checkpoint.json`. Same persistent DEV quota-exhausted; Codex temporary sole writer. Owner requests continuing until release; do not publish before mandatory acceptance.
-- Source `1b79085`: nonempty output refresh overwrites generated results, preserves unrelated data, no old-output backup; Unity/RenPy direct game install/uninstall with affected-file backup, exact hash checks and paired RPYC cache lifecycle. Installer4 PASS, focused Python34 + prior74/WPF26/worker5 reused with unchanged inputs; native WPF output reuse PASS, fixture disposed. Original game not patched. Candidate `RELEASE_RUN/candidate-0.1.16/dev-app-direct-cache/Start-DEV.cmd`.
-- Current fix: Setup disk-space note was below body viewport (live screenshot); bind disk note/summary height to available body. VI/EN geometry regression and release preparation next. Current release check14 Setup/updater tests PASS; two installer tests failed solely missing configured binary and two skipped; prior exact installer4 PASS remains valid. Preserve failed wrapper; no product PASS inferred.
-- Real-game semantic MT acceptance, full-payload Setup/updater and exact Release remain open. Cleanup REVIEW_REQUIRED for protected historical audit; no waiver/history deletion. Rebaseline grant consumed; current ordinary epoch at `epoch-20261104-cache-1b79085`, one transition left before eight-hop limit.
+Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact; `release_technical_acceptance` holds the table and asset hashes). This file replaces older checkpoints.
 
 ## Goal and authority
 
-- Finish 0.1.16 prerequisite fixes, exact app build/smoke, app-generated patch and native validation on the declared copy of Owner game. Owner: “nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release”; subsequent real-game semantic quality is a prerequisite. NO publication before acceptance. Public0.1.15/tag/assets immutable: `4326abd56d8d64e8c9024ca499d68303aa31db67`, Setup SHA `fc98d13fea08de94cf6cffe611f6f37787ddb2691bb1c1e3974af263fa861694`. See docs/RELEASE_0.1.16.md and0.1.15 ledger.
-- New one-use grant call_e90de61d52e64bfe9839197a3ffef14d: “Cho phép một lần rebaseline và tiếp tục hoàn tất”, prepared `ac8c841` plus authority/focused-prerequisite descendants, same scope/cap/CAS/rollback/eight ordinary hops, no user-data deletion/model change/publication before acceptance. Authority registered in cleanup helper; not yet consumed at this checkpoint. Do not reuse earlier grants.
-- Standing CONTRACTS10a Owner2026-10-24 permits measured temporary release allocations without per-release approval: measured3.11GiB nonexempt, scope `RELEASE_RUN/candidate-0.1.16` cap6.25GiB with reserve. Existing directory now physically created and registered DISPOSABLE. Shared .dev-env measured10.23GiB under Owner approved11GiB cap (7B test-only grant call_4a1f654ae2e3411daf215456e67807d7). Do not load7B again under current RAM limits. Historical assertion that the measured6.25GiB cap needed separate approval was stale; canonical standing allocation authority supersedes it.
+- Release 0.1.16 preparation under Owner “nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release”. Publication is BLOCKED: no push/tag/release until Brain/Owner ACCEPT.
+- Budget unchanged: release-0.1.16 cap 6.25 GiB, shared `.dev-env` 11 GiB, no raise/waiver. The publisher exceeded the cap transiently (`publish016-run5.log`: cleanup.before non-exempt 7,971,430,756 B > 6,710,886,400 B; after 6,588,710,482 B; run3 peaked 8.89 GB). That incident stays on record; now 5.19 GB.
+- One-use rebaseline `owner-20261105-af0d059` is consumed. Chain: `epoch-20261105-rebase016-0550dc4` → ordinary hop `epoch-20261105-host8-37640ef` → one docs-only hop for this commit (six ordinary hops remain after it).
 
-## Writer and source
+## Source and candidate
 
-- Brain Codex `01a17d30-bc24-7940-a814-f172fe463e3e`. Same persistent Claude DEV `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`, cursor1225: live idle/weekly quota failure, resets2026-11-05 05:00JST. Codex temporary sole writer; return same DEV after recovery safely. No new agent/model/session.
-- Prepared product fixes: `ef128cf` actual CSV CR/LF/CRLF protection; `43c76bc` bounded source-derived Vietnamese font styles and pure language-label/list support inside transactional overlay. No game profile/source rewrite. `08d6362` wraps direct finalize_scope in one integrity transaction; `ac8c841` fixes fixture teardown proof schema. Current commit adds only grant registration/checkpoint.
-- Candidate currently runnable is OLD: `DEV_RUN/resources-dev15/Start-DEV.cmd`, EXE source07ac5c8, SHA `7b91f5a941179f183f91ef806fa500d9a9e677b8bfdc8526363bfb111d9cd8ec`; worker launcher uses repo source. This mixed candidate is NOT exact current build. Preserve its data/localappdata. Setup wizard preview is stand-in payload, not full0.1.16.
+- Candidate built from source `37640ef0d081435800501bc97ba8e143db7833e6` (clean main). `37640ef` fixes `release/publish.ps1`: the self-contained patch installer uses the cached .NET 8 singlefilehost pack (SDK 10 host could not start the .NET 8 runtime, 0x80131522); fail-closed if the pack is absent. The docs-only commit after it is NOT the artifact source; artifact manifests keep `37640ef` and are not relabelled.
+- Candidate (nine assets, hashes re-checked): `C:/v/RELEASE_RUN/candidate-0.1.16/setup-exact-run5/ReleaseRoot` — Setup 284,375,040 B sha256 `ca407dba34e65d6dc665a920abc73f5da6a73a835236015d5d64f1b9d50a80c7`; Updates: full-app current + from-0.1.13/0.1.14/0.1.15 routes (zip + current.json each). Legacy 0.1.7 uses the full-app current feed. Per-file sha256 in `C:/vnrg/evidence/release-0116-final-hashes.json`. Packaged installer `VNTextPatchInstaller.exe` sha256 `e87ac3f6f67885b0fb82eb7362e70eaad48932f3dda8c4e2fcf8eb4cd83a689f`. Model tree unchanged from public 0.1.15 (guard not loosened).
 
-## Evidence and next action
+## Technical evidence (no re-run needed)
 
-- Current granular checkpoint/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json`, fontlang-gate-original.json (148 tests childPASS at43c; initial cleanup30s timeout), fontlang-08d6362-gate2.json (13 tests childPASS; cleanup complete, unknown/locked/errors0; REVIEW_REQUIRED solely one fixture missing proof). Fix at ac8c841 NOT yet rerun. Reuse unrelated valid tests; do not label original wrappers PASS.
-- Active epoch before rebaseline: `epoch-20261103-finalize-08d6362`. Depth0 files valid; prospective depth1 fails epoch_transition_depth_exceeded. No rebaseline performed yet. No owned exec/UI children pending at boundary. Apply new grant with fresh manifest CAS, then run only affected fixture/integrity tests and scoped cleanup to terminal. Build/smoke only after mandatory gates close.
-- Real game original `C:/Users/VNTextDev/Desktop/game/Cucked by My Wife` (From Two Worlds, FTWorlds.exe, RenPy8.3.7) is read-only. Original1433 files and Owner RenPy appdata483 files hashes unchanged in prior receipts. Copies `C:/vnrg/original-copy`, game-copy, game-copy-v2 were an earlier unregistered ownership/budget deviation: register/move needed copy into managed TEST_RUN before new game execution; dispose stale owned copies with plan, never original/save. Declared isolated appdata/launchers in C:/vnrg. No owned game/llama process running at previous boundary; verify before move/run.
-- Audit package out_hyF imports reviewed Hy1.8+OPUS fallback, not product model promotion. Latest read-only audit308 eligible,9 review,1 actual newline mismatch (warning key d23a3b891a93d23e). Preserve audit package, create managed working package, rerun that row through protected translation, generate patch via product writer, exact readback; remove only known manual support files from test copy before installing generated overlay.
-- Native checklist: generated overlay only, readable VI font/dialogue/menus, Settings, VI->EN->VI, save/load, original/user hashes unchanged. Agent-desktopv1.0.2 for WPF (read ROUTING+embedded docs); built-in CU current skill for SDL game. One UI owner; no guessed/stale actions; reset UI backend at terminal/backend transitions.
+- PASS: clean-source build/publish; installer 4/4 under a private no-framework .NET root plus GUI probe; Setup/updater/release-verify/cleanup unit 168 PASS, 0 skip; reused WPF 26/74/34/worker5 and Setup VI/EN wizard + installer5 (inputs unchanged).
+- Native (Brain, `C:/vnrg/evidence/native*`): Setup 016 VI6/EN6 PASS, installed worker5 smoke PASS; updater 0.1.15/0.1.14/0.1.13 → 0.1.16 PASS via product `--apply-full-app-update` CLI (exit 0, 7196/7196 files, canaries unchanged) with success dialog and About 0.1.16 observed (`native016/014/013-updater-receipt.json`).
+- Boundaries: baseline apps 014/013 were not launched (appPid = exited Setup PID); the 015 app was launched and closed. UI offer from the baseline with a local-only source is NOT PROVEN for all three (not PASS); published baselines unchanged. The 0.1.7 route has no native run. No real-game native run on this candidate.
 
-## Acceptance limits
+## Open blockers
 
-- Semantic quality NOT ACCEPTED: 7B vs1.8 sample64 win24/tie29/lose11, still7 severe errors (subjective); RAM guard was improperly lowered in prior harness, full run lacked equivalent abort guard. No further7B load/default model change. Existing-output diagnostic12 found4 serious fidelity errors, not blind/population estimate; receipts brain-hy7-final-receipt.json and hy7-existing-output-diagnostic12.json. Product route stays CT2/OPUS-MT. Do not turn test-copy/manual post-edit into automatic-product quality PASS.
-- Font/language source support implemented but generated-patch native, exact current app, Setup/updater0.1.16 and quality acceptance remain open. Cleanup terminal<=1GiB remains REVIEW_REQUIRED for protected immutable history; never waive/delete history to claimPASS.
+- Semantic game quality NOT ACCEPTED (OPUS64: 32 S2 / 5 F); Owner scope question pending. Product route stays OPUS; no model switch.
+- Cleanup `REVIEW_REQUIRED` (protected immutable history, retained patch-installer containers); never waived. All native/baseline/proof fixtures are disposed with helper receipts.
+- Next after ACCEPT: tag/push/release per `docs/RELEASE_0.1.16.md`. Real game original `C:/Users/VNTextDev/Desktop/game/Cucked by My Wife` stays read-only.
+
+## Writer
+
+- Persistent Claude DEV (sole writer); Brain Codex coordinates. No owned processes running.
