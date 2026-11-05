@@ -81,6 +81,24 @@ class VietnameseHomographRepairTests(unittest.TestCase):
         self.assertEqual(set(), short - AUDITED_NOT_HOMOGRAPH - VIETNAMESE_HOMOGRAPH_TERMS, "new short dictionary key needs a homograph audit")
 
 
+class PlaceholderNameDoesNotProveEchoTests(unittest.TestCase):
+    def test_vietnamese_words_equal_to_placeholder_names_are_kept(self):
+        for name, prose in (("an", "Chúc bạn bình an."),
+                            ("anh", "Chào anh."),
+                            ("ban", "Chờ đến ban mai."),
+                            ("long", "Long đang đọc sách.")):
+            token = "{" + name + "}"
+            text = prose + " " + token
+            with self.subTest(name=name):
+                self.assertEqual(text, postprocess("Wish " + token + " well.", text))
+
+    def test_echo_removal_does_not_modify_protected_output(self):
+        from vntext.mt_translation_safety import _blank_bare_tokens
+        text = "mName {mName} [mName] <mName> https://host/mName"
+        self.assertEqual("  {mName} [mName] <mName> https://host/mName",
+                         _blank_bare_tokens(text, "mName"))
+
+
 class _StubTranslator:
     """Stands in for the CT2 model: returns a fixed, correct Vietnamese sentence so only the pipeline's own code can change it."""
 

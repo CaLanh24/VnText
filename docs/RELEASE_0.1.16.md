@@ -6,6 +6,15 @@ Trạng thái: **ĐANG CHUẨN BỊ (chưa phát hành)**. `v0.1.15` (source `43
 
 ## Authority
 
+Owner2026-11-05 supersedes the earlier perfect-semantic-quality blocker:
+deliver usable raw Vietnamese, free/offline, with idiom/context/style limits
+left for editing or external tools. App-induced word corruption is unacceptable.
+The confirmed homograph/cache and placeholder-echo defects must pass exact
+packaged checks before release. Direct original-game install/uninstall testing
+was explicitly authorised and completed with exact restoration; gameplay remains
+NOT PROVEN. Persistent DEV hit session quota; Codex temporarily owns finishing
+the same source, gates and release, without changing model or weakening guards.
+
 Owner 2026-11-02: “nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release” — ghi đè lệnh “không release” trước đó; phiên bản kế tiếp suy ra là 0.1.16 (patch sau 0.1.15 công khai). Phạm vi cho phép: bump version owners, ledger/scope, gate, build candidate đầy đủ ở scope Release riêng, kiểm Setup/updater, chuẩn bị asset/ghi chú/lệnh phát hành. **Chưa push/tag/release trước khi Brain ACCEPT.** Không cài vào Desktop của Owner, không ghi game gốc, không đổi/tải model. Không ngụ ý rebaseline epoch.
 
 ## Phạm vi sản phẩm (từ 0.1.15, đã review từng gate)

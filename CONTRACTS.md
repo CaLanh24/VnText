@@ -121,6 +121,14 @@ Editor load rejects ambiguous headers, mismatched record widths, malformed quote
 
 ## 4. Translation states và memory
 
+Owner clarification 2026-11-05 for0.1.16: usable raw Vietnamese output is the
+product target; idiom, context and style errors may be manually revised or
+handled by other tools. These model-quality limits must be disclosed but are
+not a perfect-semantic-quality release gate. The app must not damage correct
+Vietnamese during repair, silently drop content, bypass structural/Patch guards
+or report unresolved rows complete. Translation stays free and offline; this
+does not authorize an unreviewed backend/model switch.
+
 Owner decision 2026-10-21 (direct instruction in Brain, relayed under existing
 coordination authority): necessary downloads and execution permissions for the
 active product semantic-quality goal may proceed without routine reapproval.

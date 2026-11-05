@@ -35,15 +35,29 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
 
 # Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
 # it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
-POSTPROCESS_VERSION = "post-homograph-unicode-2"
+POSTPROCESS_VERSION = "post-homograph-unicode-3"
 
 def _blank_bare_tokens(text, bare):
     """Blank a model-echoed copy of a placeholder name.  Word boundaries are Unicode- and combining-mark-aware: an ASCII-only test removed the
     ``i`` of ``Đi`` and the ``a`` of ``ưa`` when a placeholder was named ``{i}`` / ``{a}``."""
+    # An arbitrary placeholder name can itself be valid Vietnamese (e.g.
+    # {an} beside "bình an"). Only known English vocabulary or an identifier
+    # shape supplies evidence of an echo; unknown alphabetic prose stays.
+    technical_name = bool(re.search(r"[a-z][A-Z]|[_0-9]", bare))
+    if not technical_name and not generic_term_translation(bare):
+        return text
+    protected = [
+        (m.start(), m.end())
+        for rx in (mt_check.PH, mt_check.TAG, BRACKET, mt_check.URL_RX,
+                   mt_check.PRINTF_RX, INTERNAL_SENTINEL_RX)
+        for m in rx.finditer(text)
+    ]
     pieces = []
     last = 0
     for m in re.finditer(re.escape(bare), text, flags=re.I):
         if not _token_boundary_ok(text, m.start(), m.end()):
+            continue
+        if any(start < m.end() and m.start() < end for start, end in protected):
             continue
         pieces.append(text[last:m.start()])
         pieces.append(" ")
