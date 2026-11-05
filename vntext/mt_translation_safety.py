@@ -33,6 +33,10 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
     return not (_letter_like(before) or before == "{" or _letter_like(after) or after == "}")
 
 
+# Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
+# it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
+POSTPROCESS_VERSION = "post-homograph-unicode-1"
+
 BRACKET_MARKER_RX = re.compile(r"\[QZEL\d{4}\]")
 LINE_BREAK_RX = re.compile(r"\\n|\r\n|\r|\n")
 
@@ -657,6 +661,7 @@ __all__ = [
     "mask_roundtrip_ok",
     "mask_text",
     "postprocess",
+    "POSTPROCESS_VERSION",
     "restore_text",
     "split_parts",
     "split_randpick_variants",

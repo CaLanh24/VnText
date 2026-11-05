@@ -345,6 +345,7 @@ def _translation_cache_context(
     context_sidecar: dict | None = None,
 ) -> dict:
     from vntext.mt_classify import CLASSIFIER_POLICY_HASH, CLASSIFIER_POLICY_VERSION
+    from vntext.mt_translation_safety import POSTPROCESS_VERSION
 
     memory_scope = hashlib.sha256(
         json.dumps(translation_memory or {}, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode(
@@ -362,6 +363,8 @@ def _translation_cache_context(
     ).hexdigest()
     metadata = model_adapter.metadata()
     strategy_version = "ct2-pipeline-1-overwrite" if allow_overwrite else "ct2-pipeline-1-frozen"
+    # The post-translation repair is part of the cached output: a new repair version must miss records written by an older one.
+    strategy_version += "-" + POSTPROCESS_VERSION
     if (glossary_v2 or {}).get("entries"):
         # Older glossary conflict handling could cache structurally valid but
         # truncated prose. Keep those records, but do not reuse them on retry.

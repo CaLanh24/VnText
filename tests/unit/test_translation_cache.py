@@ -10,7 +10,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from vntext.mt_model_adapter import Ct2ModelAdapter
-from vntext.mt_ct2_pipeline import _translation_cache_context, run_ct2_translate_keys
+from vntext.mt_ct2_pipeline import _cached_batch_translate_chunk, _translation_cache_context, run_ct2_translate, run_ct2_translate_keys
+from vntext.mt_translation_safety import POSTPROCESS_VERSION
 from vntext.translation_cache import (
     TranslationCache,
     TranslationCacheError,
@@ -147,7 +148,8 @@ class TranslationCacheTests(unittest.TestCase):
     def test_glossary_applicability_fix_misses_legacy_cache_without_deleting_it(self):
         adapter=MagicMock();adapter.metadata.return_value=self.model
         plain=_translation_cache_context(self.root,adapter,{}, {},allow_overwrite=False)
-        self.assertEqual(plain['strategy_version'],'ct2-pipeline-1-frozen')
+        self.assertTrue(plain['strategy_version'].startswith('ct2-pipeline-1-frozen-'))
+        self.assertTrue(plain['strategy_version'].endswith(POSTPROCESS_VERSION))
         current=_translation_cache_context(self.root,adapter,{}, {},allow_overwrite=False,
             glossary_v2={'entries':[{'source':'mode','target':'chế độ'}],'fingerprint':'bank1'})
         args={k:v for k,v in current.items() if k not in {'context_by_key','context_status','context_model_injection'}}
@@ -254,6 +256,56 @@ class TranslationCacheTests(unittest.TestCase):
         self.assertEqual(second["cache"]["hits"], 1)
         self.assertEqual(second["cache"]["misses"], 0)
         self.assertEqual(second["cache_fingerprints"]["k1"], first["cache_fingerprints"]["k1"])
+
+    def test_postprocess_fix_misses_stale_corrupt_cache_without_deleting_it(self):
+        """A validated-only record written by the old repair ("lý làm") must not be reused; the new repair re-translates and stores the correct text."""
+        adapter = MagicMock(); adapter.metadata.return_value = self.model
+        current = _translation_cache_context(self.root, adapter, {}, {}, allow_overwrite=False)
+        legacy_strategy = current["strategy_version"].replace("-" + POSTPROCESS_VERSION, "")
+        self.assertEqual("ct2-pipeline-1-frozen", legacy_strategy)
+        keys = {k: v for k, v in current.items() if k not in {"context_by_key", "context_status", "context_model_injection", "approval_memory"}}
+        row = {"key": "k1", "source_text": "There were a thousand reasons.", "context": "RenPy:game/script.rpy:1:start", "import_method": "renpy_dialogue"}
+        legacy_key = compute_cache_fingerprint(row, **{**keys, "strategy_version": legacy_strategy})["cache_key"]
+        current_key = compute_cache_fingerprint(row, **keys)["cache_key"]
+        self.assertNotEqual(legacy_key, current_key)
+        stale, correct = "Có hàng ngàn lý làm.", "Có hàng ngàn lý do."
+        cache = TranslationCache(self.root)
+        try:
+            self.assertTrue(cache.put(legacy_key, row, stale, validation_status="PASS"))
+            # control: under the OLD identity the stale record is a hit and the model is never asked (this is the bug the fingerprint closes)
+            with patch("vntext.mt_ct2_io._batch_translate_chunk", side_effect=AssertionError("old identity must hit the stale cache")):
+                out, cached, _ = _cached_batch_translate_chunk(cache, MagicMock(), [row], {}, {}, {**current, "strategy_version": legacy_strategy})
+            self.assertEqual({"k1": stale}, out); self.assertEqual({"k1"}, cached)
+            # current identity: miss -> fresh translation with the fixed repair
+            with patch("vntext.mt_ct2_io._batch_translate_chunk", return_value={"k1": correct}) as batch:
+                out, cached, _ = _cached_batch_translate_chunk(cache, MagicMock(), [row], {}, {}, current)
+            self.assertEqual(1, batch.call_count)
+            self.assertEqual({"k1": correct}, out); self.assertEqual(set(), cached)
+            self.assertTrue(cache.put(current_key, row, correct, validation_status="PASS"))
+            self.assertEqual(correct, cache.lookup(current_key))
+            self.assertEqual(stale, cache.lookup(legacy_key), "the old record is kept, never deleted")
+        finally:
+            cache.close()
+
+    def test_frozen_existing_translation_is_not_overwritten_by_the_fix(self):
+        nl = chr(10)
+        csv_path = self.root / "translation.csv"
+        csv_path.write_text(
+            "key,source_text,translation,context,file_path,import_method" + nl
+            + "k1,A reason,,NaninovelScript:Main:1,game/sample.txt,naninovel_script_string" + nl
+            + "k2,Another reason,Một lý làm do người dùng sửa,NaninovelScript:Main:2,game/sample.txt,naninovel_script_string" + nl,
+            encoding="utf-8",
+        )
+        delegate = MagicMock(); delegate.config = {"batch_size": 8, "inter_threads": 1, "flush_every": 8}
+        with patch("vntext.mt_ct2_model.get_translator", return_value=delegate), patch(
+            "vntext.mt_ct2_io._batch_translate_chunk", return_value={"k1": "Một lý do", "k2": "Một lý do khác"}
+        ):
+            result = run_ct2_translate(csv_path)  # whole-CSV run, allow_overwrite=False: existing translations are frozen
+        self.assertTrue(result["ok"])
+        text = csv_path.read_text(encoding="utf-8").replace(chr(13) + nl, nl)
+        self.assertIn("k1,A reason,Một lý do,", text)
+        self.assertIn("Một lý làm do người dùng sửa", text, "frozen/user-edited translation must stay untouched")
+        self.assertNotIn("Một lý do khác", text)
 
 
 if __name__ == "__main__":
