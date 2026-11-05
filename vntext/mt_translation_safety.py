@@ -35,7 +35,22 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
 
 # Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
 # it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
-POSTPROCESS_VERSION = "post-homograph-unicode-1"
+POSTPROCESS_VERSION = "post-homograph-unicode-2"
+
+def _blank_bare_tokens(text, bare):
+    """Blank a model-echoed copy of a placeholder name.  Word boundaries are Unicode- and combining-mark-aware: an ASCII-only test removed the
+    ``i`` of ``Đi`` and the ``a`` of ``ưa`` when a placeholder was named ``{i}`` / ``{a}``."""
+    pieces = []
+    last = 0
+    for m in re.finditer(re.escape(bare), text, flags=re.I):
+        if not _token_boundary_ok(text, m.start(), m.end()):
+            continue
+        pieces.append(text[last:m.start()])
+        pieces.append(" ")
+        last = m.end()
+    pieces.append(text[last:])
+    return "".join(pieces)
+
 
 BRACKET_MARKER_RX = re.compile(r"\[QZEL\d{4}\]")
 LINE_BREAK_RX = re.compile(r"\\n|\r\n|\r|\n")
@@ -455,12 +470,9 @@ def postprocess(src, text):
             or re.search(rf"\b{re.escape(bare)}\b", source_plain, flags=re.I)
         ):
             continue
-        out = re.sub(
-            rf"(?<![A-Za-z{{]){re.escape(bare)}(?![A-Za-z}}])",
-            " ",
-            out,
-            flags=re.I,
-        )
+        if is_vietnamese_homograph(bare):
+            continue
+        out = _blank_bare_tokens(out, bare)
     # Translate a generic star-wrapped SFX when the lexical table has a safe
     # source-token mapping; the star delimiters remain byte-for-byte intact.
     for m in STAR_SFX.finditer(str(src or '')):

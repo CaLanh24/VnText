@@ -60,6 +60,16 @@ class VietnameseHomographRepairTests(unittest.TestCase):
         self.assertEqual(word, postprocess("A reason", word))
         self.assertEqual(word, postprocess("I do not know", word))
 
+    def test_placeholder_echo_removal_never_cuts_into_vietnamese_words(self):
+        # A placeholder named {i}/{a} used to blank the "i" of "Đi" and the "a" of "ưa" (ASCII-only word boundary).
+        self.assertEqual("Đi lấy vàng: {i}", postprocess("Gold: {i}", "Đi lấy vàng: {i}"))
+        self.assertEqual("Giá trị {a}, ưa thích", postprocess("Value {a}", "Giá trị {a}, ưa thích"))
+        self.assertEqual("Giá {x} tại đây", postprocess("Cost {x}", "Giá {x} tại đây"))
+        # the intended behaviour stays: a bare echo of the placeholder name is removed
+        echoed = postprocess("Name {mName}", "Tên mName {mName}")
+        self.assertEqual(1, echoed.count("mName"))
+        self.assertIn("{mName}", echoed)
+
     def test_homograph_set_is_exact_and_dictionary_backed(self):
         for token in ("Do", "so", "IN", "Me", "men", "man"):
             self.assertTrue(is_vietnamese_homograph(token), token)
