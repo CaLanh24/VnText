@@ -27,6 +27,7 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 - Raw OPUS word-sense/context/style errors remain documented; Owner accepts these for a rough draft. App must not introduce Vietnamese word corruption; focused regression and exact packaged-output checks remain mandatory.
 - Cleanup `REVIEW_REQUIRED` (protected history, retained patch-installer containers), never waived. The managed game copy `TEST_RUN/realgame016/play` and `C:/vnrg/game-copy-v2` were disposed with compact evidence.
 - Next: gate this fix, build an exact candidate, finish required direct updater routes, bounded native/raw-output acceptance and publication. No new model experiment, game launch or whole-game copy. See `docs/RELEASE_0.1.16.md`.
+- Packaging peak fix: retire only the owned payload staging directory after all routes have consumed it and package_installer has hash-verified the ZIP, before embedding the ZIP in Setup. Later publication hash/transaction/cleanup guards stay in place. Required supported015 + legacy017 baselines remain unchanged; do not bypass them to save space. Exact publisher gate/build/budget proof is pending in the external checkpoint.
 
 ## Writer
 

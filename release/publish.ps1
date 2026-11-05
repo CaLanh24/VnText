@@ -1411,6 +1411,12 @@ $payloadBytes = [long](Get-ChildItem -LiteralPath $staging -Recurse -File -Force
 $payloadCount = (Get-ChildItem -LiteralPath $staging -Recurse -File -Force).Count
 & $Python (Join-Path $DevRoot "release\package_installer.py") $staging $payloadZip
 if ($LASTEXITCODE -ne 0) { throw "Setup payload hash/package verification failed" }
+# Every update route has consumed staging, and package_installer has verified
+# every payload member. The compiler reads only payloadZip from this point on.
+# Retire this owned copy before also allocating the embedded Setup executable.
+$retirePayloadStage = "import sys; sys.path.insert(0,sys.argv[2]); sys.path.insert(0,sys.argv[1]); from cleanup_work_artifacts import dispose_stale_batch; target=sys.argv[4]; plan={target:{'ownership_proof':'Publisher staging was fully packaged and hash-verified; update routes have consumed it and no staging reader remains','consumer_closed':True,'reclassify':'all_under_target'}}; report=dispose_stale_batch([target],reason='verified Setup payload staging consumed',scope_id=sys.argv[3]+'-payload-consumed',plan=plan); print({'ok':report.get('ok'),'disposed':report.get('disposed'),'refused':report.get('refused'),'left':report.get('left')}); raise SystemExit(0 if report.get('ok') else 1)"
+& $Python -B -c $retirePayloadStage (Join-Path $ArtifactHelpersRoot "..\tools") $ArtifactHelpersRoot $publishScope $staging
+if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $staging)) { throw "Consumed payload staging cleanup failed; old Release contents preserved" }
 $resourceArgument = [string]::Concat("/resource:", $payloadZip, ",Payload.zip")
 $setupCompileArgs = @("/nologo", "/target:winexe", "/out:$setupExe", $resourceArgument,
     "/reference:System.Windows.Forms.dll", "/reference:System.Web.Extensions.dll",
