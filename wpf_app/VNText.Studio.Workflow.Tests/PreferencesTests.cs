@@ -122,7 +122,9 @@ internal static class PreferencesTests
             policy.NextUpdateReminderUtc=DateTime.MinValue;Check(UpdatePreferencePolicy.CanRemind(policy,DateTime.UtcNow,"1.0.1"),"reminder due");policy.BackgroundUpdateDownload=false;Check(!UpdatePreferencePolicy.CanDownload(policy,false,false,"1.0.1"),"default/manual download");
             Console.WriteLine("PASS background-download / busy / skip / reminder policy (no network/install)");
 
-            var vm=new MainViewModel(new Picker(),new PythonWorkerHost(),startWorker:false);vm.NavigateTabCommand.Execute("settings");
+            var vm=new MainViewModel(new Picker(),new PythonWorkerHost(),startWorker:false);
+            // First-run resource preparation selects Data; this test exercises General explicitly.
+            vm.SelectedSettingsTab=0;vm.NavigateTabCommand.Execute("settings");
             var window=new MainWindow(vm,new Presentation());window.Show();window.UpdateLayout();
             vm.Language="en";vm.Theme="dark";vm.BackgroundStrength=60;window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
             CaptureReview(window,"settings-dark-top");
@@ -179,7 +181,7 @@ internal static class PreferencesTests
     }
     private static void AssertSettingsToggleTrack(Window window,bool isOn)
     {
-        var toggle=Find<CheckBox>(window,c=>System.Windows.Automation.AutomationProperties.GetName(c)=="Tự động tải cập nhật nền");
+        var toggle=Find<CheckBox>(window,c=>System.Windows.Automation.AutomationProperties.GetName(c)==UiText.Translate("Tự động tải cập nhật nền"));
         Check(toggle is not null && toggle.IsChecked==isOn,"Settings toggle state bound to view model");
         toggle!.ApplyTemplate();
         var track=toggle.Template.FindName("Track",toggle) as Border;
