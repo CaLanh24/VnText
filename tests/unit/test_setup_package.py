@@ -503,7 +503,11 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             self.assertNotIn('Start-Sleep', uninstall_source)
             self.assertNotIn('SilentlyContinue', uninstall_source)
             self.assertNotIn("Remove-Item", uninstall_source)
-            self.assertEqual(1, uninstall_source.count("MessageBoxButtons.YesNo"))
+            # One explicit confirmation in the shared installer frame (header/footer); Enter and Escape both choose the safe Cancel.
+            self.assertEqual(1, uninstall_source.count("ConfirmUninstall(root)"))
+            self.assertEqual(1, uninstall_source.count("DialogResult = DialogResult.Yes"))
+            self.assertEqual(1, uninstall_source.count("form.AcceptButton = no; form.CancelButton = no;"))
+            self.assertNotIn("MessageBoxButtons.YesNo", uninstall_source)
             self.assertIn("data/", uninstall_source)
             self.assertIn("thư mục cài đặt vẫn còn nhưng trống", uninstall_source)
             self.assertIn("Final uninstall cleanup failed", uninstall_source)
