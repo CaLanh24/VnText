@@ -1082,6 +1082,7 @@ GENERAL_EN_VI_TERMS = {
 GENERAL_EN_VI_TERMS.update({"tavern": "quán rượu", "macaroni": "mì ống", "titan": "titan"})
 # Words the model garbles or leaves English in rough-draft prose (real-game corpus); exact lexical entries only.
 GENERAL_EN_VI_TERMS.update({"incredibly": "vô cùng", "crannies": "khe kẽ", "nook": "góc khuất", "lanky": "gầy cao", "smirk": "nụ cười khẩy", "crazily": "điên cuồng", "girth": "độ dày", "gills": "mang", "domineering": "độc đoán", "wickedly": "một cách tà ác"})
+GENERAL_EN_VI_TERMS.update({"hyenas": "linh cẩu", "hyperbolic": "cường điệu", "gruffing": "gầm gừ", "jello": "thạch", "itch": "cơn ngứa"})
 
 def generic_term_translation(token: str) -> str | None:
     """Vietnamese fallback for an exact generic source token, if defined."""

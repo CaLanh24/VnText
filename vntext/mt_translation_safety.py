@@ -36,7 +36,7 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
 
 # Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
 # it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
-POSTPROCESS_VERSION = "rough-draft-lexical-6"
+POSTPROCESS_VERSION = "rough-draft-lexical-7"
 
 def _blank_bare_tokens(text, bare):
     """Blank a model-echoed copy of a placeholder name.  Word boundaries are Unicode- and combining-mark-aware: an ASCII-only test removed the
@@ -464,6 +464,20 @@ def repair_model_artifacts(src, text):
         out = re.sub(r"[ \t]+(?=[,.;:!?\u2026])", "", out)
     if not re.search(r"[\"“] +[^\W\d_]", source):
         out = re.sub(r"(?<![^\s(\[])([\"“]) +(?=[^\W\d_])", r"\1", out)
+    # Recover only a quoted, known lower-case source word missing exactly its
+    # first character. Short consonant fragments can evade the English gate.
+    # Existing source tokens, Vietnamese syllables and quoted names stay intact.
+    quoted = {w for w in re.findall(r"['\"]([a-z]{4,})['\"]", source) if generic_term_translation(w)}
+    source_tokens = {w.casefold() for w in re.findall(r"[^\W\d_]+", source)}
+
+    def quoted_fragment(match):
+        token = match.group(2)
+        candidates = [w for w in quoted if w[1:] == token.casefold()]
+        if token.casefold() in source_tokens or mt_check.is_possible_vietnamese(token) or len(candidates) != 1:
+            return match.group(0)
+        return match.group(1) + generic_term_translation(candidates[0]) + match.group(3)
+
+    out = re.sub(r"(['\"“])([A-Za-z]{3,})(['\"”])", quoted_fragment, out)
     _score, reasons = mt_check.english_report(source, out, set())
     flagged = {tok for reason in reasons if reason.startswith("english-token: ") for tok in reason[len("english-token: "):].split()}
     if not flagged:

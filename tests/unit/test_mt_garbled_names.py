@@ -32,6 +32,18 @@ class GarbledNameRestoreTests(unittest.TestCase):
 
 
 class ModelArtifactRepairTests(unittest.TestCase):
+    def test_quoted_fragment_requires_a_unique_known_source_word(self):
+        self.assertEqual("Một 'cơn ngứa' còn đó.", postprocess("An 'itch' remained.", "Một 'tch' còn đó."))
+        self.assertEqual("'tch'", repair_model_artifacts("An 'itch'; tch!", "'tch'"))
+        self.assertEqual("'tch'", repair_model_artifacts("A name 'Itch'.", "'tch'"))
+        self.assertEqual("'lý do'", repair_model_artifacts("An 'itch' remained.", "'lý do'"))
+
+    def test_ordinary_residue_is_translated_without_changing_names_or_user_words(self):
+        self.assertEqual("Một đàn linh cẩu.", postprocess("A band of Hyenas.", "Một đàn Hyenas."))
+        self.assertEqual("Như thạch.", postprocess("Like jello.", "Như jello."))
+        self.assertEqual("Thật cường điệu.", postprocess("It is hyperbolic.", "Thật hyperbolic."))
+        self.assertEqual("'gầm gừ'.", postprocess("'Gruffing'.", "'Gruffing'."))
+
     def test_residual_ordinary_word_uses_exact_token_boundaries(self):
         self.assertEqual("Con cá thở bằng mang.", postprocess("The fish breathes with gills.", "Con cá thở bằng gills."))
         self.assertEqual("Gillson nói lý do.", postprocess("Gillson explains why.", "Gillson nói lý do."))
