@@ -56,7 +56,7 @@ Chỉ model CT2/OPUS-MT được đóng gói; VinAI và PyTorch không nằm tro
 
 Build, verify, smoke và package chạy trong registered
 `TEST_RUN`. Publisher xác minh payload/hash trước khi thay Setup và
-atomically công bố feed; ReleaseRoot chỉ còn `Setup.exe` và `Updates`. Báo
+atomically công bố feed; từ 0.1.17, ReleaseRoot chỉ còn `VNTextStudio-<version>-Setup.exe` và `Updates` (các release cũ giữ tên cũ). Setup/Uninstall dùng icon app. Báo
 version, source SHA, Setup/package SHA256, payload size và số package/byte được
 giữ lại. Chỉ khi tất cả release gates và acceptance bắt buộc đạt mới gọi
 `RELEASE_VERIFIED`.

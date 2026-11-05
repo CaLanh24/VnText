@@ -1067,7 +1067,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         return state switch
         {
             GitHubUpdateState.Unconfigured => "Chưa cấu hình nguồn cập nhật.",
-            GitHubUpdateState.Current => "Bạn đang dùng phiên bản mới nhất.",
+            GitHubUpdateState.Current => UiText.Msg("Đã là bản mới nhất v{0}", version),
             GitHubUpdateState.OfferAvailable => "Có bản cập nhật mới; chưa tải gói.",
             GitHubUpdateState.UpdateAvailable => "Đã kiểm tra gói. Sẵn sàng cập nhật.",
             GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",

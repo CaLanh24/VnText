@@ -628,16 +628,13 @@ public static class Setup
                 using (var decline = new Button())
                 using (var viewEula = new Button())
                 {
-                    form.Text = "Intel oneAPI Redistributable Terms";
-                    form.Width = 760;
-                    form.Height = 560;
-                    form.MinimumSize = new System.Drawing.Size(640, 420);
-                    form.StartPosition = FormStartPosition.CenterScreen;
-                    form.FormBorderStyle = FormBorderStyle.Sizable;
-                    form.ShowInTaskbar = true;
+                    ConfigureInstallerFrame(form, "Intel oneAPI Redistributable Terms");
                     text.ReadOnly = true;
                     text.WordWrap = true;
                     text.Dock = DockStyle.Fill;
+                    text.BorderStyle = BorderStyle.None;
+                    text.BackColor = System.Drawing.Color.White;
+                    text.Font = form.Font;
                     text.Text = terms;
                     accept.Text = "Accept and continue";
                     accept.DialogResult = DialogResult.Yes;
@@ -647,13 +644,12 @@ public static class Setup
                     decline.AutoSize = true;
                     viewEula.Text = "View original Intel agreement";
                     viewEula.AutoSize = true;
-                    var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true,
-                        FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
-                    buttons.Controls.Add(accept);
-                    buttons.Controls.Add(decline);
-                    buttons.Controls.Add(viewEula);
-                    form.Controls.Add(text);
+                    var buttons = InstallerFooter(accept, decline, viewEula);
+                    var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(24, 16, 24, 16), BackColor = System.Drawing.Color.White };
+                    body.Controls.Add(text);
+                    form.Controls.Add(body);
                     form.Controls.Add(buttons);
+                    form.Controls.Add(InstallerHeader("Intel oneAPI Redistributable Terms", "Read the terms before continuing with VNText Studio Setup."));
                     accept.Name = "acceptIntelTerms";
                     decline.Name = "declineIntelTerms";
                     form.AcceptButton = accept;
@@ -665,6 +661,44 @@ public static class Setup
         }
     }
 
+    private static void ConfigureInstallerFrame(Form form, string title)
+    {
+        form.Text = title;
+        form.Font = new System.Drawing.Font("Segoe UI", 9F);
+        form.ClientSize = new System.Drawing.Size(640, 450);
+        form.BackColor = System.Drawing.Color.FromArgb(240, 240, 240);
+        form.StartPosition = FormStartPosition.CenterScreen;
+        form.FormBorderStyle = FormBorderStyle.FixedDialog;
+        form.MaximizeBox = false;
+        form.ShowInTaskbar = true;
+        try { form.Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
+    }
+
+    private static Panel InstallerHeader(string title, string subtitle)
+    {
+        var panel = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = System.Drawing.Color.White };
+        panel.Controls.Add(new Label { Text = title, Left = 24, Top = 12, Width = 590, Height = 22,
+            Font = new System.Drawing.Font("Segoe UI", 10.5F, System.Drawing.FontStyle.Bold) });
+        panel.Controls.Add(new Label { Text = subtitle, Left = 40, Top = 38, Width = 570, Height = 22 });
+        panel.Controls.Add(new Panel { Dock = DockStyle.Bottom, Height = 1, BackColor = System.Drawing.Color.FromArgb(208, 208, 208) });
+        return panel;
+    }
+
+    private static FlowLayoutPanel InstallerFooter(params Button[] buttons)
+    {
+        var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 58,
+            FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16, 12, 16, 12),
+            BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
+        foreach (var button in buttons)
+        {
+            button.AutoSize = true;
+            button.MinimumSize = new System.Drawing.Size(82, 30);
+            button.Margin = new Padding(6, 0, 0, 0);
+            footer.Controls.Add(button);
+        }
+        return footer;
+    }
+
     private static void ShowOriginalIntelEula(byte[] eula)
     {
         using (var form = new Form())
@@ -672,21 +706,20 @@ public static class Setup
         using (var close = new Button())
         using (var input = new MemoryStream(eula, false))
         {
-            form.Text = "Intel End User License Agreement (Version August 2024)";
-            form.Width = 820;
-            form.Height = 640;
-            form.StartPosition = FormStartPosition.CenterScreen;
+            ConfigureInstallerFrame(form, "Intel End User License Agreement (Version August 2024)");
             text.ReadOnly = true;
             text.Dock = DockStyle.Fill;
             text.LoadFile(input, RichTextBoxStreamType.RichText);
             close.Text = "Close";
             close.DialogResult = DialogResult.OK;
             close.AutoSize = true;
-            var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true,
-                FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(8) };
-            buttons.Controls.Add(close);
-            form.Controls.Add(text);
+            text.BorderStyle = BorderStyle.None;
+            var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(24, 16, 24, 16), BackColor = System.Drawing.Color.White };
+            body.Controls.Add(text);
+            var buttons = InstallerFooter(close);
+            form.Controls.Add(body);
             form.Controls.Add(buttons);
+            form.Controls.Add(InstallerHeader("Intel End User License Agreement", "Original agreement — Version August 2024"));
             form.AcceptButton = close;
             form.ShowDialog();
         }
@@ -1046,12 +1079,7 @@ public static class Setup
             return 2;
         }
 
-        if (MessageBox.Show(
-            "Gỡ cài đặt sẽ xóa mọi nội dung trong thư mục này, bao gồm dữ liệu trong data/. " +
-            "Sau khi hoàn tất, thư mục cài đặt vẫn còn nhưng trống:\n" + root +
-            "\n\nKhông thể khôi phục. Bạn có muốn tiếp tục?",
-            "Gỡ cài đặt VNText Studio", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
-            MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+        if (!ConfirmUninstall(root))
             return 1;
 
         try
@@ -1073,28 +1101,52 @@ public static class Setup
         }
     }
 
+    private static bool ConfirmUninstall(string root)
+    {
+        using (var form = new Form())
+        using (var yes = new Button { Text = "Gỡ cài đặt", DialogResult = DialogResult.Yes })
+        using (var no = new Button { Text = "Hủy", DialogResult = DialogResult.No })
+        {
+            ConfigureInstallerFrame(form, "Gỡ cài đặt — VNText Studio");
+            var message = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, WordWrap = true,
+                BorderStyle = BorderStyle.None, BackColor = form.BackColor, Font = form.Font,
+                Text = "Gỡ cài đặt sẽ xóa mọi nội dung trong thư mục này, bao gồm dữ liệu trong data/. " +
+                    "Sau khi hoàn tất, thư mục cài đặt vẫn còn nhưng trống:\n\n" + root +
+                    "\n\nKhông thể khôi phục. Bạn có muốn tiếp tục?" };
+            var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(24, 24, 24, 16) };
+            body.Controls.Add(message);
+            form.Controls.Add(body);
+            form.Controls.Add(InstallerFooter(yes, no));
+            form.Controls.Add(InstallerHeader("Gỡ cài đặt VNText Studio", "Kiểm tra thư mục và dữ liệu trước khi tiếp tục."));
+            // Enter and Escape are both safe until the user explicitly chooses removal.
+            form.AcceptButton = no; form.CancelButton = no;
+            return form.ShowDialog() == DialogResult.Yes;
+        }
+    }
+
     private static Form CreateUninstallProgressForm(string root, string selfPath, int parentPid,
         bool launchFinalHelper, IList<Dictionary<string, object>> progressEvidence)
     {
         var form = CreateProgressWindow("Gỡ cài đặt VNText Studio", "Đang quét thư mục cài đặt.");
-        form.Width = 600;
-        form.Height = 350;
+        ConfigureInstallerFrame(form, "Gỡ cài đặt — VNText Studio");
         form.ControlBox = false;
+        form.Controls.Add(InstallerHeader("Đang gỡ cài đặt VNText Studio", "Vui lòng chờ trong khi ứng dụng được gỡ khỏi máy."));
         var phaseLabel = (Label)form.Controls.Find("progressStatus", false)[0];
-        phaseLabel.Width = 550;
+        phaseLabel.Left = 24; phaseLabel.Top = 92; phaseLabel.Width = 592;
         phaseLabel.Height = 24;
         phaseLabel.Font = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold);
         var progress = (ProgressBar)form.Controls.Find("progressBar", false)[0];
-        progress.Left = 18;
-        progress.Top = 50;
-        progress.Width = 550;
-        progress.Height = 22;
+        progress.Left = 24;
+        progress.Top = 126;
+        progress.Width = 592;
+        progress.Height = 8;
         progress.Style = ProgressBarStyle.Marquee;
-        var pathBox = new TextBox { Left = 18, Top = 82, Width = 550, ReadOnly = true, WordWrap = false, ScrollBars = ScrollBars.Horizontal, Text = root };
-        var details = new TextBox { Name = "uninstallDetails", Left = 18, Top = 116, Width = 550, Height = 135, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
-        var heartbeat = new Label { Name = "uninstallHeartbeat", Left = 18, Top = 265, Width = 420, Height = 24 };
-        var close = new Button { Name = "closeUninstall", Left = 478, Top = 260, Width = 90, Height = 30, Text = "Đóng", Enabled = false };
-        form.Controls.AddRange(new Control[] { pathBox, details, heartbeat, close });
+        var pathBox = new TextBox { Left = 24, Top = 150, Width = 592, ReadOnly = true, WordWrap = false, ScrollBars = ScrollBars.Horizontal, Text = root };
+        var details = new TextBox { Name = "uninstallDetails", Left = 24, Top = 184, Width = 592, Height = 168, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = System.Drawing.Color.White };
+        var heartbeat = new Label { Name = "uninstallHeartbeat", Left = 24, Top = 364, Width = 592, Height = 22 };
+        var close = new Button { Name = "closeUninstall", Text = "Đóng", Enabled = false };
+        form.Controls.AddRange(new Control[] { pathBox, details, heartbeat });
+        form.Controls.Add(InstallerFooter(close));
 
         form.Tag = 2;
         var terminal = false;

@@ -1078,6 +1078,9 @@ GENERAL_EN_VI_TERMS = {
 }
 
 
+# Ordinary vocabulary/loanwords, independent of any game, ID or character.
+GENERAL_EN_VI_TERMS.update({"tavern": "quán rượu", "macaroni": "mì ống", "titan": "titan"})
+
 def generic_term_translation(token: str) -> str | None:
     """Vietnamese fallback for an exact generic source token, if defined."""
     return GENERAL_EN_VI_TERMS.get(str(token or '').casefold())

@@ -31,7 +31,7 @@ DOMAIN_LIKE = re.compile(r"^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z]{2,12})+$")
 # the battle-tested legacy rules below.  The policy fingerprint is explicit so
 # trace/cache consumers can invalidate decisions without hashing source files
 # or changing the CSV contract.
-CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-3"
+CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-4"
 _CLASSIFIER_POLICY_RULES = (
     "hard-technical-veto",
     "validated-renpy-native-identity-before-generic-token-heuristics",
@@ -714,7 +714,10 @@ def classify_row(row: dict) -> tuple[str, str]:
         return "copy_literal", "moan + placeholder/tag — giữ nguyên"
 
     body = mt_check.strip_technical(src)
-    body = mt_check.KEY_PREFIX.sub(" ", body)
+    # A native display string such as "Achievements: " is a complete label,
+    # not an ID prefix. Its SDK-bound locator remains authoritative.
+    if not native_renpy_unit:
+        body = mt_check.KEY_PREFIX.sub(" ", body)
     body = mt_check.COND_EXPR.sub(" ", body)
     if not mt_check.WORD.findall(body) and not any(ord(c) > 127 for c in body):
         return "skip_technical", "punctuation/number only"

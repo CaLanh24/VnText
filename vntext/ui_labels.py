@@ -68,6 +68,10 @@ UI_LABEL_CATALOG: dict[str, str] = {
     "video": "Video",
     "mute all": "Tắt tiếng tất cả",
     "your name": "Tên của bạn",
+    "unlocked": "Đã mở khóa",
+    "test": "Thử",
+    "achievements:": "Thành tựu:",
+    "made with ren'py": "Làm bằng Ren'Py",
 }
 
 # Exact numbered-label patterns ("Achievement3"); the number is carried over untouched.

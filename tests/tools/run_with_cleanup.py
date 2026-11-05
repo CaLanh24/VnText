@@ -763,6 +763,7 @@ def main() -> int:
             "release-0.1.15",
             "dev-resources-0.1.15",
             "release-0.1.16",
+            "release-0.1.17",
         ),
         default=None,
         help="Request an epoch-bound temporary project cap for a registered Release task; otherwise the default 1 GiB applies",

@@ -188,6 +188,15 @@ RELEASE_TASK_014_BUDGET_APPROVAL = (
 RELEASE_TASK_015_BUDGET_ID = "release-0.1.15"
 # Release 0.1.16 (NOT 0.1.6: RELEASE_TASK_016_BUDGET_ID below is the historical 0.1.6 task).
 RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
+RELEASE_TASK_0117_BUDGET_ID = "release-0.1.17"
+RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2
+RELEASE_TASK_0117_BUDGET_APPROVAL = (
+    "Owner 2026-11-05 requested whole-game verification and 'nếu có vấn đề thì sửa trên 0.1.17', then requested the scoped UI/installer fixes. "
+    "Under the standing measured release-allocation authority, preserve the 6.25 GiB project plus owned-external ceiling and 11 GiB shared cache. "
+    "Existing project is about 4.36 GB including protected history; sequential build/package needs about 2.2 GB above a cleaned base. "
+    "This account permits only the registered candidate-0.1.17 task after a legitimate epoch is activated. It grants no rebaseline, extra hop, "
+    "guard waiver, model change or publication before whole-game and Brain acceptance. Terminal protected history stays REVIEW_REQUIRED."
+)
 RELEASE_TASK_0116_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2  # 6.25 GiB, measured below; Brain/Owner confirm before the first allocation
 RELEASE_TASK_0116_BUDGET_APPROVAL = (
     "Owner 2026-11-02 answered 'nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release' and authorized version 0.1.16 (next patch after the "
@@ -304,6 +313,8 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
         return task_id, "0.1.12", RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_013_BUDGET_ID:
         return task_id, "0.1.13", RELEASE_TASK_013_BUDGET_APPROVAL
+    if task_id == RELEASE_TASK_0117_BUDGET_ID:
+        return task_id, "0.1.17", RELEASE_TASK_0117_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_0116_BUDGET_ID:
         return task_id, "0.1.16", RELEASE_TASK_0116_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_015_BUDGET_ID:
@@ -326,7 +337,7 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
 def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
     """Allow same-release continuation and the Owner-authorized 0.1.12 -> 0.1.13 and 0.1.13 -> 0.1.14 handoffs."""
 
-    return previous_task_id == target_task_id or (previous_task_id == DEV_RESOURCES_TASK_ID and target_task_id == RELEASE_TASK_0116_BUDGET_ID) or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
+    return previous_task_id == target_task_id or (previous_task_id == RELEASE_TASK_0116_BUDGET_ID and target_task_id == RELEASE_TASK_0117_BUDGET_ID) or (previous_task_id == DEV_RESOURCES_TASK_ID and target_task_id == RELEASE_TASK_0116_BUDGET_ID) or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
         previous_task_id == RELEASE_TASK_012_BUDGET_ID
         and target_task_id == RELEASE_TASK_013_BUDGET_ID
     ) or (
@@ -365,6 +376,8 @@ def _release_task_budget_limit(task_id: str) -> int:
         return RELEASE_TASK_013_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_014_BUDGET_ID:
         return RELEASE_TASK_014_BUDGET_LIMIT_BYTES
+    if task_id == RELEASE_TASK_0117_BUDGET_ID:
+        return RELEASE_TASK_0117_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_0116_BUDGET_ID:
         return RELEASE_TASK_0116_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_015_BUDGET_ID:
@@ -3943,7 +3956,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID):
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -3952,7 +3965,7 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID):
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
@@ -5640,7 +5653,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument(
         "--owner-reset-authorization",

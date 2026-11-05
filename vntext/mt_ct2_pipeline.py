@@ -1157,7 +1157,8 @@ def _run_ct2_translate_impl(
         full_by_key: dict[str, str] = {}
         if retry_rows:
             try:
-                full_outputs = translator.translate_many([r["source_text"] for r, _, _ in retry_rows])
+                from vntext.mt_ct2_io import translate_many_by_sentence
+                full_outputs = translate_many_by_sentence(translator, [r["source_text"] for r, _, _ in retry_rows])
                 full_by_key = {
                     row["key"]: output
                     for (row, _, _), output in zip(retry_rows, full_outputs)
@@ -1603,7 +1604,8 @@ def _run_ct2_translate_keys_impl(
         full_by_key: dict[str, str] = {}
         if retry_rows:
             try:
-                full_outputs = translator.translate_many([r["source_text"] for r, _, _ in retry_rows])
+                from vntext.mt_ct2_io import translate_many_by_sentence
+                full_outputs = translate_many_by_sentence(translator, [r["source_text"] for r, _, _ in retry_rows])
                 full_by_key = {
                     row["key"]: output
                     for (row, _, _), output in zip(retry_rows, full_outputs)

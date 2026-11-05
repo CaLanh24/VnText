@@ -158,6 +158,20 @@ internal sealed class AppDialogWindow : Window
     private double _ownerHeightBound;
 
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+    internal static void CenterOverOwner(Window dialog, Window owner)
+    {
+        // Window.Left/Top retain the restore position when maximized. Use the
+        // actual native frame, then convert physical pixels to this HWND's DIP.
+        var handle = new WindowInteropHelper(owner).Handle;
+        if (handle == IntPtr.Zero || !GetWindowRect(handle, out var rect)) return;
+        var target = PresentationSource.FromVisual(dialog)?.CompositionTarget;
+        if (target is null || dialog.ActualWidth <= 0 || dialog.ActualHeight <= 0) return;
+        var topLeft = target.TransformFromDevice.Transform(new Point(rect.Left, rect.Top));
+        var bottomRight = target.TransformFromDevice.Transform(new Point(rect.Right, rect.Bottom));
+        dialog.Left = (topLeft.X + bottomRight.X - dialog.ActualWidth) / 2;
+        dialog.Top = (topLeft.Y + bottomRight.Y - dialog.ActualHeight) / 2;
+    }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
     [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] private struct MonitorInfo { public int Size; public NativeRect Monitor, Work; public uint Flags; }

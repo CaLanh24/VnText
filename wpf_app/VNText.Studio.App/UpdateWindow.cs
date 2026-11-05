@@ -152,9 +152,9 @@ internal sealed class UpdateWindow : Window
         SizeChanged += (_, _) =>
         {
             if (!IsVisible) return;
-            Left = owner.Left + (owner.ActualWidth - ActualWidth) / 2;
-            Top = owner.Top + (owner.ActualHeight - ActualHeight) / 2;
+            AppDialogWindow.CenterOverOwner(this, owner);
         };
+        Loaded += (_, _) => AppDialogWindow.CenterOverOwner(this, owner);
         source.PropertyChanged += Changed; Refresh();
     }
     private void Changed(object? sender, PropertyChangedEventArgs e)

@@ -31,7 +31,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 function Assert-ReleaseRootLayout {
-    param([string]$Path)
+    param([string]$Path, [string]$SetupFileName = "Setup.exe")
 
     if (-not (Test-Path -LiteralPath $Path)) { return }
     $releaseItem = Get-Item -LiteralPath $Path -Force
@@ -42,7 +42,7 @@ function Assert-ReleaseRootLayout {
         throw "ReleaseRoot cannot be a junction or symbolic link: $Path"
     }
     $allowedItems = @{
-        "Setup.exe" = $false
+        $SetupFileName = $false
         "Updates" = $true
     }
     $unexpectedItems = @()
@@ -76,7 +76,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16', 'candidate-0.1.17') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
@@ -248,7 +248,9 @@ $isUnsafeRepoPath = $isRepoOrAncestor -or ($insideRepo -and -not $insideWork) -o
 if ($isUnsafeRepoPath) {
     throw "ReleaseRoot must be outside the repository, except for a dedicated child of RELEASE_RUN: $ReleaseRoot"
 }
-Assert-ReleaseRootLayout -Path $ReleaseRoot
+$setupFileName = "VNTextStudio-$((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim())-Setup.exe"
+if ($setupFileName -notmatch '^VNTextStudio-\d+\.\d+\.\d+-Setup\.exe$') { throw "Invalid versioned Setup filename." }
+Assert-ReleaseRootLayout -Path $ReleaseRoot -SetupFileName $setupFileName
 Assert-InAppReleasePolicy ((Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -Raw).Trim()) $FullAppUpdateBaselineRoot ([bool]$SkipWpfUpdatePackage) $GitHubOwner $GitHubRepository $FullAppUpdateLegacyBaselineRoot $FullAppUpdateAdditionalBaselineRoots
 Set-Location $DevRoot
 $SourceSha = if (-not [string]::IsNullOrWhiteSpace($SourceRevision)) { $SourceRevision.Trim() } else { (& git -C $DevRoot rev-parse HEAD).Trim() }
@@ -264,7 +266,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16', '0.1.17') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
@@ -779,7 +781,7 @@ $env:VNTEXT_ARTIFACT_RUN_ID = $publishScope
 $env:VNTEXT_ARTIFACT_SCOPE_ROOT = $publishArtifactRoot
 Write-Host "DEV release_verify PASS" -ForegroundColor Green
 
-$setupReleasePath = Join-Path $ReleaseRoot "Setup.exe"
+$setupReleasePath = Join-Path $ReleaseRoot $setupFileName
 
 Write-Host "=== VNText Studio publish ===" -ForegroundColor Cyan
 Write-Host "DEV:     $DevRoot"
@@ -1313,7 +1315,9 @@ $setupVersionSource = Join-Path $publishArtifactRoot "SetupVersion.cs"
 $versionNumeric = ($version -replace '-.*$', '') + '.0'
 Write-SetupVersionSource $setupVersionSource $version $versionNumeric
 $uninstaller = Join-Path $staging "Uninstall.exe"
-& $csc /nologo /target:winexe /define:UNINSTALLER /out:$uninstaller /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll $setupSource $setupVersionSource
+$installerIcon = Join-Path $DevRoot "release\assets\vntext_studio.ico"
+if (-not (Test-Path -LiteralPath $installerIcon -PathType Leaf)) { throw "Installer app icon is missing." }
+& $csc /nologo /target:winexe /define:UNINSTALLER /out:$uninstaller /win32icon:$installerIcon /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll /reference:System.IO.Compression.dll /reference:System.IO.Compression.FileSystem.dll $setupSource $setupVersionSource
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $uninstaller)) { throw "Uninstall.exe compilation failed" }
 Assert-SetupVersion $uninstaller $version $versionNumeric
 
@@ -1418,7 +1422,7 @@ $retirePayloadStage = "import sys; sys.path.insert(0,sys.argv[2]); sys.path.inse
 & $Python -B -c $retirePayloadStage (Join-Path $ArtifactHelpersRoot "..\tools") $ArtifactHelpersRoot $publishScope $staging
 if ($LASTEXITCODE -ne 0 -or (Test-Path -LiteralPath $staging)) { throw "Consumed payload staging cleanup failed; old Release contents preserved" }
 $resourceArgument = [string]::Concat("/resource:", $payloadZip, ",Payload.zip")
-$setupCompileArgs = @("/nologo", "/target:winexe", "/out:$setupExe", $resourceArgument,
+$setupCompileArgs = @("/nologo", "/target:winexe", "/out:$setupExe", "/win32icon:$installerIcon", $resourceArgument,
     "/reference:System.Windows.Forms.dll", "/reference:System.Web.Extensions.dll",
     "/reference:System.IO.Compression.dll", "/reference:System.IO.Compression.FileSystem.dll")
 if (-not [string]::IsNullOrWhiteSpace($GitHubOwner)) {
@@ -1448,7 +1452,7 @@ if ([string]::IsNullOrWhiteSpace($GitHubOwner)) {
 Write-Host "Size:     $setupBytes bytes"
 Write-Host "Payload:  $payloadCount files, $payloadBytes bytes ($((Format-Megabytes $payloadBytes)) MB)"
 
-Assert-ReleaseRootLayout -Path $ReleaseRoot
+Assert-ReleaseRootLayout -Path $ReleaseRoot -SetupFileName $setupFileName
 New-Item -ItemType Directory -Path $ReleaseRoot -Force | Out-Null
 $pendingSetup = Join-Path $ReleaseRoot "Setup.pending.exe"
 $previousSetup = Join-Path $ReleaseRoot "Setup.previous.exe"
@@ -1608,7 +1612,7 @@ try {
         $fullAppFeedCommitted = $true
     }
     $transactionNames = @(Get-ChildItem -LiteralPath $ReleaseRoot -Force | Select-Object -ExpandProperty Name | Sort-Object)
-    $expectedTransactionNames = if ($hadPreviousSetup) { @("Setup.exe", "Setup.previous.exe", "Updates") } else { @("Setup.exe", "Updates") }
+    $expectedTransactionNames = @(if ($hadPreviousSetup) { @($setupFileName, "Setup.previous.exe", "Updates") } else { @($setupFileName, "Updates") }) | Sort-Object
     if ($finalSha -ne $setupSha -or ($transactionNames -join "|") -ne ($expectedTransactionNames -join "|")) {
         throw "Setup replacement mismatch: hash=$finalSha; entries=[$($transactionNames -join ', ')]"
     }
@@ -1616,8 +1620,8 @@ try {
     if (Test-Path -LiteralPath $previousUpdateFeed) { Remove-Item -LiteralPath $previousUpdateFeed -Force -ErrorAction Stop }
     if (Test-Path -LiteralPath $previousFullAppFeed) { Remove-Item -LiteralPath $previousFullAppFeed -Force -ErrorAction Stop }
     $finalFiles = @(Get-ChildItem -LiteralPath $ReleaseRoot -Force)
-    if ($finalFiles.Count -ne 2 -or @($finalFiles | Where-Object { $_.Name -notin @("Setup.exe", "Updates") }).Count -gt 0 -or
-        -not ($finalFiles | Where-Object { $_.Name -eq "Setup.exe" -and -not $_.PSIsContainer }) -or
+    if ($finalFiles.Count -ne 2 -or @($finalFiles | Where-Object { $_.Name -notin @($setupFileName, "Updates") }).Count -gt 0 -or
+        -not ($finalFiles | Where-Object { $_.Name -eq $setupFileName -and -not $_.PSIsContainer }) -or
         -not ($finalFiles | Where-Object { $_.Name -eq "Updates" -and $_.PSIsContainer }) -or
         (Get-Sha256 $setupReleasePath) -ne $setupSha) {
         $names = ($finalFiles | Select-Object -ExpandProperty Name) -join ", "
@@ -1666,7 +1670,7 @@ try {
 }
 
 Write-Host ""
-Write-Host "Final ReleaseRoot contains Setup.exe and retained Updates: $ReleaseRoot"
+Write-Host "Final ReleaseRoot contains $setupFileName and retained Updates: $ReleaseRoot"
 $publishedPackages = @(Get-ChildItem -LiteralPath (Join-Path $ReleaseRoot "Updates") -File -Filter "wpf-update-*.zip" -Force)
 $publishedPackageBytes = [long]($publishedPackages | Measure-Object Length -Sum).Sum
 Write-Host "WPF Updates retention: $($publishedPackages.Count) immutable packages, $publishedPackageBytes bytes" -ForegroundColor DarkGray

@@ -66,7 +66,8 @@ def translate_many_by_sentence(translator, cores: list[str]) -> list[str]:
     whole = [core for core, sentences in zip(cores, split) if len(sentences) < 2]
     outputs = list(translator.translate_many(whole + flat)) if (whole or flat) else []
     if len(outputs) != len(whole) + len(flat):
-        return list(translator.translate_many(cores))
+        # Retry each sentence, never unsplit prose or a short batch response.
+        outputs = [translator.translate(text) for text in whole + flat]
     whole_out, flat_out = outputs[:len(whole)], outputs[len(whole):]
     result: list[str] = []
     whole_iter = iter(whole_out)
@@ -97,16 +98,6 @@ def _join_pieces(pieces: list[str]) -> str:
     return "".join(out)
 
 
-def _names_lost(source: str, value: str) -> bool:
-    """True when a protected source name (Chang, Tia) is missing from a non-empty translation."""
-    if not str(value or "").strip():
-        return False
-    for name in _mt_check.source_proper_name_tokens(source):
-        if not re.search(rf"(?<![^\W_]){re.escape(name)}(?![^\W_])", str(value), re.IGNORECASE):
-            return True
-    return False
-
-
 def _batch_translate_chunk(
     translator: Ct2Translator,
     rows: list[dict],
@@ -116,15 +107,14 @@ def _batch_translate_chunk(
     v2_glossary: dict | None = None,
     glossary_conflicts: set[str] | None = None,
 ) -> dict[str, str]:
-    """Names stay INSIDE their sentence (cutting a sentence at every name made the model translate orphan fragments: "Chang Không nhận thấy...");
-    a row whose name did not survive is translated again with the name cut out, the original protected route."""
-    out = _batch_translate_chunk_core(translator, rows, user_glossary, translation_memory, v2_glossary=v2_glossary,
-                                      glossary_conflicts=glossary_conflicts, inline_names=True)
-    retry = [row for row in rows if _names_lost(str(row.get("source_text") or ""), out.get(str(row.get("key")), ""))]
-    if retry:
-        out.update(_batch_translate_chunk_core(translator, retry, user_glossary, translation_memory, v2_glossary=v2_glossary,
-                                               glossary_conflicts=glossary_conflicts, inline_names=False))
-    return out
+    """Keep inferred names inside their sentences.
+
+    Inferred Title-case words are not authoritative glossary entries. Cutting
+    them out on a second pass destroyed complete clauses. Explicit package
+    glossary/memory overrides still use the existing protected paths below.
+    """
+    return _batch_translate_chunk_core(translator, rows, user_glossary, translation_memory,
+        v2_glossary=v2_glossary, glossary_conflicts=glossary_conflicts, inline_names=True)
 
 
 def _batch_translate_chunk_core(

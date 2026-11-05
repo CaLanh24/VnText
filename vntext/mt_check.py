@@ -257,12 +257,12 @@ def is_possible_vietnamese(tok):
 
 
 def has_vietnamese_diacritic(tok):
-    if 'đ' in tok or 'Đ' in tok:
-        return True
-    for c in unicodedata.normalize('NFD', tok):
-        if unicodedata.combining(c):
-            return True
-    return False
+    # An arbitrary Unicode combining mark is not evidence of Vietnamese:
+    # foreign names such as Anaïs previously caused whole English paragraphs
+    # to be copied as "already Vietnamese". Normalize only this read-only
+    # probe; never rewrite the source or the user's translation.
+    vietnamese = "àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ"
+    return any(c in vietnamese for c in unicodedata.normalize('NFC', str(tok)).casefold())
 
 
 def is_vietnamese_text(text):
@@ -272,7 +272,16 @@ def is_vietnamese_text(text):
     ships a partial Vietnamese UI, so for those rows keeping the same string is
     a correct translation, not a missing one.
     """
-    return has_vietnamese_diacritic(strip_technical(text))
+    for word in WORD.findall(unicodedata.normalize('NFC', strip_technical(text))):
+        if not has_vietnamese_diacritic(word):
+            continue
+        if any(c.casefold() in "đăơư" or 0x1EA0 <= ord(c) <= 0x1EF9 for c in word):
+            return True
+        bare = ''.join(c for c in unicodedata.normalize('NFD', word.casefold())
+                       if not unicodedata.combining(c)).replace('đ', 'd')
+        if is_possible_vietnamese(bare):
+            return True
+    return False
 
 
 # ------------------------------------------------------------- English lexicons
@@ -419,6 +428,16 @@ def source_proper_name_tokens(src, whitelist=None):
     from vntext.mt_translation_constants import generic_term_translation
 
     body = strip_technical(str(src or ""))
+    # A translated common noun inside a proper-name phrase must not turn the
+    # other source spelling into residual-English corruption (e.g. a venue's
+    # two-word name). Require an independently name-like anchor; ordinary
+    # pairs such as "House Owner" retain their normal vocabulary treatment.
+    for phrase in re.finditer(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b", body):
+        parts = phrase.group(0).split()
+        if any(part.casefold() not in known and generic_term_translation(part) is None for part in parts):
+            out.update(part.casefold() for part in parts
+                if part.casefold() not in (set(whitelist or ()) | ENG_STRONG | ENG_WEAK)
+                and generic_term_translation(part) is None)
     matches = list(re.finditer(r"[A-Za-z]+", body))
     for index, match in enumerate(matches):
         token = match.group(0)

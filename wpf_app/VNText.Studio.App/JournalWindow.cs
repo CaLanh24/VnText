@@ -34,6 +34,10 @@ internal sealed class JournalWindow : Window
         TextOptions.SetTextFormattingMode(this,TextFormattingMode.Display);
         KeyboardNavigation.SetTabNavigation(this,KeyboardNavigationMode.Cycle);
         Brush B(string key)=>(Brush)owner.FindResource(key);
+        _content.SetResourceReference(Control.BackgroundProperty, "SubtlePanelBrush");
+        _content.SetResourceReference(Control.ForegroundProperty, "InkBrush");
+        _content.SetResourceReference(TextBox.CaretBrushProperty, "InkBrush");
+        _content.SetResourceReference(TextBox.SelectionBrushProperty, "BlueSoftBrush");
         var compactHeight=(double)owner.FindResource("UiControlHeightCompact");   // file/level/page-size selects share the 30 DIP compact row with the folder chip and pager
         Foreground=B("InkBrush");
         foreach(var combo in new[]{_files,_level,_size})

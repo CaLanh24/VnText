@@ -208,6 +208,9 @@
     <SolidColorBrush x:Key="GreenDarkBrush" Color="{StaticResource GreenDarkColor}" />
 
     <SolidColorBrush x:Key="GreenSoftBrush" Color="{StaticResource GreenSoftColor}" />
+    <SolidColorBrush x:Key="AboutCurrentBackgroundBrush" Color="#D8F1E2" />
+    <SolidColorBrush x:Key="AboutCurrentBorderBrush" Color="#86DDA5" />
+    <SolidColorBrush x:Key="AboutCurrentTextBrush" Color="#15803D" />
 
     <SolidColorBrush x:Key="GreenHoverBrush" Color="{StaticResource GreenHoverColor}" />
 

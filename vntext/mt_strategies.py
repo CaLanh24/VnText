@@ -390,6 +390,13 @@ def translate_sentence_segments_ct2(src: str, translator: Any) -> str:
     only at source punctuation keeps every source fragment in the retry path;
     structural tokens are still handled by ``translate_protected`` per chunk.
     """
+    from vntext.mt_ct2_io import translate_many_by_sentence
+    # Ordinary prose must retain sentence context. The protected fragment route
+    # cuts at every inferred name and can discard the text between two names.
+    # Structured rows still use the token-preserving route below.
+    if not (mt_check.PH.search(src) or mt_check.TAG.search(src) or mt_check.BRACKET_TOKEN.search(src)
+            or "\\n" in src or "\n" in src):
+        return postprocess(src, translate_many_by_sentence(translator, [src])[0])
     parts = re.split(r"(?<=[.!?…])(?=\s+)", src)
     if len(parts) < 2:
         return translate_protected_ct2(src, translator)
@@ -872,7 +879,7 @@ def retry_row_strategies(
         # Pass đầu: full_sentence; chỉ copy EN khi keep hợp lệ (sfx/moan/classify).
         if not full_raw.strip():
             try:
-                full_raw = translator.translate(src)
+                full_raw = translate_sentence_segments_ct2(src, translator)
             except TranslateCancelled:
                 raise
             except Exception:
@@ -907,7 +914,7 @@ def retry_row_strategies(
         # Dịch cả câu (không tách tên) — tránh rác khi fragment quá ngắn quanh KEEP_NAMES.
         if not full_raw.strip():
             try:
-                full_raw = translator.translate(src)
+                full_raw = translate_sentence_segments_ct2(src, translator)
             except TranslateCancelled:
                 raise
             except Exception:
@@ -965,13 +972,15 @@ def retry_row_strategies(
             "ui_glossary": -1,
             "placeholder_safe_first": -1,
             "direct_source": 0,
-            "full_sentence": 0,
-            "full_sentence_fast": 0,
-            "sentence_segments": 1,
+            "full_sentence": 1,
+            "full_sentence_fast": 1,
+            "batch_default": 1,
+            "batch_healed": 1,
+            "sentence_segments": 0,
         }
         _score, _length, name, candidate = min(
             valid_candidates,
-            key=lambda item: (preference.get(item[2], 2), item[0], item[1]),
+            key=lambda item: (preference.get(item[2], 2), item[0], -item[1]),
         )
         return candidate, name, []
     return None, (strategies2[-1][0] if strategies2 else "none"), last_reasons

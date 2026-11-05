@@ -74,6 +74,9 @@ public static class UiAppearance
         Set("GreenSoftBrush", C("#E6FAEF", "#173D32"));
         Set("GreenDarkBrush", C("#087C42", "#7BDEA7"));
         Set("GreenBrush", C("#16A34A", "#7BDEA7"));
+        Set("AboutCurrentBackgroundBrush", C("#D8F1E2", "#173D32"));
+        Set("AboutCurrentBorderBrush", C("#86DDA5", "#418C63"));
+        Set("AboutCurrentTextBrush", C("#15803D", "#7BDEA7"));
         if (dark)
         {
             Set("DisabledBackgroundBrush", "#263247");

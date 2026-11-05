@@ -231,8 +231,6 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="Hủy tác vụ" Style="{StaticResource OutlineButton}" Margin="0,0,10,0"
                             Command="{Binding CancelCommand}" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
-                    <Button Content="Hủy rồi thoát" Style="{StaticResource SecondaryButton}" Margin="0,0,10,0"
-                            Command="{Binding CancelAndExitCommand}" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                     <Border Background="{DynamicResource GreenSoftBrush}" CornerRadius="12" Padding="13,10">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Fill="{DynamicResource GreenBrush}" VerticalAlignment="Center" />
@@ -1248,28 +1246,28 @@
                                         <Border Grid.Row="2" HorizontalAlignment="Center" MaxWidth="560" Margin="0,8,0,0">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="CornerRadius" Value="12" />
+                                                    <Setter Property="CornerRadius" Value="8" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
-                                                            <Setter Property="Background" Value="{DynamicResource GreenSoftBrush}" />
-                                                            <Setter Property="BorderBrush" Value="{DynamicResource GreenBrush}" />
+                                                            <Setter Property="Background" Value="{DynamicResource AboutCurrentBackgroundBrush}" />
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource AboutCurrentBorderBrush}" />
                                                             <Setter Property="BorderThickness" Value="1" />
                                                             <Setter Property="Padding" Value="18,12" />
-                                                            <Setter Property="MinWidth" Value="420" />
+                                                            <Setter Property="MinWidth" Value="365" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
                                         <TextBlock Text="{Binding GitHubUpdateStatus, Converter={StaticResource UiTextDynamic}}"
-                                                   MaxWidth="560" TextWrapping="Wrap" TextAlignment="Center"
-                                                   HorizontalAlignment="Center">
+                                                   MaxWidth="560" TextWrapping="Wrap" TextAlignment="Left"
+                                                   HorizontalAlignment="Stretch">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock" BasedOn="{StaticResource UiSecondaryTextStyle}">
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
-                                                            <Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" />
-                                                            <Setter Property="FontWeight" Value="SemiBold" />
-                                                            <Setter Property="FontSize" Value="15" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource AboutCurrentTextBrush}" />
+                                                            <Setter Property="FontWeight" Value="Normal" />
+                                                            <Setter Property="FontSize" Value="14" />
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng.">
                                                             <Setter Property="Visibility" Value="Collapsed" />

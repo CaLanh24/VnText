@@ -89,6 +89,10 @@ class CatalogBeforeNameGuardTests(unittest.TestCase):
         self.assertEqual("copy_literal", classify_row_authoritative(self.row("Chang", self.CTX))[0])
         self.assertEqual("copy_literal", classify_row_authoritative(self.row("Back", "RenPy:game/script.rpy:21:start_a4a14dc7"))[0])
 
+    def test_visible_achievement_label_is_not_a_technical_prefix(self):
+        self.assertEqual(("ui_label_fixed", "Thành tựu:"), classify_row_authoritative(self.row("Achievements: ", self.CTX))[:2])
+        self.assertEqual(("ui_label_fixed", "Đã mở khóa"), classify_row_authoritative(self.row("Unlocked ", self.CTX))[:2])
+
 
 class DateFormatAndNumberedLabelTests(unittest.TestCase):
     FORMAT = "%b %d, %Y @ %I:%M %p{#achievement_timestamp}"
@@ -165,12 +169,66 @@ class NameInsideSentenceTests(unittest.TestCase):
         self.assertNotIn(" did not notice the cold.", sent)                         # no orphan fragment
         self.assertIn("Chang", out["k1"])
 
-    def test_if_the_model_changes_the_name_the_row_is_translated_again_with_the_name_protected(self):
+    def test_inferred_name_mutation_does_not_trigger_destructive_fragment_retranslation(self):
         from vntext.mt_ct2_io import _batch_translate_chunk
         model = self.Model(mutate_name=True)
         out = _batch_translate_chunk(model, [dict(self.ROW)])
-        self.assertIn("Chang", out["k1"])
-        self.assertNotIn("Chàng", out["k1"])                                  # the protected route restored the exact name
+        self.assertIn("Chàng", out["k1"])
+        self.assertIn("He asked about the job.", out["k1"])
+        self.assertEqual(1, len(model.seen))
+
+    def test_name_retry_never_sends_orphan_fragments_and_keeps_the_second_sentence(self):
+        from vntext.mt_ct2_io import _batch_translate_chunk
+        model = self.Model(mutate_name=True)
+        out = _batch_translate_chunk(model, [dict(self.ROW)])
+        self.assertIn("He asked about the job.", out["k1"])
+        self.assertFalse(any(text.strip() == "did not notice the cold." for batch in model.seen for text in batch))
+        self.assertFalse(any("ZZG" in text for batch in model.seen for text in batch))
+
+    def test_explicit_user_glossary_translation_still_wins_over_inferred_names(self):
+        from vntext.mt_ct2_io import _batch_translate_chunk
+        class Unused(self.Model):
+            def translate_many(self, texts):
+                raise AssertionError("an exact user translation must not go to the model")
+        approved = "Chang không nhận thấy cái lạnh. Anh hỏi về công việc."
+        out = _batch_translate_chunk(Unused(), [dict(self.ROW)], {self.ROW["source_text"]: approved})
+        self.assertEqual(approved, out["k1"])
+
+
+class CompleteSentenceRetryTests(unittest.TestCase):
+    def test_foreign_name_accents_do_not_mark_an_english_paragraph_as_already_vietnamese(self):
+        import unicodedata
+        for text in ("Thanks to the Anaïs Nin book, I read it twice.", "Renée asked José about the café."):
+            self.assertFalse(mt_check.is_vietnamese_text(text))
+        for text in ("Có", "Hủy", "Tên người dùng", "Tiếng Việt"):
+            self.assertTrue(mt_check.is_vietnamese_text(text))
+            self.assertTrue(mt_check.is_vietnamese_text(unicodedata.normalize('NFD', text)))
+
+    def test_retry_of_plain_prose_keeps_every_sentence_in_context(self):
+        from vntext.mt_strategies import translate_sentence_segments_ct2
+        class Model(Echo):
+            def translate_many(self, texts):
+                self.calls.append(list(texts))
+                return ["Câu đầu." if text.startswith("First") else "Câu sau." for text in texts]
+            def translate(self, text):
+                raise AssertionError("the retry must use the sentence batch")
+        model = Model(drop_second=True)
+        result = translate_sentence_segments_ct2("First one. Second one.", model)
+        self.assertEqual("Câu đầu. Câu sau.", result)
+
+    def test_short_adapter_batch_response_retries_every_source_sentence(self):
+        class Short:
+            def translate_many(self, texts): return []
+            def translate(self, text): return {"First one.": "Câu đầu.", "Second one.": "Câu sau."}[text]
+        self.assertEqual(["Câu đầu. Câu sau."], translate_many_by_sentence(Short(), ["First one. Second one."]))
+
+    def test_compound_name_anchor_retains_a_common_word_without_whitelisting_plain_prose(self):
+        try:
+            mt_check.set_runtime_common_words({"mockingbird", "house", "owner"})
+            self.assertIn("mockingbird", mt_check.source_proper_name_tokens("We met at Aster Mockingbird Hall."))
+            self.assertNotIn("house", mt_check.source_proper_name_tokens("The House Owner paid us."))
+        finally:
+            mt_check.set_runtime_common_words(())
 
 
 if __name__ == "__main__":

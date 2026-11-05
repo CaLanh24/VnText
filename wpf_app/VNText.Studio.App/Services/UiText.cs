@@ -174,6 +174,7 @@ public static class UiText
         ["Không thể kiểm tra bản cập nhật."] = "The update check failed.",
         ["Không thể kiểm tra bản cập nhật: {0}"] = "The update check failed: {0}",
         ["Bạn đang dùng phiên bản mới nhất."] = "You are using the latest version.",
+        ["Đã là bản mới nhất v{0}"] = "Already up to date v{0}",
         ["Có bản cập nhật mới; chưa tải gói."] = "A new update is available; the package is not downloaded yet.",
         ["Đã kiểm tra gói. Sẵn sàng cập nhật."] = "The package was verified. Ready to update.",
         ["Bản cập nhật này cần bộ cài mới."] = "This update needs a new installer.",

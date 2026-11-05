@@ -3511,6 +3511,16 @@ class CleanupLifecycleTests(unittest.TestCase):
             tampered, task_id, cleanup.RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
         ))
 
+    def test_release_0_1_17_account_is_distinct_and_does_not_invent_a_rebaseline_grant(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        self.assertNotEqual(task, cleanup.RELEASE_TASK_017_BUDGET_ID)
+        self.assertEqual((task, "0.1.17", cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL), cleanup._release_budget_spec(task))
+        self.assertEqual(6400 * 1024 ** 2, cleanup._release_task_budget_limit(task))
+        self.assertEqual("0.1.7", cleanup._release_budget_spec(cleanup.RELEASE_TASK_017_BUDGET_ID)[1])
+        self.assertTrue(cleanup._epoch_transition_tasks_compatible(cleanup.RELEASE_TASK_0116_BUDGET_ID, task))
+        self.assertFalse(cleanup._epoch_transition_tasks_compatible(task, cleanup.RELEASE_TASK_0116_BUDGET_ID))
+        self.assertFalse(any(value[0] == task for value in cleanup.EPOCH_REBASELINE_AUTHORIZATIONS.values()))
+
     def test_release_0_1_16_budget_is_a_measured_separate_task_not_the_dev_cap_nor_the_0_1_15_cap(self):
         task = cleanup.RELEASE_TASK_0116_BUDGET_ID
         self.assertEqual("release-0.1.16", task)
