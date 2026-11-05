@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import difflib
 import unicodedata
 
 from vntext.mt_translation_constants import (
@@ -35,7 +36,7 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
 
 # Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
 # it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
-POSTPROCESS_VERSION = "sentence-retry-context-4"
+POSTPROCESS_VERSION = "garbled-name-context-5"
 
 def _blank_bare_tokens(text, bare):
     """Blank a model-echoed copy of a placeholder name.  Word boundaries are Unicode- and combining-mark-aware: an ASCII-only test removed the
@@ -438,6 +439,67 @@ def collapse_token_repetition(text: str) -> str:
     return out
 
 
+_INTERJECTION_SRC = re.compile(r"(?<![^\W\d_])(?:w?o+a*h+|a+h+|o+h+|u+h+|e+h+)(?![^\W\d_])", re.IGNORECASE)
+_INTERJECTION_OUT = re.compile(r"(?<![^\W\d_])[AaEeOoUuHh]{2,5}(?![^\W\d_])")
+
+
+def repair_model_artifacts(src, text):
+    """Undo token-level artifacts of the model while keeping the whole translation.
+
+    * ``con_cái`` (a word-joiner underscore) and `` ,`` (space before punctuation)
+      are only fixed when the source has neither, and never in structured rows.
+    * A token the quality gate flags as English garbage, spelled almost like one
+      source word (``Babib`` for ``Bambi``, ``incridibly`` for ``incredibly``), is
+      restored to that exact source word; a vowel-only cry (``Aa``) becomes the
+      source's own interjection.  Unrelated, ambiguous or far tokens stay, so
+      the gate still rejects them and the retry ladder runs.
+    """
+    out = str(text or "")
+    source = str(src or "")
+    if not out or mt_check.PH.search(out) or mt_check.TAG.search(out) or mt_check.BRACKET_TOKEN.search(out):
+        return out
+    if "_" not in source:
+        out = re.sub(r"(?<=[^\W\d_])_(?=[^\W\d_])", " ", out)
+    if not re.search(r"\s[,.;:!?\u2026]", source):
+        out = re.sub(r"[ \t]+(?=[,.;:!?\u2026])", "", out)
+    if not re.search(r"[\"“] +[^\W\d_]", source):
+        out = re.sub(r"(?<![^\s(\[])([\"“]) +(?=[^\W\d_])", r"\1", out)
+    _score, reasons = mt_check.english_report(source, out, set())
+    flagged = {tok for reason in reasons if reason.startswith("english-token: ") for tok in reason[len("english-token: "):].split()}
+    if not flagged:
+        return out
+    source_words = sorted({w for w in re.findall(r"[^\W\d_]{4,}", source)})
+    source_folded = {w.casefold() for w in re.findall(r"[^\W\d_]+", source)}
+    interjection = _INTERJECTION_SRC.search(source)
+
+    def repl(match):
+        token = match.group(0)
+        folded = token.casefold()
+        if token not in flagged or folded in source_folded or mt_check.is_possible_vietnamese(token):
+            return token
+        start = match.start()
+        before = match.string[:start].rstrip("\"'\u201c\u2018([ \t")
+        sentence_start = not before or before[-1] in ".!?\u2026:\n"
+        if _INTERJECTION_OUT.fullmatch(token):
+            if not interjection:
+                return token
+            word = interjection.group(0).lower()
+            return word[:1].upper() + word[1:] if sentence_start else word
+        scored = sorted(
+            ((difflib.SequenceMatcher(None, folded, w.casefold()).ratio(), w) for w in source_words
+             if w[:1].casefold() == folded[:1] and abs(len(w) - len(token)) <= 3),
+            reverse=True,
+        )
+        if not scored or scored[0][0] < 0.6 or (len(scored) > 1 and scored[1][0] > scored[0][0] - 0.04 and scored[1][1] != scored[0][1]):
+            return token
+        word = generic_term_translation(scored[0][1]) or scored[0][1]
+        if token[:1].isupper() and not word[:1].isupper() and sentence_start:
+            word = word[:1].upper() + word[1:]
+        return word
+
+    return re.sub(r"(?<![^\W\d_])[^\W\d_]{2,}(?![^\W\d_])", repl, out)
+
+
 def postprocess(src, text):
     # Translator adapters are expected to return strings.  Keep the retry
     # path fail-closed when a backend/mocked adapter returns a non-text value
@@ -641,6 +703,7 @@ def postprocess(src, text):
         out = re.sub(r"\s{2,}", " ", out).strip()
     # Bỏ space thừa ngay sau thẻ mở <color=…> (join bug cũ / CT2).
     out = re.sub(r"(<color\s*=\s*[^>]+>)\s+", r"\1", out, flags=re.I)
+    out = repair_model_artifacts(src, out)
     out = apply_exact_labels(src, out)
     if mt_check.tight_commas(src) >= 2:
         if mt_check.tight_commas(out) != mt_check.tight_commas(src):
@@ -687,6 +750,7 @@ __all__ = [
     "mask_roundtrip_ok",
     "mask_text",
     "postprocess",
+    "repair_model_artifacts",
     "POSTPROCESS_VERSION",
     "restore_text",
     "split_parts",

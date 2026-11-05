@@ -72,6 +72,11 @@ UI_LABEL_CATALOG: dict[str, str] = {
     "test": "Thử",
     "achievements:": "Thành tựu:",
     "made with ren'py": "Làm bằng Ren'Py",
+    # Ren'Py's own standard confirmation prompts (single-line source strings of the stock screens); exact text only.
+    "are you sure you want to delete this save?": "Bạn có chắc muốn xóa bản lưu này không?",
+    "are you sure you want to overwrite your save?": "Bạn có chắc muốn ghi đè bản lưu của mình không?",
+    "are you sure you want to quit?": "Bạn có chắc muốn thoát không?",
+    "are you sure you want to begin skipping?": "Bạn có chắc muốn bắt đầu bỏ qua không?",
 }
 
 # Exact numbered-label patterns ("Achievement3"); the number is carried over untouched.

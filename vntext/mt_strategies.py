@@ -30,6 +30,29 @@ _MOAN_WORDS = frozenset(
 _MIXED_CASE_WORD = re.compile(r"(?<![A-Za-z])[A-Za-z]+(?:'[A-Za-z]+)?(?![A-Za-z])")
 
 
+_STRETCHED_WORD = re.compile(r"(?<![^\W\d_])[A-Za-z]*([A-Za-z])\1{2,}[A-Za-z]*(?![^\W\d_])")
+
+
+def _collapse_stretched_word(match: re.Match[str]) -> str:
+    """``stoppp`` -> ``stop``: shorten a stretched letter run only when the result is a known English word.
+
+    The tokenizer turns a stretched word into an unrelated Vietnamese
+    syllable.  Names, sound effects and every other unknown spelling keep their
+    exact bytes; the collapsed word is never invented.
+    """
+    from vntext.mt_translation_constants import GENERAL_EN_VI_TERMS
+
+    token = match.group(0)
+    known = mt_check.ENG_STRONG | mt_check.ENG_WEAK | mt_check._RUNTIME_COMMON_WORDS | GENERAL_EN_VI_TERMS.keys()
+    if token.casefold() in known:
+        return token
+    for keep in (2, 1):
+        candidate = re.sub(r"([A-Za-z])\1{2,}", lambda m: m.group(1) * keep, token)
+        if len(candidate) >= 2 and candidate.casefold() in known:
+            return candidate
+    return token
+
+
 def _normalise_mixed_case_for_mt(text: str) -> str:
     """Repair stylised lower-leading casing before the MT tokenizer.
 
@@ -46,6 +69,7 @@ def _normalise_mixed_case_for_mt(text: str) -> str:
         return token
 
     value = _MIXED_CASE_WORD.sub(repl, str(text or ""))
+    value = _STRETCHED_WORD.sub(_collapse_stretched_word, value)
     words = re.findall(r"[A-Za-z]+", value)
     # Shouted prose can become unrelated gibberish in OPUS. Normalize only
     # complete all-caps English sentences with a grammatical leading word;
@@ -421,7 +445,7 @@ def translate_sentence_segments_ct2(src: str, translator: Any) -> str:
 _BOUNDARY_LEAD = re.compile(r"^[\s.,;:!?\u2026\-\u2013\u2014]+")
 
 
-def _translate_exterior_piece(piece: str, fn: Any, *, key_prefix: bool) -> str:
+def _translate_exterior_piece(piece: str, fn: Any, *, key_prefix: bool, translator: Any = None) -> str:
     """Translate text outside a parenthetical while keeping its leading boundary.
 
     Separators such as ``). `` or `` - `` belong to the source structure; the model
@@ -433,6 +457,17 @@ def _translate_exterior_piece(piece: str, fn: Any, *, key_prefix: bool) -> str:
     rest = piece[len(boundary):]
     if not rest.strip():
         return piece
+    # Plain prose keeps sentence context: the protected route cuts at every
+    # inferred name and would split ``..., his cock got even harder`` mid-clause.
+    if translator is not None and not (
+        mt_check.PH.search(rest) or mt_check.TAG.search(rest) or mt_check.BRACKET_TOKEN.search(rest) or "\\n" in rest or "\n" in rest
+    ):
+        from vntext.mt_ct2_io import translate_many_by_sentence
+
+        translated = translate_many_by_sentence(translator, [rest])[0]
+        if str(translated or "").strip():
+            # The model trims the request; the source's own trailing space is structure (``go, (aside)``).
+            return boundary + str(translated).rstrip() + rest[len(rest.rstrip()):]
     return boundary + translate_protected(rest, fn, always_attempt=True, key_prefix=key_prefix)
 
 
@@ -452,7 +487,7 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
     for match in re.finditer(r"\([^()]*\)", src):
         if match.start() > cursor:
             pieces.append(
-                _translate_exterior_piece(src[cursor : match.start()], fn, key_prefix=cursor == 0)
+                _translate_exterior_piece(src[cursor : match.start()], fn, key_prefix=cursor == 0, translator=translator)
             )
         original = match.group(0)
         inner = original[1:-1]
@@ -465,8 +500,34 @@ def translate_parenthetical_segments_ct2(src: str, translator: Any) -> str:
         pieces.append("(" + translated_inner + ")")
         cursor = match.end()
     if cursor < len(src):
-        pieces.append(_translate_exterior_piece(src[cursor:], fn, key_prefix=False))
+        pieces.append(_translate_exterior_piece(src[cursor:], fn, key_prefix=False, translator=translator))
     return postprocess(src, "".join(pieces))
+
+
+def _join_continuations(pieces: list[tuple[str, str]]) -> str:
+    """Join separately translated ``(source, translation)`` pieces of one sentence.
+
+    The model capitalises the first word of every request.  A piece whose
+    source continues a sentence (lower-case start after a non-terminal piece)
+    is lower-cased at its first letter so the joined prose is not fragmented;
+    names, all-caps words and sentence starts are never touched.
+    """
+    out: list[str] = []
+    prev_src = ""
+    for src_piece, translated in pieces:
+        text = translated
+        head = src_piece.lstrip()
+        if (
+            prev_src.strip()
+            and not re.search(r"[.!?\u2026][\"')\]]*\s*$", prev_src)
+            and head[:1].islower()
+            and re.match(r"[A-Z\u00C0-\u1EF8][a-z\u00DF-\u1EF9]", text.lstrip())
+        ):
+            lead = len(text) - len(text.lstrip())
+            text = text[:lead] + text[lead].lower() + text[lead + 1:]
+        out.append(text)
+        prev_src = src_piece
+    return "".join(out)
 
 
 def translate_word_chunks_ct2(src: str, translator: Any, *, chunk_words: int = 4) -> str:
@@ -488,10 +549,7 @@ def translate_word_chunks_ct2(src: str, translator: Any, *, chunk_words: int = 4
         for i in range(0, len(matches), chunk_words)
     ]
     fn = _ct2_fn(translator)
-    translated: list[str] = []
-    for chunk in chunks:
-        translated.append(translate_protected(chunk, fn, always_attempt=True))
-    return postprocess(src, "".join(translated))
+    return postprocess(src, _join_continuations([(chunk, translate_protected(chunk, fn, always_attempt=True)) for chunk in chunks]))
 
 
 def translate_clause_segments_ct2(src: str, translator: Any) -> str:
@@ -506,10 +564,10 @@ def translate_clause_segments_ct2(src: str, translator: Any) -> str:
     parts = re.split(r"(?<=[,;:])(?=\s+)", src)
     if len(parts) < 2:
         return translate_protected_ct2(src, translator)
-    return postprocess(src, "".join(
-        translate_protected(part, _ct2_fn(translator), always_attempt=True)
+    return postprocess(src, _join_continuations([
+        (part, translate_protected(part, _ct2_fn(translator), always_attempt=True))
         for part in parts
-    ))
+    ]))
 
 
 def translate_pipe_segments_ct2(src: str, translator: Any) -> str:

@@ -93,5 +93,16 @@ class UiLabelCatalogTests(unittest.TestCase):
             self.assertEqual("Ghi lại", rows["k2"], {k: v for k, v in result.items() if k in ("error", "review_only", "blocked", "pending", "summary", "ok")})                                          # the user glossary keeps the higher priority
 
 
+class RenpyConfirmationPromptTests(unittest.TestCase):
+    """The delete-save prompt was translated as a folder question ("xoá thư mục này"); the stock prompt now has an exact catalog entry."""
+
+    def test_stock_delete_save_prompt_is_exact_and_context_bounded(self):
+        source = "Are you sure you want to delete this save?"
+        self.assertEqual("Bạn có chắc muốn xóa bản lưu này không?", resolve_ui_label_translation(source, "RenPy:game/screens.rpy:1614:string:screens.rpy:231"))
+        self.assertIsNone(resolve_ui_label_translation(source, "RenPy:game/script.rpy:40:start"))
+        self.assertIsNone(resolve_ui_label_translation(source + " Really?", "RenPy:game/screens.rpy:1614:string:screens.rpy:231"))
+        self.assertIsNone(resolve_ui_label_translation(source, "RenPy:game/script.rpy:40:choice"))
+
+
 if __name__ == "__main__":
     unittest.main()
