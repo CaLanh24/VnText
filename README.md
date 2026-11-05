@@ -1,15 +1,13 @@
 # VNText Studio
 
 
-Phiên bản mới nhất là [**VNText Studio 0.1.12**](https://github.com/CaLanh24/VnText/releases/tag/v0.1.12); trang phát hành có Setup cho người cài mới và gói cập nhật cho người đang dùng app.
+Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ.
 
-Bản công khai mới nhất là [0.1.15](https://github.com/CaLanh24/VnText/releases/tag/v0.1.15) (source `4326abd`); bản 0.1.16 đang được chuẩn bị và chưa phát hành. Các bản trước vẫn có trên trang Releases.
-
-Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật** để cập nhật trực tiếp lên bản mới nhất. Người mới có thể tải Setup 0.1.12 từ trang Releases.
+Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**. Người mới tải bộ cài từ trang Releases.
 
 ## Không gian trọn quy trình để Việt hóa game trên Windows
 
-VNText Studio giúp bạn nhận diện cấu trúc game, lấy văn bản, dịch và đưa bản dịch trở lại **bản sao an toàn** của game. Mọi bước nằm trong một quy trình rõ ràng để bạn dễ theo dõi từ đầu đến cuối.
+VNText Studio giúp bạn nhận diện game, lấy văn bản, tạo bản dịch nháp tiếng Việt offline và đóng gói patch. Tuyến cài/gỡ được hỗ trợ có thể thao tác trực tiếp trên thư mục game, sao lưu từng file và kiểm hash; không cần nhân bản cả game.
 
 ## Điểm nổi bật
 
@@ -19,7 +17,7 @@ VNText Studio giúp bạn nhận diện cấu trúc game, lấy văn bản, dị
 - **Biên tập và rà soát trong ứng dụng**: tìm kiếm, lọc theo trạng thái và chỉnh sửa trực tiếp trong bảng CSV.
 - **Làm việc với CSV**: nhập hoặc xuất CSV để dùng Excel và công cụ quen thuộc, vẫn giữ key, placeholder, tag, biến và xuống dòng.
 - **Thuật ngữ nhất quán**: thêm danh sách thuật ngữ cho từng gói dịch để tên riêng và cách gọi được dùng ổn định.
-- **Patch có kiểm tra**: ứng dụng kiểm tra dữ liệu, tạo bản sao lưu, áp dụng vào bản sao game và xác minh lại kết quả.
+- **Patch có kiểm tra**: ứng dụng kiểm tra dữ liệu, sao lưu từng file bị thay đổi và xác minh kết quả cài/gỡ.
 - **Cập nhật trong ứng dụng**: kiểm tra phiên bản mới ngay trong app khi có bản cập nhật phù hợp.
 
 ## Engine hiện được hỗ trợ
@@ -35,14 +33,14 @@ Hỗ trợ các cấu trúc và asset Unity phù hợp, gồm những dạng vă
 ## Quy trình sử dụng
 
 1. Tải và chạy [Setup từ GitHub Releases](https://github.com/CaLanh24/VnText/releases).
-2. Cài ứng dụng trên Windows và chọn một bản sao game để làm việc.
-3. Chọn **Extract** để nhận diện game và tạo workspace văn bản.
+2. Cài ứng dụng trên Windows, chuẩn bị tài nguyên trong **Cài đặt → Dữ liệu**, rồi chọn thư mục game.
+3. App tự nhận diện engine; chọn **Lấy text** để tạo gói văn bản.
 4. **Dịch trong ứng dụng** hoặc xuất, chỉnh sửa rồi nhập CSV lại.
 5. Rà soát bản dịch, thêm thuật ngữ nếu cần, rồi chọn **Patch**.
-6. Mở bản sao game để kiểm tra kết quả và giữ lại bản sao lưu.
+6. Với gói có installer, chọn thư mục game để cài/gỡ, rồi chạy game kiểm tra kết quả. Giữ các file sao lưu cho đến khi gỡ patch.
 
 ## Lưu ý
 
-Khả năng tương thích tùy cấu trúc từng game. Hãy thao tác trên bản sao, giữ backup và đọc kết quả kiểm tra trước khi dùng bản dịch.
+Khả năng tương thích tùy cấu trúc từng game. Đọc preflight và phạm vi chưa hỗ trợ trước khi cài. Bản dịch offline là bản nháp thô, vẫn có thể sai nghĩa, thành ngữ hoặc văn phong; bạn có thể chỉnh trong CSV trước khi đóng gói.
 
 [Giấy phép](LICENSE)

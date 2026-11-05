@@ -1467,8 +1467,11 @@ internal static partial class Program
                 AssertEqual(WorkflowTabs.Extract, vm.SelectedTab);
                 AssertFalse(vm.ProgressSubtitle.Contains("Hoàn tất"));
                 AssertEqual("extract", vm.CurrentWorkflowStep);
+                var csvBefore = File.ReadAllBytes(Path.Combine(root, "translation.csv"));
                 vm.RunExtractCommand.Execute(null);
-                AssertEqual("Chọn thư mục xuất mới", vm.StatusText);
+                // Existing output is reusable; this deliberately invalid input must still be refused.
+                AssertEqual("Lỗi", vm.StatusText);
+                AssertTrue(csvBefore.SequenceEqual(File.ReadAllBytes(Path.Combine(root, "translation.csv"))));
                 AssertFalse(vm.Busy);
             }
             finally { Directory.Delete(root, true); }
@@ -4770,7 +4773,7 @@ internal static partial class Program
             pending.SetResult(JsonResponse("[]"));
             vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.Current, vm.GitHubUpdateState);
-            AssertEqual("Bạn đang dùng phiên bản mới nhất.", vm.GitHubUpdateStatus);
+            AssertEqual("Đã là bản mới nhất v1.0.0", vm.GitHubUpdateStatus);
             AssertEqual("Đã cập nhật", vm.GitHubUpdateButtonText);
             AssertFalse(vm.GitHubUpdateButtonEnabled);
             AssertTrue(vm.RecheckUpdateCommand.CanExecute(null));

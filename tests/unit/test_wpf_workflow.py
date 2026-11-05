@@ -599,8 +599,10 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn(f"DynamicResource ToastSuccess{part}Brush", toast)       # the default (success) pair
         # (2) the shared dialog keeps header and footer inside the work area when content grows after loading
         self.assertIn("GetMonitorInfo", dialog)
-        self.assertIn("SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };", dialog)
-        self.assertIn("Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); FitToWorkArea(); FocusDefault(); };", dialog)
+        self.assertIn("SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) PositionWithinOwner(); };", dialog)
+        self.assertIn("Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); PositionWithinOwner(); FocusDefault(); };", dialog)
+        self.assertIn("CenterOverOwner(this, _shellOwner)", dialog)
+        self.assertIn("FitToWorkArea();", dialog)
         # (3) image choices follow the theme
         self.assertIn('Foreground="{DynamicResource InkBrush}"', panel)
         self.assertIn('<Style TargetType="CheckBox">', panel)
@@ -649,7 +651,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('x:Name="SafetyText"', panel)
         self.assertIn('<Border x:Name="IntroDetails"', panel)
         details = panel[panel.index('x:Name="IntroDetails"'):panel.index("</Border>", panel.index('x:Name="IntroDetails"'))]
-        for phrase in ("Tự nhận diện chữ tiếng Anh", "BẢN SAO game do bạn chọn", "bản sao trùng hoặc nằm trong game gốc sẽ bị từ chối"):
+        for phrase in ("Tự nhận diện chữ tiếng Anh", "chỉ đọc ảnh gốc", "thư mục locale của game bạn chọn", "có nhật ký cài/gỡ và kiểm hash đọc lại"):
             self.assertIn(phrase, details)
         # (N4) selects use the two shared sizes
         self.assertNotIn('Width="150" Height="34"', xaml)
@@ -1037,7 +1039,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Text="{Binding TranslateWorkflowStatusText}" FontSize="{StaticResource UiCaptionSize}"', xaml)
         self.assertIn('RefreshWorkflow();\n                RefreshTranslateReadiness();', view_model)
         self.assertIn('Content="Dịch ảnh…"', xaml)
-        self.assertIn('Command="{Binding CancelAndExitCommand}"', xaml)
+        self.assertNotIn('Command="{Binding CancelAndExitCommand}"', xaml)
         self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
         window_code = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
         self.assertIn("vm.CancelAndExitCommand.Execute(null)", window_code)
@@ -1159,9 +1161,10 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertLess(delivery.index("CanCreateImageDelivery()"), delivery.index("NewImageRoot()"))
         install = image_vm[image_vm.index("InstallImageDeliveryCommand = new RelayCommand"):image_vm.index("RecoverImageDeliveryCommand = new RelayCommand")]
         self.assertLess(install.index("CanInstallImageDelivery()"), install.index("PickInputPath()"))
-        # Honest wording: only the install step writes, and only into a separate copy.
+        # Only the install step writes to the chosen game; image sources stay intact.
         self.assertNotIn("game không bị sửa", panel)
-        self.assertIn("BẢN SAO", panel)
+        self.assertIn("Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá", panel)
+        self.assertIn("ảnh gốc được giữ nguyên", panel)
         # Restore geometry is fitted to the logical work area, always (also when window memory is off).
         settings = (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8")
         restore = settings[settings.index("internal void RestoreWindow"):settings.index("internal void SaveWindow")]

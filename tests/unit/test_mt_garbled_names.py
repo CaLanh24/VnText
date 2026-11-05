@@ -95,17 +95,17 @@ class ParentheticalExteriorTests(unittest.TestCase):
 
             def translate(self, text):
                 self.seen.append(text)
-                return {"Hmm.": "Hmm.", "I am sorry.": "Tôi xin lỗi.", "Hmm. I am sorry.": "Hmm. Tôi xin lỗi.", "Hmm. I am sorry. ": "Hmm. Tôi xin lỗi.", "Somehow, his cock got even harder.": "Bằng cách nào đó, nó cứng hơn."}.get(text, "Ngay cả khi tôi không muốn đi,")
+                return {"Hmm.": "Hmm.", "I am sorry.": "Tôi xin lỗi.", "Hmm. I am sorry.": "Hmm. Tôi xin lỗi.", "Hmm. I am sorry. ": "Hmm. Tôi xin lỗi.", "Somehow, his grip got even tighter.": "Bằng cách nào đó, tay anh ấy nắm chặt hơn."}.get(text, "Ngay cả khi tôi không muốn đi,")
 
             def translate_many(self, texts):
                 self.seen.extend(texts)
                 return [self.translate(t) for t in texts]
 
         stub = Stub()
-        out = translate_parenthetical_segments_ct2("Even if I did not want to go, (Hmm. I am sorry.) Somehow, his cock got even harder.", stub)
-        self.assertIn("Somehow, his cock got even harder.", stub.seen)
+        out = translate_parenthetical_segments_ct2("Even if I did not want to go, (Hmm. I am sorry.) Somehow, his grip got even tighter.", stub)
+        self.assertIn("Somehow, his grip got even tighter.", stub.seen)
         self.assertIn("đi, (", out)
-        self.assertTrue(out.endswith("Bằng cách nào đó, nó cứng hơn."))
+        self.assertTrue(out.endswith("Bằng cách nào đó, tay anh ấy nắm chặt hơn."))
 
 
 class QuoteSpacingTests(unittest.TestCase):

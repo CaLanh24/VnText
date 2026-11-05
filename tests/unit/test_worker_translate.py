@@ -37,7 +37,7 @@ from tests.lib.dev_environment import worker_python
 
 WORK = work_temp_dir("worker_translate")
 DEV_RUN_ROOT = Path(os.environ.get("VNTEXT_DEV_RUN_ROOT", str(ROOT / "DEV_RUN"))).expanduser()
-MODEL_DIR = Path(os.environ.get("VNTEXT_CT2_MODEL", str(DEV_RUN_ROOT / "cache" / "models" / "opus-mt-en-vi-int8"))).expanduser().resolve()
+MODEL_DIR = Path(os.environ.get("VNTEXT_CT2_MODEL", str(ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8"))).expanduser().resolve()
 
 
 def _venv_python() -> Path:
@@ -256,10 +256,13 @@ class WorkerTranslateTests(unittest.TestCase):
         returned = threading.Event()
         cancel_sent = threading.Event()
         cancelled = threading.Event()
+        cancelled_in_flight = threading.Event()
         timing: dict[str, float] = {}
 
         class ObservedRealCt2:
-            config = real.config
+            # A real data batch must outlast the cancellation signal even on a
+            # fast CPU. Single-word whitelist probes are not the operation under test.
+            config = {**real.config, "batch_size": 64}
 
             def metadata(self):
                 return real.metadata()
@@ -269,19 +272,24 @@ class WorkerTranslateTests(unittest.TestCase):
                 return values[0] if values else text
 
             def translate_many(self, texts):
-                timing["entered"] = time.monotonic()
+                if not any("silver lantern" in str(text).lower() for text in texts):
+                    return real.translate_many(texts)
+                returned.clear()
+                timing["entered"] = time.perf_counter()
                 entered.set()
                 try:
                     return real.translate_many(texts)
                 finally:
-                    timing["returned"] = time.monotonic()
+                    timing["returned"] = time.perf_counter()
                     returned.set()
 
         def cancel_while_native_call_runs():
             if not entered.wait(120):
                 return
             time.sleep(0.02)
-            timing["cancelled"] = time.monotonic()
+            timing["cancelled"] = time.perf_counter()
+            if not returned.is_set():
+                cancelled_in_flight.set()
             cancelled.set()
             cancel_sent.set()
 
@@ -341,6 +349,7 @@ class WorkerTranslateTests(unittest.TestCase):
         self.assertEqual("cancelled", completed[0].get("error"))
         self.assertFalse(any(int(event.get("done") or 0) > 0 for event in progress_events))
         self.assertTrue(cancel_sent.is_set(), "cancellation was not signalled during the real CT2 call")
+        self.assertTrue(cancelled_in_flight.is_set(), "the real synchronous call must still be in flight at cancellation")
         self.assertTrue(returned.is_set(), "the synchronous CT2 call did not return within the test bound")
         self.assertLess(timing["entered"], timing["cancelled"])
         self.assertLess(timing["cancelled"], timing["returned"], "cancel must arrive before CT2 returns")
