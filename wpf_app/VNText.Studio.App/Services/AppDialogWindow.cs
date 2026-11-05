@@ -149,13 +149,19 @@ internal sealed class AppDialogWindow : Window
             if (e.Key == Key.Escape) { e.Handled = true; Dismiss(); }
         };
         Closing += (_, _) => RaiseDismissIfNeeded();
-        Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); FitToWorkArea(); FocusDefault(); };
+        Loaded += (_, _) => { UiText.Apply(this); AttachOverlay(); PositionWithinOwner(); FocusDefault(); };
         // Content that grows after the first layout (OCR rows, a longer message) must keep the header and footer inside the work area.
-        SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) FitToWorkArea(); };
+        SizeChanged += (_, e) => { if (e.HeightChanged || e.WidthChanged) PositionWithinOwner(); };
         Closed += (_, _) => DetachOverlay();
     }
 
     private double _ownerHeightBound;
+
+    private void PositionWithinOwner()
+    {
+        if (_shellOwner is not null) CenterOverOwner(this, _shellOwner);
+        FitToWorkArea();
+    }
 
     [DllImport("user32.dll")] private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
     [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);

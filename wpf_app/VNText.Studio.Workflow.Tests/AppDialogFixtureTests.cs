@@ -106,6 +106,11 @@ internal static partial class Program
                         grow.AddButton("Đóng", () => { }, true, true);
                         grow.Show();
                         grow.UpdateLayout();
+                        var centerBeforeGrowth = grow.Top + grow.ActualHeight / 2;
+                        growing.Height = 140;
+                        grow.UpdateLayout();
+                        grow.Dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                        AssertTrue(Math.Abs(grow.Top + grow.ActualHeight / 2 - centerBeforeGrowth) < 1);
                         var area = grow.CurrentWorkAreaDips();
                         grow.Top = area.Bottom - grow.ActualHeight - 12;     // bottom edge close to the taskbar, like a centred window that then grows
                         grow.UpdateLayout();

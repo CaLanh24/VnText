@@ -2,6 +2,8 @@
 
 Status: source preparation, NOT built, NOT released, whole-game acceptance NOT PROVEN.
 
+Latest gate evidence: `gate017d-translation.json` has381 tests, zero failures/errors/skips at717782c; `gate017-publisher-d.json` child PASS at9382c1a. Wrapper history remains REVIEW_REQUIRED separately. WPF build/resource/CSV passed; Preferences exposed a stale TextBlock-only section-header assertion (the localized section is HeaderedContentControl). Shared-shell centering also needed wiring on Loaded/SizeChanged; a growth regression now checks stable center. Native and final candidate remain NOT PROVEN.
+
 Owner 2026-11-05 requested verification on the previously named original game and fixes in 0.1.17. Accepting rough offline Vietnamese did not waive whole-game E2E. Keep public 0.1.16/tag/assets unchanged until compatibility of any asset pruning is proved. No cloud, paid service, model change or full-game copy.
 
 ## Corpus evidence

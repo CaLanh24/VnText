@@ -27,4 +27,4 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 
 ## Writer
 
-- Persistent Claude DEV is the sole writer again (Codex takeover ended). Ledger `docs/RELEASE_0.1.17.md`; public history `docs/RELEASE_0.1.16.md`. Corpus pass 2 fixes are committed; canonical gates, candidate build and handoff follow.
+- Claude DEV hit quota again at cursor1375 (reset04:30JST Nov6), with clean9382c1a and no owned child left. Codex is temporary sole writer; return the same DEV after recovery at a safe boundary. MT gate381 tests passed at717782c; publisher gates passed at9382c1a. WPF build/resource/CSV passed; Preferences failed on an obsolete TextBlock-only header assertion. Fix that assertion and complete shared-shell centering before candidate/native acceptance. Ledger `docs/RELEASE_0.1.17.md`.

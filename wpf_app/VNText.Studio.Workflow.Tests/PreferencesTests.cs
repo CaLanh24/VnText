@@ -127,7 +127,7 @@ internal static class PreferencesTests
             vm.Language="en";vm.Theme="dark";vm.BackgroundStrength=60;window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
             CaptureReview(window,"settings-dark-top");
             Check(AppSettingsStore.Load().Language=="en" && AppSettingsStore.Load().Theme=="dark" && vm.Theme=="dark","view-model settings persisted");
-            Check(Find<TextBlock>(window,t=>t.Text=="Display language") is not null && Find<TextBlock>(window,t=>t.Text=="Appearance") is not null,"real Settings rows localized");
+            Check(Find<TextBlock>(window,t=>t.Text=="Display language") is not null && Find<HeaderedContentControl>(window,t=>Equals(t.Header,"Appearance")) is not null,"real Settings rows and section header localized");
             vm.NavigateTabCommand.Execute("extract");window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
             vm.NavigateTabCommand.Execute("settings");window.Dispatcher.Invoke(()=>{},DispatcherPriority.ApplicationIdle);
             Check(Find<TextBlock>(window,t=>t.Text=="Display language") is not null && vm.Theme=="dark","deferred Settings content retains language and selection");
