@@ -91,7 +91,10 @@ internal static partial class Program
                 var bound = grid.Columns.OfType<DataGridBoundColumn>().Select(c => ((System.Windows.Data.Binding)c.Binding).Path.Path).ToArray();
                 AssertEqual("SourceText,ModeSummary,Approved", string.Join(",", bound));
                 AssertEqual(5, grid.Columns.Count);                       // OCR text, translation, mode summary, approve, delete
-                AssertTrue(((TextBlock)panel.FindName("IntroText")).Text.Contains("BẢN SAO", StringComparison.Ordinal));
+                // Direct install (a74f8c2): the intro names the install step and says the original images stay unchanged; the old copy-only wording is gone.
+                AssertTrue(((TextBlock)panel.FindName("IntroText")).Text.Contains("Cài gói vào game", StringComparison.Ordinal));
+                AssertTrue(((TextBlock)panel.FindName("IntroText")).Text.Contains("ảnh gốc được giữ nguyên", StringComparison.Ordinal));
+                AssertFalse(((TextBlock)panel.FindName("IntroText")).Text.Contains("BẢN SAO", StringComparison.Ordinal));
                 AssertFalse(((TextBlock)panel.FindName("IntroText")).Text.Contains("game không bị sửa", StringComparison.Ordinal));
                 // Accessibility: every form control has a name; none of the four background modes is ticked by default.
                 foreach (var name in new[] { "RegionXBox", "RegionYBox", "RegionWidthBox", "RegionHeightBox", "RegionFontBox", "RegionBackgroundBox", "RegionForegroundBox",
