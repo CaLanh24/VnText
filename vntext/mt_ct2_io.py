@@ -64,10 +64,12 @@ def translate_many_by_sentence(translator, cores: list[str]) -> list[str]:
                 index[sentence] = len(flat)
                 flat.append(sentence)
     whole = [core for core, sentences in zip(cores, split) if len(sentences) < 2]
-    outputs = list(translator.translate_many(whole + flat)) if (whole or flat) else []
+    from vntext.mt_strategies import _normalise_mixed_case_for_mt
+    model_inputs = [_normalise_mixed_case_for_mt(text) for text in whole + flat]
+    outputs = list(translator.translate_many(model_inputs)) if model_inputs else []
     if len(outputs) != len(whole) + len(flat):
         # Retry each sentence, never unsplit prose or a short batch response.
-        outputs = [translator.translate(text) for text in whole + flat]
+        outputs = [translator.translate(text) for text in model_inputs]
     whole_out, flat_out = outputs[:len(whole)], outputs[len(whole):]
     result: list[str] = []
     whole_iter = iter(whole_out)

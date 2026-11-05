@@ -45,7 +45,17 @@ def _normalise_mixed_case_for_mt(text: str) -> str:
             return token.lower()
         return token
 
-    return _MIXED_CASE_WORD.sub(repl, str(text or ""))
+    value = _MIXED_CASE_WORD.sub(repl, str(text or ""))
+    words = re.findall(r"[A-Za-z]+", value)
+    # Shouted prose can become unrelated gibberish in OPUS. Normalize only
+    # complete all-caps English sentences with a grammatical leading word;
+    # short unknown acronyms stay uppercase, and IDs/SFX are not rewritten.
+    starts = {"a", "an", "the", "this", "that", "we", "i", "you", "he", "she", "it", "they", "there", "what", "when", "where", "why", "how", "do", "does", "is", "are", "can", "will", "please"}
+    if len(words) >= 4 and value.isupper() and words[0].casefold() in starts and not (mt_check.PH.search(value) or mt_check.TAG.search(value)):
+        known = mt_check.ENG_STRONG | mt_check.ENG_WEAK
+        value = re.sub(r"[A-Z]+", lambda m: m.group(0).lower() if len(m.group(0)) > 4 or m.group(0).casefold() in known else m.group(0), value)
+        value = value[:1].upper() + value[1:]
+    return value
 
 
 def is_moan_fragment(text: str) -> bool:
@@ -279,7 +289,9 @@ def _ct2_fn(translator: Any, *, preserve_moan: bool = True):
     def fn(core: str) -> str:
         if preserve_moan and is_moan_fragment(core):
             return core
-        return translator.translate(_normalise_mixed_case_for_mt(core))
+        from vntext.mt_ct2_io import split_sentences
+        parts = split_sentences(core)
+        return " ".join(str(translator.translate(_normalise_mixed_case_for_mt(part)) or part).strip() for part in parts)
 
     return fn
 

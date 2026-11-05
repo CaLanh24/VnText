@@ -196,6 +196,18 @@ class NameInsideSentenceTests(unittest.TestCase):
 
 
 class CompleteSentenceRetryTests(unittest.TestCase):
+    def test_shouted_prose_uses_normal_case_model_input_without_touching_acronyms_or_source(self):
+        from vntext.mt_strategies import _normalise_mixed_case_for_mt
+        source = "A HUNDRED WHOLE DOLLARS!"
+        self.assertEqual("A hundred whole dollars!", _normalise_mixed_case_for_mt(source))
+        self.assertEqual("A HUNDRED WHOLE DOLLARS!", source)
+        self.assertEqual("NASA IS IN SPACE!", _normalise_mixed_case_for_mt("NASA IS IN SPACE!"))
+        self.assertIn("NASA", _normalise_mixed_case_for_mt("THE NASA MISSION IS FINISHED!"))
+        class Model:
+            def translate_many(self, texts):
+                return ["Cả trăm đô-la!" if text == "A hundred whole dollars!" else "Một con thỏ đế!" for text in texts]
+        self.assertEqual(["Cả trăm đô-la!"], translate_many_by_sentence(Model(), [source]))
+
     def test_foreign_name_accents_do_not_mark_an_english_paragraph_as_already_vietnamese(self):
         import unicodedata
         for text in ("Thanks to the Anaïs Nin book, I read it twice.", "Renée asked José about the café."):
