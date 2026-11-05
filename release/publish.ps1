@@ -1108,6 +1108,7 @@ if (-not $SkipBuild) {
     & $dotnet publish $installerProj `
         -c Release -r win-x64 --self-contained true `
         -p:PublishSingleFile=true `
+        -p:EnableCompressionInSingleFile=true `
         -p:PublishTrimmed=false $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
     if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
     if (-not (Test-Path $installerBuiltExe)) { throw "Patch installer missing: $installerBuiltExe" }
