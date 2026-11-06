@@ -5,11 +5,11 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 ## Goal and authority
 
 - CURRENT: Owner requires whole-game verification and fixes in 0.1.17, plus the latest banner/Journal/modal/Setup/uninstall/icon/filename/exit-button/asset-list requests. Rough-draft acceptance did NOT waive whole-game E2E; 0.1.16 was released without that evidence. See `docs/RELEASE_0.1.17.md`. Public 0.1.16 remains immutable pending proven safe asset simplification.
-- Owner one-use rebaseline `owner-20261105-091e367-017` is CONSUMED; epoch `epoch-20261105-017-942d6da` (task `release-0.1.17`, same 6.25 GiB/11 GiB caps) is active; later commits use ordinary descendant hops (max 8). Whole-game and native acceptance remain open; direct probes are not Release PASS.
+- Rebaseline grants `owner-20261105-091e367-017` (consumed) and `owner-20261106-b895c68-017` (one-use, for prepared `b895c68`, recorded in `cleanup_work_artifacts.py`/CONTRACTS; consumed when its epoch is applied) cover release-0.1.17 (6.25 GiB project + all owned `C:/vnrg`, 11 GiB shared). Native finding: Patch was blocked for a proven scoped MAIN subset with excluded review screens; fixed in `b895c68` (WPF `ScopedReviewExcluded`). Build/native/original-game verification and Brain ACCEPT are still required before any release.
 
 - Release 0.1.16 is PUBLISHED: https://github.com/CaLanh24/VnText/releases/tag/v0.1.16, annotated tag `v0.1.16` → source `de44d43fc621264f772b3e20aea807564cbcc7fa` (immutable artifact source; later commits do not change the released bytes). Brain accepted only the bounded technical candidate, mistakenly treating raw-draft tolerance as waiving whole-game E2E; Owner has now corrected that interpretation; Owner 2026-11-05: usable raw offline Vietnamese output is the product bar (idiom/context/style errors are accepted for a rough draft), free/offline is mandatory, app-induced corruption/lost protected content/false completion stay blockers. `v0.1.15` is untouched (tag `4326abd`, 17 assets).
 - Budget unchanged: release-0.1.16 cap 6.25 GiB, shared `.dev-env` 11 GiB, no raise/waiver. Transient project peaks above the cap are on record for publish run3 (8.89 GB), run5 (7.97 GB) and run6 (6.89 GB); the final `de44d43` publish stayed under it (combined project + owned external peak 6,560,255,259 B < 6,710,886,400 B). Now about 4.36 GB.
-- 0.1.16 chain ended at hop 8/8 (`epoch-20261105-publisher-de44d43`); the 0.1.17 campaign has its own chain/budget account. Record each hop in `C:/vnrg/evidence/`.
+- 0.1.16 chain ended at hop 8/8; the 0.1.17 chain reached 8/8 at `f1bf58b` (`epoch-20261106-017-rc8`). Compact live cursor: `C:/vnrg/evidence/brain-current-checkpoint.json`.
 
 ## Release 0.1.16 (what shipped)
 
@@ -27,4 +27,4 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 
 ## Writer
 
-- Claude DEV hit quota again at cursor1375 (reset04:30JST Nov6), with clean9382c1a and no owned child left. Codex is temporary sole writer; return the same DEV after recovery at a safe boundary. MT gate381 tests passed at717782c; publisher gates passed at9382c1a. WPF build/resource/CSV passed; Preferences failed on an obsolete TextBlock-only header assertion. Fix that assertion and complete shared-shell centering before candidate/native acceptance. Ledger `docs/RELEASE_0.1.17.md`.
+- The persistent Claude DEV (same session) is the sole writer again; Codex takeover ended. Ledger `docs/RELEASE_0.1.17.md`; public history `docs/RELEASE_0.1.16.md`.

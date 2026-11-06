@@ -258,6 +258,7 @@ internal static partial class Program
         Run("ExtractPartialAndEmpty_DoNotAdvance", ExtractPartialAndEmpty_DoNotAdvance, failures);
         Run("ExtractScopedPartial_AdvancesOnlyForExpectedLimitations", ExtractScopedPartial_AdvancesOnlyForExpectedLimitations, failures);
         Run("TranslateScopedReview_CompletesOnlyWithProvenAccounting", TranslateScopedReview_CompletesOnlyWithProvenAccounting, failures);
+        Run("PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel", PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel, failures);
         Run("ExternalCsv_ValidatesReadyForPatch", ExternalCsv_ValidatesReadyForPatch, failures);
         Run("CsvValidator_RejectsEmptyTranslation", CsvValidator_RejectsEmptyTranslation, failures);
         Run("TranslateComplete_NavigatesToPatch", TranslateComplete_NavigatesToPatch, failures);
@@ -1561,6 +1562,79 @@ internal static partial class Program
             AssertFalse(WorkflowStatus.EvaluateTranslateProgress(legacy).IsComplete);
         }
         finally { Directory.Delete(legacy, true); }
+    }
+
+    private static string CreateScopedReviewPackage(bool blankOneMainRow, bool scopedExtract)
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_scoped_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, ".mt"));
+        var rows = new (string Key, string Source, string Vi)[] { ("k1", "Escort", "Hộ tống"), ("k2", "Guard", "Lính gác"), ("k3", "Gate", "Cổng") };
+        var csv = new StringBuilder("key,source_text,translation,context,file_path,import_method\r\n");
+        for (var i = 0; i < rows.Length; i++)
+            csv.Append($"{rows[i].Key},{rows[i].Source},{(blankOneMainRow && i == 2 ? "" : rows[i].Vi)},UI:Text,game/data.unity3d,unity_ui_text\r\n");
+        File.WriteAllText(Path.Combine(root, "translation.csv"), csv.ToString(), Encoding.UTF8);
+        // Like the native package: the manifest also lists the review screen; its row lives only in review_only.csv.
+        File.WriteAllText(Path.Combine(root, "manifest.json"),
+            """{"entries":[{"key":"k1","source_text":"Escort","file_path":"game/data.unity3d","import_method":"unity_ui_text"},{"key":"k2","source_text":"Guard","file_path":"game/data.unity3d","import_method":"unity_ui_text"},{"key":"k3","source_text":"Gate","file_path":"game/data.unity3d","import_method":"unity_ui_text"},{"key":"r1","source_text":"Menu","file_path":"game/data.unity3d","import_method":"unity_ui_text"}]}""", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, "review_only.csv"), "key,source_text,context,file_path,import_method\r\nr1,Menu,UI:Text,game/data.unity3d,unity_ui_text\r\n", Encoding.UTF8);
+        File.WriteAllText(Path.Combine(root, "extract_status.json"), JsonSerializer.Serialize(new
+        {
+            complete = false, status = "PARTIAL", main = 3, review = 1, skipped = 0, errors = 0, native_accounting_complete = true, severity = "warning",
+            patch_scope = scopedExtract ? "VERIFIED_MAIN_SUBSET" : "NONE",
+            limitations = new object[] { new { code = "RUNTIME_DYNAMIC_UNRESOLVED", count = 1 }, new { code = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", count = 1 } },
+        }));
+        // The status deliberately claims every MAIN row is translated, also for the blank-row case.
+        File.WriteAllText(Path.Combine(root, ".mt", "translate_status.json"), "{\"complete\":false,\"pending\":0,\"review_only\":1,\"blocked\":0,\"translated\":3}", Encoding.UTF8);
+        return root;
+    }
+
+    private static void PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel()
+    {
+        // Real view-model path (Choose CSV -> validate -> Python patch_gate preflight -> Create Patch command), not only WorkflowStatus.
+        var cases = new (string Name, bool Blank, bool Scoped, bool Build)[]
+        {
+            ("proven scoped subset with an excluded review screen", false, true, true),
+            ("one MAIN row blank although the status claims all translated", true, true, false),
+            ("review row without a verified scope", false, false, false),
+        };
+        foreach (var (name, blank, scoped, build) in cases)
+        {
+            var root = CreateScopedReviewPackage(blank, scoped);
+            try { AssertScopedPackageBuildState(name, root, build, 3, 1); }
+            finally { Directory.Delete(root, true); }
+        }
+        // Optional: the actual current native package (copied; never modified) when its folder is supplied.
+        var native = Environment.GetEnvironmentVariable("VNTEXT_WPF_NATIVE_PACKAGE");
+        if (!string.IsNullOrWhiteSpace(native) && File.Exists(Path.Combine(native, "translation.csv")))
+        {
+            var copy = Path.Combine(TestTempRoot(), "vntext_native_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(copy, ".mt"));
+            try
+            {
+                foreach (var name in new[] { "translation.csv", "manifest.json", "review_only.csv", "extract_status.json" })
+                    File.Copy(Path.Combine(native, name), Path.Combine(copy, name));
+                File.Copy(Path.Combine(native, ".mt", "translate_status.json"), Path.Combine(copy, ".mt", "translate_status.json"));
+                AssertScopedPackageBuildState("actual native package", copy, true, -1, -1);
+                Console.WriteLine("Native package preflight through the view model: PASS (Build enabled, review rows excluded)");
+            }
+            finally { Directory.Delete(copy, true); }
+        }
+    }
+
+    private static void AssertScopedPackageBuildState(string name, string root, bool build, int eligible, int blocked)
+    {
+        var picker = new FakePathPicker { TranslationCsv = Path.Combine(root, "translation.csv") };
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root };
+        vm.NavigateTabCommand.Execute("patch");
+        vm.ChooseTranslationCsvCommand.Execute(null);
+        if (vm.ReadyForPatch != build) throw new InvalidOperationException(name + ": ReadyForPatch expected " + build + " (" + vm.PatchPreflightMessage + ")");
+        if (vm.PatchPreflightOk != build) throw new InvalidOperationException(name + ": PatchPreflightOk expected " + build + " (" + vm.PatchPreflightMessage + ")");
+        if (vm.RunPatchCommand.CanExecute(null) != build) throw new InvalidOperationException(name + ": Create Patch command expected enabled=" + build);
+        if (build && eligible >= 0 && (vm.PatchEligibleCount != eligible || vm.PatchBlockedCount != blocked))
+            throw new InvalidOperationException(name + ": expected " + eligible + " eligible / " + blocked + " review-excluded, got " + vm.PatchEligibleCount + " / " + vm.PatchBlockedCount);
+        if (build && vm.PatchBlockedCount < 1) throw new InvalidOperationException(name + ": review rows must stay reported as excluded");
+        if (!build && vm.PatchPreflightMessage.Length == 0) throw new InvalidOperationException(name + ": a blocked package must say why");
     }
 
     private static void RenpySdkMissing_ReportsPartialExtraction()
