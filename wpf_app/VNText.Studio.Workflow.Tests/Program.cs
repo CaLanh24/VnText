@@ -257,6 +257,7 @@ internal static partial class Program
         Run("ImageText_EditInvalidatesApproval", ImageText_EditInvalidatesApproval, failures);
         Run("ExtractPartialAndEmpty_DoNotAdvance", ExtractPartialAndEmpty_DoNotAdvance, failures);
         Run("ExtractScopedPartial_AdvancesOnlyForExpectedLimitations", ExtractScopedPartial_AdvancesOnlyForExpectedLimitations, failures);
+        Run("TranslateScopedReview_CompletesOnlyWithProvenAccounting", TranslateScopedReview_CompletesOnlyWithProvenAccounting, failures);
         Run("ExternalCsv_ValidatesReadyForPatch", ExternalCsv_ValidatesReadyForPatch, failures);
         Run("CsvValidator_RejectsEmptyTranslation", CsvValidator_RejectsEmptyTranslation, failures);
         Run("TranslateComplete_NavigatesToPatch", TranslateComplete_NavigatesToPatch, failures);
@@ -1505,6 +1506,61 @@ internal static partial class Program
             }
             finally { Directory.Delete(root, true); }
         }
+    }
+
+    private static void TranslateScopedReview_CompletesOnlyWithProvenAccounting()
+    {
+        // Mirrors the real native package: 3 MAIN rows all translated, 2 unpromoted review screens kept in review_only.csv.
+        object Status(int main = 3, int review = 2, int errors = 0, bool accounting = true, string scope = "VERIFIED_MAIN_SUBSET", string code = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", int count = 2)
+            => new { complete = false, status = "PARTIAL", main, review, errors, native_accounting_complete = accounting, patch_scope = scope, severity = "warning",
+                     limitations = new object[] { new { code = "RUNTIME_DYNAMIC_UNRESOLVED", count = 1 }, new { code, count } } };
+        object Translate(int pending = 0, int review = 2, int blocked = 0, int translated = 3)
+            => new { complete = false, pending, review_only = review, blocked, translated };
+        var allRows = "key,source_text,translation\na,A,Một\nb,B,Hai\nc,C,Ba\n";
+        var cases = new (string Name, object Extract, object Tr, string Csv, int ReviewRows, bool Complete)[]
+        {
+            ("proven scoped subset", Status(), Translate(), allRows, 2, true),
+            ("main row pending", Status(), Translate(pending: 1, translated: 2), "key,source_text,translation\na,A,Một\nb,B,Hai\nc,C,\n", 2, false),
+            ("main row blocked", Status(), Translate(blocked: 1), allRows, 2, false),
+            ("one MAIN row blank although the status claims all translated", Status(), Translate(translated: 3), "key,source_text,translation\na,A,Một\nb,B,Hai\nc,C,\n", 2, false),
+            ("csv row missing", Status(), Translate(translated: 3), "key,source_text,translation\na,A,Một\nb,B,Hai\n", 2, false),
+            ("extract error", Status(errors: 1), Translate(), allRows, 2, false),
+            ("accounting incomplete", Status(accounting: false), Translate(), allRows, 2, false),
+            ("no verified scope", Status(scope: "NONE"), Translate(), allRows, 2, false),
+            ("unknown limitation", Status(code: "OTHER"), Translate(), allRows, 2, false),
+            ("review count differs from extract", Status(review: 3, count: 3), Translate(), allRows, 2, false),
+            ("review ledger differs", Status(), Translate(), allRows, 1, false),
+            ("translate status stale", Status(), Translate(translated: 2), allRows, 2, false),
+        };
+        foreach (var (name, extract, tr, csv, reviewRows, complete) in cases)
+        {
+            var root = Path.Combine(TestTempRoot(), "translate_scoped_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(root, ".mt"));
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "translation.csv"), csv);
+                File.WriteAllText(Path.Combine(root, "extract_status.json"), JsonSerializer.Serialize(extract));
+                File.WriteAllText(Path.Combine(root, ".mt", "translate_status.json"), JsonSerializer.Serialize(tr));
+                File.WriteAllText(Path.Combine(root, "review_only.csv"), "key,source_text\n" + string.Concat(Enumerable.Range(0, reviewRows).Select(i => "r" + i + ",R\n")));
+                var progress = WorkflowStatus.EvaluateTranslateProgress(root);
+                if (progress.IsComplete != complete) throw new InvalidOperationException("scoped translate completion '" + name + "' expected " + complete);
+                // The step that enables Create Patch follows the same proof (snapshot used by the Patch tab and the preflight).
+                File.WriteAllText(Path.Combine(root, "manifest.json"), "{}");
+                if (WorkflowStatus.Evaluate("synthetic-game", root).ReadyForPatch != complete) throw new InvalidOperationException("ready-for-patch '" + name + "' expected " + complete);
+            }
+            finally { Directory.Delete(root, true); }
+        }
+        // No extract_status.json (legacy package) with review rows must stay incomplete.
+        var legacy = Path.Combine(TestTempRoot(), "translate_legacy_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(legacy, ".mt"));
+        try
+        {
+            File.WriteAllText(Path.Combine(legacy, "translation.csv"), allRows);
+            File.WriteAllText(Path.Combine(legacy, "review_only.csv"), "key,source_text\nr,R\nq,Q\n");
+            File.WriteAllText(Path.Combine(legacy, ".mt", "translate_status.json"), JsonSerializer.Serialize(Translate()));
+            AssertFalse(WorkflowStatus.EvaluateTranslateProgress(legacy).IsComplete);
+        }
+        finally { Directory.Delete(legacy, true); }
     }
 
     private static void RenpySdkMissing_ReportsPartialExtraction()

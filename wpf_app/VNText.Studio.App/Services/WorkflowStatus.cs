@@ -140,6 +140,28 @@ public static class WorkflowStatus
         return status.GetProperty("review").GetInt32() == unpromoted;
     }
 
+    /// <summary>
+    /// True only when extract_status.json proves a scoped (VERIFIED_MAIN_SUBSET) extraction with complete accounting and no errors, its review count equals
+    /// the unpromoted review-screen limitation AND the review_only.csv ledger AND the translate status, and every MAIN row of the current CSV is translated.
+    /// </summary>
+    private static bool ScopedReviewExcluded(string packageDir, string csvPath, int reviewOnly, int translatedByStatus)
+    {
+        try
+        {
+            var statusPath = Path.Combine(packageDir, "extract_status.json");
+            if (!File.Exists(statusPath)) return false;
+            using var doc = JsonDocument.Parse(File.ReadAllText(statusPath));
+            var status = doc.RootElement;
+            if (!ScopedPatchEligible(status)) return false;
+            var main = status.GetProperty("main").GetInt32();
+            if (main <= 0 || status.GetProperty("errors").GetInt32() != 0 || status.GetProperty("review").GetInt32() != reviewOnly) return false;
+            if (CountCsvDataRows(Path.Combine(packageDir, "review_only.csv")) != reviewOnly) return false;
+            var counts = CountCsvTranslations(csvPath);
+            return counts.Total == main && counts.Translated == main && translatedByStatus == main;
+        }
+        catch { return false; }
+    }
+
     public static TranslateProgress EvaluateTranslateProgress(string packageDir)
     {
         var csvPath = Path.Combine(packageDir, "translation.csv");
@@ -159,6 +181,10 @@ public static class WorkflowStatus
                     && reviewOnly == 0
                     && blocked == 0;
                 var translated = root.TryGetProperty("translated", out var trEl) ? trEl.GetInt32() : 0;
+                // Native finding (0.1.17): a verified MAIN subset whose only open rows are the extractor's own unpromoted review screens is
+                // translated completely; those rows stay excluded and coverage stays PARTIAL.  Everything else keeps failing closed.
+                if (!complete && pending == 0 && blocked == 0 && reviewOnly > 0 && ScopedReviewExcluded(packageDir, csvPath, reviewOnly, translated))
+                    complete = true;
                 // Prefer status counts — avoid full CSV scan on large Unity packages (UI hang).
                 var hasTranslations = translated > 0;
                 return new TranslateProgress(hasTranslations, complete, pending, reviewOnly, blocked, true);
