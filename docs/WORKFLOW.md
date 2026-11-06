@@ -26,7 +26,7 @@ Khi chuyển lịch sử: giữ nguyên nội dung evidence/SHA/verdict, ghi ori
 
 Checkpoint sau compaction cần goal/authority/exclusions, sole writer/DEV ID/cursor, candidate/source, acceptance đã đạt/còn thiếu, receipt và một bước kế tiếp. Tự compact khi runtime hỗ trợ và cần thiết; không có ngưỡng %/số phase tạo session mới. Chỉ bàn giao tuần tự khi Owner yêu cầu hoặc phục hồi đã thất bại có bằng chứng. Không giả vờ có công cụ compact; thiếu công cụ thủ công không tự buộc đổi Brain.
 
-Không commit checkpoint sau mỗi tool call. Khi epoch đang active, ghi delta tạm trong receipt ignored được AI_STATE trỏ rõ; gom cập nhật tracked ở boundary docs/source có sẵn trước activation tiếp theo. Không tạo vòng docs → epoch → docs. Không chạy lại gate hợp lệ chỉ vì tổ chức tài liệu.
+Không commit checkpoint sau mỗi tool call. Khi epoch đang active, ghi delta tạm trong receipt ignored được AI_STATE trỏ rõ; gom cập nhật tracked ở boundary docs/source có sẵn trước activation tiếp theo. Không tạo vòng docs → epoch → docs. Với task `release-0.1.17` đã được Owner cho phép, các hop epoch thông thường cùng task/scope/budget chạy liên tục theo chính sách standing (CONTRACTS.md) — không còn hạn mức 8 hop; CAS, lịch sử, sạch/descendant, rollback vẫn bắt buộc, và đổi budget/scope/task/quyền vẫn cần Owner. Không chạy lại gate hợp lệ chỉ vì tổ chức tài liệu.
 
 ## Quy tắc chi tiết được giữ nguyên
 

@@ -313,6 +313,22 @@ RELEASE_TASK_0117_REBASELINE_APPROVAL_2 = (
     "Earlier grants remain consumed."
 )
 
+# Standing same-scope metadata continuity (Owner 2026-11-07, via the authorized PM thread: "bao no di").  It replaces the numeric approval quota of eight
+# ordinary hops for the ALREADY authorized task/scope/budget only; it is not 8 -> 100 and it grants no new task, scope, budget, right, publication, model
+# or game authority.  Every transition is still an exact-CAS, clean strict-descendant, no-writer, rollback/readback-proven step; the hop number is
+# provenance only.  The depth bound below is a RESOURCE bound with its own reason; it is never an approval counter or a grant reset.
+STANDING_TRANSITION_POLICY_ID = "standing-same-scope-continuity-20261107"
+STANDING_TRANSITION_POLICY_TASKS = (RELEASE_TASK_0117_BUDGET_ID,)
+STANDING_TRANSITION_POLICY_TEXT = (
+    "Owner 2026-11-07 (authorized PM thread 01a16897-90b1-7ea3-8eb6-ee9babb3a1f4) answered 'bao no di': automatic metadata continuity for the SAME already "
+    "authorized task, scope and budget (release-0.1.17, 6.25 GiB project plus all owned C:/vnrg, 11 GiB shared) without an ordinary-hop approval quota. "
+    "Exact expected epoch and full-manifest CAS, clean strict-descendant source, no other writer, continuity of task/scope/budget/authority, inventory, "
+    "path/junction/protected/active-consumer checks, rollback and readback, cycle/malformed/full-history validation all still hold. Not a budget increase, "
+    "new scope or task, user-data deletion, validator waiver, publication, model or game authority; whole-game verification and Brain ACCEPT still required."
+)
+EPOCH_CHAIN_RESOURCE_BOUND = 4096
+
+
 def _task_scope_path(root, task_id, version):
     return (root / "DEV_RUN/resources-dev15").resolve() if task_id == DEV_RESOURCES_TASK_ID else (root / "RELEASE_RUN" / f"candidate-{version}").resolve()
 
@@ -364,6 +380,38 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
     if task_id == RELEASE_TASK_BUDGET_ID:
         return task_id, "0.1.5", RELEASE_TASK_BUDGET_APPROVAL
     raise ValueError("unsupported temporary release task budget")
+
+
+def _transition_is_standing(transition) -> bool:
+    """True when the transition record carries the standing same-scope marker (validated separately and strictly)."""
+
+    return isinstance(transition, dict) and isinstance(transition.get("standing_policy"), dict)
+
+
+def _standing_budget_identity(budget) -> tuple:
+    if not isinstance(budget, dict):
+        return ()
+    return (budget.get("task_id"), budget.get("limit_bytes"), budget.get("scope_path"), budget.get("terminal_limit_bytes"), budget.get("owner_approval"))
+
+
+def _standing_policy_applies(previous_budget, new_budget) -> bool:
+    """Same already-authorized task, scope path, limit and approval; any change needs an explicit Owner authority instead."""
+
+    identity = _standing_budget_identity(new_budget)
+    return bool(identity) and identity[0] in STANDING_TRANSITION_POLICY_TASKS and identity == _standing_budget_identity(previous_budget)
+
+
+def _standing_policy_record_valid(transition: dict, previous_epoch: dict, new_budget, task_id: str) -> bool:
+    record = transition.get("standing_policy")
+    ordinal = record.get("ordinal") if isinstance(record, dict) else None
+    return (
+        isinstance(record, dict)
+        and record.get("id") == STANDING_TRANSITION_POLICY_ID
+        and record.get("text") == STANDING_TRANSITION_POLICY_TEXT
+        and isinstance(ordinal, int) and not isinstance(ordinal, bool) and ordinal >= 1          # provenance only, never compared with a limit
+        and task_id in STANDING_TRANSITION_POLICY_TASKS
+        and _standing_policy_applies(previous_epoch.get("release_task_budget"), new_budget)
+    )
 
 
 def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
@@ -3472,8 +3520,10 @@ def _epoch_verify_files(
     epoch_id = str(epoch.get("epoch_id") or "")
     if epoch_id in _transition_seen:
         return ["epoch_transition_cycle"]
+    if len(_transition_seen) > EPOCH_CHAIN_RESOURCE_BOUND:
+        return ["epoch_transition_chain_resource_bound"]          # resource failure with its own reason: never an approval quota or a grant reset
     if _transition_depth > 8:
-        return ["epoch_transition_depth_exceeded"]
+        return ["epoch_transition_depth_exceeded"]                # legacy (non-standing) hops keep their historical bound
     failures = []
     manifest = manifest or json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     failures.extend(_epoch_manifest_shape(manifest))
@@ -3614,9 +3664,13 @@ def _epoch_verify_files(
             except (OSError, json.JSONDecodeError):
                 failures.append("fresh_public_clone_record_unreadable")
     if "transition_provenance" in epoch:
-        failures.extend(_epoch_transition_provenance_failures(
-            epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,), _transition_depth + 1
-        ))
+        standing = _transition_is_standing(epoch.get("transition_provenance"))
+        try:
+            failures.extend(_epoch_transition_provenance_failures(
+                epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,), _transition_depth if standing else _transition_depth + 1
+            ))
+        except RecursionError:
+            failures.append("epoch_transition_chain_resource_bound")
     if "rebaseline_provenance" in epoch:
         failures.extend(_epoch_rebaseline_provenance_failures(
             epoch, manifest, rollback, rollback_path, _transition_seen + (epoch_id,)
@@ -3689,6 +3743,8 @@ def _epoch_transition_provenance_failures(
         or not _epoch_transition_versions_valid(previous_task_id, task_id, previous_sha, target_sha)
     ):
         failures.append("epoch_transition_source_lineage_invalid")
+    if "standing_policy" in transition and not _standing_policy_record_valid(transition, previous_epoch, release_budget, task_id):
+        failures.append("epoch_transition_standing_policy_invalid")
     old_failures = _epoch_verify_files(
         previous_epoch, manifest=previous_manifest, _transition_seen=transition_seen,
         _transition_depth=transition_depth,
@@ -3838,7 +3894,9 @@ def _epoch_rebaseline_approval_used(
     """
 
     epoch_id = str(epoch.get("epoch_id") or "")
-    if not epoch_id or epoch_id in seen or depth > 256:
+    # Cycle, malformed or unreadable history fails closed as consumed.  The depth cap is the shared RESOURCE bound (not the former 256): a long
+    # standing-policy chain must never turn the single-use check into an indirect approval quota.
+    if not epoch_id or epoch_id in seen or depth > EPOCH_CHAIN_RESOURCE_BOUND:
         return True
     rebaseline = epoch.get("rebaseline_provenance")
     if rebaseline is not None:
@@ -3862,13 +3920,16 @@ def _epoch_rebaseline_approval_used(
     old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
     if not isinstance(old_epoch, dict) or old_epoch.get("epoch_id") != previous_id:
         return True
-    return _epoch_rebaseline_approval_used(
-        old_epoch,
-        manifest=old_manifest,
-        authorization_id=authorization_id,
-        seen=seen + (epoch_id,),
-        depth=depth + 1,
-    )
+    try:
+        return _epoch_rebaseline_approval_used(
+            old_epoch,
+            manifest=old_manifest,
+            authorization_id=authorization_id,
+            seen=seen + (epoch_id,),
+            depth=depth + 1,
+        )
+    except RecursionError:
+        return True
 
 
 def _epoch_rebaseline_authorization_consumed(
@@ -4092,6 +4153,23 @@ def activate_prospective_epoch(
                     "owner_authorization": owner_transition_authorization,
                     "historical_hygiene": "NOT_RECOVERABLE/UNVERIFIABLE",
                 }
+                new_budget_spec = _release_budget_spec(release_task_id) if release_task_id else None
+                if (
+                    release_task_id in STANDING_TRANSITION_POLICY_TASKS
+                    and isinstance(release_budget, dict)
+                    and new_budget_spec is not None
+                    and release_budget.get("task_id") == release_task_id
+                    and release_budget.get("owner_approval") == new_budget_spec[2]
+                    and release_budget.get("limit_bytes") == _release_task_budget_limit(release_task_id)
+                    and release_budget.get("scope_path") == str(_task_scope_path(ROOT, release_task_id, new_budget_spec[1]))
+                ):
+                    previous_standing = ((active.get("transition_provenance") or {}).get("standing_policy") or {}) if isinstance(active.get("transition_provenance"), dict) else {}
+                    previous_ordinal = previous_standing.get("ordinal") if isinstance(previous_standing.get("ordinal"), int) else 0
+                    transition_provenance["standing_policy"] = {
+                        "id": STANDING_TRANSITION_POLICY_ID,
+                        "text": STANDING_TRANSITION_POLICY_TEXT,
+                        "ordinal": previous_ordinal + 1,
+                    }
     elif incident.get("status") == "MISSING":
         if fresh_public_clone:
             if str(owner_reset_authorization or "").strip():

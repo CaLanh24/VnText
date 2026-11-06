@@ -1612,6 +1612,131 @@ class CleanupLifecycleTests(unittest.TestCase):
                 for path, content in preserved.items():
                     self.assertEqual(content, path.read_bytes())
 
+    # ---- standing same-scope metadata continuity (Owner 2026-11-07): no ordinary-hop approval quota for the already authorized 0.1.17 scope ----
+
+    def _standing_hop(self, manifest: Path, hop: int, **overrides):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        before = manifest.read_bytes()
+        old = json.loads(before)["prospective_epoch"]
+        target_sha = f"{hop + 100:040x}"
+        kwargs = dict(
+            dry_run=False, epoch_id=f"epoch-standing-{hop}", source_sha=target_sha, release_task_id=task, transition_from_epoch_id=old["epoch_id"],
+            expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(), owner_transition_authorization=cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL,
+        )
+        kwargs.update(overrides)
+        dirty = kwargs.pop("_dirty", False)
+        writer = kwargs.pop("_writer", False)
+        guards = self._release_013_guards(target_sha, version="0.1.17")
+        with guards[0], guards[1], guards[2], guards[3],                 patch.object(cleanup, "_git_repository_state", return_value={"head": target_sha, "dirty": dirty, "error": ""}),                 patch.object(cleanup, "_prospective_epoch_writer_status", side_effect=(lambda: {"active": True}) if writer else cleanup._prospective_epoch_writer_status):
+            return before, cleanup.activate_prospective_epoch(**kwargs)
+
+    def test_standing_policy_continues_past_eight_valid_same_scope_transitions_and_keeps_history(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task}):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.17", task_id=task)
+            preserved = {}
+            for hop in range(1, 13):
+                for path in cleanup._prospective_epoch_root().rglob("*"):
+                    if path.is_file():
+                        preserved.setdefault(path, path.read_bytes())
+                _before, result = self._standing_hop(manifest, hop)
+                self.assertTrue(result["ok"], (hop, result))
+                guards = self._release_013_guards(f"{hop + 100:040x}", version="0.1.17")
+                with guards[0], guards[1], guards[2], guards[3]:
+                    self.assertTrue(cleanup.verify_prospective_epoch()["ok"], hop)
+                record = json.loads(manifest.read_bytes())["prospective_epoch"]["transition_provenance"]["standing_policy"]
+                self.assertEqual((cleanup.STANDING_TRANSITION_POLICY_ID, cleanup.STANDING_TRANSITION_POLICY_TEXT, hop), (record["id"], record["text"], record["ordinal"]))
+            # full history stays verifiable and a corrupted ancestor is still caught twelve hops later
+            guards = self._release_013_guards(f"{112:040x}", version="0.1.17")
+            oldest = next(path for path in preserved if path.name == "epoch_policy.json")
+            with guards[0], guards[1], guards[2], guards[3]:
+                oldest.write_bytes(b"corrupt ancestor")
+                self.assertFalse(cleanup.verify_prospective_epoch()["ok"])
+                oldest.write_bytes(preserved[oldest])
+                self.assertTrue(cleanup.verify_prospective_epoch()["ok"])
+            for path, content in preserved.items():
+                self.assertEqual(content, path.read_bytes())
+
+    def test_standing_policy_refuses_what_is_not_the_same_authorized_scope(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task}):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.17", task_id=task)
+            self.assertTrue(self._standing_hop(manifest, 1)[1]["ok"])
+            before = manifest.read_bytes()
+            current = json.loads(before)["prospective_epoch"]["epoch_id"]
+            cases = {
+                "stale full-manifest CAS": ({"expected_manifest_sha256": "0" * 64}, "transition_manifest_hash_mismatch"),
+                "wrong or borrowed authorization": ({"owner_transition_authorization": cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL}, "transition_owner_authorization_invalid"),
+                "unexpected active epoch": ({"transition_from_epoch_id": "epoch-not-the-active-one"}, "transition_active_epoch_id_mismatch"),
+                "cycle onto the active id": ({"epoch_id": current}, "transition_new_epoch_id_must_differ"),
+                "another task": ({"release_task_id": cleanup.RELEASE_TASK_0116_BUDGET_ID, "owner_transition_authorization": cleanup.RELEASE_TASK_0116_BUDGET_APPROVAL}, None),
+            }
+            for name, (overrides, reason) in cases.items():
+                with self.subTest(name):
+                    _b, result = self._standing_hop(manifest, 2, **overrides)
+                    self.assertFalse(result["ok"], result)
+                    if reason:
+                        self.assertIn(reason, result["reasons"])
+                    self.assertEqual(before, manifest.read_bytes())
+            # a dirty tree, an active writer and a non-descendant source are refused too
+            target_sha = f"{102:040x}"
+            _b, dirty = self._standing_hop(manifest, 2, _dirty=True)
+            self.assertIn("working_tree_dirty", dirty["reasons"])
+            _b, busy = self._standing_hop(manifest, 2, _writer=True)
+            self.assertIn("registry_writer_active", busy["reasons"])
+            guards = self._release_013_guards(target_sha, version="0.1.17", descendant=False)
+            with guards[0], guards[1], guards[2], guards[3]:
+                refused = cleanup.activate_prospective_epoch(
+                    dry_run=False, epoch_id="epoch-standing-sideways", source_sha=target_sha, release_task_id=task, transition_from_epoch_id=current,
+                    expected_manifest_sha256=cleanup.hashlib.sha256(before).hexdigest(), owner_transition_authorization=cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL)
+            self.assertIn("transition_source_not_descendant", refused["reasons"])
+            self.assertEqual(before, manifest.read_bytes())
+
+    def test_without_the_standing_policy_the_legacy_eight_hop_bound_still_applies(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task}), \
+                patch.object(cleanup, "STANDING_TRANSITION_POLICY_TASKS", ()):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.17", task_id=task)
+            for hop in range(1, 10):
+                before, result = self._standing_hop(manifest, hop)
+                if hop <= 8:
+                    self.assertTrue(result["ok"], (hop, result))
+                    self.assertNotIn("standing_policy", json.loads(manifest.read_bytes())["prospective_epoch"]["transition_provenance"])
+                else:
+                    self.assertIn("transition_active_epoch_integrity_failed", result["reasons"])
+                    self.assertEqual(before, manifest.read_bytes())
+
+    def test_forged_or_malformed_standing_markers_fail_verification(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        with self.isolated_workspace() as (root, _work, _game, manifest), patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task}):
+            self._active_release_epoch_for_transition(root, manifest, version="0.1.17", task_id=task)
+            self.assertTrue(self._standing_hop(manifest, 1)[1]["ok"])
+            good = manifest.read_bytes()
+            guards = self._release_013_guards(f"{101:040x}", version="0.1.17")
+            for field, value in (("text", "invented policy"), ("id", "standing-other"), ("ordinal", True), ("ordinal", 0), ("ordinal", "1")):
+                with self.subTest((field, value)):
+                    document = json.loads(good)
+                    document["prospective_epoch"]["transition_provenance"]["standing_policy"][field] = value
+                    manifest.write_bytes(json.dumps(document).encode("utf-8"))
+                    with guards[0], guards[1], guards[2], guards[3]:
+                        self.assertFalse(cleanup.verify_prospective_epoch()["ok"])
+            manifest.write_bytes(good)
+
+    def test_standing_policy_pure_rules_and_resource_bound_are_not_approval_counters(self):
+        task = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        budget = {"task_id": task, "limit_bytes": 1, "scope_path": "S", "terminal_limit_bytes": 2, "owner_approval": "A"}
+        self.assertTrue(cleanup._standing_policy_applies(dict(budget), dict(budget)))
+        for key, value in (("limit_bytes", 2), ("scope_path", "T"), ("owner_approval", "B"), ("task_id", cleanup.RELEASE_TASK_0116_BUDGET_ID)):
+            self.assertFalse(cleanup._standing_policy_applies(dict(budget), {**budget, key: value}), key)
+        self.assertFalse(cleanup._standing_policy_applies(None, dict(budget)))
+        self.assertFalse(cleanup._standing_policy_applies({**budget, "task_id": cleanup.RELEASE_TASK_0116_BUDGET_ID}, {**budget, "task_id": cleanup.RELEASE_TASK_0116_BUDGET_ID}))
+        # a very long chain fails with its own resource reason and never as a depth/approval reason
+        seen = tuple(f"e{i}" for i in range(cleanup.EPOCH_CHAIN_RESOURCE_BOUND + 1))
+        self.assertEqual(["epoch_transition_chain_resource_bound"], cleanup._epoch_verify_files({"epoch_id": "tail"}, manifest={}, _transition_seen=seen))
+        self.assertEqual(["epoch_transition_cycle"], cleanup._epoch_verify_files({"epoch_id": "e3"}, manifest={}, _transition_seen=("e1", "e3")))
+        self.assertEqual(["epoch_transition_depth_exceeded"], cleanup._epoch_verify_files({"epoch_id": "x"}, manifest={}, _transition_depth=9))
+        self.assertGreater(cleanup.EPOCH_CHAIN_RESOURCE_BOUND, 256)
+
     def test_owner_rebaseline_preserves_and_verifies_eight_hop_history(self):
         with self.isolated_workspace() as (_root, work, _game, manifest):
             missing_incident = {"scope_id": cleanup.INCIDENT_SCOPE_ID, "path": str(cleanup._prospective_epoch_incident_path()), "status": "MISSING"}
@@ -5335,7 +5460,11 @@ class ApprovalHistoryDepthTests(unittest.TestCase):
         with patch.object(Path, "read_text", lambda path, **kwargs: documents[str(path)]):
             self.assertFalse(used(history(80)))
             self.assertTrue(used(history(80, used=True)))
-            self.assertTrue(used(history(258)))
+            # The former 256-deep cap acted as an indirect approval quota; the depth guard is now only the shared resource bound.
+            self.assertFalse(used(history(258)))
+            self.assertTrue(used(history(258, used=True)))
+            with patch.object(cleanup, "EPOCH_CHAIN_RESOURCE_BOUND", 50):
+                self.assertTrue(used(history(80)))          # resource exhaustion still fails closed (never a grant)
             cycle = {"epoch_id": "cycle", "transition_provenance": {"previous_epoch_id": "cycle"},
                      "rollback": {"manifest_absent": False, "path": "cycle.json"}}
             documents["cycle.json"] = json.dumps({"prospective_epoch": cycle})

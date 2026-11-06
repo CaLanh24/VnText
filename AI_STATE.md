@@ -9,7 +9,7 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 
 - Release 0.1.16 is PUBLISHED: https://github.com/CaLanh24/VnText/releases/tag/v0.1.16, annotated tag `v0.1.16` → source `de44d43fc621264f772b3e20aea807564cbcc7fa` (immutable artifact source; later commits do not change the released bytes). Brain accepted only the bounded technical candidate, mistakenly treating raw-draft tolerance as waiving whole-game E2E; Owner has now corrected that interpretation; Owner 2026-11-05: usable raw offline Vietnamese output is the product bar (idiom/context/style errors are accepted for a rough draft), free/offline is mandatory, app-induced corruption/lost protected content/false completion stay blockers. `v0.1.15` is untouched (tag `4326abd`, 17 assets).
 - Budget unchanged: release-0.1.16 cap 6.25 GiB, shared `.dev-env` 11 GiB, no raise/waiver. Transient project peaks above the cap are on record for publish run3 (8.89 GB), run5 (7.97 GB) and run6 (6.89 GB); the final `de44d43` publish stayed under it (combined project + owned external peak 6,560,255,259 B < 6,710,886,400 B). Now about 4.36 GB.
-- 0.1.16 chain ended at hop 8/8; the 0.1.17 chain reached 8/8 at `f1bf58b` (`epoch-20261106-017-rc8`). Compact live cursor: `C:/vnrg/evidence/brain-current-checkpoint.json`.
+- 0.1.16 chain ended at hop 8/8. For release-0.1.17 the Owner's standing same-scope policy (2026-11-07, CONTRACTS.md) replaced the 8-hop approval quota: transitions continue automatically under exact CAS/clean-descendant/rollback guards; new task/scope/budget/rights still need the Owner. Live cursor: `C:/vnrg/evidence/brain-current-checkpoint.json`.
 
 ## Release 0.1.16 (what shipped)
 
