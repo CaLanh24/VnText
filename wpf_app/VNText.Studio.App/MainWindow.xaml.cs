@@ -222,8 +222,8 @@ public partial class MainWindow : Window
         if (ActualWidth <= 0)
             return;
 
-        // Effective height after the interface scale: under ~760 DIP the CSV table would keep fewer than three rows with the tools open.
-        if (DataContext is MainViewModel sizeVm) sizeVm.SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 760);
+        // Effective height after the interface scale: under ~900 DIP the CSV table would keep fewer than three rows with the tools open.
+        if (DataContext is MainViewModel sizeVm) sizeVm.SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 900);
 
         if (_layoutInitialized)
             return;

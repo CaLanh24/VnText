@@ -635,7 +635,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("public bool CsvBulkPanelVisible => CsvEditorHasDocument;", vm)
         self.assertNotIn("ToggleCsvBulkCommand", vm)
         self.assertNotIn("ToggleCsvBulkCommand", xaml)
-        self.assertIn("SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 760)", code)
+        self.assertIn("SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 900)", code)
         grid_start = xaml.index('x:Name="CsvEditorGrid"')
         self.assertIn("ScrollViewer.CanContentScroll=\"True\"", xaml[grid_start:grid_start + 1800])     # the table keeps its own virtualized viewport
         # (N2) CSV and glossary empty states
@@ -872,7 +872,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('x:Name="CsvEditorCard"', xaml)
         self.assertIn('x:Name="CsvEditorSearchBox"', xaml)
         self.assertNotIn('<UniformGrid Grid.Column="1" Columns="3"', xaml)
-        self.assertIn('<StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">', xaml)
+        self.assertIn('<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">', xaml)     # scope + Preview/Apply/Undo wrap instead of running under the examples column
         self.assertIn('x:Name="CsvBulkFindTextBox"', xaml)
         self.assertIn('x:Name="CsvBulkReplaceTextBox"', xaml)
         self.assertIn('Text="Tìm trong bản dịch"', xaml)

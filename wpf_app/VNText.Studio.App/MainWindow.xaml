@@ -1444,21 +1444,16 @@
                                             <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                             <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" />
                                         </StackPanel>
-                                        <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="150" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <ComboBox x:Name="CsvBulkScopeComboBox" AutomationProperties.Name="Phạm vi thay thế"
+                                        <!-- Wrap (not clip): at the narrow native width the scope select and the three buttons flow onto a second line instead of running under the examples column. -->
+<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">
+<ComboBox Margin="0,0,8,3" x:Name="CsvBulkScopeComboBox" AutomationProperties.Name="Phạm vi thay thế"
                                                       ItemsSource="{Binding CsvBulkScopeOptions}" SelectedValue="{Binding CsvBulkScope, Mode=TwoWay}"
                                                       SelectedValuePath="Value" DisplayMemberPath="Label" Width="144" Height="{StaticResource UiControlHeightStandard}"
-                                                      VerticalAlignment="Center" Style="{StaticResource SettingsCombo}" />
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                <Button x:Name="CsvBulkPreviewButton" Content="Xem trước" ToolTip="Đếm các dòng và lần thay thế trước khi áp dụng." Style="{StaticResource OutlineButton}" MinWidth="96" Margin="0,0,8,0" Command="{Binding BulkReplaceCsvCommand}" />
-                                                <Button x:Name="CsvBulkApplyButton" Content="Áp dụng" Style="{StaticResource PrimaryButton}" MinWidth="96" Margin="0,0,8,0" Command="{Binding ApplyBulkReplaceCsvCommand}" />
-                                                <Button x:Name="CsvBulkUndoButton" Content="Hoàn tác" Style="{StaticResource OutlineButton}" MinWidth="96" Margin="0" Command="{Binding UndoBulkReplaceCsvCommand}" />
-                                            </StackPanel>
-                                        </Grid>
+                                                      Style="{StaticResource SettingsCombo}" />
+<Button Margin="0,0,8,3" x:Name="CsvBulkPreviewButton" Content="Xem trước" ToolTip="Đếm các dòng và lần thay thế trước khi áp dụng." Style="{StaticResource OutlineButton}" MinWidth="96" Command="{Binding BulkReplaceCsvCommand}" />
+<Button Margin="0,0,8,3" x:Name="CsvBulkApplyButton" Content="Áp dụng" Style="{StaticResource PrimaryButton}" MinWidth="96" Command="{Binding ApplyBulkReplaceCsvCommand}" />
+<Button Margin="0,0,0,3" x:Name="CsvBulkUndoButton" Content="Hoàn tác" Style="{StaticResource OutlineButton}" MinWidth="96" Command="{Binding UndoBulkReplaceCsvCommand}" />
+</WrapPanel>
 </Grid>
                                 </Border>
 
@@ -1475,7 +1470,7 @@
                 <Setter Property="Grid.Row" Value="0" />
                 <Setter Property="Grid.Column" Value="1" />
                 <Setter Property="Grid.ColumnSpan" Value="1" />
-                <Setter Property="Width" Value="300" />
+                <Setter Property="Width" Value="200" />
             </DataTrigger>
         </Style.Triggers>
     </Style>
