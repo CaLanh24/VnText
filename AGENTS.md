@@ -26,7 +26,7 @@
 - Build/test, native integration, cleanup và Release acceptance là các verdict riêng, gắn đúng SHA/payload/receipt. Không biến PARTIAL/NOT_PROVEN/SKIP thành PASS. Báo giới hạn thật; task terminal dùng outcome theo WORKFLOW. Docs mới không biến evidence cũ thành exact-HEAD Release PASS.
 - Đường dẫn/root nông, TEMP/PATH process-only đúng scope; không tích lũy home tạm vào PATH, không sửa User/Machine tùy tiện. Trước allocation/gate kiểm budget/path theo CONTRACTS §10a/§10c. Môi trường chung ở .dev-env, runtime test ở TEST_RUN, Release ở RELEASE_RUN; source không chứa binary/model/game/log lớn/secret.
 - Cleanup theo plan ownership/consumer/exclusions, không cắt ngang writer/test/epoch và không follow junction ra ngoài root. Dọn disposable hết consumer sau phase/trước allocation; RETAINED/UNKNOWN/evidence không cho giữ payload vô hạn. Giữ receipt/hash gọn, consumer/hạn rà lại từng ngoại lệ; xác minh before/after và outcome riêng. Chi tiết ở WORKFLOW và CONTRACTS §10a.
-- Computer Use chỉ khởi tạo khi làm native; dispose/reset tác vụ/kernel sở hữu khi xong, chuyển backend/chờ/interrupt/terminal. Xác minh app/worker/pending input/capture; không kill tool server dùng chung. Quy trình đầy đủ ở WORKFLOW.
+- Acceptance toàn game: một aggregate `tests/tools/whole_game_acceptance.py` + ma trận coverage; UI native chỉ phần bắt buộc, agent-desktop trước, built-in CU chỉ khi thiếu năng lực cụ thể (WORKFLOW). Computer Use chỉ khởi tạo khi làm native; dispose/reset tác vụ/kernel sở hữu khi xong, chuyển backend/chờ/interrupt/terminal. Xác minh app/worker/pending input/capture; không kill tool server dùng chung. Quy trình đầy đủ ở WORKFLOW.
 
 ## Cập nhật tài liệu
 
