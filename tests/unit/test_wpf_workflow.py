@@ -671,7 +671,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('x:Name="CsvBulkPreviewDetailButton"', xaml)
         self.assertNotIn("ToggleCsvBulkPreviewDetailCommand", xaml)
         scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
-        self.assertIn('MaxHeight="120"', scroll)
+        # 0.1.17 small-window fix: the bound is 120 at a normal height and 48 at a low height (still visible, scrollable), via the view model
+        self.assertIn('MaxHeight="{Binding CsvPreviewMaxHeight}"', scroll)
+        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("CsvBulkPreviewDetailOpen", scroll)
         self.assertIn("public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;", vm)
         # the stored preview, the Apply guard and its signature are untouched
