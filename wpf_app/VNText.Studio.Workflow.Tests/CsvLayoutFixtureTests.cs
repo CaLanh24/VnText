@@ -100,10 +100,12 @@ internal static partial class Program
                     Require(summaryText.IsVisible && ((TextBlock)summaryText).Text == "Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).", "the preview summary (count of replacements/rows) stays visible");
                     Require(Named("CsvBulkPreviewScroll").IsVisible && Named("CsvBulkPreviewScroll").ActualHeight <= 120.5, "the Trước/Sau examples are always visible inside a bounded scroller");
                     Require(vm.CsvBulkPreview == examples, "the preview text is untouched");
+                    // The visible body is the window CLIENT area in window space (content is laid out at 1/UiScale); the outer window height included the title bar and was a false premise.
+                    double ClientH() => ((FrameworkElement)window.Content).ActualHeight * vm.UiScale;
                     int VisibleRows()
                     {
                         var gridBottom = grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y;
-                        var limit = Math.Min(gridBottom, window.ActualHeight) + 0.5;
+                        var limit = Math.Min(gridBottom, ClientH()) + 0.5;
                         var count = 0;
                         for (var i = 0; i < rows.Count; i++)
                             if (grid.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow { IsVisible: true } dataRow
@@ -116,8 +118,8 @@ internal static partial class Program
                         Console.WriteLine($"DIAG window={window.ActualHeight} card={H("CsvEditorCard")} cardTop={Named("CsvEditorCard").TranslatePoint(new Point(0, 0), window).Y} bulk={H("CsvBulkReplacePanel")} preview={H("CsvBulkPreviewScroll")} previewHeader={H("CsvBulkPreviewHeader")} grid={grid.ActualHeight} gridTop={grid.TranslatePoint(new Point(0, 0), window).Y} valFull={H("CsvEditorValidationText")} valShort={H("CsvEditorValidationShortText")} lowHeight={vm.CsvEditorValidationCompact}");
                     }
                     // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, tools and preview always open ----
-                    var viewportBottom = Math.Min(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y, window.ActualHeight);
-                    Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= window.ActualHeight, "the table ends inside the window (bottom " + grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y + " of " + window.ActualHeight + ")");
+                    var viewportBottom = Math.Min(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y, ClientH());
+                    Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= ClientH(), "the table ends inside the window (bottom " + grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y + " of " + ClientH() + ")");
                     var fullRows = 0;
                     var rowBottoms = new List<double>();
                     for (var i = 0; i < rows.Count; i++)
@@ -168,7 +170,7 @@ internal static partial class Program
                     // Low height trades vertical space only: no control is hidden, the section keeps its accessible name, the examples stay in a bounded scroller.
                     Require(!Named("CsvBulkTitleText").IsVisible && System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")) == "Tìm và thay thế bản dịch", "low height: the redundant title yields to the group's accessible name");
                     Require(Named("CsvBulkFindTextBox").IsVisible && Named("CsvBulkReplaceTextBox").IsVisible && Named("CsvBulkScopeComboBox").IsVisible && Named("CsvBulkPreviewButton").IsVisible
-                        && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 48, "low height: every bulk control stays visible and the examples scroller is bounded");
+                        && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 64, "low height: every bulk control stays visible and the examples scroller is bounded");
                     vm.SetCsvLowHeight(false);
                     window.UpdateLayout();
                     Require(Named("CsvBulkTitleText").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 120, "normal height: the title and the full-size examples scroller come back");

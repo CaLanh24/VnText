@@ -671,9 +671,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('x:Name="CsvBulkPreviewDetailButton"', xaml)
         self.assertNotIn("ToggleCsvBulkPreviewDetailCommand", xaml)
         scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
-        # 0.1.17 small-window fix: the bound is 120 at a normal height and 48 at a low height (still visible, scrollable), via the view model
+        # 0.1.17 small-window fix: the bound is 120 at a normal height and 64 at a low height (examples beside the find/replace group) (still visible, scrollable), via the view model
         self.assertIn('MaxHeight="{Binding CsvPreviewMaxHeight}"', scroll)
-        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
+        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 64 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("CsvBulkPreviewDetailOpen", scroll)
         self.assertIn("public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;", vm)
         # the stored preview, the Apply guard and its signature are untouched
@@ -1468,6 +1468,9 @@ class WpfWorkflowTests(unittest.TestCase):
             csv_layout_proc = _run_harness(harness_env, artifacts_root, ["--csv-layout-fixture"])
             self.assertEqual(0, csv_layout_proc.returncode, (csv_layout_proc.stdout or "") + (csv_layout_proc.stderr or ""))
             self.assertIn("WPF CSV low-height layout fixture: PASS", csv_layout_proc.stdout)
+            native_repro_proc = _run_harness(harness_env, artifacts_root, ["--csv-native-repro-fixture"])
+            self.assertEqual(0, native_repro_proc.returncode, (native_repro_proc.stdout or "") + (native_repro_proc.stderr or ""))
+            self.assertIn("WPF CSV native-repro fixture: PASS", native_repro_proc.stdout)
             region_grid_proc = _run_harness(harness_env, artifacts_root, ["--region-grid-fixture"])
             self.assertEqual(0, region_grid_proc.returncode, (region_grid_proc.stdout or "") + (region_grid_proc.stderr or ""))
             self.assertIn("WPF region grid fixture: PASS", region_grid_proc.stdout)

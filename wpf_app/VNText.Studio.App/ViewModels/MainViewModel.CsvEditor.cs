@@ -119,14 +119,22 @@ public sealed partial class MainViewModel
     // Low-height presentation: tighter vertical gaps only (controls keep their 36/30 DIP sizes) and a one-line validation summary.
     public Thickness CsvBannerMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
     public Thickness CsvBulkAreaMargin => new(0, _csvLowHeight ? 2 : 5, 0, 0);
-    public Thickness CsvPreviewAreaMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
+    public Thickness CsvPreviewAreaMargin => _csvLowHeight ? new Thickness(8, 3, 0, 0) : new Thickness(0, 6, 0, 0);
     public Thickness CsvGridMargin => new(0, _csvLowHeight ? 4 : 8, 0, 0);
     // Owner 2026-11-07 native finding (1565x1080 @ OS 150%, UI 120%): with the always-open tools the table kept ~1.5 rows and ran past the window.
     // At a low height only vertical space is traded: the redundant section title yields to the group's accessible name, and the Trước/Sau examples
     // stay visible in a shorter bounded scroller.  No control is hidden, resized or collapsed.
     public bool CsvBulkTitleVisible => !_csvLowHeight;
-    public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;
+    public double CsvPreviewMaxHeight => _csvLowHeight ? 64 : 120;
     public Thickness CsvBulkPanelPadding => _csvLowHeight ? new Thickness(8, 3, 8, 3) : new Thickness(8, 4, 8, 4);
+    // Native repro (0.1.17 / 369adc5, 1043x720 DIP, UI 120%): the visible body is the CLIENT area; page header, card padding, the stacked preview and a 158-unit table
+    // minimum left one row.  Low height therefore also tightens the page header and card padding, seats the examples beside the find/replace group, and keeps
+    // a table viewport that shows the header plus three ordinary rows.
+    public Thickness PageHeaderMargin => _csvLowHeight ? new Thickness(0, 12, 0, 10) : new Thickness(0, 38, 0, 32);
+    public double PageHeaderMinHeight => _csvLowHeight ? 44 : 58;
+    public Thickness CsvCardPadding => _csvLowHeight ? new Thickness(24, 10, 24, 10) : new Thickness(24, 20, 24, 20);
+    public Thickness CsvValidationAreaMargin => new(0, _csvLowHeight ? 0 : 2, 0, 0);
+    public double CsvGridMinHeight => _csvLowHeight ? 150 : 158;
     public Thickness CsvBulkButtonRowMargin => new(0, _csvLowHeight ? 3 : 5, 0, 0);
 
     /// <summary>With the tools collapsed (or at a low height) the validation message is ONE line; the whole message stays in the tooltip and the accessible help text.</summary>
@@ -156,6 +164,11 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvGridMargin));
         Raise(nameof(CsvBulkTitleVisible));
         Raise(nameof(CsvPreviewMaxHeight));
+        Raise(nameof(PageHeaderMargin));
+        Raise(nameof(PageHeaderMinHeight));
+        Raise(nameof(CsvCardPadding));
+        Raise(nameof(CsvValidationAreaMargin));
+        Raise(nameof(CsvGridMinHeight));
         Raise(nameof(CsvBulkPanelPadding));
         Raise(nameof(CsvBulkButtonRowMargin));
         Raise(nameof(CsvEditorValidationCompact));

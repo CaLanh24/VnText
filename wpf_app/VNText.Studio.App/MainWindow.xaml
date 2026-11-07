@@ -225,7 +225,7 @@
             </Grid.RowDefinitions>
 
             <!-- Page header -->
-            <Grid Grid.Row="0" Margin="0,38,0,32" MinHeight="58" Style="{StaticResource StandardPageHeaderStyle}">
+            <Grid Grid.Row="0" Margin="{Binding PageHeaderMargin}" MinHeight="{Binding PageHeaderMinHeight}" Style="{StaticResource StandardPageHeaderStyle}">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding HeroTitle}" Style="{StaticResource UiPageTitleTextStyle}" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -1352,7 +1352,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Grid.Row="1" x:Name="CsvEditorCard" Style="{StaticResource CardShadowBorder}">
+                        <Border Grid.Row="1" x:Name="CsvEditorCard" Style="{StaticResource CardShadowBorder}" Padding="{Binding CsvCardPadding}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -1404,7 +1404,22 @@
                                         <TextBlock Text="{Binding CsvEditorSaveError, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     </Border>
                                 </StackPanel>
-                                <StackPanel Grid.Row="2" Margin="{Binding CsvBulkAreaMargin}">
+<Grid Grid.Row="2" x:Name="CsvBulkArea">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+    <StackPanel Margin="{Binding CsvBulkAreaMargin}">
+<StackPanel.Style>
+    <Style TargetType="StackPanel">
+        <Setter Property="Grid.Row" Value="0" />
+        <Setter Property="Grid.Column" Value="0" />
+        <Setter Property="Grid.ColumnSpan" Value="2" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding CsvEditorValidationCompact}" Value="True">
+                <Setter Property="Grid.ColumnSpan" Value="1" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+</StackPanel.Style>
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="{Binding CsvBulkPanelPadding}" AutomationProperties.Name="Tìm và thay thế bản dịch"
                                         Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
                                     <Grid>
@@ -1447,8 +1462,24 @@
 </Grid>
                                 </Border>
 
-                                </StackPanel>
-<StackPanel Grid.Row="3" Margin="{Binding CsvPreviewAreaMargin}">
+    </StackPanel>
+    <StackPanel x:Name="CsvPreviewArea" Margin="{Binding CsvPreviewAreaMargin}">
+<StackPanel.Style>
+    <Style TargetType="StackPanel">
+        <Setter Property="Grid.Row" Value="1" />
+        <Setter Property="Grid.Column" Value="0" />
+        <Setter Property="Grid.ColumnSpan" Value="2" />
+        <Style.Triggers>
+            <!-- Low height: the examples sit BESIDE the find/replace group (same controls, same content) so the table keeps its rows. -->
+            <DataTrigger Binding="{Binding CsvEditorValidationCompact}" Value="True">
+                <Setter Property="Grid.Row" Value="0" />
+                <Setter Property="Grid.Column" Value="1" />
+                <Setter Property="Grid.ColumnSpan" Value="1" />
+                <Setter Property="Width" Value="300" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+</StackPanel.Style>
                                     <!-- The preview keeps ONE summary line; the Trước/Sau examples are always visible in a bounded scroller. -->
                                     <Grid x:Name="CsvBulkPreviewHeader">
                                         <Grid.ColumnDefinitions>
@@ -1473,6 +1504,9 @@
                                                   Visibility="{Binding CsvBulkPreviewDetailOpen, Converter={StaticResource BoolToVis}}">
                                         <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding CsvBulkPreviewDetail, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" />
                                     </ScrollViewer>
+    </StackPanel>
+</Grid>
+<StackPanel Grid.Row="3" Margin="{Binding CsvValidationAreaMargin}">
                                     <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
                                                Text="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}" ToolTip="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}"
                                                AutomationProperties.HelpText="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}">
@@ -1528,7 +1562,7 @@
                                         <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </StackPanel>
                                 </Border>
-                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="158"
+                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="{Binding CsvGridMinHeight}"
                                           Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
@@ -1608,7 +1642,7 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <StackPanel Grid.Row="2" Margin="0,6,0,0">
+                                <StackPanel Grid.Row="2" x:Name="CsvEditorFooter" Margin="0,6,0,0">
 <TextBlock Text="{Binding CsvEditorGateStats, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
 <TextBlock Text="{Binding CsvEditorSelectionDetails, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
            Visibility="{Binding CsvEditorSelectionDetailsVisible, Converter={StaticResource BoolToVis}}"/>

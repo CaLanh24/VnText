@@ -31,6 +31,8 @@ internal static partial class Program
             return RunScrollRoutingFixture();
         if (args.Contains("--csv-layout-fixture", StringComparer.Ordinal))
             return RunCsvLayoutFixture();
+        if (args.Contains("--csv-native-repro-fixture", StringComparer.Ordinal))
+            return RunCsvNativeReproFixture();
         if (args.Contains("--region-grid-fixture", StringComparer.Ordinal))
             return RunRegionGridFixture();
         if (args.Contains("--english-pages-fixture", StringComparer.Ordinal))
