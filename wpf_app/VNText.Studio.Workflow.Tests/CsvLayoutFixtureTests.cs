@@ -235,6 +235,8 @@ internal static partial class Program
                         vm.Language = "en";
                         window.UpdateLayout();
                         PumpFixture(300);
+                        // The accessible name of the always-open find/replace group follows the language through the global walker (not hard-coded Vietnamese).
+                        AssertEqual("Find and replace translations", System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")));
                         foreach (var key in navKeys)
                         {
                             var english = UiText.Translate(key);
@@ -253,6 +255,7 @@ internal static partial class Program
                     window.UpdateLayout();
                     PumpFixture(200);
                     AssertEqual("Dịch tự động", UiText.Translate("Dịch tự động"));                   // the Vietnamese label is unchanged
+                    AssertEqual("Tìm và thay thế bản dịch", System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")));
                     // ---- Journal: an invalid search expression is not a log read failure ----
                     Directory.CreateDirectory(vm.JournalStore.Root);
                     File.WriteAllText(Path.Combine(vm.JournalStore.Root, "app.log." + DateTime.Now.ToString("yyyy-MM-dd")),
