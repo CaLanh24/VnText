@@ -121,6 +121,13 @@ public sealed partial class MainViewModel
     public Thickness CsvBulkAreaMargin => new(0, _csvLowHeight ? 2 : 5, 0, 0);
     public Thickness CsvPreviewAreaMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
     public Thickness CsvGridMargin => new(0, _csvLowHeight ? 4 : 8, 0, 0);
+    // Owner 2026-11-07 native finding (1565x1080 @ OS 150%, UI 120%): with the always-open tools the table kept ~1.5 rows and ran past the window.
+    // At a low height only vertical space is traded: the redundant section title yields to the group's accessible name, and the Trước/Sau examples
+    // stay visible in a shorter bounded scroller.  No control is hidden, resized or collapsed.
+    public bool CsvBulkTitleVisible => !_csvLowHeight;
+    public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;
+    public Thickness CsvBulkPanelPadding => _csvLowHeight ? new Thickness(8, 3, 8, 3) : new Thickness(8, 4, 8, 4);
+    public Thickness CsvBulkButtonRowMargin => new(0, _csvLowHeight ? 3 : 5, 0, 0);
 
     /// <summary>With the tools collapsed (or at a low height) the validation message is ONE line; the whole message stays in the tooltip and the accessible help text.</summary>
     public bool CsvEditorValidationCompact => _csvLowHeight;
@@ -147,6 +154,10 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvBulkAreaMargin));
         Raise(nameof(CsvPreviewAreaMargin));
         Raise(nameof(CsvGridMargin));
+        Raise(nameof(CsvBulkTitleVisible));
+        Raise(nameof(CsvPreviewMaxHeight));
+        Raise(nameof(CsvBulkPanelPadding));
+        Raise(nameof(CsvBulkButtonRowMargin));
         Raise(nameof(CsvEditorValidationCompact));
     }
 

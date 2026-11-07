@@ -36,6 +36,12 @@ internal static partial class Program
                     window.WindowState = WindowState.Normal;
                     window.Width = 1043;
                     window.Height = 720;
+                    if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1")
+                    {
+                        // Unattended runs must not take focus from anyone using the desktop: lay out and measure off-screen.
+                        window.WindowStartupLocation = WindowStartupLocation.Manual;
+                        window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false;
+                    }
                     window.Show();
                     window.UpdateLayout();
                     PumpFixture(250);
@@ -104,7 +110,12 @@ internal static partial class Program
                                 && dataRow.TranslatePoint(new Point(0, dataRow.ActualHeight), window).Y <= limit) count++;
                         return count;
                     }
-                    // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, preview kept, tools collapsed ----
+                    if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_DIAG") == "1")
+                    {
+                        double H(string n) => Named(n).ActualHeight;
+                        Console.WriteLine($"DIAG window={window.ActualHeight} card={H("CsvEditorCard")} cardTop={Named("CsvEditorCard").TranslatePoint(new Point(0, 0), window).Y} bulk={H("CsvBulkReplacePanel")} preview={H("CsvBulkPreviewScroll")} previewHeader={H("CsvBulkPreviewHeader")} grid={grid.ActualHeight} gridTop={grid.TranslatePoint(new Point(0, 0), window).Y} valFull={H("CsvEditorValidationText")} valShort={H("CsvEditorValidationShortText")} lowHeight={vm.CsvEditorValidationCompact}");
+                    }
+                    // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, tools and preview always open ----
                     var viewportBottom = Math.Min(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y, window.ActualHeight);
                     Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= window.ActualHeight, "the table ends inside the window (bottom " + grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y + " of " + window.ActualHeight + ")");
                     var fullRows = 0;
@@ -154,8 +165,13 @@ internal static partial class Program
                     // the examples are always visible, bounded, and never add table rows; normal height wraps the whole message
                     var rowsWithExamples = VisibleRows();
                     Require(rowsWithExamples <= rowsShown, "visible examples never add table rows (" + rowsWithExamples + " vs " + rowsShown + ")");
+                    // Low height trades vertical space only: no control is hidden, the section keeps its accessible name, the examples stay in a bounded scroller.
+                    Require(!Named("CsvBulkTitleText").IsVisible && System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")) == "Tìm và thay thế bản dịch", "low height: the redundant title yields to the group's accessible name");
+                    Require(Named("CsvBulkFindTextBox").IsVisible && Named("CsvBulkReplaceTextBox").IsVisible && Named("CsvBulkScopeComboBox").IsVisible && Named("CsvBulkPreviewButton").IsVisible
+                        && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 48, "low height: every bulk control stays visible and the examples scroller is bounded");
                     vm.SetCsvLowHeight(false);
                     window.UpdateLayout();
+                    Require(Named("CsvBulkTitleText").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 120, "normal height: the title and the full-size examples scroller come back");
                     Require(fullWarning.IsVisible && !shortWarning.IsVisible && fullWarning.TextWrapping == TextWrapping.Wrap && fullWarning.Text == vm.CsvEditorUserValidationMessage, "at a normal height the whole message wraps");
                     vm.SetCsvLowHeight(true);
                     window.UpdateLayout();
@@ -193,7 +209,7 @@ internal static partial class Program
                             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));
                             Badge("CẦN KIỂM TRA LẠI", "SubtlePanelBrush", "MutedBrush", "B invalidated");
                             Require(((FrameworkElement)Named("PatchCheckCard")).IsVisible && ((FrameworkElement)Named("PatchBadge")).IsVisible, "the neutral recheck badge is VISIBLE after the source changed (not hidden with the results)");
-                            Require(((FrameworkElement)Named("PatchRecheckNote")).IsVisible && !((FrameworkElement)Named("PatchDiagnosticsExpander")).IsVisible && !((FrameworkElement)Named("PatchSummaryCard")).IsVisible, "a one-line recheck cue replaces the old results");
+                            Require(((FrameworkElement)Named("PatchRecheckNote")).IsVisible && !((FrameworkElement)Named("PatchDiagnosticsPanel")).IsVisible && !((FrameworkElement)Named("PatchSummaryCard")).IsVisible, "a one-line recheck cue replaces the old results");
                             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Badge("CẦN XEM LẠI", "ToastWarningBackgroundBrush", "ToastWarningForegroundBrush", "B blocked");
@@ -331,7 +347,7 @@ internal static partial class Program
                     Require(vm.CsvEditorDirtySummary != oneEdited, "a second committed row raises the unsaved count");
                     AssertTrue(vm.SaveCsvEditorCommand.CanExecute(null) || vm.Busy);
                     vm.TestClearCsvDirty();                                   // the fixture's own pending edits must not raise the unsaved-changes prompt when the window closes
-                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, collapsed bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Patch badge states (" + string.Join("/", badgeReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows after preview+collapse: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
+                    Console.WriteLine("WPF CSV low-height layout fixture: PASS (empty state, always-visible bulk tools, table viewport, English sidebar labels (" + string.Join("/", navReport) + "), Patch badge states (" + string.Join("/", badgeReport) + "), Journal expression message, 36 DIP selects, preview summary + examples toggle, short status label; full rows with the tools and preview open: " + rowsShown + ", slack " + Math.Round(slack, 1) + " DIP, status cell " + Math.Round(statusCell.ActualWidth, 1) + " vs label " + Math.Round(labelWidth, 1) + ")");
                     exitCode = 0;
                 }
                 finally { window.Close(); UiText.SetLanguage("vi"); UiAppearance.Apply("light", 100); app.Shutdown(); }
