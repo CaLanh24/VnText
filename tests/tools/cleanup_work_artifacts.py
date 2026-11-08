@@ -3116,6 +3116,7 @@ INTEGRITY_STATS = {"hash_misses": 0, "json_misses": 0, "hits": 0}
 
 def _clear_integrity_cache() -> None:
     _INTEGRITY_CACHE.clear()
+    globals()["_JSON_MEMO_BYTES"] = 0
 
 
 def _file_signature(path: Path):
@@ -3154,20 +3155,50 @@ def _sha256_file(path: Path) -> str:
     return result
 
 
-def _read_json_cached(path: Path):
-    """Parse an immutable snapshot once per transaction; raises like ``json.loads(path.read_text())`` (callers must not mutate the result)."""
+# Memory bound for the integrity memo.  Every epoch keeps a ~50 MB copy of the registry (rollback_manifest.json); caching 140+ fully parsed copies held 4.5 GB on an 8 GB
+# machine and thrashed the end-of-publish inventory (inventory_timeout).  Large documents are therefore never cached whole: the epoch chain asks for a PROJECTION of
+# the only fields it verifies, and any unprojected document above the bound is parsed on demand and released.
+JSON_MEMO_MAX_SOURCE_BYTES = 4 * 1024 * 1024
+JSON_MEMO_MAX_TOTAL_BYTES = 64 * 1024 * 1024
+EPOCH_RECORD_PREFIX = "artifact-registry-epoch:"
+_JSON_MEMO_BYTES = 0
 
+
+def _project_epoch_chain_manifest(document):
+    """Keep exactly what the epoch chain reads from a PREVIOUS registry: every top-level field, and from ``artifacts`` only the epoch records
+    (the sole artifact records the chain compares).  Anything else, including a non-list ``artifacts``, passes through so the shape checks still fail closed."""
+
+    if isinstance(document, dict) and isinstance(document.get("artifacts"), list):
+        projected = dict(document)
+        projected["artifacts"] = [
+            item for item in document["artifacts"]
+            if isinstance(item, dict) and str(item.get("id") or "").startswith(EPOCH_RECORD_PREFIX)
+        ]
+        return projected
+    return document
+
+
+def _read_json_cached(path: Path, project=None):
+    """Parse an immutable snapshot once per transaction; raises like ``json.loads(path.read_text())`` (callers must not mutate the result).
+    ``project`` reduces a large document to the fields the caller verifies BEFORE it is cached; memo memory stays bounded."""
+
+    global _JSON_MEMO_BYTES
     path = Path(path)
     signature = _file_signature(path) if _memo_allowed(path) else None
-    if signature is not None:
-        key = ("json", signature)
-        if key in _INTEGRITY_CACHE:
-            INTEGRITY_STATS["hits"] += 1
-            return _INTEGRITY_CACHE[key]
+    key = ("json", signature, getattr(project, "__name__", ""))
+    if signature is not None and key in _INTEGRITY_CACHE:
+        INTEGRITY_STATS["hits"] += 1
+        return _INTEGRITY_CACHE[key]
     document = json.loads(path.read_text(encoding="utf-8"))
     INTEGRITY_STATS["json_misses"] += 1
+    if project is not None:
+        document = project(document)
     if signature is not None and signature == _file_signature(path):
-        _INTEGRITY_CACHE[("json", signature)] = document
+        size = int(signature[1]) if isinstance(signature, tuple) and len(signature) > 1 and isinstance(signature[1], int) else 0
+        retained = size if project is None else min(size, 256 * 1024)         # a projection is small by construction; budget it conservatively
+        if (project is not None or size <= JSON_MEMO_MAX_SOURCE_BYTES) and _JSON_MEMO_BYTES + retained <= JSON_MEMO_MAX_TOTAL_BYTES:
+            _INTEGRITY_CACHE[key] = document
+            _JSON_MEMO_BYTES += retained
     return document
 
 
@@ -3723,7 +3754,7 @@ def _epoch_transition_provenance_failures(
         failures.append("epoch_transition_provenance_invalid")
         return failures
     try:
-        previous_manifest = _read_json_cached(rollback_path)
+        previous_manifest = _read_json_cached(rollback_path, project=_project_epoch_chain_manifest)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return ["epoch_transition_previous_manifest_invalid"]
     previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
@@ -3810,7 +3841,7 @@ def _epoch_rebaseline_provenance_failures(
         failures.append("epoch_rebaseline_provenance_invalid")
         return failures
     try:
-        previous_manifest = _read_json_cached(rollback_path)
+        previous_manifest = _read_json_cached(rollback_path, project=_project_epoch_chain_manifest)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return ["epoch_rebaseline_previous_manifest_invalid"]
     previous_epoch = previous_manifest.get("prospective_epoch") if isinstance(previous_manifest, dict) else None
@@ -3914,7 +3945,7 @@ def _epoch_rebaseline_approval_used(
     if not isinstance(rollback, dict) or rollback.get("manifest_absent") is not False:
         return True
     try:
-        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")))
+        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")), project=_project_epoch_chain_manifest)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return True
     old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
@@ -3947,7 +3978,7 @@ def _epoch_rebaseline_authorization_consumed(
     if not isinstance(rollback, dict) or rollback.get("manifest_absent") is not False:
         return True
     try:
-        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")))
+        old_manifest = _read_json_cached(Path(str(rollback.get("path") or "")), project=_project_epoch_chain_manifest)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return True
     old_epoch = old_manifest.get("prospective_epoch") if isinstance(old_manifest, dict) else None
