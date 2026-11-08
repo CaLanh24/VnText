@@ -12,13 +12,16 @@ public sealed partial class MainViewModel
 {
     internal static readonly JsonSerializerOptions ImageJson = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, WriteIndented = true };
     private ImageTextDocument? _imageDocument;
-    private string _imagePath = "", _imageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.", _imageTaskRoot = "";
+    internal const string DefaultImageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.";
+    private string _imagePath = "", _imageStatus = DefaultImageStatus, _imageTaskRoot = "";
     private string _renderedImage = "", _imagePackage = "", _renderGameRoot = "";
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
     public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); RaiseImageContentState(); } } }
-    public string ImageStatus { get => _imageStatus; private set => Set(ref _imageStatus, value); }
+    public string ImageStatus { get => _imageStatus; private set { if (Set(ref _imageStatus, value)) Raise(nameof(ImageShowStatus)); } }
+    /// <summary>The initial manual-OCR hint is shown only in the edit view; any real status (task result, error) is shown in both views.</summary>
+    public bool ImageShowStatus => _imageEditMode || _imageStatus != DefaultImageStatus;
     public ImageSource? ImagePreview
     {
         get => _imagePreview;
@@ -49,7 +52,7 @@ public sealed partial class MainViewModel
     public RelayCommand LeaveImageEditCommand { get; private set; } = null!;
     private void RaiseImageViewState()
     {
-        Raise(nameof(ImageResultsView)); Raise(nameof(ImageHasResults)); Raise(nameof(ImageHasUntranslated)); Raise(nameof(ImageShowOpenResults)); Raise(nameof(ImageShowResultText)); Raise(nameof(ImageResultTexts));
+        Raise(nameof(ImageResultsView)); Raise(nameof(ImageHasResults)); Raise(nameof(ImageHasUntranslated)); Raise(nameof(ImageShowOpenResults)); Raise(nameof(ImageShowResultText)); Raise(nameof(ImageResultTexts)); Raise(nameof(ImageShowStatus));
     }
     public string ImageEmptyHint => string.IsNullOrWhiteSpace(_imagePath)
         ? "Chọn ảnh để xem trước và OCR"

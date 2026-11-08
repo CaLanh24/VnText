@@ -241,7 +241,7 @@
             <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
         </StackPanel>
-        <TextBlock x:Name="StatusLine" Text="{Binding ImageStatus, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
+        <TextBlock x:Name="StatusLine" Visibility="{Binding ImageShowStatus, Converter={StaticResource PanelBoolToVis}}" Text="{Binding ImageStatus, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
                    AutomationProperties.Name="Trạng thái xử lý ảnh" />
     </StackPanel>
 </UserControl>

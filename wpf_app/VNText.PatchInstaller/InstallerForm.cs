@@ -162,7 +162,7 @@ internal sealed class InstallerForm : Form
         pathRow.Controls.Add(field, 0, 0); pathRow.Controls.Add(_browse, 1, 0);
 
         _statusBox.Controls.Add(_status);
-        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Surface, Margin = new Padding(0) };
+        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Bottom, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Surface, Padding = new Padding(0, 12, 0, 0) };
         actions.Controls.Add(_install); actions.Controls.Add(_uninstall); actions.Controls.Add(_confirm); actions.Controls.Add(_cancelConfirm);
 
         _browse.Click += (_, _) => BrowseGame();
@@ -181,13 +181,14 @@ internal sealed class InstallerForm : Form
         AcceptButton = _install; CancelButton = _cancelConfirm;
 
         // One column, every row sized by its content (no fixed heights), so nothing is clipped at the default or minimum size or at 150% scaling.
-        var flow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = false, BackColor = Surface };
+        var flow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = true, BackColor = Surface };      // a short window scrolls the body; the actions below never leave the viewport
         flow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        foreach (Control c in new Control[] { heading, _description, label, pathRow, _statusBox, _busy, actions })
+        foreach (Control c in new Control[] { heading, _description, label, pathRow, _statusBox, _busy })
         {
             c.Dock = DockStyle.Fill; flow.RowStyles.Add(new RowStyle(SizeType.AutoSize)); flow.Controls.Add(c);
         }
-        _card.Controls.Add(flow);
+        _card.Controls.Add(flow);                       // Fill first, then the Bottom footer (later controls dock first)
+        _card.Controls.Add(actions);
         _card.Dock = DockStyle.Fill; _card.Fill = Surface;
         var frame = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = Canvas };
         frame.Controls.Add(_card);
@@ -195,7 +196,7 @@ internal sealed class InstallerForm : Form
 
         void Fit()
         {
-            var inner = Math.Max(240, _card.ClientSize.Width - _card.Padding.Horizontal);
+            var inner = Math.Max(240, _card.ClientSize.Width - _card.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
             _description.MaximumSize = new Size(inner, 0);
             _status.MaximumSize = new Size(Math.Max(120, inner - _statusBox.Padding.Horizontal), 0);
         }
