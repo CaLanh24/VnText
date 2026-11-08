@@ -23,8 +23,8 @@ RAR = Path(r"C:\Users\VNTextDev\Desktop\game\Cucked_by_My_Wife.rar")
 BASELINE_DIR = Path(r"C:\vnrg\run017\pre-game-v2")
 EVIDENCE = Path(r"C:\vnrg\run017\postgame-evidence-v2")
 RESULT = Path(r"C:\vnrg\evidence\postgame-v2-restore-result.json")
-# What the installed Vietnamese patch adds (the exact installer removes them) and what a run writes (removed only by this tool, from saves/).
-PATCH_FILES = ("game/tl/vietnamese/vntext.rpy", "game/zzz_vntext_vietnamese.rpy")
+# What the installed patch adds is read from the package's own patch_manifest.json (exact paths); a run writes saves/ (removed only by this tool) and Ren'Py always compiles
+# a matching .rpyc next to each installed .rpy (removed only for those exact siblings).  Nothing else is ever deleted.
 RUN_OWNED_PREFIX = "game/saves/"
 
 
@@ -44,15 +44,42 @@ def norm(value):
     return value.replace(BS, "/")
 
 
+def is_reparse(path):
+    return os.path.islink(path) or (hasattr(os.path, "isjunction") and os.path.isjunction(path))
+
+
 def snap(root):
+    """Hash every file and list every directory; a junction/symlink anywhere (including the root) is refused, never followed."""
+    if is_reparse(root):
+        raise Refused("root is a junction/symlink: %s" % root)
     files, dirs = {}, set()
     for r, ds, fs in os.walk(root):
         for d in ds:
+            if is_reparse(os.path.join(r, d)):
+                raise Refused("junction/symlink inside the tree: %s" % os.path.join(r, d))
             dirs.add(norm(os.path.relpath(os.path.join(r, d), root)))
         for n in fs:
             p = os.path.join(r, n)
+            if is_reparse(p):
+                raise Refused("symlink inside the tree: %s" % p)
             files[norm(os.path.relpath(p, root))] = sha(p)
     return files, sorted(dirs)
+
+
+def patch_files(pkg):
+    """Exact installed paths from the package manifest (game-relative, no traversal) and their compiled siblings."""
+    manifest = Path(pkg) / "patch_manifest.json"
+    if not manifest.is_file():
+        raise Refused("patch_manifest.json missing in the package")
+    paths = [norm(f["path"]) for f in json.loads(manifest.read_text(encoding="utf-8-sig")).get("files", [])]
+    if not paths or any(not p.startswith("game/") or ".." in p.split("/") or not p.endswith(".rpy") for p in paths):
+        raise Refused("patch manifest lists unexpected paths: %s" % paths)
+    return paths, [p + "c" for p in paths]
+
+
+def parents(rel):
+    parts = rel.split("/")[:-1]
+    return ["/".join(parts[:i]) for i in range(2, len(parts) + 1)]       # game/tl, game/tl/vietnamese (never "game" itself)
 
 
 def diff(now, base):
@@ -91,8 +118,8 @@ def verify(baseline, game, owner):
     gf, gd = snap(game)
     af, ad = snap(owner)
     g, a = diff(gf, baseline["game"]["files"]), diff(af, baseline["appdata"]["files"])
-    report = {"game": g, "game_dirs_diff": sorted(set(gd) ^ set(baseline["game"]["dirs"])), "owner": a}
-    report["exact"] = not any(g.values()) and not report["game_dirs_diff"] and not any(a.values())
+    report = {"game": g, "game_dirs_diff": sorted(set(gd) ^ set(baseline["game"]["dirs"])), "owner": a, "owner_dirs_diff": sorted(set(ad) ^ set(baseline["appdata"]["dirs"]))}
+    report["exact"] = not any(g.values()) and not report["game_dirs_diff"] and not any(a.values()) and not report["owner_dirs_diff"]
     return report
 
 
@@ -104,9 +131,12 @@ def preconditions(baseline, game, owner, rar, pkg, installer_sha, running):
         raise Refused("installer missing in the package: %s" % installer)
     if sha(installer) != installer_sha:
         raise Refused("installer sha256 differs from the expected exact installer")
-    root = os.path.realpath(game)
-    if os.path.realpath(pkg).startswith(root + os.sep):
-        raise Refused("the package must not live inside the game")
+    root, package = os.path.realpath(game), os.path.realpath(pkg)
+    if package == root or package.startswith(root + os.sep) or root.startswith(package + os.sep):
+        raise Refused("the package and the game must be separate trees")
+    for tree in (pkg, game, owner):
+        if is_reparse(tree):
+            raise Refused("junction/symlink root: %s" % tree)
     if running():
         raise Refused("the game is running")
     if Path(baseline["game_root"]) != Path(game):
@@ -118,17 +148,20 @@ def preconditions(baseline, game, owner, rar, pkg, installer_sha, running):
     return installer
 
 
-def plan(baseline, baseline_dir, game, owner):
+def plan(baseline, baseline_dir, game, owner, pkg):
     """Classify every difference; anything not explained is listed under refuse."""
     base = baseline["game"]["files"]
+    patch, compiled = patch_files(pkg)
     now, now_dirs = snap(game)
     d = diff(now, base)
-    refuse, restore, remove_saves, expect_uninstall = [], [], [], []
+    refuse, restore, remove_saves, expect_uninstall, remove_compiled = [], [], [], [], []
     for rel in d["added"]:
         if rel.startswith(RUN_OWNED_PREFIX):
             remove_saves.append(rel)
-        elif rel in PATCH_FILES:
+        elif rel in patch:
             expect_uninstall.append(rel)
+        elif rel in compiled:
+            remove_compiled.append(rel)                                          # only the .rpyc sibling of an exact installed patch file
         else:
             refuse.append({"file": rel, "why": "added and not run-owned"})
     for rel in d["changed"] + d["removed"]:
@@ -137,9 +170,14 @@ def plan(baseline, baseline_dir, game, owner):
             restore.append(rel)
         else:
             refuse.append({"file": rel, "why": "changed/removed without a sha-verified backup"})
-    return {"added": d["added"], "changed": d["changed"], "removed": d["removed"], "restore_from_backup": restore, "remove_run_owned_saves": remove_saves,
-            "removed_by_exact_uninstall": expect_uninstall, "refuse": refuse, "owner_vs_baseline": diff(snap(owner)[0], baseline["appdata"]["files"]),
+    return {"added": d["added"], "changed": d["changed"], "removed": d["removed"], "restore_from_backup": restore, "remove_run_owned_saves": remove_saves, "remove_compiled_siblings": remove_compiled,
+            "removed_by_exact_uninstall": expect_uninstall, "refuse": refuse, "owner_vs_baseline": owner_report(baseline, owner),
             "dirs_added": sorted(set(now_dirs) - set(baseline["game"]["dirs"]))}
+
+
+def owner_report(baseline, owner):
+    files, dirs = snap(owner)
+    return {**diff(files, baseline["appdata"]["files"]), "dirs_diff": sorted(set(dirs) ^ set(baseline["appdata"]["dirs"]))}
 
 
 def default_uninstall(installer, game, pkg):
@@ -154,7 +192,7 @@ def restore(baseline_dir, game, owner, rar, pkg, installer_sha, execute=False, e
     installer = preconditions(baseline, game, owner, rar, pkg, installer_sha, running)
     if execute and Path(result_path).exists():
         raise Refused("result file exists (never overwritten): %s" % result_path)
-    p = plan(baseline, baseline_dir, game, owner)
+    p = plan(baseline, baseline_dir, game, owner, pkg)
     result = {"utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "mode": "EXECUTE" if execute else "DRY_RUN", "installer_sha256": installer_sha, "plan": p}
     if p["refuse"]:
         raise Refused("unexplained differences, nothing changed: " + json.dumps(p["refuse"][:10]))
@@ -163,10 +201,10 @@ def restore(baseline_dir, game, owner, rar, pkg, installer_sha, execute=False, e
         return result
     evidence = Path(evidence)
     evidence.mkdir(parents=True, exist_ok=True)
-    for rel in p["remove_run_owned_saves"]:                                    # 1 archive run-owned saves first
+    for rel in p["remove_run_owned_saves"] + p["remove_compiled_siblings"]:   # 1 archive run-owned files first
         shutil.copy2(game / Path(*rel.split("/")), evidence / Path(rel).name)
     result["uninstall"] = uninstall(installer, game, pkg)                       # 2 exact installer
-    after = plan(baseline, baseline_dir, game, owner)
+    after = plan(baseline, baseline_dir, game, owner, pkg)
     if after["refuse"] or after["removed_by_exact_uninstall"]:
         result["after_uninstall"] = after
         result["final"] = {"game_exact": False}
@@ -181,16 +219,27 @@ def restore(baseline_dir, game, owner, rar, pkg, installer_sha, execute=False, e
         if target.is_file() and not target.is_symlink():
             target.unlink()
             removed.append(rel)
-    saves = game / "game" / "saves"
-    if "game/saves" not in baseline["game"]["dirs"] and saves.is_dir() and not any(saves.iterdir()):
-        saves.rmdir()
-    final = verify(baseline, game, owner)                                      # 5 exact readback
+    for rel in after["remove_compiled_siblings"]:                              # 4b only compiled siblings of the exact installed patch files
+        target = game / Path(*rel.split("/"))
+        if target.is_file() and not target.is_symlink():
+            target.unlink()
+            removed.append(rel)
+    # 4c only EMPTY directories that this run created and the baseline did not have (saves/, tl/vietnamese, tl), deepest first
+    for rel in sorted({"game/saves"} | {d for p_ in patch_files(pkg)[0] for d in parents(p_)}, key=lambda x: -x.count("/")):
+        folder = game / Path(*rel.split("/"))
+        if rel not in baseline["game"]["dirs"] and folder.is_dir() and not is_reparse(folder) and not any(folder.iterdir()):
+            folder.rmdir()
+            removed.append(rel + "/ (empty run-created dir)")
+    final = verify(baseline, game, owner)                                      # 5 exact readback: game AND Owner files + dirs
     result["restored"] = after["restore_from_backup"]
-    result["removed_saves"] = removed
-    result["final"] = {"game_exact": not any(final["game"].values()) and not final["game_dirs_diff"], "owner_vs_baseline": final["owner"]}
+    result["removed"] = removed
+    game_exact = not any(final["game"].values()) and not final["game_dirs_diff"]
+    owner_exact = not any(final["owner"].values()) and not final["owner_dirs_diff"]
+    result["final"] = {"game_exact": game_exact, "owner_exact": owner_exact, "game": final["game"], "game_dirs_diff": final["game_dirs_diff"], "owner": final["owner"],
+                       "owner_dirs_diff": final["owner_dirs_diff"], "note": "Owner AppData is only reported, never written by this tool"}
     Path(result_path).write_text(json.dumps(result, indent=1), encoding="utf-8")
-    if not result["final"]["game_exact"]:
-        raise Refused("final readback is not exact")
+    if not (game_exact and owner_exact):
+        raise Refused("final readback is not exact (game_exact=%s owner_exact=%s); see %s" % (game_exact, owner_exact, result_path))
     return result
 
 
@@ -214,11 +263,12 @@ def main(argv=None):
         baseline = json.loads((bdir / "before.json").read_text(encoding="utf-8"))
         if a.mode == "verify":
             r = verify(baseline, GAME, OWNER)
-            print(json.dumps({"exact": r["exact"], "game": {k: len(v) for k, v in r["game"].items()}, "owner": {k: len(v) for k, v in r["owner"].items()}}))
+            print(json.dumps({"exact": r["exact"], "game": {k: len(v) for k, v in r["game"].items()}, "game_dirs_diff": len(r["game_dirs_diff"]), "owner": {k: len(v) for k, v in r["owner"].items()},
+                              "owner_dirs_diff": len(r["owner_dirs_diff"])}))
             return 0 if r["exact"] else 1
         r = restore(bdir, GAME, OWNER, RAR, Path(a.pkg or ""), a.installer_sha256 or "", execute=a.execute)
         print(json.dumps({"mode": r["mode"], "refuse": r["plan"]["refuse"], "restore": len(r["plan"]["restore_from_backup"]), "saves": len(r["plan"]["remove_run_owned_saves"]),
-                          "uninstall_expected": r["plan"]["removed_by_exact_uninstall"], "final": r.get("final")}))
+                          "compiled_siblings": r["plan"]["remove_compiled_siblings"], "uninstall_expected": r["plan"]["removed_by_exact_uninstall"], "final": r.get("final")}))
         return 0
     except Refused as exc:
         print(json.dumps({"REFUSED": str(exc)}))

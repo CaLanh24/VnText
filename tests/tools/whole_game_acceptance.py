@@ -342,7 +342,14 @@ def build(args):
         if not old_state["match"]:
             gap = load_json(args.owner_gap, "owner historical gap record (required when the historical snapshot differs)")
             history["gap_status"] = gap.get("status")
-            history["gap_resolved"] = gap.get("status") == "RESOLVED_BY_OWNER" and bool(gap.get("owner_decision"))
+            owner_resolved = gap.get("status") == "RESOLVED_BY_OWNER" and bool(gap.get("owner_decision"))
+            # A bounded Root review of the CURRENT task data against the current baseline: both snapshots stay, the historical cause stays UNKNOWN and visible, and it is never
+            # recorded as an Owner approval.  It must name the exact baseline and historical snapshot files it reviewed.
+            root_reviewed = (gap.get("status") == "ROOT_REVIEWED_CURRENT_TASK" and gap.get("reviewed_by") == "Root" and bool(gap.get("review_ref"))
+                             and gap.get("current_baseline_sha256") == sha(args.game_before) and gap.get("historical_snapshot_sha256") == sha(args.historical_before)
+                             and gap.get("historical_cause") == "UNKNOWN")
+            history["gap_resolved"] = owner_resolved or root_reviewed
+            history["disposition"] = "OWNER_RESOLVED" if owner_resolved else "ROOT_REVIEWED_CURRENT_TASK_ONLY" if root_reviewed else "OPEN"
             history["gap_record_sha256"] = sha(args.owner_gap)
     candidate = verify_candidate(args.candidate_setup, args.route_zip, args.route_feed, args.candidate_source)
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
@@ -425,6 +432,8 @@ def build(args):
         "basis": basis_status,
         "matrix": items,
         "representative_cases": cases,
+        "visible_gaps": ([] if not history or not history["differs_from_current"] else
+                         ["Owner AppData differs from the historical snapshot (%d files missing); cause UNKNOWN; disposition %s" % (history["missing"], history.get("disposition"))]),
         "blocking": blocking,
         "residual_checklist": sorted({b["id"] for b in blocking}),
         "verdict": "ACCEPT_ELIGIBLE" if not blocking else "NOT_ACCEPTED",

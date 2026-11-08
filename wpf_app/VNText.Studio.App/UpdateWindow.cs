@@ -163,6 +163,13 @@ internal sealed class UpdateWindow : Window
         if (!Dispatcher.CheckAccess()) { Dispatcher.BeginInvoke(new Action(Refresh)); return; } Refresh();
     }
     private void HistoryChanged(object? sender, NotifyCollectionChangedEventArgs e) { _renderedNotes = null; Changed(sender, new PropertyChangedEventArgs("ReleaseNotesHistory")); }
+    // Test-visible view of what the person sees / what UI Automation reports.
+    internal string StatusText => _status.Text;
+    internal bool StatusShown => _status.Visibility == Visibility.Visible;
+    internal string PrimaryAutomationName => AutomationProperties.GetName(_primary);
+    internal string LaterText => _later.Content as string ?? "";
+    internal string BannerText => _banner.Text;
+    internal bool BannerShown => _success.Visibility == Visibility.Visible;
     private void Refresh()
     {
         var state = UpdateViewState.From(_source);
@@ -193,7 +200,9 @@ internal sealed class UpdateWindow : Window
         _banner.Text = updateCompleted
             ? UiText.Format("✓  VNText Studio đã cập nhật lên v{0} và sẵn sàng sử dụng.", _successVersion)
             : UiText.Format("✓  Phiên bản v{0} đã sẵn sàng. Hãy khởi động lại để áp dụng.", state.Version);
-        _status.Text = UiText.TranslateDynamic(_notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status);
+        // Dynamic chrome is registered as an app message: UiText.Apply (below) otherwise replays the FIRST catalog string it ever saw for the element
+        // (e.g. the offer text at the READY state) and the accessible name of the primary button.  App messages follow the current state and the language.
+        UiText.SetAppText(_status, TextBlock.TextProperty, _notesOnly && Owner.DataContext is MainViewModel statusVm ? statusVm.ReleaseNotesStatus : _source.IsTestFixture ? "" : state.Status);
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.
         _notes.MaxHeight = _notesOnly ? double.PositiveInfinity : Math.Min(145, Math.Max(90, Owner.ActualHeight * .22));
@@ -201,12 +210,12 @@ internal sealed class UpdateWindow : Window
         var primaryContents = new StackPanel { Orientation = Orientation.Horizontal };
         var glyph = new TextBlock { Text = state.Downloading ? "◌" : state.Ready ? "↻" : "↓", Margin = new Thickness(0, 0, 8, 0), RenderTransformOrigin = new Point(.5, .5) };
         if (state.Downloading) { var rotation = new RotateTransform(); glyph.RenderTransform = rotation; rotation.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromSeconds(1.2)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever }); }
-        primaryContents.Children.Add(glyph); primaryContents.Children.Add(new TextBlock { Text = state.PrimaryLabel }); _primary.Content = primaryContents; AutomationProperties.SetName(_primary, state.PrimaryLabel);
+        primaryContents.Children.Add(glyph); primaryContents.Children.Add(new TextBlock { Text = state.PrimaryLabel }); _primary.Content = primaryContents; UiText.SetAppText(_primary, AutomationProperties.NameProperty, state.PrimaryLabel);
         _primary.IsEnabled = state.CanStart && !state.Downloading && !_starting;
         _primary.Opacity = state.Downloading ? .65 : 1;
         _skip.Visibility = !state.Downloading && state.Available && !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
         _primary.Visibility = !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
-        _later.Content = _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy";
+        UiText.SetAppText(_later, ContentControl.ContentProperty, _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy");
         UiText.Apply(this);          // literal chrome (buttons, headings, tooltips, accessible names); the release-note BODY is never in the catalog
     }
     internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);

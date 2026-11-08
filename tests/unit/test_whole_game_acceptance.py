@@ -221,6 +221,22 @@ class WholeGameAcceptanceTests(unittest.TestCase):
         self.assertFalse(self.blocked(receipt, "gate.owner_history"))
         self.assertEqual("ACCEPT_ELIGIBLE", receipt["verdict"], receipt["blocking"])
 
+    def test_root_review_of_current_task_data_is_bounded_and_keeps_the_historical_gap_visible(self):
+        old = json.loads((self.tmp / "before.json").read_text(encoding="utf-8"))
+        old["appdata"]["files"]["backups/older.rpy"] = "0" * 64
+        (self.tmp / "old_before.json").write_text(json.dumps(old), encoding="utf-8")
+        review = {"status": "ROOT_REVIEWED_CURRENT_TASK", "reviewed_by": "Root", "review_ref": "message", "historical_cause": "UNKNOWN",
+                  "current_baseline_sha256": sha(self.tmp / "before.json"), "historical_snapshot_sha256": sha(self.tmp / "old_before.json")}
+        def run(**over):
+            (self.tmp / "gap.json").write_text(json.dumps(dict(review, **over)), encoding="utf-8")
+            return wga.build(self.fx.args(historical_before=self.tmp / "old_before.json", owner_gap=self.tmp / "gap.json"))
+        ok = run()
+        self.assertFalse(self.blocked(ok, "gate.owner_history"))
+        self.assertEqual("ROOT_REVIEWED_CURRENT_TASK_ONLY", ok["userdata"]["historical"]["disposition"])     # never presented as an Owner approval
+        self.assertTrue(ok["visible_gaps"] and "UNKNOWN" in ok["visible_gaps"][0])
+        for bad in ({"reviewed_by": "DEV"}, {"review_ref": ""}, {"current_baseline_sha256": "0" * 64}, {"historical_snapshot_sha256": "0" * 64}, {"historical_cause": "OWNER_DELETED"}):
+            self.assertTrue(self.blocked(run(**bad), "gate.owner_history"), bad)
+
     def test_unreachable_by_source_is_recomputed_not_asserted(self):
         reach = {"gallery": {"refs": [["a.rpy", 1, "screen achievement_gallery():"]], "showmenu_targets": ["load"], "rpy_members_scanned": 3},
                  "popup_flag_hits": [["a.rpy", 2, "define myconfig.SHOW_ACHIEVEMENT_POPUPS = False"]]}
