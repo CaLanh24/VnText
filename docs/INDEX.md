@@ -41,7 +41,7 @@
 | [docs/RELEASE_0.1.11.md](RELEASE_0.1.11.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.12.md](RELEASE_0.1.12.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ĐÃ PHÁT HÀNH v0.1.13 (đã đóng; lịch sử) |
-| [docs/RELEASE_0.1.17.md](RELEASE_0.1.17.md) | Kiểm toàn game và sửa UI; source chuẩn bị, chưa build/release; whole-game chưa nghiệm thu |
+| [docs/RELEASE_0.1.17.md](RELEASE_0.1.17.md) | 0.1.17 đã phát hành (tag `v0.1.17` → `ed3f5b5`): tests, build, native, cleanup, publication tách riêng; lời mời cập nhật công khai chờ Root |
 | [docs/RELEASE_0.1.16.md](RELEASE_0.1.16.md) | Đã phát hành; evidence kỹ thuật có giới hạn, chưa chứng minh chất lượng toàn game |
 | [docs/RELEASE_0.1.15.md](RELEASE_0.1.15.md) | ĐÃ PHÁT HÀNH v0.1.15 (bất biến; lịch sử) |
 | [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ĐÃ PHÁT HÀNH v0.1.14 không đổi; test-only style-fixed10 sửa F1–F7 fixed8, QA pending; xem AI_STATE và ledger |

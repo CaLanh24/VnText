@@ -1,58 +1,34 @@
-# 0.1.17 — whole-game acceptance and scoped UI repairs
+# Release 0.1.17 — ledger
 
-Status: source preparation, NOT built, NOT released, whole-game acceptance NOT PROVEN.
+Trạng thái: **ĐÃ PHÁT HÀNH** (2026-11-08T06:09:40Z) — https://github.com/CaLanh24/VnText/releases/tag/v0.1.17 (Latest), tag chú thích `v0.1.17` → source `ed3f5b58f1b0540e913785705080a1b3327d0455`. Các commit sau đó trên `main` chỉ đổi `tests/` (công cụ cleanup, guard game gốc, test) và docs; byte sản phẩm không đổi. `v0.1.16` và mọi asset của nó giữ nguyên (9 asset, `Setup.exe` sha256 `2f9ce610…1124bc`).
 
-Expanded prebuild run63ef57f timed out at1800s: deterministic accounting records590 completed successes, five WPF failures and one worker-test error;19 cases were not completed. This is NOT a gate PASS (`gate017-partial-accounting.json`). Targeted reproduction found stale UI/copy expectations and a legacy model-path/low-resolution timing fixture. The cancellation fixture now targets a64-row real data call (not word probes), uses high-resolution timing and proves cancellation while in flight, closed cache and zero persisted translations. Public regression prose is synthetic. Remaining terminal reruns are still required; the standalone full-WPF diagnostic lacks the configured A/B updater fixtures and cannot replace the Python harness gate.
+Mỗi mục dưới đây là một verdict riêng; không mục nào thay cho mục khác.
 
-At9ba0e8f the combined child passed382 MT tests (zero failures/errors/skips), WPF build, Preferences and dialog growth/interaction. Current-scope cleanup PASS; terminal TEST_RUN remains REVIEW_REQUIRED for protected history. One warning is in the private test driver (`with Path`, a no-op), not product code. Private source run `draft017j` translated311 MAIN rows with zero blanks/blocked/pending; source patch read-back311/311 and exact original file/directory inventory preserved (`game017-source-patch.json`). None proves packaged gameplay. Packaging now compresses the existing self-contained single-file patch-installer bundle; exact-binary no-framework runtime acceptance remains required.
+## Tests (nguồn chính xác `ed3f5b5`)
+- WPF workflow 37 test (gồm fixture CSV real-open/real-Preview và fixture chuyển trạng thái cửa sổ cập nhật) + test aggregate + test guard game: 61 test, child exit 0 (wrapper `REVIEW_REQUIRED` vì lịch sử epoch được bảo vệ).
+- Installer tự chứa không cần framework: `test_patch_installer` 4/4 trên đúng byte `e7a7ee98…`. Updater backend: public 0.1.16 → ứng viên, exit 0, 7196/7196 tệp, canary giữ nguyên (không phải UI native).
+- Công cụ sau artifact (`775ef19`): 189 test cleanup/epoch/aggregate/guard, child exit 0, cleanup phạm vi PASS, wrapper `REVIEW_REQUIRED` (lịch sử được bảo vệ). Test dịch/MT/engine của chu kỳ trước dùng lại, không chạy lại vì không đổi.
+- Aggregate `tests/tools/whole_game_acceptance.py` (inventory → CSV → overlay sinh lại bằng renderer sản phẩm → đọc lại): 311/311 MAIN, `ACCEPT_ELIGIBLE`, 0 chặn; Root ACCEPT ghi ở `release-readiness/root-accept-0.1.17.json` (aggregate sha `7ad9485a…`).
 
-Latest gate evidence: `gate017d-translation.json` has381 tests, zero failures/errors/skips at717782c; `gate017-publisher-d.json` child PASS at9382c1a. Wrapper history remains REVIEW_REQUIRED separately. WPF build/resource/CSV passed; Preferences exposed a stale TextBlock-only section-header assertion (the localized section is HeaderedContentControl). Shared-shell centering also needed wiring on Loaded/SizeChanged; a growth regression now checks stable center. Native and final candidate remain NOT PROVEN.
+## Build
+- Publish đúng source `ed3f5b5`: Setup `VNTextStudio-0.1.17-Setup.exe` 285.221.888 B sha256 `4e56da3e960c2030ce6c709bda2475b7c695a4dd680f1a1217817c7b836ccf7f`, payload 7197 tệp. Đỉnh dung lượng lấy mẫu 6.648.569.803 B, dưới ngưỡng hủy 6.660.554.752 B (cap 6,25 GiB + guard 48 MiB không đổi).
+- Ba lần publish trước hỏng ở bước kiểm kê cuối (`inventory_timeout`, cleanup `REVIEW_REQUIRED`): xác minh chuỗi epoch giữ ~4,5 GB bộ nhớ trên máy 8 GB. Sửa ở `c649892`/`775ef19` (chiếu chỉ các trường cần kiểm, không giữ bản đồ lớn trong memo; 4,5 GB → 0,46 GB, 188 s → 73–80 s). Không đổi cap, guard hay sampler.
 
-Owner 2026-11-05 requested verification on the previously named original game and fixes in 0.1.17. Accepting rough offline Vietnamese did not waive whole-game E2E. Keep public 0.1.16/tag/assets unchanged until compatibility of any asset pruning is proved. No cloud, paid service, model change or full-game copy.
+## Native
+- Brain/Root (agent-desktop, CU 0): CSV ở 1043x720/UI 120% Dark — đủ 6 điều khiển trong khung, ≥3 dòng; cửa sổ cập nhật bằng UI sản phẩm thật + mạng giả có ZIP thật — dòng trạng thái và tên UIA nút chính theo trạng thái, canh giữa; nhãn nút phụ KHÔNG nằm trong kết luận. Setup/gỡ cài đặt VI dùng lại từ `f6a4cb5` (Setup.cs không đổi).
+- Game Ren'Py thử trên bản gốc đã khóa hash từng tệp: tuyến tuyến tính 227 câu đến màn hình kết thúc, hai lần xem Lịch sử (dòng dài nhất #129, ngắn nhất #220), tiêu đề, thẻ Lưu/Tải A/Q, nạp lại autosave cuối; restore chính xác (1433 tệp game + tệp Owner hiện tại). Attestation `brain-native017-final-20261108.json` (sha `f3bb75cd…`).
+- Suy luận được chấp nhận và gắn nhãn: việc nạp script thành tựu (không hiển thị được: popup tắt, gallery không có nơi gọi). Không có ảnh từng hộp thoại, không đánh giá ngữ nghĩa.
+- Lời mời cập nhật CÔNG KHAI trong app chưa được kiểm native: checklist `release-readiness/native-checklist-public-offer.md` (fixture `run017/native-upd016`, verifier chỉ đọc `evidence/verify_public_offer_result.py`).
 
-## Corpus evidence
+## Cleanup
+- Cleanup phạm vi PASS; lịch sử epoch được bảo vệ vẫn `REVIEW_REQUIRED` (không phải lỗi child, không waive).
+- Owner AppData: 497 tệp lịch sử → 2 tệp hiện tại, NGUYÊN NHÂN KHÔNG RÕ (Owner trả lời "Không hoặc không rõ", không phải phê duyệt). Backup 497 giữ nguyên, không khôi phục/quy kết; kiểm tra phạm vi hiện tại chính xác (guard `tests/tools/original_game_guard.py`, Root review `ROOT_REVIEWED_CURRENT_TASK`).
+- Sau phát hành: đã xóa baseline đã dùng, harness scratch, worktree nguồn ứng viên, patch-ready; giữ `ReleaseRoot` cục bộ (đúng byte đã phát hành), fixture 0.1.16 cho kiểm tra công khai, evidence gọn, backup 497, lịch sử epoch.
 
-Private evidence: `C:/vnrg/evidence/p2p3-summary.json`, `C:/vnrg/corpus017/README.txt`, `aligned_corpus.csv`, `t1_traces.json`.
+## Publication
+- Đúng 5 asset (không có asset checksum thứ sáu; checksum nằm trong thân release): `VNTextStudio-0.1.17-Setup.exe` 285.221.888 B; `full-app-update-0.1.17-d403c45f9fabb262.zip` 68.553.720 B; `full-app-update-current.json` 2.331.838 B; `full-app-update-from-0.1.16-to-0.1.17-current.json` 2.321.521 B; `full-app-update-from-0.1.16-to-0.1.17-f3d6a0c7871f87be.zip` 65.855.137 B. Sha256 từng tệp ở thân release và `release-readiness/SHA256SUMS.txt`.
+- Đọc lại ẩn danh sau phát hành (`public-readback-0.1.17.json`): tag chú thích → `ed3f5b58f1b0540e913785705080a1b3327d0455`; release non-draft, non-prerelease, Latest; tải đủ 5 asset, byte và sha256 khớp kho cục bộ và digest của GitHub; thân release có liên kết Setup đầu tiên, source SHA và 5 checksum; không chứa tên game hay dữ liệu Owner.
+- Đường cập nhật 0.1.16 → 0.1.17 và tuyến cũ (từ 0.1.7) được giữ; bản cũ hơn đi qua các release đã phát hành theo planner của client (chưa kiểm native công khai).
 
-- Independent archive scan: 25 game scripts plus 48 translation scripts; 227 dialogue statements matched, one linear start label, no choice branches found. 310 MAIN rows, 8 non-main review-screen rows, 6 technical rows: 324 unique game-owned units. The six blocked dialogue rows also present in review are duplicates, not six additional source units.
-- 291 engine-common strings remain excluded from patch; 230 are potentially player-visible. This is an OPEN coverage gap, not whole-game PASS. Ten runtime expressions remain unresolved. No promotion or validator waiver is authorized.
-- Exact public 0.1.16 worker sources/model were verified against its payload. Whole-corpus output found app-induced clause loss, six blank translations, an English paragraph falsely classified Vietnamese because of a foreign name accent, and a visible achievement label classified as an ID prefix.
-- OCR covered 330/330 archive images plus two loose webp images; positive control passed. No readable English text found; stylized/non-Latin OCR remains a limitation.
-- Candidate flags are not all defects: date-format carriers must remain exact; borrowed words and punctuation changes do not prove semantic loss. Single-row versus batched numerical differences do not by themselves prove app causality.
-
-## Prepared changes
-
-- Keep inferred names in sentence context rather than cutting their surrounding prose into fragments. Explicit user glossary/memory and structural safeguards remain authoritative. This prevents app-induced fragmentation; it does not guarantee the model spells every inferred name correctly.
-- Sentence-by-sentence retry also applies to the quality-retry batch. Prefer validated complete sentence candidates over shorter fragments. A malformed batch response retries each source sentence without dropping rows.
-- Recognize actual Vietnamese marks/syllables instead of treating every foreign combining mark as Vietnamese. Detection normalizes only a probe, never user/source bytes.
-- A bounded all-caps English-prose input normalization addresses a confirmed raw-model failure (a currency sentence became an unrelated animal phrase). Real-model paired probe changed it to “Cả trăm đô-la!”. Preserve short acronyms and source bytes; no model/framework change. Full exact-candidate rerun remains required.
-- Preserve anchored compound name spellings in residue detection; bounded generic vocabulary and UI catalog additions address the observed ordinary-word and achievement-label cases. New postprocess/cache identity; no old cache deletion or user-edit overwrite.
-- Whole-corpus pass 2 (same-invocation traces): a good first pass was rejected for ONE garbled token (`Babib`/`Tavenn`/`Chunga`/`incridibly`/`cripies`) and the ladder then chose a fragmented fallback (10 rows). `postprocess` now restores a gate-flagged near-miss token to its exact source word (translated by the exact lexical table when defined), turns a vowel-only cry into the source interjection, and removes the model's `_` word joiner, space-before-punctuation and space-after-opening-quote only when the source has none (never in structured rows). Continuation pieces of word/clause segments are lower-cased at the join; plain exterior prose of a parenthetical row keeps sentence context and its trailing space. A stretched known English word (`stoppp`) is collapsed before MT only when the result is known; SFX/names keep their bytes. Exact stock prompt `Are you sure you want to delete this save?` (+ overwrite/quit/begin skipping) enters the strict `:string:` UI catalog. `POSTPROCESS_VERSION=garbled-name-context-5`. Real-model private run on a fresh product extract (311 rows, 0 blocked/pending): 258 first-pass, 3 ladder rows; remaining known gaps: raw-model word-sense/idiom errors, `stunned to the gills` leaves `gills`, quote closing of M0088.
-- About current-version banner: restrained left-aligned green surface with localized version; keep other status semantics. Journal text surface follows the active Light/Dark palette.
-- Release notes/update dialog centers using the actual owner HWND frame (Window.Left/Top can be restore coordinates while maximized), including height changes during download.
-- License/EULA/uninstall surfaces reuse Setup typography, header/body/footer spacing and app icon; explicit consent and safe uninstall default remain. No uninstall-data behavior change.
-- Published installer filename becomes `VNTextStudio-0.1.17-Setup.exe`; Setup and Uninstall embed the app icon. Publisher layout/transaction checks use the exact versioned name.
-- Remove only the redundant “Hủy rồi thoát” button. “Hủy tác vụ” and titlebar-close confirmation/terminal guards remain.
-
-## Validation boundaries and next steps
-
-Direct focused tests and private corpus probes are development evidence, NOT canonical wrappers, packaged/native PASS or whole-game acceptance. Initial direct retry experiments included failures/regressions; the sentinel-name experiment was rejected because OPUS mutated markers. Retain the compact probes, not a false PASS.
-
-Latest preparation evidence: `C:/vnrg/evidence/prepare017-focused.json` records 94 direct focused tests (20 real-game fixes, 32 strategies, 13 Vietnamese homographs, 29 classifier), all child exits 0. Python AST, XAML XML and PowerShell parsing pass; this is not compilation. `draft017c_result.json` records a fresh private 310-row run: 310 nonblank, 0 blocked/pending, source CSV unchanged, 29 outputs differ from public 0.1.16. Five identities are format/symbol/borrowed-word cases; the foreign-name paragraph now translates. This probe precedes the classifier policy-version metadata bump and is not a packaged/whole-game quality verdict. Linguistic review and full extraction/runtime coverage remain open.
-
-Remaining: complete paired linguistic review; fresh product extract/translate/patch with exact candidate provenance; resolve coverage gaps honestly; native game display/playback with a safe windowed/render strategy; exact file-and-directory restoration; scoped UI/Setup/uninstall tests; supported updater routes and public asset simplification proof. Do not launch the original game without the recorded per-file cache/save backups and before/after inventory. `PYTHONDONTWRITEBYTECODE` alone does not prevent Ren'Py cache/save writes.
-
-## Budget / epoch
-
-New account `release-0.1.17` is prepared under the standing measured-allocation rule: same 6.25 GiB combined project/owned-external cap, shared cache 11 GiB, no increase. Existing project about 4.36 GB includes 3.13 GB protected history; sequential candidate/build route estimated about 2.2 GB above a cleaned base. Measure completely before allocating. No artifact becomes exempt by moving it outside the checkout.
-
-The old active epoch ends at hop8/8 and is bound to de44d43. Owner has now answered “cho phép” to the concrete one-use metadata rebaseline/scope transition for prepared091e367 and focused prerequisite descendants: `owner-20261105-091e367-017`. Activate and verify it before canonical gates/build/registered allocation; preserve CAS, rollback, prior history and the ordinary eight-hop bound. No earlier grant is reused. Cleanup history remains REVIEW_REQUIRED separately from scoped cleanup.
-
-Future distribution target: Setup plus previous-supported and immutable legacy updater routes; reuse older releases for compatible intermediate hops only after testing the actual client planner. Do not delete existing public routes merely to make the asset list shorter.
-
-## Native finding (Brain, packaged `f1bf58b`): Patch blocked by the scoped review screens
-
-Native Extract (311 MAIN, 8 unpromoted review screens, VERIFIED_MAIN_SUBSET, accounting complete) then Translate (311/311, pending 0, blocked 0, review 8) left Create Patch disabled: `WorkflowStatus.EvaluateTranslateProgress` required `review_only == 0`, although `ExtractionComplete` and the Python `scoped_patch_eligible`/`patch_gate` already accept this scope (`patch_gate --json` on the native package: 311 eligible, 8 blocked as review_only). Fix: translate progress is complete for such a package only when `extract_status.json` is scoped-eligible with errors 0, its review count equals the translate review count and the `review_only.csv` rows, and every MAIN row of the current CSV is non-blank and equals the status counts; anything else fails closed. Review rows stay excluded and coverage stays PARTIAL. Test: harness `TranslateScopedReview_CompletesOnlyWithProvenAccounting` (12 cases incl. blank MAIN row despite a full status, plus ReadyForPatch). Direct receipt: red at base, green with fix; no canonical gate/build yet (needs the next metadata authority for this commit).
-
-Second one-use authority `owner-20261106-b895c68-017` (same task/caps) rebaselines the epoch to `b895c68` or its focused descendants. Added a view-model regression, `PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel`: Choose CSV -> validate -> real Python `patch_gate` preflight -> Create Patch enabled for a proven scoped subset, disabled for a blank MAIN row (status still claiming all translated) and for review rows without verified scope; with `VNTEXT_WPF_NATIVE_PACKAGE` it also runs the actual native package copy (311 eligible, 8 review-excluded). Red at `f1bf58b` with the native message, green at the fix.
-
+## Chưa chứng minh / không tuyên bố
+Hoàn hảo ngữ nghĩa, kiểm từng dòng hộp thoại, mọi game/DPI/đường UI; lời mời cập nhật công khai trong app (chờ Root); nhãn "Để sau" bằng native; nguyên nhân mất 495 tệp AppData lịch sử.
