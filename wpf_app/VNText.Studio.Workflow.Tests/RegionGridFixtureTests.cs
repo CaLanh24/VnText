@@ -196,6 +196,7 @@ internal static partial class Program
             using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false) { OutputPath = root };
             var owner = new Window { Title = "English scan owner", Width = 1043, Height = 720 };
             owner.Show();
+            vm.ImageEditMode = true;                                  // this scan covers the manual edit tools; the results view shows package data
             var panel = new ImageWorkspacePanel { DataContext = vm };
             var dialog = new AppDialogWindow(owner, UiText.Translate("Text trong ảnh"), panel, 1040);
             dialog.AddButton(UiText.Translate("Đóng"), () => { });

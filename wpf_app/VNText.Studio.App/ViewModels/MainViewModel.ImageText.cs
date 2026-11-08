@@ -34,6 +34,23 @@ public sealed partial class MainViewModel
     public bool ImageHasPreview => _imagePreview is not null;
     public bool ImageHasRegions => ImageRegions.Count > 0;
     public bool ImageShowEmptyState => !ImageHasPreview && !ImageHasRegions;
+
+    // Results first.  Edit mode is entered only by "Sửa ảnh" and left by "Quay lại kết quả"; the manual OCR/crop/render tools exist only there.
+    private bool _imageEditMode;
+    public bool ImageEditMode { get => _imageEditMode; set { if (Set(ref _imageEditMode, value)) { RaiseImageViewState(); RefreshImageCommands(); } } }
+    public bool ImageResultsView => !_imageEditMode;
+    public bool ImageHasResults => ImageResults.Count > 0;
+    public bool ImageHasUntranslated => ImageResults.Any(r => r.Status != "Đã dịch nháp");
+    public bool ImageShowOpenResults => ImageHasResults && !ImageHasUntranslated;
+    public bool ImageShowResultText => !_imageEditMode && ImageHasRegions;
+    /// <summary>The read-only translations of the selected result; empty in the edit view so nothing is realised there.</summary>
+    public System.Collections.IEnumerable ImageResultTexts => _imageEditMode ? Array.Empty<ImageTextRegion>() : ImageRegions;
+    public RelayCommand EnterImageEditCommand { get; private set; } = null!;
+    public RelayCommand LeaveImageEditCommand { get; private set; } = null!;
+    private void RaiseImageViewState()
+    {
+        Raise(nameof(ImageResultsView)); Raise(nameof(ImageHasResults)); Raise(nameof(ImageHasUntranslated)); Raise(nameof(ImageShowOpenResults)); Raise(nameof(ImageShowResultText)); Raise(nameof(ImageResultTexts));
+    }
     public string ImageEmptyHint => string.IsNullOrWhiteSpace(_imagePath)
         ? "Chọn ảnh để xem trước và OCR"
         : "Bấm “OCR ảnh đã chọn” để xem trước và đọc text trong ảnh này.";
@@ -46,7 +63,7 @@ public sealed partial class MainViewModel
     }
     private void RaiseImageContentState()
     {
-        Raise(nameof(ImageHasPreview)); Raise(nameof(ImageHasRegions)); Raise(nameof(ImageShowEmptyState)); Raise(nameof(ImageEmptyHint));
+        Raise(nameof(ImageHasPreview)); Raise(nameof(ImageHasRegions)); Raise(nameof(ImageShowEmptyState)); Raise(nameof(ImageEmptyHint)); RaiseImageViewState();
     }
     /// <summary>Preview size in source PIXELS.  Region boxes are source pixels, while BitmapSource.Width/Height are DPI-scaled
     /// DIPs (a 600x200 px image at 300 DPI is 192x64 DIP), so the overlay canvas must use these, not Width/Height.</summary>
@@ -133,6 +150,8 @@ public sealed partial class MainViewModel
         var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
         ImageResults.Clear();
         foreach (var result in ImagePackageProbe.ReadResults(WorkflowStatus.ResolvePackageDir(OutputPath))) ImageResults.Add(result);
+        RaiseImageViewState();
+        if (_selectedImageResult is null && !ImageHasPreview && ImageResults.Count > 0) SelectedImageResult = ImageResults[0];      // show the first result right away
         ImageWorkspaceSummary = images.Total == 0
             ? "Không có ảnh phát hiện chữ trong kết quả Lấy text."
             : $"{images.Total:N0} ảnh có chữ · {images.TranslatedDrafts:N0} bản dịch nháp · {images.Total - images.TranslatedDrafts:N0} cần dịch / xem lại.\nKết quả: {Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "images")}\nBấm Dịch ở tab Dịch để dịch cả text và ảnh. Chọn một ảnh bên dưới để xem hoặc sửa.";
@@ -141,7 +160,7 @@ public sealed partial class MainViewModel
     private void RefreshImageCommands()
     {
         Raise(nameof(ImageGridEnabled));
-        foreach (var command in new[] { OpenImageWorkspaceCommand, ChooseOcrImageCommand, DiscoverImagesCommand, TranslateAllImagesCommand, RunImageOcrCommand,
+        foreach (var command in new[] { EnterImageEditCommand, LeaveImageEditCommand, OpenImageWorkspaceCommand, ChooseOcrImageCommand, DiscoverImagesCommand, TranslateAllImagesCommand, RunImageOcrCommand,
             OpenImageReviewCommand, SaveImageReviewCommand, RenderImageCommand, AddImageRegionCommand,
             RemoveImageRegionCommand, CreateImageDeliveryCommand, InstallImageDeliveryCommand, RecoverImageDeliveryCommand, RetryImageCommand })
             command?.RaiseCanExecuteChanged();
@@ -199,7 +218,9 @@ public sealed partial class MainViewModel
     private void InitImageTextCommands()
     {
         ImageRegions.CollectionChanged += OnImageRegionsChanged;
-        OpenImageWorkspaceCommand = new RelayCommand(_ => { RefreshImageWorkspace(); ImageWorkspaceRequested?.Invoke(); }, _ => !Busy);
+        EnterImageEditCommand = new RelayCommand(_ => ImageEditMode = true, _ => !Busy && !_imageEditMode);
+        LeaveImageEditCommand = new RelayCommand(_ => ImageEditMode = false, _ => !Busy && _imageEditMode);
+        OpenImageWorkspaceCommand = new RelayCommand(_ => { ImageEditMode = false; RefreshImageWorkspace(); ImageWorkspaceRequested?.Invoke(); }, _ => !Busy);
         RetryImageCommand = new RelayCommand(_ =>
         {
             var image = _pathPicker.PickImageFile();

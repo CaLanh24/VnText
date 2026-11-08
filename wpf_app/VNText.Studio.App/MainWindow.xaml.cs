@@ -207,7 +207,19 @@ public partial class MainWindow : Window
     {
         void Show()
         {
-            if (!IsVisible || _completionDialogs.Count == 0 || _completionDialogOpen) return;
+            if (_completionDialogs.Count == 0 || _completionDialogOpen) return;
+            if (!IsVisible)
+            {
+                // Hidden to the tray: a finished task must still be announced.  Restore the window once (bounded), then show the persistent dialog with its sound.
+                try { if (_tray is not null) _tray.Restore(); else Show(); } catch (InvalidOperationException) { }
+                if (!IsVisible)
+                {
+                    var hidden = _completionDialogs.Dequeue();                       // cannot be shown (closing): still play the completion sound, never drop it silently
+                    if (DataContext is MainViewModel quiet) quiet.ShowCompletionToast(hidden);
+                    if (_completionDialogs.Count > 0) Dispatcher.BeginInvoke(Show, System.Windows.Threading.DispatcherPriority.ContextIdle);
+                    return;
+                }
+            }
             _completionDialogOpen = true;
             try
             {

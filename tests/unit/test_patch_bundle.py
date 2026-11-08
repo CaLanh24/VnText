@@ -146,6 +146,22 @@ class PatchBundleRuntimeTests(unittest.TestCase):
             self.assertFalse(target.exists())
 
 
+class PatchInstallerUiSourceTests(unittest.TestCase):
+    """Native review found the description clipped at the default size and a plain square/blue-flat look; these guard the layout rules in source."""
+
+    def test_description_wraps_to_its_own_height_and_the_brand_mark_is_the_app_artwork(self):
+        form = (ROOT / "wpf_app" / "VNText.PatchInstaller" / "InstallerForm.cs").read_text(encoding="utf-8")
+        project = (ROOT / "wpf_app" / "VNText.PatchInstaller" / "VNText.PatchInstaller.csproj").read_text(encoding="utf-8")
+        self.assertIn("_description = new() { AutoSize = true", form)                  # content-sized, never a fixed height
+        self.assertNotRegex(form, r"_description[^;]*Height\s*=")
+        self.assertIn("_description.MaximumSize = new Size(inner, 0)", form)           # wraps at the card width on every resize
+        self.assertIn("SizeType.AutoSize", form)
+        self.assertIn("class RoundedButton", form); self.assertIn("class RoundedPanel", form)
+        self.assertIn("VNText.Logo.png", form)
+        self.assertIn("brand_144.png", project)
+        self.assertTrue((ROOT / "wpf_app" / "VNText.PatchInstaller" / "Assets" / "brand_144.png").is_file())
+
+
 if __name__ == "__main__":
     import unittest.mock  # noqa: F401
     unittest.main()

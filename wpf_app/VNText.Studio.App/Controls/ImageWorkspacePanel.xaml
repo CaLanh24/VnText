@@ -77,29 +77,48 @@
                        AutomationProperties.Name="Tình trạng ảnh trong gói" />
         </Border>
 
-        <TextBlock Text="Ảnh có chữ trong gói" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <!-- Results first: counts above, the images with text and their results, ONE clear action.  Manual OCR / crop / font / mode / render / package
+             recovery live in the edit view that only "Sửa ảnh" opens (and "Quay lại kết quả" leaves); nothing here is a drop-down disclosure. -->
         <WrapPanel Margin="0,0,0,8">
-            <Button Content="Dịch ảnh chưa xong" Command="{Binding TranslateAllImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button x:Name="DiscoverButton" Visibility="Collapsed" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="TranslateImagesButton" Content="Dịch ảnh chưa xong" Command="{Binding TranslateAllImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                    Visibility="{Binding ImageHasUntranslated, Converter={StaticResource PanelBoolToVis}}" />
+            <Button x:Name="OpenResultsButton" Content="Mở thư mục kết quả" Command="{Binding OpenOutputCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                    Visibility="{Binding ImageShowOpenResults, Converter={StaticResource PanelBoolToVis}}" />
+            <Button x:Name="EditImagesButton" Content="Sửa ảnh" Command="{Binding EnterImageEditCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8"
+                    Visibility="{Binding ImageResultsView, Converter={StaticResource PanelBoolToVis}}" AutomationProperties.Name="Sửa ảnh" />
+            <Button x:Name="BackToResultsButton" Content="‹ Quay lại kết quả" Command="{Binding LeaveImageEditCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8"
+                    Visibility="{Binding ImageEditMode, Converter={StaticResource PanelBoolToVis}}" AutomationProperties.Name="Quay lại kết quả" />
         </WrapPanel>
+        <TextBlock Text="Ảnh có chữ trong gói" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6"
+                   Visibility="{Binding ImageHasResults, Converter={StaticResource PanelBoolToVis}}" />
         <ListBox x:Name="ImageResultList" ItemsSource="{Binding ImageResults}" SelectedItem="{Binding SelectedImageResult, Mode=TwoWay}"
                  IsEnabled="{Binding ImageGridEnabled}" MaxHeight="150" MinHeight="60" Background="{DynamicResource FieldBackgroundBrush}"
+                 Visibility="{Binding ImageHasResults, Converter={StaticResource PanelBoolToVis}}"
                  Foreground="{DynamicResource InkBrush}" AutomationProperties.Name="Ảnh có chữ và kết quả dịch">
             <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal">
                 <TextBlock Text="{Binding Name}" Margin="0,0,16,0" /><TextBlock Text="{Binding Status, Converter={StaticResource UiTextDynamic}}" />
             </StackPanel></DataTemplate></ListBox.ItemTemplate>
         </ListBox>
-        <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" />
+        <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"
+                   Visibility="{Binding ImageHasResults, Converter={StaticResource PanelBoolToVis}}" />
 
+        <!-- Edit view, part 1: choosing / OCR of a single image. -->
+        <StackPanel x:Name="EditViewTop" Visibility="{Binding ImageEditMode, Converter={StaticResource PanelBoolToVis}}">
+        <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <WrapPanel Margin="0,0,0,8">
+            <Button x:Name="DiscoverButton" Visibility="Collapsed" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+        </WrapPanel>
         <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <Border x:Name="ImageEmptyState" Style="{StaticResource SubtlePanelBorder}" Padding="16,14" Margin="0,0,0,8"
                 Visibility="{Binding ImageShowEmptyState, Converter={StaticResource PanelBoolToVis}}">
             <TextBlock x:Name="ImageEmptyHintText" Text="{Binding ImageEmptyHint, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
                        AutomationProperties.Name="Chưa có ảnh để xem trước" />
         </Border>
+        </StackPanel>
+
         <Border x:Name="ImagePreviewPanel" Style="{StaticResource SubtlePanelBorder}" Padding="8" Margin="0,0,0,8"
                 Visibility="{Binding ImageHasPreview, Converter={StaticResource PanelBoolToVis}}">
             <Viewbox Height="150" Stretch="Uniform" HorizontalAlignment="Left">
@@ -124,6 +143,15 @@
             </Viewbox>
         </Border>
 
+        <ItemsControl x:Name="ResultTranslations" ItemsSource="{Binding ImageResultTexts}" Margin="0,0,0,8" Visibility="{Binding ImageShowResultText, Converter={StaticResource PanelBoolToVis}}"
+                      AutomationProperties.Name="Bản dịch trong ảnh đã chọn">
+            <ItemsControl.ItemTemplate><DataTemplate><StackPanel Margin="0,0,0,6">
+                <TextBlock Text="{Binding SourceText}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding Translation}" Foreground="{DynamicResource InkBrush}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            </StackPanel></DataTemplate></ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel x:Name="EditViewBottom" Visibility="{Binding ImageEditMode, Converter={StaticResource PanelBoolToVis}}">
         <!-- Compact main grid: only what is reviewed line by line.  Crop, font, colours and background options are in the detail form. -->
         <DataGrid x:Name="RegionGrid" ItemsSource="{Binding ImageRegions}" SelectedItem="{Binding SelectedImageRegion, Mode=TwoWay}"
                   Style="{StaticResource CsvDataGridStyle}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
@@ -212,6 +240,7 @@
             <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
+        </StackPanel>
         <TextBlock x:Name="StatusLine" Text="{Binding ImageStatus, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"
                    AutomationProperties.Name="Trạng thái xử lý ảnh" />
     </StackPanel>

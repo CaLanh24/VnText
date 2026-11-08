@@ -1031,6 +1031,12 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Visibility="{Binding AnalyzeBusy, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn("chưa xác minh khả năng tạo patch", analyze)
         self.assertIn("AnalyzeOutcome.Cancelled", analyze)
+        # A finished task is announced even when the window is hidden to the tray: restore once, then dialog + sound; never a silent return.
+        window_cs = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
+        handler = window_cs[window_cs.index("private void OnCompletionRequested"):window_cs.index("private readonly Queue<CompletionNotification>")]
+        self.assertNotIn("if (!IsVisible || _completionDialogs.Count == 0", handler)
+        self.assertIn("_tray.Restore()", handler)
+        self.assertIn("ShowCompletionToast(hidden)", handler)
         # Newest-version banner (Cockpit 1.3.80 reference, measured): hairline lighter border, tighter padding, same global palette family.
         tokens = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
         self.assertIn('AboutCurrentBackgroundBrush" Color="#D8EDE1"', tokens)

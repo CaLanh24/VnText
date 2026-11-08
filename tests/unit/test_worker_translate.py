@@ -377,6 +377,7 @@ class WorkerTranslateTests(unittest.TestCase):
         out = WORK / f"worker_real_cancel_{time.time_ns()}"
         marker = out / "call-entry.json"
         timing_path = out / "call-timing.json"
+        release_path = out / "call-release"          # created by the parent AFTER the worker acknowledged the cancel
         csv_path = out / "translation.csv"
         rows = [
             {
@@ -397,10 +398,11 @@ class WorkerTranslateTests(unittest.TestCase):
         _write_csv(csv_path, rows)
         (out / "manifest.json").write_text('{"entries":[]}', encoding="utf-8")
 
-        # This disposable worker launcher wraps only the adapter boundary. The
-        # worker still receives NDJSON commands over stdin and performs real
-        # OPUS-MT/CT2 inference in its task thread; the timestamp files let the
-        # parent send cancel after the adapter call starts but before it returns.
+        # This disposable worker launcher wraps only the adapter boundary. The worker still receives NDJSON commands over stdin and performs
+        # REAL OPUS-MT/CT2 inference in its task thread.  The boundary is instrumented with a deterministic handshake instead of a race against
+        # inference speed: the adapter call is entered (marker) and then HELD until the parent has sent cancel AND the worker has acknowledged
+        # it from its command thread while this synchronous call is still outstanding; only then does the real inference run and return.  The
+        # timing file records what is instrumented (the hold) and what is real (inference duration and the translated strings).
         startup_code = r'''
 import json, os, time
 from pathlib import Path
@@ -408,6 +410,7 @@ import vntext.app_tasks as app_tasks
 original = app_tasks.run_ct2_translate
 marker = Path(os.environ["VNTEXT_TEST_CT2_CALL_MARKER"])
 timing_path = Path(os.environ["VNTEXT_TEST_CT2_CALL_TIMING"])
+release_path = Path(os.environ["VNTEXT_TEST_CT2_CALL_RELEASE"])
 def observed_run(csv_path, *args, **kwargs):
     from vntext.mt_ct2_model import get_translator
     from vntext.mt_model_adapter import adapt_ct2_translator
@@ -424,10 +427,18 @@ def observed_run(csv_path, *args, **kwargs):
             entered = time.monotonic()
             if not marker.exists():
                 marker.write_text(json.dumps({"entered": entered}), encoding="utf-8")
+            hold_deadline = time.monotonic() + 90
+            while not release_path.exists() and time.monotonic() < hold_deadline:
+                time.sleep(0.005)
+            started = time.monotonic()
+            values = []
             try:
-                return real.translate_many(texts)
+                values = real.translate_many(texts)
+                return values
             finally:
-                timing_path.write_text(json.dumps({"entered": entered, "returned": time.monotonic()}), encoding="utf-8")
+                timing_path.write_text(json.dumps({"entered": entered, "released": release_path.exists(), "inference_started": started,
+                                                   "returned": time.monotonic(), "inputs": len(texts), "translated": len(values),
+                                                   "changed": sum(1 for a, b in zip(texts, values) if a != b)}), encoding="utf-8")
     kwargs["model_adapter"] = ObservedAdapter()
     return original(csv_path, *args, **kwargs)
 app_tasks.run_ct2_translate = observed_run
@@ -438,6 +449,7 @@ raise SystemExit(main())
             {
                 "VNTEXT_TEST_CT2_CALL_MARKER": str(marker),
                 "VNTEXT_TEST_CT2_CALL_TIMING": str(timing_path),
+                "VNTEXT_TEST_CT2_CALL_RELEASE": str(release_path),
             },
             startup_code=startup_code,
         )
@@ -490,7 +502,11 @@ raise SystemExit(main())
             cancel_ack = None
             completed = None
             deadline = time.monotonic() + 90
+            released = False
             while time.monotonic() < deadline and (cancel_ack is None or completed is None):
+                if cancel_ack is not None and not released:
+                    release_path.write_text("go", encoding="utf-8")      # the cancel was acknowledged while the adapter call was outstanding
+                    released = True
                 try:
                     event = events.get(timeout=0.1)
                 except queue.Empty:
@@ -518,6 +534,16 @@ raise SystemExit(main())
             timing = json.loads(timing_path.read_text(encoding="utf-8"))
             self.assertLess(entered_at, cancel_sent_at, "cancel must be sent after the real CT2 adapter call begins")
             self.assertLess(cancel_sent_at, float(timing["returned"]), "cancel must arrive before the synchronous inference returns")
+            # Deterministic proof of the ordering, plus proof that the inference itself was REAL (not faked): the held call was only released
+            # after the worker acknowledged the cancel, and the model really produced changed translations for the whole batch.
+            self.assertTrue(released, "the adapter call was never released after the acknowledgement")
+            self.assertTrue(timing["released"])
+            self.assertLess(entered_at, cancel_sent_at)
+            self.assertLessEqual(cancel_sent_at, float(timing["inference_started"]))
+            self.assertGreater(float(timing["returned"]) - float(timing["inference_started"]), 0.0, timing)
+            self.assertGreater(timing["translated"], 0, timing)
+            self.assertEqual(timing["inputs"], timing["translated"], timing)
+            self.assertEqual(timing["inputs"], timing["changed"], "the real model returned the source text unchanged: not a real translation")
 
             # Confirm the persistent worker remains responsive after a canceled
             # task, then close stdin and require a normal process exit.

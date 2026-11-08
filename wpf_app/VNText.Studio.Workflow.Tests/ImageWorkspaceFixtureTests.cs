@@ -73,6 +73,15 @@ internal static partial class Program
                 dialog.UpdateLayout();
 
                 Button B(string name) => panel.FindName(name) as Button ?? throw new InvalidOperationException("missing button " + name);
+                // Results first: the manual tools do not exist in the default view; only "Sửa ảnh" opens them and "Quay lại kết quả" returns.
+                panel.UpdateLayout();
+                AssertTrue(B("EditImagesButton").IsVisible);
+                AssertTrue(((FrameworkElement)panel.FindName("ImageResultList")).IsVisible);
+                foreach (var name in new[] { "OcrButton", "ChooseButton", "OpenReviewButton", "RenderButton", "DeliveryButton", "InstallButton", "RecoverButton" }) AssertFalse(B(name).IsVisible);
+                AssertFalse(((FrameworkElement)panel.FindName("RegionGrid")).IsVisible);
+                AssertFalse(B("BackToResultsButton").IsVisible);
+                vm.EnterImageEditCommand.Execute(null); panel.UpdateLayout();
+                AssertTrue(B("OcrButton").IsVisible); AssertTrue(B("RenderButton").IsVisible); AssertTrue(B("BackToResultsButton").IsVisible); AssertFalse(B("EditImagesButton").IsVisible);
                 // Every workflow stage is a real, bound control.
                 AssertTrue(ReferenceEquals(B("DiscoverButton").Command, vm.DiscoverImagesCommand));
                 AssertTrue(ReferenceEquals(B("ChooseButton").Command, vm.ChooseOcrImageCommand));

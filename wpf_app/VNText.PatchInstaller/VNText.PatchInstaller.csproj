@@ -10,6 +10,9 @@
     <ApplicationIcon>..\VNText.Studio.App\Assets\vntext_studio.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Assets\brand_144.png" LogicalName="VNText.Logo.png" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Remove="obj\**\*.cs" />
   </ItemGroup>
 </Project>
