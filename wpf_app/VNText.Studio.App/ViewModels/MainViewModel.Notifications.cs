@@ -23,7 +23,7 @@ public sealed partial class MainViewModel
     internal bool SuppressCompletionNotifications { get; set; }
 
     internal void ShowCompletionToast(CompletionNotification notification) =>
-        ShowToast(notification.Message, notification.Kind, playSound: notification.Kind is "error" or "warning");
+        ShowToast(notification.Message, notification.Kind, playSound: true);
 
     public string ToastMessage
     {
@@ -92,6 +92,9 @@ public sealed partial class MainViewModel
     private void RequestCompletion(string title, string message, string kind)
     {
         if (SuppressCompletionNotifications || string.IsNullOrWhiteSpace(message))
+            return;
+        // A superseded automatic scan must not interrupt the person with the old folder's result.
+        if (_runningTask == "analyze" && _analyzeRejectLate)
             return;
 
         CompletionRequested?.Invoke(

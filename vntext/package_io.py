@@ -223,7 +223,10 @@ def _write_package_legacy(
             row = entry.to_csv_row()
             row["patch_note"] = f"skip_technical: {reason}"
             rows.append(row)
-        write_csv_rows_file(technical_path, CSV_FIELDS, rows)
+        if separate_review or not enforce_symmetry:
+            write_csv_rows_file(technical_path, CSV_FIELDS, rows)
+        else:
+            (out / "technical_skipped.json").write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
     elif technical_path.exists():
         technical_path.unlink()
 
@@ -273,14 +276,17 @@ def _write_package_legacy(
             (out / "raw_candidates_rejected.csv").unlink()
         manifest_entries = list(main_entries) + list(raw_candidate_entries) + list(real_review_entries) + list(raw_unpatchable_entries) + list(auto_rejected_entries)
     else:
-        all_entries = list(main_entries) + list(review_entries)
+        # One editable document, without promoting review entries into the proven writer set.
+        all_entries = list(main_entries) + list(review_entries) + (list(raw_unpatchable_entries) if enforce_symmetry else [])
         write_csv(out / "translation.csv", all_entries)
-        if raw_unpatchable_entries:
+        if raw_unpatchable_entries and not enforce_symmetry:
             write_csv(out / "raw_unpatchable.csv", raw_unpatchable_entries)
-        for extra_name in ("review_only.csv", "raw_candidates.csv", "raw_candidates_rejected.csv"):
+        extras = ("review_only.csv", "raw_candidates.csv", "raw_candidates_rejected.csv")
+        if enforce_symmetry: extras += ("raw_unpatchable.csv", "technical_skipped.csv")
+        for extra_name in extras:
             if (out / extra_name).exists():
                 (out / extra_name).unlink()
-        manifest_entries = all_entries + list(raw_unpatchable_entries)
+        manifest_entries = all_entries + ([] if enforce_symmetry else list(raw_unpatchable_entries))
 
     stats = dict(stats)
     engine_common_exclusions = stats.pop("renpy_engine_common_exclusion_entries", [])
@@ -309,6 +315,7 @@ def _write_package_legacy(
     stats["review_only_entries"] = len(real_review_entries)
     manifest = {
         "format": 2,
+        "unified_document": not separate_review and enforce_symmetry,
         "tool": "VNText Studio Core",
         "version": VERSION,
         "entries": [entry.to_manifest() for entry in manifest_entries],

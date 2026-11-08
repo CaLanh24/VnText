@@ -8,10 +8,41 @@ from unittest.mock import Mock, patch
 
 from PIL import Image, ImageDraw, ImageFont
 from tests.lib.work_paths import work_temp_dir
-from vntext.image_batch import run_image_batch, _font_path
+from vntext.image_batch import run_image_batch, translate_cached_images, _font_path
 
 
 class AutomaticImageTests(unittest.TestCase):
+    def test_cached_translate_uses_saved_ocr_without_rescanning(self):
+        self.run_batch(translate=False)
+        with patch('vntext.image_batch.recognize_image', side_effect=AssertionError('must reuse OCR')), patch('vntext.image_batch.discover_images', side_effect=AssertionError('must not scan')), patch('vntext.image_batch._translator', return_value=Mock(translate_many=lambda texts: ['Xin chào thế giới'])):
+            result = translate_cached_images(self.package, source=self.source)
+        self.assertEqual((result['total'], result['translated'], result['untranslated']), (1, 1, 0))
+        report = self.report(result)
+        self.assertFalse(report['items'][0]['human_approved'])
+        self.assertEqual(self.source.read_bytes(), self.data)
+        with patch('vntext.image_batch._translator', side_effect=AssertionError('already translated')):
+            self.assertEqual(translate_cached_images(self.package)['translated'], 1)
+
+    def test_cached_translate_refuses_changed_image_and_wrong_game(self):
+        result = self.run_batch(translate=False)
+        report = self.report(result)
+        original = Path(result['output']) / report['items'][0]['original']
+        Image.new('RGB', (400, 120), 'black').save(original)
+        with patch('vntext.image_batch._translator', side_effect=AssertionError('invalid image')):
+            result = translate_cached_images(self.package)
+        self.assertEqual(result['translated'], 0)
+        self.assertEqual(result['untranslated'], 1)
+        with self.assertRaisesRegex(ValueError, 'game khác'):
+            translate_cached_images(self.package, source=self.root / 'other')
+
+    def test_cached_translate_does_not_process_no_text_images(self):
+        def empty(path, **kwargs):
+            document = self.ocr(path); document['regions'] = []; return document
+        with patch('vntext.image_batch.recognize_image', side_effect=empty):
+            run_image_batch(self.source, self.package, translate=False)
+        with patch('vntext.image_batch._translator', side_effect=AssertionError('no text')):
+            self.assertEqual(translate_cached_images(self.package)['total'], 0)
+
     def setUp(self):
         self.root=work_temp_dir('automatic-image-'+self.id().rsplit('.',1)[-1])
         self.source=self.root/'source.png'; self.package=self.root/'package'

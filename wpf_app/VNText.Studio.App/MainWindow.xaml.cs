@@ -207,15 +207,32 @@ public partial class MainWindow : Window
     {
         void Show()
         {
-            if (DataContext is MainViewModel vm)
-                vm.ShowCompletionToast(notification);
+            if (!IsVisible || _completionDialogs.Count == 0 || _completionDialogOpen) return;
+            _completionDialogOpen = true;
+            try
+            {
+                var next = _completionDialogs.Dequeue();
+                if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
+                if (DataContext is MainViewModel vm) vm.ShowCompletionToast(next);
+                Window owner = this;
+                while (owner.OwnedWindows.Cast<Window>().LastOrDefault(w => w.IsVisible) is { } child) owner = child;
+                var body = new TextBlock { Text = UiText.TranslateDynamic(next.Message), TextWrapping = TextWrapping.Wrap };
+                var dialog = new AppDialogWindow(owner, UiText.TranslateDynamic(next.Title), body, 600);
+                dialog.AddButton(UiText.Translate("Đóng"), () => { });
+                dialog.ShowDialog();
+            }
+            finally
+            {
+                _completionDialogOpen = false;
+                if (_completionDialogs.Count > 0) Dispatcher.BeginInvoke(Show, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            }
         }
-
-        if (Dispatcher.CheckAccess())
-            Show();
-        else
-            Dispatcher.BeginInvoke(Show);
+        // Never enter a modal dispatcher frame inside the worker's terminal event: finish its state update first.
+        Dispatcher.BeginInvoke(() => { _completionDialogs.Enqueue(notification); Show(); }, System.Windows.Threading.DispatcherPriority.ContextIdle);
     }
+
+    private readonly Queue<CompletionNotification> _completionDialogs = new();
+    private bool _completionDialogOpen;
 
     private void MainWindow_SizeChanged(object sender, SizeChangedEventArgs e)
     {

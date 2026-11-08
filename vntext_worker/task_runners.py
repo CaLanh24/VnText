@@ -215,7 +215,9 @@ def run_extract_worker(
     out = str(params.get("out") or "").strip()
     mode = str(params.get("mode") or "deep").strip() or "deep"
     level = str(params.get("level") or "balanced").strip() or "balanced"
-    separate_review = bool(params.get("separate_review", True))
+    # The desktop has one editable CSV. Review provenance remains in the manifest,
+    # and patch/MT still enforce it rather than trusting editable CSV flags.
+    separate_review = False
     renpy_sdk_path = str(params.get("renpy_sdk_path") or "").strip()
     renpy_sdk_action = str(params.get("renpy_sdk_action") or "auto").strip() or "auto"
 
@@ -300,6 +302,7 @@ def run_translate_worker(
             )
         else:
             log("Đang chuyển sang pipeline dịch và ghi trace tác vụ.")
+            terminal = []
             run_translate_ct2_task(
                 csv_path,
                 package_dir,
@@ -308,9 +311,28 @@ def run_translate_worker(
                 human_review_required=human_review_required,
                 progress=progress,
                 log=log,
-                complete=complete,
+                complete=terminal.append,
                 is_cancelled=is_cancelled,
             )
+            if terminal:
+                payload = dict(terminal[-1])
+                if (payload.get('ok') or payload.get('pipeline_liveness')) and not is_cancelled():
+                    from vntext.image_batch import cached_image_report, translate_cached_images
+                    try:
+                        if cached_image_report(package_dir) is not None:
+                            images = translate_cached_images(package_dir, is_cancelled=is_cancelled, progress=progress)
+                            detail = f"Ảnh: {images['translated']}/{images['total']} bản dịch nháp; {images['untranslated']} cần xem lại. {images['output']}"
+                            log(detail)
+                            payload['summary'] = str(payload.get('summary') or '') + '\n' + detail
+                            if images['cancelled']:
+                                payload.update(ok=False, error='cancelled')
+                            elif images['untranslated']:
+                                payload.update(ok=False, complete=False, error=detail)
+                    except Exception as exc:
+                        detail = 'Chưa dịch xong ảnh: ' + str(exc)
+                        log(detail)
+                        payload.update(ok=False, error=detail)
+                complete(payload)
     except WorkerCancelled:
         _finish_cancelled(task_id)
 

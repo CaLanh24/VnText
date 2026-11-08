@@ -378,7 +378,7 @@ public sealed partial class MainViewModel
                         "analyze" => "Phân tích game hoàn tất",
                         _ => string.IsNullOrWhiteSpace(evt.Summary) ? "Hoàn tất" : evt.Summary!,
                     };
-                    if (!(completedTask == "analyze" && _analyzeAuto))      // automatic detection is silent: no toast, no log pop-up
+                    if (!(completedTask == "analyze" && _analyzeRejectLate))
                     {
                         RequestCompletion("VNText Studio — Hoàn tất", doneMsg, "success");
                         LogExpanded = true;

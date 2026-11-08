@@ -46,11 +46,11 @@
     </UserControl.Resources>
     <StackPanel>
         <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,4"
-                   Text="Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả." />
+                   Text="Ảnh có chữ đã được lọc khi Lấy text. Bước Dịch tự tạo bản dịch nháp; chọn ảnh bên dưới nếu muốn sửa." />
         <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
                    Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
-        <Border x:Name="IntroDetails" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
+        <Border x:Name="IntroDetails" Visibility="Collapsed" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
                        Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
         </Border>
@@ -77,16 +77,21 @@
                        AutomationProperties.Name="Tình trạng ảnh trong gói" />
         </Border>
 
-        <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <TextBlock Text="Ảnh có chữ trong gói" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <WrapPanel Margin="0,0,0,8">
-            <Button Content="Tìm ảnh có chữ và dịch tất cả" Command="{Binding TranslateAllImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button x:Name="DiscoverButton" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button Content="Dịch ảnh chưa xong" Command="{Binding TranslateAllImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="DiscoverButton" Visibility="Collapsed" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
-        <ComboBox x:Name="CandidateCombo" ItemsSource="{Binding ImageCandidates}" SelectedItem="{Binding ImagePath, Mode=TwoWay}" IsEnabled="{Binding ImageGridEnabled}"
-                  Style="{StaticResource SettingsPreferenceCombo}" MinHeight="32" AutomationProperties.Name="Ảnh ứng viên" />
+        <ListBox ItemsSource="{Binding ImageResults}" SelectedItem="{Binding SelectedImageResult, Mode=TwoWay}"
+                 IsEnabled="{Binding ImageGridEnabled}" MaxHeight="150" MinHeight="60" Background="{DynamicResource FieldBackgroundBrush}"
+                 Foreground="{DynamicResource InkBrush}" AutomationProperties.Name="Ảnh có chữ và kết quả dịch">
+            <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Name}" Margin="0,0,16,0" /><TextBlock Text="{Binding Status, Converter={StaticResource UiTextDynamic}}" />
+            </StackPanel></DataTemplate></ListBox.ItemTemplate>
+        </ListBox>
         <TextBlock Text="{Binding ImagePath}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" />
 
         <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />

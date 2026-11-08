@@ -16,6 +16,107 @@ MAX_BATCH_BYTES = 512 * 1024 * 1024
 MAX_BATCH_PIXELS_BYTES = 16_000_000 * 4 + 1024 * 1024
 
 
+def cached_image_report(package):
+    """Newest bounded report; no image discovery or OCR is performed here."""
+    base = _regular(Path(package) / 'images')
+    if not base.is_dir():
+        return None
+    paths = [base / 'report.json']
+    paths += [p / 'report.json' for p in list(base.glob('retry-*'))[:64] if p.is_dir()]
+    paths = [p for p in paths if p.is_file()]
+    if not paths:
+        return None
+    path = _regular(max(paths, key=lambda p: (p.stat().st_mtime_ns, str(p))))
+    if path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError('Báo cáo ảnh vượt 4 MiB.')
+    report = json.loads(path.read_text(encoding='utf-8'))
+    if report.get('schema') != 1 or not isinstance(report.get('items'), list) or len(report['items']) > 100000:
+        raise ValueError('Báo cáo ảnh không hợp lệ; hãy lấy text lại.')
+    return path, report
+
+
+def translate_cached_images(package, *, source=None, is_cancelled=None, progress=None):
+    """Translate Extract's positive OCR results. Never scans or OCRs again and never approves a draft."""
+    cached = cached_image_report(package)
+    if cached is None:
+        raise ValueError('Chưa có kết quả ảnh từ Lấy text; hãy lấy text trước.')
+    report_path, report = cached
+    root = report_path.parent
+    if source is not None and Path(report.get('source_root', '')).resolve() != Path(source).resolve():
+        raise ValueError('Kết quả ảnh thuộc game khác; hãy lấy text lại.')
+    cancelled = is_cancelled or (lambda: False)
+    translator = None
+    positives = [i for i in report['items'] if i.get('text_detected')]
+
+    def contained(relative):
+        path = _regular(root / relative)
+        if not path.resolve().is_relative_to(root.resolve()):
+            raise ValueError('Đường dẫn kết quả ảnh nằm ngoài gói.')
+        return path
+
+    def save():
+        tmp = root / ('report-' + uuid.uuid4().hex + '.tmp')
+        try:
+            tmp.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+            tmp.replace(report_path)
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    for index, item in enumerate(positives):
+        if cancelled():
+            break
+        if item.get('status') == 'TRANSLATED_DRAFT':
+            continue
+        try:
+            ocr = contained(item.get('ocr_result', ''))
+            if not ocr.is_file() or ocr.stat().st_size > 4 * 1024 * 1024:
+                raise ValueError('Thiếu kết quả OCR hợp lệ; hãy lấy text lại.')
+            document = json.loads(ocr.read_text(encoding='utf-8'))
+            original = contained(item['original'])
+            _, _, digest = _image(original)
+            if digest != item.get('source_sha256') or digest != document.get('source_sha256'):
+                raise ValueError('Ảnh nguồn đã đổi; hãy lấy text lại.')
+            if Path(document.get('source_path', '')).resolve() != original.resolve():
+                raise ValueError('OCR không khớp ảnh trong gói.')
+            regions = document.get('regions')
+            if not isinstance(regions, list) or not regions or len(regions) > 500:
+                raise ValueError('Vùng OCR không hợp lệ.')
+            if translator is None:
+                translator = _translator()
+            values = translate_region_texts(translator, [r['source_text'] for r in regions])
+            if len(values) != len(regions):
+                raise ValueError('Số dòng bản dịch không khớp OCR.')
+            for region, value in zip(regions, values):
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError('Model chưa tạo được bản dịch.')
+                region['translation'] = value
+                region['approved'] = False
+            if cancelled():
+                break
+            target = contained('translated/' + uuid.uuid4().hex + '.png')
+            _render_draft(document, target, _font_path(), cancelled)
+            tmp = ocr.with_name(ocr.name + '.' + uuid.uuid4().hex + '.tmp')
+            try:
+                tmp.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding='utf-8')
+                tmp.replace(ocr)
+            finally:
+                tmp.unlink(missing_ok=True)
+            item.update(status='TRANSLATED_DRAFT', translated=str(target.relative_to(root)),
+                        translated_sha256=hashlib.sha256(target.read_bytes()).hexdigest(), reason='', human_approved=False)
+        except Exception as exc:
+            item.update(status='UNTRANSLATED', reason=str(exc)[:1000])
+        if progress:
+            progress({'done': index + 1, 'total': len(positives), 'step': 'Dịch ảnh đã OCR', 'item': Path(item['source']).name})
+        save()
+    report['translated'] = sum(i.get('status') == 'TRANSLATED_DRAFT' for i in positives)
+    report['total'] = len(positives)
+    report['untranslated'] = len(positives) - report['translated']
+    report['ocr_ready'] = sum(i.get('status') == 'OCR_READY' for i in positives)
+    report['status'] = 'CANCELLED' if cancelled() else 'PARTIAL' if report['untranslated'] or not report.get('inventory_complete') else 'COMPLETE'
+    save()
+    return {k: report[k] for k in ('translated', 'untranslated', 'total')} | {'output': str(root), 'cancelled': cancelled()}
+
+
 def _translator():
     from vntext.mt_ct2_model import ensure_model, get_translator, resolve_model_dir
     return get_translator(ensure_model(resolve_model_dir(), download=False))
@@ -176,7 +277,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
     root=base if not base.exists() else _regular(base/('retry-'+uuid.uuid4().hex))
     root.mkdir(parents=True,exist_ok=False)
     for name in ('original','ocr','translated','untranslated'): (root/name).mkdir()
-    report={'schema':1,'status':'RUNNING','review_required':True,'inventory_complete':inventory['complete'],
+    report={'schema':1,'source_root':str(source.resolve()),'status':'RUNNING','review_required':True,'inventory_complete':inventory['complete'],
             'inventory_errors':inventory['errors'],'items':[]}
     report_path=root/'report.json'
     def save():
@@ -232,6 +333,11 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                 original.replace(confirmed)
                 original=confirmed
                 document['source_path']=str(original)
+                if item.get('container'):
+                    document.update(source_container_path=item['container'], source_container_sha256=item['container_sha256'],
+                                    source_member_name=item['member'], source_member_sha256=item['member_sha256'])
+                else:
+                    document['source_reference']=reference
                 item.update(original=str(original.relative_to(root)),text_detected=True)
                 if not translate:
                     ocr_path=(root/'ocr'/key).with_suffix('.json')

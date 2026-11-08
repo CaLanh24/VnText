@@ -462,9 +462,6 @@
                                         </StackPanel>
                                         <TextBlock Text="{Binding ExtractProgressEta, Converter={StaticResource UiTextFormatLabel}, ConverterParameter='Ước tính còn: {0}'}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" Visibility="{Binding ExtractProgressHasEta, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <Button x:Name="ExtractImageTextButton" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,12,0,0"
-                                            Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh trong game." AutomationProperties.Name="Mở Text trong ảnh"
-                                            Style="{StaticResource OutlineButton}" Command="{Binding OpenImageWorkspaceCommand}" />
                                     <Button x:Name="ExtractRunButton" Grid.Row="1" Grid.Column="1" Style="{StaticResource PrimaryButton}" VerticalAlignment="Center" Margin="12,12,0,0" Command="{Binding RunExtractCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <Path Data="{StaticResource ScanIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="White" Width="16" Height="16" Margin="0,0,8,0" />
@@ -1441,8 +1438,8 @@
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
                                         
                                         <StackPanel Grid.Row="1" Margin="0,0,7,0">
-                                            <TextBlock Text="Tìm trong bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                            <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Chỉ tìm trong cột Bản dịch" />
+                                            <TextBlock Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                            <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="7,0,7,0">
                                             <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />

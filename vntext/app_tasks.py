@@ -1343,7 +1343,7 @@ def _run_extract_task_impl(
         screen_review = sum(1 for item in (review or []) if (item.get("import_method") if isinstance(item, dict) else getattr(item, "import_method", "")) == "renpy_screen_candidate")
         if review_count and screen_review == review_count and not renpy_sdk_missing:
             limitations.append({"code": "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", "count": review_count,
-                                "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) chỉ nằm trong review_only.csv, không dịch và không patch."})
+                                "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) được đánh dấu cần xem lại trong tài liệu; chưa thể tạo patch cho các dòng này."})
         dynamic_note = " ".join(str(item["message"]) for item in limitations)
         if runtime_dynamic:
             (Path(out) / "renpy_runtime_dynamic.json").write_text(json.dumps(

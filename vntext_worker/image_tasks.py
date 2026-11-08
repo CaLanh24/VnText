@@ -9,11 +9,14 @@ from vntext.renpy_archive import RenPyArchive, RenPyArchiveError, parse_member_r
 
 def run_image_worker(task_id, task, params, is_cancelled):
     if task == 'image_batch':
-        from vntext.image_batch import run_image_batch
+        from vntext.image_batch import run_image_batch, translate_cached_images
         from vntext_worker.protocol import emit_progress
-        result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
-            is_cancelled=is_cancelled,
-            progress=lambda info: emit_progress(task_id, **info))
+        if params.get('cached_only'):
+            result = translate_cached_images(params['out'], source=params['src'], is_cancelled=is_cancelled,
+                progress=lambda info: emit_progress(task_id, **info))
+        else:
+            result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
+                is_cancelled=is_cancelled, progress=lambda info: emit_progress(task_id, **info))
         summary = f"Ảnh: {result['translated']} bản dịch nháp, {result['untranslated']} chưa dịch. {result['output']}"
         emit_complete(task_id, ok=not result['cancelled'], summary=summary,
                       error='cancelled' if result['cancelled'] else '')

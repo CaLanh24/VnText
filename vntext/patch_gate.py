@@ -16,7 +16,7 @@ from vntext.package_io import read_translation_rows
 
 REASON_LABELS_VI: dict[str, str] = {
     "eligible": "Sẽ patch",
-    "review_only": "Trong review_only.csv (cần xem lại thủ công)",
+    "review_only": "Chưa có đường ghi patch được chứng minh; bản dịch vẫn được lưu trong tài liệu",
     "no_translation": "Chưa có bản dịch trong translation.csv",
     "garbage_repetition": "Rác lặp từ/ký tự",
     "html_garbage": "HTML/entity rác",
@@ -40,11 +40,17 @@ RETRANSLATE_STILL_BLOCKED_NOTE = "Dịch lại vẫn bị chặn"
 
 
 def load_review_only_keys(package_dir: Path) -> set[str]:
+    manifest_path = package_dir / "manifest.json"
+    manifest_keys = set()
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+        if manifest.get('unified_document') is True:
+            manifest_keys = {str(e['key']) for e in manifest.get('entries', []) if e.get('review_only') and e.get('key')}
     review_path = package_dir / "review_only.csv"
     if not review_path.is_file():
-        return set()
+        return manifest_keys
     with review_path.open(encoding="utf-8-sig", newline="") as fh:
-        return {str(row.get("key") or "") for row in csv.DictReader(fh) if row.get("key")}
+        return manifest_keys | {str(row.get("key") or "") for row in csv.DictReader(fh) if row.get("key")}
 
 
 def entry_row(entry: dict) -> dict:

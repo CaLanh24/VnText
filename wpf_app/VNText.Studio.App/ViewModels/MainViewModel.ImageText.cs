@@ -53,6 +53,19 @@ public sealed partial class MainViewModel
     public double ImagePreviewPixelWidth => (_imagePreview as BitmapSource)?.PixelWidth ?? 0;
     public double ImagePreviewPixelHeight => (_imagePreview as BitmapSource)?.PixelHeight ?? 0;
     public ObservableCollection<string> ImageCandidates { get; } = new();
+    public ObservableCollection<ImagePackageProbe.ImageResult> ImageResults { get; } = new();
+    private ImagePackageProbe.ImageResult? _selectedImageResult;
+    public ImagePackageProbe.ImageResult? SelectedImageResult
+    {
+        get => _selectedImageResult;
+        set
+        {
+            if (!Set(ref _selectedImageResult, value) || value is null) return;
+            if (!string.IsNullOrEmpty(value.ReviewPath)) TryLoadImageReview(value.ReviewPath, fromSavedReview: true);
+            if (!string.IsNullOrEmpty(value.DraftPath))
+                try { ImagePreview = LoadImagePreview(value.DraftPath); } catch (IOException) { }
+        }
+    }
     public ObservableCollection<ImageTextRegion> ImageRegions { get; } = new();
     public RelayCommand ChooseOcrImageCommand { get; private set; } = null!;
     public RelayCommand DiscoverImagesCommand { get; private set; } = null!;
@@ -118,9 +131,11 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(InputPath)) { ImageWorkspaceSummary = "Chưa chọn game / thư mục chứa ảnh."; return; }
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageWorkspaceSummary = "Chưa chọn thư mục xuất."; return; }
         var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
+        ImageResults.Clear();
+        foreach (var result in ImagePackageProbe.ReadResults(WorkflowStatus.ResolvePackageDir(OutputPath))) ImageResults.Add(result);
         ImageWorkspaceSummary = images.Total == 0
-            ? "Chưa có báo cáo OCR trong gói. Bấm “Tìm ảnh từ thư mục game”, chọn ảnh rồi OCR."
-            : UiText.Msg("Gói có {0:N0} ảnh: {1:N0} đã OCR, {2:N0} bản dịch nháp, {3:N0} chưa OCR được (cần xem tay). Để duyệt và cài, chọn ảnh thật trong thư mục game (không phải bản sao trong gói).", images.Total, images.OcrReady, images.TranslatedDrafts, images.Total - images.OcrReady - images.TranslatedDrafts);
+            ? "Không có ảnh phát hiện chữ trong kết quả Lấy text."
+            : $"{images.Total:N0} ảnh có chữ · {images.TranslatedDrafts:N0} bản dịch nháp · {images.Total - images.TranslatedDrafts:N0} cần dịch / xem lại.\nKết quả: {Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "images")}\nBấm Dịch ở tab Dịch để dịch cả text và ảnh. Chọn một ảnh bên dưới để xem hoặc sửa.";
     }
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException(UiText.Msg("Chọn thư mục xuất trước.")) : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
@@ -219,7 +234,7 @@ public sealed partial class MainViewModel
         TranslateAllImagesCommand = new RelayCommand(_ =>
         {
             if (Busy || !Directory.Exists(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
-            BeginTask("image_batch", new { src = InputPath, @out = OutputPath }, "Đang tìm ảnh có chữ và dịch tự động…");
+            BeginTask("image_batch", new { src = InputPath, @out = WorkflowStatus.ResolvePackageDir(OutputPath), cached_only = true }, "Đang dịch ảnh đã OCR…");
         }, _ => !Busy && Directory.Exists(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
         OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p, fromSavedReview: true); }, _ => !Busy);
@@ -272,6 +287,15 @@ public sealed partial class MainViewModel
                     || (long)r.Box[0] + r.Box[2] > document.Width || (long)r.Box[1] + r.Box[3] > document.Height))
                 throw new InvalidDataException(UiText.Msg("Schema/region không hợp lệ."));
             var sourcePath = Path.GetFullPath(document.SourcePath);
+            if (!string.IsNullOrWhiteSpace(document.SourceReference))
+            {
+                var reference = Path.GetFullPath(document.SourceReference);
+                var game = Path.GetFullPath(Path.Combine(InputPath, "game")) + Path.DirectorySeparatorChar;
+                if (!reference.StartsWith(game, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("Ảnh trong kết quả thuộc game khác; hãy lấy text lại.");
+                sourcePath = reference;
+                document.SourcePath = reference;
+            }
             if (!File.Exists(sourcePath) || new FileInfo(sourcePath).Length > 32 * 1024 * 1024)
                 throw new InvalidDataException(UiText.Msg("Ảnh nguồn không tồn tại hoặc vượt 32 MiB."));
             var sourceBytes = File.ReadAllBytes(sourcePath);
@@ -375,6 +399,7 @@ public sealed partial class MainViewModel
         }
         if (task == "image_batch")
         {
+            RefreshImageWorkspace();
             ImageStatus = evt.Ok ? evt.Summary ?? "Đã xử lý ảnh; xem thư mục images cạnh CSV." : evt.Error ?? "Chưa dịch được ảnh.";
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
@@ -397,6 +422,6 @@ public sealed partial class MainViewModel
             else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã render"), _imageTaskRoot); }
         }
         catch (Exception e) { ImageStatus = UiText.Msg("Không đọc được kết quả ảnh: {0}", e.Message); }
-        finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Extract; RefreshImageCommands(); }
+            finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Translate; RefreshImageCommands(); }
     }
 }

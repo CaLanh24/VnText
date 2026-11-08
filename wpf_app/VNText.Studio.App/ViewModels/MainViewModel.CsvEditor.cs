@@ -324,6 +324,7 @@ public sealed partial class MainViewModel
         {
             if (Set(ref _csvBulkFind, value))
             {
+                CsvEditorSearch = value; // one visible search finds English source text as well as existing translations
                 InvalidateCsvBulkPreview("Đã thay đổi chuỗi tìm — hãy xem trước lại.");
                 BulkReplaceCsvCommand?.RaiseCanExecuteChanged();
             }

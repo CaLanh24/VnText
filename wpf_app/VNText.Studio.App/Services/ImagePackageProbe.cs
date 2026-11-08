@@ -11,6 +11,41 @@ namespace VNText.Studio.App.Services;
 /// </summary>
 public static class ImagePackageProbe
 {
+    public sealed record ImageResult(string Name, string ReviewPath, string DraftPath, string Status);
+    public static IReadOnlyList<ImageResult> ReadResults(string packageDir)
+    {
+        var results = new List<ImageResult>();
+        try
+        {
+            var root = Path.Combine(packageDir, "images");
+            if (!Directory.Exists(root)) return results;
+            var reports = new[] { Path.Combine(root, "report.json") }.Concat(
+                Directory.EnumerateDirectories(root, "retry-*").Take(MaxRetryDirectories).Select(p => Path.Combine(p, "report.json")));
+            var report = reports.Where(File.Exists).OrderByDescending(File.GetLastWriteTimeUtc).ThenBy(p => p, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+            if (report is null || new FileInfo(report).Length > MaxReportBytes) return results;
+            root = Path.GetDirectoryName(report)!;
+            string SafePath(string relative)
+            {
+                if (string.IsNullOrEmpty(relative)) return "";
+                var path = Path.GetFullPath(Path.Combine(root, relative));
+                if (!path.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return "";
+                for (var part = new FileInfo(path) as FileSystemInfo; part is not null; part = part is FileInfo f ? f.Directory : ((DirectoryInfo)part).Parent)
+                    if (part.Exists && (part.Attributes & FileAttributes.ReparsePoint) != 0) return "";
+                return File.Exists(path) ? path : "";
+            }
+            using var doc = JsonDocument.Parse(File.ReadAllText(report));
+            if (!doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array) return results;
+            foreach (var item in items.EnumerateArray().Take(MaxItems))
+            {
+                if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("text_detected", out var detected) || detected.ValueKind != JsonValueKind.True) continue;
+                string S(string name) => item.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString()! : "";
+                results.Add(new ImageResult(Path.GetFileName(S("source")), SafePath(S("ocr_result")), SafePath(S("translated")),
+                    S("status") == "TRANSLATED_DRAFT" ? "Đã dịch nháp" : "Cần dịch / xem lại"));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException) { }
+        return results;
+    }
     public readonly record struct Summary(int Total, int OcrReady, int TranslatedDrafts);
 
     public const int MaxRetryDirectories = 64;
@@ -47,13 +82,15 @@ public static class ImagePackageProbe
             int total = 0, ready = 0, drafts = 0;
             foreach (var item in items.EnumerateArray())
             {
-                if (total >= MaxItems) break;
-                total++;
                 if (item.ValueKind != JsonValueKind.Object
                     || !item.TryGetProperty("status", out var status)
                     || status.ValueKind != JsonValueKind.String)
                     continue;
                 var text = status.GetString();
+                if (text == "NO_TEXT") continue;
+                if (text is not ("OCR_READY" or "TRANSLATED_DRAFT")
+                    && (!item.TryGetProperty("text_detected", out var detected) || detected.ValueKind != JsonValueKind.True)) continue;
+                total++;
                 if (text == "OCR_READY") ready++;
                 else if (text == "TRANSLATED_DRAFT") drafts++;
             }

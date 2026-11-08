@@ -104,6 +104,10 @@ def _safe_candidate(
 
 def _load_human_review_keys(package_dir: Path) -> set[str]:
     """Return keys whose persisted review provenance requires human promotion."""
+    manifest_path = package_dir / 'manifest.json'
+    if manifest_path.is_file() and json.loads(manifest_path.read_text(encoding='utf-8-sig')).get('unified_document') is True:
+        from vntext.patch_gate import load_review_only_keys
+        return load_review_only_keys(package_dir)
     review_path = package_dir / "review_only.csv"
     if not review_path.is_file():
         return set()
@@ -502,6 +506,10 @@ def reconcile_mirror_translations(
 
 
 def _count_review_only_rows(package_dir: Path) -> int:
+    manifest_path = package_dir / 'manifest.json'
+    if manifest_path.is_file() and json.loads(manifest_path.read_text(encoding='utf-8-sig')).get('unified_document') is True:
+        from vntext.patch_gate import load_review_only_keys
+        return len(load_review_only_keys(package_dir))
     review_path = package_dir / "review_only.csv"
     if not review_path.is_file():
         return 0

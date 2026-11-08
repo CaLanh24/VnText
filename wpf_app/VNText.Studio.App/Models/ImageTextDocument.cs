@@ -6,6 +6,7 @@ public sealed class ImageTextDocument
 {
     public int Schema { get; set; } = 1;
     public string SourcePath { get; set; } = "";
+    public string SourceReference { get; set; } = "";
     public string SourceSha256 { get; set; } = "";
     public string SourceContainerPath { get; set; } = "";
     public string SourceContainerSha256 { get; set; } = "";
