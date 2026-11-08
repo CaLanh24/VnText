@@ -9,8 +9,8 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 ## Verdicts (separate; none substitutes for another)
 - Tests: 61 (WPF/aggregate/guard) on `ed3f5b5`, installer 4/4, updater backend 7196/7196, 189 tool tests on `775ef19`; wrapper status `REVIEW_REQUIRED` from protected history, child exits 0.
 - Build: Setup `VNTextStudio-0.1.17-Setup.exe` 285,221,888 B sha256 `4e56da3e960c2030ce6c709bda2475b7c695a4dd680f1a1217817c7b836ccf7f`; sampled peak 6,648,569,803 B < 6,660,554,752 B.
-- Native: CSV small window PASS; update window dynamic footer + primary name PASS (fixture UI, later-button label NOT claimed); original-game linear 227-line route to the ending + two History looks + title/tabs PASS (attestation `brain-native017-final-20261108.json`). PUBLIC in-app update offer: NOT yet checked (checklist `release-readiness/native-checklist-public-offer.md`).
-- Cleanup: scoped PASS; protected epoch history `REVIEW_REQUIRED` separately. Owner AppData 497→2 historical gap cause UNKNOWN (Owner reply is not approval); backups of the 497 retained; current-task protection exact (`tests/tools/original_game_guard.py`).
+- Native: CSV small window PASS; update window dynamic footer + primary name PASS (fixture UI, later-button label NOT claimed); original-game linear 227-line route to the ending + two History looks + title/tabs PASS (attestation `brain-native017-final-20261108.json`). PUBLIC in-app update 0.1.16 → 0.1.17 (real packaged 0.1.16 payload, real GitHub, no fake feed): offer → download → Restart → About 0.1.17 PASS (`brain-public-updater-0.1.17.json`); read-only verifier PASS: 7196/7196 files, exe `d8f19292…`, canary unchanged. Known minor residual: success-dialog Close button UIA name stays "Hủy" (visible text correct; fix in a later version, no asset replacement).
+- Cleanup: scoped PASS (also after the public check: fixture `native-upd016`, baselines, harness, patch-ready and private run fixtures removed; 5.86 → 5.20 GB); protected epoch history `REVIEW_REQUIRED` separately. The Root-accepted aggregate receipt bytes (sha `7ad9485a…`) were overwritten by a post-cleanup re-run (same verdict, 0 blocking) and cannot be reproduced. Owner AppData 497→2 historical gap cause UNKNOWN (Owner reply is not approval); backups of the 497 retained; current-task protection exact (`tests/tools/original_game_guard.py`).
 - Publication: tag and release read back anonymously (`public-readback-0.1.17.json`), sizes and sha256 equal the local inventory.
 
 ## Rules in force
@@ -19,5 +19,4 @@ Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact)
 - Cleanup of epoch verification is memory-bounded (projection of previous registries).
 
 ## Next
-- Root: public in-app offer check with `run017/native-upd016`, then DEV runs the read-only verifier and removes that fixture.
-- No further publication work is open. DEV is the sole writer; no owned process is running.
+- Nothing is open for 0.1.17. Candidate follow-up for a later version: success-dialog Close button UIA name. DEV is the sole writer; no owned process is running.
