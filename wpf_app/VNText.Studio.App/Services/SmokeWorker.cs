@@ -89,6 +89,31 @@ public static class SmokeWorker
         throw new IOException($"No writable smoke work directory under {artifactsRoot}");
     }
 
+    /// <summary>Reads the footer (sha256, length, magic) of the single-EXE patch, verifies the digest and looks for COPY_TO_GAME_ROOT/sample.txt in the appended ZIP.</summary>
+    internal static bool BundledSampleExists(string executable)
+    {
+        const string magic = "VNTEXT-PATCH-001!";
+        try
+        {
+            using var stream = new FileStream(executable, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var footerSize = 32 + 8 + magic.Length;
+            if (stream.Length < footerSize) return false;
+            stream.Position = stream.Length - footerSize;
+            var footer = new byte[footerSize];
+            stream.ReadExactly(footer);
+            if (System.Text.Encoding.ASCII.GetString(footer, 40, magic.Length) != magic) return false;
+            var length = BitConverter.ToInt64(footer, 32);
+            if (length < 22 || length > 256L * 1024 * 1024 || length > stream.Length - footerSize) return false;
+            stream.Position = stream.Length - footerSize - length;
+            var payload = new byte[length];
+            stream.ReadExactly(payload);
+            if (!System.Security.Cryptography.SHA256.HashData(payload).AsSpan().SequenceEqual(footer.AsSpan(0, 32))) return false;
+            using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(payload), System.IO.Compression.ZipArchiveMode.Read);
+            return zip.GetEntry("COPY_TO_GAME_ROOT/sample.txt") is not null && zip.GetEntry("patch_manifest.json") is not null;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException) { return false; }
+    }
+
     public static string? FindPatchedSamplePath(string outputDirectory)
     {
         var patchContainer = Path.Combine(outputDirectory, "Patch_Viet_Hoa");
@@ -322,6 +347,10 @@ public static class SmokeWorker
         if (!ok)
             return 34;
 
+        // One self-contained EXE is the delivery: its appended, hash-checked payload must carry the patched sample.
+        var bundle = Path.Combine(outDir, "Patch_Viet_Hoa", "VNText-VietHoa.exe");
+        if (File.Exists(bundle))
+            return BundledSampleExists(bundle) && !host.IsBusy ? 0 : 35;
         var patched = FindPatchedSamplePath(outDir);
         if (patched is null)
             return 35;
