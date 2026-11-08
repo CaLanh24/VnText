@@ -22,6 +22,7 @@
 |---|---|
 | [AGENTS.md](../AGENTS.md) | CANONICAL — tra mục liên quan |
 | [AI_STATE.md](../AI_STATE.md) | HIỆN HÀNH — checkpoint, xác minh Git/live |
+| [Workflow candidate 2026-11-09](WORKFLOW_CANDIDATE_2026-11-09.md) | LOCAL DEV — one CSV, cached image drafts, single patch EXE; bounded evidence and native limits |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | CANONICAL — tra mục liên quan |
 | [CONTRACTS.md](../CONTRACTS.md) | CANONICAL — tra mục liên quan |
 | [docs/WORKFLOW.md](WORKFLOW.md) | CANONICAL — vận hành/compact/checkpoint/history chi tiết |
@@ -125,3 +126,4 @@ Chỉ đọc theo câu hỏi/task ID. Nội dung evidence của snapshot giữ n
 ## Duy trì bản đồ
 
 Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con trỏ task hiện hành; không thêm một tracker/summary thứ hai. Landing page giữ kết quả/contract còn hiệu lực và đường dẫn archive; archive bất biến, không làm mới chữ pending/current cũ. Lịch sử chưa tách vẫn tra theo heading/câu hỏi; không nhập toàn bộ vào session.
+

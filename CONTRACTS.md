@@ -35,7 +35,7 @@ Mỗi mục ghi `Owner`, invariant phải giữ và bằng chứng hiện có. �
 - `Entry.finalize()` chỉ tạo key khi key đang rỗng; không ghi đè key đã có.
 - `CSV_FIELDS` và thứ tự hiện tại là cố định: `key`, `source_text`, `translation`, `context`, `file_path`, `object_info`, `import_method`, `safety`, `backend`, `byte_limit`, `patch_note`.
 - CSV dùng `utf-8-sig`, `newline=""`; đọc giữ field cũ, bổ sung field bắt buộc còn thiếu; ghi giữ thứ tự field đầu vào rồi append field bắt buộc thiếu.
-- `translation.csv` là main patch workflow. `review_only.csv`, `raw_candidates.csv`, `raw_unpatchable.csv`, `technical_skipped.csv` là các ledger/phân loại riêng theo `write_package`.
+- Desktop (Owner 2026-11-09): một tài liệu `translation.csv` chứa cả dòng chính và dòng cần xem lại; sửa/lưu và chọn nguồn Patch trên cùng tài liệu. Manifest `unified_document` giữ vai trò review authoritative: nhập bản dịch không tự tạo writer proof hoặc mở khóa dòng chưa patch được. MT vẫn bỏ qua các dòng này. Technical audit ở JSON; legacy CLI/caller `separate_review=True` giữ các ledger CSV riêng theo `write_package`.
 - `manifest.json` format hiện tại là `2`, có `tool`, `version`, `entries`, `technical_skipped`, `stats`; entry giữ locator, import method, backend, review state và duplicate locations.
 - Không đổi thứ tự row, key, field name, locator hoặc cách phân tách main/review/raw nếu chưa có migration và golden evidence.
 
