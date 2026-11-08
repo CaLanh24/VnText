@@ -250,6 +250,8 @@ def main(argv=None):
     ap.add_argument("--pkg")
     ap.add_argument("--installer-sha256")
     ap.add_argument("--execute", action="store_true")
+    ap.add_argument("--result-path", help="new result file (never overwritten); default: a UTC-stamped file next to postgame-v2-restore-result.json")
+    ap.add_argument("--evidence-dir", help="new directory for archived run-owned files; default: a UTC-stamped sibling of postgame-evidence-v2")
     ap.add_argument("--previous-changed-json", default=r"C:\vnrg\run017\postgame-evidence\runtime-hashes.json")
     ap.add_argument("--archive-sha256", default="537aaa6eae5f07c21779ed4fcbd4de309b2cb8aebecee52d7bb44a58a8026c98")
     a = ap.parse_args(argv)
@@ -266,7 +268,10 @@ def main(argv=None):
             print(json.dumps({"exact": r["exact"], "game": {k: len(v) for k, v in r["game"].items()}, "game_dirs_diff": len(r["game_dirs_diff"]), "owner": {k: len(v) for k, v in r["owner"].items()},
                               "owner_dirs_diff": len(r["owner_dirs_diff"])}))
             return 0 if r["exact"] else 1
-        r = restore(bdir, GAME, OWNER, RAR, Path(a.pkg or ""), a.installer_sha256 or "", execute=a.execute)
+        stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+        result_path = Path(a.result_path) if a.result_path else RESULT.with_name("postgame-v2-restore-result-%s.json" % stamp)
+        evidence = Path(a.evidence_dir) if a.evidence_dir else EVIDENCE.with_name("postgame-evidence-v2-%s" % stamp)
+        r = restore(bdir, GAME, OWNER, RAR, Path(a.pkg or ""), a.installer_sha256 or "", execute=a.execute, evidence=evidence, result_path=result_path)
         print(json.dumps({"mode": r["mode"], "refuse": r["plan"]["refuse"], "restore": len(r["plan"]["restore_from_backup"]), "saves": len(r["plan"]["remove_run_owned_saves"]),
                           "compiled_siblings": r["plan"]["remove_compiled_siblings"], "uninstall_expected": r["plan"]["removed_by_exact_uninstall"], "final": r.get("final")}))
         return 0
