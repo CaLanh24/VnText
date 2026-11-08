@@ -33,6 +33,8 @@ internal static partial class Program
             return RunCsvLayoutFixture();
         if (args.Contains("--csv-native-repro-fixture", StringComparer.Ordinal))
             return RunCsvNativeReproFixture();
+        if (args.Contains("--updater-offer-live-fixture", StringComparer.Ordinal))
+            return RunUpdaterOfferLiveFixture();
         if (args.Contains("--region-grid-fixture", StringComparer.Ordinal))
             return RunRegionGridFixture();
         if (args.Contains("--english-pages-fixture", StringComparer.Ordinal))

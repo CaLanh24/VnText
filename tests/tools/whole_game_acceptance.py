@@ -31,7 +31,7 @@ SCHEMA = "vntext.whole_game_acceptance/2"
 PLACEHOLDER = re.compile(r"\[[^\[\]]+\]|%\([^)]+\)[sd]|%[sd]|\{(?!/?[a-z]+(?:=[^}]*)?\})[^{}]*\}")
 TAG = re.compile(r"\{/?[a-z]+(?:=[^}]*)?\}")
 OK_RUNTIME = {"PROVEN_BOUND", "NOT_REQUIRED"}
-STATIC_CLASSES = {"COVERED_BY_STATIC_STRINGS", "EXCLUDED_TECHNICAL", "EXCLUDED_USER_DATA", "COVERED_BY_DIALOGUE"}
+STATIC_CLASSES = {"COVERED_BY_STATIC_STRINGS", "EXCLUDED_TECHNICAL", "EXCLUDED_USER_DATA", "COVERED_BY_DIALOGUE", "UNREACHABLE_BY_SOURCE"}
 NATIVE_CLASSES = {"SHORT_LABEL_REVIEW", "RUNTIME_FORMAT_OBSERVE", "RUNTIME_SPEAKER_OBSERVE", "RUNTIME_LOAD_OBSERVE"}
 
 
@@ -205,6 +205,25 @@ def strip_tokens(text):
     return re.sub(r"[\W\d_]", "", re.sub(r"\[[^\]]*\]|\{[^}]*\}", "", text))
 
 
+def unreachable_errors(item):
+    """Source-absence proofs recomputed from a scan file (every .rpy archive member read statically): a screen nobody can open is not a visible path."""
+    reach = load_json(item.get("reachability"), "reachability scan")
+    gallery = reach.get("gallery", {})
+    proofs = {
+        "gallery_has_no_caller": lambda: len(gallery.get("refs", [])) == 1 and gallery["refs"][0][2].startswith("screen achievement_gallery")
+        and "achievement_gallery" not in gallery.get("showmenu_targets", []),
+        "popups_disabled": lambda: any("define myconfig.SHOW_ACHIEVEMENT_POPUPS = False" in h[2] for h in reach.get("popup_flag_hits", []))
+        and not any(re.search(r"myconfig\.SHOW_ACHIEVEMENT_POPUPS\s*=\s*True", h[2]) for h in reach.get("popup_flag_hits", [])),
+    }
+    errs = [] if item.get("requires") else ["no requires listed"]
+    if gallery.get("rpy_members_scanned", 0) < 1:
+        errs.append("scan covers no .rpy member")
+    for need in item.get("requires", []):
+        if need not in proofs or not proofs[need]():
+            errs.append("source-absence proof %r does not hold" % need)
+    return errs
+
+
 def evaluate_investigation(inv, excluded, overlay_text, manifest, dialogue_count):
     """Each excluded coverage group must be fully inspected; every classification is re-checked mechanically where it can be."""
     olds = dict(re.findall(r'^\s+old "((?:[^"\\]|\\.)*)"\n\s+new "((?:[^"\\]|\\.)*)"$', overlay_text, re.M))
@@ -231,6 +250,8 @@ def evaluate_investigation(inv, excluded, overlay_text, manifest, dialogue_count
             elif cl == "COVERED_BY_DIALOGUE":
                 if not dialogue_count:
                     errs.append("no dialogue entries")
+            elif cl == "UNREACHABLE_BY_SOURCE":
+                errs += unreachable_errors(it)
             elif cl == "EXCLUDED_USER_DATA":
                 if not it.get("reason"):
                     errs.append("no reason")
@@ -306,6 +327,17 @@ def build(args):
     chain = check_chain(manifest, rows, overlay_text, verification)
     game = tree_hashes(args.game_root, before["game"]["files"])
     owner = tree_hashes(args.owner_root, before["appdata"]["files"])
+    history = None
+    if args.historical_before:
+        old = load_json(args.historical_before, "historical before.json")
+        old_state = tree_hashes(args.owner_root, old["appdata"]["files"])
+        history = {"historical_before_sha256": sha(args.historical_before), "differs_from_current": not old_state["match"], "missing": len(old_state["missing"]), "changed": old_state["changed"],
+                   "extra": old_state["extra"]}
+        if not old_state["match"]:
+            gap = load_json(args.owner_gap, "owner historical gap record (required when the historical snapshot differs)")
+            history["gap_status"] = gap.get("status")
+            history["gap_resolved"] = gap.get("status") == "RESOLVED_BY_OWNER" and bool(gap.get("owner_decision"))
+            history["gap_record_sha256"] = sha(args.owner_gap)
     candidate = verify_candidate(args.candidate_setup, args.route_zip, args.route_feed, args.candidate_source)
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     excluded = [{"code": x["code"], "count": x["count"], "reason": x["message"]} for x in coverage.get("excluded_coverage", [])]
@@ -353,6 +385,8 @@ def build(args):
         for col in ("runtime", "native"):
             if it[col] not in OK_RUNTIME:
                 blocking.append({"id": it["id"], "why": "%s=%s" % (col, it[col])})
+    if history and history["differs_from_current"] and not history["gap_resolved"]:
+        blocking.append({"id": "gate.owner_history", "why": "Owner AppData differs from the historical snapshot (%d missing); gap status %s - needs Owner/Root resolution, never restored or attributed here" % (history["missing"], history["gap_status"])})
     for name, ok, why in (("chain", chain["pass"], "per-key chain failed"), ("game_hashes", game["match"], "original game differs from the recorded hashes"),
                           ("owner_hashes", owner["match"], "Owner AppData differs from the recorded hashes"), ("candidate", candidate["match"], "; ".join(candidate["problems"])),
                           ("investigation", not inv_problems, "; ".join(inv_problems))):
@@ -372,7 +406,7 @@ def build(args):
         "components": components,
         "game": {"root": before.get("game_root"), "recorded_files": game["files"], "current": {k: game[k] for k in ("missing", "extra", "changed", "match")}, "before_receipt_sha256": sha(before_path),
                  "archive_rpa_sha256": before["game"]["files"].get("game/archive.rpa") or next((v for k, v in before["game"]["files"].items() if k.lower().endswith("archive.rpa")), None)},
-        "userdata": {"recorded_files": owner["files"], "current": {k: owner[k] for k in ("missing", "extra", "changed", "match")}},
+        "userdata": {"recorded_files": owner["files"], "current": {k: owner[k] for k in ("missing", "extra", "changed", "match")}, "historical": history},
         "inputs": {"manifest": str(package / "manifest.json"), "csv": str(csv_path), "overlay": str(overlay_path), "readback_sha256": sha(patch / "patch_verification.json"),
                    "coverage_sha256": sha(patch / "patch_coverage.json"), "basis_sha256": sha(args.basis), "investigation_sha256": sha(args.investigation),
                    "story_flow_sha256": sha(args.story_flow), "script_audit_sha256": sha(args.script_audit)},
@@ -395,6 +429,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("package", "patch", "game-before", "game-root", "owner-root", "candidate-setup", "route-zip", "route-feed", "basis", "investigation", "story-flow", "script-audit", "output"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--historical-before", default="", help="older before.json whose Owner AppData snapshot is kept as immutable history; a difference needs --owner-gap")
+    parser.add_argument("--owner-gap", default="", help="gap record JSON {status, owner_decision}; only RESOLVED_BY_OWNER with a decision clears the history gate")
     parser.add_argument("--candidate-source", default="", help="expected candidate source SHA (prefix ok); the feed's source_sha must match")
     args = parser.parse_args(argv)
     args = argparse.Namespace(**{k.replace("-", "_"): v for k, v in vars(args).items()})

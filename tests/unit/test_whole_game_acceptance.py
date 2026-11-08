@@ -93,7 +93,7 @@ class Fixture:
         r = self.root
         base = dict(package=r / "package", patch=r / "patch", game_before=r / "before.json", game_root=r / "game", owner_root=r / "owner", candidate_setup=r / "setup.exe",
                     route_zip=r / "route.zip", route_feed=r / "feed.json", candidate_source="0123456", basis=r / "basis.json", investigation=r / "investigation.json",
-                    story_flow=r / "flow.json", script_audit=r / "audit.json", output=r / "out.json")
+                    story_flow=r / "flow.json", script_audit=r / "audit.json", output=r / "out.json", historical_before="", owner_gap="")
         base.update(over)
         return argparse.Namespace(**{k: str(v) for k, v in base.items()})
 
@@ -189,6 +189,35 @@ class WholeGameAcceptanceTests(unittest.TestCase):
         receipt = wga.build(self.fx.args())                                              # a classification that is not mechanically true is a failure, not a waiver
         self.assertEqual("FAIL", receipt["matrix"][-1]["static"])
         self.assertEqual("NOT_ACCEPTED", receipt["verdict"])
+
+    def test_historical_owner_snapshot_gap_is_never_silently_accepted(self):
+        old = json.loads((self.tmp / "before.json").read_text(encoding="utf-8"))
+        old["appdata"]["files"]["backups/older.rpy"] = "0" * 64                          # an older snapshot that listed one more file than exists now
+        (self.tmp / "old_before.json").write_text(json.dumps(old), encoding="utf-8")
+        with self.assertRaises(wga.InputError):                                            # a difference without a gap record is an input error
+            wga.build(self.fx.args(historical_before=self.tmp / "old_before.json", owner_gap=self.tmp / "missing_gap.json"))
+        (self.tmp / "gap.json").write_text(json.dumps({"status": "HISTORICAL_GAP_CAUSE_UNKNOWN"}), encoding="utf-8")
+        receipt = wga.build(self.fx.args(historical_before=self.tmp / "old_before.json", owner_gap=self.tmp / "gap.json"))
+        self.assertTrue(self.blocked(receipt, "gate.owner_history"))
+        self.assertEqual("NOT_ACCEPTED", receipt["verdict"])
+        (self.tmp / "gap.json").write_text(json.dumps({"status": "RESOLVED_BY_OWNER", "owner_decision": "baseline is the current state"}), encoding="utf-8")
+        receipt = wga.build(self.fx.args(historical_before=self.tmp / "old_before.json", owner_gap=self.tmp / "gap.json"))
+        self.assertFalse(self.blocked(receipt, "gate.owner_history"))
+        self.assertEqual("ACCEPT_ELIGIBLE", receipt["verdict"], receipt["blocking"])
+
+    def test_unreachable_by_source_is_recomputed_not_asserted(self):
+        reach = {"gallery": {"refs": [["a.rpy", 1, "screen achievement_gallery():"]], "showmenu_targets": ["load"], "rpy_members_scanned": 3},
+                 "popup_flag_hits": [["a.rpy", 2, "define myconfig.SHOW_ACHIEVEMENT_POPUPS = False"]]}
+        (self.tmp / "reach.json").write_text(json.dumps(reach), encoding="utf-8")
+        item = {"id": "u1", "file": "game/screens.rpy", "line": 4, "classification": "UNREACHABLE_BY_SOURCE", "reachability": str(self.tmp / "reach.json"), "requires": ["gallery_has_no_caller", "popups_disabled"]}
+        self.fx.write_investigation([item])
+        self.assertEqual("STATIC_CLASSIFIED", wga.build(self.fx.args())["matrix"][-1]["static"])
+        reach["gallery"]["showmenu_targets"].append("achievement_gallery")              # someone can open it: the claim must fail
+        (self.tmp / "reach.json").write_text(json.dumps(reach), encoding="utf-8")
+        self.assertEqual("FAIL", wga.build(self.fx.args())["matrix"][-1]["static"])
+        reach["gallery"]["showmenu_targets"].pop(); reach["popup_flag_hits"].append(["b.rpy", 3, "$ myconfig.SHOW_ACHIEVEMENT_POPUPS = True"])
+        (self.tmp / "reach.json").write_text(json.dumps(reach), encoding="utf-8")
+        self.assertEqual("FAIL", wga.build(self.fx.args())["matrix"][-1]["static"])
 
     def test_missing_input_fails_closed_and_changed_protected_data_blocks(self):
         (self.tmp / "basis.json").unlink()
