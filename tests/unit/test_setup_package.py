@@ -1347,6 +1347,7 @@ internal static class ResourceHarness
                 Application.Run(form);
                 watchdog.Dispose();
                 if (locked != null) locked.Dispose();
+                if (state == "failed") Directory.Delete(Path.Combine(root, "link"), false);      // removes the junction only, so cleanup never meets a link
                 var all = String.Join(" || ", visibleText.ToArray()) + " || " + headerText;
                 Console.WriteLine("UNINSTALL " + state + "/" + (vietnamese ? "vi" : "en") + " tag=" + form.Tag + " header=" + headerText + " status=" + statusText);
                 Require(!heartbeatVisible, "the engineering heartbeat is visible in the product UI");
