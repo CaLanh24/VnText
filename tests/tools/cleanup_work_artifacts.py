@@ -3195,7 +3195,8 @@ def _read_json_cached(path: Path, project=None):
         document = project(document)
     if signature is not None and signature == _file_signature(path):
         size = int(signature[1]) if isinstance(signature, tuple) and len(signature) > 1 and isinstance(signature[1], int) else 0
-        retained = size if project is None else min(size, 256 * 1024)         # a projection is small by construction; budget it conservatively
+        # A projection is charged for its REAL size (serialised length), never an assumed small one; an unexpectedly large projection simply stops being memoised once the budget is used.
+        retained = size if project is None else len(json.dumps(document, separators=(",", ":"), default=str))
         if (project is not None or size <= JSON_MEMO_MAX_SOURCE_BYTES) and _JSON_MEMO_BYTES + retained <= JSON_MEMO_MAX_TOTAL_BYTES:
             _INTEGRITY_CACHE[key] = document
             _JSON_MEMO_BYTES += retained

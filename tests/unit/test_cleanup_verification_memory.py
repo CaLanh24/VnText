@@ -73,6 +73,25 @@ class EpochChainMemoryTests(unittest.TestCase):
         again = cleanup._read_json_cached(paths[0], project=cleanup._project_epoch_chain_manifest)                       # a repeat is served from the small projection memo
         self.assertEqual([cleanup.EPOCH_RECORD_PREFIX + "e0"], [r["id"] for r in again["artifacts"]])
 
+    def test_projection_is_charged_its_real_size_and_stops_caching_at_the_budget(self):
+        wide = registry(10, epoch_ids=tuple("epoch%05d" % i for i in range(6000)))             # a projection far above the old assumed 256 KiB
+        path = self.write("wide.json", wide)
+        projected = cleanup._read_json_cached(path, project=cleanup._project_epoch_chain_manifest)
+        self.assertEqual(6000, len(projected["artifacts"]))
+        self.assertGreater(cleanup._JSON_MEMO_BYTES, 256 * 1024)                                  # charged by what is really retained
+        self.assertEqual(cleanup._JSON_MEMO_BYTES, len(json.dumps(projected, separators=(",", ":"))))
+        saved = cleanup.JSON_MEMO_MAX_TOTAL_BYTES
+        cleanup.JSON_MEMO_MAX_TOTAL_BYTES = cleanup._JSON_MEMO_BYTES + 1000                    # budget nearly used: the next projection is returned but NOT retained
+        try:
+            misses = cleanup.INTEGRITY_STATS["json_misses"]
+            other = self.write("wide2.json", wide)
+            for _ in range(2):
+                self.assertEqual(6000, len(cleanup._read_json_cached(other, project=cleanup._project_epoch_chain_manifest)["artifacts"]))
+            self.assertEqual(misses + 2, cleanup.INTEGRITY_STATS["json_misses"])
+            self.assertLessEqual(cleanup._JSON_MEMO_BYTES, cleanup.JSON_MEMO_MAX_TOTAL_BYTES)
+        finally:
+            cleanup.JSON_MEMO_MAX_TOTAL_BYTES = saved
+
     def test_unprojected_large_documents_are_parsed_on_demand_and_never_cached(self):
         big = self.write("big.json", registry(30000))
         self.assertGreater(big.stat().st_size, cleanup.JSON_MEMO_MAX_SOURCE_BYTES)
