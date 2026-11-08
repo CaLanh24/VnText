@@ -79,6 +79,7 @@ internal static partial class Program
                         Require(window.StatusText == Tr(state.Status), $"{step}: footer '{window.StatusText}' follows the state status '{Tr(state.Status)}'");
                         var later = state.Downloading || state.Ready ? "Để sau" : "Hủy";
                         Require(window.LaterText == Tr(later), $"{step}: later button '{window.LaterText}' is '{Tr(later)}'");
+                        Require(window.LaterAutomationName == Tr(later), $"{step}: later button UIA name '{window.LaterAutomationName}' is '{Tr(later)}' (same state as the visible label)");
                     }
 
                     // offer
@@ -121,7 +122,29 @@ internal static partial class Program
                     Agrees("recheck");
                     Require(!(source.Ready && window.StatusText == offerFooter), "recheck: a ready package never shows the offer footer");
 
-                    window.Close(); owner.Close();
+                    // Completion (success) and release-notes windows: the secondary button is "Đóng"/"Close" for BOTH the visible label and the UIA name, across language switches,
+                    // and invoking it through UI Automation still closes the window.
+                    window.Close();
+                    foreach (var (mode, notesOnly, success) in new[] { ("success", false, "1.0.1"), ("notes", true, (string?)null) })
+                    {
+                        UiText.SetLanguage("vi");
+                        var dialog = new UpdateWindow(owner, source, notesOnly, success);
+                        dialog.WindowStartupLocation = WindowStartupLocation.Manual; dialog.Left = -4000; dialog.Top = 0; dialog.ShowActivated = false;
+                        dialog.Show(); PumpFixture(200);
+                        Require(dialog.LaterText == "Đóng" && dialog.LaterAutomationName == "Đóng", $"{mode}/vi: visible '{dialog.LaterText}' and UIA '{dialog.LaterAutomationName}' are both 'Đóng'");
+                        UiText.SetLanguage("en"); PumpFixture(200);
+                        var closeEn = Tr("Đóng");
+                        Require(closeEn != "Đóng" && dialog.LaterText == closeEn && dialog.LaterAutomationName == closeEn, $"{mode}/en: visible '{dialog.LaterText}' and UIA '{dialog.LaterAutomationName}' are both '{closeEn}'");
+                        UiText.SetLanguage("vi"); PumpFixture(200);
+                        Require(dialog.LaterText == "Đóng" && dialog.LaterAutomationName == "Đóng", $"{mode}/vi again: both return to 'Đóng'");
+                        var closed = false; dialog.Closed += (_, _) => closed = true;
+                        var peer = System.Windows.Automation.Peers.UIElementAutomationPeer.CreatePeerForElement(dialog.LaterButton);
+                        Require(peer.GetName() == "Đóng", $"{mode}: the real automation peer reports 'Đóng' (was 'Hủy')");
+                        ((System.Windows.Automation.Provider.IInvokeProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke)).Invoke();
+                        PumpFixture(300);
+                        Require(closed, $"{mode}: invoking the secondary button through UI Automation closes the window");
+                    }
+                    owner.Close();
                     Console.WriteLine("WPF update window transition fixture: PASS (offer -> downloading -> ready -> EN/VI -> defer -> recheck; footer, banner, later button and UIA name follow the state)");
                     exitCode = 0;
                 }

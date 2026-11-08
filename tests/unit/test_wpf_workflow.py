@@ -513,6 +513,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("UiText.SetAppText(_status, TextBlock.TextProperty,", update)
         self.assertIn("UiText.SetAppText(_primary, AutomationProperties.NameProperty, state.PrimaryLabel)", update)
         self.assertIn("UiText.SetAppText(_later, ContentControl.ContentProperty,", update)
+        self.assertIn("UiText.SetAppText(_later, AutomationProperties.NameProperty, laterLabel)", update)      # same state as the visible label (success dialog UIA name was "Huy")
         # (1) two shared sizes; Primary and Outline share the standard one, compact is explicit
         self.assertIn('x:Key="UiControlHeightStandard">36<', tokens)
         self.assertIn('x:Key="UiControlHeightCompact">30<', tokens)

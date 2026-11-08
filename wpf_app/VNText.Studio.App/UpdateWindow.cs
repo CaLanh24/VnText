@@ -168,6 +168,8 @@ internal sealed class UpdateWindow : Window
     internal bool StatusShown => _status.Visibility == Visibility.Visible;
     internal string PrimaryAutomationName => AutomationProperties.GetName(_primary);
     internal string LaterText => _later.Content as string ?? "";
+    internal string LaterAutomationName => AutomationProperties.GetName(_later);
+    internal Button LaterButton => _later;
     internal string BannerText => _banner.Text;
     internal bool BannerShown => _success.Visibility == Visibility.Visible;
     private void Refresh()
@@ -215,7 +217,11 @@ internal sealed class UpdateWindow : Window
         _primary.Opacity = state.Downloading ? .65 : 1;
         _skip.Visibility = !state.Downloading && state.Available && !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
         _primary.Visibility = !_notesOnly && _successVersion is null ? Visibility.Visible : Visibility.Collapsed;
-        UiText.SetAppText(_later, ContentControl.ContentProperty, _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy");
+        // ONE state-derived label drives both what is shown and what UI Automation reports.  MakeButton seeds the accessible name with the construction-time text
+        // ("Hủy"), and UiText.Apply would replay that first catalog string, so the success/notes windows reported "Hủy" for a visible "Đóng".
+        var laterLabel = _notesOnly || _successVersion is not null ? "Đóng" : state.Downloading || state.Ready ? "Để sau" : "Hủy";
+        UiText.SetAppText(_later, ContentControl.ContentProperty, laterLabel);
+        UiText.SetAppText(_later, AutomationProperties.NameProperty, laterLabel);
         UiText.Apply(this);          // literal chrome (buttons, headings, tooltips, accessible names); the release-note BODY is never in the catalog
     }
     internal static LinearGradientBrush Gradient(bool ready) => new(Color.FromRgb(37, 99, 235), Color.FromRgb(0, 181, 205), 0);
