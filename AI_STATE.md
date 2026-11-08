@@ -1,21 +1,19 @@
-# Current checkpoint — 2026-11-09 (local batch 5)
+# Current checkpoint — 2026-11-09 translation workflow + patch installer
 
-## Current work
-- Owner requested banner fidelity, automatic-analysis journal/result, resource preparation in Setup, and matching Uninstall. All five implemented locally. Source candidate `168b6550634405c34cc13d2454252437000f2824`; published 0.1.17 remains immutable at `ed3f5b5`, exactly five assets. No push/tag/version/release change.
-- Prior local UIA fix `500fef4` is included and was independently accepted live.
-- Sole writer temporarily Root/Codex because Claude DEV returned quota API error, reset 03:10 Asia/Tokyo. Persistent agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`, cursor1521; idle. Return writing to that session after quota recovery at a safe boundary. No second writer/process is active.
+## Work and authority
+Owner requests one editable CSV for edit/save/patch; source+translation search; image workspace only Translate, reuse Extract OCR, auto image translation, clear counts/output/review and simpler UI; completion modal+sound for scan/extract/translate/patch. Latest adds one self-contained patch EXE, VNText icon, matching installer UI. No push/release/version/tag changes; public0.1.17 immutable. Prior batch5 evidence retained at C:/vnrg/evidence/batch5/root-batch5-handoff-20261109.json.
 
-## Evidence and candidate
-- Canonical detailed handoff: `C:/vnrg/evidence/batch5/root-batch5-handoff-20261109.json`. Do not overwrite Root receipts.
-- WPF37 and Setup/resources20 child tests passed at3f6976b. Wrapper protected-history REVIEW_REQUIRED separate. Only two About color literals changed since; new Debug/Release builds and worker smoke passed. No new whole-game or semantic-quality claim.
-- Native: F2/F3 PASS on declared inert RenPy fixture; full inline journal and clear persistent result observed. F1 latest-status native, F4 actual Setup and F5 Uninstall native NOT_PROVEN: DEV status controls unavailable; exec command to launchSetup was rejected as blocked by policy. Do not infer native PASS from automated tests or bypass the refusal.
-- DEV Setup: `C:\v\DEV_RUN\batch5-candidate\VNTextStudio-DEV-0.1.17-168b655-Setup.exe`, SHA256 `62cb59a564ef5ff7c17b53e7a2076090a0caf9a3d3de2bdff706ae798eabc3ba`. Embedded ZIP verified,7197 members; worker/runtime/model/license/Uninstall reused byte-exact from verified3f6976b candidate.
-- DEV app: `C:\v\DEV_RUN\bootstrap-build\VNText.Studio.App.exe`, SHA256 `ca37c3f3d51c2ee521ac513535ca765a1a0fe6d2ae78cde97ad0e255d55da94b`; use its Start-DEV launcher. This is NOT the GitHub release.
+## Writer / exact state
+Root temporarily wrote during proven Claude quota exhaustion. Same DEV agent72329c3d-5883-4cc8-8d14-60c73886ebd3/session76922e45-71b2-47a9-be97-cf18b927ae26/cursor1521. Clock now03:33JST after03:10reset; ready to return sole writing to same DEV. No Root child remains; canonical gate terminal. HEAD b0fb507a7420e3f7443272036ecdaac7b70dcd9a, clean. d8c8a20 first workflow implementation; b0fb507 patchbundle preparation + test changes. These are WIP NOT accepted.
 
-## Data, cleanup and limits
-- No original game, saves or OwnerAppData touched; external changes observed earlier remain untouched. Historical497-filebackup retained, causeofoldgap UNKNOWN.
-- Owned consumed build/nativefixtures disposed, compact proof retained; one DEV app and one candidateSetup retained for Owner testing. Budget6.25GiB,48MiBguard,shared11GiB unchanged. Protected epochhistory remains REVIEW_REQUIRED. Currentepoch epoch-20261109-017-batch5-reference.
-- Publication0.1.17 and its Root finalACCEPT/public updaterPASS remain historical exact-byte proof, not acceptanceofthis local batch.
+## Gates and blockers
+Current epoch epoch-20261109-017-translation-workspace at d8c8a20 (transition receipt C:/vnrg/evidence/batch5/epoch-workspace.json PASS). Standing same-scope transitions allowed; no 8hop limit. Budget6.25GiB combined repo excluding.dev-env + owned C:/vnrg,48MiBguard,shared11GiB. Need transition to final clean source before new gate.
+Gate C:/vnrg/evidence/batch5/workspace-python2.json terminal FAIL:46 tests,1failure1error2skips. Error new unified test wrongly assumes save_document result issues_by_key (call validate separately). Failure extract fixture budget guard because HEAD changed during gate -> epoch mismatch; rerun exact clean source after transition. Cleanup48 roots deleted, protected history REVIEW_REQUIRED; no user data touched. Earlier workspace-python1 failed beforechild due logs outsideRepo; don't retry external stdout paths. Use runner default owned logs and capture huge wrapper stdout to file/select summary.
 
-## Next
-- No build/test/native child is running. Candidate handoff only; nativeSetup/Uninstall remains blocked/unproven, not releaseaccepted.
+## Implementation needing completion
+Root added cache translation to vntext/image_batch.py, worker full translate chains images, positive-only ImagePackageProbe+result list; one strict GUI CSV with manifest review roles, legacy CLI separate behavior retained; completion queued themed modal+sound with stale auto scan guard; source search bridge.
+Review critically: image-only CSV still blocked by text translator; source_root/cache identity/hash/counts, bounds/cancel; no-text cache zero result; current report UI summary localization; advanced image controls still too much; review rows preserve translation but cannot gain patchability without proven writer. Avoid automatic human approval.
+Patch singlefile WIP vntext/patch_bundle.py appends ZIP+SHA256+length+magic to .NET installer; EmbeddedPatch.cs extracts bounded allowlist into LocalAppData/VNText/Patches/hash, state/backups persistent. Taskrunner patch builds under package/.patch-build/UUID, bundles delivery/Patch_VietHoa/VNText-VietHoa.exe. Needs tamper/path/size/concurrency/cached manifest integrity validation, tests, consume stage payload cleanup and retain compact audit. Installer WinForms got icon and initial Segoe/palette/button changes, NOT native verified or finishedmatching. Need test actual selfcontained executable after appended payload, install/uninstall/modifiedfile refusal on declared inert fixtures. Never original game/save.
+
+## Native / candidate
+Old DEV app bootstrap-build source168b655 and batch5Setup retained; no new candidate yet. Use new output, rebuild worker since Python changed; can't reuse old worker byteexact. Native tool agent-desktop v1.0.2 first, read ROUTING/embedded docs. Prior Setup launch command was blocked by policy; do not bypass that same rejected launch viaalternatebackend. App/patch fixture native verification separately permitted within current request. No active app/worker/game/CU known. Keep user files and historical497backup untouched. Return exact source/path/hash/tests/native/cleanup limits.
