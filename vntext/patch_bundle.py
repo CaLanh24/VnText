@@ -14,6 +14,20 @@ MAX_ENTRIES = 100_000
 MAX_TOTAL_BYTES = 64 * 1024 ** 3
 
 
+def read_bundle_file(executable: Path, name: str) -> bytes:
+    """One payload file of a built patch EXE (used by tests and diagnostics; the installer itself never trusts this path)."""
+    verify_bundle(executable)
+    executable = Path(executable)
+    size = executable.stat().st_size
+    with executable.open('rb') as handle:
+        handle.seek(size - FOOTER_SIZE)
+        length = struct.unpack('<Q', handle.read(FOOTER_SIZE)[32:40])[0]
+        handle.seek(size - FOOTER_SIZE - length)
+        import io
+        with zipfile.ZipFile(io.BytesIO(handle.read(length))) as bundle:
+            return bundle.read(name)
+
+
 def verify_bundle(executable: Path) -> dict:
     """Re-read the footer of a built EXE: digest, length and the ZIP inventory (names only; nothing is extracted)."""
     executable = Path(executable)

@@ -1090,9 +1090,14 @@ raise SystemExit(main())
                 timeout=60,
             )
             self.assertTrue(patch.get("ok"), patch.get("error"))
-            patched = out / "Patch_Viet_Hoa" / "COPY_TO_GAME_ROOT" / "sample.txt"
-            self.assertTrue(patched.is_file())
-            self.assertTrue(patched.read_text(encoding="utf-8-sig").strip())
+            delivery = out / "Patch_Viet_Hoa"
+            if (delivery / "VNText-VietHoa.exe").is_file():
+                from vntext.patch_bundle import read_bundle_file
+                self.assertTrue(read_bundle_file(delivery / "VNText-VietHoa.exe", "COPY_TO_GAME_ROOT/sample.txt").decode("utf-8-sig").strip())
+            else:
+                patched = delivery / "COPY_TO_GAME_ROOT" / "sample.txt"
+                self.assertTrue(patched.is_file())
+                self.assertTrue(patched.read_text(encoding="utf-8-sig").strip())
         finally:
             _stop_worker(proc)
 

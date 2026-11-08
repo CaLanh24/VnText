@@ -709,12 +709,18 @@ class WorkerExtractPatchTests(unittest.TestCase):
             proc.stdin.flush()
             patch_msg = _collect_until(proc, task_id="patch-ok", want="complete", timeout=30)
             self.assertTrue(patch_msg.get("ok"), patch_msg.get("error"))
-            patched = out / "Patch_Viet_Hoa" / "COPY_TO_GAME_ROOT" / "sample.txt"
-            self.assertTrue(patched.is_file(), f"missing patched file: {patched}")
-            self.assertIn("Xin chào", patched.read_text(encoding="utf-8-sig"))
-            verification = json.loads(
-                (out / "Patch_Viet_Hoa" / "patch_verification.json").read_text(encoding="utf-8")
-            )
+            delivery = out / "Patch_Viet_Hoa"
+            bundled = delivery / "VNText-VietHoa.exe"
+            if bundled.is_file():          # one self-contained EXE when the installer is available: its payload is the patch
+                from vntext.patch_bundle import read_bundle_file
+                self.assertEqual(["VNText-VietHoa.exe"], sorted(p.name for p in delivery.iterdir()))
+                self.assertIn("Xin chào", read_bundle_file(bundled, "COPY_TO_GAME_ROOT/sample.txt").decode("utf-8-sig"))
+                verification = json.loads(read_bundle_file(bundled, "patch_verification.json").decode("utf-8"))
+            else:
+                patched = delivery / "COPY_TO_GAME_ROOT" / "sample.txt"
+                self.assertTrue(patched.is_file(), f"missing patched file: {patched}")
+                self.assertIn("Xin chào", patched.read_text(encoding="utf-8-sig"))
+                verification = json.loads((delivery / "patch_verification.json").read_text(encoding="utf-8"))
             self.assertEqual(verification["counts"], {"PASS": 1})
             trace_summary = json.loads(
                 (out / ".mt" / "trace_summary.json").read_text(encoding="utf-8")
