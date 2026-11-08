@@ -33,3 +33,14 @@ Mỗi mục dưới đây là một verdict riêng; không mục nào thay cho m
 
 ## Chưa chứng minh / không tuyên bố
 Hoàn hảo ngữ nghĩa, kiểm từng dòng hộp thoại, mọi game/DPI/đường UI; thời gian hoạt ảnh; nhãn "Để sau" bằng native; tên UIA của nút Đóng ở hộp thoại thành công; nguyên nhân mất 495 tệp AppData lịch sử.
+
+
+## Post-release local batch 5 (2026-11-09; NOT shipped)
+
+Owner requested five further changes: Cockpit-referenced About banner; automatic-analysis events in the Extract journal; persistent detection result; default resource preparation during Setup; Setup-consistent Uninstall. Local commits f611218/9f6678f/3f6976b implement them; 168b655 matches the supplied light-theme text green as well. The accepted local UIA fix500fef4 is included. Published0.1.17 assets/tag remain unchanged.
+
+Candidate source: `168b6550634405c34cc13d2454252437000f2824`. DEV Setup: `C:/v/DEV_RUN/batch5-candidate/VNTextStudio-DEV-0.1.17-168b655-Setup.exe`, SHA256 `62cb59a564ef5ff7c17b53e7a2076090a0caf9a3d3de2bdff706ae798eabc3ba`. Worker/runtime/model/licenses/Uninstall are byte-identical to the verified3f6976b DEV payload; WPF and RELEASE.json were rebuilt. No update feed or release acceptance exists for this candidate.
+
+Validation is separate: WPF37 and Setup/resources20 child tests passed at3f6976b; only two color literals changed after that, with new Debug/Release builds and worker smoke passing. Live F2/F3 passed on a declared inert RenPy fixture (seven journal lines plus persistent engine/next-action summary). The newest-version banner state was not reached in the DEV update presentation; no pixel parity is claimed. The exec tool rejected the command to launch Setup with a process-only offline proxy as “blocked by policy”, so native Setup/resource-step/Uninstall are NOT_PROVEN. The refusal was not retried through another backend. Automated tests do not substitute for these native checks.
+
+Root temporarily became sole writer after the existing Claude DEV session returned a quota error. Detailed immutable handoff: `C:/vnrg/evidence/batch5/root-batch5-handoff-20261109.json`. Owned consumed packaging/native fixtures were removed via guarded disposal; one DEV app and one DEV Setup are retained for testing. Owner game/saves/AppData were untouched; protected epoch history remains REVIEW_REQUIRED separately.

@@ -1,22 +1,21 @@
-# Current checkpoint — 2026-11-08
+# Current checkpoint — 2026-11-09 (local batch 5)
 
-Live cursor/receipts: `C:/vnrg/evidence/brain-current-checkpoint.json` (compact). This file replaces older checkpoints.
+## Current work
+- Owner requested banner fidelity, automatic-analysis journal/result, resource preparation in Setup, and matching Uninstall. All five implemented locally. Source candidate `168b6550634405c34cc13d2454252437000f2824`; published 0.1.17 remains immutable at `ed3f5b5`, exactly five assets. No push/tag/version/release change.
+- Prior local UIA fix `500fef4` is included and was independently accepted live.
+- Sole writer temporarily Root/Codex because Claude DEV returned quota API error, reset 03:10 Asia/Tokyo. Persistent agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`, cursor1521; idle. Return writing to that session after quota recovery at a safe boundary. No second writer/process is active.
 
-## Goal and authority
-- Release 0.1.17 is PUBLISHED: https://github.com/CaLanh24/VnText/releases/tag/v0.1.17 (Latest), annotated tag `v0.1.17` → artifact source `ed3f5b58f1b0540e913785705080a1b3327d0455` (immutable; later commits are tests/docs only). Exactly five assets; public 0.1.16 and its nine assets are unchanged. Ledger `docs/RELEASE_0.1.17.md`.
-- Authority: Owner explicitly authorized the release after Root ACCEPT (`C:/vnrg/evidence/release-readiness/root-accept-0.1.17.json`, aggregate sha `7ad9485a…`, Setup sha `4e56da3e…`). Standing same-scope epoch policy (CONTRACTS.md) continues; budget cap 6.25 GiB + 48 MiB abort line, shared `.dev-env` 11 GiB, no raise/waiver. No model change, free/offline only.
+## Evidence and candidate
+- Canonical detailed handoff: `C:/vnrg/evidence/batch5/root-batch5-handoff-20261109.json`. Do not overwrite Root receipts.
+- WPF37 and Setup/resources20 child tests passed at3f6976b. Wrapper protected-history REVIEW_REQUIRED separate. Only two About color literals changed since; new Debug/Release builds and worker smoke passed. No new whole-game or semantic-quality claim.
+- Native: F2/F3 PASS on declared inert RenPy fixture; full inline journal and clear persistent result observed. F1 latest-status native, F4 actual Setup and F5 Uninstall native NOT_PROVEN: DEV status controls unavailable; exec command to launchSetup was rejected as blocked by policy. Do not infer native PASS from automated tests or bypass the refusal.
+- DEV Setup: `C:\v\DEV_RUN\batch5-candidate\VNTextStudio-DEV-0.1.17-168b655-Setup.exe`, SHA256 `62cb59a564ef5ff7c17b53e7a2076090a0caf9a3d3de2bdff706ae798eabc3ba`. Embedded ZIP verified,7197 members; worker/runtime/model/license/Uninstall reused byte-exact from verified3f6976b candidate.
+- DEV app: `C:\v\DEV_RUN\bootstrap-build\VNText.Studio.App.exe`, SHA256 `ca37c3f3d51c2ee521ac513535ca765a1a0fe6d2ae78cde97ad0e255d55da94b`; use its Start-DEV launcher. This is NOT the GitHub release.
 
-## Verdicts (separate; none substitutes for another)
-- Tests: 61 (WPF/aggregate/guard) on `ed3f5b5`, installer 4/4, updater backend 7196/7196, 189 tool tests on `775ef19`; wrapper status `REVIEW_REQUIRED` from protected history, child exits 0.
-- Build: Setup `VNTextStudio-0.1.17-Setup.exe` 285,221,888 B sha256 `4e56da3e960c2030ce6c709bda2475b7c695a4dd680f1a1217817c7b836ccf7f`; sampled peak 6,648,569,803 B < 6,660,554,752 B.
-- Native: CSV small window PASS; update window dynamic footer + primary name PASS (fixture UI, later-button label NOT claimed); original-game linear 227-line route to the ending + two History looks + title/tabs PASS (attestation `brain-native017-final-20261108.json`). PUBLIC in-app update 0.1.16 → 0.1.17 (real packaged 0.1.16 payload, real GitHub, no fake feed): offer → download → Restart → About 0.1.17 PASS (`brain-public-updater-0.1.17.json`); read-only verifier PASS: 7196/7196 files, exe `d8f19292…`, canary unchanged. Known minor residual: success-dialog Close button UIA name stays "Hủy" (visible text correct; fix in a later version, no asset replacement).
-- Cleanup: scoped PASS (also after the public check: fixture `native-upd016`, baselines, harness, patch-ready and private run fixtures removed; 5.86 → 5.20 GB); protected epoch history `REVIEW_REQUIRED` separately. Evidence-binding note (resolved): the first Root ACCEPT receipt (sha `7ad9485a…`) was overwritten by a DEV re-run and is not reproducible; Root re-ran the aggregate once to an immutable file, `C:/vnrg/evidence/whole-game/receipt-root-final-20261108.json` (sha256 `d2fc68a8d1a66eacc7b79d6d6f59642d5a2f52b7ccea93cd0c71b11c04c76b8f`, ACCEPT_ELIGIBLE 311/311, 0 blocking, HEAD `aa3d2a15…`, same candidate `ed3f5b5`), and recorded the final ACCEPT in `release-readiness/root-accept-final-0.1.17.json` (binds that hash + the public updater verifier PASS; supersedes the old binding only). The final ACCEPT file was read and hashed by DEV: sha256 `afdb054222abeaba6856f5f25905da758ab092939deff359640883fbe7d257be` (its `aggregate_sha256` = `d2fc68a8…`, artifact `ed3f5b5`). The first ACCEPT `root-accept-0.1.17.json` (sha256 `218997068c2f4b78501ee950eda80dcd0bd75dc6ab3de9d785957486886fdd1d`) is unchanged; its `aggregate_sha256` `7ad9485a…` is the hash of the original, overwritten receipt. Owner AppData 497→2 historical gap cause UNKNOWN (Owner reply is not approval); backups of the 497 retained; current-task protection exact (`tests/tools/original_game_guard.py`).
-- Publication: tag and release read back anonymously (`public-readback-0.1.17.json`), sizes and sha256 equal the local inventory.
-
-## Rules in force
-- Testing/UI rule: aggregate acceptance `tests/tools/whole_game_acceptance.py` (fail-closed, hash-bound reuse), UI only where required, agent-desktop first (docs/WORKFLOW.md).
-- Original game: never launched by DEV; use the guard (`verify`, dry-run `restore`, then `--execute`) around any run; Owner AppData is never written.
-- Cleanup of epoch verification is memory-bounded (projection of previous registries).
+## Data, cleanup and limits
+- No original game, saves or OwnerAppData touched; external changes observed earlier remain untouched. Historical497-filebackup retained, causeofoldgap UNKNOWN.
+- Owned consumed build/nativefixtures disposed, compact proof retained; one DEV app and one candidateSetup retained for Owner testing. Budget6.25GiB,48MiBguard,shared11GiB unchanged. Protected epochhistory remains REVIEW_REQUIRED. Currentepoch epoch-20261109-017-batch5-reference.
+- Publication0.1.17 and its Root finalACCEPT/public updaterPASS remain historical exact-byte proof, not acceptanceofthis local batch.
 
 ## Next
-- Nothing is open for 0.1.17. Candidate follow-up for a later version: success-dialog Close button UIA name. DEV is the sole writer; no owned process is running.
+- No build/test/native child is running. Candidate handoff only; nativeSetup/Uninstall remains blocked/unproven, not releaseaccepted.
