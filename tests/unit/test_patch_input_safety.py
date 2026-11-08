@@ -156,18 +156,60 @@ class PatchInputSafetyTests(unittest.TestCase):
 
     def test_worker_explicit_package_output_uses_separate_patch_directory(self):
         from vntext_worker.task_runners import run_patch_worker
+        from vntext.patch_bundle import verify_bundle
         original_csv = self.csv.read_bytes()
         original_manifest = self.manifest.read_bytes()
+        stub = self.root / "stub" / "VNTextPatchInstaller.exe"
+        stub.parent.mkdir()
+        stub.write_bytes(b"MZ" + bytes(512))                                    # stand-in for the self-contained installer
         completed = []
-        with patch("vntext_worker.task_runners._make_callbacks", return_value=(lambda _: None, lambda _: None, completed.append)):
+        with patch.dict("os.environ", {"VNTEXT_PATCH_INSTALLER": str(stub)}),              patch("vntext_worker.task_runners._make_callbacks", return_value=(lambda _: None, lambda _: None, completed.append)):
             run_patch_worker("patch-input-fixture", {"src": str(self.game), "out": str(self.package),
                              "csv_path": str(self.csv), "manifest_path": str(self.manifest)}, lambda: False)
         self.assertEqual(len(completed), 1)
         self.assertTrue(completed[0]["ok"], completed[0])
         output = self.package / "Patch_Viet_Hoa"
-        self.assertEqual((output / "COPY_TO_GAME_ROOT/dialogue.txt").read_text(encoding="utf-8"), "Xin chào\n")
+        self.assertEqual(["VNText-VietHoa.exe"], sorted(p.name for p in output.iterdir()))
+        self.assertIn("COPY_TO_GAME_ROOT/dialogue.txt", verify_bundle(output / "VNText-VietHoa.exe")["files"])
+        self.assertFalse((self.package / ".patch-build").exists())
         self.assertEqual(self.csv.read_bytes(), original_csv)
         self.assertEqual(self.manifest.read_bytes(), original_manifest)
+
+    def _run_worker_with_installer_manifest(self, stub_bytes):
+        """The worker's single-EXE hand-off with a stand-in for the heavy engine writer: it stages a manifest-bearing payload (as the Unity/Ren'Py writers do)."""
+        from vntext_worker import task_runners
+        completed = []
+
+        def fake_task(csv_path, manifest_path, src, patch_out, *, complete, patch_out_override, **kwargs):
+            stage = Path(patch_out_override)
+            (stage / "COPY_TO_GAME_ROOT").mkdir(parents=True)
+            (stage / "COPY_TO_GAME_ROOT/dialogue.txt").write_text("Xin chào\n", encoding="utf-8")
+            (stage / "patch_manifest.json").write_text("{}", encoding="utf-8")
+            if stub_bytes is not None:
+                (stage / "VNTextPatchInstaller.exe").write_bytes(stub_bytes)
+            complete({"ok": True, "summary": "ok", "complete": True})
+
+        with patch("vntext_worker.task_runners._make_callbacks", return_value=(lambda *a, **k: None, lambda _: None, completed.append)),              patch("vntext_worker.task_runners.run_patch_task", side_effect=fake_task):
+            task_runners.run_patch_worker("single-exe", {"src": str(self.game), "out": str(self.package),
+                                          "csv_path": str(self.csv), "manifest_path": str(self.manifest)}, lambda: False)
+        return completed
+
+    def test_worker_delivers_one_verified_exe_and_removes_the_stage(self):
+        from vntext.patch_bundle import verify_bundle
+        completed = self._run_worker_with_installer_manifest(b"MZ" + bytes(512))
+        self.assertEqual(1, len(completed)); self.assertTrue(completed[0]["ok"], completed[0])
+        delivery = self.package / "Patch_Viet_Hoa"
+        self.assertEqual(["VNText-VietHoa.exe"], sorted(p.name for p in delivery.iterdir()))        # ONE distributable file
+        self.assertEqual(str(delivery / "VNText-VietHoa.exe"), completed[0]["patch_payload_path"])
+        self.assertIn("COPY_TO_GAME_ROOT/dialogue.txt", verify_bundle(delivery / "VNText-VietHoa.exe")["files"])
+        self.assertFalse((self.package / ".patch-build").exists())                                   # the bulk stage never lingers
+
+    def test_worker_reports_missing_installer_as_error_and_still_cleans_the_stage(self):
+        completed = self._run_worker_with_installer_manifest(None)
+        self.assertEqual(1, len(completed)); self.assertFalse(completed[0]["ok"], completed[0])
+        self.assertIn("installer", completed[0]["error"].lower())
+        self.assertFalse((self.package / ".patch-build").exists())
+        self.assertFalse((self.package / "Patch_Viet_Hoa" / "VNText-VietHoa.exe").exists())
 
 
 if __name__ == "__main__": unittest.main()

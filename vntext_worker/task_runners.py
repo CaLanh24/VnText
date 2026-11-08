@@ -425,6 +425,16 @@ def run_patch_worker(
         stage_root = Path(package_dir) / '.patch-build'
         build_dir = _regular(stage_root / uuid.uuid4().hex)
         def deliver(payload):
+            if payload.get('ok') and not (build_dir / 'patch_manifest.json').is_file():
+                # An engine without an installer manifest keeps the loose COPY_TO_GAME_ROOT delivery: hand the staged files over unchanged.
+                import shutil
+                try:
+                    shutil.copytree(build_dir, delivery_dir, dirs_exist_ok=True)
+                except OSError as exc:
+                    payload = dict(payload)
+                    payload.update(ok=False, complete=False, error=f'Chưa bàn giao được patch: {exc}')
+                complete(payload)
+                return
             if payload.get('ok'):
                 try:
                     from vntext.patch_bundle import bundle_patch, verify_bundle
