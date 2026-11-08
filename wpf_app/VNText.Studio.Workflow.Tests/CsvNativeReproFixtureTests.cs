@@ -35,7 +35,7 @@ internal static partial class Program
                 vm.NavigateTabCommand.Execute("editcsv");
                 try
                 {
-                    foreach (var (outerHeight, scale, label) in new[] { (720.0, 1.2, "native 1043x720 UI120"), (883.0, 1.2, "tallest here UI120"), (720.0, 1.0, "720 UI100"), (760.0, 1.0, "760 UI100 (former threshold)"), (780.0, 1.0, "780 UI100"), (800.0, 1.0, "800 UI100"), (883.0, 1.0, "883 UI100") })
+                    foreach (var (outerHeight, scale, label) in new[] { (720.0, 1.2, "native 1043x720 UI120"), (883.0, 1.2, "tallest here UI120"), (720.0, 1.0, "720 UI100"), (760.0, 1.0, "760 UI100 (former threshold)"), (780.0, 1.0, "780 UI100"), (800.0, 1.0, "800 UI100"), (883.0, 1.0, "883 UI100") }.Where(sc => sc.Item1 <= SystemParameters.WorkArea.Height + 0.5))     // a window taller than the display cannot occur; those cases are skipped on small displays (observed to stall here)
                     {
                         vm.UiScale = scale;
                         var window = new MainWindow(vm, new FixtureUpdatePresentation());
@@ -48,6 +48,7 @@ internal static partial class Program
                             window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false;
                         }
                         window.Show();
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE shown " + label + " actual=" + window.ActualWidth + "x" + window.ActualHeight); Console.Out.Flush(); }
                         window.UpdateLayout();
                         PumpFixture(200);
                         FrameworkElement Named(string name) => (FrameworkElement)(window.FindName(name) ?? throw new InvalidOperationException(name));
@@ -63,6 +64,7 @@ internal static partial class Program
                         for (var wait = 0; wait < 80 && grid.Items.Count < rows.Count; wait++) PumpFixture(100);
                         for (var wait = 0; wait < 100 && vm.CsvEditorStatus.Contains("kiểm tra", StringComparison.OrdinalIgnoreCase); wait++) PumpFixture(100);
                         Require(grid.Items.Count == rows.Count, "the real CSV open loaded the 4 rows (" + grid.Items.Count + ")");
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE opened " + label); Console.Out.Flush(); }
                         vm.CsvBulkFind = "kiểm tra";
                         vm.CsvBulkReplace = "";
                         window.UpdateLayout();
@@ -79,7 +81,9 @@ internal static partial class Program
                         }
                         window.UpdateLayout();
                         PumpFixture(400);
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE previewed " + label + " mode=" + previewMode.Substring(0, 4)); Console.Out.Flush(); }
                         // window.Content is laid out at 1/UiScale; TranslatePoint reports window (DIP) space, so the client area in that space is ActualHeight x scale.
+if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE pre-measure " + label); Console.Out.Flush(); }
                         var client = ((FrameworkElement)window.Content).ActualHeight * scale;
                         // the page keeps a bottom margin below the card; what the user can reach without scrolling the page is the client area
                         var gridTop = grid.TranslatePoint(new Point(0, 0), window).Y;
@@ -101,7 +105,9 @@ internal static partial class Program
                             }
                         // scrolled page content is reachable too: count the rows the grid itself shows when the page scrolls to its end
                         var pageScroll = FindVisualChildren<ScrollViewer>(Named("CsvEditorCard")).FirstOrDefault(s => s.Name == "CsvCardScroll");
+if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE post-measure-rows " + label); Console.Out.Flush(); }
                         var report = $"{label}: client={Math.Round(client)} gridTop={Math.Round(gridTop)} gridH={Math.Round(grid.ActualHeight)} fullRowsInClient={full} bottoms=[{string.Join(",", bottoms)}] low={vm.CsvEditorValidationCompact} outerH={Math.Round(window.ActualHeight)} scale={UiAppearance.Scale} pageScroll={(pageScroll is null ? "none" : "H" + Math.Round(pageScroll.ViewportHeight) + "/" + Math.Round(pageScroll.ExtentHeight))}";
+if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Console.WriteLine("TRACE pre-repro-print " + label); Console.Out.Flush(); }
                         Console.WriteLine("REPRO " + report);
                         if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_DIAG") == "1")
                             foreach (var n in new[] { "CsvEditorSearchBox", "CsvEditorCard", "CsvChooseHeaderButton", "CsvBulkReplacePanel", "CsvBulkPreviewHeader", "CsvBulkPreviewScroll", "CsvEditorValidationShortText", "CsvEditorGrid" })
