@@ -3264,8 +3264,8 @@ internal static partial class Program
             File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[]}""", Encoding.UTF8);
             File.WriteAllText(Path.Combine(root, "images", "report.json"), """
                 {"schema":1,"status":"OCR_PARTIAL","items":[
-                  {"source":"a.png","status":"OCR_READY"},{"source":"b.png","status":"OCR_READY"},
-                  {"source":"c.png","status":"UNTRANSLATED","reason":"tilt gate"}]}
+                  {"source":"a.png","status":"OCR_READY","text_detected":true},{"source":"b.png","status":"OCR_READY","text_detected":true},
+                  {"source":"c.png","status":"UNTRANSLATED","text_detected":false,"reason":"tilt gate"}]}
                 """, Encoding.UTF8);
             var probe = ImagePackageProbe.Read(root);
             AssertEqual(2, probe.Total);
@@ -3276,8 +3276,8 @@ internal static partial class Program
             vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
             AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
             AssertTrue(vm.TranslateReadinessText.Contains("2 ảnh đã OCR", StringComparison.Ordinal));
-            AssertTrue(vm.TranslateReadinessText.Contains("Dịch ảnh…", StringComparison.Ordinal));
-            AssertFalse(vm.RunTranslateCommand.CanExecute(null));   // there are no text rows to translate
+            AssertTrue(vm.TranslateReadinessText.Contains("bấm Dịch", StringComparison.Ordinal));
+            AssertTrue(vm.RunTranslateCommand.CanExecute(null));    // no text rows, but the OCR-detected images are translated by the same Dịch button
             // No image report: the plain validator text stays (nothing invented).
             File.Delete(Path.Combine(root, "images", "report.json"));
             vm.OutputPath = root + Path.DirectorySeparatorChar;

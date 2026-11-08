@@ -85,7 +85,7 @@
             <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
-        <ListBox ItemsSource="{Binding ImageResults}" SelectedItem="{Binding SelectedImageResult, Mode=TwoWay}"
+        <ListBox x:Name="ImageResultList" ItemsSource="{Binding ImageResults}" SelectedItem="{Binding SelectedImageResult, Mode=TwoWay}"
                  IsEnabled="{Binding ImageGridEnabled}" MaxHeight="150" MinHeight="60" Background="{DynamicResource FieldBackgroundBrush}"
                  Foreground="{DynamicResource InkBrush}" AutomationProperties.Name="Ảnh có chữ và kết quả dịch">
             <ListBox.ItemTemplate><DataTemplate><StackPanel Orientation="Horizontal">

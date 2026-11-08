@@ -57,7 +57,7 @@ internal static partial class Program
                 using (var stream = File.Create(png)) encoder.Save(stream);
                 File.WriteAllText(Path.Combine(package, "translation.csv"), "key,source_text,translation,context,file_path,import_method\r\n", new UTF8Encoding(true));
                 File.WriteAllText(Path.Combine(package, "manifest.json"), """{"entries":[]}""", Encoding.UTF8);
-                File.WriteAllText(Path.Combine(package, "images", "report.json"), """{"schema":1,"items":[{"status":"OCR_READY"},{"status":"OCR_READY"},{"status":"UNTRANSLATED"}]}""", Encoding.UTF8);
+                File.WriteAllText(Path.Combine(package, "images", "report.json"), """{"schema":1,"items":[{"status":"OCR_READY","text_detected":true,"source":"a.png"},{"status":"OCR_READY","text_detected":true,"source":"b.png"},{"status":"NO_TEXT","text_detected":false,"source":"c.png"}]}""", Encoding.UTF8);
 
                 using var worker = new PythonWorkerHost();
                 var picker = new FakePathPicker();
@@ -100,7 +100,7 @@ internal static partial class Program
                 foreach (var name in new[] { "RegionXBox", "RegionYBox", "RegionWidthBox", "RegionHeightBox", "RegionFontBox", "RegionBackgroundBox", "RegionForegroundBox",
                                              "FlatModeBox", "TransparentModeBox", "SolidModeBox", "CloneModeBox", "DonorXBox", "DonorYBox", "ApproveBox", "CancelButton", "TaskText", "ProgressText", "StatusLine" })
                     AssertTrue(!string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName((DependencyObject)panel.FindName(name))));
-                AssertTrue(((TextBlock)panel.FindName("WorkspaceSummary")).Text.Contains("2 đã OCR", StringComparison.Ordinal));
+                AssertTrue(((TextBlock)panel.FindName("WorkspaceSummary")).Text.Contains("2 ảnh có chữ", StringComparison.Ordinal));
 
                 // Text-less CSV package: the image path is open and the text patch/translate stay closed.
                 vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
@@ -110,8 +110,8 @@ internal static partial class Program
                 AssertFalse(B("RenderButton").IsEnabled);               // nothing reviewed yet
                 AssertFalse(B("DeliveryButton").IsEnabled);
                 AssertFalse(B("InstallButton").IsEnabled);
-                AssertFalse(vm.RunTranslateCommand.CanExecute(null));
-                AssertFalse(vm.RunPatchCommand.CanExecute(null));
+                AssertTrue(vm.RunTranslateCommand.CanExecute(null));       // an image-only package still translates (straight to the OCR-detected images)
+                AssertFalse(vm.RunPatchCommand.CanExecute(null));          // but there is nothing for the text patch
 
                 // Choosing a real game image enables OCR; a loaded review enables region editing, save and render.
                 vm.ImagePath = png;
@@ -218,7 +218,7 @@ internal static partial class Program
                 foreach (var name in new[] { "DiscoverButton", "ChooseButton", "OcrButton", "OpenReviewButton", "AddRegionButton", "SaveReviewButton", "RenderButton" })
                     AssertFalse(B(name).IsEnabled);
                 AssertFalse(grid.IsEnabled);
-                AssertFalse(((ComboBox)panel.FindName("CandidateCombo")).IsEnabled);     // the source cannot change under a running task
+                AssertFalse(((ListBox)panel.FindName("ImageResultList")).IsEnabled);     // the source cannot change under a running task
                 AssertFalse(((FrameworkElement)panel.FindName("RegionDetails")).IsEnabled);
                 AssertTrue(((FrameworkElement)panel.FindName("TaskBanner")).IsVisible);
                 AssertTrue(((TextBlock)panel.FindName("TaskText")).Text.Contains("OCR ảnh", StringComparison.Ordinal));
@@ -241,16 +241,16 @@ internal static partial class Program
                 AssertEqual("", vm.ImageWorkspaceProgressText);
                 AssertTrue(B("DiscoverButton").IsEnabled);
                 AssertTrue(grid.IsEnabled);
-                AssertTrue(((ComboBox)panel.FindName("CandidateCombo")).IsEnabled);
+                AssertTrue(((ListBox)panel.FindName("ImageResultList")).IsEnabled);
                 // Another (non-image) task owning the worker is named and can be cancelled from here as well.
                 vm.TestSetActiveTask("fixture-translate", "translate");
                 panel.UpdateLayout();
-                AssertFalse(((ComboBox)panel.FindName("CandidateCombo")).IsEnabled);
+                AssertFalse(((ListBox)panel.FindName("ImageResultList")).IsEnabled);
                 AssertTrue(((TextBlock)panel.FindName("TaskText")).Text.Contains("tác vụ khác", StringComparison.Ordinal));
                 AssertTrue(B("CancelButton").IsEnabled);
                 vm.TestMarkTaskTerminal("fixture-translate");
                 panel.UpdateLayout();
-                AssertTrue(((ComboBox)panel.FindName("CandidateCombo")).IsEnabled);
+                AssertTrue(((ListBox)panel.FindName("ImageResultList")).IsEnabled);
 
                 // ---- cancel -> acknowledgement -> terminal for each image task: explicit Vietnamese "Đã hủy", nothing applied ----
                 void Terminal(string id, bool ok, string error) =>

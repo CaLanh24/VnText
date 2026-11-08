@@ -57,9 +57,13 @@ public sealed partial class MainViewModel
         });
     }
 
+    /// <summary>A text-less package whose only content is OCR-detected images: Translate still runs (the worker goes straight to the images).</summary>
+    private bool IsImageOnlyPackage => !_translatePackageReady && _translatePackageMessage == CsvPackageValidator.NoDataRowsMessage
+        && _translatePackageImages.OcrReady + _translatePackageImages.TranslatedDrafts > 0;
+
     private bool CanStartTranslate()
     {
-        if (Busy || CsvEditorSaving || CsvEditorDirty || !_translationModelChecked || _translationModelUnavailable || !_translatePackageReady)
+        if (Busy || CsvEditorSaving || CsvEditorDirty || !_translationModelChecked || _translationModelUnavailable || !(_translatePackageReady || IsImageOnlyPackage))
             return false;
         try
         {
@@ -94,7 +98,7 @@ public sealed partial class MainViewModel
                     return UiText.Compose(
                         UiText.Msg("Không có dòng text để dịch • {0} ảnh đã OCR", images.OcrReady.ToString("N0")),
                         images.TranslatedDrafts > 0 ? UiText.Msg(", {0} bản dịch nháp", images.TranslatedDrafts.ToString("N0")) : "",
-                        " — bấm “Dịch ảnh…”, rồi duyệt, dựng và cài ảnh trong mục Text trong ảnh.");
+                        " — bấm Dịch để dịch ảnh tự động; duyệt, dựng và cài ảnh ngay bên dưới nếu cần.");
             }
             if (!_translatePackageReady)
                 return string.IsNullOrWhiteSpace(_translatePackageMessage)
@@ -424,7 +428,8 @@ public sealed partial class MainViewModel
             StatusText = "Lỗi kiểm tra gói";
             return;
         }
-        if (!validation.Ok)
+        var imageOnly = !validation.Ok && validation.Message == CsvPackageValidator.NoDataRowsMessage && IsImageOnlyPackage;
+        if (!validation.Ok && !imageOnly)
         {
             AppendLog($"Chưa thể dịch {csv}: {validation.Message}");
             StatusText = "CSV chưa sẵn sàng";

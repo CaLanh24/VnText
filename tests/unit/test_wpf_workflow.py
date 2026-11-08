@@ -192,7 +192,7 @@ class WpfWorkflowTests(unittest.TestCase):
         run = workflow[workflow.index("private async void RunTranslate()"):workflow.index("private void ExportCloudRepairPackage()")]
         self.assertIn("var csv = ResolveActiveCsvPath();", run)
         self.assertIn("CsvPackageValidator.Validate(csv, requireTranslations: false)", run)
-        self.assertIn("if (!validation.Ok)", run)
+        self.assertIn("if (!validation.Ok && !imageOnly)", run)
         self.assertIn("BuildTranslateParameters(csv)", run)
         self.assertNotIn("WorkflowStatus.Evaluate", run)
 
@@ -615,10 +615,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('<Style TargetType="CheckBox">', panel)
         self.assertIn("DisabledForegroundBrush", panel)
         # (4) the two Lấy text actions share one row and one centre line; the status has its own row
-        row = xaml[xaml.index('x:Name="ExtractImageTextButton"'):xaml.index("Lấy text\" Foreground=\"White\"")]
-        self.assertIn('Grid.Row="1" Grid.Column="0"', row)
+        self.assertNotIn('x:Name="ExtractImageTextButton"', xaml)         # the image workspace lives only in Translate; Extract has one action
+        row = xaml[xaml.index('x:Name="ExtractRunButton"'):xaml.index("Lấy text\" Foreground=\"White\"")]
         self.assertIn('x:Name="ExtractRunButton" Grid.Row="1" Grid.Column="1"', row)
-        self.assertEqual(2, row.count('VerticalAlignment="Center"'))
         self.assertIn('Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"', xaml)
         # (5) readable filter label with the stored value untouched; the Patch picker names its own step
         self.assertIn('public const string ReviewOnly = "review_only";', filters)
@@ -882,7 +881,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">', xaml)     # scope + Preview/Apply/Undo wrap instead of running under the examples column
         self.assertIn('x:Name="CsvBulkFindTextBox"', xaml)
         self.assertIn('x:Name="CsvBulkReplaceTextBox"', xaml)
-        self.assertIn('Text="Tìm trong bản dịch"', xaml)
+        self.assertIn('Text="Tìm nguyên bản hoặc bản dịch"', xaml)
         self.assertIn('Content="Xem trước"', xaml)
         self.assertIn('Content="Áp dụng"', xaml)
         self.assertIn('Command="{Binding ApplyBulkReplaceCsvCommand}"', xaml)
@@ -1131,7 +1130,7 @@ class WpfWorkflowTests(unittest.TestCase):
                 self.assertRegex(panel, r"Command=\"\{Binding (DataContext\.)?" + command + r"\b")
                 if command != "OpenOutputCommand":
                     self.assertIn(f"public RelayCommand {command}", image_vm)
-        for binding in ("ImageCandidates", "ImagePath", "ImagePreview", "ImageRegions", "ImageStatus", "ImageWorkspaceSummary", "ImageGridEnabled"):
+        for binding in ("ImageResults", "ImagePath", "ImagePreview", "ImageRegions", "ImageStatus", "ImageWorkspaceSummary", "ImageGridEnabled"):
             with self.subTest(binding=binding):
                 self.assertIn("{Binding " + binding, panel)
         for approval in ("FlatBackgroundApproved", "ReplacementBackgroundApproved", "TransparentTextApproved", "CloneBackgroundApproved"):
@@ -1140,7 +1139,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertEqual(4, panel.count('GroupName="RegionBackgroundMode"'))
         self.assertEqual(4, panel.count('Click="OnBackgroundModeClick"'))
         # The workspace is opened through the shared themed dialog shell from both entry points.
-        self.assertGreaterEqual(len(re.findall(r"Command=\"\{Binding OpenImageWorkspaceCommand\}\"", window)), 2)
+        self.assertGreaterEqual(len(re.findall(r"Command=\"\{Binding OpenImageWorkspaceCommand\}\"", window)), 1)
         self.assertIn("new AppDialogWindow(this", window_code)
         self.assertIn("ImageWorkspacePanel", window_code)
         self.assertIn("ImageWorkspaceRequested", window_code)
@@ -1157,7 +1156,7 @@ class WpfWorkflowTests(unittest.TestCase):
         for field in ("X", "Y", "Width", "Height", "FontSize", "Background", "Foreground", "DonorX", "DonorY"):
             self.assertIn("Text=\"{Binding " + field + ",", panel)
         # The candidate source cannot change while a task runs, cancellation is its own state, and a cancelled/failed OCR keeps the source.
-        self.assertRegex(panel, r'x:Name="CandidateCombo"[^>]*IsEnabled="\{Binding ImageGridEnabled\}"')
+        self.assertRegex(panel, r'x:Name="ImageResultList"[^>]*IsEnabled="\{Binding ImageGridEnabled\}"')
         complete = image_vm[image_vm.index("private void CompleteImageTask"):]
         self.assertIn("Đã hủy {0}", complete)
         self.assertIn("kết quả cũ bị bỏ", complete)
