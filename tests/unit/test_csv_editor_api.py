@@ -488,7 +488,7 @@ class CsvEditorApiTests(unittest.TestCase):
 
     def test_reason_label_vi(self):
         self.assertIn("Rác", reason_label_vi("garbage_repetition"))
-        self.assertIn("review", reason_label_vi("review_only").lower())
+        self.assertIn("chưa có đường ghi patch", reason_label_vi("review_only").lower())      # the unified document keeps the translation; the label says why it is not patched
 
     @patch("vntext.mt_ct2.run_ct2_translate_keys")
     def test_retranslate_blocked_keys_dry_run(self, mock_ct2):

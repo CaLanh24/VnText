@@ -302,6 +302,39 @@ def run_translate_worker(
             )
         else:
             log("Đang chuyển sang pipeline dịch và ghi trace tác vụ.")
+            from vntext.image_batch import cached_image_report, translate_cached_images
+            from vntext.package_io import read_csv_rows_file
+
+            def with_images(payload: dict) -> dict:
+                """Chain the cached OCR images (positive-only, no rescan) after the text step; the first honest failure wins."""
+                if not ((payload.get('ok') or payload.get('pipeline_liveness')) and not is_cancelled()):
+                    return payload
+                try:
+                    if cached_image_report(package_dir) is None:
+                        return payload
+                    images = translate_cached_images(package_dir, is_cancelled=is_cancelled, progress=progress)
+                    detail = f"Ảnh: {images['translated']}/{images['total']} bản dịch nháp; {images['untranslated']} cần xem lại. {images['output']}"
+                    log(detail)
+                    payload['summary'] = (str(payload.get('summary') or '') + chr(10) + detail).strip()
+                    if images['cancelled']:
+                        payload.update(ok=False, error='cancelled')
+                    elif images['untranslated']:
+                        payload.update(ok=False, complete=False, error=detail)
+                except Exception as exc:
+                    detail = 'Chưa dịch xong ảnh: ' + str(exc)
+                    log(detail)
+                    payload.update(ok=False, error=detail)
+                return payload
+
+            try:
+                text_rows = read_csv_rows_file(csv_path)[1]
+            except Exception:
+                text_rows = None
+            if text_rows == [] and cached_image_report(package_dir) is not None:
+                # An image-only package: there is no text for the text translator, so go straight to the images.
+                log("Gói không có dòng text; dịch ảnh đã nhận diện.")
+                complete(with_images({'ok': True, 'complete': True, 'summary': 'Không có text cần dịch.', 'pending': 0, 'review_only': 0, 'blocked': 0, 'translated': 0}))
+                return
             terminal = []
             run_translate_ct2_task(
                 csv_path,
@@ -315,24 +348,7 @@ def run_translate_worker(
                 is_cancelled=is_cancelled,
             )
             if terminal:
-                payload = dict(terminal[-1])
-                if (payload.get('ok') or payload.get('pipeline_liveness')) and not is_cancelled():
-                    from vntext.image_batch import cached_image_report, translate_cached_images
-                    try:
-                        if cached_image_report(package_dir) is not None:
-                            images = translate_cached_images(package_dir, is_cancelled=is_cancelled, progress=progress)
-                            detail = f"Ảnh: {images['translated']}/{images['total']} bản dịch nháp; {images['untranslated']} cần xem lại. {images['output']}"
-                            log(detail)
-                            payload['summary'] = str(payload.get('summary') or '') + '\n' + detail
-                            if images['cancelled']:
-                                payload.update(ok=False, error='cancelled')
-                            elif images['untranslated']:
-                                payload.update(ok=False, complete=False, error=detail)
-                    except Exception as exc:
-                        detail = 'Chưa dịch xong ảnh: ' + str(exc)
-                        log(detail)
-                        payload.update(ok=False, error=detail)
-                complete(payload)
+                complete(with_images(dict(terminal[-1])))
     except WorkerCancelled:
         _finish_cancelled(task_id)
 
@@ -406,14 +422,22 @@ def run_patch_worker(
         import uuid
         from vntext.image_text import _regular
         delivery_dir = _regular(patch_out)
-        build_dir = _regular(Path(package_dir) / '.patch-build' / uuid.uuid4().hex)
+        stage_root = Path(package_dir) / '.patch-build'
+        build_dir = _regular(stage_root / uuid.uuid4().hex)
         def deliver(payload):
             if payload.get('ok'):
-                from vntext.patch_bundle import bundle_patch
-                stub = build_dir / 'VNTextPatchInstaller.exe'
-                if not stub.is_file():
-                    raise ValueError('Thiếu installer patch tự chứa; chưa thể bàn giao.')
-                executable = bundle_patch(stub, build_dir, delivery_dir / 'VNText-VietHoa.exe')
+                try:
+                    from vntext.patch_bundle import bundle_patch, verify_bundle
+                    stub = build_dir / 'VNTextPatchInstaller.exe'
+                    if not stub.is_file():
+                        raise ValueError('Thiếu installer patch tự chứa; chưa thể bàn giao.')
+                    executable = bundle_patch(stub, build_dir, delivery_dir / 'VNText-VietHoa.exe')
+                    verify_bundle(executable)
+                except Exception as exc:       # a failed hand-off is an error, never a half-written success
+                    payload = dict(payload)
+                    payload.update(ok=False, complete=False, error=f'Chưa tạo được installer Việt hóa: {exc}')
+                    complete(payload)
+                    return
                 payload = dict(payload)
                 payload.update(patch_payload_path=str(executable),
                     patch_install_instructions='Mở VNText-VietHoa.exe, chọn thư mục game để cài hoặc gỡ bản Việt hóa.',
@@ -437,6 +461,15 @@ def run_patch_worker(
         )
     except WorkerCancelled:
         _finish_cancelled(task_id)
+    finally:
+        # The staged payload is consumed (bundled or abandoned); never leave a bulk copy behind.
+        import shutil
+        try:
+            shutil.rmtree(build_dir, ignore_errors=True)
+            if stage_root.is_dir() and not any(stage_root.iterdir()):
+                stage_root.rmdir()
+        except (OSError, NameError):
+            pass
 
 
 def run_cloud_repair_worker(

@@ -9,6 +9,38 @@ import uuid
 import zipfile
 
 MAGIC = b'VNTEXT-PATCH-001!'
+FOOTER_SIZE = 32 + 8 + len(MAGIC)
+MAX_ENTRIES = 100_000
+MAX_TOTAL_BYTES = 64 * 1024 ** 3
+
+
+def verify_bundle(executable: Path) -> dict:
+    """Re-read the footer of a built EXE: digest, length and the ZIP inventory (names only; nothing is extracted)."""
+    executable = Path(executable)
+    size = executable.stat().st_size
+    with executable.open('rb') as handle:
+        handle.seek(size - FOOTER_SIZE)
+        footer = handle.read(FOOTER_SIZE)
+        if footer[40:] != MAGIC:
+            raise ValueError('EXE không có payload patch.')
+        digest, length = footer[:32], struct.unpack('<Q', footer[32:40])[0]
+        if not 22 <= length <= size - FOOTER_SIZE:
+            raise ValueError('Độ dài payload patch không hợp lệ.')
+        handle.seek(size - FOOTER_SIZE - length)
+        check = hashlib.sha256()
+        remaining = length
+        while remaining:
+            block = handle.read(min(1024 * 1024, remaining))
+            if not block:
+                raise ValueError('Payload patch bị cắt.')
+            check.update(block); remaining -= len(block)
+        if check.digest() != digest:
+            raise ValueError('Hash payload patch không khớp.')
+        handle.seek(size - FOOTER_SIZE - length)
+        import io
+        with zipfile.ZipFile(io.BytesIO(handle.read(length))) as bundle:
+            names = [i.filename for i in bundle.infolist() if not i.is_dir()]
+    return {'sha256': digest.hex(), 'payload_bytes': length, 'files': names}
 
 
 def bundle_patch(installer: Path, patch: Path, destination: Path) -> Path:
@@ -18,8 +50,19 @@ def bundle_patch(installer: Path, patch: Path, destination: Path) -> Path:
         raise ValueError('Thiếu manifest patch; không thể tạo installer.')
     files = [p for p in patch.rglob('*') if p.is_file() and
              (p.relative_to(patch).parts[0] == 'COPY_TO_GAME_ROOT' or p.name in {'patch_manifest.json', 'patch_coverage.json', 'patch_verification.json'})]
+    if not files or len(files) > MAX_ENTRIES:
+        raise ValueError('Số file patch không hợp lệ.')
+    total = 0
+    seen: set[str] = set()
     for path in files:
         _regular(path)
+        total += path.stat().st_size
+        folded = path.relative_to(patch).as_posix().casefold()
+        if folded in seen:
+            raise ValueError('Tên file patch trùng nhau.')
+        seen.add(folded)
+    if total > MAX_TOTAL_BYTES:
+        raise ValueError('Payload patch vượt giới hạn 64 GiB.')
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_name(destination.name + '.' + uuid.uuid4().hex + '.tmp')
     archive = temporary.with_suffix('.zip')

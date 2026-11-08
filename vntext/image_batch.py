@@ -284,7 +284,12 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
         temp=root/'report.tmp'
         with temp.open('w',encoding='utf-8') as stream:
             json.dump(report,stream,ensure_ascii=False,indent=2)
-        temp.replace(report_path)
+        for attempt in range(8):            # Windows indexers/scanners can briefly hold the fresh file
+            try:
+                temp.replace(report_path); break
+            except PermissionError:
+                if attempt == 7: raise
+                time.sleep(0.05 * (attempt + 1))
     save(); used_bytes=0; translator=None; model_error=''
     started=time.monotonic()
     try:

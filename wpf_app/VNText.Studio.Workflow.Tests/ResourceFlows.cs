@@ -186,6 +186,7 @@ internal static partial class Program
                      "scan_errors": []}
                     """);
                 using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false){InputPath=a,OutputPath=a};
+                var completions = 0; vm.CompletionRequested += (_, _) => completions++;
                 // success: START, a step, result and the final status all land in the SAME journal; the summary names the engine and does not claim patchability
                 vm.TestBeginTaskLog("an-ok","analyze"); vm.TestMarkAnalyzeStarted();
                 vm.TestHandleWorkerEvent(new WorkerEvent{Type="progress",Id="an-ok",Done=2,Total=10,Step="scan",Item="item-ok"});
@@ -195,6 +196,7 @@ internal static partial class Program
                 AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Đã phân tích")));
                 AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Engine")));
                 AssertEqual("Phân tích xong",vm.ExtractRuns[0].Status);
+                AssertEqual(1,completions);                                                              // exactly one completion notice for a finished analysis
                 AssertFalse(vm.AnalyzeBusy);
                 AssertTrue(vm.AnalyzeNextActionText.Contains("Đã nhận diện",StringComparison.Ordinal));
                 AssertTrue(vm.AnalyzeNextActionText.Contains("chưa xác minh khả năng tạo patch",StringComparison.Ordinal));
@@ -210,6 +212,7 @@ internal static partial class Program
                 AssertEqual(1,vm.ExtractLogLines.Count(s=>s.Contains("Đầu vào đã đổi")));
                 vm.TestHandleWorkerEvent(new WorkerEvent{Type="complete",Id="an-stale",Ok=true,Complete=true});
                 AssertEqual("Đã bỏ kết quả cũ",vm.ExtractRuns[0].Status);
+                AssertEqual(1,completions);                                                              // a superseded scan never interrupts the person with the old folder's result
                 AssertEqual(0,vm.AnalyzeResourceCount);
                 AssertFalse(vm.AnalyzeNextActionText.Contains("Đã nhận diện",StringComparison.Ordinal));
                 AssertEqual(2,vm.ExtractRuns.Count);                                                      // history kept, nothing cleared twice
@@ -222,6 +225,7 @@ internal static partial class Program
                 vm.TestSimulateTaskComplete("analyze",new WorkerEvent{Type="complete",Id="an-err",Ok=false,Error="analyzer exploded"});
                 AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("analyzer exploded")));
                 AssertEqual("Lỗi",vm.ExtractRuns[0].Status);
+                AssertEqual(2,completions);                                                              // the failure is announced once
                 AssertTrue(vm.AnalyzeNextActionText.Contains("Phân tích không hoàn tất",StringComparison.Ordinal));
                 vm.TestMarkTaskTerminal("an-err");
 

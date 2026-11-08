@@ -94,7 +94,7 @@ public sealed partial class MainViewModel
         if (SuppressCompletionNotifications || string.IsNullOrWhiteSpace(message))
             return;
         // A superseded automatic scan must not interrupt the person with the old folder's result.
-        if (_runningTask == "analyze" && _analyzeRejectLate)
+        if (_completingSuperseded)
             return;
 
         CompletionRequested?.Invoke(

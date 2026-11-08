@@ -111,7 +111,16 @@ public sealed partial class MainViewModel
         }
     }
 
+    // True only while the terminal event of an analysis for an input that has since changed is being handled: NO completion dialog or sound for it.
+    private bool _completingSuperseded;
+
     private void HandleWorkerEvent(WorkerEvent evt)
+    {
+        try { HandleWorkerEventCore(evt); }
+        finally { _completingSuperseded = false; }
+    }
+
+    private void HandleWorkerEventCore(WorkerEvent evt)
     {
         switch (evt.Type)
         {
@@ -192,6 +201,7 @@ public sealed partial class MainViewModel
                 _cancelWatchdog = null;
 
                 var completedTask = _runningTask;
+                _completingSuperseded = completedTask == "analyze" && _analyzeRejectLate;
                 var extractWarning = completedTask == "extract" && evt.ExtractStatus == "PARTIAL"
                     && evt.Severity == "warning" && evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) != true;
                 if (!string.IsNullOrWhiteSpace(evt.Error))
