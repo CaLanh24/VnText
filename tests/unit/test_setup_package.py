@@ -1382,7 +1382,9 @@ internal static class ResourceHarness
             self.assertEqual(0, built_harness.returncode, built_harness.stdout + built_harness.stderr)
             tools = ROOT / ".dev-env" / "tools"
             have_cache = (tools / "renpy-8.5.3" / "renpy.py").is_file() and (ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8" / "model.bin").is_file()
-            run = subprocess.run([str(harness), str(setup_exe), sys.executable, str(fake), str(ROOT), str(work), str(tools) if have_cache else ""], capture_output=True, text=True, timeout=420, stdin=subprocess.DEVNULL, cwd=str(work))
+            venv_python = ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+            worker_python = str(venv_python) if venv_python.is_file() else sys.executable
+            run = subprocess.run([str(harness), str(setup_exe), worker_python, str(fake), str(ROOT), str(work), str(tools) if have_cache else ""], capture_output=True, text=True, timeout=420, stdin=subprocess.DEVNULL, cwd=str(work))
             self.assertEqual(0, run.returncode, run.stdout + run.stderr)
             for marker in ("RES success PASS", "RES failure keeps the readable reason PASS", "RES graceful cancel PASS", "RES stubborn worker is killed and reported cancelled PASS",
                            "RES worker crash PASS", "RES silent worker PASS", "RES foreign task id is ignored PASS", "RES worker layout and environment PASS",
