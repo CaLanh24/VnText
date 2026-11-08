@@ -491,7 +491,7 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             setup_hash_check = publish_source.index("if ((Get-Sha256 $pendingSetup) -ne $setupSha)")
             self.assertLess(setup_hash_check, feed_commit, "Updates feed must not replace its manifest before the new Setup hash is verified.")
             self.assertIn("WPF Updates retention:", publish_source)
-            uninstall_source = setup_source[setup_source.index("private static int Uninstall()"):]
+            uninstall_source = setup_source[setup_source.index("private static int Uninstall("):]
             self.assertIn("BuildUninstallCleanupCommand(root", uninstall_source)
             self.assertIn("BackgroundWorker", uninstall_source)
             self.assertIn("System.Windows.Forms.Timer", uninstall_source)
@@ -1077,6 +1077,324 @@ internal static class WizardHarness
             outcome = "PASS"
         finally:
             report = cleanup_after_test([work], reason="test_setup_package.py wizard", outcome=outcome, scope_id=scope, run_id=run_id)
+        if outcome == "PASS":
+            self.assertTrue(report.get("ok"), report)
+
+
+    def test_setup_resource_step_hands_off_to_the_worker_and_uninstall_uses_the_installer_frame(self):
+        """Actual invocation of the Setup resource step (success, failure, cancel, stubborn worker, crash, silent worker, foreign task id, local validated
+        cache, offline) through the worker's real JSON-line protocol, the wizard's honest outcome pages, and every uninstall state in the installer frame."""
+        work = WORK_ROOT / f"setup-resources-{uuid4().hex}"
+        scope = os.environ.get("VNTEXT_ARTIFACT_SCOPE_ID") or new_scope_id("setup-resources")
+        run_id = os.environ.get("VNTEXT_ARTIFACT_RUN_ID") or scope
+        register_artifact(artifact_id=f"setup-resources:{work.name}", path=work, kind="test_workspace", created_by="test_setup_package.py", owner="test_setup_package.py", purpose="Setup resource step and uninstall chrome fixture", lifecycle="DISPOSABLE", scope_id=scope, run_id=run_id)
+        outcome = "FAIL"
+        try:
+            payload = work / "payload"
+            (payload / "app").mkdir(parents=True)
+            (payload / "app" / "readme.txt").write_text("payload", encoding="utf-8")
+            (payload / "VNText Studio.exe").write_bytes(b"main app")
+            (payload / "Uninstall.exe").write_bytes(b"uninstaller")
+            archive = work / "payload.zip"
+            package_installer.build(payload, archive)
+            csc = Path(os.environ["WINDIR"]) / "Microsoft.NET" / "Framework64" / "v4.0.30319" / "csc.exe"
+            references = [f"/reference:{name}.dll" for name in ("System.Windows.Forms", "System.Web.Extensions", "System.IO.Compression", "System.IO.Compression.FileSystem")]
+            setup_exe = work / "Setup.exe"
+            built = subprocess.run([str(csc), "/nologo", "/target:winexe", f"/out:{setup_exe}", f"/resource:{archive},Payload.zip", *references, str(ROOT / "release" / "Setup.cs")], capture_output=True, text=True, timeout=90)
+            self.assertEqual(0, built.returncode, built.stdout + built.stderr)
+            setup_source = (ROOT / "release" / "Setup.cs").read_text(encoding="utf-8")
+            # one worker handoff, no second downloader inside Setup
+            self.assertIn('{ "task", "resources" }', setup_source)
+            self.assertIn('{ "download", true }', setup_source)
+            for forbidden in ("WebClient", "HttpClient", "HttpWebRequest", "DownloadFile", "SDK_URL"):
+                self.assertNotIn(forbidden, setup_source, "Setup must not carry its own downloader")
+            self.assertIn("Resources already in the installation are skipped", setup_source)
+            fake = work / "fake_worker.py"
+            fake.write_text(r'''
+import json, os, sys, time
+mode = os.environ["FAKE_MODE"]
+pid_file = os.environ.get("FAKE_PID")
+if pid_file:
+    open(pid_file, "w").write(str(os.getpid()))
+def emit(**message):
+    sys.stdout.write(json.dumps({"v": 1, **message}, ensure_ascii=False) + "\n"); sys.stdout.flush()
+if mode == "silent":
+    time.sleep(60)
+print("a library banner that is not protocol output"); sys.stdout.flush()
+emit(type="ready")
+for line in sys.stdin:
+    command = json.loads(line)
+    if command["type"] == "run":
+        assert command["task"] == "resources" and command["params"] == {"download": True}, command
+        task = command["id"]
+        if mode == "success":
+            emit(type="progress", id=task, done=0, total=0, step="Kiểm tra tài nguyên", item="model")
+            emit(type="progress", id=task, done=5 * 1048576, total=10 * 1048576, step="Tải Ren'Py SDK 8.5.3")
+            emit(type="complete", id=task, ok=True, summary="Tài nguyên đã sẵn sàng.", error="")
+            break
+        if mode == "failure":
+            emit(type="progress", id=task, done=0, total=0, step="Kiểm tra tài nguyên", item="renpy")
+            emit(type="complete", id=task, ok=False, summary="Tài nguyên chưa đầy đủ.", error="renpy: Không tải được SDK Ren'Py 8.5.3: offline")
+            break
+        if mode == "crash":
+            sys.stderr.write("worker exploded"); sys.stderr.flush(); sys.exit(3)
+        if mode == "foreign":
+            emit(type="complete", id="some-other-task", ok=True, summary="not ours", error="")
+        emit(type="progress", id=task, done=1, total=0, step="Kiểm tra tài nguyên", item="model")
+        if mode == "stubborn":
+            time.sleep(60)
+    elif command["type"] == "cancel" and mode in ("cancel", "foreign"):
+        emit(type="complete", id=command["id"], ok=False, summary="", error="cancelled")
+        break
+''', encoding="utf-8")
+            harness_source = work / "resource_harness.cs"
+            harness_source.write_text(r"""
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Windows.Forms;
+
+internal static class ResourceHarness
+{
+    static MethodInfo run;
+    static void Require(bool ok, string message) { if (!ok) { Console.WriteLine("FAIL: " + message); Environment.Exit(1); } }
+    static T Field<T>(object target, string name) { return (T)target.GetType().GetField(name).GetValue(target); }
+
+    static object Run(string python, string arguments, string cwd, Dictionary<string, string> environment, List<string> progress, Func<bool> cancelled, int readySeconds, int graceSeconds)
+    {
+        Action<long, long, string, string> report = delegate(long done, long total, string step, string item) { progress.Add(done + "/" + total + "/" + step + "/" + item); };
+        return run.Invoke(null, new object[] { python, arguments, cwd, environment, report, cancelled, readySeconds, graceSeconds });
+    }
+
+    static Dictionary<string, string> Fake(string mode, string pidFile)
+    {
+        var environment = new Dictionary<string, string>();
+        environment["FAKE_MODE"] = mode;
+        environment["PYTHONUTF8"] = "1";
+        if (pidFile != null) environment["FAKE_PID"] = pidFile;
+        return environment;
+    }
+
+    static int Main(string[] args)
+    {
+        var setup = Assembly.LoadFrom(args[0]).GetType("Setup", true);
+        var statics = BindingFlags.NonPublic | BindingFlags.Static;
+        run = setup.GetMethod("RunResourceWorker", statics);
+        var python = args[1]; var fake = "-u \"" + args[2] + "\""; var repo = args[3]; var work = args[4]; var tools = args[5];
+        var neverCancel = new Func<bool>(delegate { return false; });
+
+        var progress = new List<string>();
+        var r = Run(python, fake, work, Fake("success", null), progress, neverCancel, 30, 5);
+        Require(Field<bool>(r, "Ok") && !Field<bool>(r, "Cancelled"), "success was not reported: " + Field<string>(r, "Error"));
+        Require(progress.Count == 2 && progress[1].StartsWith("5242880/10485760/Tải Ren'Py SDK"), "SDK download progress did not reach Setup: " + String.Join("|", progress.ToArray()));
+        Console.WriteLine("RES success PASS");
+
+        r = Run(python, fake, work, Fake("failure", null), new List<string>(), neverCancel, 30, 5);
+        Require(!Field<bool>(r, "Ok") && !Field<bool>(r, "Cancelled") && Field<string>(r, "Error").Contains("renpy:") && Field<string>(r, "Error").Contains("offline"), "failure was reported as success or lost its reason: " + Field<string>(r, "Error"));
+        Console.WriteLine("RES failure keeps the readable reason PASS");
+
+        var polled = new List<string>();
+        var cancelAfterProgress = new Func<bool>(delegate { return polled.Count > 0; });
+        r = Run(python, fake, work, Fake("cancel", null), polled, cancelAfterProgress, 30, 10);
+        Require(!Field<bool>(r, "Ok") && Field<bool>(r, "Cancelled"), "cancel was not reported as cancelled (Ok=" + Field<bool>(r, "Ok") + ")");
+        Console.WriteLine("RES graceful cancel PASS");
+
+        var pidFile = Path.Combine(work, "stubborn.pid");
+        polled = new List<string>();
+        var clock = Stopwatch.StartNew();
+        r = Run(python, fake, work, Fake("stubborn", pidFile), polled, cancelAfterProgress, 30, 2);
+        Require(!Field<bool>(r, "Ok") && Field<bool>(r, "Cancelled"), "a worker that ignores cancel was not reported as cancelled");
+        Require(clock.Elapsed.TotalSeconds < 20, "stubborn worker was waited for too long");
+        var pid = int.Parse(File.ReadAllText(pidFile));
+        var alive = true;
+        try { using (var gone = Process.GetProcessById(pid)) { gone.WaitForExit(5000); alive = !gone.HasExited; } } catch (ArgumentException) { alive = false; }
+        Require(!alive, "the stubborn worker process was left running");
+        Console.WriteLine("RES stubborn worker is killed and reported cancelled PASS");
+
+        r = Run(python, fake, work, Fake("crash", null), new List<string>(), neverCancel, 30, 5);
+        Require(!Field<bool>(r, "Ok") && Field<string>(r, "Error").Contains("exit code 3") && Field<string>(r, "Error").Contains("worker exploded"), "crash not reported with its reason: " + Field<string>(r, "Error"));
+        Console.WriteLine("RES worker crash PASS");
+
+        r = Run(python, fake, work, Fake("silent", null), new List<string>(), neverCancel, 2, 2);
+        Require(!Field<bool>(r, "Ok") && Field<string>(r, "Error").Contains("did not become ready"), "a silent worker was not reported: " + Field<string>(r, "Error"));
+        Console.WriteLine("RES silent worker PASS");
+
+        polled = new List<string>();
+        var cancelSoon = new Func<bool>(delegate { return polled.Count > 0; });
+        r = Run(python, fake, work, Fake("foreign", null), polled, cancelSoon, 30, 5);
+        Require(!Field<bool>(r, "Ok"), "a completion for ANOTHER task id was accepted as ours");
+        Console.WriteLine("RES foreign task id is ignored PASS");
+
+        // The worker start: bundled layout and the environment the app gives its worker; an incomplete install is an error, never a silent success.
+        var installRoot = Path.Combine(work, "install-layout");
+        var env = new Dictionary<string, string>();
+        var startArgs = new object[] { installRoot, null, null, null, env };
+        var startMethod = setup.GetMethod("BuildResourceWorkerStart", statics);
+        Require(startMethod.Invoke(null, startArgs) != null, "an install without app/worker produced a worker command");
+        Directory.CreateDirectory(Path.Combine(installRoot, "app", "worker", "vntext_worker"));
+        Directory.CreateDirectory(Path.Combine(installRoot, "app", "worker", "python"));
+        Directory.CreateDirectory(Path.Combine(installRoot, "app", "worker", ".venv", "Scripts"));
+        File.WriteAllText(Path.Combine(installRoot, "app", "worker", "python", "python.exe"), "x");
+        File.WriteAllText(Path.Combine(installRoot, "app", "worker", ".venv", "Scripts", "python.exe"), "x");
+        startArgs = new object[] { installRoot, null, null, null, env };
+        Require(startMethod.Invoke(null, startArgs) == null, "a complete worker layout was rejected");
+        Require((string)startArgs[3] == Path.Combine(installRoot, "app", "worker") && ((string)startArgs[2]).Contains("vntext_worker.worker_main"), "worker command is wrong");
+        Require(env["VNTEXT_DATA_ROOT"] == Path.Combine(installRoot, "data") && env["PYTHONHOME"] == Path.Combine(installRoot, "app", "worker", "python")
+            && env["VNTEXT_RENPY_TOOL_ROOT"] == Path.Combine(installRoot, "data", "tools") && env["PYTHONNOUSERSITE"] == "1", "worker environment differs from the app's");
+        Console.WriteLine("RES worker layout and environment PASS");
+
+        // The REAL worker with the REAL resources task against local validated caches (bundled-style model + an installed SDK): nothing is downloaded.
+        if (tools.Length > 0)
+        {
+            var local = Path.Combine(work, "real-local");
+            Directory.CreateDirectory(local);
+            var real = new Dictionary<string, string>();
+            real["LOCALAPPDATA"] = local; real["VNTEXT_DATA_ROOT"] = ""; real["VNTEXT_RENPY_TOOL_ROOT"] = tools; real["PYTHONDONTWRITEBYTECODE"] = "1"; real["PYTHONUTF8"] = "1";
+            real["HTTPS_PROXY"] = "http://127.0.0.1:9"; real["https_proxy"] = "http://127.0.0.1:9";       // a download attempt would fail loudly: cached resources must not need it
+            var realProgress = new List<string>();
+            r = Run(python, "-m vntext_worker.worker_main", repo, real, realProgress, neverCancel, 120, 15);
+            var error = Field<string>(r, "Error");
+            Console.WriteLine("REAL_CACHE ok=" + Field<bool>(r, "Ok") + " error=" + error.Replace("\r", " ").Replace("\n", " | "));
+            Require(Field<bool>(r, "Ok") || (error.StartsWith("ocr:") && !error.Contains("renpy") && !error.Contains("model")), "cached model/SDK were not accepted as ready: " + error);
+            Require(!realProgress.Exists(delegate(string line) { return line.Contains("Tải Ren'Py SDK"); }), "a valid cached SDK was downloaded again");
+            Console.WriteLine("RES real worker with local validated cache PASS");
+
+            // Offline with no cached SDK: the real worker fails with a readable reason, and Setup does not call that ready.
+            var emptyTools = Path.Combine(work, "empty-tools");
+            Directory.CreateDirectory(emptyTools);
+            real["VNTEXT_RENPY_TOOL_ROOT"] = emptyTools;
+            r = Run(python, "-m vntext_worker.worker_main", repo, real, new List<string>(), neverCancel, 120, 15);
+            error = Field<string>(r, "Error");
+            Console.WriteLine("REAL_OFFLINE ok=" + Field<bool>(r, "Ok") + " error=" + error.Replace("\r", " ").Replace("\n", " | "));
+            Require(!Field<bool>(r, "Ok") && error.Contains("renpy:"), "an offline run without a cached SDK was reported ready: " + error);
+            Console.WriteLine("RES real worker offline PASS");
+        }
+
+        // The wizard's outcome pages never claim readiness that did not happen.
+        var instance = BindingFlags.NonPublic | BindingFlags.Instance;
+        var wizardType = Assembly.LoadFrom(args[0]).GetType("Setup+SetupWizard", true);
+        foreach (var vietnamese in new[] { true, false })
+        {
+            var wizard = (Form)Activator.CreateInstance(wizardType, instance, null, new object[] { vietnamese }, null);
+            wizard.Opacity = 0; wizard.ShowInTaskbar = false; wizard.Show(); Application.DoEvents();
+            wizardType.GetField("root", instance).SetValue(wizard, Path.Combine(work, "wizard-no-worker-" + vietnamese));
+            var page = wizardType.GetField("page", instance);
+            var next = (Button)wizardType.GetField("next", instance).GetValue(wizard);
+            var cancel = (Button)wizardType.GetField("cancel", instance).GetValue(wizard);
+            var status = (Label)wizardType.GetField("resStatus", instance).GetValue(wizard);
+            var detail = (Label)wizardType.GetField("resDetail", instance).GetValue(wizard);
+            var doneNotes = (Label)wizardType.GetField("doneNotes", instance).GetValue(wizard);
+            wizardType.GetField("preparing", instance).SetValue(wizard, false);
+            wizardType.GetMethod("StartResources", instance).Invoke(wizard, null);        // no app/worker in this root: a failed run
+            Application.DoEvents();
+            Require((int)page.GetValue(wizard) == 5, "a failed resource run left the resource page");
+            Require(next.Enabled && next.Text == (vietnamese ? "Thử lại" : "Retry"), "no Retry after a failed run");
+            Require(cancel.Enabled && cancel.Text == (vietnamese ? "Bỏ qua" : "Skip"), "no Skip after a failed run");
+            Require(status.Text == (vietnamese ? "Tài nguyên chưa sẵn sàng" : "Resources are not ready") && detail.Text.Contains("app\\worker"), "the failure reason is not readable: " + detail.Text);
+            Require(!(bool)wizardType.GetField("resourcesReady", instance).GetValue(wizard), "resources were marked ready after a failure");
+            cancel.PerformClick();                                                       // Skip
+            Application.DoEvents();
+            Require((int)page.GetValue(wizard) == 6, "Skip did not reach the final page");
+            Require(!doneNotes.Text.Contains(vietnamese ? "đã sẵn sàng." : "are ready.") && doneNotes.Text.Contains(vietnamese ? "chưa sẵn sàng" : "not ready"), "the final page claims ready resources after a failure: " + doneNotes.Text);
+            wizardType.GetField("resourcesReady", instance).SetValue(wizard, true);
+            wizardType.GetMethod("ShowDone", instance).Invoke(wizard, null);
+            Require(doneNotes.Text.Contains(vietnamese ? "đã sẵn sàng." : "are ready."), "the final page does not report ready resources after success");
+            wizard.Dispose();
+        }
+        Console.WriteLine("RES wizard outcome pages PASS");
+
+        // Every uninstall state in the installer frame: running copy is owned and localized, the heartbeat is hidden, failures list their reason.
+        var progressFactory = setup.GetMethod("CreateUninstallProgressForm", statics);
+        var languageField = setup.GetField("uninstallVietnamese", statics);
+        foreach (var vietnamese in new[] { true, false })
+        {
+            languageField.SetValue(null, vietnamese);
+            foreach (var state in new[] { "success", "blocked", "failed" })
+            {
+                var root = Path.Combine(work, "uninstall-" + state + "-" + vietnamese);
+                Directory.CreateDirectory(Path.Combine(root, "data"));
+                File.WriteAllText(Path.Combine(root, "data", "user.txt"), "user");
+                var self = Path.Combine(root, "Uninstall.exe");
+                File.WriteAllText(self, "x");
+                FileStream locked = null;
+                if (state == "blocked") { File.WriteAllText(Path.Combine(root, "in-use.dll"), "x"); locked = new FileStream(Path.Combine(root, "in-use.dll"), FileMode.Open, FileAccess.Read, FileShare.None); }
+                if (state == "failed")
+                {
+                    var target = Path.Combine(work, "junction-target-" + vietnamese);
+                    Directory.CreateDirectory(target);
+                    var mk = Process.Start(new ProcessStartInfo("cmd.exe", "/c mklink /J \"" + Path.Combine(root, "link") + "\" \"" + target + "\"") { UseShellExecute = false, CreateNoWindow = true });
+                    mk.WaitForExit();
+                    Require(mk.ExitCode == 0, "could not create the reparse-point fixture");
+                }
+                var form = (Form)progressFactory.Invoke(null, new object[] { root, self, 2147483647, false, null });
+                form.Opacity = 0; form.ShowInTaskbar = false;
+                var watchdog = new System.Threading.Timer(delegate { Console.WriteLine("WATCHDOG uninstall " + state); Console.Out.Flush(); Environment.Exit(124); }, null, 20000, System.Threading.Timeout.Infinite);
+                var visibleText = new List<string>();
+                var headerText = "";
+                var statusText = ""; var detailText = ""; var detailsVisible = false; var heartbeatVisible = true; var closeText = "";
+                form.FormClosing += delegate
+                {
+                    foreach (Control c in form.Controls.Find("uninstallHeartbeat", true)) heartbeatVisible = c.Visible;
+                    foreach (Control c in form.Controls.Find("uninstallDetails", true)) { detailsVisible = c.Visible; detailText = c.Text; }
+                    statusText = form.Controls.Find("progressStatus", true)[0].Text;
+                    closeText = form.Controls.Find("closeUninstall", true)[0].Text;
+                    foreach (Control c in form.Controls.Find("uninstallMessage", true)) visibleText.Add(c.Text);
+                    foreach (Control c in form.Controls) if (c is Panel && c.Controls.Count == 3) headerText = c.Controls[0].Text + " / " + c.Controls[1].Text;
+                    visibleText.Add(statusText);
+                };
+                Application.Run(form);
+                watchdog.Dispose();
+                if (locked != null) locked.Dispose();
+                var all = String.Join(" || ", visibleText.ToArray()) + " || " + headerText;
+                Console.WriteLine("UNINSTALL " + state + "/" + (vietnamese ? "vi" : "en") + " tag=" + form.Tag + " header=" + headerText + " status=" + statusText);
+                Require(!heartbeatVisible, "the engineering heartbeat is visible in the product UI");
+                Require(!all.Contains("heartbeat") && !all.Contains("Checking files") && !all.Contains("active locks") && !all.Contains("Scanning the install folder."), "engineering text is in the product UI: " + all);
+                Require(closeText == (vietnamese ? "Đóng" : "Close"), "close button language/text: " + closeText);
+                if (state == "success")
+                {
+                    Require(Convert.ToInt32(form.Tag) == 0 && !detailsVisible, "success state is wrong");
+                    Require(statusText == (vietnamese ? "Đã gỡ cài đặt VNText Studio" : "VNText Studio was uninstalled"), "success headline: " + statusText);
+                    Require(!File.Exists(Path.Combine(root, "data", "user.txt")) && File.Exists(self), "uninstall ownership changed (data removed, own exe kept for the helper)");
+                }
+                else if (state == "blocked")
+                {
+                    Require(Convert.ToInt32(form.Tag) == 2 && detailsVisible && detailText.Contains("in-use.dll"), "blocked state does not list the file in use: " + detailText);
+                    Require(File.Exists(Path.Combine(root, "data", "user.txt")), "a blocked uninstall removed data");
+                    Require(statusText == (vietnamese ? "Chưa thể gỡ cài đặt" : "Uninstall cannot continue yet"), "blocked headline: " + statusText);
+                }
+                else
+                {
+                    Require(Convert.ToInt32(form.Tag) == 2 && detailsVisible && detailText.Length > 0, "failed state has no readable reason");
+                    Require(File.Exists(Path.Combine(root, "data", "user.txt")), "a failed pre-delete scan removed data");
+                    Require(statusText == (vietnamese ? "Gỡ cài đặt dừng giữa chừng" : "Uninstall stopped part-way"), "failed headline: " + statusText);
+                }
+            }
+        }
+        Console.WriteLine("RES uninstall states PASS");
+        return 0;
+    }
+}
+""", encoding="utf-8")
+            harness = work / "resource_harness.exe"
+            built_harness = subprocess.run([str(csc), "/nologo", "/target:exe", f"/out:{harness}", "/reference:System.Windows.Forms.dll", "/reference:System.Web.Extensions.dll", "/reference:System.IO.Compression.dll", str(harness_source)], capture_output=True, text=True, timeout=90)
+            self.assertEqual(0, built_harness.returncode, built_harness.stdout + built_harness.stderr)
+            tools = ROOT / ".dev-env" / "tools"
+            have_cache = (tools / "renpy-8.5.3" / "renpy.py").is_file() and (ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8" / "model.bin").is_file()
+            run = subprocess.run([str(harness), str(setup_exe), sys.executable, str(fake), str(ROOT), str(work), str(tools) if have_cache else ""], capture_output=True, text=True, timeout=420, stdin=subprocess.DEVNULL, cwd=str(work))
+            self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+            for marker in ("RES success PASS", "RES failure keeps the readable reason PASS", "RES graceful cancel PASS", "RES stubborn worker is killed and reported cancelled PASS",
+                           "RES worker crash PASS", "RES silent worker PASS", "RES foreign task id is ignored PASS", "RES worker layout and environment PASS",
+                           "RES wizard outcome pages PASS", "RES uninstall states PASS"):
+                self.assertIn(marker, run.stdout)
+            if have_cache:
+                self.assertIn("RES real worker with local validated cache PASS", run.stdout)
+                self.assertIn("RES real worker offline PASS", run.stdout)
+            print(run.stdout)
+            outcome = "PASS"
+        finally:
+            report = cleanup_after_test([work], reason="test_setup_package.py resource step", outcome=outcome, scope_id=scope, run_id=run_id)
         if outcome == "PASS":
             self.assertTrue(report.get("ok"), report)
 

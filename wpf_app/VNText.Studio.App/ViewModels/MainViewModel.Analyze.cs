@@ -27,6 +27,9 @@ public sealed partial class MainViewModel
     // result and makes the still-running analysis of the OLD input ignorable (late event).
     private string? _analyzeIdentity;
     private bool _analyzeRejectLate;
+    // What the inline summary under "Nguồn và gói dịch" reports for the CURRENT input.  Anything attributed to an older input is cleared by InvalidateAnalyzeIfInputsChanged.
+    internal enum AnalyzeOutcome { None, Identified, IdentifiedIncomplete, Unsupported, Failed, Cancelled }
+    private AnalyzeOutcome _analyzeOutcome;
     private string? _nestedRuntimePath;
     private bool _gameFolderReadError;
     private string _gameFolderBoundaryMessage => _gameFolderReadError
@@ -75,6 +78,8 @@ public sealed partial class MainViewModel
             return;
         _analyzeIdentity = null;
         _analyzeRejectLate = true;
+        _analyzeOutcome = AnalyzeOutcome.None;
+        if (Busy && _runningTask == "analyze") AddExtractRunLine(_activeTaskId, "Đầu vào đã đổi: kết quả phân tích đang chạy sẽ bị bỏ.");
         AnalyzeInventoryComplete = false;
         AnalyzeUnityStatus = "NOT_DETECTED";
         AnalyzeEngineSummary = "Chưa xác định engine";
@@ -91,12 +96,52 @@ public sealed partial class MainViewModel
         AnalyzeResultsExpanded = false;
         AnalyzeScanErrorText = "";
         AnalyzeStatusText = "Đầu vào đã đổi • cần phân tích lại";
+        RaiseAnalyzeSummary();
+    }
+
+    /// <summary>One persistent sentence for the person: the engine that was identified and what they can do next, or why nothing could be identified.
+    /// Identifying an engine is NOT a claim that patching works; the sentence says so and the counts below keep the evidence.</summary>
+    public string AnalyzeNextActionText
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage)) return UiText.Translate("Chọn thư mục game cụ thể để tiếp tục.");
+            if (AnalyzeBusy) return UiText.Translate("Đang nhận diện engine. Bạn có thể hủy hoặc chọn nguồn khác.");
+            if (string.IsNullOrWhiteSpace(InputPath)) return UiText.Translate("Chọn game / asset để tự nhận diện engine.");
+            if (_analyzeIdentity is null) return UiText.Translate("Đầu vào đã đổi; hệ thống sẽ nhận diện lại khi đủ nguồn và thư mục xuất.");
+            return _analyzeOutcome switch
+            {
+                AnalyzeOutcome.Identified => UiText.Format("Đã nhận diện: {0}. Sẵn sàng Lấy text; chưa xác minh khả năng tạo patch.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
+                AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh mục tài nguyên chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
+                AnalyzeOutcome.Unsupported => UiText.Translate("Chưa nhận diện được engine được hỗ trợ trong thư mục này. Kiểm tra lại thư mục game đã chọn."),
+                AnalyzeOutcome.Failed => UiText.Translate("Phân tích không hoàn tất. Xem Nhật ký, rồi chọn lại nguồn để thử lại."),
+                AnalyzeOutcome.Cancelled => UiText.Translate("Đã hủy phân tích. Chọn lại nguồn để nhận diện lại."),
+                _ => "",
+            };
+        }
+    }
+
+    /// <summary>True while detection is debouncing, waiting for the worker, or running.</summary>
+    public bool AnalyzeBusy => AnalysisInFlightOrPending;
+
+    internal void RaiseAnalyzeSummary()
+    {
+        Raise(nameof(AnalyzeNextActionText));
+        Raise(nameof(AnalyzeBusy));
+    }
+
+    private void WriteAnalyzeResultToRun(string? runId)
+    {
+        AddExtractRunLine(runId, UiText.Translate(_analyzeStatusText));
+        AddExtractRunLine(runId, UiText.Translate(_analyzeEngineSummary));
+        AddExtractRunLine(runId, _analyzeScanErrorText.Length > 0 ? UiText.Translate(_analyzeScanErrorText) : "");
+        if (!string.IsNullOrWhiteSpace(_analyzeReportPath)) AddExtractRunLine(runId, UiText.Format("Báo cáo: {0}", _analyzeReportPath));
     }
 
     public string AnalyzeStatusText
     {
         get => !string.IsNullOrEmpty(_gameFolderBoundaryMessage) ? _gameFolderBoundaryMessage : UiText.Translate(_analyzeStatusText);
-        private set => Set(ref _analyzeStatusText, value);
+        private set { if (Set(ref _analyzeStatusText, value)) RaiseAnalyzeSummary(); }
     }
 
     public string AnalyzeReportPath
@@ -311,6 +356,7 @@ public sealed partial class MainViewModel
         var reportDirectory = WorkflowStatus.ResolvePackageDir(OutputPath);
         _analyzeIdentity = AnalyzeIdentityOf(InputPath, OutputPath);
         _analyzeRejectLate = false;
+        _analyzeOutcome = AnalyzeOutcome.None;
         AnalyzeStatusText = "Đang phân tích game…";
         AnalyzeReportPath = "";
         AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của danh mục tài nguyên…";
@@ -336,6 +382,8 @@ public sealed partial class MainViewModel
             AnalyzeUnityStatus = "UNKNOWN";
             AnalyzeEngineSummary = "Engine: chưa xác định";
             AnalyzeEngineDetails = "Không đọc được báo cáo Unity; chưa có đủ bằng chứng để phân loại engine.";
+            _analyzeOutcome = AnalyzeOutcome.Failed;
+            RaiseAnalyzeSummary();
             AnalyzeStatusText = evt.Ok
                 ? "Đã chạy nhưng không đọc được report"
                 : "Phân tích thất bại";
@@ -369,9 +417,14 @@ public sealed partial class MainViewModel
         AnalyzeScanErrorCount = snapshot.ScanErrorCount;
         AnalyzeReportPath = snapshot.ReportPath;
         AnalyzeHasReport = true;
+        var engineKnown = !_analyzeEngineSummary.EndsWith("chưa xác định", StringComparison.Ordinal);
+        _analyzeOutcome = !evt.Ok ? AnalyzeOutcome.Failed
+            : !engineKnown ? AnalyzeOutcome.Unsupported
+            : AnalyzeInventoryComplete ? AnalyzeOutcome.Identified : AnalyzeOutcome.IdentifiedIncomplete;
         AnalyzeStatusText = AnalyzeInventoryComplete
             ? "Đã phân tích • danh mục tài nguyên đầy đủ"
             : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
+        RaiseAnalyzeSummary();
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
             ? "Không ghi nhận lỗi quét."
             : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";

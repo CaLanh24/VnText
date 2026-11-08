@@ -156,7 +156,7 @@ internal static partial class Program
             vm.TestBeginTaskLog("ext-live","extract");
             vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="ext-live",Done=1,Total=10,Step="scan",Item="own-item"});
             var before=vm.ExtractLogLines.Count;
-            foreach(var (id,task) in new[]{("an-1","analyze"),("res-1","resources"),("tr-1","translate"),("pa-1","patch"),("img-1","image_batch"),("inv-1","image_inventory")})
+            foreach(var (id,task) in new[]{("res-1","resources"),("tr-1","translate"),("pa-1","patch"),("img-1","image_batch"),("inv-1","image_inventory")})
             {
                 vm.TestBeginTaskLog(id,task);
                 vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id=id,Done=3,Total=10,Step="other step",Item="foreign-"+task});
@@ -167,7 +167,75 @@ internal static partial class Program
             AssertFalse(vm.ExtractLogLines.Any(s=>s.Contains("foreign")));
             AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("own-item")));
             AssertTrue(ReadShared(vm.ExtractRuns[0].FilePath).All(s=>!s.Contains("foreign")));
-            AssertTrue(vm.JournalStore.Files().Any(f=>vm.JournalStore.Read(f).Contains("foreign-analyze")));   // the sidebar journal keeps the general audit copy
+            AssertTrue(vm.JournalStore.Files().Any(f=>vm.JournalStore.Read(f).Contains("foreign-resources")));   // the sidebar journal keeps the general audit copy
+        }, failures);
+        Run("AutoAnalyzeRunsAreWrittenToTheExtractJournalWithSummaryAndStaleGuards", () =>
+        {
+            ResetExtractRuns();
+            var root=Path.Combine(TestTempRoot(),"analyze-journal-"+Guid.NewGuid().ToString("N"));
+            var a=Path.Combine(root,"A"); var b=Path.Combine(root,"B");
+            Directory.CreateDirectory(Path.Combine(a,"game")); Directory.CreateDirectory(Path.Combine(b,"game"));
+            try
+            {
+                File.WriteAllText(Path.Combine(a,"game","a.rpy"),"label start:\n    return\n");
+                File.WriteAllText(Path.Combine(b,"game","b.rpy"),"label start:\n    return\n");
+                File.WriteAllText(Path.Combine(a,"unity_analysis.json"),"""
+                    {"inventory_complete": true, "unity": {"status": "DETECTED"},
+                     "summary": {"resource_count": 30, "unknown_resources": 0, "scan_error_count": 0},
+                     "coverage": {"text_candidates": 30, "patchable_text": 0, "extract_only_text": 0, "review_required": 0, "unsupported": 0},
+                     "scan_errors": []}
+                    """);
+                using var vm=new MainViewModel(new FakePathPicker(),new PythonWorkerHost(),startWorker:false){InputPath=a,OutputPath=a};
+                // success: START, a step, result and the final status all land in the SAME journal; the summary names the engine and does not claim patchability
+                vm.TestBeginTaskLog("an-ok","analyze"); vm.TestMarkAnalyzeStarted();
+                vm.TestHandleWorkerEvent(new WorkerEvent{Type="progress",Id="an-ok",Done=2,Total=10,Step="scan",Item="item-ok"});
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Bắt đầu")));
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("item-ok")));
+                vm.TestSimulateTaskComplete("analyze",new WorkerEvent{Type="complete",Id="an-ok",Ok=true,Complete=true});
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Đã phân tích")));
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Engine")));
+                AssertEqual("Phân tích xong",vm.ExtractRuns[0].Status);
+                AssertFalse(vm.AnalyzeBusy);
+                AssertTrue(vm.AnalyzeNextActionText.Contains("Đã nhận diện",StringComparison.Ordinal));
+                AssertTrue(vm.AnalyzeNextActionText.Contains("chưa xác minh khả năng tạo patch",StringComparison.Ordinal));
+                AssertEqual(1,vm.ExtractRuns.Count);
+                vm.TestMarkTaskTerminal("an-ok");
+                AssertTrue(ReadShared(vm.ExtractRuns[0].FilePath).Any(s=>s.Contains("item-ok")));        // durable file, same as extraction runs
+
+                // A -> B while a run is live: the running result is discarded, never shown for B, and the discard is journaled once
+                vm.InputPath=a; vm.OutputPath=a;
+                vm.TestBeginTaskLog("an-stale","analyze"); vm.TestMarkAnalyzeStarted(); vm.TestSetActiveTask("an-stale","analyze");
+                AssertTrue(vm.AnalyzeBusy);
+                vm.InputPath=b; vm.OutputPath=b;
+                AssertEqual(1,vm.ExtractLogLines.Count(s=>s.Contains("Đầu vào đã đổi")));
+                vm.TestHandleWorkerEvent(new WorkerEvent{Type="complete",Id="an-stale",Ok=true,Complete=true});
+                AssertEqual("Đã bỏ kết quả cũ",vm.ExtractRuns[0].Status);
+                AssertEqual(0,vm.AnalyzeResourceCount);
+                AssertFalse(vm.AnalyzeNextActionText.Contains("Đã nhận diện",StringComparison.Ordinal));
+                AssertEqual(2,vm.ExtractRuns.Count);                                                      // history kept, nothing cleared twice
+                AssertTrue(ReadShared(vm.ExtractRuns[1].FilePath).Any(s=>s.Contains("item-ok")||s.Contains("Đã phân tích")));
+
+                // error: the reason is journaled, the run ends as an error and the summary says analysis did not finish
+                vm.InputPath=a; vm.OutputPath=a;
+                File.Delete(Path.Combine(a,"unity_analysis.json"));
+                vm.TestBeginTaskLog("an-err","analyze"); vm.TestMarkAnalyzeStarted();
+                vm.TestSimulateTaskComplete("analyze",new WorkerEvent{Type="complete",Id="an-err",Ok=false,Error="analyzer exploded"});
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("analyzer exploded")));
+                AssertEqual("Lỗi",vm.ExtractRuns[0].Status);
+                AssertTrue(vm.AnalyzeNextActionText.Contains("Phân tích không hoàn tất",StringComparison.Ordinal));
+                vm.TestMarkTaskTerminal("an-err");
+
+                // cancel: journaled, no result kept
+                vm.TestBeginTaskLog("an-cancel","analyze"); vm.TestMarkAnalyzeStarted();
+                vm.TestSimulateTaskComplete("analyze",new WorkerEvent{Type="complete",Id="an-cancel",Ok=false,Error="cancelled"});
+                AssertTrue(vm.ExtractLogLines.Any(s=>s.Contains("Đã hủy phân tích game")));
+                AssertEqual("Đã hủy",vm.ExtractRuns[0].Status);
+                AssertTrue(vm.AnalyzeNextActionText.Contains("Đã hủy phân tích",StringComparison.Ordinal));
+                AssertEqual(0,vm.AnalyzeResourceCount);
+                vm.TestMarkTaskTerminal("an-cancel");
+                AssertTrue(vm.ExtractRuns.Count>=4);
+            }
+            finally { Directory.Delete(root,true); }
         }, failures);
         Run("ANewExtractRunKeepsThePreviousHistoryReachableInline", () =>
         {

@@ -202,9 +202,10 @@ public sealed partial class MainViewModel
                     RecordPersistentError(completedTask, evt.Error);
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
                     : extractWarning ? "Lấy text một phần — xem cảnh báo" : "Đã dừng — xem Nhật ký", completedTask);
-                EndExtractRun(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
-                    : extractWarning ? "Lấy text một phần"
-                    : evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true ? "Đã hủy" : "Lỗi");
+                if (completedTask != "analyze")      // the analysis run stays open until its result (or the stale-input verdict) has been written
+                    EndExtractRun(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
+                        : extractWarning ? "Lấy text một phần"
+                        : evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true ? "Đã hủy" : "Lỗi");
                 if (completedTask == "cloud_export")
                     CloudRepairPackageReady = evt.Ok && (evt.Complete ?? evt.Ok) && File.Exists(CloudRepairPackagePath);
                 if (completedTask == "cloud_import" && evt.Ok && evt.Complete != false
@@ -403,16 +404,22 @@ public sealed partial class MainViewModel
                 }
 
                 if (completedTask == "analyze" && (cancelled || _analyzeRejectLate)) _extractAfterAnalyze = false;
+                var analyzeRunId = evt.Id;
+                var analyzeRunStatus = "Lỗi";
                 if (!cancelled && completedTask == "analyze" && _analyzeRejectLate)
                 {
                     // The inputs changed while this analysis ran: its report describes the OLD input.
                     StatusText = "Đầu vào đã đổi";
                     StepStatusLine = "Kết quả phân tích của đầu vào cũ đã bị bỏ — hãy phân tích lại";
+                    AddExtractRunLine(analyzeRunId, "Đầu vào đã đổi trong lúc phân tích: bỏ kết quả của đầu vào cũ.");
+                    analyzeRunStatus = "Đã bỏ kết quả cũ";
                     AppendLog("Bỏ kết quả phân tích cũ vì đầu vào đã đổi trong lúc chạy.");
                 }
                 else if (!cancelled && completedTask == "analyze")
                 {
                     ApplyAnalyzeResult(evt);
+                    WriteAnalyzeResultToRun(analyzeRunId);
+                    analyzeRunStatus = evt.Ok ? "Phân tích xong" : "Lỗi";
                     if (!_analyzeAuto)
                     {
                         SelectedTab = WorkflowTabs.Extract;
@@ -471,6 +478,17 @@ public sealed partial class MainViewModel
                     _csvEditorRetranslatePending = false;
                 }
 
+                if (completedTask == "analyze")
+                {
+                    if (cancelled)
+                    {
+                        _analyzeOutcome = AnalyzeOutcome.Cancelled;
+                        AddExtractRunLine(analyzeRunId, "Đã hủy phân tích game; không có kết quả nào được giữ.");
+                        analyzeRunStatus = "Đã hủy";
+                    }
+                    EndExtractRun(analyzeRunId, analyzeRunStatus);
+                    RaiseAnalyzeSummary();
+                }
                 if (completedTask == "patch" && evt.Ok && !cancelled)
                 {
                     _patchArtifactBehindCsv = false;          // a Build of the CURRENT CSV revision succeeded: its artifact is fresh again

@@ -37,8 +37,8 @@ public sealed class ExtractRunInfo : INotifyPropertyChanged
 /// <summary>
 /// The Extract tab's own task journal. Every line of the CURRENT extraction run (progress, worker log, errors, phases) is kept in full
 /// for the whole run and after it ends, in a virtualized list; each run also lives in its own append-only file so earlier runs stay
-/// readable from the inline run selector. Other tasks (analyze/resources/translate/patch/image batch) never enter this journal; the
-/// sidebar Journal keeps general audit copies and is NOT a substitute for it.
+/// readable from the inline run selector. The automatic game analysis is a run of this same journal (start, steps, result, warnings, errors,
+/// cancel); other tasks (resources/translate/patch/image batch) never enter it, and the sidebar Journal keeps general audit copies.
 /// </summary>
 public sealed partial class MainViewModel
 {
@@ -127,7 +127,7 @@ public sealed partial class MainViewModel
     internal bool IsLiveExtractRun(string? id) => _liveRun is not null && _liveRunTaskId.Length > 0 && string.Equals(id, _liveRunTaskId, StringComparison.Ordinal);
 
     /// <summary>A new extraction starts a NEW run: the previous run stays in its file and in the selector; nothing is deleted.</summary>
-    private void StartExtractRun(string id)
+    private void StartExtractRun(string id, string task = "extract")
     {
         EndExtractRun(null, "Bị gián đoạn");
         var started = DateTime.Now;
@@ -145,7 +145,7 @@ public sealed partial class MainViewModel
             _liveRunWriteFailed = true;
             PersistJournal($"Không tạo được tệp lịch sử lần lấy text: {ex.Message}");
         }
-        _liveRun = new ExtractRunInfo(file, started, "Đang chạy");
+        _liveRun = new ExtractRunInfo(file, started, task == "analyze" ? "Đang phân tích" : "Đang chạy");
         _liveRunTaskId = id;
         _liveRunLastStep = "";
         ExtractRuns.Insert(0, _liveRun);

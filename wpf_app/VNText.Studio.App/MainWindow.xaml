@@ -310,6 +310,10 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
+                                                <TextBlock x:Name="AnalyzeNextActionLine" Text="{Binding AnalyzeNextActionText}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                                           AutomationProperties.LiveSetting="Polite" />
+                                                <ProgressBar x:Name="AnalyzeBusyBar" IsIndeterminate="True" Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,0,0,8"
+                                                             Visibility="{Binding AnalyzeBusy, Converter={StaticResource BoolToVis}}" />
                                                 <TextBlock Text="{Binding AnalyzeStatusText}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
                                                 <TextBlock Text="{Binding AnalyzeEngineSummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource BlueBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                                 <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
@@ -1251,8 +1255,8 @@
                                                         <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
                                                             <Setter Property="Background" Value="{DynamicResource AboutCurrentBackgroundBrush}" />
                                                             <Setter Property="BorderBrush" Value="{DynamicResource AboutCurrentBorderBrush}" />
-                                                            <Setter Property="BorderThickness" Value="1" />
-                                                            <Setter Property="Padding" Value="18,12" />
+                                                            <Setter Property="BorderThickness" Value="0.75" />
+                                                            <Setter Property="Padding" Value="14,11" />
                                                             <Setter Property="MinWidth" Value="365" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -1267,7 +1271,7 @@
                                                         <DataTrigger Binding="{Binding GitHubUpdateState}" Value="Current">
                                                             <Setter Property="Foreground" Value="{DynamicResource AboutCurrentTextBrush}" />
                                                             <Setter Property="FontWeight" Value="Normal" />
-                                                            <Setter Property="FontSize" Value="14" />
+                                                            <Setter Property="FontSize" Value="13.5" />
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding GitHubUpdateStatus}" Value="Kiểm tra phiên bản mới khi bạn sẵn sàng.">
                                                             <Setter Property="Visibility" Value="Collapsed" />

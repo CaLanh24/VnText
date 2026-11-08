@@ -779,6 +779,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 ChooseOutputCommand.RaiseCanExecuteChanged();
                 ChooseRenpySdkCommand.RaiseCanExecuteChanged();
                 AnalyzeCommand.RaiseCanExecuteChanged();
+                RaiseAnalyzeSummary();
                 if (!value) Application.Current?.Dispatcher.BeginInvoke(new Action(ResumeAutoAnalyzeWhenIdle));
                 RunTranslateCommand.RaiseCanExecuteChanged();
                 ExportCloudRepairPackageCommand.RaiseCanExecuteChanged();

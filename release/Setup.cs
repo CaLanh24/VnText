@@ -38,7 +38,7 @@ public static class Setup
     public static int Main(string[] args)
     {
 #if UNINSTALLER
-        return Uninstall();
+        return Uninstall(args);
 #else
         return Install(args);
 #endif
@@ -274,20 +274,215 @@ public static class Setup
     }
 
 #if !UNINSTALLER
+    // ---- Resource preparation (a real Setup step) -------------------------------------------------------------------------------
+    // After the files are installed, Setup hands off to the BUNDLED worker (app/worker, the same trusted code that Settings uses) with the
+    // existing "resources" task and download=true: the pinned, hash-checked, atomically installed catalog (translation model, Ren'Py SDK 8.5.3,
+    // Windows OCR check).  Valid resources that are already present (the bundled model, an installed SDK) are skipped by that task.  Setup
+    // has NO downloader of its own; it only speaks the worker's JSON-line protocol, shows progress and reports the honest outcome.
+
+    internal sealed class ResourceStepResult
+    {
+        public bool Ok;
+        public bool Cancelled;
+        public string Error = "";
+        public string Summary = "";
+    }
+
+    /// <summary>The bundled worker command and the exact environment the app gives it (WorkerPaths.ConfigureReleaseEnvironment).  Returns an error text or null.</summary>
+    private static string BuildResourceWorkerStart(string root, out string python, out string arguments, out string workDirectory, Dictionary<string, string> environment)
+    {
+        python = null; arguments = null; workDirectory = null;
+        var worker = Path.Combine(root, "app", "worker");
+        python = Path.Combine(worker, "python", "python.exe");
+        if (!Directory.Exists(Path.Combine(worker, "vntext_worker")) || !File.Exists(python) || !File.Exists(Path.Combine(worker, ".venv", "Scripts", "python.exe")))
+            return "The installed program has no resource worker (app\\worker is incomplete).";
+        var data = Path.Combine(root, "data");
+        var temp = Path.Combine(data, "temp");
+        var cache = Path.Combine(data, "cache");
+        Directory.CreateDirectory(temp);
+        Directory.CreateDirectory(cache);
+        environment["VNTEXT_DATA_ROOT"] = data;
+        environment["VNTEXT_RENPY_TOOL_ROOT"] = Path.Combine(data, "tools");
+        environment["TEMP"] = temp; environment["TMP"] = temp; environment["TMPDIR"] = temp;
+        environment["LOCALAPPDATA"] = data; environment["APPDATA"] = data;
+        environment["HF_HOME"] = Path.Combine(cache, "huggingface");
+        environment["HF_HUB_CACHE"] = Path.Combine(cache, "huggingface", "hub");
+        environment["TRANSFORMERS_CACHE"] = Path.Combine(cache, "huggingface", "transformers");
+        environment["TORCH_HOME"] = Path.Combine(cache, "torch");
+        environment["VNTEXT_DIRECT_GPU_ROOT"] = Path.Combine(cache, "gpu");
+        environment["PYTHONHOME"] = Path.Combine(worker, "python");
+        environment["PYTHONPATH"] = Path.Combine(worker, ".venv", "Lib", "site-packages");
+        environment["PYTHONNOUSERSITE"] = "1";
+        environment["PYTHONDONTWRITEBYTECODE"] = "1";
+        environment["PYTHONUTF8"] = "1";
+        environment["PYTHONIOENCODING"] = "utf-8";
+        environment["TRANSFORMERS_OFFLINE"] = "1";
+        environment["HF_HUB_OFFLINE"] = "1";
+        environment["OMP_NUM_THREADS"] = "1";
+        arguments = "-m vntext_worker.worker_main";
+        workDirectory = worker;
+        return null;
+    }
+
+    private static string StringField(Dictionary<string, object> message, string name)
+    {
+        object value;
+        return message.TryGetValue(name, out value) && value != null ? Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) : "";
+    }
+
+    private static long NumberField(Dictionary<string, object> message, string name)
+    {
+        object value;
+        long number;
+        return message.TryGetValue(name, out value) && value != null
+            && Int64.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture), out number) ? number : 0;
+    }
+
+    /// <summary>
+    /// Runs the worker's "resources" task to its end.  report(done, total, step, item) is called for progress (total 0 = unknown).  cancelled() is polled;
+    /// on cancel the worker is asked to stop and is killed (with its children) if it does not finish in time.  Never reports success unless the worker's
+    /// own "complete" event said ok.
+    /// </summary>
+    internal static ResourceStepResult RunResourceWorker(string python, string arguments, string workDirectory, Dictionary<string, string> environment,
+        Action<long, long, string, string> report, Func<bool> cancelled, int readySeconds, int cancelGraceSeconds)
+    {
+        var result = new ResourceStepResult();
+        var serializer = new JavaScriptSerializer { MaxJsonLength = Int32.MaxValue };
+        var lines = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var signal = new System.Threading.AutoResetEvent(false);
+        var lastError = new StringBuilder();
+        var info = new ProcessStartInfo(python, arguments)
+        {
+            WorkingDirectory = workDirectory, UseShellExecute = false, CreateNoWindow = true,
+            RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+            StandardOutputEncoding = new UTF8Encoding(false), StandardErrorEncoding = new UTF8Encoding(false),
+        };
+        foreach (var pair in environment) info.EnvironmentVariables[pair.Key] = pair.Value;
+        Process process;
+        try { process = Process.Start(info); }
+        catch (Exception ex) { result.Error = "The resource worker did not start: " + ex.Message; return result; }
+        using (process)
+        {
+            process.OutputDataReceived += delegate(object sender, DataReceivedEventArgs e) { if (e.Data != null) { lines.Enqueue(e.Data); signal.Set(); } };
+            process.ErrorDataReceived += delegate(object sender, DataReceivedEventArgs e)
+            {
+                if (String.IsNullOrWhiteSpace(e.Data)) return;
+                lock (lastError) { lastError.Length = 0; lastError.Append(e.Data.Trim()); }
+            };
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            var taskId = "setup-resources-" + Guid.NewGuid().ToString("N");
+            var started = false;
+            var cancelSent = false;
+            var clock = Stopwatch.StartNew();
+            double cancelAt = 0;
+            try
+            {
+                while (true)
+                {
+                    string raw;
+                    while (lines.TryDequeue(out raw))
+                    {
+                        Dictionary<string, object> message;
+                        try { message = serializer.DeserializeObject(raw) as Dictionary<string, object>; }
+                        catch (Exception) { continue; }          // not protocol output (a library banner); the worker's contract is JSON lines
+                        if (message == null) continue;
+                        var type = StringField(message, "type");
+                        if (type == "ready" && !started)
+                        {
+                            started = true;
+                            var command = serializer.Serialize(new Dictionary<string, object> {
+                                { "v", 1 }, { "type", "run" }, { "id", taskId }, { "task", "resources" },
+                                { "params", new Dictionary<string, object> { { "download", true } } } });
+                            process.StandardInput.WriteLine(command);
+                            process.StandardInput.Flush();
+                        }
+                        else if (type == "progress" && StringField(message, "id") == taskId)
+                        {
+                            if (report != null) report(NumberField(message, "done"), NumberField(message, "total"), StringField(message, "step"), StringField(message, "item"));
+                        }
+                        else if (type == "complete" && StringField(message, "id") == taskId)
+                        {
+                            object okValue;
+                            result.Ok = message.TryGetValue("ok", out okValue) && okValue is bool && (bool)okValue;
+                            result.Error = StringField(message, "error");
+                            result.Summary = StringField(message, "summary");
+                            result.Cancelled = !result.Ok && result.Error.IndexOf("cancel", StringComparison.OrdinalIgnoreCase) >= 0;
+                            return result;
+                        }
+                    }
+                    if (process.HasExited && lines.IsEmpty)
+                    {
+                        var tail = ""; lock (lastError) { tail = lastError.ToString(); }
+                        result.Error = "The resource worker stopped before it finished (exit code " + process.ExitCode + ")." + (tail.Length > 0 ? " " + tail : "");
+                        return result;
+                    }
+                    if (cancelled != null && cancelled() && !cancelSent)
+                    {
+                        cancelSent = true; cancelAt = clock.Elapsed.TotalSeconds;
+                        if (started)
+                        {
+                            try
+                            {
+                                process.StandardInput.WriteLine(serializer.Serialize(new Dictionary<string, object> { { "v", 1 }, { "type", "cancel" }, { "id", taskId } }));
+                                process.StandardInput.Flush();
+                            }
+                            catch (Exception) { /* the process is going away; the kill below covers it */ }
+                        }
+                    }
+                    if (cancelSent && (!started || clock.Elapsed.TotalSeconds - cancelAt >= cancelGraceSeconds))
+                    {
+                        result.Cancelled = true;
+                        result.Error = "cancelled";
+                        return result;
+                    }
+                    if (!started && clock.Elapsed.TotalSeconds > readySeconds)
+                    {
+                        result.Error = "The resource worker did not become ready in " + readySeconds + " seconds.";
+                        return result;
+                    }
+                    signal.WaitOne(100);
+                }
+            }
+            finally
+            {
+                if (!process.HasExited)
+                {
+                    try { process.StandardInput.Close(); } catch (Exception) { }
+                    if (!process.WaitForExit(2000))
+                    {
+                        try
+                        {
+                            var kill = Process.Start(new ProcessStartInfo("taskkill.exe", "/PID " + process.Id + " /T /F") { UseShellExecute = false, CreateNoWindow = true });
+                            if (kill != null) kill.WaitForExit(5000);
+                        }
+                        catch (Exception) { }
+                        try { if (!process.HasExited) process.Kill(); } catch (Exception) { }
+                    }
+                }
+            }
+        }
+    }
+
     private sealed class SetupWizard : Form
     {
         private readonly bool vi;
         private readonly long payloadBytes;
         private readonly Label title = new Label(), subtitle = new Label();
         private readonly Panel body = new Panel();
-        private readonly Panel[] pages = new Panel[6];
+        private readonly Panel[] pages = new Panel[7];
         private readonly Button back = new Button(), next = new Button(), cancel = new Button();
         private readonly TextBox destination = new TextBox(), menuFolder = new TextBox(), summary = new TextBox();
         private readonly CheckBox menuNone = new CheckBox(), desktopShortcut = new CheckBox(), launch = new CheckBox();
         private readonly Label diskNote = new Label(), installStatus = new Label(), installFile = new Label(), doneText = new Label(), doneNotes = new Label();
         private readonly ProgressBar bar = new ProgressBar();
+        private readonly Label resStatus = new Label(), resItem = new Label(), resDetail = new Label();
+        private readonly ProgressBar resBar = new ProgressBar();
         private int page;
         private bool installing;
+        private bool preparing, resourceCancel, resourcesReady;
+        private string resourceFailure;
+        private List<string> shortcutNotes = new List<string>();
         private string root, menuRelative;
         private bool existingInstall;
         internal int ExitCode = 1;
@@ -341,11 +536,16 @@ public static class Setup
             summary.Height = Math.Max(100, body.ClientSize.Height - summary.Top - 24);
             back.Click += delegate { Go(page - 1); };
             next.Click += delegate { Advance(); };
-            cancel.Click += delegate { Close(); };
+            cancel.Click += delegate
+            {
+                if (page == 5) { if (preparing) RequestResourceCancel(); else ShowDone(); return; }       // Cancel stops preparation; after a failure it is Skip
+                Close();
+            };
             AcceptButton = next;
             FormClosing += delegate(object sender, FormClosingEventArgs e)
             {
                 if (installing) { e.Cancel = true; return; }
+                if (preparing) { e.Cancel = true; RequestResourceCancel(); return; }
                 if (page < 4 && e.CloseReason == CloseReason.UserClosing && ExitCode != 0 &&
                     MessageBox.Show(T("Thoát Setup? VNText Studio chưa được cài đặt.", "Exit Setup? VNText Studio has not been installed yet."),
                         T("Cài đặt VNText Studio", "VNText Studio Setup"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
@@ -445,22 +645,33 @@ public static class Setup
             p4.Controls.Add(installFile);
 
             var p5 = NewPage(5);
+            resStatus.Left = 24; resStatus.Top = 40; resStatus.Width = 580; resStatus.Height = 44;
+            resBar.Left = 24; resBar.Top = 96; resBar.Width = 580; resBar.Height = 22; resBar.Minimum = 0; resBar.Maximum = 100;
+            resItem.Left = 24; resItem.Top = 130; resItem.Width = 580; resItem.Height = 22;
+            resDetail.Left = 24; resDetail.Top = 164; resDetail.Width = 580; resDetail.Height = 150;
+            p5.Controls.Add(resStatus);
+            p5.Controls.Add(resBar);
+            p5.Controls.Add(resItem);
+            p5.Controls.Add(resDetail);
+
+            var p6 = NewPage(6);
             doneText.Left = 24; doneText.Top = 28; doneText.Width = 580; doneText.Height = 66;
             doneNotes.Left = 24; doneNotes.Top = 150; doneNotes.Width = 580; doneNotes.Height = 120;
             launch.Left = 24; launch.Top = 110; launch.Width = 580; launch.Checked = true;
             launch.Text = T("Mở VNText Studio", "Launch VNText Studio");
-            p5.Controls.Add(doneText);
-            p5.Controls.Add(launch);
-            p5.Controls.Add(doneNotes);
+            p6.Controls.Add(doneText);
+            p6.Controls.Add(launch);
+            p6.Controls.Add(doneNotes);
         }
 
         private void Go(int target)
         {
-            page = Math.Max(0, Math.Min(5, target));
+            page = Math.Max(0, Math.Min(6, target));
             for (var i = 0; i < pages.Length; i++) pages[i].Visible = i == page;
             back.Visible = page > 0 && page < 4;
-            cancel.Visible = page < 5;
+            cancel.Visible = page < 6;
             cancel.Enabled = page < 4;
+            cancel.Text = T("Hủy", "Cancel");
             next.Enabled = true;
             switch (page)
             {
@@ -469,6 +680,7 @@ public static class Setup
                 case 2: title.Text = T("Chọn tác vụ bổ sung", "Select Additional Tasks"); subtitle.Text = T("Cần thực hiện thêm tác vụ nào?", "Which additional tasks should be performed?"); next.Text = T("Tiếp tục ›", "Next >"); break;
                 case 3: title.Text = T("Sẵn sàng cài đặt", "Ready to Install"); subtitle.Text = T("Setup đã sẵn sàng bắt đầu cài VNText Studio.", "Setup is now ready to begin installing VNText Studio on your computer."); next.Text = T("Cài đặt", "Install"); RefreshSummary(); break;
                 case 4: title.Text = T("Đang cài đặt", "Installing"); subtitle.Text = T("Vui lòng chờ trong khi Setup cài VNText Studio.", "Please wait while Setup installs VNText Studio on your computer."); next.Enabled = false; break;
+                case 5: title.Text = T("Chuẩn bị tài nguyên", "Preparing Resources"); subtitle.Text = T("Setup đang tải và kiểm tra các tài nguyên cần thiết.", "Setup is downloading and checking the resources VNText Studio needs."); next.Enabled = false; break;
                 default: title.Text = T("Hoàn tất cài đặt VNText Studio", "Completing the VNText Studio Setup"); subtitle.Text = T("Setup đã cài xong VNText Studio.", "Setup has finished installing VNText Studio on your computer."); next.Text = T("Hoàn tất", "Finish"); break;
             }
         }
@@ -529,7 +741,8 @@ public static class Setup
                     }
                 case 2: Go(3); return;
                 case 3: RunInstall(); return;
-                case 5:
+                case 5: if (!preparing) StartResources(); return;          // the page's primary button is "Retry" once a run has failed or was cancelled
+                case 6:
                     ExitCode = 0;
                     if (launch.Checked) LaunchApp();
                     Close();
@@ -598,10 +811,108 @@ public static class Setup
             List<string> notes;
             try { notes = CreateShortcuts(installRoot, desktopShortcut.Checked ? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) : null, ProgramsFolder(), menuRelative, vi); }
             catch (Exception ex) { notes = new List<string>(); notes.Add(T("Không ghi được bản ghi lối tắt: ", "Could not record shortcuts: ") + ex.Message); }
-            doneText.Text = String.Format(T("VNText Studio đã được cài vào:\n{0}\n\nNhấn Hoàn tất để thoát Setup.", "VNText Studio was installed to:\n{0}\n\nClick Finish to exit Setup."), installRoot);
-            doneNotes.Text = String.Join(Environment.NewLine, notes.ToArray());
-            ExitCode = 0;
+            shortcutNotes = notes;
+            ExitCode = 0;                // the files are installed; resource preparation below can fail without making the installation itself fail
             Go(5);
+            StartResources();
+        }
+
+        private void RequestResourceCancel()
+        {
+            resourceCancel = true;
+            cancel.Enabled = false;
+            resStatus.Text = T("Đang hủy chuẩn bị tài nguyên…", "Cancelling resource preparation…");
+        }
+
+        private string ResourceItemName(string item)
+        {
+            switch (item)
+            {
+                case "model": return T("Mô hình dịch", "Translation model");
+                case "renpy": return "Ren'Py SDK 8.5.3";
+                case "ocr": return T("OCR của Windows", "Windows OCR");
+                default: return item ?? "";
+            }
+        }
+
+        private void ShowResourceProgress(long done, long total, string step, string item)
+        {
+            if (step != null && step.StartsWith("Tải Ren'Py SDK", StringComparison.Ordinal))
+            {
+                resStatus.Text = T("Đang tải Ren'Py SDK 8.5.3", "Downloading Ren'Py SDK 8.5.3");
+                if (total > 0)
+                {
+                    if (resBar.Style != ProgressBarStyle.Continuous) resBar.Style = ProgressBarStyle.Continuous;
+                    resBar.Value = (int)Math.Max(0, Math.Min(100, done * 100 / total));
+                    resItem.Text = String.Format("{0:N1} / {1:N1} MB", done / 1048576.0, total / 1048576.0);
+                }
+                else resItem.Text = String.Format("{0:N1} MB", done / 1048576.0);
+                return;
+            }
+            resStatus.Text = T("Đang kiểm tra các tài nguyên cần thiết…", "Checking the required resources…");
+            resItem.Text = ResourceItemName(item);
+        }
+
+        /// <summary>The real resource step: a failed, cancelled or offline run never says "ready"; the person can retry or skip and finish.</summary>
+        private async void StartResources()
+        {
+            preparing = true; resourceCancel = false; resourcesReady = false; resourceFailure = null;
+            Go(5);
+            next.Enabled = false;
+            cancel.Visible = true; cancel.Enabled = true; cancel.Text = T("Hủy", "Cancel");
+            next.Text = T("Tiếp tục ›", "Next >");
+            resBar.Style = ProgressBarStyle.Marquee;
+            resStatus.Text = T("Đang chuẩn bị các tài nguyên cần thiết…", "Preparing the required resources…");
+            resItem.Text = "";
+            resDetail.Text = T("Tài nguyên đã có sẵn trong bản cài sẽ được bỏ qua; các tệp cần tải được kiểm tra mã băm trước khi dùng.",
+                "Resources already in the installation are skipped; files that need downloading are hash-checked before use.");
+            var installRoot = root;
+            var environment = new Dictionary<string, string>();
+            string python, arguments, workDirectory;
+            ResourceStepResult result;
+            var startError = BuildResourceWorkerStart(installRoot, out python, out arguments, out workDirectory, environment);
+            if (startError != null) result = new ResourceStepResult { Error = startError };
+            else
+            {
+                var report = new Action<long, long, string, string>(delegate(long done, long total, string step, string item)
+                {
+                    BeginInvoke(new Action(delegate { ShowResourceProgress(done, total, step, item); }));
+                });
+                result = await Task.Run(delegate { return RunResourceWorker(python, arguments, workDirectory, environment, report, delegate { return resourceCancel; }, 120, 15); });
+            }
+            preparing = false;
+            resBar.Style = ProgressBarStyle.Continuous;
+            if (result.Ok)
+            {
+                resourcesReady = true;
+                resBar.Value = 100;
+                ShowDone();
+                return;
+            }
+            resourceFailure = result.Cancelled ? T("Đã hủy chuẩn bị tài nguyên.", "Resource preparation was cancelled.")
+                : String.IsNullOrWhiteSpace(result.Error) ? T("Không rõ nguyên nhân.", "The reason is unknown.") : result.Error.Trim();
+            resBar.Value = 0;
+            resStatus.Text = T("Tài nguyên chưa sẵn sàng", "Resources are not ready");
+            resItem.Text = "";
+            resDetail.Text = resourceFailure + Environment.NewLine + Environment.NewLine
+                + T("Kiểm tra kết nối mạng rồi nhấn Thử lại, hoặc nhấn Bỏ qua để hoàn tất cài đặt và chuẩn bị sau trong Cài đặt › Dữ liệu.",
+                    "Check your network connection and click Retry, or click Skip to finish the installation and prepare them later in Settings › Data.");
+            next.Text = T("Thử lại", "Retry");
+            next.Enabled = true;
+            cancel.Text = T("Bỏ qua", "Skip");
+            cancel.Enabled = true;
+        }
+
+        private void ShowDone()
+        {
+            var notes = new List<string>(shortcutNotes);
+            notes.Insert(0, resourcesReady
+                ? T("Tài nguyên cần thiết đã sẵn sàng.", "The required resources are ready.")
+                : T("Tài nguyên chưa sẵn sàng: ", "Resources are not ready: ") + (resourceFailure ?? "")
+                    + Environment.NewLine + T("Mở VNText Studio › Cài đặt › Dữ liệu để chuẩn bị lại.", "Open VNText Studio › Settings › Data to prepare them again."));
+            doneText.Text = String.Format(T("VNText Studio đã được cài vào:\n{0}\n\nNhấn Hoàn tất để thoát Setup.", "VNText Studio was installed to:\n{0}\n\nClick Finish to exit Setup."), root);
+            doneNotes.Text = String.Join(Environment.NewLine, notes.ToArray());
+            Go(6);
         }
     }
 #endif
@@ -684,18 +995,21 @@ public static class Setup
         return panel;
     }
 
-    private static FlowLayoutPanel InstallerFooter(params Button[] buttons)
+    private static Panel InstallerFooter(params Button[] buttons)
     {
-        var footer = new FlowLayoutPanel { Dock = DockStyle.Bottom, Height = 58,
-            FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(16, 12, 16, 12),
+        var footer = new Panel { Dock = DockStyle.Bottom, Height = 58, BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
+        footer.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 1, BackColor = System.Drawing.Color.FromArgb(0xD0, 0xD0, 0xD0) });
+        var flow = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(14, 13, 14, 0),
             BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
         foreach (var button in buttons)
         {
-            button.AutoSize = true;
-            button.MinimumSize = new System.Drawing.Size(82, 30);
-            button.Margin = new Padding(6, 0, 0, 0);
-            footer.Controls.Add(button);
+            button.AutoSize = false;
+            button.Size = new System.Drawing.Size(96, 30);
+            button.Margin = new Padding(8, 0, 0, 0);
+            button.UseVisualStyleBackColor = true;
+            flow.Controls.Add(button);
         }
+        footer.Controls.Add(flow);
         return footer;
     }
 
@@ -723,41 +1037,6 @@ public static class Setup
             form.AcceptButton = close;
             form.ShowDialog();
         }
-    }
-
-    private static Form CreateProgressWindow(string title, string status)
-    {
-        var form = new Form
-        {
-            Text = title,
-            Width = 430,
-            Height = 135,
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            StartPosition = FormStartPosition.CenterScreen,
-            ControlBox = false,
-            ShowInTaskbar = true
-        };
-        var label = new Label
-        {
-            Name = "progressStatus",
-            Left = 18,
-            Top = 16,
-            Width = 380,
-            Text = status
-        };
-        var bar = new ProgressBar
-        {
-            Name = "progressBar",
-            Left = 18,
-            Top = 52,
-            Width = 380,
-            Height = 22,
-            Style = ProgressBarStyle.Marquee,
-            MarqueeAnimationSpeed = 24
-        };
-        form.Controls.Add(label);
-        form.Controls.Add(bar);
-        return form;
     }
 
     private static void InstallPayload(string root, Action<int, string> report)
@@ -1064,8 +1343,43 @@ public static class Setup
             throw new InvalidDataException("Install path contains a directory link; choose a regular folder: " + path);
     }
 
-    private static int Uninstall()
+    // Uninstall speaks the person's language (Vietnamese or English, from the Windows UI language or /lang=vi|en) and uses the SAME installer frame as the Setup
+    // wizard: white header with a rule, grey body, footer with a rule and 96x30 buttons, Segoe UI 9, the standard green progress bar.  The engineering
+    // heartbeat is still measured (a hidden control, and a line in the temp log for a real uninstall) but is never part of what the person reads.
+    private static bool uninstallVietnamese = String.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, "vi", StringComparison.OrdinalIgnoreCase);
+
+    private static string U(string vietnamese, string english) { return uninstallVietnamese ? vietnamese : english; }
+
+    private static void ApplyUninstallLanguage(string[] args)
     {
+        if (args == null) return;
+        foreach (var arg in args)
+        {
+            if (String.Equals(arg, "/lang=vi", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "--lang=vi", StringComparison.OrdinalIgnoreCase)) uninstallVietnamese = true;
+            if (String.Equals(arg, "/lang=en", StringComparison.OrdinalIgnoreCase) || String.Equals(arg, "--lang=en", StringComparison.OrdinalIgnoreCase)) uninstallVietnamese = false;
+        }
+    }
+
+    /// <summary>An uninstall message in the installer frame (instead of a bare system message box).</summary>
+    private static void ShowUninstallMessage(string title, string subtitle, string text)
+    {
+        using (var form = new Form())
+        using (var close = new Button { Text = U("Đóng", "Close"), DialogResult = DialogResult.OK })
+        {
+            ConfigureInstallerFrame(form, U("Gỡ cài đặt — VNText Studio", "Uninstall — VNText Studio"));
+            var body = new Panel { Dock = DockStyle.Fill, BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
+            body.Controls.Add(new Label { Left = 24, Top = 28, Width = 580, Height = 300, AutoSize = false, Text = text });
+            form.Controls.Add(body);
+            form.Controls.Add(InstallerFooter(close));
+            form.Controls.Add(InstallerHeader(title, subtitle));
+            form.AcceptButton = close; form.CancelButton = close;
+            form.ShowDialog();
+        }
+    }
+
+    private static int Uninstall(string[] args)
+    {
+        ApplyUninstallLanguage(args);
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         var selfPath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location);
@@ -1074,8 +1388,8 @@ public static class Setup
         if (String.Equals(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
             volume.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
         {
-            MessageBox.Show("Không thể gỡ cài đặt khỏi thư mục gốc của ổ đĩa.", "Gỡ cài đặt VNText Studio",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ShowUninstallMessage(U("Không thể gỡ cài đặt", "Cannot uninstall"), U("Thư mục không hợp lệ.", "The folder is not valid."),
+                U("Không thể gỡ cài đặt khỏi thư mục gốc của ổ đĩa.", "Uninstall cannot run from the root folder of a drive."));
             return 2;
         }
 
@@ -1095,8 +1409,8 @@ public static class Setup
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Không thể gỡ cài đặt:\n" + ex.Message, "Gỡ cài đặt VNText Studio",
-                MessageBoxButtons.OK, MessageBoxIcon.Error);
+            ShowUninstallMessage(U("Không thể gỡ cài đặt", "Cannot uninstall"), U("Gỡ cài đặt chưa bắt đầu.", "Uninstall did not start."),
+                U("Không thể gỡ cài đặt:", "Uninstall could not run:") + Environment.NewLine + Environment.NewLine + ex.Message);
             return 2;
         }
     }
@@ -1104,20 +1418,23 @@ public static class Setup
     private static bool ConfirmUninstall(string root)
     {
         using (var form = new Form())
-        using (var yes = new Button { Text = "Gỡ cài đặt", DialogResult = DialogResult.Yes })
-        using (var no = new Button { Text = "Hủy", DialogResult = DialogResult.No })
+        using (var yes = new Button { Text = U("Gỡ cài đặt", "Uninstall"), DialogResult = DialogResult.Yes })
+        using (var no = new Button { Text = U("Hủy", "Cancel"), DialogResult = DialogResult.No })
         {
-            ConfigureInstallerFrame(form, "Gỡ cài đặt — VNText Studio");
-            var message = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, WordWrap = true,
-                BorderStyle = BorderStyle.None, BackColor = form.BackColor, Font = form.Font,
-                Text = "Gỡ cài đặt sẽ xóa mọi nội dung trong thư mục này, bao gồm dữ liệu trong data/. " +
+            ConfigureInstallerFrame(form, U("Gỡ cài đặt — VNText Studio", "Uninstall — VNText Studio"));
+            var message = new Label { Left = 24, Top = 28, Width = 580, Height = 300, AutoSize = false,
+                Text = U("Gỡ cài đặt sẽ xóa mọi nội dung trong thư mục này, bao gồm dữ liệu trong data/. " +
                     "Sau khi hoàn tất, thư mục cài đặt vẫn còn nhưng trống:\n\n" + root +
-                    "\n\nKhông thể khôi phục. Bạn có muốn tiếp tục?" };
-            var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(24, 24, 24, 16) };
+                    "\n\nKhông thể khôi phục. Bạn có muốn tiếp tục?",
+                    "Uninstall removes everything in this folder, including the data in data/. " +
+                    "When it finishes, the install folder remains but is empty:\n\n" + root +
+                    "\n\nThis cannot be undone. Do you want to continue?") };
+            var body = new Panel { Dock = DockStyle.Fill, BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
             body.Controls.Add(message);
             form.Controls.Add(body);
-            form.Controls.Add(InstallerFooter(yes, no));
-            form.Controls.Add(InstallerHeader("Gỡ cài đặt VNText Studio", "Kiểm tra thư mục và dữ liệu trước khi tiếp tục."));
+            form.Controls.Add(InstallerFooter(no, yes));      // right-to-left: Cancel is the right-most button, as in the Setup wizard
+            form.Controls.Add(InstallerHeader(U("Gỡ cài đặt VNText Studio", "Uninstall VNText Studio"),
+                U("Kiểm tra thư mục và dữ liệu trước khi tiếp tục.", "Check the folder and its data before continuing.")));
             // Enter and Escape are both safe until the user explicitly chooses removal.
             form.AcceptButton = no; form.CancelButton = no;
             return form.ShowDialog() == DialogResult.Yes;
@@ -1127,26 +1444,35 @@ public static class Setup
     private static Form CreateUninstallProgressForm(string root, string selfPath, int parentPid,
         bool launchFinalHelper, IList<Dictionary<string, object>> progressEvidence)
     {
-        var form = CreateProgressWindow("Gỡ cài đặt VNText Studio", "Đang quét thư mục cài đặt.");
-        ConfigureInstallerFrame(form, "Gỡ cài đặt — VNText Studio");
+        var form = new Form();
+        ConfigureInstallerFrame(form, U("Gỡ cài đặt — VNText Studio", "Uninstall — VNText Studio"));
         form.ControlBox = false;
-        form.Controls.Add(InstallerHeader("Đang gỡ cài đặt VNText Studio", "Vui lòng chờ trong khi ứng dụng được gỡ khỏi máy."));
-        var phaseLabel = (Label)form.Controls.Find("progressStatus", false)[0];
-        phaseLabel.Left = 24; phaseLabel.Top = 92; phaseLabel.Width = 592;
-        phaseLabel.Height = 24;
-        phaseLabel.Font = new System.Drawing.Font("Segoe UI", 10, System.Drawing.FontStyle.Bold);
-        var progress = (ProgressBar)form.Controls.Find("progressBar", false)[0];
-        progress.Left = 24;
-        progress.Top = 126;
-        progress.Width = 592;
-        progress.Height = 8;
-        progress.Style = ProgressBarStyle.Marquee;
-        var pathBox = new TextBox { Left = 24, Top = 150, Width = 592, ReadOnly = true, WordWrap = false, ScrollBars = ScrollBars.Horizontal, Text = root };
-        var details = new TextBox { Name = "uninstallDetails", Left = 24, Top = 184, Width = 592, Height = 168, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = System.Drawing.Color.White };
-        var heartbeat = new Label { Name = "uninstallHeartbeat", Left = 24, Top = 364, Width = 592, Height = 22 };
-        var close = new Button { Name = "closeUninstall", Text = "Đóng", Enabled = false };
-        form.Controls.AddRange(new Control[] { pathBox, details, heartbeat });
+        var header = InstallerHeader(U("Đang gỡ cài đặt VNText Studio", "Uninstalling VNText Studio"),
+            U("Vui lòng chờ trong khi ứng dụng được gỡ khỏi máy.", "Please wait while the app is removed from your computer."));
+        var body = new Panel { Dock = DockStyle.Fill, BackColor = System.Drawing.Color.FromArgb(240, 240, 240) };
+        var phaseLabel = new Label { Name = "progressStatus", Left = 24, Top = 40, Width = 580, Height = 44, AutoSize = false,
+            Text = U("Đang quét thư mục cài đặt…", "Scanning the install folder…") };
+        var progress = new ProgressBar { Name = "progressBar", Left = 24, Top = 96, Width = 580, Height = 22, Minimum = 0, Maximum = 100,
+            Style = ProgressBarStyle.Marquee };
+        var pathLabel = new Label { Name = "uninstallPath", Left = 24, Top = 130, Width = 580, Height = 22, AutoSize = false, AutoEllipsis = true, Text = root };
+        var messageLabel = new Label { Name = "uninstallMessage", Left = 24, Top = 164, Width = 580, Height = 44, AutoSize = false,
+            Text = U("Đang liệt kê các tệp trong thư mục cài đặt.", "Listing the files in the install folder.") };
+        // Only shown for a blocked or failed uninstall: the files that were in use, or the technical reason.  Same style as the Setup summary box.
+        var details = new TextBox { Name = "uninstallDetails", Left = 24, Top = 214, Width = 582, Height = 170, Multiline = true, ReadOnly = true,
+            ScrollBars = ScrollBars.Vertical, BackColor = System.Drawing.Color.White, Visible = false };
+        var heartbeat = new Label { Name = "uninstallHeartbeat", Visible = false };
+        var close = new Button { Name = "closeUninstall", Text = U("Đóng", "Close"), Enabled = false };
+        body.Controls.Add(phaseLabel);
+        body.Controls.Add(progress);
+        body.Controls.Add(pathLabel);
+        body.Controls.Add(messageLabel);
+        body.Controls.Add(details);
+        body.Controls.Add(heartbeat);
+        form.Controls.Add(body);
         form.Controls.Add(InstallerFooter(close));
+        form.Controls.Add(header);
+        var headerTitle = (Label)header.Controls[0];
+        var headerSubtitle = (Label)header.Controls[1];
 
         form.Tag = 2;
         var terminal = false;
@@ -1171,6 +1497,18 @@ public static class Setup
         };
         timer.Start();
 
+        Action<string> showFailure = delegate(string kind)
+        {
+            headerTitle.Text = U("Gỡ cài đặt chưa hoàn tất", "Uninstall did not finish");
+            headerSubtitle.Text = U("Xem chi tiết bên dưới rồi thử lại.", "See the details below, then try again.");
+            phaseLabel.Text = kind == "blocked" ? U("Chưa thể gỡ cài đặt", "Uninstall cannot continue yet") : U("Gỡ cài đặt dừng giữa chừng", "Uninstall stopped part-way");
+            messageLabel.Text = kind == "blocked"
+                ? U("Chưa có tệp nào bị xóa. Hãy đóng các chương trình đang dùng các tệp bên dưới rồi chạy lại Uninstall.exe.",
+                    "No files were removed. Close the programs that are using the files below, then run Uninstall.exe again.")
+                : U("Một số tệp có thể đã bị xóa. Chi tiết kỹ thuật ở bên dưới.", "Some files may already be removed. The technical details are below.");
+            details.Visible = true;
+        };
+
         worker.DoWork += delegate(object sender, DoWorkEventArgs e)
         {
             RemoveUninstallContents(root, selfPath, (BackgroundWorker)sender);
@@ -1187,11 +1525,10 @@ public static class Setup
             }
             var done = Convert.ToInt32(update["done"]);
             var total = Convert.ToInt32(update["total"]);
-            pathBox.Text = (string)update["path"];
-            details.Text = (string)update["message"];
+            pathLabel.Text = (string)update["path"];
             if (phase == "scanning")
             {
-                phaseLabel.Text = String.Format("Đang quét: {0} mục đã tìm thấy", done);
+                phaseLabel.Text = String.Format(U("Đang quét: {0} mục đã tìm thấy", "Scanning: {0} items found"), done);
                 progress.Style = ProgressBarStyle.Marquee;
             }
             else
@@ -1199,11 +1536,29 @@ public static class Setup
                 progress.Style = ProgressBarStyle.Continuous;
                 progress.Maximum = Math.Max(1, total);
                 progress.Value = Math.Min(progress.Maximum, Math.Max(0, done));
-                if (phase == "checking") phaseLabel.Text = String.Format("Đang kiểm tra tệp đang được sử dụng: {0}/{1}", done, total);
-                else if (phase == "deleting") phaseLabel.Text = String.Format("Đang xóa: {0}/{1} mục", done, total);
-                else if (phase == "handoff") phaseLabel.Text = "Đang chuyển bước cuối cho trình trợ giúp bên ngoài.";
-                else if (phase == "blocked") phaseLabel.Text = "Không thể tiếp tục vì có tệp đang được sử dụng.";
-                else if (phase == "failed") phaseLabel.Text = "Không thể xóa toàn bộ thư mục cài đặt.";
+                if (phase == "checking")
+                {
+                    phaseLabel.Text = String.Format(U("Đang kiểm tra tệp đang được sử dụng: {0}/{1}", "Checking for files in use: {0}/{1}"), done, total);
+                    messageLabel.Text = U("Đang bảo đảm không có chương trình nào đang dùng các tệp trước khi xóa.", "Making sure no program is using the files before anything is removed.");
+                }
+                else if (phase == "deleting")
+                {
+                    phaseLabel.Text = String.Format(U("Đang xóa: {0}/{1} mục", "Deleting: {0}/{1} items"), done, total);
+                    messageLabel.Text = U("Đang xóa các tệp của VNText Studio, kể cả dữ liệu trong data/.", "Removing the VNText Studio files, including the data in data/.");
+                }
+                else if (phase == "handoff") phaseLabel.Text = U("Đang chuyển bước cuối cho trình trợ giúp bên ngoài.", "Handing the last step to the external helper.");
+                else if (phase == "blocked")
+                {
+                    var text = (string)update["message"];
+                    var separator = text.IndexOf(Environment.NewLine, StringComparison.Ordinal);
+                    details.Text = separator >= 0 ? text.Substring(separator + Environment.NewLine.Length) : text;     // the files in use, one per line
+                    showFailure("blocked");
+                }
+                else if (phase == "failed")
+                {
+                    details.Text = (string)update["message"];
+                    showFailure("failed");
+                }
             }
         };
         worker.RunWorkerCompleted += delegate(object sender, RunWorkerCompletedEventArgs e)
@@ -1211,10 +1566,14 @@ public static class Setup
             if (e.Error != null)
             {
                 form.Tag = 2;
-                phase = "failed";
-                phaseClock.Restart();
-                phaseLabel.Text = "Không thể hoàn tất gỡ cài đặt.";
-                details.Text = e.Error.ToString();
+                if (phase != "blocked" && phase != "failed")
+                {
+                    phase = "failed";
+                    phaseClock.Restart();
+                    details.Text = e.Error.ToString();
+                    showFailure("failed");
+                }
+                progress.Style = ProgressBarStyle.Continuous;
             }
             else
             {
@@ -1238,21 +1597,36 @@ public static class Setup
                     form.Tag = 0;
                     phase = "handoff";
                     phaseClock.Restart();
-                    phaseLabel.Text = launchFinalHelper
-                        ? "Đã dọn nội dung; trình trợ giúp cuối sẽ xóa Uninstall.exe. Thư mục cài đặt sẽ vẫn còn nhưng trống."
-                        : "Fixture đã dọn; worker kết thúc trong cửa sổ progress thật.";
-                    details.Text = launchFinalHelper
-                        ? "Trình trợ giúp bên ngoài đang chờ tiến trình này kết thúc rồi xóa Uninstall.exe. Thư mục cài đặt sẽ vẫn còn nhưng trống."
-                        : "Trình trợ giúp cuối không chạy trong bài kiểm tra fixture.";
+                    headerTitle.Text = U("Hoàn tất gỡ cài đặt", "Uninstall complete");
+                    headerSubtitle.Text = U("VNText Studio đã được gỡ khỏi máy.", "VNText Studio was removed from your computer.");
+                    phaseLabel.Text = U("Đã gỡ cài đặt VNText Studio", "VNText Studio was uninstalled");
+                    progress.Style = ProgressBarStyle.Continuous;
+                    progress.Maximum = 100; progress.Value = 100;
+                    pathLabel.Text = root;
+                    messageLabel.Text = U("Đã dọn nội dung; trình trợ giúp cuối sẽ xóa Uninstall.exe. Thư mục cài đặt vẫn còn nhưng trống.",
+                        "The contents were removed; a final helper deletes Uninstall.exe. The install folder remains but is empty.");
                 }
                 catch (Exception ex)
                 {
                     form.Tag = 2;
                     phase = "failed";
                     phaseClock.Restart();
-                    phaseLabel.Text = "Không thể chuyển bước xóa tệp cuối cùng.";
                     details.Text = ex.ToString();
+                    showFailure("failed");
+                    phaseLabel.Text = U("Không thể chuyển bước xóa tệp cuối cùng", "The last cleanup step could not start");
+                    progress.Style = ProgressBarStyle.Continuous;
                 }
+            }
+            if (launchFinalHelper)
+            {
+                // The measurements the person does not need still go somewhere: one line per uninstall in the temp folder (the install folder is being removed).
+                try
+                {
+                    File.AppendAllText(Path.Combine(Path.GetTempPath(), "VNTextStudio-uninstall.log"),
+                        DateTime.Now.ToString("s") + " exit=" + Convert.ToInt32(form.Tag) + " phase=" + phase + " | " + heartbeat.Text
+                        + (details.Text.Length > 0 ? " | " + details.Text.Replace(Environment.NewLine, " / ") : "") + Environment.NewLine, Encoding.UTF8);
+                }
+                catch (Exception) { /* diagnostics only */ }
             }
             terminal = true;
             close.Enabled = true;

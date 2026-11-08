@@ -368,8 +368,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn("<Expander", card)
         self.assertNotIn("RemoveAt(0)", runs)                                           # no eviction of the run
         self.assertNotIn("Count > 200", runs)
-        self.assertIn('"extract" => WorkflowTabs.Extract', journal)
-        for other in ('"analyze"', '"resources"', '"image_inventory"', '"image_extract"', '"image_batch"'):
+        self.assertIn('"extract" or "analyze" => WorkflowTabs.Extract', journal)      # the automatic analysis is a run of the same Extract journal
+        for other in ('"resources"', '"image_inventory"', '"image_extract"', '"image_batch"'):
             self.assertNotIn(other + " or", journal[journal.index("LogOwner"):journal.index("BeginTaskLog")].split("WorkflowTabs.Translate")[0])
         self.assertIn("IsLiveExtractRun(id)", runs)
         self.assertIn("FileShare.ReadWrite", runs)
@@ -1025,6 +1025,16 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('x:Name="AnalyzeButton"', xaml)
         self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
         self.assertIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
+        # Persistent inline summary of the automatic detection: engine + next action, busy bar; identification never claims patchability.
+        self.assertIn('Text="{Binding AnalyzeNextActionText}"', xaml)
+        self.assertIn('Visibility="{Binding AnalyzeBusy, Converter={StaticResource BoolToVis}}"', xaml)
+        self.assertIn("chưa xác minh khả năng tạo patch", analyze)
+        self.assertIn("AnalyzeOutcome.Cancelled", analyze)
+        # Newest-version banner (Cockpit 1.3.80 reference, measured): hairline lighter border, tighter padding, same global palette family.
+        tokens = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "DesignTokens.xaml").read_text(encoding="utf-8")
+        self.assertIn('AboutCurrentBackgroundBrush" Color="#D8EDE1"', tokens)
+        self.assertIn('AboutCurrentBorderBrush" Color="#A1E2BA"', tokens)
+        self.assertIn('<Setter Property="BorderThickness" Value="0.75" />', xaml)
         self.assertIn('GetRenpyEvidenceKind(InputPath', analyze)
         self.assertNotIn('IsExpanded="{Binding PatchResultsExpanded', xaml)
         self.assertIn('Visibility="{Binding PatchResultsAvailable, Converter={StaticResource BoolToVis}}"', xaml)

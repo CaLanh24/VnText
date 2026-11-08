@@ -24,10 +24,11 @@ public sealed partial class MainViewModel
     public ObservableCollection<string> PatchLogLines { get; } = new();
     private readonly Dictionary<string,string> _logTaskOwners = new();
 
-    // Only the extraction run owns the Extract journal; analyze/resources/image tasks keep their audit copy in the sidebar Journal only.
+    // The Extract tab journal holds the extraction run AND the automatic game analysis that precedes it (each is its own run in the selector);
+    // resources/image tasks keep their audit copy in the sidebar Journal only.
     private static string LogOwner(string? task) => task switch
     {
-        "extract" => WorkflowTabs.Extract,
+        "extract" or "analyze" => WorkflowTabs.Extract,
         "translate" or "image_render" or "cloud_export" or "cloud_import" or "external_translation_import" => WorkflowTabs.Translate,
         "patch" or "image_delivery" or "image_apply" or "image_rollback" => WorkflowTabs.Patch,
         _ => ""
@@ -37,7 +38,7 @@ public sealed partial class MainViewModel
     {
         if (_logTaskOwners.Count >= 64) _logTaskOwners.Remove(_logTaskOwners.Keys.First());
         _logTaskOwners[id] = LogOwner(task);
-        if (task == "extract") StartExtractRun(id);
+        if (task is "extract" or "analyze") StartExtractRun(id, task);
         AddTaskProgress(id,message);
     }
 
