@@ -23,7 +23,6 @@ public static class UiText
         ["Mở tài nguyên trong Cài đặt"] = "Open resources in Settings",
         ["Tìm ảnh có chữ và dịch tất cả"] = "Find text images and translate all",
         ["Chọn ảnh để sửa riêng"] = "Choose an image to edit",
-        ["Ảnh có chữ đã được lọc khi Lấy text. Bước Dịch tự tạo bản dịch nháp; chọn ảnh bên dưới nếu muốn sửa."] = "Images with text were filtered during Extract. The Translate step drafts their translation automatically; choose an image below only if you want to edit it.",
         ["Tìm ảnh có chữ và dịch tự động theo lô. Chỉ sửa ảnh khi bạn chưa hài lòng với kết quả."] = "Find text-bearing images and translate them automatically. Edit only results you want to improve.",
         ["Cảnh báo {0} lúc {1}"] = "Warning: {0} at {1}",
         ["Thông báo lấy text chưa xác nhận"] = "Unacknowledged extraction notice",

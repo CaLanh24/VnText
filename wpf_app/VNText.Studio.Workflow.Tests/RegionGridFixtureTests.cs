@@ -238,7 +238,8 @@ internal static partial class Program
             Require(((TextBlock)panel.FindName("StatusLine")).Text.StartsWith("Không mở được review:", StringComparison.Ordinal), "Vietnamese status is exact after switching back");
             Require(grid.Columns[0].Header as string == "TEXT OCR" && grid.Columns[1].Header as string == "BẢN DỊCH", "Vietnamese grid headers are exact");
             UiText.SetLanguage("en"); UiText.Apply(dialog); vm.RaiseImageLanguageText(); dialog.UpdateLayout(); PumpFixture(80);
-            Require(grid.Columns[0].Header as string == "OCR TEXT" && ((TextBlock)panel.FindName("LeadText")).Text.StartsWith("Images with text were filtered", StringComparison.Ordinal), "English returns after the round trip");
+            Require(grid.Columns[0].Header as string == "OCR TEXT", "English grid header returns after the round trip");
+            Require(((TextBlock)panel.FindName("LeadText")).Text.StartsWith("Extract has already found images with text", StringComparison.Ordinal), "English lead text returns after the round trip: " + ((TextBlock)panel.FindName("LeadText")).Text);
             Scan("after the language round trip");
             dialog.Close();
             owner.Close();
