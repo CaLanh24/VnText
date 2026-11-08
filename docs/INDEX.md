@@ -126,4 +126,3 @@ Chỉ đọc theo câu hỏi/task ID. Nội dung evidence của snapshot giữ n
 ## Duy trì bản đồ
 
 Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con trỏ task hiện hành; không thêm một tracker/summary thứ hai. Landing page giữ kết quả/contract còn hiệu lực và đường dẫn archive; archive bất biến, không làm mới chữ pending/current cũ. Lịch sử chưa tách vẫn tra theo heading/câu hỏi; không nhập toàn bộ vào session.
-
