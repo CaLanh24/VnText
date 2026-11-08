@@ -174,6 +174,22 @@ class WholeGameAcceptanceTests(unittest.TestCase):
         receipt = wga.build(self.fx.args())
         self.assertEqual("EVIDENCE_MISMATCH", receipt["matrix"][0]["native"])
 
+    def test_inference_counts_only_when_explicitly_accepted_and_stays_labelled(self):
+        basis = json.loads((self.tmp / "basis.json").read_text(encoding="utf-8"))
+        basis["items"][0]["covers"].remove("representative.longest_dialogue")
+        extra = dict(basis["items"][0], id="inf1", covers=["representative.longest_dialogue"], inference=True)
+        basis["items"].append(extra)
+        (self.tmp / "basis.json").write_text(json.dumps(basis), encoding="utf-8")
+        receipt = wga.build(self.fx.args())                                              # inference without an acceptor is not proof
+        self.assertEqual("INFERENCE_NOT_ACCEPTED", [i for i in receipt["matrix"] if i["id"] == "representative.longest_dialogue"][0]["native"])
+        self.assertEqual("NOT_ACCEPTED", receipt["verdict"])
+        extra.update(accepted_by="Root", acceptance_ref="message 2026-11-08")
+        (self.tmp / "basis.json").write_text(json.dumps(basis), encoding="utf-8")
+        receipt = wga.build(self.fx.args())
+        item = [i for i in receipt["matrix"] if i["id"] == "representative.longest_dialogue"][0]
+        self.assertEqual("PROVEN_BOUND_INFERENCE", item["native"])                      # accepted, but still visibly an inference
+        self.assertEqual("ACCEPT_ELIGIBLE", receipt["verdict"], receipt["blocking"])
+
     def test_missing_required_coverage_stays_blocking(self):
         basis = json.loads((self.tmp / "basis.json").read_text(encoding="utf-8"))
         basis["items"][0]["covers"].remove("representative.longest_dialogue")

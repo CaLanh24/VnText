@@ -30,7 +30,7 @@ from vntext.patch_renpy import _render_overlay
 SCHEMA = "vntext.whole_game_acceptance/2"
 PLACEHOLDER = re.compile(r"\[[^\[\]]+\]|%\([^)]+\)[sd]|%[sd]|\{(?!/?[a-z]+(?:=[^}]*)?\})[^{}]*\}")
 TAG = re.compile(r"\{/?[a-z]+(?:=[^}]*)?\}")
-OK_RUNTIME = {"PROVEN_BOUND", "NOT_REQUIRED"}
+OK_RUNTIME = {"PROVEN_BOUND", "PROVEN_BOUND_INFERENCE", "NOT_REQUIRED"}
 STATIC_CLASSES = {"COVERED_BY_STATIC_STRINGS", "EXCLUDED_TECHNICAL", "EXCLUDED_USER_DATA", "COVERED_BY_DIALOGUE", "UNREACHABLE_BY_SOURCE"}
 NATIVE_CLASSES = {"SHORT_LABEL_REVIEW", "RUNTIME_FORMAT_OBSERVE", "RUNTIME_SPEAKER_OBSERVE", "RUNTIME_LOAD_OBSERVE"}
 
@@ -193,6 +193,12 @@ def evaluate_basis(basis, components):
             status = "EVIDENCE_MISSING"; why.append("no evidence files")
         if item.get("attestation") != "receipt" and status == "PROVEN_BOUND":
             status = "REPORTED_ONLY"; why.append("attestation is not a machine receipt")
+        if item.get("inference") and status == "PROVEN_BOUND":
+            # An inference is never direct evidence: it counts only with a named acceptor and a reference to the acceptance, and it stays labelled in the receipt.
+            if item.get("accepted_by") and item.get("acceptance_ref"):
+                status = "PROVEN_BOUND_INFERENCE"
+            else:
+                status = "INFERENCE_NOT_ACCEPTED"; why.append("inference without accepted_by / acceptance_ref")
         for cid in item.get("covers", []):
             slot = result.setdefault(cid, {})
             kind = item.get("kind", "native")
@@ -397,7 +403,7 @@ def build(args):
             blocking.append({"id": "cache." + c["path"], "why": "compiled cache lacks a listed member"})
     for cid, kinds in basis_status.items():
         for kind, b in kinds.items():
-            if b["status"] != "PROVEN_BOUND":
+            if b["status"] not in ("PROVEN_BOUND", "PROVEN_BOUND_INFERENCE"):
                 blocking.append({"id": "basis.%s.%s" % (cid, kind), "why": "%s: %s" % (b["status"], "; ".join(b["why"]))})
     return {
         "schema": SCHEMA,
