@@ -3268,7 +3268,7 @@ internal static partial class Program
                   {"source":"c.png","status":"UNTRANSLATED","reason":"tilt gate"}]}
                 """, Encoding.UTF8);
             var probe = ImagePackageProbe.Read(root);
-            AssertEqual(3, probe.Total);
+            AssertEqual(2, probe.Total);
             AssertEqual(2, probe.OcrReady);
             using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
             vm.TestSetTranslationModelReady(true);
@@ -3301,7 +3301,9 @@ internal static partial class Program
             void Put(string json) => File.WriteAllText(report, json, Encoding.UTF8);
             // Valid report.
             Put("""{"items":[{"status":"OCR_READY"},{"status":"OCR_READY"},{"status":"TRANSLATED_DRAFT"},{"status":"UNTRANSLATED"}]}""");
-            AssertEqual(new ImagePackageProbe.Summary(4, 2, 1), ImagePackageProbe.Read(root));
+            AssertEqual(new ImagePackageProbe.Summary(3, 2, 1), ImagePackageProbe.Read(root));
+            Put("""{"items":[{"status":"NO_TEXT"},{"status":"NO_TEXT"},{"status":"OCR_READY","text_detected":true}]}""");
+            AssertEqual(new ImagePackageProbe.Summary(1, 1, 0), ImagePackageProbe.Read(root));
             // Valid JSON of the wrong shape: none of these may throw, none counts as ready.
             foreach (var json in new[]
             {
@@ -3313,7 +3315,7 @@ internal static partial class Program
             }
             // Malformed entries are counted as items but never as ready; well-formed neighbours still count.
             Put("""{"items":[1,null,"s",[],{"status":7},{"status":null},{"status":{}},{"status":["OCR_READY"]},{"status":"OCR_READY"}]}""");
-            AssertEqual(new ImagePackageProbe.Summary(9, 1, 0), ImagePackageProbe.Read(root));
+            AssertEqual(new ImagePackageProbe.Summary(1, 1, 0), ImagePackageProbe.Read(root));
             // Invalid JSON and an empty file.
             Put("{not json");
             AssertEqual(default(ImagePackageProbe.Summary), ImagePackageProbe.Read(root));
@@ -4004,6 +4006,11 @@ internal static partial class Program
             AssertEqual(0, vm.CsvEditorVisibleCount);
             vm.CsvEditorSearch = "";
             AssertEqual(3, vm.CsvEditorVisibleCount);
+            vm.CsvEditorRows[1].Translation = "";
+            vm.CsvBulkFind = "Hello";
+            AssertEqual(1, vm.CsvEditorVisibleCount);
+            AssertEqual("Hello", vm.CsvEditorSearch);
+            vm.CsvBulkFind = "";
             var original = File.ReadAllBytes(csv);
             vm.CsvEditorRows[0].Translation = "Chưa lưu";
             vm.OnCsvEditorTranslationChanged();

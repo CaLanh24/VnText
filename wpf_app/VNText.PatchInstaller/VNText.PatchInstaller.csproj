@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>VNTextPatchInstaller</AssemblyName>
     <RootNamespace>VNText.PatchInstaller</RootNamespace>
+    <ApplicationIcon>..\VNText.Studio.App\Assets\vntext_studio.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="obj\**\*.cs" />

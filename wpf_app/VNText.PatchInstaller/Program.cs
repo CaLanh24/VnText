@@ -8,7 +8,9 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        var patchDir = AppContext.BaseDirectory;
+        string patchDir;
+        try { patchDir = EmbeddedPatch.Open(Environment.ProcessPath!); }
+        catch (Exception ex) { MessageBox.Show(ex.Message, "Không mở được patch", MessageBoxButtons.OK, MessageBoxIcon.Error); return 1; }
         if (args.Length >= 3 && (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase) || args[0].Equals("--uninstall", StringComparison.OrdinalIgnoreCase)))
         {
             try
@@ -51,14 +53,28 @@ internal sealed class InstallerForm : Form
     {
         _service = new InstallerService(patchDir);
         Text = "VNText Patch Installer";
+        Icon = Icon.ExtractAssociatedIcon(Environment.ProcessPath!);
+        Font = new Font("Segoe UI", 10F);
+        BackColor = Color.FromArgb(245, 247, 251);
+        ForeColor = Color.FromArgb(15, 23, 42);
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(700, 300);
+        MinimumSize = new Size(700, 390);
         Width = 760;
-        Height = 330;
+        Height = 420;
 
-        var title = new Label { Text = "Cài đặt bản Việt hóa", AutoSize = true, Font = new Font(Font, FontStyle.Bold), Dock = DockStyle.Fill };
+        var title = new Label { Text = "Cài đặt bản Việt hóa", AutoSize = true, Font = new Font("Segoe UI", 20F, FontStyle.Bold), Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 16) };
         var description = new Label { Text = "Chọn trực tiếp thư mục game chứa file .exe (Unity hoặc Ren'Py). Chỉ các file bị sửa được sao lưu để có thể gỡ patch; không cần sao chép toàn bộ game.", AutoSize = true, MaximumSize = new Size(650, 0), Dock = DockStyle.Fill };
         var browse = new Button { Text = "Chọn game...", AutoSize = true };
+        foreach (var button in new[] { browse, _install, _uninstall })
+        {
+            button.FlatStyle = FlatStyle.Flat; button.FlatAppearance.BorderColor = Color.FromArgb(218, 224, 234);
+            button.BackColor = Color.White; button.Padding = new Padding(14, 6, 14, 6); button.MinimumSize = new Size(100, 36);
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(233, 240, 255);
+            button.Margin = new Padding(0, 8, 10, 8); button.Cursor = Cursors.Hand;
+        }
+        _install.BackColor = Color.FromArgb(37, 99, 235); _install.ForeColor = Color.White;
+        _install.FlatAppearance.MouseOverBackColor = Color.FromArgb(29, 78, 216);
+        _status.Padding = new Padding(12); _status.BackColor = Color.White; _status.Margin = new Padding(0, 16, 0, 8);
         browse.Click += (_, _) => BrowseGame();
         _gamePath.TextChanged += (_, _) => RefreshState();
         _install.Click += (_, _) => Install();

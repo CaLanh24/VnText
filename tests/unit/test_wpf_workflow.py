@@ -198,7 +198,9 @@ class WpfWorkflowTests(unittest.TestCase):
 
     def test_completion_notifications_use_the_app_theme_surface(self):
         window = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
-        self.assertIn("vm.ShowCompletionToast(notification)", window)
+        self.assertIn("vm.ShowCompletionToast(next)", window)
+        self.assertIn("dialog.ShowDialog()", window)
+        self.assertIn("DispatcherPriority.ContextIdle", window)
         self.assertNotIn("MessageBox.Show(", window[window.index("private void OnCompletionRequested"):window.index("private void MainWindow_SizeChanged")])
 
     def test_harness_env_forces_process_only_global_tools_guard_over_any_inherited_value(self):

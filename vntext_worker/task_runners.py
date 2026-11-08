@@ -403,6 +403,22 @@ def run_patch_worker(
         return
 
     try:
+        import uuid
+        from vntext.image_text import _regular
+        delivery_dir = _regular(patch_out)
+        build_dir = _regular(Path(package_dir) / '.patch-build' / uuid.uuid4().hex)
+        def deliver(payload):
+            if payload.get('ok'):
+                from vntext.patch_bundle import bundle_patch
+                stub = build_dir / 'VNTextPatchInstaller.exe'
+                if not stub.is_file():
+                    raise ValueError('Thiếu installer patch tự chứa; chưa thể bàn giao.')
+                executable = bundle_patch(stub, build_dir, delivery_dir / 'VNText-VietHoa.exe')
+                payload = dict(payload)
+                payload.update(patch_payload_path=str(executable),
+                    patch_install_instructions='Mở VNText-VietHoa.exe, chọn thư mục game để cài hoặc gỡ bản Việt hóa.',
+                    summary=f'Đã tạo installer Việt hóa: {executable}. Mở file này để cài hoặc gỡ patch.')
+            complete(payload)
         run_patch_task(
             csv_path,
             manifest_path,
@@ -410,13 +426,13 @@ def run_patch_worker(
             patch_out,
             progress=progress,
             log=log,
-            complete=complete,
+            complete=deliver,
             # ``patch_out`` is already the worker's package-level
             # Patch_Viet_Hoa directory.  Pass it as an override so the
             # worker contract stays flat (COPY_TO_GAME_ROOT directly below
             # Patch_Viet_Hoa) instead of creating a versioned subdirectory
             # that callers and installers cannot find.
-            patch_out_override=patch_out,
+            patch_out_override=str(build_dir),
             enable_trace=True,
         )
     except WorkerCancelled:
