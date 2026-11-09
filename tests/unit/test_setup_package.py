@@ -1394,7 +1394,7 @@ internal static class ResourceHarness
 }
 """, encoding="utf-8")
             harness = work / "resource_harness.exe"
-            built_harness = subprocess.run([str(csc), "/nologo", "/target:exe", f"/out:{harness}", "/reference:System.Windows.Forms.dll", "/reference:System.Web.Extensions.dll", "/reference:System.IO.Compression.dll", str(harness_source)], capture_output=True, text=True, timeout=90)
+            built_harness = subprocess.run([str(csc), "/nologo", "/target:exe", f"/out:{harness}", "/reference:System.Windows.Forms.dll", "/reference:System.Drawing.dll", "/reference:System.Web.Extensions.dll", "/reference:System.IO.Compression.dll", str(harness_source)], capture_output=True, text=True, timeout=90)
             self.assertEqual(0, built_harness.returncode, built_harness.stdout + built_harness.stderr)
             tools = ROOT / ".dev-env" / "tools"
             have_cache = (tools / "renpy-8.5.3" / "renpy.py").is_file() and (ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8" / "model.bin").is_file()
