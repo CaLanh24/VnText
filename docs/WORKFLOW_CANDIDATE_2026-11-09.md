@@ -19,7 +19,7 @@ Implemented: image translation consumes Extract's positive OCR report; results s
 - Setup: `C:/vnrg/candidate-terms-fix/VNTextStudio-DEV-0.1.17-1845cfe-Setup.exe`, SHA256 `24399a11a7c9613fed6205f555de8ee240e8dee5a622189d15bb786c3a89921d` (289,011,712 B); payload 7,198 members verified, embedded stream hash equals the verified ZIP `c48edc57...`.
 - DEV app (unchanged): `C:/v/DEV_RUN/final-workflow-0.1.17/Start-DEV.cmd`, app SHA256 `78391c5a7a84d92e04d4f7078e2bc795259cb157071b6762e55787025458ea8b`.
 - Root native receipt: `C:/vnrg/evidence/batch5/root-native-setup-20261109.json`. PASS: VI/EN terms footer, original Intel agreement + Close, isolated install, resources start then Cancel/Skip truthfully NOT ready, installed app launch, uninstall blocked while the app is active (no deletion) then success after close and self-removal; Owner Desktop/Start Menu unchanged; test root empty, UI closed.
-- NOT_PROVEN: real SDK download/success (budget 6.25 -> 6.75 GiB question unanswered, cap unchanged); forced-offline native branch (proxy launch auto-policy rejected, not retried); all DPI/themes; audible playback.
+- Full native resource path PASS (Root `root-native-full-setup-20261109.json`: real 155.5 MB SDK download/verify/extract -> Setup Ready, app launched, Check Resources all Ready, uninstall removed 11,680 items; cleanup `native-full-cleanup-linked-receipt.json`). NOT_PROVEN: forced-offline native branch (proxy launch auto-policy rejected, not retried); all DPI/themes; audible playback.
 - Build evidence: `terms-build-receipt.json`, `terms-build-dispose.json`, `terms-build-budget.json`, `native-setup-terms-prep.json`; scope recovery `scope-recovery-receipt.json`; legacy DEV_RUN archive `legacy-dev-run-archive-receipt.json`.
 
 ## History (superseded pointers, kept for the ledger)
@@ -28,3 +28,5 @@ Implemented: image translation consumes Extract's positive OCR report; results s
 - Earlier DEV candidates: `88d6a75` (results-first image workspace, installer layout) and `3f6976b` (five-finding batch). Their Setup builds are consumed; hashes are in the batch5 receipts.
 - Private inert patch fixture: Root's `eef87e36...b632a` is no longer at `C:/vnrg/candidate-single-exe`; DEV's superseded fixture at that path was consumed with a hash receipt (`consumed-r3-receipt.json`) during budget cleanup. Rebuild a fixture from `build_fixture_exe.py` if one is needed again.
 - Consumed with receipts: generated 0.1.17 baseline mirror, old batch5 Setup, legacy DEV_RUN audit output (text archived, binaries hash-indexed), empty native test container. `runner-reports` stays REVIEW_REQUIRED. User data, original game/saves and protected epoch history retained.
+
+- Temporary 6.75 GiB grant (Owner 2026-11-09) funded the full-resource run; stub relocated for the preflight and restored byte-exact afterwards; test container disposed through the registry route.
