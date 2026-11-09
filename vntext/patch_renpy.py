@@ -586,14 +586,21 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     source_cache: dict[tuple[Path, str], str] = {}
     archive_cache: dict[Path, RenPyArchive] = {}
     archive_identities: dict[Path, str] = {}
+    omitted_by_reason: dict[str, int] = {}
     for entry in entries:
         key = str(entry.get("key") or "")
         row = rows.get(key)
         if not isinstance(row, dict):
-            raise RenPyPatchError(f"Ren'Py translation row is missing: {key}")
+            # read_translation_rows drops blank translations, so a manifest entry without a row is simply untranslated.
+            omitted_by_reason["untranslated"] = omitted_by_reason.get("untranslated", 0) + 1
+            continue
         translation = str(row.get("translation") or "")
-        if patch_skip_reason(entry, translation, set()):
-            raise RenPyPatchError(f"Ren'Py entry is not eligible: {key}")
+        skip_reason = patch_skip_reason(entry, translation, set())
+        if skip_reason:
+            # Partial patch: a row without a proven, reviewed-by-the-gate translation (untranslated, technical control, unsafe text) is OMITTED and counted;
+            # it is never written.  Structural problems (missing row, contract, identity) above and below still abort the whole patch.
+            omitted_by_reason[skip_reason] = omitted_by_reason.get(skip_reason, 0) + 1
+            continue
         locator = entry.get("locator") if isinstance(entry.get("locator"), dict) else {}
         contract_reason = validate_renpy_contract(entry)
         if contract_reason:
@@ -808,6 +815,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                 already_satisfied=len(already_satisfied) + len(dialogues) - len(new_dialogues),
             )
             verification["review_only_skipped"] = excluded_review_only
+            verification["omitted_by_reason"] = dict(omitted_by_reason)
             (output / "patch_verification.json").write_text(
                 json.dumps(verification, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -819,6 +827,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         "patched_lines: " + str(len(new_dialogues) + len(strings)),
         "already_satisfied: " + str(len(already_satisfied) + len(dialogues) - len(new_dialogues)),
         "review_only_skipped: " + str(excluded_review_only),
+        "omitted_ineligible: " + json.dumps(omitted_by_reason, sort_keys=True),
         "RENPY native overlay written",
     ]
     (output / "import_report.txt").write_text("\n".join(report) + "\n", encoding="utf-8")
@@ -831,6 +840,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         already_satisfied=len(already_satisfied) + len(dialogues) - len(new_dialogues),
     )
     verification["review_only_skipped"] = excluded_review_only
+    verification["omitted_by_reason"] = dict(omitted_by_reason)
     (output / "patch_verification.json").write_text(
         json.dumps(verification, ensure_ascii=False, indent=2),
         encoding="utf-8",
