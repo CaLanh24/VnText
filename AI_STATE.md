@@ -18,3 +18,6 @@ Cap 6.25 GiB (+48 MiB guard), shared `.dev-env` 11 GiB, none changed. Combined a
 
 ## Next
 Owner QA on the exact Setup/app. A real SDK-success test needs the budget decision first. History of earlier rounds: `docs/WORKFLOW_CANDIDATE_2026-11-09.md`.
+
+## Temporary 6.75 GiB grant (2026-11-09, native full-resource run)
+Owner: 'Cho phép 6,75 GiB, kiểm trọn Setup'. Recorded through the supported tooling path (`3008b52`, epoch `epoch-20261109-017-budget675b`): limit 6,912 MiB for release-0.1.17, 6.25 GiB epochs stay verifiable, scope generation reactivated, regressions in `test_cleanup_work_artifacts` (162 OK); guard 48 MiB and shared 11 GiB unchanged. Test root `DEV_RUN/native-setup-full` registered (absent); telemetry/cleanup scripts and checklist ready (`native-full-checklist.md`, `native-full-prep-receipt.json`). PREFLIGHT DOES NOT FIT yet: expected peak exceeds the abort line by ~39 MB; Root must pick one listed option before the download. Nothing started; Setup `24399a11…` untouched.
