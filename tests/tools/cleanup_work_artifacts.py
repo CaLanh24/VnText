@@ -189,13 +189,21 @@ RELEASE_TASK_015_BUDGET_ID = "release-0.1.15"
 # Release 0.1.16 (NOT 0.1.6: RELEASE_TASK_016_BUDGET_ID below is the historical 0.1.6 task).
 RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
 RELEASE_TASK_0117_BUDGET_ID = "release-0.1.17"
-RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2
-RELEASE_TASK_0117_BUDGET_APPROVAL = (
+RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2          # 6.25 GiB, recorded in every epoch before the native full-resource run
+RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = 6912 * 1024 ** 2                    # 6.75 GiB, temporary (Owner 2026-11-09), exact native Setup run only
+RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL = (
     "Owner 2026-11-05 requested whole-game verification and 'nếu có vấn đề thì sửa trên 0.1.17', then requested the scoped UI/installer fixes. "
     "Under the standing measured release-allocation authority, preserve the 6.25 GiB project plus owned-external ceiling and 11 GiB shared cache. "
     "Existing project is about 4.36 GB including protected history; sequential build/package needs about 2.2 GB above a cleaned base. "
     "This account permits only the registered candidate-0.1.17 task after a legitimate epoch is activated. It grants no rebaseline, extra hop, "
     "guard waiver, model change or publication before whole-game and Brain acceptance. Terminal protected history stays REVIEW_REQUIRED."
+)
+RELEASE_TASK_0117_BUDGET_APPROVAL = (
+    RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL
+    + " Owner 2026-11-09 then answered 'Cho phép 6,75 GiB, kiểm trọn Setup' to the concrete request to raise the project plus owned-external ceiling "
+    "from 6.25 GiB to 6.75 GiB TEMPORARILY, for the exact native Setup run with the real Ren'Py SDK download (measured install peak 1,102,989,383 B), "
+    "keeping the 48 MiB guard and the 11 GiB shared cache unchanged, preserving the Owner's install and data, with no release, version, tag or push. "
+    "The ceiling returns to 6.25 GiB after that run's cleanup."
 )
 RELEASE_TASK_0116_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2  # 6.25 GiB, measured below; Brain/Owner confirm before the first allocation
 RELEASE_TASK_0116_BUDGET_APPROVAL = (
@@ -476,6 +484,10 @@ def _release_budget_record_is_valid(
     ):
         return True
     return (
+        task_id == RELEASE_TASK_0117_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL
+    ) or (
         task_id == DEV_RESOURCES_TASK_ID
         and release_budget.get("limit_bytes") == DEV_RESOURCES_PREVIOUS_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == DEV_RESOURCES_BUDGET_APPROVAL
