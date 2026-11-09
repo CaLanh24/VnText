@@ -11,26 +11,20 @@ Round-1 corrections in `d517a43` (WPF only; Python worker unchanged):
 - R3 delivery heading names the produced file (`VNText-VietHoa.exe`); a folder payload uses the installer named by the worker's own instructions; no fixed stub name otherwise.
 - R4 busy Analyze no longer shows the amber duplicate "Đang kiểm tra…" line (real scan errors still appear on completion).
 
+## Round-2 correction (last): worker task-log severity
+Root native round 2 passed R1/R3/R4, journal colours and the real Build (one EXE, readback 300 PASS / 0 FAIL, Owner files unchanged). Only left: the worker's preflight block in the Patch tab log stayed neutral. Fix `bf9b878` (end-to-end, no wording guesses): `emit_log(task_id, text, severity=None)` adds optional `severity` ("warning"/"error"/"ok", parsed by the existing `WorkerEvent.Severity`); `run_patch_worker` marks the preflight log "warning" only when `blocked > 0` (otherwise the old one-argument call, so existing callers/mocks are unchanged); the VM maps it (`KnownLogLevel`) and routes it through `AppendLog` AND `AddTaskProgress` (marked `PatchLogLines`/`TranslateLogLines` line + persisted journal level). Text, order and history are unchanged; unmarked lines stay text-derived/neutral.
+Tests: Python `test_worker_preflight_log_carries_producer_known_warning_only_when_rows_are_omitted` (real worker emit; `test_patch_input_safety` 15 OK); WPF `WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal` (real protocol JSON → `PatchLogLines`, `LogLines`, persisted WARN) inside `--owner-quality-only` PASS. Full updater harness, engine/OCR/MT and Setup not rerun (unchanged components reuse the `d517a43` native proof).
+
 ## Candidate
-- App: `C:/v/DEV_RUN/bootstrap-build/VNText.Studio.App.exe` sha256 `13b61771c1a10904a2576e219e7668c611fd9716302ae69d297ec1fb5dfd3400` (dll `7cb408c5…ccf`), Debug, `build-identity.json`, evidence `app-build2.json`.
-- Launcher: `Start-DEV.cmd` sha256 `5a370665…ad8b`, `Start-DEV.ps1` sha256 `fffa9beb…310b` (worker `C:/v/.dev-env/.venv`, cwd `C:/v`, model `opus-mt-en-vi-int8`).
-- Candidate app data: `VNTEXT_LOCALAPPDATA=C:/v/DEV_RUN/bootstrap-build/localappdata`, so settings/journal live in `localappdata/VNTextStudio/` (NOT `data/`). Private prefs reset to Vietnamese / Light / 100% (`wpf_settings.json`) after Root's Dark 120% phase.
+- App: `C:/v/DEV_RUN/bootstrap-build/VNText.Studio.App.exe` sha256 `cb9587f553c87b89307a3e7eeb023de3c47d1732e76c8b9cb239df543c25cd85` (dll `d269c0d9…bdd4`), Debug, from clean source `bf9b878697040b0ed112096128156b0d69761ce5` (`build-identity.json`, evidence `app-build3.json`). Epoch `epoch-20261110-021-quality7`.
+- Launcher (unchanged, works; run `Start-DEV.cmd`, raw `powershell -File` hits the OS script policy): `Start-DEV.cmd` `5a370665…ad8b`, `Start-DEV.ps1` `fffa9beb…310b`; app data `DEV_RUN/bootstrap-build/localappdata/VNTextStudio/`. Prefs Light / 100%.
 - Previous candidate app `DEV_RUN/final-workflow-0.1.17` and Setup `C:/vnrg/candidate-terms-fix/…-Setup.exe` (`24399a11…9921d`) untouched (old payload; no Setup rebuild).
 
-## Gates (separate verdicts; none is a native/UI PASS of the new source)
-- WPF `Workflow.Tests --owner-quality-only` PASS at `d517a43` content, including new `PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep` (real VM/preflight: ready → build → source change), `LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal` (missing manifest ERROR live + persisted; partial preflight WARN; SUCCESS producers) and `AnalyzeBusy_…`.
-- Full harness (no args): 24 failures, all updater tests that need versioned A/B executables not supplied here; everything else passes. Three tests were stale against Root's `9b3493a` partial-patch contract and were updated (AnalyzeComplete clean-scan text, scoped-review readiness is advisory, PartialPackage preflight decides).
-- Backend/OCR/patch proof unchanged since `af36f6a` (real OCR NO_TEXT for WB025/WB113, 48 Python tests, real patch 300/0, one EXE `7a0b995d…`); not rerun.
-
 ## Budget and cleanup
-Base 6.25 GiB (6,710,886,400) + 48 MiB guard; the tooling still records the old 6,912 MiB (not used). Combined 6,495,863,691 B, ~164 MB below the abort line. Disposed via registry: Root's `bootstrap-build/data/native-qa` (74 MB; hash proof archived in `native-qa-fixture-proof.json`), failed `quality-9b3493a`, real-patch fixtures. Retained: `DEV_RUN/quality-b3dd134` (WPF test build, disposable after QA). Compiler server stopped.
+Base 6.25 GiB (6,710,886,400) + 48 MiB guard; no 6.75 reuse. Combined 6,527,458,597 B, ~133 MB below the abort line. Disposed via registry: Root's `native-qa2` fixture (hash proof `native-qa2-fixture-proof.json`) and the WPF test build `DEV_RUN/quality-b3dd134`. No owned process or build is running.
 
-## Native checklist for Root (retest R1–R4 + colours only)
-1. Patch tab after a successful build: card shows "Đã tạo patch từ CSV hiện tại — ghi 300 dòng, bỏ qua 19" (no "Bước 2/3 / pending / review"); second column titled BỎ QUA = 19. Before build: "Sẵn sàng tạo patch — …". After editing/saving the CSV: card asks for a recheck, never "Đã tạo".
-2. Delivery heading names `VNText-VietHoa.exe` (Light and Dark).
-3. Journal (sidebar and Patch log): missing-manifest CSV failure red; partial preflight amber; "Patch read-back PASS" and "Patch tại …" green; ordinary lines neutral; Light/Dark.
-4. Analyze while running: one progress, one engine line, no amber "Đang kiểm tra…" line.
-5. Journal window: the stored ERROR/WARN levels filter correctly.
+## Native check for Root (new worker warning only + colours)
+Build a patch from the Owner CSV copy: the Patch tab log line "Kiểm tra patch — hợp lệ 300, bị chặn 19 …" is amber (Light and Dark); the read-back/created-installer lines stay green; ordinary lines neutral; Journal window shows the persisted WARN.
 
 ## Limits
 Native UI of the new source, other DPI/theme combinations and audible behaviour unverified by DEV. OCR 0/O, 1/l/I confusion is an engine limit. Debug configuration app.
