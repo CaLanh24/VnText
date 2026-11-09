@@ -22,8 +22,12 @@ def emit_ready() -> None:
     emit({"type": "ready"})
 
 
-def emit_log(task_id: str, text: str) -> None:
-    emit({"type": "log", "id": task_id, "text": text})
+def emit_log(task_id: str, text: str, severity: str | None = None) -> None:
+    """Task log line; ``severity`` ("warning"/"error"/"ok") is optional producer-known metadata, never inferred from the text."""
+    msg: dict[str, Any] = {"type": "log", "id": task_id, "text": text}
+    if severity in ("ok", "warning", "error"):
+        msg["severity"] = severity
+    emit(msg)
 
 
 def emit_progress(

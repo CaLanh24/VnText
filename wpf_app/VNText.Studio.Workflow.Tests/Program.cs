@@ -51,6 +51,7 @@ internal static partial class Program
             Run("PatchPreflight_BlocksGarbage", PatchPreflight_BlocksGarbage, qualityFailures);
             Run("PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep", PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep, qualityFailures);
             Run("LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal", LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal, qualityFailures);
+            Run("WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal", WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal, qualityFailures);
             Run("AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning", AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning, qualityFailures);
             Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, qualityFailures);
             Run("LogSeverity_MetadataNotSourceWords", () =>
@@ -1746,6 +1747,32 @@ internal static partial class Program
         AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch read-back PASS — targets=300"));
         AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch tại C:" + System.IO.Path.DirectorySeparatorChar + "Out. Mở VNText-VietHoa.exe"));
         AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Ren'Py: overlay hợp lệ tại game/tl/vietnamese/"));
+    }
+
+    private static void WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        vm.TestBeginTaskLog("sev-patch-log", "patch");
+        // The exact protocol line the worker emits (emit_log with producer-known severity), through the real parser.
+        var warn = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Kiểm tra patch — hợp lệ 300, bị chặn 19\",\"severity\":\"warning\"}")!;
+        var plain = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Ren'Py: đang tạo native overlay.\"}")!;
+        vm.TestHandleWorkerEvent(warn);
+        vm.TestHandleWorkerEvent(plain);
+        var line = vm.PatchLogLines.Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal));
+        AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(line));       // the Patch tab's own task log, not only LogLines
+        Require(line.EndsWith("] Kiểm tra patch — hợp lệ 300, bị chặn 19", StringComparison.Ordinal), "text unchanged: " + line);
+        AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity(vm.PatchLogLines.Last(l => l.Contains("native overlay", StringComparison.Ordinal))));
+        AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(vm.LogLines.Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal))));
+        var persisted = vm.JournalStore.Read(vm.JournalStore.Files()[0]).Split('\n').Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal) && l.Contains("[task sev-patch-log", StringComparison.Ordinal));
+        Require(System.Text.RegularExpressions.Regex.IsMatch(persisted, @"^\S+ \S+ [+-]\d\d:\d\d WARN "), "persisted level: " + persisted);
+        AssertEqual("ERROR", VNText.Studio.App.Converters.LogSeverityConverter.Severity(WorkerLineWithSeverity(vm, "error", "Lỗi nặng 1")));
+    }
+
+    private static string WorkerLineWithSeverity(MainViewModel vm, string severity, string text)
+    {
+        vm.TestHandleWorkerEvent(WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"" + text + "\",\"severity\":\"" + severity + "\"}")!);
+        return vm.PatchLogLines.Last(l => l.Contains(text, StringComparison.Ordinal));
     }
 
     private static void AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning()

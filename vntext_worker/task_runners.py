@@ -47,8 +47,8 @@ def _make_callbacks(
             eta=str(eta).strip() or None if eta is not None else None,
         )
 
-    def log(text: str) -> None:
-        emit_log(task_id, text)
+    def log(text: str, severity: str | None = None) -> None:
+        emit_log(task_id, text, severity)
 
     def complete(payload: dict) -> None:
         extra: dict[str, Any] = {}
@@ -406,7 +406,12 @@ def run_patch_worker(
 
     try:
         preflight = audit_patch_package(csv_path, manifest_path, game_root=src)
-        log(format_preflight_log(preflight))
+        # Rows omitted from the patch make the preflight a warning, decided here from the audit counts (not from the text).
+        preflight_text = format_preflight_log(preflight)
+        if int(preflight.get("blocked", 0) or 0) > 0:
+            log(preflight_text, "warning")
+        else:
+            log(preflight_text)
         if preflight.get("eligible", 0) <= 0:
             msg = "Không có dòng hợp lệ để patch sau kiểm tra chất lượng"
             emit_error(task_id, msg)

@@ -42,18 +42,22 @@ public sealed partial class MainViewModel
         AddTaskProgress(id,message);
     }
 
-    private void AddTaskProgress(string id,string message,string? fallbackTask=null)
+    /// <summary>Worker log severity metadata ("warning"/"error"/"ok") as a display level; anything else stays unmarked (text-derived default).</summary>
+    internal static string? KnownLogLevel(string? severity) => severity switch { "warning" => "WARN", "error" => "ERROR", "ok" => "SUCCESS", _ => null };
+
+    private void AddTaskProgress(string id,string message,string? fallbackTask=null,string? level=null)
     {
         var owner = _logTaskOwners.TryGetValue(id,out var known) ? known : LogOwner(fallbackTask);
         if (string.IsNullOrWhiteSpace(message)) return;
         var content = message.Trim();
-        PersistJournal($"[task {id} / {(owner.Length == 0 ? "other" : owner)}] {content}");        // general audit copy (sidebar Journal)
+        PersistJournal($"[task {id} / {(owner.Length == 0 ? "other" : owner)}] {content}", level);        // general audit copy (sidebar Journal)
         if (owner == WorkflowTabs.Extract) { AddExtractRunLine(id, content); return; }              // complete, never truncated or evicted
         var lines = owner switch { WorkflowTabs.Translate => TranslateLogLines, WorkflowTabs.Patch => PatchLogLines, _ => null };
         if (lines is null) return;
 
         if (lines.Count > 0 && lines[^1].EndsWith("] " + content,StringComparison.Ordinal)) return;
-        lines.Add($"[{DateTime.Now:HH:mm:ss}] {content}");
+        var stamped = $"[{DateTime.Now:HH:mm:ss}] {content}";
+        lines.Add(level is null ? stamped : VNText.Studio.App.Converters.LogSeverityConverter.Mark(stamped, level));
 
     }
 

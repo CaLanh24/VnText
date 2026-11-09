@@ -138,8 +138,9 @@ public sealed partial class MainViewModel
             case "log":
                 if (!string.IsNullOrWhiteSpace(evt.Text))
                 {
-                    AppendLog(evt.Text);
-                    AddTaskProgress(evt.Id, evt.Text); // retain the whole owned task log, not just errors
+                    var level = KnownLogLevel(evt.Severity);
+                    AppendLog(evt.Text, level);
+                    AddTaskProgress(evt.Id, evt.Text, level: level); // retain the whole owned task log, not just errors
                 }
                 break;
             case "progress":

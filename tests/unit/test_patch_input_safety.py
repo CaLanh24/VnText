@@ -204,6 +204,25 @@ class PatchInputSafetyTests(unittest.TestCase):
         self.assertIn("COPY_TO_GAME_ROOT/dialogue.txt", verify_bundle(delivery / "VNText-VietHoa.exe")["files"])
         self.assertFalse((self.package / ".patch-build").exists())                                   # the bulk stage never lingers
 
+    def test_worker_preflight_log_carries_producer_known_warning_only_when_rows_are_omitted(self):
+        from vntext_worker import task_runners
+        for blocked, expected in ((3, "warning"), (0, None)):
+            events = []
+
+            def fake_task(csv_path, manifest_path, src, patch_out, *, complete, patch_out_override, **kwargs):
+                complete({"ok": True, "summary": "ok", "complete": True})
+
+            audit = {"ok": True, "eligible": 2, "blocked": blocked, "summary": f"Kiểm tra patch — hợp lệ 2, bị chặn {blocked}", "reason_counts": {}}
+            with self.subTest(blocked=blocked), patch("vntext_worker.protocol.emit", side_effect=events.append), \
+                    patch("vntext.patch_gate.audit_patch_package", return_value=audit), \
+                    patch("vntext_worker.task_runners.run_patch_task", side_effect=fake_task):
+                task_runners.run_patch_worker("sev-patch", {"src": str(self.game), "out": str(self.package),
+                                              "csv_path": str(self.csv), "manifest_path": str(self.manifest)}, lambda: False)
+                logs = [e for e in events if e.get("type") == "log" and "Kiểm tra patch" in str(e.get("text"))]
+                self.assertEqual(1, len(logs), events)
+                self.assertEqual(expected, logs[0].get("severity"))
+                self.assertEqual(audit["summary"], logs[0]["text"])                  # text unchanged; severity is metadata only
+
     def test_worker_reports_missing_installer_as_error_and_still_cleans_the_stage(self):
         completed = self._run_worker_with_installer_manifest(None)
         self.assertEqual(1, len(completed)); self.assertFalse(completed[0]["ok"], completed[0])
