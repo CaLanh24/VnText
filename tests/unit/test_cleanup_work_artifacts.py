@@ -3662,6 +3662,23 @@ class CleanupLifecycleTests(unittest.TestCase):
             again = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
             self.assertFalse(again["ok"]); self.assertIn("release_scope_recovery_already_active", again["reasons"])
 
+    def test_recovery_generation_is_reactivated_after_a_transition_marks_it_missing_and_old_proof_stays(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            task_id, scope = self._consumed_017_scope(root, manifest)
+            result = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
+            self.assertTrue(result["ok"], result)
+            new_id = result["new_entry_id"]
+            old = json.dumps(next(e for e in self._manifest_entries(manifest) if e["id"] == task_id), sort_keys=True)
+            paths.set_artifact_status(new_id, "MISSING", lifecycle="MISSING", purpose="an epoch transition marks absent scope roots missing")     # no deletion proof
+            self.assertEqual("terminal-default", cleanup._release_task_budget_profile(root)[2])
+            again = cleanup.register_release_task_scope()
+            self.assertTrue(again["ok"], again); self.assertTrue(again.get("reactivated"), again)
+            entries = self._manifest_entries(manifest)
+            self.assertEqual(old, json.dumps(next(e for e in entries if e["id"] == task_id), sort_keys=True))              # old proof untouched
+            active = [e for e in entries if cleanup._path_key(e.get("path", "")) == cleanup._path_key(scope) and e.get("lifecycle") != "MISSING"]
+            self.assertEqual([new_id], [e["id"] for e in active])
+            self.assertEqual(task_id, cleanup._release_task_budget_profile(root)[2])
+
     def test_release_scope_recovery_refusals_write_nothing(self):
         with self.isolated_workspace() as (root, _work, _game, manifest):
             task_id, scope = self._consumed_017_scope(root, manifest)

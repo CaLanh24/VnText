@@ -2675,9 +2675,13 @@ def register_release_task_scope() -> dict:
                 matches.append(entry)
         except (KeyError, TypeError, ValueError, OSError):
             return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+    # A scope generation that was consumed with deletion proof stays terminal history; other release_task_scope generations (for example the recovery
+    # generation, which has no deletion proof) are the only candidates for the ordinary non-deleted MISSING -> DISPOSABLE reactivation.
+    live_matches = [e for e in matches if not (str(e.get("lifecycle") or "").upper() == "MISSING" and e.get("deletion_provenance"))
+                    and str(e.get("kind") or "") == "release_task_scope"]
     if matches:
-        if len(matches) == 1:
-            entry = matches[0]
+        if len(live_matches) == 1 and len([e for e in matches if e is not live_matches[0] and str(e.get("lifecycle") or "").upper() != "MISSING"]) == 0:
+            entry = live_matches[0]
             provenance = entry.get("provenance") if isinstance(entry.get("provenance"), dict) else {}
             reactivatable = (
                 str(entry.get("lifecycle") or "").upper() == "MISSING"
@@ -2696,7 +2700,7 @@ def register_release_task_scope() -> dict:
                 and str(provenance.get("scope_root") or "") == str(scope)
             )
             if reactivatable:
-                set_artifact_status(task_id, "DISPOSABLE", lifecycle="DISPOSABLE")
+                set_artifact_status(str(entry.get("id") or task_id), "DISPOSABLE", lifecycle="DISPOSABLE")
                 refreshed, _raw, refresh_errors = _strict_registry_snapshot()
                 if refresh_errors:
                     return {"ok": False, "reasons": refresh_errors}
