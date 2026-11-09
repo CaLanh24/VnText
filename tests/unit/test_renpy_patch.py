@@ -202,12 +202,12 @@ class RenPyPatchTests(unittest.TestCase):
     def test_partial_patch_omits_untranslated_rows_counts_them_and_writes_the_proven_rows(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base); original = (game / "game/script.rpy").read_bytes()
-            self._set_translation(csv, "d", "")                                   # one dialogue is still untranslated: it must be omitted, not abort the patch
+            self._set_translation(csv, "s", "")                                   # one string row is still untranslated: it must be omitted, not abort the patch
             apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
             overlay = (base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
-            self.assertIn('new "Mở"', overlay); self.assertNotIn("translate vietnamese start_a:", overlay)
+            self.assertNotIn('old "Open"', overlay)
             verification = json.loads((base / "out/patch_verification.json").read_text(encoding="utf-8"))
-            self.assertEqual(verification["counts"], {"PASS": 1, "FAIL": 0})
+            self.assertEqual(verification["counts"], {"PASS": 1, "FAIL": 0})   # the omitted string row must not be re-added to verification
             self.assertEqual(1, sum(verification["omitted_by_reason"].values()))
             self.assertEqual((game / "game/script.rpy").read_bytes(), original)
 

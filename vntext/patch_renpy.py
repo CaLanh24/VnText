@@ -587,12 +587,14 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     archive_cache: dict[Path, RenPyArchive] = {}
     archive_identities: dict[Path, str] = {}
     omitted_by_reason: dict[str, int] = {}
+    omitted_keys: set[str] = set()
     for entry in entries:
         key = str(entry.get("key") or "")
         row = rows.get(key)
         if not isinstance(row, dict):
             # read_translation_rows drops blank translations, so a manifest entry without a row is simply untranslated.
             omitted_by_reason["untranslated"] = omitted_by_reason.get("untranslated", 0) + 1
+            omitted_keys.add(key)
             continue
         translation = str(row.get("translation") or "")
         skip_reason = patch_skip_reason(entry, translation, set())
@@ -600,6 +602,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # Partial patch: a row without a proven, reviewed-by-the-gate translation (untranslated, technical control, unsafe text) is OMITTED and counted;
             # it is never written.  Structural problems (missing row, contract, identity) above and below still abort the whole patch.
             omitted_by_reason[skip_reason] = omitted_by_reason.get(skip_reason, 0) + 1
+            omitted_keys.add(key)
             continue
         locator = entry.get("locator") if isinstance(entry.get("locator"), dict) else {}
         contract_reason = validate_renpy_contract(entry)
@@ -785,7 +788,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     except Exception as exc:  # noqa: BLE001 - fail closed at the patch boundary.
         raise RenPyPatchError(f"Ren'Py activation generation failed: {exc}") from exc
     verification_entries, verification_records = _build_verification_records(
-        entries,
+        [entry for entry in entries if str(entry.get("key") or "") not in omitted_keys],
         dialogues,
         target,
         already_satisfied,
