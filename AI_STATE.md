@@ -1,33 +1,36 @@
-# Current checkpoint — 2026-11-10 Owner quality batch (candidate ready for Root native QA)
+# Current checkpoint — 2026-11-10 Owner quality batch, native round-1 corrections (R1–R4)
 
 ## Authority and writer
-Local only: no push, release, version or tag. Public 0.1.17 immutable. Owner data (`Desktop/vntextapp/data/output`, game, saves) read-only and unchanged. Source writer is DEV again (Root's temporary quota commits `9b3493a`, `5f874f2`, `b3dd134` reviewed). Root is sole UI owner. No owned process, build or fixture is running.
+Local only: no push, release, version or tag. Public 0.1.17 immutable. Owner data (`Desktop/vntextapp/data/output`, game, saves) read-only and unchanged. DEV is the source writer; Root is sole UI owner (native round 1 at `af36f6a` PASSED the core flow; receipts `C:/vnrg/evidence/quality-batch/root-native-round1.json`, `native-*.png`, bound to `af36f6a`). No owned process, build or fixture is running.
 
 ## Source
-HEAD `af36f6af9b80add3fcf33f3d9465da634c7d20ba`, tree clean, epoch `epoch-20261110-019-quality5`. DEV fixes on top of Root's `b3dd134`: `b41a00d` / `af36f6a` — the Ren'Py partial patch writer now OMITS ineligible rows (technical control, untranslated/blank) and counts them in `patch_verification.json["omitted_by_reason"]` / `import_report.txt` instead of aborting with "entry is not eligible"; omitted rows are no longer re-added to the verification records. Structural/identity/contract errors still abort. WPF code is unchanged since `b3dd134`.
+App/code source `d517a43dfd57bb166c09128807544ae491d5eb36` (tree clean when built); a docs-only commit follows it. Epoch `epoch-20261110-020-quality6`. Earlier: `b41a00d`/`af36f6a` partial Ren'Py patch writer omits and counts ineligible rows (300 patched / 11 technical omitted, readback PASS 300).
+Round-1 corrections in `d517a43` (WPF only; Python worker unchanged):
+- R1 Patch summary card: own `PatchStatusText` (Building / ready — N rows written, M omitted / built from the CURRENT CSV / needs recheck / blocked) instead of the Translate step line; "BỎ QUA" (omitted) replaces "BỊ CHẶN" when `PatchPartialReady`. "Built" comes only from the patch task's own completion (`PatchDeliveryReady`), cleared by any source change/save; Validate or an old artifact never implies it.
+- R2 severity by producer: `AppendLog(line, level)` + `LogSeverityConverter.Mark` (live display) and `AppJournalStore.Append(.., level)` (persisted ERROR/WARN). Explicit: CSV validation failure ERROR, preflight with omitted rows WARN, preflight failure ERROR. Worker lines `Patch read-back PASS` and `Patch tại …` are SUCCESS. Text, order, history unchanged.
+- R3 delivery heading names the produced file (`VNText-VietHoa.exe`); a folder payload uses the installer named by the worker's own instructions; no fixed stub name otherwise.
+- R4 busy Analyze no longer shows the amber duplicate "Đang kiểm tra…" line (real scan errors still appear on completion).
 
 ## Candidate
-- App: `C:/v/DEV_RUN/bootstrap-build/VNText.Studio.App.exe` sha256 `cf3a95f85a9b607007c3bade1ab204e02943c6a5a5af8fd70cc867fb27d479ce` (dll `fe14235a…4700`), Debug, built from clean `af36f6a` (`build-identity.json`, evidence `app-build.json`).
-- Launcher: `C:/v/DEV_RUN/bootstrap-build/Start-DEV.cmd` (sha256 `5a370665…ad8b`) + `Start-DEV.ps1` (`fffa9beb…310b`); worker `C:/v/.dev-env/.venv`, worker cwd `C:/v`, model `.dev-env/cache/models/opus-mt-en-vi-int8`, data under `DEV_RUN/bootstrap-build/data`.
-- Previous candidate app `DEV_RUN/final-workflow-0.1.17` and Setup `C:/vnrg/candidate-terms-fix/…-Setup.exe` (sha `24399a11…9921d`) are untouched; that Setup carries the old payload (no Setup rebuild for this batch).
+- App: `C:/v/DEV_RUN/bootstrap-build/VNText.Studio.App.exe` sha256 `13b61771c1a10904a2576e219e7668c611fd9716302ae69d297ec1fb5dfd3400` (dll `7cb408c5…ccf`), Debug, `build-identity.json`, evidence `app-build2.json`.
+- Launcher: `Start-DEV.cmd` sha256 `5a370665…ad8b`, `Start-DEV.ps1` sha256 `fffa9beb…310b` (worker `C:/v/.dev-env/.venv`, cwd `C:/v`, model `opus-mt-en-vi-int8`).
+- Candidate app data: `VNTEXT_LOCALAPPDATA=C:/v/DEV_RUN/bootstrap-build/localappdata`, so settings/journal live in `localappdata/VNTextStudio/` (NOT `data/`). Private prefs reset to Vietnamese / Light / 100% (`wpf_settings.json`) after Root's Dark 120% phase.
+- Previous candidate app `DEV_RUN/final-workflow-0.1.17` and Setup `C:/vnrg/candidate-terms-fix/…-Setup.exe` (`24399a11…9921d`) untouched (old payload; no Setup rebuild).
 
-## Gates (separate verdicts; none is native/UI PASS)
-- WPF `Workflow.Tests --owner-quality-only` PASS at `b3dd134` (build exit 0, component unchanged since; reused, not rerun).
-- Python focused: `test_renpy_patch` + `test_patch_input_safety` 48 OK at `af36f6a` (includes the new partial-omission regression); Root's 116-test gate at `9b3493a`.
-- Real OCR (Owner photos WB025/WB113, source unchanged): both `NO_TEXT`; synthetic positives detected. "OK" is read as "0K" by Windows OCR, so positives are compared modulo O/0 and I/l/1 — NOT an exact-transcription PASS.
-- Real patch (Owner CSV/manifest copied into a registered fixture, game read-only): preflight eligible 300 / blocked 19 (11 technical_control + 8 review_only); worker terminal ok; ONE EXE (sha256 `7a0b995d…80dd`); readback PASS 300 / FAIL 0 = exactly the eligible rows; 11 technical rows omitted and counted, 8 review rows unpatched; coverage scope `VERIFIED_MAIN_SUBSET`. Owner files unchanged. Evidence `C:/vnrg/evidence/quality-batch/` (`final-gates2.json`, `actual-patch.json`, `real-ocr.log`).
-- Wrapper `REVIEW_REQUIRED` is only protected epoch history.
+## Gates (separate verdicts; none is a native/UI PASS of the new source)
+- WPF `Workflow.Tests --owner-quality-only` PASS at `d517a43` content, including new `PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep` (real VM/preflight: ready → build → source change), `LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal` (missing manifest ERROR live + persisted; partial preflight WARN; SUCCESS producers) and `AnalyzeBusy_…`.
+- Full harness (no args): 24 failures, all updater tests that need versioned A/B executables not supplied here; everything else passes. Three tests were stale against Root's `9b3493a` partial-patch contract and were updated (AnalyzeComplete clean-scan text, scoped-review readiness is advisory, PartialPackage preflight decides).
+- Backend/OCR/patch proof unchanged since `af36f6a` (real OCR NO_TEXT for WB025/WB113, 48 Python tests, real patch 300/0, one EXE `7a0b995d…`); not rerun.
 
 ## Budget and cleanup
-Base 6.25 GiB (6,710,886,400) + 48 MiB guard; the tooling still records the temporary 6,912 MiB (not used). Combined now 6,435,430,971 B, 225 MB to the abort line. Disposed through the registry: failed `DEV_RUN/quality-9b3493a`, both real-patch fixtures (`dispose-*.json`). Retained: `DEV_RUN/quality-b3dd134` (WPF test build, disposable after QA). The compiler server started by the build was stopped.
+Base 6.25 GiB (6,710,886,400) + 48 MiB guard; the tooling still records the old 6,912 MiB (not used). Combined 6,495,863,691 B, ~164 MB below the abort line. Disposed via registry: Root's `bootstrap-build/data/native-qa` (74 MB; hash proof archived in `native-qa-fixture-proof.json`), failed `quality-9b3493a`, real-patch fixtures. Retained: `DEV_RUN/quality-b3dd134` (WPF test build, disposable after QA). Compiler server stopped.
 
-## Native checklist for Root (finite; not yet run)
-1. Launch `Start-DEV.cmd`; scale 100% and 120%, Light and Dark.
-2. Analyze: ONE progress bar/line only; engine status is a single concise NextAction line.
-3. Journal/log: smaller font; success green, warning amber, error red in both themes; Translate/Patch history not truncated; warning card concise.
-4. Extract/Translate on a folder with the Owner photos (WB025, WB113): no text rows, no MT, no rendered output. A real text image still gets rows.
-5. CSV: Achievement/strftime/`[a.stat_progress]`/`[config.name!t]`/`<`/`>`/`{#quick_page}Q`/`{#auto_page}A`/`[page]` rows are technical (skipped); "Mute All" stays a translatable label.
-6. Patch with 5 pending / 8 review: ONE confirmation naming included and omitted counts; icons/counts consistent; review is advisory; no-writeback/dynamic rows are not forced in; one patch EXE produced.
+## Native checklist for Root (retest R1–R4 + colours only)
+1. Patch tab after a successful build: card shows "Đã tạo patch từ CSV hiện tại — ghi 300 dòng, bỏ qua 19" (no "Bước 2/3 / pending / review"); second column titled BỎ QUA = 19. Before build: "Sẵn sàng tạo patch — …". After editing/saving the CSV: card asks for a recheck, never "Đã tạo".
+2. Delivery heading names `VNText-VietHoa.exe` (Light and Dark).
+3. Journal (sidebar and Patch log): missing-manifest CSV failure red; partial preflight amber; "Patch read-back PASS" and "Patch tại …" green; ordinary lines neutral; Light/Dark.
+4. Analyze while running: one progress, one engine line, no amber "Đang kiểm tra…" line.
+5. Journal window: the stored ERROR/WARN levels filter correctly.
 
 ## Limits
-Native UI, all DPI/theme combinations and audible behaviour unverified by DEV. OCR confusables (0/O, 1/l/I) are an engine limit. Debug configuration app.
+Native UI of the new source, other DPI/theme combinations and audible behaviour unverified by DEV. OCR 0/O, 1/l/I confusion is an engine limit. Debug configuration app.
