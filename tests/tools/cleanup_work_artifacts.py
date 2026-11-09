@@ -2718,6 +2718,123 @@ def register_release_task_scope() -> dict:
     return {"ok": True, "registered": True, "path": str(scope), "lifecycle": "DISPOSABLE"}
 
 
+# Owner 2026-11-09: "Cho phép, kiểm nốt Setup đi, có lỗi thì sửa luôn rồi đưa t bản hoàn chỉnh để test."  Root narrowed this to ONE explicit recovery for the
+# release-0.1.17 scope whose root was consumed by an approved disposal (the registry then refuses reactivation by design).
+RELEASE_SCOPE_RECOVERY_AUTHORIZATION = "Cho phép, kiểm nốt Setup đi, có lỗi thì sửa luôn rồi đưa t bản hoàn chỉnh để test."
+
+
+def recover_release_task_scope(expected_manifest_sha256: str | None, owner_authorization: str | None) -> dict:
+    """Create ONE new-generation budget scope entry for the same release task after its scope root was consumed.
+
+    This is NOT automatic reactivation.  The old MISSING entry keeps its deletion proof byte for byte; a second entry (new unique id, same exact
+    ``_task_scope_path``, zero bytes, DISPOSABLE) is added under a registry compare-and-swap, with lineage to the consumed entry.  It requires an explicit
+    invocation tied to the Owner's authorization quote and to the registry hash the caller read, a clean HEAD that equals the active epoch/budget source,
+    the exact version, no existing path, and at most one active scope at that path.
+    """
+    from work_paths import RegistryChanged, register_artifacts
+    task_id, version, approval = _release_budget_spec()
+    if task_id != RELEASE_TASK_0117_BUDGET_ID:
+        return {"ok": False, "reasons": ["release_scope_recovery_wrong_task"]}
+    if owner_authorization != RELEASE_SCOPE_RECOVERY_AUTHORIZATION:
+        return {"ok": False, "reasons": ["release_scope_recovery_authorization_missing"]}
+    digest = str(expected_manifest_sha256 or "").strip().lower()
+    if len(digest) != 64:
+        return {"ok": False, "reasons": ["release_scope_recovery_cas_missing"]}
+    manifest, _raw, errors = _strict_registry_snapshot()
+    if errors:
+        return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+    if hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest() != digest:
+        return {"ok": False, "reasons": ["release_scope_recovery_cas_mismatch"]}
+    epoch = manifest.get("prospective_epoch")
+    if not isinstance(epoch, dict) or _epoch_verify_files(epoch, manifest=manifest):
+        return {"ok": False, "reasons": ["release_task_epoch_invalid"]}
+    budget = epoch.get("release_task_budget")
+    scope = _task_scope_path(ROOT, task_id, version)
+    state = _git_repository_state()
+    if (
+        not isinstance(budget, dict)
+        or budget.get("task_id") != task_id
+        or budget.get("limit_bytes") != _release_task_budget_limit(task_id)
+        or budget.get("owner_approval") != approval
+        or budget.get("scope_path") != str(scope)
+        or budget.get("source_sha") != state.get("head")
+        or epoch.get("source_sha") != state.get("head")
+        or state.get("dirty")
+        or (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() != version
+    ):
+        return {"ok": False, "reasons": ["release_task_budget_scope_or_source_mismatch"]}
+    if os.path.lexists(scope):
+        return {"ok": False, "reasons": ["release_scope_recovery_scope_path_exists"]}
+    consumed = []
+    for entry in manifest.get("artifacts", []):
+        if not isinstance(entry, dict):
+            return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+        try:
+            at_scope = _path_key(_entry_path(entry)) == _path_key(scope)
+        except (KeyError, TypeError, ValueError, OSError):
+            return {"ok": False, "reasons": ["release_task_registry_invalid"]}
+        if str(entry.get("id") or "").startswith(task_id + ":recovery:") and str(entry.get("lifecycle") or "").upper() != "MISSING":
+            return {"ok": False, "reasons": ["release_scope_recovery_already_active"]}
+        if not at_scope:
+            continue
+        if str(entry.get("lifecycle") or "").upper() != "MISSING":
+            return {"ok": False, "reasons": ["release_scope_recovery_active_scope_exists"]}
+        consumed.append(entry)
+    if len(consumed) != 1:
+        return {"ok": False, "reasons": ["release_scope_recovery_consumed_entry_not_unique"]}
+    old = consumed[0]
+    proof = old.get("deletion_provenance")
+    if (
+        str(old.get("id") or "") != task_id
+        or str(old.get("kind") or "") != "release_task_scope"
+        or str(old.get("owner") or "") != task_id
+        or str(old.get("scope_id") or "") != task_id
+        or str(old.get("run_id") or "") != task_id
+        or str(old.get("scope_root") or "") != str(scope)
+        or old.get("bytes") != 0
+        or not isinstance(proof, dict)
+        or proof.get("result") != "deleted"
+        or _path_key(proof.get("path", "")) != _path_key(scope)
+    ):
+        return {"ok": False, "reasons": ["release_scope_recovery_consumed_entry_not_exact"]}
+    old_sha = hashlib.sha256(json.dumps(old, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+    new_id = f"{task_id}:recovery:{old_sha[:12]}"
+    if any(str(entry.get("id") or "") == new_id for entry in manifest.get("artifacts", [])):
+        return {"ok": False, "reasons": ["release_scope_recovery_replay"]}
+    try:
+        register_artifacts(
+            [{
+                "artifact_id": new_id,
+                "path": scope,
+                "kind": "release_task_scope",
+                "created_by": "cleanup_work_artifacts.py",
+                "owner": task_id,
+                "purpose": "Owner-authorized release scope recovery: new generation after the consumed scope root (lineage in provenance)",
+                "lifecycle": "DISPOSABLE",
+                "scope_id": task_id,
+                "run_id": task_id,
+                "scope_root": scope,
+                "size_bytes": 0,
+                "provenance": {
+                    "source_sha": epoch.get("source_sha"), "epoch_id": epoch.get("epoch_id"),
+                    "recovery_of": task_id, "consumed_entry_sha256": old_sha, "consumed_deleted_at": proof.get("deleted_at"),
+                    "consumed_scope_id": proof.get("scope_id"), "manifest_sha256_before": digest,
+                    "owner_authorization_sha256": hashlib.sha256(RELEASE_SCOPE_RECOVERY_AUTHORIZATION.encode("utf-8")).hexdigest(),
+                },
+            }],
+            expected_manifest_sha256=digest,
+        )
+    except RegistryChanged:
+        return {"ok": False, "reasons": ["release_scope_recovery_cas_mismatch"]}
+    refreshed, _raw, refresh_errors = _strict_registry_snapshot()
+    if refresh_errors:
+        return {"ok": False, "reasons": refresh_errors}
+    limit, error, profile = _release_task_budget_profile_for_manifest(ROOT, refreshed, state)
+    if error or profile != task_id or limit != _release_task_budget_limit(task_id):
+        return {"ok": False, "reasons": [error or "release_scope_recovery_profile_not_restored"]}
+    return {"ok": True, "recovered": True, "new_entry_id": new_id, "consumed_entry_sha256": old_sha, "path": str(scope), "limit_bytes": limit, "profile": profile}
+
+
 def _release_task_budget_profile_for_manifest(root: Path, manifest: dict, state: dict) -> tuple[int, str | None, str]:
     """Internal profile resolver when a strict manifest and Git state are already read."""
     task_id, version, approval = _release_budget_spec()
@@ -5798,6 +5915,8 @@ def main() -> int:
     ap.add_argument("--owner-rebaseline-authorization", default=None)
     ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
+    ap.add_argument("--recover-release-task-scope", action="store_true", help="explicit one-shot CAS recovery of a consumed release-0.1.17 scope (needs --expected-manifest-sha256 and --owner-scope-recovery-authorization)")
+    ap.add_argument("--owner-scope-recovery-authorization", default=None)
     ap.add_argument(
         "--owner-reset-authorization",
         default=None,
@@ -5816,6 +5935,10 @@ def main() -> int:
     args = ap.parse_args()
     if args.release_task_id:
         os.environ["VNTEXT_RELEASE_TASK_ID"] = args.release_task_id
+    if args.recover_release_task_scope:
+        result = recover_release_task_scope(args.expected_manifest_sha256, args.owner_scope_recovery_authorization)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("ok") else 1
     if args.register_release_task_scope:
         result = register_release_task_scope()
         print(json.dumps(result, ensure_ascii=False, indent=2))

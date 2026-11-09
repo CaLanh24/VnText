@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import shutil
@@ -3611,6 +3612,83 @@ class CleanupLifecycleTests(unittest.TestCase):
                         unchanged = next(item for item in json.loads(manifest.read_text(encoding="utf-8"))["artifacts"] if item["id"] == task_id)
                         self.assertEqual("MISSING", unchanged["lifecycle"])
                         self.assertEqual({"result": "deleted", "reason": "fixture only"}, unchanged["deletion_provenance"])
+
+    def _consumed_017_scope(self, root, manifest):
+        """release-0.1.17 epoch + registered scope, then the scope root is consumed by an approved disposal (MISSING + deletion proof)."""
+        task_id = cleanup.RELEASE_TASK_0117_BUDGET_ID
+        (root / "VERSION.txt").write_text("0.1.17\n", encoding="utf-8")
+        git_guard, incident_guard = self._epoch_guards()
+        stack = contextlib.ExitStack()
+        stack.enter_context(git_guard); stack.enter_context(incident_guard); stack.enter_context(patch.object(cleanup, "ROOT", root))
+        stack.enter_context(patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}))
+        self.addCleanup(stack.close)
+        applied = cleanup.activate_prospective_epoch(dry_run=False, epoch_id="epoch-recovery", source_sha="test-sha", release_task_id=task_id)
+        self.assertTrue(applied["ok"], applied)
+        self.assertTrue(cleanup.register_release_task_scope()["ok"])
+        scope = cleanup._task_scope_path(root, task_id, "0.1.17")
+        proof = {"schema_version": 1, "deleted_at": "2026-11-09T07:06:57Z", "deleted_by": "cleanup_after_test", "path": str(scope), "bytes": 424284354,
+                 "scope_id": "native-setup-r3-consumed", "run_id": "native-setup-r3-consumed", "result": "deleted"}
+        paths.set_artifact_status(task_id, "MISSING", lifecycle="MISSING", purpose="consumed by approved disposal", deletion_provenance=proof, bytes=0)
+        return task_id, scope
+
+    def _manifest_entries(self, manifest):
+        return json.loads(manifest.read_text(encoding="utf-8"))["artifacts"]
+
+    def test_release_scope_recovery_adds_one_new_generation_and_keeps_the_deletion_proof(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            task_id, scope = self._consumed_017_scope(root, manifest)
+            self.assertEqual("terminal-default", cleanup._release_task_budget_profile(root)[2])
+            self.assertFalse(cleanup.register_release_task_scope()["ok"])                      # existing refusal is unchanged
+            before = next(e for e in self._manifest_entries(manifest) if e["id"] == task_id)
+            before_bytes = json.dumps(before, sort_keys=True)
+            digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+            result = cleanup.recover_release_task_scope(digest, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
+            self.assertTrue(result["ok"], result)
+            entries = self._manifest_entries(manifest)
+            self.assertEqual(before_bytes, json.dumps(next(e for e in entries if e["id"] == task_id), sort_keys=True))     # old proof fields unchanged
+            active = [e for e in entries if cleanup._path_key(e.get("path", "")) == cleanup._path_key(scope) and e.get("lifecycle") != "MISSING"]
+            self.assertEqual(1, len(active))
+            new = active[0]
+            self.assertEqual(result["new_entry_id"], new["id"]); self.assertNotEqual(task_id, new["id"])
+            self.assertEqual(("DISPOSABLE", "release_task_scope", task_id, task_id, task_id, 0), (new["lifecycle"], new["kind"], new["owner"], new["scope_id"], new["run_id"], new["bytes"]))
+            self.assertEqual(task_id, new["provenance"]["recovery_of"]); self.assertEqual(digest, new["provenance"]["manifest_sha256_before"])
+            limit, error, profile = cleanup._release_task_budget_profile(root)
+            self.assertEqual((cleanup._release_task_budget_limit(task_id), None, task_id), (limit, error, profile))
+            self.assertEqual(6710886400, limit)                                                  # the already authorised 6.25 GiB, nothing raised
+            # replay / second generation is refused
+            again = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
+            self.assertFalse(again["ok"]); self.assertIn("release_scope_recovery_already_active", again["reasons"])
+
+    def test_release_scope_recovery_refusals_write_nothing(self):
+        with self.isolated_workspace() as (root, _work, _game, manifest):
+            task_id, scope = self._consumed_017_scope(root, manifest)
+            good = hashlib.sha256(manifest.read_bytes()).hexdigest()
+            quote = cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION
+            snapshot = manifest.read_bytes()
+            cases = {
+                "release_scope_recovery_authorization_missing": (good, "Cho phép"),
+                "release_scope_recovery_cas_missing": (None, quote),
+                "release_scope_recovery_cas_mismatch": ("0" * 64, quote),
+            }
+            for reason, (cas, auth) in cases.items():
+                refused = cleanup.recover_release_task_scope(cas, auth)
+                self.assertFalse(refused["ok"], refused); self.assertIn(reason, refused["reasons"])
+            with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_016_BUDGET_ID}):          # wrong task
+                refused = cleanup.recover_release_task_scope(good, quote)
+                self.assertIn("release_scope_recovery_wrong_task", refused["reasons"])
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": "other-sha", "dirty": False, "error": ""}):       # wrong source
+                self.assertIn("release_task_budget_scope_or_source_mismatch", cleanup.recover_release_task_scope(good, quote)["reasons"])
+            with patch.object(cleanup, "_git_repository_state", return_value={"head": "test-sha", "dirty": True, "error": ""}):
+                self.assertFalse(cleanup.recover_release_task_scope(good, quote)["ok"])
+            scope.mkdir(parents=True)                                                              # the scope path must still be absent
+            self.assertIn("release_scope_recovery_scope_path_exists", cleanup.recover_release_task_scope(good, quote)["reasons"])
+            scope.rmdir()
+            self.assertEqual(snapshot, manifest.read_bytes())                                     # no refusal touched the registry
+            # an already active scope at that path is ambiguity
+            paths.register_artifact(artifact_id="rogue-active-scope", path=scope, kind="release_task_scope", created_by="cleanup_work_artifacts.py", owner=task_id,
+                                    purpose="rogue", lifecycle="DISPOSABLE", scope_id=task_id, run_id=task_id, scope_root=scope, size_bytes=0)
+            rogue = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), quote)
+            self.assertFalse(rogue["ok"]); self.assertIn("release_scope_recovery_active_scope_exists", rogue["reasons"])
 
     def test_release_012_expanded_budget_preserves_old_epoch_verifiability(self):
         task_id = cleanup.RELEASE_TASK_012_BUDGET_ID
