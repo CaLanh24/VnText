@@ -3629,6 +3629,9 @@ class CleanupLifecycleTests(unittest.TestCase):
         proof = {"schema_version": 1, "deleted_at": "2026-11-09T07:06:57Z", "deleted_by": "cleanup_after_test", "path": str(scope), "bytes": 424284354,
                  "scope_id": "native-setup-r3-consumed", "run_id": "native-setup-r3-consumed", "result": "deleted"}
         paths.set_artifact_status(task_id, "MISSING", lifecycle="MISSING", purpose="consumed by approved disposal", deletion_provenance=proof, bytes=0)
+        paths.register_artifact(artifact_id="run:native-setup-r3-consumed:" + str(scope), path=scope, kind="test_output", created_by="cleanup_work_artifacts.py", owner="cleanup",
+                                purpose="the disposal's own run record", lifecycle="DISPOSABLE", scope_id="native-setup-r3-consumed", run_id="native-setup-r3-consumed", scope_root=scope, size_bytes=0)
+        paths.set_artifact_status("run:native-setup-r3-consumed:" + str(scope), "MISSING", lifecycle="MISSING", purpose="consumed")
         return task_id, scope
 
     def _manifest_entries(self, manifest):

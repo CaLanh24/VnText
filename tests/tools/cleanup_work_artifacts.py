@@ -2779,7 +2779,8 @@ def recover_release_task_scope(expected_manifest_sha256: str | None, owner_autho
             continue
         if str(entry.get("lifecycle") or "").upper() != "MISSING":
             return {"ok": False, "reasons": ["release_scope_recovery_active_scope_exists"]}
-        consumed.append(entry)
+        if str(entry.get("id") or "") == task_id and str(entry.get("kind") or "") == "release_task_scope":
+            consumed.append(entry)          # other MISSING records at the path (the disposal's own run record) are harmless history
     if len(consumed) != 1:
         return {"ok": False, "reasons": ["release_scope_recovery_consumed_entry_not_unique"]}
     old = consumed[0]
