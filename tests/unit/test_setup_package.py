@@ -444,6 +444,9 @@ foreach ($function in $functions) {{ . ([scriptblock]::Create($function.Extent.T
             self.assertIn("ShowOriginalIntelEula(eula)", setup_source)
             install_source = setup_source[setup_source.index("private static int Install(string[] args)"):setup_source.index("private const string ShortcutRecordName")]
             self.assertIn("try { accepted = ConfirmIntelTerms(); }", install_source)
+            self.assertLess(install_source.index("termsVietnamese = UseVietnamese(args)"), install_source.index("ConfirmIntelTerms()"))   # /lang applies to the legal chrome too
+            for localized in ("Chấp nhận và tiếp tục", "Từ chối", "Xem thỏa thuận Intel gốc"):
+                self.assertIn(localized, setup_source)
             self.assertLess(install_source.index("ConfirmIntelTerms()"), install_source.index("new SetupWizard("))      # terms first, then the wizard; nothing is written by either before Install
             self.assertIn("if (!accepted) return 1;", install_source)
             self.assertIn("Setup could not verify the Intel terms in its payload:", install_source)
@@ -1272,6 +1275,18 @@ internal static class ResourceHarness
             Console.WriteLine("RES real worker offline PASS");
         }
 
+        // Native finding: the terms footer cut "Accept and continue" / "View original Intel agreement".  Every footer button now measures its own caption
+        // (Vietnamese and English), so nothing is clipped at any DPI scale.
+        var footerMethod = setup.GetMethod("InstallerFooter", statics);
+        foreach (var caption in new[] { "Chấp nhận và tiếp tục", "Xem thỏa thuận Intel gốc", "Từ chối", "Accept and continue", "View original Intel agreement", "Decline" })
+        {
+            var probe = new Button { Text = caption };
+            footerMethod.Invoke(null, new object[] { new Button[] { probe } });
+            using (var measure = new System.Drawing.Font("Segoe UI", 9F))
+                Require(probe.Width >= TextRenderer.MeasureText(caption, measure).Width + 24 && probe.Width >= 96, "footer button is narrower than its caption: " + caption + " " + probe.Width);
+        }
+        Console.WriteLine("RES terms footer captions fit PASS");
+
         // The wizard's outcome pages never claim readiness that did not happen.
         var instance = BindingFlags.NonPublic | BindingFlags.Instance;
         var wizardType = Assembly.LoadFrom(args[0]).GetType("Setup+SetupWizard", true);
@@ -1389,7 +1404,7 @@ internal static class ResourceHarness
             self.assertEqual(0, run.returncode, run.stdout + run.stderr)
             for marker in ("RES success PASS", "RES failure keeps the readable reason PASS", "RES graceful cancel PASS", "RES stubborn worker is killed and reported cancelled PASS",
                            "RES worker crash PASS", "RES silent worker PASS", "RES foreign task id is ignored PASS", "RES worker layout and environment PASS",
-                           "RES wizard outcome pages PASS", "RES uninstall states PASS"):
+                           "RES wizard outcome pages PASS", "RES uninstall states PASS", "RES terms footer captions fit PASS"):
                 self.assertIn(marker, run.stdout)
             if have_cache:
                 self.assertIn("RES real worker with local validated cache PASS", run.stdout)

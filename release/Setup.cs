@@ -50,6 +50,7 @@ public static class Setup
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
         bool accepted;
+        termsVietnamese = UseVietnamese(args);          // the dialog chrome is localized; the legal text itself is shown exactly as shipped
         try { accepted = ConfirmIntelTerms(); }
         catch (Exception ex)
         {
@@ -917,6 +918,9 @@ public static class Setup
     }
 #endif
 
+    private static bool termsVietnamese;
+    private static string TermsText(string vietnamese, string english) { return termsVietnamese ? vietnamese : english; }
+
     private static bool ConfirmIntelTerms()
     {
         using (var zipStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Payload.zip"))
@@ -947,20 +951,20 @@ public static class Setup
                     text.BackColor = System.Drawing.Color.White;
                     text.Font = form.Font;
                     text.Text = terms;
-                    accept.Text = "Accept and continue";
+                    accept.Text = TermsText("Chấp nhận và tiếp tục", "Accept and continue");
                     accept.DialogResult = DialogResult.Yes;
                     accept.AutoSize = true;
-                    decline.Text = "Decline";
+                    decline.Text = TermsText("Từ chối", "Decline");
                     decline.DialogResult = DialogResult.No;
                     decline.AutoSize = true;
-                    viewEula.Text = "View original Intel agreement";
+                    viewEula.Text = TermsText("Xem thỏa thuận Intel gốc", "View original Intel agreement");
                     viewEula.AutoSize = true;
                     var buttons = InstallerFooter(accept, decline, viewEula);
                     var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(24, 16, 24, 16), BackColor = System.Drawing.Color.White };
                     body.Controls.Add(text);
                     form.Controls.Add(body);
                     form.Controls.Add(buttons);
-                    form.Controls.Add(InstallerHeader("Intel oneAPI Redistributable Terms", "Read the terms before continuing with VNText Studio Setup."));
+                    form.Controls.Add(InstallerHeader("Intel oneAPI Redistributable Terms", TermsText("Hãy đọc điều khoản trước khi tiếp tục cài đặt VNText Studio.", "Read the terms before continuing with VNText Studio Setup.")));
                     accept.Name = "acceptIntelTerms";
                     decline.Name = "declineIntelTerms";
                     form.AcceptButton = accept;
@@ -1004,7 +1008,8 @@ public static class Setup
         foreach (var button in buttons)
         {
             button.AutoSize = false;
-            button.Size = new System.Drawing.Size(96, 30);
+            using (var measure = new System.Drawing.Font("Segoe UI", 9F))
+                button.Size = new System.Drawing.Size(Math.Max(96, TextRenderer.MeasureText(button.Text, measure).Width + 32), 30);
             button.Margin = new Padding(8, 0, 0, 0);
             button.UseVisualStyleBackColor = true;
             flow.Controls.Add(button);
@@ -1024,7 +1029,7 @@ public static class Setup
             text.ReadOnly = true;
             text.Dock = DockStyle.Fill;
             text.LoadFile(input, RichTextBoxStreamType.RichText);
-            close.Text = "Close";
+            close.Text = TermsText("Đóng", "Close");
             close.DialogResult = DialogResult.OK;
             close.AutoSize = true;
             text.BorderStyle = BorderStyle.None;
@@ -1033,7 +1038,7 @@ public static class Setup
             var buttons = InstallerFooter(close);
             form.Controls.Add(body);
             form.Controls.Add(buttons);
-            form.Controls.Add(InstallerHeader("Intel End User License Agreement", "Original agreement — Version August 2024"));
+            form.Controls.Add(InstallerHeader("Intel End User License Agreement", TermsText("Thỏa thuận gốc — phiên bản tháng 8/2024", "Original agreement — Version August 2024")));
             form.AcceptButton = close;
             form.ShowDialog();
         }
