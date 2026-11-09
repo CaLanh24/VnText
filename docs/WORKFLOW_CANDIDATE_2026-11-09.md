@@ -1,6 +1,6 @@
 # Local workflow candidate — 2026-11-09
 
-Local test candidate only; public 0.1.17 remains immutable. Code source `dfd15e2ed5087b94d2e35efdd2a1a270b92bacac`. No push, release, version or tag change.
+Local test candidate only; public 0.1.17 remains immutable. Current code source `949d1fc` (workflow code `dfd15e2` plus the Setup terms-dialog fix and the scope-recovery tooling). No push, release, version or tag change.
 
 Owner requested one editable CSV, source/translation search, image results only in Translate without repeated OCR, automatic image drafts, persistent completion dialogs with sound, and a single branded patch installer. Contract for document roles is in CONTRACTS §1. Human editing does not grant a missing engine writer proof.
 
@@ -14,9 +14,17 @@ Implemented: image translation consumes Extract's positive OCR report; results s
 - Native: exact final patch fixture install → inline uninstall confirmation → uninstall restored the inert fixture. Footer accessible at580×540 physical pixels/OS150%; default description wraps. Final app automatic-analysis completion dialog observed. Simplified empty image results observed on88d6a75; final delta only hides its stale manual hint.
 - NOT_PROVEN: native Setup install/uninstall (earlier launch rejected by policy, not retried), actual audible playback, final positive-image E2E through native UI, all DPI/themes/large games. Automated evidence is not native PASS or release acceptance.
 
-## Candidates and retention
+## Current candidate and native result
 
-- Setup: `C:/vnrg/candidate-workflow-final/VNTextStudio-DEV-0.1.17-dfd15e2-Setup.exe`, SHA256 `5b4e964b813a3cabd633f965fe1775964632ebb477535b2c5538efbe69b4768c`.
-- DEV app: `C:/v/DEV_RUN/final-workflow-0.1.17/Start-DEV.cmd`; app SHA256 `78391c5a7a84d92e04d4f7078e2bc795259cb157071b6762e55787025458ea8b`.
-- Private inert patch fixture: `C:/vnrg/candidate-single-exe/VNText-VietHoa.exe`, SHA256 `eef87e360762492581b519b55d21cad1d89dc2a7547a32b37a6f03fabf4b632a`.
-- Build staging and superseded Setup candidates consumed; historical gatec audit compressed and byte-verified before disposal. User data, original game/saves and protected epoch history retained. Cleanup helper left debug/three small .NET fixture containers; no forced deletion or cleanup PASS claimed for those. Retain candidates until Owner QA, then consume superseded payloads with receipts.
+- Setup: `C:/vnrg/candidate-terms-fix/VNTextStudio-DEV-0.1.17-1845cfe-Setup.exe`, SHA256 `24399a11a7c9613fed6205f555de8ee240e8dee5a622189d15bb786c3a89921d` (289,011,712 B); payload 7,198 members verified, embedded stream hash equals the verified ZIP `c48edc57...`.
+- DEV app (unchanged): `C:/v/DEV_RUN/final-workflow-0.1.17/Start-DEV.cmd`, app SHA256 `78391c5a7a84d92e04d4f7078e2bc795259cb157071b6762e55787025458ea8b`.
+- Root native receipt: `C:/vnrg/evidence/batch5/root-native-setup-20261109.json`. PASS: VI/EN terms footer, original Intel agreement + Close, isolated install, resources start then Cancel/Skip truthfully NOT ready, installed app launch, uninstall blocked while the app is active (no deletion) then success after close and self-removal; Owner Desktop/Start Menu unchanged; test root empty, UI closed.
+- NOT_PROVEN: real SDK download/success (budget 6.25 -> 6.75 GiB question unanswered, cap unchanged); forced-offline native branch (proxy launch auto-policy rejected, not retried); all DPI/themes; audible playback.
+- Build evidence: `terms-build-receipt.json`, `terms-build-dispose.json`, `terms-build-budget.json`, `native-setup-terms-prep.json`; scope recovery `scope-recovery-receipt.json`; legacy DEV_RUN archive `legacy-dev-run-archive-receipt.json`.
+
+## History (superseded pointers, kept for the ledger)
+
+- `dfd15e2` Setup `5b4e964b...4768c` was the first native-ready candidate; Root found the terms footer clipped and `/lang=vi` ignored for that dialog. It was consumed (approved exact move into DEV_RUN + registry disposal) when the terms-fix Setup was built.
+- Earlier DEV candidates: `88d6a75` (results-first image workspace, installer layout) and `3f6976b` (five-finding batch). Their Setup builds are consumed; hashes are in the batch5 receipts.
+- Private inert patch fixture: Root's `eef87e36...b632a` is no longer at `C:/vnrg/candidate-single-exe`; DEV's superseded fixture at that path was consumed with a hash receipt (`consumed-r3-receipt.json`) during budget cleanup. Rebuild a fixture from `build_fixture_exe.py` if one is needed again.
+- Consumed with receipts: generated 0.1.17 baseline mirror, old batch5 Setup, legacy DEV_RUN audit output (text archived, binaries hash-indexed), empty native test container. `runner-reports` stays REVIEW_REQUIRED. User data, original game/saves and protected epoch history retained.
