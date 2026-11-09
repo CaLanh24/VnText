@@ -359,7 +359,7 @@ public sealed partial class MainViewModel
         _analyzeOutcome = AnalyzeOutcome.None;
         AnalyzeStatusText = "Đang phân tích game…";
         AnalyzeReportPath = "";
-        AnalyzeScanErrorText = "Đang kiểm tra tính đầy đủ của danh mục tài nguyên…";
+        AnalyzeScanErrorText = "";   // the running engine/progress line already says it is checking; real scan errors appear on completion
         ResetAnalyzeMetrics();
         BeginTask("analyze", new
         {

@@ -85,8 +85,35 @@ public sealed partial class MainViewModel
     public bool PatchRecheckNeeded => _patchSourceStale && !PatchResultsAvailable;
     public bool PatchCheckCardVisible => PatchResultsAvailable || PatchRecheckNeeded;
 
+    /// <summary>A partial patch (eligible subset, the rest omitted) is not "blocked": only a hard-blocked package keeps that word.</summary>
+    public bool PatchPartialReady => PatchPreflightOk && PatchBlockedCount > 0;
+    public string PatchBlockedLabel => PatchPartialReady ? "BỎ QUA" : "BỊ CHẶN";
+
+    /// <summary>
+    /// Patch-specific state of the CURRENT CSV revision (never the Translate step line): building, built from this revision,
+    /// checked and ready (with the omitted count) or blocked.  "Built" comes only from the patch task's own completion (PatchDeliveryReady),
+    /// which every source change/save/recheck clears; Validate and an artifact left on disk never imply it.
+    /// </summary>
+    public string PatchStatusText
+    {
+        get
+        {
+            if (Busy && _runningTask == "patch") return "Đang tạo patch…";
+            if (!PatchPreflightEvaluated) return "Cần kiểm tra lại CSV hiện tại";
+            if (!PatchPreflightOk) return "Chưa thể tạo patch — không có dòng nào đủ điều kiện";
+            if (PatchDeliveryReady && !_patchArtifactBehindCsv)
+                return PatchBlockedCount > 0
+                    ? UiText.Msg("Đã tạo patch từ CSV hiện tại — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
+                    : UiText.Msg("Đã tạo patch từ CSV hiện tại — ghi {0} dòng", PatchEligibleCount);
+            return PatchBlockedCount > 0
+                ? UiText.Msg("Sẵn sàng tạo patch — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
+                : UiText.Msg("Sẵn sàng tạo patch — ghi {0} dòng", PatchEligibleCount);
+        }
+    }
+
     private void RaisePatchBadge()
     {
+        Raise(nameof(PatchStatusText)); Raise(nameof(PatchBlockedLabel)); Raise(nameof(PatchPartialReady));
         Raise(nameof(PatchBadgeKind)); Raise(nameof(PatchBadgeText));
         Raise(nameof(PatchRecheckNeeded)); Raise(nameof(PatchCheckCardVisible)); Raise(nameof(PatchArtifactBehindCsv));
     }
@@ -163,7 +190,7 @@ public sealed partial class MainViewModel
         var candidate = CsvPackageValidator.Validate(path, requireTranslations);
         if (!candidate.Ok)
         {
-            AppendLog($"CSV: {candidate.Message}");
+            AppendLog($"CSV: {candidate.Message}", "ERROR");
             ShowToast(candidate.Message, "warning");
             // The rejected pick is not adopted, but the Translate readiness line must give the same specific reason
             // instead of reporting the default output file as missing.
@@ -273,9 +300,9 @@ public sealed partial class MainViewModel
         }
         if (!silent)
         {
-            AppendLog(result.Ok ? $"CSV OK: {result.Message}" : $"CSV: {result.Message}");
+            AppendLog(result.Ok ? $"CSV OK: {result.Message}" : $"CSV: {result.Message}", result.Ok ? null : "ERROR");
             if (result.Ok)
-                AppendLog(PatchPreflightMessage.Replace("\r\n", " | ").Replace("\n", " | "));
+                AppendLog(PatchPreflightMessage.Replace("\r\n", " | ").Replace("\n", " | "), PatchBlockedCount > 0 ? "WARN" : null);   // an eligible subset still builds, but rows are omitted
             if (result.Ok && SelectedTab != WorkflowTabs.Patch)
                 AppendLog("Có thể chuyển sang tab «Tạo patch».");
         }
@@ -342,7 +369,7 @@ public sealed partial class MainViewModel
         if (!silent)
             AppendLog(result.Ok
                 ? $"Kiểm tra patch: {result.Eligible} hợp lệ, {result.Blocked} bị chặn."
-                : $"Kiểm tra patch: {result.Error ?? result.Summary}");
+                : $"Kiểm tra patch: {result.Error ?? result.Summary}", result.Ok ? (result.Blocked > 0 ? "WARN" : null) : "ERROR");
         if (SelectedTab == WorkflowTabs.Patch)
             UpdateHeroForTab();
         return result.Ok;

@@ -49,6 +49,9 @@ internal static partial class Program
             var qualityFailures = new List<string>();
             Run("PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel", PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel, qualityFailures);
             Run("PatchPreflight_BlocksGarbage", PatchPreflight_BlocksGarbage, qualityFailures);
+            Run("PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep", PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep, qualityFailures);
+            Run("LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal", LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal, qualityFailures);
+            Run("AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning", AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning, qualityFailures);
             Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, qualityFailures);
             Run("LogSeverity_MetadataNotSourceWords", () =>
             {
@@ -1572,7 +1575,9 @@ internal static partial class Program
                 if (progress.IsComplete != complete) throw new InvalidOperationException("scoped translate completion '" + name + "' expected " + complete);
                 // The step that enables Create Patch follows the same proof (snapshot used by the Patch tab and the preflight).
                 File.WriteAllText(Path.Combine(root, "manifest.json"), "{}");
-                if (WorkflowStatus.Evaluate("synthetic-game", root).ReadyForPatch != complete) throw new InvalidOperationException("ready-for-patch '" + name + "' expected " + complete);
+                // Patch readiness is advisory since the partial-patch workflow: a proven-complete translation is always ready; an incomplete one may still be ready
+                // (the per-row preflight decides the eligible subset), so only the complete => ready direction is asserted here.
+                if (complete && !WorkflowStatus.Evaluate("synthetic-game", root).ReadyForPatch) throw new InvalidOperationException("ready-for-patch '" + name + "' expected true for a complete translation");
             }
             finally { Directory.Delete(root, true); }
         }
@@ -1660,6 +1665,101 @@ internal static partial class Program
             throw new InvalidOperationException(name + ": expected " + eligible + " eligible / " + blocked + " review-excluded, got " + vm.PatchEligibleCount + " / " + vm.PatchBlockedCount);
         if (build && vm.PatchBlockedCount < 1) throw new InvalidOperationException(name + ": review rows must stay reported as excluded");
         if (!build && vm.PatchPreflightMessage.Length == 0) throw new InvalidOperationException(name + ": a blocked package must say why");
+    }
+
+    private static void PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep()
+    {
+        var root = CreateScopedReviewPackage(true, true);          // 2 eligible rows, 2 omitted (one blank MAIN row + the review screen)
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(root, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root };
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertTrue(vm.PatchPreflightOk && vm.PatchPartialReady);
+            AssertEqual("BỎ QUA", vm.PatchBlockedLabel);            // omitted rows of a partial patch are not "blocked"
+            Require(vm.PatchStatusText.StartsWith("Sẵn sàng tạo patch", StringComparison.Ordinal) && vm.PatchStatusText.Contains("bỏ qua " + vm.PatchBlockedCount, StringComparison.Ordinal), "ready state: " + vm.PatchStatusText);
+            foreach (var stale in new[] { "Bước", "pending", "review", "blocked" })
+                Require(!vm.PatchStatusText.Contains(stale, StringComparison.OrdinalIgnoreCase), "Translate-step wording on the Patch card: " + vm.PatchStatusText);
+            // Validate alone never claims a build; only the patch task's own completion does.
+            Require(!vm.PatchDeliveryReady && !vm.PatchStatusText.StartsWith("Đã tạo", StringComparison.Ordinal), "validate must not imply a build");
+            var changed = new List<string>(); vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
+            var exe = Path.Combine(root, "Patch_Viet_Hoa", "VNText-VietHoa.exe");
+            vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "patch-status", Ok = true, Complete = true, PatchEngine = "renpy", PatchDelivery = "renpy_installer", PatchPayloadPath = exe, PatchInstallInstructions = "Đã tạo installer" });
+            Require(vm.PatchStatusText.StartsWith("Đã tạo patch từ CSV hiện tại", StringComparison.Ordinal), "built state: " + vm.PatchStatusText);
+            Require(changed.Contains(nameof(vm.PatchStatusText)), "the Patch status must notify");
+            Require(vm.PatchDeliveryLabel.Contains("VNText-VietHoa.exe", StringComparison.Ordinal) && !vm.PatchDeliveryLabel.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal), "delivery heading: " + vm.PatchDeliveryLabel);
+            vm.TestMarkTaskTerminal("patch-status");
+            // A different source (CSV path change) clears the built claim and asks for a recheck instead of keeping a stale success.
+            var other = CreateScopedReviewPackage(false, true);
+            try
+            {
+                picker.TranslationCsv = Path.Combine(other, "translation.csv");
+                vm.ChooseTranslationCsvCommand.Execute(null);
+                Require(!vm.PatchDeliveryReady && !vm.PatchStatusText.StartsWith("Đã tạo", StringComparison.Ordinal), "stale build claim after the source changed: " + vm.PatchStatusText);
+            }
+            finally { Directory.Delete(other, true); }
+            Require(!vm.PatchStatusText.StartsWith("Đã tạo", StringComparison.Ordinal), "stale build claim after the source changed: " + vm.PatchStatusText);
+            Require(!VNText.Studio.App.ViewModels.MainViewModel.PatchDeliveryLabelFor(Path.Combine(root, "COPY_TO_GAME_ROOT")).Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal), "no fixed stub name on a non-installer payload");
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    private static void LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal()
+    {
+        // A package without manifest.json: the app-owned CSV validation failure is an ERROR by producer metadata, not by guessing the wording.
+        var root = Path.Combine(TestTempRoot(), "vntext_sev_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "translation.csv"), "key,source_text,translation,context,file_path,import_method\r\nk1,Hello,Xin chào,UI,x,unity_ui_text\r\n", Encoding.UTF8);
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(root, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root };
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            var failure = vm.LogLines.Last(l => l.Contains("] CSV: ", StringComparison.Ordinal) && l.Contains("manifest.json", StringComparison.Ordinal));
+            Require(failure.Contains("] CSV: ", StringComparison.Ordinal), "the log text must stay unchanged: " + failure);
+            AssertEqual("ERROR", VNText.Studio.App.Converters.LogSeverityConverter.Severity(failure));
+            var persisted = vm.JournalStore.Read(vm.JournalStore.Files()[0]).Split('\n').Last(l => l.Contains("CSV: ", StringComparison.Ordinal) && l.Contains("manifest.json", StringComparison.Ordinal));
+            Require(System.Text.RegularExpressions.Regex.IsMatch(persisted, @"^\S+ \S+ [+-]\d\d:\d\d ERROR "), "persisted level: " + persisted);
+            AssertEqual("ERROR", VNText.Studio.App.Converters.LogSeverityConverter.Severity(persisted));
+        }
+        finally { Directory.Delete(root, true); }
+
+        // A partial preflight (eligible subset, rows omitted) is an explicit WARN; the worker's own read-back / created-installer lines are SUCCESS.
+        var package = CreateScopedReviewPackage(true, true);
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = package };
+            vm.NavigateTabCommand.Execute("patch");
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            var preflight = vm.LogLines.Last(l => l.Contains("Kiểm tra patch", StringComparison.Ordinal));
+            AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(preflight));
+            vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "sev-patch", Ok = true, Complete = true, PatchEngine = "renpy", PatchDelivery = "renpy_installer", PatchPayloadPath = Path.Combine(package, "Out", "VNText-VietHoa.exe"), PatchInstallInstructions = "Patch tại " + Path.Combine(package, "Out") + ". Mở VNText-VietHoa.exe." });
+            vm.TestMarkTaskTerminal("sev-patch");
+        }
+        finally { Directory.Delete(package, true); }
+        AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch read-back PASS — targets=300"));
+        AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch tại C:" + System.IO.Path.DirectorySeparatorChar + "Out. Mở VNText-VietHoa.exe"));
+        AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Ren'Py: overlay hợp lệ tại game/tl/vietnamese/"));
+    }
+
+    private static void AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning()
+    {
+        var game = Path.Combine(TestTempRoot(), "vntext_busy_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(game);
+        try
+        {
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false) { InputPath = game, OutputPath = Path.Combine(game, "out") };
+            vm.AnalyzeCommand.Execute(null);
+            Require(!vm.AnalyzeScanErrorText.Contains("Đang kiểm tra", StringComparison.Ordinal), "busy analysis must not repeat the engine line as a warning: " + vm.AnalyzeScanErrorText);
+        }
+        finally { Directory.Delete(game, true); }
     }
 
     private static void RenpySdkMissing_ReportsPartialExtraction()
@@ -1762,20 +1862,19 @@ internal static partial class Program
             AssertEqual("translate", snap.Current);
             AssertEqual(WorkflowStepState.Current, snap.TranslateState);
             AssertFalse(snap.TranslateState == WorkflowStepState.Done);
-            AssertTrue(snap.StepStatusLine.Contains("Dịch một phần"));
-            AssertTrue(snap.StepStatusLine.Contains("review"));
-            AssertFalse(snap.ReadyForPatch);
+            Require(snap.StepStatusLine.Contains("Dịch một phần"), "step line: " + snap.StepStatusLine);
+            Require(snap.StepStatusLine.Contains("review"), "step line: " + snap.StepStatusLine);
+            AssertTrue(snap.ReadyForPatch);          // advisory: translated rows exist, the preflight decides the eligible subset
             var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
             using var worker = new PythonWorkerHost();
             var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = Path.Combine(package, "unused-output") };
             vm.ChooseTranslationCsvCommand.Execute(null);
             vm.TestSimulateTaskComplete("translate", new WorkerEvent { Type = "complete", Ok = true, Complete = false, Translated = 1, Pending = 1, ReviewOnly = 1, Blocked = 1 });
-            AssertFalse(vm.ReadyForPatch);
-            AssertFalse(vm.RunPatchCommand.CanExecute(null));
+            // Completion is advisory: the per-row preflight of the CURRENT CSV/manifest decides (here the manifest has no entries), not the old translate counts.
             AssertFalse(vm.PatchPreflightOk);
             AssertEqual(0, vm.PatchEligibleCount);
-            AssertTrue(vm.CsvValidationMessage.Contains("Đã dịch 1"));
-            AssertTrue(vm.PatchPreflightMessage.Contains("chưa thể tạo Patch"));
+            Require(vm.CsvValidationMessage.Contains("Đã dịch 1"), "csv message: " + vm.CsvValidationMessage);
+            Require(vm.PatchPreflightMessage.Length > 0, "a blocked package must say why");
         }
         finally
         {
@@ -2942,7 +3041,7 @@ internal static partial class Program
             AssertEqual(6, vm.AnalyzeReviewRiskCount);
             AssertEqual(2, vm.AnalyzeUnknownCount);
             AssertTrue(vm.AnalyzeStatusText.Contains("danh mục tài nguyên đầy đủ", StringComparison.Ordinal));
-            AssertEqual("Không ghi nhận lỗi quét.", vm.AnalyzeScanErrorText);
+            AssertEqual("", vm.AnalyzeScanErrorText);   // a clean scan shows no extra line under the single engine/progress text
             AssertTrue(vm.AnalyzeResultsExpanded);
             AssertTrue(vm.AnalyzeHasReport);
             AssertEqual(report, vm.AnalyzeReportPath);

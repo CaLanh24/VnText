@@ -1176,7 +1176,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         catch { /* ignore */ }
     }
 
-    private void AppendLog(string line)
+    /// <param name="level">Optional producer-known severity (ERROR, WARN or SUCCESS); null keeps the text-derived default. The text and its order are never changed.</param>
+    private void AppendLog(string line, string? level = null)
     {
         if (string.IsNullOrWhiteSpace(line))
             return;
@@ -1184,8 +1185,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         if (content.Length > AppJournalStore.MaxMessageChars)
             content = content[..AppJournalStore.MaxMessageChars] + $" […đã cắt {content.Length - AppJournalStore.MaxMessageChars} ký tự vượt giới hạn một dòng nhật ký]";
         var stamped = $"[{DateTime.Now:HH:mm:ss}] {content}";
-        LogLines.Add(stamped);
-        PersistJournal(content);
+        LogLines.Add(level is null ? stamped : VNText.Studio.App.Converters.LogSeverityConverter.Mark(stamped, level));
+        PersistJournal(content, level);
         const int max = 1000;
         while (LogLines.Count > max)
             LogLines.RemoveAt(0);

@@ -718,6 +718,15 @@ public sealed partial class MainViewModel
         return "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp.";
     }
 
+    /// <summary>The delivery heading names the file the current build actually produced; no fixed stub name is assumed.</summary>
+    internal static string PatchDeliveryLabelFor(string? payloadPath, string? instructions = null)
+    {
+        var name = string.IsNullOrWhiteSpace(payloadPath) ? "" : Path.GetFileName(payloadPath.TrimEnd('\\', '/'));
+        if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))      // folder payload: the installer the worker itself names in its instructions
+            name = !string.IsNullOrEmpty(instructions) && instructions.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal) ? "VNTextPatchInstaller.exe" : "";
+        return name.Length > 0 ? UiText.Msg("Gói patch có installer — {0}", name) : "Gói patch có installer";
+    }
+
     private void ApplyPatchDelivery(WorkerEvent evt)
     {
         if (string.Equals(evt.PatchDelivery, "renpy_native_overlay", StringComparison.OrdinalIgnoreCase))
@@ -731,7 +740,7 @@ public sealed partial class MainViewModel
             || string.Equals(evt.PatchDelivery, "renpy_installer", StringComparison.OrdinalIgnoreCase))
         {
             // The installer route also delivers plain text and other supported formats: name the delivery, not an engine.
-            PatchDeliveryLabel = "Gói patch có installer — VNTextPatchInstaller.exe";
+            PatchDeliveryLabel = PatchDeliveryLabelFor(evt.PatchPayloadPath, evt.PatchInstallInstructions);
             PatchInstallInstructions = evt.PatchInstallInstructions ?? "";
             PatchDeliveryReady = true;
         }

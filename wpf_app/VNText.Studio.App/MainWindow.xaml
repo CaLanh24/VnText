@@ -965,12 +965,12 @@
                                             <TextBlock Text="{Binding PatchEligibleCount}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="1">
-                                            <TextBlock Text="BỊ CHẶN" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
+                                            <TextBlock Text="{Binding PatchBlockedLabel, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
                                             <TextBlock Text="{Binding PatchBlockedCount}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" />
                                         </StackPanel>
                                         <StackPanel Grid.Column="2">
                                             <TextBlock Text="TRẠNG THÁI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
-                                            <TextBlock Text="{Binding StepStatusLine, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding PatchStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Grid>
                                 </Border>

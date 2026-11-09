@@ -539,7 +539,8 @@ public sealed partial class MainViewModel
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort));
-            if (e.PropertyName is nameof(PatchPreflightOk) or nameof(PatchPreflightEvaluated) or nameof(CsvValidationOk) or nameof(PatchResultsAvailable)) RaisePatchBadge();
+            if (e.PropertyName is nameof(PatchPreflightOk) or nameof(PatchPreflightEvaluated) or nameof(CsvValidationOk) or nameof(PatchResultsAvailable)
+                or nameof(PatchDeliveryReady) or nameof(PatchEligibleCount) or nameof(PatchBlockedCount) or nameof(Busy)) RaisePatchBadge();
         };
         ReloadCsvEditorCommand = new RelayCommand(
             _ => LoadCsvEditor(reload: true),

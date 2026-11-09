@@ -29,12 +29,12 @@ internal sealed class AppJournalStore
         Check(Path.Combine(Root,"placeholder"));
         return Directory.Exists(Root) ? Directory.EnumerateFiles(Root).Select(Path.GetFileName).Where(n=>n is not null && OwnedName.IsMatch(n)).Select(n=>n!).OrderDescending(StringComparer.Ordinal).ToArray() : [];
     }
-    internal void Append(string message)
+    internal void Append(string message,string? level=null)
     {
         lock(_gate)
         {
             var text=message.Length>MaxMessageChars ? message[..MaxMessageChars]+$" […đã cắt {message.Length-MaxMessageChars} ký tự vượt giới hạn một dòng nhật ký]" : message;
-            var line=$"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} {Level(text)} {text.Replace("\r","").Replace("\n"," ↵ ")}{Environment.NewLine}";
+            var line=$"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} {(level is "ERROR" or "WARN" ? level : Level(text))} {text.Replace("\r","").Replace("\n"," ↵ ")}{Environment.NewLine}";
             var bytes=Encoding.UTF8.GetBytes(line);
             Check(Path.Combine(Root,"placeholder"));Directory.CreateDirectory(Root);
             var stem=$"app.log.{DateTime.Now:yyyy-MM-dd}";

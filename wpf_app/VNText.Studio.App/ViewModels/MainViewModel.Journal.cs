@@ -10,9 +10,9 @@ public sealed partial class MainViewModel
     internal event Action? JournalRequested;
     private bool _journalWriteFailed;
     internal bool JournalWriteFailed => _journalWriteFailed;
-    internal void PersistJournal(string message)
+    internal void PersistJournal(string message, string? level = null)
     {
-        try { JournalStore.Append(message); _journalWriteFailed=false; }
+        try { JournalStore.Append(message, level); _journalWriteFailed=false; }
         catch(Exception ex)
         {
             if(!_journalWriteFailed) LogLines.Add($"[{DateTime.Now:HH:mm:ss}] Không ghi được nhật ký: {ex.Message}");
