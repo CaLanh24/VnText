@@ -25,6 +25,10 @@ class OwnerQualityBatchTests(unittest.TestCase):
             action, _, _ = classify_row_authoritative(dict(source_text=source, import_method='renpy_string'))
             self.assertNotEqual(action, 'skip_technical', source)
 
+    def test_old_translated_control_never_enters_a_patch(self):
+        from vntext.patch_gate import patch_skip_reason
+        self.assertEqual(patch_skip_reason(dict(source_text='Achievement2', import_method='renpy_string'), 'Thành tựu 2', set()), 'technical_control')
+
     def test_photo_fragment_without_crop_consensus_is_not_text(self):
         image = Image.new('RGB', (200, 100))
         line = dict(text='•ell', words=[dict(text='•ell', x=10, y=10, width=100, height=40)])

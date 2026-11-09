@@ -23,18 +23,20 @@ public sealed record PatchPreflightResult(
         {
             if (!string.IsNullOrWhiteSpace(Error))
                 return Error;
+            var summary = Ok ? UiText.Msg("{0} câu sẵn sàng; {1} câu sẽ được bỏ qua.", Eligible, Blocked) : Summary;
             if (ReasonCounts.Count == 0)
-                return Summary;
+                return summary;
             var parts = ReasonCounts
                 .OrderByDescending(kv => kv.Value)
                 .Select(kv => UiText.Msg("{0}: {1}", UiText.Key(FormatReason(kv.Key)), kv.Value));
-            return UiText.Lines(new[] { Summary }.Concat(parts).ToArray());
+            return UiText.Lines(new[] { summary }.Concat(parts).ToArray());
         }
     }
 
     private static string FormatReason(string code) => code switch
     {
-        "review_only" => "Trong review_only.csv",
+        "review_only" => "Chưa có đường ghi lại vào game (bỏ qua)",
+        "technical_control" => "Mã / định dạng của game (giữ nguyên)",
         "no_translation" => "Chưa có bản dịch",
         "garbage_repetition" => "Rác lặp từ/ký tự",
         "html_garbage" => "HTML/entity rác",

@@ -396,6 +396,9 @@ def patch_skip_reason(
 ) -> str:
     row = entry_row(entry)
     src = row["source_text"]
+    from vntext.mt_classify import is_renpy_control_text
+    if str(entry.get("import_method") or "").startswith("renpy_") and is_renpy_control_text(src):
+        return "technical_control"
     legacy_reason = legacy_entry_reason(entry)
     if legacy_reason:
         return legacy_reason
