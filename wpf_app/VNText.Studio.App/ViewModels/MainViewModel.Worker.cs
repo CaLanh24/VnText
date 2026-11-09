@@ -139,9 +139,7 @@ public sealed partial class MainViewModel
                 if (!string.IsNullOrWhiteSpace(evt.Text))
                 {
                     AppendLog(evt.Text);
-                    if (IsLiveExtractRun(evt.Id)) AddExtractRunLine(evt.Id, evt.Text);              // the run's whole worker log
-                    else if (evt.Text.Contains("error", StringComparison.OrdinalIgnoreCase) || evt.Text.Contains("lỗi", StringComparison.OrdinalIgnoreCase))
-                        AddTaskProgress(evt.Id, evt.Text);
+                    AddTaskProgress(evt.Id, evt.Text); // retain the whole owned task log, not just errors
                 }
                 break;
             case "progress":
@@ -207,7 +205,7 @@ public sealed partial class MainViewModel
                 if (!string.IsNullOrWhiteSpace(evt.Error))
                     AddTaskProgress(evt.Id, completedTask == "extract" && evt.Error.IndexOf("cancel", StringComparison.OrdinalIgnoreCase) < 0
                         ? (evt.Severity == "warning" ? "[cảnh báo] " : "[lỗi] ") + evt.Error
-                        : evt.Error, completedTask);
+                        : (evt.Severity == "warning" ? "[warning] " : evt.Ok || evt.Error.Contains("cancel", StringComparison.OrdinalIgnoreCase) ? "" : "[error] ") + evt.Error, completedTask);
                 if (!evt.Ok && !extractWarning && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
                     RecordPersistentError(completedTask, evt.Error);
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"

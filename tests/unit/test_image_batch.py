@@ -23,6 +23,19 @@ class AutomaticImageTests(unittest.TestCase):
         with patch('vntext.image_batch._translator', side_effect=AssertionError('already translated')):
             self.assertEqual(translate_cached_images(self.package)['translated'], 1)
 
+    def test_legacy_ocr_is_not_silently_translated_or_rendered(self):
+        result = self.run_batch(translate=False)
+        report = self.report(result)
+        ocr = Path(result['output']) / report['items'][0]['ocr_result']
+        doc = json.loads(ocr.read_text(encoding='utf8'))
+        doc.pop('text_detection_policy')
+        ocr.write_text(json.dumps(doc), encoding='utf8')
+        with patch('vntext.image_batch._translator', side_effect=AssertionError('legacy OCR must not reach MT')):
+            result = translate_cached_images(self.package)
+        self.assertEqual(result['translated'], 0)
+        self.assertEqual(result['untranslated'], 1)
+        self.assertFalse(any((Path(result['output']) / 'translated').iterdir()))
+
     def test_cached_translate_refuses_changed_image_and_wrong_game(self):
         result = self.run_batch(translate=False)
         report = self.report(result)

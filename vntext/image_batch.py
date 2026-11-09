@@ -279,7 +279,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
     root=base if not base.exists() else _regular(base/('retry-'+uuid.uuid4().hex))
     root.mkdir(parents=True,exist_ok=False)
     for name in ('original','ocr','translated','untranslated'): (root/name).mkdir()
-    report={'schema':1,'source_root':str(source.resolve()),'status':'RUNNING','review_required':True,'inventory_complete':inventory['complete'],
+    report={'schema':1,'text_detection_policy':OCR_TEXT_POLICY,'source_root':str(source.resolve()),'status':'RUNNING','review_required':True,'inventory_complete':inventory['complete'],
             'inventory_errors':inventory['errors'],'items':[]}
     report_path=root/'report.json'
     def save():

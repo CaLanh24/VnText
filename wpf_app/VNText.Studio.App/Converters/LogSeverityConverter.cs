@@ -20,7 +20,7 @@ public sealed class LogSeverityConverter : IValueConverter
             text = Regex.Replace(text, @"^\[task [^\]]+\]\s*", "");
         }
         text = Regex.Replace(text, @"^\[\d\d:\d\d:\d\d\]\s*", "");
-        if (Regex.IsMatch(text, @"^(?:\[error\]|Lỗi(?:\b|:)|Error(?:\b|:)|Không thể|Không đọc được|Không ghi được)", RegexOptions.IgnoreCase)) return "ERROR";
+        if (Regex.IsMatch(text, @"^(?:\[(?:error|lỗi)\]|── Lỗi|Lỗi(?:\b|:)|Error(?:\b|:)|Không thể|Không đọc được|Không ghi được)", RegexOptions.IgnoreCase)) return "ERROR";
         if (Regex.IsMatch(text, @"^(?:\[(?:warning|cảnh báo)\]|Cảnh báo|Warning|Lấy text một phần|── Lấy text một phần)", RegexOptions.IgnoreCase)) return "WARN";
         if (Regex.IsMatch(text, @"^(?:\[success\]|CSV OK:|Extract xong|Dịch xong|Tạo patch xong|Đã hoàn tất|Hoàn tất(?:\b|:)|── Hoàn tất|Kiểm tra patch: [1-9]\d* hợp lệ, 0 bị chặn)", RegexOptions.IgnoreCase)) return "SUCCESS";
         return "INFO";

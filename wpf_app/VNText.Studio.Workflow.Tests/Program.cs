@@ -46,19 +46,19 @@ internal static partial class Program
 
         if (args.Contains("--owner-quality-only", StringComparer.Ordinal))
         {
-            var failures = new List<string>();
-            Run("PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel", PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel, failures);
-            Run("PatchPreflight_BlocksGarbage", PatchPreflight_BlocksGarbage, failures);
-            Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, failures);
+            var qualityFailures = new List<string>();
+            Run("PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel", PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel, qualityFailures);
+            Run("PatchPreflight_BlocksGarbage", PatchPreflight_BlocksGarbage, qualityFailures);
+            Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, qualityFailures);
             Run("LogSeverity_MetadataNotSourceWords", () =>
             {
                 AssertEqual("ERROR", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] Lỗi: SDK failed"));
                 AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] [cảnh báo] Partial"));
                 AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] Hoàn tất"));
                 AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] 47% • Mục: error-ok.png"));
-            }, failures);
-            foreach (var failure in failures) Console.Error.WriteLine(failure);
-            return failures.Count == 0 ? 0 : 1;
+            }, qualityFailures);
+            foreach (var failure in qualityFailures) Console.Error.WriteLine(failure);
+            return qualityFailures.Count == 0 ? 0 : 1;
         }
 
         if (args.Contains("--preferences-only", StringComparer.Ordinal))

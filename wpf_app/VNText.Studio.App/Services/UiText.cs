@@ -418,6 +418,7 @@ public static class UiText
         ["Cần CSV hợp lệ trước khi kiểm tra chất lượng patch."] = "A valid CSV is needed before the patch quality check.",
         ["Không thể cập nhật trạng thái CSV: {0}"] = "Could not update the CSV state: {0}",
         ["Chi tiết được giữ đầy đủ trong Nhật ký."] = "Full details are kept in the Journal.",
+        ["Kết quả cũ · lấy text lại để lọc ảnh"] = "Old results · extract again to filter images",
         ["PATCH MỘT PHẦN"] = "PARTIAL PATCH",
         ["{0} · Sẵn sàng lấy text."] = "{0} · Ready to extract.",
         ["Đang nhận diện engine…"] = "Detecting engine…",

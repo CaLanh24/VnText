@@ -1020,16 +1020,16 @@ class WpfWorkflowTests(unittest.TestCase):
         analyze = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Analyze.cs").read_text(encoding="utf-8")
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         # Owner 2026-11-01: engine analysis details are always visible (no Details dropdown) and detection is automatic (no manual Analyze button).
-        self.assertIn('x:Name="AnalyzeDetailsHeading"', xaml)
+        self.assertNotIn('x:Name="AnalyzeDetailsHeading"', xaml)
         self.assertNotIn('Header="Chi tiết phân tích"', xaml)
         self.assertNotIn('IsExpanded="{Binding AnalyzeResultsExpanded', xaml)
         self.assertNotIn('x:Name="AnalyzeButton"', xaml)
         self.assertIn('Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
+        self.assertNotIn('Text="{Binding AnalyzeEngineDetails}"', xaml)
         # Persistent inline summary of the automatic detection: engine + next action, busy bar; identification never claims patchability.
         self.assertIn('Text="{Binding AnalyzeNextActionText}"', xaml)
-        self.assertIn('Visibility="{Binding AnalyzeBusy, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn("chưa xác minh khả năng tạo patch", analyze)
+        self.assertNotIn('x:Name="AnalyzeBusyBar"', xaml)
+        self.assertIn("Sẵn sàng lấy text", analyze)
         self.assertIn("AnalyzeOutcome.Cancelled", analyze)
         # A finished task is announced even when the window is hidden to the tray: restore once, then dialog + sound; never a silent return.
         window_cs = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")

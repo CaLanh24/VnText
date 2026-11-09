@@ -375,7 +375,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public int PatchBlockedCount
     {
         get => _patchBlockedCount;
-        private set => Set(ref _patchBlockedCount, value);
+        private set { if (Set(ref _patchBlockedCount, value)) RaisePatchBadge(); }
     }
 
     public string InputDisplay => string.IsNullOrWhiteSpace(InputPath) ? UiText.Translate("Chọn thư mục game...") : InputPath;

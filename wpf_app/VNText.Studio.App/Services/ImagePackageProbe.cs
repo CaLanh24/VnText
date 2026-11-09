@@ -35,12 +35,14 @@ public static class ImagePackageProbe
             }
             using var doc = JsonDocument.Parse(File.ReadAllText(report));
             if (!doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array) return results;
+            var confirmed = doc.RootElement.TryGetProperty("text_detection_policy", out var policy)
+                && policy.ValueKind == JsonValueKind.String && policy.GetString() == "crop-consensus-1";
             foreach (var item in items.EnumerateArray().Take(MaxItems))
             {
                 if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("text_detected", out var detected) || detected.ValueKind != JsonValueKind.True) continue;
                 string S(string name) => item.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString()! : "";
-                results.Add(new ImageResult(Path.GetFileName(S("source")), SafePath(S("ocr_result")), SafePath(S("translated")),
-                    S("status") == "TRANSLATED_DRAFT" ? "Đã dịch nháp" : "Cần dịch / xem lại"));
+                results.Add(new ImageResult(Path.GetFileName(S("source")), SafePath(S("ocr_result")), confirmed ? SafePath(S("translated")) : "",
+                    !confirmed ? "Kết quả cũ · lấy text lại để lọc ảnh" : S("status") == "TRANSLATED_DRAFT" ? "Đã dịch nháp" : "Cần dịch / xem lại"));
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException) { }
