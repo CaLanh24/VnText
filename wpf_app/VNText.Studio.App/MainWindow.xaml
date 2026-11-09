@@ -39,7 +39,19 @@
             <TextBlock Text="{TemplateBinding Header}" Style="{StaticResource UiPageTitleTextStyle}" Foreground="{DynamicResource SettingsTitleBrush}" VerticalAlignment="Center" />
         </ControlTemplate>
         <ImageBrush x:Key="BrandArtwork" ImageSource="Assets/brand-owner.png" Viewbox="0.1053,0.1013,0.7903,0.7967" ViewboxUnits="RelativeToBoundingBox" Stretch="Fill" />
-        <DataTemplate x:Key="JournalLineTemplate"><TextBlock Text="{Binding}" FontSize="{StaticResource UiBodySize}" FontWeight="Normal" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,0,6" /></DataTemplate>
+        <conv:LogSeverityConverter x:Key="LogSeverity" />
+        <DataTemplate x:Key="JournalLineTemplate">
+            <TextBlock Text="{Binding}" FontSize="12" FontWeight="Normal" TextWrapping="Wrap" Margin="0,0,0,4">
+                <TextBlock.Style><Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="SUCCESS"><Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" /></DataTrigger>
+                        <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="WARN"><Setter Property="Foreground" Value="{DynamicResource ToastWarningBorderBrush}" /></DataTrigger>
+                        <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="ERROR"><Setter Property="Foreground" Value="{DynamicResource ToastErrorBorderBrush}" /></DataTrigger>
+                    </Style.Triggers>
+                </Style></TextBlock.Style>
+            </TextBlock>
+        </DataTemplate>
         <!-- About/updater-only surface resources. -->
         <LinearGradientBrush x:Key="UpdaterGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
         <LinearGradientBrush x:Key="UpdaterReadyGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
@@ -304,25 +316,21 @@
                                                 <TextBlock Text="Kiểm tra khả năng lấy text; không sửa game." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
                                             </StackPanel>
                                         </Grid>
-                                        <Grid Grid.Row="1" Margin="0,20,0,0">
+                                        <Grid Grid.Row="1" Margin="0,12,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
                                                 <TextBlock x:Name="AnalyzeNextActionLine" Text="{Binding AnalyzeNextActionText}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,0,8"
-                                                           AutomationProperties.LiveSetting="Polite" />
-                                                <ProgressBar x:Name="AnalyzeBusyBar" IsIndeterminate="True" Style="{StaticResource GreenThinProgressBarStyle}" Margin="0,0,0,8"
-                                                             Visibility="{Binding AnalyzeBusy, Converter={StaticResource BoolToVis}}" />
-                                                <TextBlock Text="{Binding AnalyzeStatusText}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
-                                                <TextBlock Text="{Binding AnalyzeEngineSummary}" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource BlueBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
-                                                <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                                                           AutomationProperties.LiveSetting="Polite" ToolTip="{Binding AnalyzeReportPath}" />
+                                                <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>
-                                        <StackPanel Grid.Row="2" Margin="0,16,0,0">
-                                        <TextBlock x:Name="AnalyzeDetailsHeading" Text="Chi tiết phân tích" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                        <StackPanel Grid.Row="2" Margin="0,12,0,0" Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}">
+
                                         <StackPanel Margin="0,10,0,0">
-                                            <TextBlock Text="{Binding AnalyzeEngineDetails}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
                                             <WrapPanel>
 <StackPanel Width="170" Margin="0,0,16,12">
                                                 <TextBlock Text="{Binding AnalyzeResourceCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
@@ -349,13 +357,10 @@
                                                 <TextBlock Text="Chưa xác định" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
                                             </StackPanel>
                                             </WrapPanel>
-                                            <TextBlock Text="Phân tích chỉ đọc nguồn; kết quả này chưa kiểm tra việc ghi bản dịch vào game."
-                                                       FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
-                                                       Margin="0,16,0,0" TextWrapping="Wrap" />
+
                                         </StackPanel>
                                         </StackPanel>
-                                        <TextBlock Grid.Row="3" Text="{Binding AnalyzeReportPath}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource SoftTextBrush}" Margin="0,16,0,0" TextTrimming="CharacterEllipsis"
-                                                   Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}" />
+
                                     </Grid>
                                 </Border>
 
@@ -908,9 +913,10 @@
                                     <Border Style="{StaticResource ChecklistPanelBorder}">
                                         <Grid>
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                            <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource GreenSoftBrush}">
-                                                <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
-                                            </Border>
+                                            <Border Width="28" Height="28" CornerRadius="9">
+                                                <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{DynamicResource ToastWarningBackgroundBrush}"/><Style.Triggers><DataTrigger Binding="{Binding CsvValidationOk}" Value="True"><Setter Property="Background" Value="{DynamicResource GreenSoftBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                <Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="!" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding CsvValidationOk}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Path Data="{StaticResource CheckIconGeometry}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" Stretch="Uniform" StrokeThickness="2"><Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding CsvValidationOk}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Path.Style></Path></Grid>
+                                                </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                 <TextBlock Text="CSV / preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
@@ -920,9 +926,10 @@
                                     <Border Style="{StaticResource ChecklistPanelBorder}" Margin="0,10,0,0">
                                         <Grid>
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                                            <Border Width="28" Height="28" CornerRadius="9" Background="{DynamicResource GreenSoftBrush}">
-                                                <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
-                                            </Border>
+                                            <Border Width="28" Height="28" CornerRadius="9">
+                                                <Border.Style><Style TargetType="Border"><Setter Property="Background" Value="{DynamicResource ToastWarningBackgroundBrush}"/><Style.Triggers><DataTrigger Binding="{Binding PatchPreflightOk}" Value="True"><Setter Property="Background" Value="{DynamicResource GreenSoftBrush}"/></DataTrigger></Style.Triggers></Style></Border.Style>
+                                                <Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="!" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding PatchPreflightOk}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Path Data="{StaticResource CheckIconGeometry}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" Stretch="Uniform" StrokeThickness="2"><Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding PatchPreflightOk}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Path.Style></Path></Grid>
+                                                </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                                 <TextBlock Text="Patch preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
@@ -1436,7 +1443,7 @@
                                         <TextBlock x:Name="CsvBulkTitleText" Text="Tìm và thay thế bản dịch" Grid.ColumnSpan="2" Visibility="{Binding CsvBulkTitleVisible, Converter={StaticResource BoolToVis}}"
                                                    FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
-                                        
+
                                         <StackPanel Grid.Row="1" Margin="0,0,7,0">
                                             <TextBlock Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                             <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
@@ -1494,7 +1501,7 @@
                                                 </Style>
                                             </TextBlock.Style>
                                         </TextBlock>
-                                        
+
                                     </Grid>
                                     <ScrollViewer x:Name="CsvBulkPreviewScroll" MaxHeight="{Binding CsvPreviewMaxHeight}" Margin="0,4,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
                                                   Visibility="{Binding CsvBulkPreviewDetailOpen, Converter={StaticResource BoolToVis}}">

@@ -4,6 +4,8 @@ import io
 import hashlib
 import json
 import math
+import re
+import tempfile
 import os
 from pathlib import Path
 import subprocess
@@ -103,8 +105,7 @@ def _horizontal_proof(image, raw):
             "method": "row-projection sharpness over OCR word boxes"}
 
 
-def recognize_image(source, *, is_cancelled=None):
-    source, image, digest = _image(source)
+def _windows_ocr(source, is_cancelled=None):
     if os.name != "nt":
         raise ValueError("OCR ảnh hiện cần Windows OCR và language pack tiếng Anh.")
     # Pass the path as a literal argument, never interpolate it into executable code.
@@ -128,7 +129,53 @@ def recognize_image(source, *, is_cancelled=None):
             proc.kill(); proc.communicate()
     if proc.returncode:
         raise ValueError("Windows OCR thất bại: " + stderr.decode("utf-8", "replace")[-1500:])
-    raw = json.loads(stdout.decode("utf-8-sig"))
+    return json.loads(stdout.decode("utf-8-sig"))
+
+
+OCR_TEXT_POLICY = "crop-consensus-1"
+
+
+def _text_key(text):
+    return "".join(c.casefold() for c in text if c.isalnum())
+
+
+def _corroborated_line(image, line, is_cancelled=None):
+    """Windows OCR has no confidence. Confirm text independently in a padded,
+    enlarged crop before automatic MT can paint over an image. No dictionary
+    whitelist: names, short UI labels and unknown words are still allowed.
+    """
+    words = line.get("words") or []
+    text = line.get("text", "").strip()
+    if not words or not any(c.isalpha() for c in text):
+        return False
+    # en-US recognizer output containing a mixture of accented glyphs on a
+    # tiny photo fragment is not reliable English input for automatic MT.
+    letters = [c for c in text if c.isalpha()]
+    if sum(not c.isascii() for c in letters) > len(letters) / 4:
+        return False
+    left=max(0, math.floor(min(w["x"] for w in words))-8)
+    top=max(0, math.floor(min(w["y"] for w in words))-8)
+    right=min(image.width, math.ceil(max(w["x"]+w["width"] for w in words))+8)
+    bottom=min(image.height, math.ceil(max(w["y"]+w["height"] for w in words))+8)
+    if right<=left or bottom<=top:
+        return False
+    crop=image.crop((left,top,right,bottom))
+    # Bound both pixel allocation and Windows OCR dimension limits.
+    scale=min(2.0, 2400/max(crop.size))
+    crop=crop.resize((max(1,round(crop.width*scale)), max(1,round(crop.height*scale))))
+    with tempfile.TemporaryDirectory(prefix="vntext-ocr-proof-") as folder:
+        path=Path(folder)/"crop.png"
+        crop.save(path)
+        proof=_windows_ocr(path, is_cancelled)
+    # Match a complete re-recognised line, not a substring of hallucinated text.
+    return any(_text_key(candidate.get("text", "")) == _text_key(text) for candidate in proof.get("lines", []))
+
+
+def recognize_image(source, *, is_cancelled=None):
+    source, image, digest = _image(source)
+    raw = _windows_ocr(source, is_cancelled)
+    if len(raw.get("lines", [])) > 500:
+        raise ValueError("Ảnh có quá 500 vùng chữ.")
     skew = None
     if raw.get("angle") is not None and abs(raw["angle"]) > 2:
         # Windows OCR TextAngle is unreliable on short UI art.  The guard stays: it is lifted ONLY when the ink of the OCR line boxes is
@@ -140,6 +187,7 @@ def recognize_image(source, *, is_cancelled=None):
     for line in raw.get("lines", []):
         words = line["words"]
         if not words or not line["text"].strip(): continue
+        if not _corroborated_line(image, line, is_cancelled): continue
         x = math.floor(min(w["x"] for w in words)); y = math.floor(min(w["y"] for w in words))
         right = math.ceil(max(w["x"] + w["width"] for w in words)); bottom = math.ceil(max(w["y"] + w["height"] for w in words))
         box = [x, y, right-x, bottom-y]; _box(box, image.size)
@@ -151,6 +199,7 @@ def recognize_image(source, *, is_cancelled=None):
     return {"schema": 1, "source_path": str(source), "source_sha256": digest, "width": image.width,
             "height": image.height, "backend": "Windows.Media.Ocr/en-US", "confidence": None,
             "status": "REVIEW_REQUIRED" if regions else "NO_TEXT", "regions": regions,
+            "text_detection_policy": OCR_TEXT_POLICY,
             **({"skew": skew} if skew else {})}
 
 

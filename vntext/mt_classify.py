@@ -31,7 +31,7 @@ DOMAIN_LIKE = re.compile(r"^[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z]{2,12})+$")
 # the battle-tested legacy rules below.  The policy fingerprint is explicit so
 # trace/cache consumers can invalidate decisions without hashing source files
 # or changing the CSV contract.
-CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-4"
+CLASSIFIER_POLICY_VERSION = "local-translation-v2-classifier-5"
 _CLASSIFIER_POLICY_RULES = (
     "hard-technical-veto",
     "validated-renpy-native-identity-before-generic-token-heuristics",
@@ -485,6 +485,24 @@ def is_debug_or_symbol_keep_line(src: str) -> bool:
     return False
 
 
+def is_renpy_control_text(src: str) -> bool:
+    """Whole runtime formats/controls, never a sentence containing a variable."""
+    s = src.strip()
+    if s in {"<", ">"}:
+        return True
+    if re.fullmatch(r"Achievement\d+", s):
+        return True
+    if re.fullmatch(r"(?:\[[A-Za-z_]\w*(?:[.!][A-Za-z_]\w*)*\]|\s|[/:.,+\-])*", s) and "[" in s:
+        return True
+    if re.fullmatch(r"\{#(?:quick_page|auto_page)\}[QA]", s):
+        return True
+    # strftime tokens with punctuation and an optional Ren'Py disambiguation tag.
+    date = re.sub(r"\{#[^{}]+\}", "", s)
+    if re.search(r"%[-_0^#]?[A-Za-z]", date):
+        return not re.sub(r"%[-_0^#]?[A-Za-z]|[\s,./:@+\-]", "", date)
+    return False
+
+
 def is_technical_token(src: str) -> bool:
     s = src.strip()
     runtime_s = re.sub(r"</?[^>]+>", "", s).strip()
@@ -584,6 +602,8 @@ def classify_row(row: dict) -> tuple[str, str]:
     src = str(row.get("source_text") or "")
     if not src.strip():
         return "skip_technical", "empty source"
+    if str(row.get("import_method") or "").startswith("renpy_") and is_renpy_control_text(src):
+        return "skip_technical", "Ren'Py runtime format/control — not prose"
     native_renpy_unit = _validated_renpy_native_unit(row)
     # Structured extractors intentionally inspect field values, so a runtime
     # config XML can contain sentence-shaped comments that pass text quality.
@@ -903,6 +923,11 @@ def classify_row_v2(row: Mapping[str, Any]) -> ClassifierDecision:
         ledger = LEDGER_REVIEW
         reason_code = "UNSUPPORTED_RAW_ROUTE"
         confidence = 0.99
+    elif legacy_action == "skip_technical" and str(normalized.get("import_method") or "").startswith("renpy_") and is_renpy_control_text(source):
+        decision = CLASSIFIER_DO_NOT_TRANSLATE
+        ledger = LEDGER_TECHNICAL
+        reason_code = "RENPY_RUNTIME_CONTROL"
+        confidence = 1.0
     elif bool(normalized.get("review_only", False)):
         decision = CLASSIFIER_REVIEW
         ledger = LEDGER_REVIEW

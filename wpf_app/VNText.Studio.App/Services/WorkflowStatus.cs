@@ -44,7 +44,7 @@ public static class WorkflowStatus
         var translateComplete = translateProgress.IsComplete;
         // A non-empty Patch folder is only an artifact; it counts as this package patch only while no later CSV save made it older than the CSV.
         var hasPatch = patchArtifactCurrent && Directory.Exists(patchDir) && Directory.EnumerateFileSystemEntries(patchDir).Any();
-        var readyForPatch = hasExtract && translateComplete;
+        var readyForPatch = hasExtract && hasTranslate;
 
         var extractState = hasExtract ? WorkflowStepState.Done : WorkflowStepState.Pending;
         var translateState = translateComplete

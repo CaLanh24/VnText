@@ -10,7 +10,7 @@ import shutil
 import time
 import uuid
 
-from vntext.image_text import _regular, _image, _box, discover_images, recognize_image
+from vntext.image_text import _regular, _image, _box, discover_images, recognize_image, OCR_TEXT_POLICY
 
 MAX_BATCH_BYTES = 512 * 1024 * 1024
 MAX_BATCH_PIXELS_BYTES = 16_000_000 * 4 + 1024 * 1024
@@ -65,13 +65,13 @@ def translate_cached_images(package, *, source=None, is_cancelled=None, progress
     for index, item in enumerate(positives):
         if cancelled():
             break
-        if item.get('status') == 'TRANSLATED_DRAFT':
-            continue
         try:
             ocr = contained(item.get('ocr_result', ''))
             if not ocr.is_file() or ocr.stat().st_size > 4 * 1024 * 1024:
                 raise ValueError('Thiếu kết quả OCR hợp lệ; hãy lấy text lại.')
             document = json.loads(ocr.read_text(encoding='utf-8'))
+            if document.get('text_detection_policy') != OCR_TEXT_POLICY:
+                raise ValueError('Kết quả OCR cũ chưa xác nhận được chữ. Hãy lấy text lại để lọc ảnh; không tự dịch hoặc vẽ từ kết quả cũ.')
             original = contained(item['original'])
             _, _, digest = _image(original)
             if digest != item.get('source_sha256') or digest != document.get('source_sha256'):
@@ -81,6 +81,8 @@ def translate_cached_images(package, *, source=None, is_cancelled=None, progress
             regions = document.get('regions')
             if not isinstance(regions, list) or not regions or len(regions) > 500:
                 raise ValueError('Vùng OCR không hợp lệ.')
+            if item.get('status') == 'TRANSLATED_DRAFT':
+                continue
             if translator is None:
                 translator = _translator()
             values = translate_region_texts(translator, [r['source_text'] for r in regions])

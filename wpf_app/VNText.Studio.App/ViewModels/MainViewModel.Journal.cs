@@ -51,10 +51,10 @@ public sealed partial class MainViewModel
         if (owner == WorkflowTabs.Extract) { AddExtractRunLine(id, content); return; }              // complete, never truncated or evicted
         var lines = owner switch { WorkflowTabs.Translate => TranslateLogLines, WorkflowTabs.Patch => PatchLogLines, _ => null };
         if (lines is null) return;
-        if (content.Length > 1000) content = content[..1000];
+
         if (lines.Count > 0 && lines[^1].EndsWith("] " + content,StringComparison.Ordinal)) return;
         lines.Add($"[{DateTime.Now:HH:mm:ss}] {content}");
-        while(lines.Count > 200) lines.RemoveAt(0);
+
     }
 
     internal void TestBeginTaskLog(string id,string task) => BeginTaskLog(id,task,"Bắt đầu");

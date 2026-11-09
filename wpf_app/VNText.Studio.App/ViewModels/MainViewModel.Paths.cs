@@ -60,7 +60,7 @@ public sealed partial class MainViewModel
 
     /// <summary>One readiness state for the Patch badge: ready | review | csvok | stale. Text AND colour in the view both follow this value.</summary>
     public string PatchBadgeKind =>
-        PatchPreflightOk ? "ready"
+        PatchPreflightOk ? (PatchBlockedCount > 0 ? "partial" : "ready")
         : PatchPreflightEvaluated ? "review"                 // judged and blocked
         : _patchSourceStale ? "stale"                          // source changed, no check yet
         : CsvValidationOk ? "csvok"                            // CSV valid, preflight not run
@@ -70,6 +70,7 @@ public sealed partial class MainViewModel
     public string PatchBadgeText => PatchBadgeKind switch
     {
         "ready" => "SẴN SÀNG",
+        "partial" => "PATCH MỘT PHẦN",
         "csvok" => "CSV HỢP LỆ",
         "stale" => "CẦN KIỂM TRA LẠI",
         "idle" => "CHƯA KIỂM TRA",
@@ -255,7 +256,7 @@ public sealed partial class MainViewModel
         _patchSourceStale = false;
         CsvValidationOk = result.Ok;
         CsvValidationMessage = result.Message;
-        ReadyForPatch = result.Ok && WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(path)!).IsComplete;
+        ReadyForPatch = result.Ok;
         if (result.Ok)
         {
             // Heavy Python gate only when user explicitly validates or starts patch (silent=false).
@@ -308,7 +309,7 @@ public sealed partial class MainViewModel
             return;
         CsvValidationOk = result.Ok;
         CsvValidationMessage = result.Message;
-        ReadyForPatch = result.Ok && progress.IsComplete;
+        ReadyForPatch = result.Ok;
         if (!result.Ok)
         {
             PatchPreflightOk = false;
@@ -325,12 +326,12 @@ public sealed partial class MainViewModel
             ? Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv")
             : TranslationCsvPath;
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
-        var progress = WorkflowStatus.EvaluateTranslateProgress(Path.GetDirectoryName(csv)!);
-        var result = !progress.IsComplete
-            ? PatchPreflightResult.Fail(csv, UiText.Msg("Dịch chưa hoàn tất — pending {0}, review {1}, blocked {2}. Chưa thể tạo Patch.", progress.Pending, progress.ReviewOnly, progress.Blocked))
-            : PatchPreflightService.Run(csv, manifest);
+        // Translation completion is advisory. The current CSV and manifest, not an
+        // older MT run's pending/review counts, decide which rows can be patched.
+        var result = PatchPreflightService.Run(csv, manifest);
         _patchSourceStale = false;
         PatchPreflightOk = result.Ok;
+        ReadyForPatch = result.Ok;
         PatchPreflightEvaluated = true;
         PatchResultsAvailable = true;
         if (!silent)

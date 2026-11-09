@@ -589,6 +589,10 @@ public sealed partial class MainViewModel
             StatusText = "Không có dòng hợp lệ để patch";
             return;
         }
+        if (PatchBlockedCount > 0 && AppDialogService.Show(
+                UiText.Msg("Tạo patch với {0} câu hợp lệ? {1} câu chưa đủ điều kiện sẽ được bỏ qua; game giữ nguyên các câu đó.", PatchEligibleCount, PatchBlockedCount),
+                "Tạo patch", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
         var csv = ResolveActiveCsvPath();
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
         BeginTask("patch", new

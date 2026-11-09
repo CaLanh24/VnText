@@ -17,7 +17,8 @@ internal sealed class JournalWindow : Window
     private readonly AppJournalStore _store;
     private readonly MainViewModel _vm;
     private readonly ComboBox _files=new(){MinWidth=210}, _level=new(){Width=100}, _size=new(){Width=85};
-    private readonly TextBox _query=new(){MinWidth=240}, _content=new(){IsReadOnly=true,AcceptsReturn=true,TextWrapping=TextWrapping.NoWrap,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,FontFamily=new FontFamily("Courier New"),FontSize=12,Background=new SolidColorBrush(Color.FromRgb(15,23,42)),Foreground=new SolidColorBrush(Color.FromRgb(226,232,240)),BorderThickness=new Thickness(0),Padding=new Thickness(12,0,12,0)};
+    private readonly TextBox _query=new(){MinWidth=240};
+    private readonly SeverityLogBox _content=new(){IsReadOnly=true,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,FontFamily=new FontFamily("Segoe UI"),FontSize=11,BorderThickness=new Thickness(0),Padding=new Thickness(12,4,12,4)};
     private readonly ToggleButton _regex=new(){Content="Biểu thức chính quy",VerticalAlignment=VerticalAlignment.Center};
     private Button? _previousPage, _nextPage;
     private readonly TextBlock _pageSizeLabel=new(){VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(12,0,8,0)};

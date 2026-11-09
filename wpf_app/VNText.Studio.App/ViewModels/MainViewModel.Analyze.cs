@@ -106,12 +106,12 @@ public sealed partial class MainViewModel
         get
         {
             if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage)) return UiText.Translate("Chọn thư mục game cụ thể để tiếp tục.");
-            if (AnalyzeBusy) return UiText.Translate("Đang nhận diện engine. Bạn có thể hủy hoặc chọn nguồn khác.");
+            if (AnalyzeBusy) return UiText.Translate("Đang nhận diện engine…");
             if (string.IsNullOrWhiteSpace(InputPath)) return UiText.Translate("Chọn game / asset để tự nhận diện engine.");
             if (_analyzeIdentity is null) return UiText.Translate("Đầu vào đã đổi; hệ thống sẽ nhận diện lại khi đủ nguồn và thư mục xuất.");
             return _analyzeOutcome switch
             {
-                AnalyzeOutcome.Identified => UiText.Format("Đã nhận diện: {0}. Sẵn sàng Lấy text; chưa xác minh khả năng tạo patch.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
+                AnalyzeOutcome.Identified => UiText.Format("{0} · Sẵn sàng lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
                 AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh mục tài nguyên chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
                 AnalyzeOutcome.Unsupported => UiText.Translate("Chưa nhận diện được engine được hỗ trợ trong thư mục này. Kiểm tra lại thư mục game đã chọn."),
                 AnalyzeOutcome.Failed => UiText.Translate("Phân tích không hoàn tất. Xem Nhật ký, rồi chọn lại nguồn để thử lại."),
@@ -426,7 +426,7 @@ public sealed partial class MainViewModel
             : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
         RaiseAnalyzeSummary();
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
-            ? "Không ghi nhận lỗi quét."
+            ? ""
             : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
     }
 

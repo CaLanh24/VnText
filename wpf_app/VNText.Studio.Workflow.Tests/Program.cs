@@ -44,6 +44,23 @@ internal static partial class Program
         if (args.Contains("--english-pages-fixture", StringComparer.Ordinal))
             return RunEnglishPagesFixture(args);
 
+        if (args.Contains("--owner-quality-only", StringComparer.Ordinal))
+        {
+            var failures = new List<string>();
+            Run("PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel", PatchPreflight_ScopedMainSubsetEnablesBuildThroughTheViewModel, failures);
+            Run("PatchPreflight_BlocksGarbage", PatchPreflight_BlocksGarbage, failures);
+            Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, failures);
+            Run("LogSeverity_MetadataNotSourceWords", () =>
+            {
+                AssertEqual("ERROR", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] Lỗi: SDK failed"));
+                AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] [cảnh báo] Partial"));
+                AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] Hoàn tất"));
+                AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[12:34:56] 47% • Mục: error-ok.png"));
+            }, failures);
+            foreach (var failure in failures) Console.Error.WriteLine(failure);
+            return failures.Count == 0 ? 0 : 1;
+        }
+
         if (args.Contains("--preferences-only", StringComparer.Ordinal))
         {
             var result=1; var thread=new Thread(() => { try { result=PreferencesTests.Run(); } catch(Exception ex) { Console.Error.WriteLine(ex); } });
@@ -1602,13 +1619,13 @@ internal static partial class Program
         var cases = new (string Name, bool Blank, bool Scoped, bool Build)[]
         {
             ("proven scoped subset with an excluded review screen", false, true, true),
-            ("one MAIN row blank although the status claims all translated", true, true, false),
+            ("one MAIN row blank: build the eligible subset", true, true, true),
             ("review row without a verified scope", false, false, false),
         };
         foreach (var (name, blank, scoped, build) in cases)
         {
             var root = CreateScopedReviewPackage(blank, scoped);
-            try { AssertScopedPackageBuildState(name, root, build, 3, 1); }
+            try { AssertScopedPackageBuildState(name, root, build, blank ? 2 : 3, blank ? 2 : 1); }
             finally { Directory.Delete(root, true); }
         }
         // Optional: the actual current native package (copied; never modified) when its folder is supplied.

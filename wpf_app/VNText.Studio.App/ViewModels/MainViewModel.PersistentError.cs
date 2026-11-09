@@ -21,6 +21,16 @@ public sealed partial class MainViewModel
 
     public bool HasPersistentError => _persistentErrorText.Length > 0;
     public string PersistentErrorText => _persistentErrorText;
+    public string PersistentNoticeSummary
+    {
+        get
+        {
+            if (!_persistentIsWarning || _persistentErrorText.Length <= 240) return _persistentErrorText;
+            var first = _persistentErrorText.IndexOf(". ", StringComparison.Ordinal);
+            return (first is > 0 and < 240 ? _persistentErrorText[..(first + 1)] : _persistentErrorText[..220] + "…")
+                + " " + UiText.Translate("Chi tiết được giữ đầy đủ trong Nhật ký.");
+        }
+    }
     // A limitation of a SUCCESSFUL run (PARTIAL) is a neutral review warning, never the red "Lỗi" of an actual failure.
     public bool PersistentErrorIsWarning => _persistentIsWarning;
     public string PersistentErrorHeading => !HasPersistentError ? ""
@@ -106,7 +116,7 @@ public sealed partial class MainViewModel
     private void RaisePersistentError()
     {
         Raise(nameof(HasPersistentError));
-        Raise(nameof(PersistentErrorText));
+        Raise(nameof(PersistentErrorText)); Raise(nameof(PersistentNoticeSummary));
         Raise(nameof(PersistentErrorHeading));
         Raise(nameof(PersistentErrorIsWarning));
         Raise(nameof(PersistentErrorHint));

@@ -50,7 +50,7 @@ class AutomaticImageTests(unittest.TestCase):
         ImageDraw.Draw(image).text((15,20),'Hello world',font=ImageFont.truetype(str(_font_path()),34),fill='black')
         image.save(self.source)
         self.data=self.source.read_bytes()
-        self.doc={'schema':1,'source_path':'','source_sha256':hashlib.sha256(self.data).hexdigest(),
+        self.doc={'schema':1,'text_detection_policy':'crop-consensus-1','source_path':'','source_sha256':hashlib.sha256(self.data).hexdigest(),
                   'width':400,'height':120,'regions':[{'box':[10,10,300,60],'source_text':'Hello world','approved':False}]}
 
     def ocr(self,path,**kwargs):
@@ -281,7 +281,7 @@ class AutomaticImageTests(unittest.TestCase):
         # Supported container whose only player-visible text is inside images: no text rows (EMPTY),
         # but the OCR result must be visible in the user-facing error, not hidden in the summary.
         game=self.root/'container';(game/'data').mkdir(parents=True);(game/'images').mkdir()
-        (game/'data/build_info.json').write_text(json.dumps({'schema':1,'build':1}),encoding='utf-8')
+        (game/'data/build_info.json').write_text(json.dumps({'schema':1,'text_detection_policy':'crop-consensus-1','build':1}),encoding='utf-8')
         (game/'images/menu.png').write_bytes(self.data)
         batch=Mock(return_value={'total':3,'ocr_ready':2,'translated':0,'untranslated':1,'output':'image-ocr'})
         completed=self._extract_raw(game,batch)
