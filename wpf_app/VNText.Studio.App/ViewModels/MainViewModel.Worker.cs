@@ -303,7 +303,7 @@ public sealed partial class MainViewModel
                         ? evt.Error
                         : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở CSV/report và xử lý lỗi trước khi dịch."
                     : isExternalTranslationImport
-                    ? $"Đã nhập {evt.Applied} dòng an toàn; còn {externalRemaining} dòng cần sửa trong CSV"
+                    ? UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong CSV", evt.Applied, externalRemaining)
                     : needsHumanReview
                     ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi Patch"
                     : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";

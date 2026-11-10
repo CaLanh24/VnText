@@ -1840,6 +1840,8 @@ internal static partial class Program
                 Require(shown != text && !System.Text.RegularExpressions.Regex.IsMatch(shown, "[À-ỹ]"), "completion text stays Vietnamese in English: " + shown);
             }
             AssertEqual("Hello đường dẫn", VNText.Studio.App.Services.UiText.TranslateDynamic("Hello đường dẫn"));   // user/unknown text is never rewritten
+            AssertEqual("Safely imported 0 rows; 8 rows still need attention in the CSV editor.",
+                VNText.Studio.App.Services.UiText.TranslateDynamic(VNText.Studio.App.Services.UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong CSV", 0, 8)));
         }
         finally { VNText.Studio.App.Services.UiText.SetLanguage("vi"); }
     }
