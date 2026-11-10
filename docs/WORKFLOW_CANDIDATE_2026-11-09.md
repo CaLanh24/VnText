@@ -30,3 +30,5 @@ Implemented: image translation consumes Extract's positive OCR report; results s
 - Consumed with receipts: generated 0.1.17 baseline mirror, old batch5 Setup, legacy DEV_RUN audit output (text archived, binaries hash-indexed), empty native test container. `runner-reports` stays REVIEW_REQUIRED. User data, original game/saves and protected epoch history retained.
 
 - Temporary 6.75 GiB grant (Owner 2026-11-09) funded the full-resource run; stub relocated for the preflight and restored byte-exact afterwards; test container disposed through the registry route.
+
+- 2026-11-10 six-finding batch (Owner-authorized): launcher budget prerequisite, quiet Analyze success + output-only reuse, `technical_control` user label, wrapping find label, language refresh + localized completion, import target consistency. Code `a24d0f6`; candidate `DEV_RUN/resources-dev15` (app sha256 `ff7e6c9f…4cc7`); real smoke chain PASS; native visual NOT PROVEN (Root desktop lock, UIA-only note for Analyze). Details: AI_STATE and `C:/vnrg/evidence/quality-batch/` (`root-native-observation-sixfinding.json`, `app-smoke.json`, `sixfinding-final-cleanup.json`).
