@@ -27,24 +27,50 @@ def default_release_task_id():
 
 
 def budget_check(task_id):
-    """Startup prerequisite of the DEV launcher: the approved budget profile must be ACTIVE for this exact source.
+    """Startup prerequisite of the DEV launcher: the approved budget profile must be bound to THIS exact source.
 
-    Returns (ok, message).  Never raises the cap, never waives the guard and never rebaselines: it only reports which supported step is missing
-    (for a documentation-only HEAD that is the ordinary same-scope epoch transition, then re-registering the release scope).
+    A fast, read-only check of the registry facts the worker's quota profile requires (ACTIVE epoch, budget record for this task/scope/limit/approval,
+    registered source == current clean HEAD, the registered release scope).  The full epoch-history verification (minutes) stays with the quota
+    tool itself on first use; this check only exists so a missing prerequisite is reported at startup instead of as a default 1 GiB block inside Extract.
+    Returns (ok, message).  It never raises the cap, waives the guard or rebaselines; for a documentation-only HEAD the supported fix is the ordinary
+    same-scope epoch transition followed by re-registering the release scope.
     """
     sys.path.insert(0, str(ROOT))
     os.environ[RELEASE_TASK_KEY] = task_id
+    fix = ("Extract/translate would be blocked by the default 1 GiB cap. Supported fix: the registered epoch source must equal the current HEAD "
+           "(ordinary same-scope epoch transition for a docs-only HEAD), then tests/tools/cleanup_work_artifacts.py --register-release-task-scope. "
+           "The cap, guard and baseline are not changed by this launcher.")
     try:
         from tests.tools import cleanup_work_artifacts as cleanup
-        limit, reason, profile = cleanup._release_task_budget_profile(cleanup._project_inventory_root())
+        spec_task, version, approval = cleanup._release_budget_spec(task_id)
+        manifest, _raw, errors = cleanup._strict_registry_snapshot()
+        if errors:
+            return False, f"approved budget '{task_id}' NOT active: registry invalid ({errors[0]}). {fix}"
+        epoch = manifest.get("prospective_epoch")
+        budget = epoch.get("release_task_budget") if isinstance(epoch, dict) else None
+        state = cleanup._git_repository_state()
+        scope = cleanup._task_scope_path(ROOT, spec_task, version)
+        problems = []
+        if not isinstance(epoch, dict) or epoch.get("status") != "ACTIVE":
+            problems.append("no ACTIVE epoch")
+        elif not isinstance(budget, dict):
+            problems.append("epoch has no task budget")
+        else:
+            if budget.get("task_id") != spec_task or budget.get("limit_bytes") != cleanup._release_task_budget_limit(spec_task) or budget.get("owner_approval") != approval:
+                problems.append("budget record differs from the approved task/limit/approval")
+            if budget.get("scope_path") != str(scope):
+                problems.append("budget scope path differs")
+            if state.get("head") != epoch.get("source_sha") or budget.get("source_sha") != epoch.get("source_sha"):
+                problems.append(f"epoch source {str(epoch.get('source_sha'))[:12]} != HEAD {str(state.get('head'))[:12]}")
+        if state.get("dirty"):
+            problems.append("source tree is dirty")
+        if not any(isinstance(item, dict) and cleanup._path_key(item.get("path", "")) == cleanup._path_key(scope) for item in manifest.get("artifacts", [])):
+            problems.append("release scope is not registered")
+        if problems:
+            return False, f"approved budget '{task_id}' NOT active: " + "; ".join(problems) + ". " + fix
+        return True, f"approved budget '{task_id}' bound to HEAD {str(state.get('head'))[:12]} (cap {budget.get('limit_bytes')} bytes)"
     except Exception as error:  # noqa: BLE001 - a launcher prerequisite must fail closed with the cause
-        return False, f"budget profile could not be evaluated: {error}"
-    if reason or profile != task_id:
-        return False, (f"approved budget profile '{task_id}' is NOT active (profile={profile}, reason={reason or 'none'}, effective cap {limit} bytes). "
-                       "Extract/translate would be blocked by the default 1 GiB cap. Supported fix: the registered epoch source must equal the current HEAD "
-                       "(ordinary same-scope epoch transition for a docs-only HEAD) and the release scope must be registered "
-                       "(tests/tools/cleanup_work_artifacts.py --register-release-task-scope). The cap, guard and baseline are not changed by this launcher.")
-    return True, f"approved budget profile '{task_id}' active (cap {limit} bytes)"
+        return False, f"approved budget '{task_id}' could not be checked: {error}. {fix}"
 MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.json", "tokenizer_config.json")
 
 

@@ -87,18 +87,33 @@ class DevBootstrapTests(unittest.TestCase):
         env = dev.owned_build_env(result, Path("out"), Path("cache"), "runtime")
         self.assertEqual("release-0.1.17", env["VNTEXT_RELEASE_TASK_ID"])
 
-    def test_budget_check_reports_the_missing_prerequisite_without_changing_anything(self):
+    def _budget_fake(self, *, head="a" * 40, epoch_source="a" * 40, dirty=False, scope_registered=True):
         import types
-        fake = types.SimpleNamespace(_project_inventory_root=lambda: Path("."),
-                                     _release_task_budget_profile=lambda root: (1073741824, "release_task_budget_scope_or_source_mismatch", "default"))
-        with patch.dict("sys.modules", {"tests.tools.cleanup_work_artifacts": fake}), patch.dict("os.environ", {}, clear=False):
-            ok, message = dev.budget_check("release-0.1.17")
-        self.assertFalse(ok)
-        self.assertIn("NOT active", message); self.assertIn("release_task_budget_scope_or_source_mismatch", message); self.assertIn("1073741824", message)
-        self.assertIn("The cap, guard and baseline are not changed", message)
-        active = types.SimpleNamespace(_project_inventory_root=lambda: Path("."), _release_task_budget_profile=lambda root: (7247757312, None, "release-0.1.17"))
-        with patch.dict("sys.modules", {"tests.tools.cleanup_work_artifacts": active}):
-            self.assertTrue(dev.budget_check("release-0.1.17")[0])
+        scope = "C:/v/RELEASE_RUN/candidate-0.1.17"
+        manifest = {"prospective_epoch": {"status": "ACTIVE", "source_sha": epoch_source,
+                                          "release_task_budget": {"task_id": "release-0.1.17", "limit_bytes": 7247757312, "owner_approval": "approval",
+                                                                  "scope_path": scope, "source_sha": epoch_source}},
+                    "artifacts": [{"path": scope}] if scope_registered else []}
+        return types.SimpleNamespace(
+            _release_budget_spec=lambda requested: ("release-0.1.17", "0.1.17", "approval"),
+            _strict_registry_snapshot=lambda: (manifest, b"", []),
+            _git_repository_state=lambda: {"head": head, "dirty": dirty},
+            _task_scope_path=lambda root, task, version: scope,
+            _release_task_budget_limit=lambda task: 7247757312,
+            _path_key=lambda value: str(value))
+
+    def test_budget_check_reports_the_missing_prerequisite_without_changing_anything(self):
+        def run(fake):
+            with patch.dict("sys.modules", {"tests.tools.cleanup_work_artifacts": fake}):
+                return dev.budget_check("release-0.1.17")
+        ok, message = run(self._budget_fake())
+        self.assertTrue(ok, message)
+        # A documentation-only HEAD ahead of the registered epoch source, a dirty tree and an unregistered scope each fail with the exact cause.
+        ok, message = run(self._budget_fake(head="b" * 40))
+        self.assertFalse(ok); self.assertIn("epoch source " + "a" * 12 + " != HEAD " + "b" * 12, message)
+        self.assertIn("ordinary same-scope epoch transition", message); self.assertIn("The cap, guard and baseline are not changed", message)
+        self.assertIn("source tree is dirty", run(self._budget_fake(dirty=True))[1])
+        self.assertIn("release scope is not registered", run(self._budget_fake(scope_registered=False))[1])
 
     def test_build_identity_includes_untracked_status_and_assembly(self):
         result = {"source_sha": "source", "receipts": [], "python": {"path": "python"},
