@@ -1855,8 +1855,13 @@ internal static partial class Program
             var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
             using var worker = new PythonWorkerHost();
             using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = elsewhere };   // the output folder holds no package
-            vm.ChooseTranslationCsvCommand.Execute(null);
-            Require(vm.RunPatchCommand != null, "setup");
+            // The editor assigns this path without running Patch validation. A
+            // different valid package in OutputPath must never win that selection.
+            File.Copy(Path.Combine(oldPackage, "translation.csv"), Path.Combine(elsewhere, "translation.csv"));
+            File.Copy(Path.Combine(oldPackage, "manifest.json"), Path.Combine(elsewhere, "manifest.json"));
+            vm.TestSetTranslationCsvPath(Path.Combine(package, "translation.csv"));
+            AssertEqual(Path.Combine(package, "translation.csv"), vm.TestResolveActiveCsvPath());
+            AssertEqual(Path.Combine(package, "translation.csv"), vm.TestGetTranslateReadinessPath());
             picker.TranslationCsv = Path.Combine(oldPackage, "translation.csv");                                // the OLD translation the person picks to import
             try { vm.TestImportExistingTranslation(); } catch (Exception) { /* no worker in this harness: only the chosen target matters */ }
             AssertEqual(Path.Combine(package, "translation.csv"), vm.TestPendingExternalImportTarget);

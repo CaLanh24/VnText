@@ -647,7 +647,7 @@
                                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                             <StackPanel VerticalAlignment="Center">
                                                 <TextBlock Text="Tiến trình dịch" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="{Binding TranslateWorkflowStatusText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,12,0" TextWrapping="Wrap" />
+                                                <TextBlock Text="{Binding TranslateWorkflowStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,12,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                                 <Button Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh (không cần dòng text trong CSV)." AutomationProperties.Name="Mở Text trong ảnh"

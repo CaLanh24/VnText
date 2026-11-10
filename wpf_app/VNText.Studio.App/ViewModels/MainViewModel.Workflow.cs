@@ -127,7 +127,7 @@ public sealed partial class MainViewModel
 
     private string GetTranslateReadinessPath()
     {
-        if (_csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath))
+        if (!string.IsNullOrWhiteSpace(TranslationCsvPath))
             return TranslationCsvPath;
         var fallback = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
         // A chosen CSV that exists but failed its own validation (for example no manifest.json beside it) is reported with that
@@ -612,7 +612,10 @@ public sealed partial class MainViewModel
 
     private string ResolveActiveCsvPath()
     {
-        if (_csvValidationOk && !string.IsNullOrWhiteSpace(TranslationCsvPath) && File.Exists(TranslationCsvPath))
+        // Selection is independent of Patch validation. CSV-editor loading clears that
+        // result; falling back here silently acts on another package. Each action still
+        // validates the selected file and its manifest before reading or writing it.
+        if (!string.IsNullOrWhiteSpace(TranslationCsvPath))
             return TranslationCsvPath;
         return Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
     }
