@@ -389,7 +389,10 @@ public sealed partial class MainViewModel
                     };
                     if (!(completedTask == "analyze" && _analyzeRejectLate))
                     {
-                        RequestCompletion("VNText Studio — Hoàn tất", doneMsg, "success");
+                        // Detection success is a quiet notification (it runs automatically and again for each source/output choice); only the
+                        // user-started long tasks keep the completion dialog.  Warnings, failures and the pre-extract guard are unchanged.
+                        if (completedTask == "analyze") ShowToast(doneMsg, "success", playSound: false);
+                        else RequestCompletion("VNText Studio — Hoàn tất", doneMsg, "success");
                         LogExpanded = true;
                     }
                 }

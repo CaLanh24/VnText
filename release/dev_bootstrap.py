@@ -14,6 +14,37 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 DEV_ENV_ROOT = ROOT / ".dev-env"
 BUILD_RESERVE = 128 * 1024 ** 2
+RELEASE_TASK_KEY = "VNTEXT_RELEASE_TASK_ID"
+
+
+def default_release_task_id():
+    """The approved task budget id this checkout is developed under (explicit env first, else the checkout version)."""
+    explicit = str(os.environ.get(RELEASE_TASK_KEY) or "").strip()
+    if explicit:
+        return explicit
+    version = (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
+    return f"release-{version}"
+
+
+def budget_check(task_id):
+    """Startup prerequisite of the DEV launcher: the approved budget profile must be ACTIVE for this exact source.
+
+    Returns (ok, message).  Never raises the cap, never waives the guard and never rebaselines: it only reports which supported step is missing
+    (for a documentation-only HEAD that is the ordinary same-scope epoch transition, then re-registering the release scope).
+    """
+    sys.path.insert(0, str(ROOT))
+    os.environ[RELEASE_TASK_KEY] = task_id
+    try:
+        from tests.tools import cleanup_work_artifacts as cleanup
+        limit, reason, profile = cleanup._release_task_budget_profile(cleanup._project_inventory_root())
+    except Exception as error:  # noqa: BLE001 - a launcher prerequisite must fail closed with the cause
+        return False, f"budget profile could not be evaluated: {error}"
+    if reason or profile != task_id:
+        return False, (f"approved budget profile '{task_id}' is NOT active (profile={profile}, reason={reason or 'none'}, effective cap {limit} bytes). "
+                       "Extract/translate would be blocked by the default 1 GiB cap. Supported fix: the registered epoch source must equal the current HEAD "
+                       "(ordinary same-scope epoch transition for a docs-only HEAD) and the release scope must be registered "
+                       "(tests/tools/cleanup_work_artifacts.py --register-release-task-scope). The cap, guard and baseline are not changed by this launcher.")
+    return True, f"approved budget profile '{task_id}' active (cap {limit} bytes)"
 MODEL_FILES = ("model.bin", "config.json", "source.spm", "target.spm", "vocab.json", "tokenizer_config.json")
 
 
@@ -42,6 +73,8 @@ def owned_build_env(result, output, cache, runtime_root):
                VNTEXT_LOCALAPPDATA=str(output / "localappdata"))
     if result["model"]["path"]:
         env["VNTEXT_CT2_MODEL"] = result["model"]["path"]
+    if result.get("release_task_id"):
+        env[RELEASE_TASK_KEY] = result["release_task_id"]   # the Owner-approved project budget; without it every child measures the default 1 GiB cap
     _sanitize_inherited_path(env)  # process-only: stale repo-owned `.dotnet\\tools` homes are not passed to the SDK
     return env
 
@@ -231,12 +264,16 @@ def write_launcher(output, environment):
     # DEV-only entrypoint carries the same preflighted paths into a fresh shell.
     keys = ("DOTNET_ROOT_X64", "DOTNET_ROOT", "VNTEXT_WORKER_CWD",
             "VNTEXT_WORKER_PYTHON", "VNTEXT_CT2_NO_DOWNLOAD", "VNTEXT_CT2_MODEL",
-            "VNTEXT_DATA_ROOT", "VNTEXT_LOCALAPPDATA")
+            "VNTEXT_DATA_ROOT", "VNTEXT_LOCALAPPDATA", RELEASE_TASK_KEY)
     lines = ["$ErrorActionPreference = 'Stop'"]
     for key in keys:
         if key in environment:
             value = environment[key].replace("'", "''")
             lines.append(f"$env:{key} = '{value}'")
+    if RELEASE_TASK_KEY in environment and "VNTEXT_WORKER_PYTHON" in environment:
+        # Fail at startup, not minutes later inside Extract: the approved budget must be active for this exact source.
+        lines.append(f"& $env:VNTEXT_WORKER_PYTHON -B '{str(ROOT / 'release/dev_bootstrap.py').replace(chr(39), chr(39) * 2)}' --action budget-check")
+        lines.append("if ($LASTEXITCODE -ne 0) { Write-Host 'VNText DEV launcher stopped: approved budget prerequisite missing (see above).'; exit $LASTEXITCODE }")
     lines.extend(["& \"$PSScriptRoot/VNText.Studio.App.exe\" @args", "exit $LASTEXITCODE"])
     (output / "Start-DEV.ps1").write_text("\n".join(lines) + "\n", encoding="utf-8-sig")
     (output / "Start-DEV.cmd").write_text(
@@ -262,15 +299,20 @@ def build_identity(output, result, runtime_root):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--action", choices=("check", "build", "smoke"), default="check")
+    parser.add_argument("--action", choices=("check", "build", "smoke", "budget-check"), default="check")
     parser.add_argument("--output-scope", choices=("bootstrap-build", "resources-dev15"), default="bootstrap-build")
     parser.add_argument("--gate", choices=("dev", "smoke"), default="dev")
     parser.add_argument("--python")
     parser.add_argument("--dotnet")
     parser.add_argument("--model")
     parser.add_argument("--shared-root", help="Existing dependency/cache checkout; explicit, never copied")
+    parser.add_argument("--release-task-id", help="Approved task budget id to carry into the launcher (default: env VNTEXT_RELEASE_TASK_ID or release-<VERSION>)")
     args = parser.parse_args(argv)
     result = {}
+    if args.action == "budget-check":
+        ok, message = budget_check(args.release_task_id or default_release_task_id())
+        print(("OK: " if ok else "BLOCKED: ") + message, file=sys.stdout if ok else sys.stderr)
+        return 0 if ok else 3
     try:
         shared = Path(args.shared_root).resolve() if args.shared_root else ROOT
         if args.action != "check":
@@ -279,10 +321,12 @@ def main(argv=None):
             inventory, _ = quota()
             if not shared.is_relative_to(Path(inventory["root"]).resolve()):
                 raise ValueError("shared-root must stay inside containing DEV checkout")
+        task_id = args.release_task_id or default_release_task_id()
         result = preflight(args.python, args.dotnet, args.model,
                            "smoke" if args.action == "smoke" else args.gate,
                            BUILD_RESERVE if args.action != "check" else 0)
         code = 2 if result["missing"] else 0
+        result["release_task_id"] = task_id
         if args.action != "check" and not code:
             output.mkdir(parents=True, exist_ok=True)
             marker = output / ".bootstrap-owner.json"

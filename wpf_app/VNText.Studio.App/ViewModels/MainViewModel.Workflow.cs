@@ -525,14 +525,19 @@ public sealed partial class MainViewModel
             workerTask: "patch");
     }
 
+    internal string TestPendingExternalImportTarget => _pendingExternalTranslationImportTargetPath;
+    internal void TestImportExistingTranslation() => ImportExistingTranslation();
+
     private async void ImportExistingTranslation()
     {
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
         if (Busy) return;
         SelectedTab = WorkflowTabs.Translate;
-        var packageDir = WorkflowStatus.ResolvePackageDir(OutputPath);
-        var targetCsv = Path.Combine(packageDir, "translation.csv");
+        // The target is the package the person is working on: the same CSV Translate/Export/Patch use (the selected, validated one), and only
+        // without such a selection the package derived from the output folder.  The file's own manifest.json is still required beside it.
+        var targetCsv = ResolveActiveCsvPath();
+        var packageDir = Path.GetDirectoryName(targetCsv) ?? WorkflowStatus.ResolvePackageDir(OutputPath);
         if (!File.Exists(targetCsv) || !File.Exists(Path.Combine(packageDir, "manifest.json")))
         {
             const string message = "Hãy extract gói hiện tại trước khi nhập bản dịch cũ.";
@@ -555,6 +560,7 @@ public sealed partial class MainViewModel
         }
 
         _pendingExternalTranslationImportTargetPath = targetCsv;
+        AppendLog($"Nhập bản dịch cũ vào gói: {targetCsv}");      // the target is shown, never implied
         BeginTask(
             "external_translation_import",
             new

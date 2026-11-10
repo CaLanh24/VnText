@@ -1445,11 +1445,11 @@
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
 
                                         <StackPanel Grid.Row="1" Margin="0,0,7,0">
-                                            <TextBlock Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                            <TextBlock Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
                                             <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Grid.Column="1" Margin="7,0,7,0">
-                                            <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                            <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
                                             <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" />
                                         </StackPanel>
                                         <!-- Wrap (not clip): at the narrow native width the scope select and the three buttons flow onto a second line instead of running under the examples column. -->

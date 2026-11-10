@@ -256,11 +256,15 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         get => _outputPath;
         set
         {
+            var previousOutput = _outputPath;
             if (Set(ref _outputPath, value))
             {
                 Raise(nameof(OutputDisplay));
-                InvalidateAnalyzeIfInputsChanged();
-                ScheduleAutoAnalyze();
+                if (!TryReuseSourceAnalysisForNewOutput(previousOutput, value))
+                {
+                    InvalidateAnalyzeIfInputsChanged();
+                    ScheduleAutoAnalyze();
+                }
                 RefreshWorkflow();
                 RefreshTranslateReadiness();
                 OpenOutputCommand?.RaiseCanExecuteChanged();

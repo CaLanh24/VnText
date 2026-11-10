@@ -52,6 +52,10 @@ internal static partial class Program
             Run("PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep", PatchStatus_ReflectsTheCurrentRevisionNotTheTranslateStep, qualityFailures);
             Run("LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal", LogSeverity_ProducerKnownLevelsReachTheDisplayAndTheJournal, qualityFailures);
             Run("WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal", WorkerPreflightLog_SeverityReachesThePatchTaskLogAndTheJournal, qualityFailures);
+            Run("Analyze_SuccessIsAQuietToastAndAnOutputOnlyChangeReusesTheSourceAnalysis", Analyze_SuccessIsAQuietToastAndAnOutputOnlyChangeReusesTheSourceAnalysis, qualityFailures);
+            Run("Csv_TechnicalControlShowsAUserLabelAndKeepsTheRawReason", Csv_TechnicalControlShowsAUserLabelAndKeepsTheRawReason, qualityFailures);
+            Run("Language_SwitchRefreshesComputedStatusAndCompletionTexts", Language_SwitchRefreshesComputedStatusAndCompletionTexts, qualityFailures);
+            Run("ImportExistingTranslation_TargetsTheSelectedPackageNotAStaleOutputFolder", ImportExistingTranslation_TargetsTheSelectedPackageNotAStaleOutputFolder, qualityFailures);
             Run("AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning", AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning, qualityFailures);
             Run("PatchPreflight_AllowsCleanRow", PatchPreflight_AllowsCleanRow, qualityFailures);
             Run("LogSeverity_MetadataNotSourceWords", () =>
@@ -1773,6 +1777,97 @@ internal static partial class Program
     {
         vm.TestHandleWorkerEvent(WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"" + text + "\",\"severity\":\"" + severity + "\"}")!);
         return vm.PatchLogLines.Last(l => l.Contains(text, StringComparison.Ordinal));
+    }
+
+    private static void Analyze_SuccessIsAQuietToastAndAnOutputOnlyChangeReusesTheSourceAnalysis()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_analyze_reuse_" + Guid.NewGuid().ToString("N"));
+        var other = Path.Combine(root, "other-source");
+        Directory.CreateDirectory(Path.Combine(root, "game")); Directory.CreateDirectory(Path.Combine(other, "game"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root, "game", "script.rpy"), "label start: pass\n", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(other, "game", "script.rpy"), "label start: pass\n", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(root, "unity_analysis.json"), "{\"inventory_complete\": true, \"unity\": {\"status\": \"DETECTED\"}, \"summary\": {\"resource_count\": 12, \"unknown_resources\": 0, \"scan_error_count\": 0}, \"coverage\": {\"text_candidates\": 4, \"patchable_text\": 4, \"extract_only_text\": 0, \"review_required\": 0, \"unsupported\": 0}, \"scan_errors\": []}", Encoding.UTF8);
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false) { InputPath = root, OutputPath = root, SelectedTab = WorkflowTabs.Extract };
+            var dialogs = 0; vm.CompletionRequested += (_, _) => dialogs++;
+            vm.TestMarkAnalyzeStarted();                                // the analysis belongs to this source + output
+            vm.TestSimulateTaskComplete("analyze", new WorkerEvent { Type = "complete", Ok = true, Complete = true, Summary = "Unity analyzer: DETECTED; resources=12; unknown=0; scan_errors=0" });
+            AssertEqual(0, dialogs);                                    // detection success never opens a blocking dialog
+            Require(vm.ToastVisible && vm.ToastKind == "success", "success is announced as a non-blocking notification");
+            vm.TestMarkTaskTerminal("test-analyze");
+            // Only the output folder changes: the valid analysis of this exact source is reused (no new run, no new announcement).
+            var identified = vm.AnalyzeNextActionText;
+            Require(!identified.Contains("Đầu vào đã đổi", StringComparison.Ordinal), "the analysis is current before the output change: " + identified);
+            vm.OutputPath = Path.Combine(root, "another-output");
+            Require(!vm.AnalysisInFlightOrPending, "no second analysis is scheduled for an output-only change");
+            AssertEqual(identified, vm.AnalyzeNextActionText);
+            AssertEqual("DETECTED", vm.AnalyzeUnityStatus);
+            AssertEqual(0, dialogs);
+            // A changed SOURCE still invalidates the result (and schedules detection again).
+            vm.InputPath = other;
+            Require(vm.AnalyzeNextActionText.Contains("Đầu vào đã đổi", StringComparison.Ordinal) || vm.AnalysisInFlightOrPending, "source change invalidates: " + vm.AnalyzeNextActionText);
+            Require(vm.AnalyzeNextActionText != identified, "the old source's result must not stay current");
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    private static void Csv_TechnicalControlShowsAUserLabelAndKeepsTheRawReason()
+    {
+        AssertEqual("Mã/định dạng game", CsvEditorRow.ShortenIssue("technical_control"));
+        var row = new CsvEditorRow { Key = "k" };
+        row.SetIssueSilent("technical_control", "technical_control");
+        AssertEqual("technical_control", row.IssueDisplay);                // tooltip/help text and the stored reason stay raw
+        AssertEqual("technical_control", row.IssueLabel);
+        AssertEqual("Mã/định dạng game", row.IssueShort);
+    }
+
+    private static void Language_SwitchRefreshesComputedStatusAndCompletionTexts()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        var changed = new List<string>(); vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
+        vm.RefreshLocalizedOptions();
+        foreach (var name in new[] { nameof(vm.TranslateReadinessText), nameof(vm.TranslateWorkflowStatusText), nameof(vm.AnalyzeNextActionText), nameof(vm.PatchStatusText) })
+            Require(changed.Contains(name), "a language switch must re-read " + name);
+        try
+        {
+            VNText.Studio.App.Services.UiText.SetLanguage("en");
+            foreach (var text in new[] { "VNText Studio — Hoàn tất", "Đã tạo gói Cloud Repair — tải ZIP lên dịch vụ bên ngoài.", "Đã nhập bản dịch cũ — có thể tạo patch.", "Tạo patch hoàn tất", "Phân tích game hoàn tất" })
+            {
+                var shown = VNText.Studio.App.Services.UiText.TranslateDynamic(text);
+                Require(shown != text && !System.Text.RegularExpressions.Regex.IsMatch(shown, "[À-ỹ]"), "completion text stays Vietnamese in English: " + shown);
+            }
+            AssertEqual("Hello đường dẫn", VNText.Studio.App.Services.UiText.TranslateDynamic("Hello đường dẫn"));   // user/unknown text is never rewritten
+        }
+        finally { VNText.Studio.App.Services.UiText.SetLanguage("vi"); }
+    }
+
+    private static void ImportExistingTranslation_TargetsTheSelectedPackageNotAStaleOutputFolder()
+    {
+        var package = CreateScopedReviewPackage(false, true);                      // selected, valid package (translation.csv + manifest.json)
+        var elsewhere = Path.Combine(TestTempRoot(), "vntext_import_out_" + Guid.NewGuid().ToString("N"));
+        var oldPackage = CreateScopedReviewPackage(false, true);
+        Directory.CreateDirectory(elsewhere);
+        try
+        {
+            var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = elsewhere };   // the output folder holds no package
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            Require(vm.RunPatchCommand != null, "setup");
+            picker.TranslationCsv = Path.Combine(oldPackage, "translation.csv");                                // the OLD translation the person picks to import
+            try { vm.TestImportExistingTranslation(); } catch (Exception) { /* no worker in this harness: only the chosen target matters */ }
+            AssertEqual(Path.Combine(package, "translation.csv"), vm.TestPendingExternalImportTarget);
+            Require(vm.LogLines.Any(l => l.Contains("Nhập bản dịch cũ vào gói: " + Path.Combine(package, "translation.csv"), StringComparison.Ordinal)), "the target package is shown in the log");
+            // The same file as target and source is still refused (identity guard).
+            picker.TranslationCsv = Path.Combine(package, "translation.csv");
+            vm.TestSetBusy(false);
+            try { vm.TestImportExistingTranslation(); } catch (Exception) { }
+            Require(vm.StatusText.Contains("Chưa chọn bản dịch cũ", StringComparison.Ordinal), "same-file import is refused: " + vm.StatusText);
+        }
+        finally { Directory.Delete(package, true); Directory.Delete(oldPackage, true); Directory.Delete(elsewhere, true); }
     }
 
     private static void AnalyzeBusy_DoesNotDuplicateTheEngineLineWithAScanErrorWarning()

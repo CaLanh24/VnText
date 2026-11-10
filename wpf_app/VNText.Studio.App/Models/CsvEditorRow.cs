@@ -65,6 +65,8 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
         "Rác lặp từ/ký tự" => "Rác lặp",
         "HTML/entity rác" => "HTML rác",
         "Dòng synonym — dịch thủ công" => "Synonym thủ công",
+        // The internal reason code is for diagnostics (tooltip/report/disk); the column says what it means to the person.
+        "technical_control" => "Mã/định dạng game",
         _ => display,
     };
 

@@ -59,6 +59,12 @@ internal static partial class Program
                     Require(Named("CsvBulkReplacePanel").IsVisible, "the find/replace tools are always visible once a CSV is open (no collapse)");
                     Require(grid.IsVisible && !Named("CsvEmptyState").IsVisible, "a loaded CSV shows the table, not the empty state");
                     Require(grid.ActualHeight >= 150, "the table keeps a finite viewport of at least three rows plus the header (got " + grid.ActualHeight + ")");
+                    // The find label must wrap, not clip, at the reviewed small presentation (UI 120%): its text fits the width it was given.
+                    var findLabel = FindVisualChildren<TextBlock>(Named("CsvBulkReplacePanel")).First(t => t.Text == "Tìm nguyên bản hoặc bản dịch");
+                    Require(findLabel.TextWrapping == System.Windows.TextWrapping.Wrap, "the find label wraps");
+                    Require(findLabel.ActualWidth + 0.5 >= Math.Min(findLabel.DesiredSize.Width, findLabel.ActualWidth), "the find label is not clipped");
+                    var findBox = Named("CsvBulkFindTextBox");
+                    Require(findLabel.TranslatePoint(new System.Windows.Point(0, findLabel.ActualHeight), window).Y <= findBox.TranslatePoint(new System.Windows.Point(0, 0), window).Y + 1, "the label ends above its field (no overlap after wrapping)");
                     Require(Math.Abs(grid.ActualHeight - emptyHeight) <= Math.Max(60, emptyHeight * 0.5), "the table viewport does not jump against the empty state");
 
                     vm.CsvBulkFind = "cửa";

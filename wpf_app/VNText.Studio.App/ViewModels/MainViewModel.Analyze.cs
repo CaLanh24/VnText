@@ -72,6 +72,24 @@ public sealed partial class MainViewModel
         return Norm(input) + "|" + Norm(output);
     }
 
+    /// <summary>
+    /// Detection reads the SOURCE; choosing only another output folder does not change what was detected.  When the current, successful
+    /// analysis belongs to exactly this source and the previous output, it is re-keyed to the new output instead of being run (and announced) again.
+    /// Any other state (changed source, running/failed/cancelled/unsupported analysis, late-rejected result, empty output) keeps the full path.
+    /// </summary>
+    private bool TryReuseSourceAnalysisForNewOutput(string? previousOutput, string? newOutput)
+    {
+        if (string.IsNullOrWhiteSpace(newOutput) || string.IsNullOrWhiteSpace(InputPath) || Busy || _analyzeRejectLate) return false;
+        if (_analyzeOutcome is not (AnalyzeOutcome.Identified or AnalyzeOutcome.IdentifiedIncomplete)) return false;
+        if (_analyzeIdentity is null || _analyzeIdentity != AnalyzeIdentityOf(InputPath, previousOutput)) return false;
+        _analyzeIdentity = AnalyzeIdentityOf(InputPath, newOutput);
+        _autoAnalyzeRevision++;                       // a debounce still pending for the old output must not start a second run
+        _autoAnalyzeDebouncing = false;
+        _autoAnalyzeWaitsForIdle = false;
+        RaiseAnalyzeSummary();
+        return true;
+    }
+
     private void InvalidateAnalyzeIfInputsChanged()
     {
         if (_analyzeIdentity is null || _analyzeIdentity == AnalyzeIdentityOf(InputPath, OutputPath))

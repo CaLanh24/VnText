@@ -68,6 +68,38 @@ class DevBootstrapTests(unittest.TestCase):
         self.assertIn('@args', script)
         self.assertIn('Start-DEV.ps1', write.call_args_list[1].args[0])
 
+    def test_launcher_carries_the_approved_task_budget_and_fails_at_startup_without_it(self):
+        environment = {"VNTEXT_WORKER_PYTHON": "C:/py/python.exe", "VNTEXT_RELEASE_TASK_ID": "release-0.1.17"}
+        with patch.object(Path, "write_text") as write:
+            dev.write_launcher(Path("owned-output"), environment)
+        script = write.call_args_list[0].args[0]
+        self.assertIn("$env:VNTEXT_RELEASE_TASK_ID = 'release-0.1.17'", script)
+        check = script.index("--action budget-check")
+        self.assertLess(check, script.index("VNText.Studio.App.exe"))                       # the prerequisite runs BEFORE the app starts
+        self.assertIn("if ($LASTEXITCODE -ne 0)", script[check:script.index("VNText.Studio.App.exe")])
+        # Without a task budget there is no check line to carry (the plain launcher is unchanged).
+        with patch.object(Path, "write_text") as write:
+            dev.write_launcher(Path("owned-output"), {"VNTEXT_WORKER_PYTHON": "C:/py/python.exe"})
+        self.assertNotIn("budget-check", write.call_args_list[0].args[0])
+
+    def test_owned_environment_propagates_the_task_budget(self):
+        result = {"python": {"path": "python"}, "model": {"path": ""}, "release_task_id": "release-0.1.17"}
+        env = dev.owned_build_env(result, Path("out"), Path("cache"), "runtime")
+        self.assertEqual("release-0.1.17", env["VNTEXT_RELEASE_TASK_ID"])
+
+    def test_budget_check_reports_the_missing_prerequisite_without_changing_anything(self):
+        import types
+        fake = types.SimpleNamespace(_project_inventory_root=lambda: Path("."),
+                                     _release_task_budget_profile=lambda root: (1073741824, "release_task_budget_scope_or_source_mismatch", "default"))
+        with patch.dict("sys.modules", {"tests.tools.cleanup_work_artifacts": fake}), patch.dict("os.environ", {}, clear=False):
+            ok, message = dev.budget_check("release-0.1.17")
+        self.assertFalse(ok)
+        self.assertIn("NOT active", message); self.assertIn("release_task_budget_scope_or_source_mismatch", message); self.assertIn("1073741824", message)
+        self.assertIn("The cap, guard and baseline are not changed", message)
+        active = types.SimpleNamespace(_project_inventory_root=lambda: Path("."), _release_task_budget_profile=lambda root: (7247757312, None, "release-0.1.17"))
+        with patch.dict("sys.modules", {"tests.tools.cleanup_work_artifacts": active}):
+            self.assertTrue(dev.budget_check("release-0.1.17")[0])
+
     def test_build_identity_includes_untracked_status_and_assembly(self):
         result = {"source_sha": "source", "receipts": [], "python": {"path": "python"},
                   "model": {"path": "model"}}
