@@ -1,6 +1,6 @@
 # Audit implementation - 2026-11-11
 
-Owner approved all R01-R12. Local implementation only; no push, release, version/tag/model change. Root is sole temporary writer while the fixed Claude DEV is weekly-quota blocked. Prior 10 fixes are preserved in 242b5a9. Current source implementation is being validated; build/native results will be added at terminal.
+Owner approved all R01-R12. Local implementation only; no push, release, version/tag/model change. Root is sole temporary writer while the fixed Claude DEV is weekly-quota blocked. Prior 10 fixes are preserved in 242b5a9. Implementation and scoped audit acceptance are complete; final native and cleanup closure is recorded below.
 
 | Proposal | Implemented owner / behavior | Verification / boundary |
 |---|---|---|
@@ -36,3 +36,11 @@ Evidence: C:/vnrg/evidence/audit-followup (registry plan/receipt, initial failed
 - **No push, release, tag/version/model change, game install or user-data deletion.** Native full-app/DPI/theme matrix, every target dependency installation, publisher, Setup/updater and whole-game acceptance are NOT_PROVEN for this audit batch.
 
 Final machine-readable receipt: `C:/vnrg/evidence/audit-followup/final-receipt.json`. Logs preserve initial failures and successful retests separately. Scoped code/build acceptance and blocked cleanup are independent verdicts.
+
+## Scoped audit acceptance — 2026-11-12
+
+**PASS within the approved audit scope.** Owner requested final-candidate Apply/Undo and completion of the blocked cleanup. Native on the unchanged `eb03d2b1e5b2765a1c4c4ff291040a855d476af3` candidate completed Preview → Apply → confirmation → Undo → confirmation. The isolated two-row CSV changed exactly one translation; backup and Undo SHA-256 both equal the original `58af44adcd9e9d46fa48743762baa59a226d0099480286fb312c61f560fc353b`. Screenshots were inspected; app and worker exited. Receipt: `C:/vnrg/evidence/audit-followup/native-final-apply-undo.json`. This closes the final positive-native gap described in the earlier handoff; prior failure evidence remains retained.
+
+After renewed explicit Owner cleanup authorization, one canonical `dispose_stale_batch` transaction completed without policy rejection: all 9 reviewed registered disposable roots were removed, 13,610,652 bytes freed, all targets absent on readback, four protected candidate files unchanged. No alternate deletion was used after a new rejection. Receipt/plan: `C:/vnrg/evidence/audit-followup/cleanup-final-receipt.json` and `cleanup-final-plan.json`. The previous PROVEN_BLOCKED receipt is historical; the new scoped cleanup verdict is PASS. Global historical MISSING remains REVIEW_REQUIRED.
+
+Existing test/build/smoke receipts remain scoped to their original source SHAs; no redundant suite or rebuild was run for this acceptance/documentation update. Candidate EXE/DLL hashes were rechecked against the receipt. Release, Setup/updater, whole-game and full DPI/theme acceptance remain outside this audit verdict. No push/publication.
