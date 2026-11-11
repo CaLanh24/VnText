@@ -191,6 +191,16 @@ RELEASE_TASK_015_BUDGET_ID = "release-0.1.15"
 # Release 0.1.16 (NOT 0.1.6: RELEASE_TASK_016_BUDGET_ID below is the historical 0.1.6 task).
 RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
 RELEASE_TASK_0117_BUDGET_ID = "release-0.1.17"
+# Release 0.1.18 (the next patch after public 0.1.17; NOT 0.1.8: RELEASE_TASK_018_BUDGET_ID is the historical 0.1.8 task).
+RELEASE_TASK_0118_BUDGET_ID = "release-0.1.18"
+RELEASE_TASK_0118_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_18_initial_bytes"]     # 3 GiB initial ceiling, raised only to a recorded measured need
+RELEASE_TASK_0118_BUDGET_APPROVAL = (
+    "Owner 2026-11-12 ('Xem còn vấn đề gì thì sửa nốt, xong thì release') authorized finishing the remaining issues and releasing the next patch 0.1.18. "
+    "Under the standing Owner authorization of 2026-10-24 (temporary release allocation, artifact-retention.md) the Coordinator records a measured 3 GiB "
+    "initial project plus owned-external ceiling for the exact registered candidate-0.1.18 scope, 11 GiB shared cache unchanged, 48 MiB guard, terminal "
+    "return to the default limit. It inherits no 0.1.17 budget, Setup grant, rebaseline or standing-hop policy and grants no dependency acquisition, "
+    "license acceptance, deletion of user data, history or cache, validator weakening, model change or publication before Brain ACCEPT."
+)
 RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2          # 6.25 GiB, recorded in every epoch before the native full-resource run
 RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_17_base_bytes"]
 RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL = (
@@ -374,6 +384,8 @@ def _release_budget_spec(task_id: str | None = None) -> tuple[str, str, str]:
         return task_id, "0.1.12", RELEASE_TASK_012_EXPANDED_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_013_BUDGET_ID:
         return task_id, "0.1.13", RELEASE_TASK_013_BUDGET_APPROVAL
+    if task_id == RELEASE_TASK_0118_BUDGET_ID:
+        return task_id, "0.1.18", RELEASE_TASK_0118_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_0117_BUDGET_ID:
         return task_id, "0.1.17", RELEASE_TASK_0117_BUDGET_APPROVAL
     if task_id == RELEASE_TASK_0116_BUDGET_ID:
@@ -430,7 +442,7 @@ def _standing_policy_record_valid(transition: dict, previous_epoch: dict, new_bu
 def _epoch_transition_tasks_compatible(previous_task_id: str, target_task_id: str) -> bool:
     """Allow same-release continuation and the Owner-authorized 0.1.12 -> 0.1.13 and 0.1.13 -> 0.1.14 handoffs."""
 
-    return previous_task_id == target_task_id or (previous_task_id == RELEASE_TASK_0116_BUDGET_ID and target_task_id == RELEASE_TASK_0117_BUDGET_ID) or (previous_task_id == DEV_RESOURCES_TASK_ID and target_task_id == RELEASE_TASK_0116_BUDGET_ID) or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
+    return previous_task_id == target_task_id or (previous_task_id == RELEASE_TASK_0117_BUDGET_ID and target_task_id == RELEASE_TASK_0118_BUDGET_ID) or (previous_task_id == RELEASE_TASK_0116_BUDGET_ID and target_task_id == RELEASE_TASK_0117_BUDGET_ID) or (previous_task_id == DEV_RESOURCES_TASK_ID and target_task_id == RELEASE_TASK_0116_BUDGET_ID) or (previous_task_id == RELEASE_TASK_015_BUDGET_ID and target_task_id == DEV_RESOURCES_TASK_ID) or (
         previous_task_id == RELEASE_TASK_012_BUDGET_ID
         and target_task_id == RELEASE_TASK_013_BUDGET_ID
     ) or (
@@ -469,6 +481,8 @@ def _release_task_budget_limit(task_id: str) -> int:
         return RELEASE_TASK_013_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_014_BUDGET_ID:
         return RELEASE_TASK_014_BUDGET_LIMIT_BYTES
+    if task_id == RELEASE_TASK_0118_BUDGET_ID:
+        return RELEASE_TASK_0118_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_0117_BUDGET_ID:
         return RELEASE_TASK_0117_BUDGET_LIMIT_BYTES
     if task_id == RELEASE_TASK_0116_BUDGET_ID:
@@ -4225,7 +4239,7 @@ def activate_prospective_epoch(
         )
     ):
         reasons.append("epoch_transition_arguments_incomplete")
-    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID):
+    if transition_requested and release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID, RELEASE_TASK_0118_BUDGET_ID):
         reasons.append("epoch_transition_release_task_required")
     state = _git_repository_state()
     expected_sha = str(source_sha or state.get("head") or "").strip()
@@ -4234,7 +4248,7 @@ def activate_prospective_epoch(
     if state.get("dirty"):
         reasons.append("working_tree_dirty")
     if release_task_id is not None:
-        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID):
+        if release_task_id not in (RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID, RELEASE_TASK_0118_BUDGET_ID):
             reasons.append("unsupported_release_task_budget")
         else:
             try:
@@ -5939,7 +5953,7 @@ def main() -> int:
     ap.add_argument("--rebaseline-from-epoch-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization-id", default=None)
     ap.add_argument("--owner-rebaseline-authorization", default=None)
-    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID), default=None)
+    ap.add_argument("--release-task-id", choices=(RELEASE_TASK_BUDGET_ID, RELEASE_TASK_016_BUDGET_ID, RELEASE_TASK_017_BUDGET_ID, RELEASE_TASK_018_BUDGET_ID, RELEASE_TASK_019_BUDGET_ID, RELEASE_TASK_010_BUDGET_ID, RELEASE_TASK_011_BUDGET_ID, RELEASE_TASK_012_BUDGET_ID, RELEASE_TASK_013_BUDGET_ID, RELEASE_TASK_014_BUDGET_ID, RELEASE_TASK_015_BUDGET_ID, DEV_RESOURCES_TASK_ID, RELEASE_TASK_0116_BUDGET_ID, RELEASE_TASK_0117_BUDGET_ID, RELEASE_TASK_0118_BUDGET_ID), default=None)
     ap.add_argument("--register-release-task-scope", action="store_true")
     ap.add_argument("--recover-release-task-scope", action="store_true", help="explicit one-shot CAS recovery of a consumed release-0.1.17 scope (needs --expected-manifest-sha256 and --owner-scope-recovery-authorization)")
     ap.add_argument("--owner-scope-recovery-authorization", default=None)

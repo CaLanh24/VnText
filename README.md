@@ -1,7 +1,7 @@
 # VNText Studio
 
 
-Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ.
+Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ. Phiên bản mã nguồn hiện tại: 0.1.18 (bản công khai mới nhất vẫn là bản trên trang Releases cho tới khi 0.1.18 được phát hành).
 
 Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**. Người mới tải bộ cài từ trang Releases.
 
