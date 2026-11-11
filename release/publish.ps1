@@ -546,6 +546,15 @@ function Copy-PrivateDotnetRuntime([string]$RuntimeRoot, [string]$HostFxrVersion
 }
 
 function Install-RequirementsIfAvailable([string]$PythonPath, [string[]]$RequirementFiles, [bool]$UseExistingOnly = $false) {
+    $profileScript = Join-Path $DevRoot "release/dependency_profiles.py"
+    $profileArgs = @($profileScript, "--root", $DevRoot)
+    if ($RequirementFiles | Where-Object { $_ -like "*requirements-build.txt" }) { $profileArgs += "--build" }
+    if ($BuildLegacy) { $profileArgs += "--legacy-qt" }
+    if ($UseExistingOnly) { $profileArgs += "--check-installed" }
+    $resolved = & $PythonPath -B @profileArgs
+    if ($LASTEXITCODE -ne 0) { throw "Audited dependency profile selection/verification failed; no range fallback or automatic environment upgrade" }
+    $RequirementFiles = @(($resolved | ConvertFrom-Json).files)
+
     if ($UseExistingOnly) {
         & $PythonPath -B -c "import PIL, UnityPy, ctranslate2, sentencepiece, transformers, huggingface_hub; print('preinstalled Python dependencies PASS')"
         if ($LASTEXITCODE -ne 0) { throw "Required preinstalled Python dependencies are missing; installation is disabled for this task" }
@@ -553,11 +562,13 @@ function Install-RequirementsIfAvailable([string]$PythonPath, [string[]]$Require
     }
     & $PythonPath -c "import pip" *> $null
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "Python runtime has no pip; using its pre-provisioned packages." -ForegroundColor DarkYellow
+        & $PythonPath -B @profileArgs --check-installed
+        if ($LASTEXITCODE -ne 0) { throw "Pip is absent and pre-provisioned packages do not match the audited lock" }
+        Write-Host "Python runtime has no pip; verified its pre-provisioned packages against the lock." -ForegroundColor DarkYellow
         return
     }
     foreach ($requirementFile in $RequirementFiles) {
-        & $PythonPath -m pip install -q -r $requirementFile
+        & $PythonPath -m pip install -q --require-hashes -r $requirementFile
         if ($LASTEXITCODE -ne 0) {
             throw "pip install failed: $requirementFile"
         }

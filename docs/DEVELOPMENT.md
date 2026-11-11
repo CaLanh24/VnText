@@ -103,7 +103,7 @@ New-Item -ItemType Directory -Force .dev-env/cache | Out-Null
 # Nếu launcher có Python 3.12; có thể thay bằng đường dẫn Python 3.12 đã xác minh.
 py -3.12 -m venv .dev-env/.venv
 .\.dev-env\.venv\Scripts\python.exe --version
-.\.dev-env\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.dev-env\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements/locks/windows-cp314-runtime.txt
 .\.dev-env\.venv\Scripts\python.exe -m pip check
 .\.dev-env\.venv\Scripts\python.exe -X utf8 -m pip inspect > .dev-env/cache/pip-inspect.json
 ```
@@ -203,3 +203,5 @@ Debug includes native development probes. Release excludes their source and comm
 Run `python -B tests/tools/audit_gates.py --report <owned-output>/gates.json` for the public deterministic groups. Installed model/native acceptance is separately listed and never implicitly PASS. CI config is read-only and runs the public groups only; this local task does not push or trigger it.
 
 The shared Impeccable package is pinned by release/impeccable-pin.json. `python release/verify_skill.py` verifies it read-only; the small project adapter is .agents/skills/vntext-ui/SKILL.md. No automatic shared-tool installation or launcher download.
+
+Publisher dependency acquisition now selects release/dependency_profiles.py for the actual Python3.12/3.14 runtime and enforces `--require-hashes`. `UsePreinstalledDependencies` verifies exact installed versions against the selected profile; mismatch blocks without upgrading. A runtime without pip must also pass this exact-version check. Default WPF builds never install Qt; only explicit BuildLegacy adds the separate legacy-qt lock. Publisher execution and re-provisioning are outside this audit acceptance. Python3.11 source development remains an unvalidated compatibility environment, not an audited publish lock profile.

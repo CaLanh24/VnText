@@ -1,0 +1,72 @@
+{
+  "platform": "win_amd64",
+  "python": "3.12",
+  "source": "https://pypi.org/simple",
+  "lock_sha256": "86cab85607dd10de84fae1afc779b18e8f95d9d33bf31a754742b31689a2949c",
+  "packages": [
+    {
+      "name": "PySide6",
+      "version": "6.12.0",
+      "url": "https://files.pythonhosted.org/packages/a1/da/8e8514fc29ea916c3cd71a524480b77409e19ed12d709e8a5d73be089b81/pyside6-6.12.0-cp310-abi3-win_amd64.whl",
+      "sha256": "31a8d2893f2f28ab483b1534dde0438f27af6e234593de30425cb4729052d8f8",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": [
+        "PySide6_Essentials==6.12.0",
+        "PySide6_Addons==6.12.0",
+        "PySide6_WebEngine==6.12.0.140",
+        "PySide6_Pdf==6.12.0.140",
+        "tomli>=2.0.1; python_version < \"3.11\"",
+        "PySide6_Examples==6.12.0; extra == \"full\"",
+        "shiboken6_generator==6.12.0; extra == \"full\""
+      ]
+    },
+    {
+      "name": "PySide6_Addons",
+      "version": "6.12.0",
+      "url": "https://files.pythonhosted.org/packages/02/41/ba3d52fe2acd942ebf71eb02b3bdf0897f7f6f4ce8f52289cb50228e48d3/pyside6_addons-6.12.0-cp310-abi3-win_amd64.whl",
+      "sha256": "98d8d62010da6605344cee83e5c96fb846170a1f2d924523f10f5d92078b02b0",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": [
+        "PySide6_Essentials==6.12.0"
+      ]
+    },
+    {
+      "name": "PySide6_Essentials",
+      "version": "6.12.0",
+      "url": "https://files.pythonhosted.org/packages/03/61/9a7e32a37b224f68506785bfb0f288d516098ec71681782d72b695a6c95d/pyside6_essentials-6.12.0-cp310-abi3-win_amd64.whl",
+      "sha256": "c9a95102aa23c1f86516a30d5a9be37552d324eee7e567eb7508973f1218cb42",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": [
+        "shiboken6==6.12.0"
+      ]
+    },
+    {
+      "name": "PySide6_Pdf",
+      "version": "6.12.0.140",
+      "url": "https://files.pythonhosted.org/packages/0e/8a/3f5eab9eb9e6486f0334b100322bbd0aff432dd90ad7977a3910979a163f/pyside6_pdf-6.12.0.140-cp310-abi3-win_amd64.whl",
+      "sha256": "4971ba1a0ca15e7c29cfd808e9600aeb46b2305dad01456eb09fa3197166268e",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": [
+        "PySide6_Essentials==6.12.0"
+      ]
+    },
+    {
+      "name": "PySide6_WebEngine",
+      "version": "6.12.0.140",
+      "url": "https://files.pythonhosted.org/packages/21/0d/260c7c286f2d4e8a49c099152a385414a872f022117f937824ca0a3f38e5/pyside6_webengine-6.12.0.140-cp310-abi3-win_amd64.whl",
+      "sha256": "f9b61b1d457a591ee590a6b80515f25a3e61e2576a2a0a70566380f9d9de4ab0",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": [
+        "PySide6_Addons==6.12.0"
+      ]
+    },
+    {
+      "name": "shiboken6",
+      "version": "6.12.0",
+      "url": "https://files.pythonhosted.org/packages/2a/b6/bee97e7a2edeab72aafabb46ee5adc939790a638d107860b4cad7a20e407/shiboken6-6.12.0-cp310-abi3-win_amd64.whl",
+      "sha256": "a1906cb8116869178c64b6bab52623bbc8b4ceed7b30bfc3c9aa0f6e67f6438e",
+      "requires_python": "<3.16,>=3.10",
+      "requires_dist": []
+    }
+  ]
+}

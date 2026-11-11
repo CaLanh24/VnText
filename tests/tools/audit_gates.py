@@ -6,7 +6,7 @@ GROUPS={
  'public-csv':['tests.unit.test_csv_editor_api','tests.unit.test_csv_transaction_regressions','tests.unit.test_audit_regressions'],
  'public-mt':['tests.unit.test_mt_vietnamese_homographs','tests.unit.test_mt_ct2_long_input','tests.unit.test_mt_ct2_status','tests.unit.test_user_glossary','tests.unit.test_glossary_context_v2','tests.unit.test_mt_real_game_fixes'],
  'public-patch':['tests.unit.test_patch_input_safety','tests.unit.test_patch_bundle.PatchBundleFormatTests','tests.unit.test_patch_bundle.PatchInstallerUiSourceTests','tests.unit.test_patch_readback','tests.unit.test_audit_seams'],
- 'public-maintenance':['tests.unit.test_registry_storage','tests.unit.test_cleanup_verification_memory','tests.unit.test_dev_bootstrap'],
+ 'public-maintenance':['tests.unit.test_registry_storage','tests.unit.test_cleanup_verification_memory','tests.unit.test_dev_bootstrap','tests.unit.test_dependency_profiles'],
 }
 def main():
  p=argparse.ArgumentParser();p.add_argument('--group',choices=['public','installed-runtime',*GROUPS],default='public');p.add_argument('--report',type=Path,required=True);a=p.parse_args()
