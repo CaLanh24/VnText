@@ -116,6 +116,7 @@ internal static partial class Program
         if (args.Contains("--csv-editor-only", StringComparer.Ordinal))
         {
             var csvFailures = new List<string>();
+            Run("CsvEditor_BulkRefusesChangedOpenedRevision", CsvEditor_BulkRefusesChangedOpenedRevision, csvFailures);
             Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
@@ -131,7 +132,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (13)");
+                Console.WriteLine("Focused CSV editor protection checks: PASS (14)");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);

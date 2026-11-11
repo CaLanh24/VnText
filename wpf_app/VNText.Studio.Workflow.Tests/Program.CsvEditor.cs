@@ -19,6 +19,27 @@ namespace VNText.Studio.Workflow.Tests;
 
 internal static partial class Program
 {
+    private static void CsvEditor_BulkRefusesChangedOpenedRevision()
+    {
+        var root = Path.Combine(TestTempRoot(), "bulk-cas-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(csv, "key,source_text,translation\r\nk,Hello,Xin chào\r\n", new UTF8Encoding(false));
+            var document = TranslationCsvEditorService.Load(csv);
+            AssertTrue(document.Ok);
+            var rows = document.Rows;
+            var foreign = File.ReadAllBytes(csv).Concat(Encoding.UTF8.GetBytes("\r\n")).ToArray();
+            File.WriteAllBytes(csv, foreign);
+            var result = TranslationCsvEditorService.ReplaceTranslation(csv, document.Fields, rows, "chào", "chúc", expectedSha256: document.SourceSha256);
+            AssertFalse(result.Ok);
+            AssertTrue(File.ReadAllBytes(csv).SequenceEqual(foreign));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+
     private static void CsvEditor_RejectedFileKeepsOpenDocumentAndShowsInlineError()
     {
         var root = Path.Combine(TestTempRoot(), "vntext_wpf_reject_" + Guid.NewGuid().ToString("N"));

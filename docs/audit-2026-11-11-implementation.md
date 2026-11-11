@@ -26,3 +26,6 @@ Evidence: C:/vnrg/evidence/audit-followup (registry plan/receipt, initial failed
 ## Acceptance still running
 
 Focused transaction/storage regressions, glossary/context/name/cache tests and public groups have bounded evidence; full cleanup compatibility suite and final public-group rerun are in progress. Build/smoke/native are NOT_RUN until matching receipts exist. The old candidate f192638 is not acceptance for these changes. No Release acceptance is claimed.
+
+
+Native followup caught a real R01 integration gap at source58c181f: WPF bulk did not forward the opened CSV SHA, although API CAS tests passed. The inert fixture proved a foreign revision was overwritten. That run is FAIL and retained in native-external-after.json/screenshot, never relabeled. The WPF caller/service now carry the loaded SHA through Apply and Undo; a service-to-Python regression reproduces the same stale opened revision. Rebuild and live retest required for this correction.

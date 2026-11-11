@@ -311,16 +311,18 @@ public static class TranslationCsvEditorService
         IReadOnlyList<Dictionary<string, string>> rows,
         string findText,
         string replacement,
-        IReadOnlyList<string>? keys = null)
+        IReadOnlyList<string>? keys = null,
+        string? expectedSha256 = null)
     {
-        return ParseReplaceResult(RunReplace("replace", csvPath, fields, rows, findText, replacement, keys, dryRun: false));
+        return ParseReplaceResult(RunReplace("replace", csvPath, fields, rows, findText, replacement, keys, dryRun: false, expectedSha256: expectedSha256));
     }
 
-    public static CsvEditorSaveResult Undo(string csvPath, string backupPath)
+    public static CsvEditorSaveResult Undo(string csvPath, string backupPath, string? expectedSha256 = null)
     {
         try
         {
-            var json = RunPython("undo", csvPath, null, null, false, new[] { backupPath });
+            var json = RunPython("undo", csvPath, null, null, false, string.IsNullOrWhiteSpace(expectedSha256)
+                ? new[] { backupPath } : new[] { backupPath, "--expected-sha256", expectedSha256 });
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
             var ok = root.TryGetProperty("ok", out var okEl) && okEl.GetBoolean();
@@ -518,7 +520,8 @@ public static class TranslationCsvEditorService
         string findText,
         string replacement,
         IReadOnlyList<string>? keys,
-        bool dryRun)
+        bool dryRun,
+        string? expectedSha256 = null)
     {
         string? payloadPath = null;
         string? keysPath = null;
@@ -531,8 +534,10 @@ public static class TranslationCsvEditorService
                 Directory.CreateDirectory(Path.GetDirectoryName(keysPath)!);
                 File.WriteAllText(keysPath, JsonSerializer.Serialize(keys), new UTF8Encoding(false));
             }
-            return RunPython(command, csvPath, payloadPath, keysPath, dryRun,
-                new[] { "--find", findText, "--replace", replacement });
+            var arguments = new List<string> { "--find", findText, "--replace", replacement };
+            if (!string.IsNullOrWhiteSpace(expectedSha256))
+                arguments.AddRange(new[] { "--expected-sha256", expectedSha256 });
+            return RunPython(command, csvPath, payloadPath, keysPath, dryRun, arguments.ToArray());
         }
         finally
         {

@@ -1065,6 +1065,7 @@ public sealed partial class MainViewModel
         var keys = ResolveCsvBulkKeys();
         var stamp = CsvBulkStamp();
         var (applyPath, applyFields, applyFind, applyReplace) = (CsvEditorPath, _csvEditorFields.ToList(), CsvBulkFind, CsvBulkReplace);
+        var applySha256 = _csvEditorSourceSha256;
         var preview = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.PreviewReplace(
             applyPath, applyFields, rows, applyFind, applyReplace, keys));
         if (stamp != CsvBulkStamp() || !string.Equals(applyPath, CsvEditorPath, StringComparison.OrdinalIgnoreCase))
@@ -1090,7 +1091,7 @@ public sealed partial class MainViewModel
         // values the user confirmed (applyFind/applyReplace/keys) are the ones written below.
 
         var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.ReplaceTranslation(
-            applyPath, applyFields, rows, applyFind, applyReplace, keys));
+            applyPath, applyFields, rows, applyFind, applyReplace, keys, applySha256));
         if (!result.Ok)
         {
             CsvBulkPreview = result.Error ?? "Thay thế hàng loạt thất bại.";
@@ -1143,8 +1144,8 @@ public sealed partial class MainViewModel
         }
         if (AppDialogService.Show("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
-        var (undoPath, undoBackup) = (CsvEditorPath, _csvBulkLastBackup);
-        var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.Undo(undoPath, undoBackup));
+        var (undoPath, undoBackup, undoSha256) = (CsvEditorPath, _csvBulkLastBackup, _csvEditorSourceSha256);
+        var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.Undo(undoPath, undoBackup, undoSha256));
         if (!result.Ok)
         {
             ShowToast(result.Error ?? "Hoàn tác thất bại.", "error");
