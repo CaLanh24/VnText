@@ -371,6 +371,10 @@ def _translation_cache_context(
         strategy_version += "-glossary-applicability-2"
         strategy_version += "-flat-protection-2"
         strategy_version += "-required-terms-2-prose-synonym"
+    if user_glossary or (glossary_v2 or {}).get("entries"):
+        # Glossary masking changed (whole-word, non-cascading, collision-free tokens): records cached with the old masking must be recomputed on
+        # retry (user/manual translations and cached rows are kept, never deleted), so the strategy fingerprint changes.
+        strategy_version += "-glossary-masking-3"
     records = (context_sidecar or {}).get("records") or []
     context_by_key = {
         str(item.get("key") or ""): item

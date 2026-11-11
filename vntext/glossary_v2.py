@@ -167,7 +167,14 @@ def resolve_exact(source: str, row: Mapping[str, Any], glossary: Mapping[str, An
 
 
 def mask_terms(source: str, row: Mapping[str, Any], glossary: Mapping[str, Any] | None) -> tuple[str, dict[str, str], list[str]]:
-    """Mask rich terms only outside tags/placeholders/control tokens."""
+    """Mask rich terms only outside tags/placeholders/control tokens.
+
+    Every term is matched ONCE on the ORIGINAL plain segments (whole words/phrases, Unicode letters and combining marks count as word
+    characters), so a generated token is never re-masked by a later term; highest priority, then the longest match, then glossary order wins an
+    overlap.  Tokens never occur in the original source, so a literal ``ZZG…`` in the text is never confused with a mask.
+    """
+
+    from vntext.package_glossary import find_term_spans
 
     entries = [
         item for item in (glossary or {}).get("entries", [])
@@ -176,45 +183,71 @@ def mask_terms(source: str, row: Mapping[str, Any], glossary: Mapping[str, Any] 
     entries.sort(key=lambda item: (-int(item.get("priority") or 0), -len(str(item.get("source") or ""))))
     restores: dict[str, str] = {}
     conflicts: list[str] = []
-    masked = str(source or "")
-    token_index = 900000
-    for item in entries:
+    text = str(source or "")
+    segments: list[tuple[int, int]] = []
+    last = 0
+    for match in _PROTECTED.finditer(text):
+        segments.append((last, match.start()))
+        last = match.end()
+    segments.append((last, len(text)))
+    candidates: list[tuple[int, int, int, int, int]] = []     # (-priority, -length, entry order, start, end)
+    usable: dict[int, tuple[str, str]] = {}
+    ordinals: dict[int, int] = {}
+    for order, item in enumerate(entries):
         term = str(item.get("source") or "").strip()
         target = str(item.get("target") or "")
         if not term or not target or _tokens(term) or _tokens(target):
             continue
-        flags = 0 if str(item.get("case_policy") or "insensitive") == "sensitive" else re.IGNORECASE
-        pattern = re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)", flags)
+        ignore_case = str(item.get("case_policy") or "insensitive") != "sensitive"
+        spans = [
+            (base + start, base + end)
+            for base, stop in segments
+            for start, end in find_term_spans(text[base:stop], term, ignore_case=ignore_case)
+        ]
         exact = resolve_exact(term, {**row, "source_text": term}, glossary)
         if exact.get("status") == "conflict":
             # Keep nonconflicting allocation/transport unchanged. Only an
             # actual maskable occurrence makes this package conflict row-local.
-            if any(pattern.search(segment) for segment in _PROTECTED.split(masked)):
+            if spans:
                 conflicts.append(term)
             continue
-        token = f"ZZG{token_index}ZZG"
-        token_index += 1
-        chunks: list[str] = []
-        last = 0
-        for match in _PROTECTED.finditer(masked):
-            segment = masked[last : match.start()]
-            segment = pattern.sub(token, segment)
-            chunks.append(segment)
-            chunks.append(match.group(0))
-            last = match.end()
-        chunks.append(pattern.sub(token, masked[last:]))
-        candidate = "".join(chunks)
-        if candidate != masked:
-            restores[token] = target
-            masked = candidate
-    return masked, restores, conflicts
+        usable[order] = (term, target)
+        ordinals[order] = 900000 + len(ordinals)          # stable per sorted entry, even when this entry has no occurrence in this row
+        priority = int(item.get("priority") or 0)
+        for start, end in spans:
+            candidates.append((-priority, -(end - start), order, start, end))
+    candidates.sort()
+    accepted: list[tuple[int, int, int]] = []
+    for _priority, _length, order, start, end in candidates:
+        if any(start < other_end and other_start < end for other_start, other_end, _ in accepted):
+            continue
+        accepted.append((start, end, order))
+    if not accepted:
+        return text, restores, conflicts
+    accepted.sort()
+    token_for: dict[int, str] = {}
+    pieces: list[str] = []
+    cursor = 0
+    for start, end, order in accepted:
+        if order not in token_for:
+            number = ordinals[order]
+            token = f"ZZG{number}ZZG"
+            while token in text or token in restores:       # a literal in the source (or another mask) never shares a token
+                number += 1000
+                token = f"ZZG{number}ZZG"
+            token_for[order] = token
+            restores[token] = usable[order][1]
+        pieces.append(text[cursor:start])
+        pieces.append(token_for[order])
+        cursor = end
+    pieces.append(text[cursor:])
+    return "".join(pieces), restores, conflicts
 
 
 def restore_terms(text: str, restores: Mapping[str, str]) -> str:
-    result = str(text or "")
-    for token, target in restores.items():
-        result = result.replace(token, str(target))
-    return result
+    from vntext.package_glossary import restore_tokens
+
+    return restore_tokens(text, {str(token): str(target) for token, target in restores.items()})
 
 
 def candidate_term_issues(source: str, row: Mapping[str, Any], candidate: str,
