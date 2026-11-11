@@ -1017,6 +1017,32 @@ if (-not $SkipBuild) {
     & $dotnet restore $wpfProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $targetsArg $wpfObjArg $wpfExtensionsArg $wpfOutputArg
     if ($LASTEXITCODE -ne 0) { throw "WPF offline restore failed" }
     if (Test-Path $wpfPublish) { Remove-Item -LiteralPath $wpfPublish -Recurse -Force }
+    Write-Host "`n[2b/5] Build patch installer (before the DEV worker smoke, which hands the patch off to this single-file installer)..." -ForegroundColor Yellow
+    $installerProj = Join-Path $DevRoot "wpf_app\VNText.PatchInstaller\VNText.PatchInstaller.csproj"
+    $installerPublish = Join-Path $DevRunRoot "patch_installer_publish"
+    $installerObj = Join-Path $DevRunRoot "obj\VNText.PatchInstaller"
+    New-Item -ItemType Directory -Path $installerObj -Force | Out-Null
+    $installerObjArg = "-p:BaseIntermediateOutputPath=$installerObj\"
+    $installerExtensionsArg = "-p:MSBuildProjectExtensionsPath=$installerObj\"
+    $installerOutputArg = "-p:OutputPath=$(Join-Path $DevRunRoot 'obj\VNText.PatchInstaller\bin\Release\net8.0-windows\win-x64')\"
+    $installerHostPacks = @(Get-ChildItem -LiteralPath (Join-Path $nugetPackages "microsoft.netcore.app.host.win-x64") -Directory -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -match '^8\.' -and (Test-Path -LiteralPath (Join-Path $_.FullName "runtimes\win-x64\native\singlefilehost.exe")) } | Sort-Object { [version]$_.Name } -Descending)
+    if ($installerHostPacks.Count -eq 0) { throw "Self-contained patch installer needs a cached .NET 8 apphost pack (singlefilehost); the SDK 10 host cannot start the .NET 8 runtime" }
+    $installerTargets = Join-Path $DevRunRoot "installer.layout.targets"
+    Set-Content -LiteralPath $installerTargets -Value $targets.Replace("AppHostPackVersion=`"$appHostPackVersion`"", "AppHostPackVersion=`"$($installerHostPacks[0].Name)`"") -Encoding utf8
+    $installerTargetsArg = "-p:DirectoryBuildTargetsPath=$installerTargets"
+    $installerBuiltExe = Join-Path $installerPublish "VNTextPatchInstaller.exe"
+    if (Test-Path $installerPublish) { Remove-Item -LiteralPath $installerPublish -Recurse -Force }
+    & $dotnet restore $installerProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg
+    if ($LASTEXITCODE -ne 0) { throw "Patch installer restore failed" }
+    & $dotnet publish $installerProj `
+        -c Release -r win-x64 --self-contained true `
+        -p:PublishSingleFile=true `
+        -p:EnableCompressionInSingleFile=true `
+        -p:PublishTrimmed=false $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
+    if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
+    if (-not (Test-Path $installerBuiltExe)) { throw "Patch installer missing: $installerBuiltExe" }
+    Write-Host "Built installer: $installerBuiltExe" -ForegroundColor Green
     $devSmokeOutcome = "FAIL"
     $oldDevSmokeEnv = @{}
     try {
@@ -1033,6 +1059,7 @@ if (-not $SkipBuild) {
         $devSmokeEnv = @{
             DOTNET_ROOT = $globalDotnetRoot; DOTNET_ROOT_X64 = $globalDotnetRoot
             VNTEXT_WORKER_CWD = $DevRoot; VNTEXT_WORKER_PYTHON = $Python
+            VNTEXT_PATCH_INSTALLER = $installerBuiltExe
             VNTEXT_WORK_ARTIFACTS_ROOT = $devWork; VNTEXT_LOCALAPPDATA = $devData
             VNTEXT_ARTIFACT_SCOPE_ID = $publishScope; VNTEXT_ARTIFACT_RUN_ID = $publishScope
             VNTEXT_ARTIFACT_SCOPE_ROOT = $devSmokeRoot; VNTEXT_DEV_RUN_ROOT = $DevRunRoot
@@ -1098,32 +1125,6 @@ if (-not $SkipBuild) {
         }
         Write-Host "Built WPF Updates candidate: $wpfUpdatePublish" -ForegroundColor Green
     }
-    Write-Host "`n[3b/5] Build patch installer..." -ForegroundColor Yellow
-    $installerProj = Join-Path $DevRoot "wpf_app\VNText.PatchInstaller\VNText.PatchInstaller.csproj"
-    $installerPublish = Join-Path $DevRunRoot "patch_installer_publish"
-    $installerObj = Join-Path $DevRunRoot "obj\VNText.PatchInstaller"
-    New-Item -ItemType Directory -Path $installerObj -Force | Out-Null
-    $installerObjArg = "-p:BaseIntermediateOutputPath=$installerObj\"
-    $installerExtensionsArg = "-p:MSBuildProjectExtensionsPath=$installerObj\"
-    $installerOutputArg = "-p:OutputPath=$(Join-Path $DevRunRoot 'obj\VNText.PatchInstaller\bin\Release\net8.0-windows\win-x64')\"
-    $installerHostPacks = @(Get-ChildItem -LiteralPath (Join-Path $nugetPackages "microsoft.netcore.app.host.win-x64") -Directory -ErrorAction SilentlyContinue |
-        Where-Object { $_.Name -match '^8\.' -and (Test-Path -LiteralPath (Join-Path $_.FullName "runtimes\win-x64\native\singlefilehost.exe")) } | Sort-Object { [version]$_.Name } -Descending)
-    if ($installerHostPacks.Count -eq 0) { throw "Self-contained patch installer needs a cached .NET 8 apphost pack (singlefilehost); the SDK 10 host cannot start the .NET 8 runtime" }
-    $installerTargets = Join-Path $DevRunRoot "installer.layout.targets"
-    Set-Content -LiteralPath $installerTargets -Value $targets.Replace("AppHostPackVersion=`"$appHostPackVersion`"", "AppHostPackVersion=`"$($installerHostPacks[0].Name)`"") -Encoding utf8
-    $installerTargetsArg = "-p:DirectoryBuildTargetsPath=$installerTargets"
-    $installerBuiltExe = Join-Path $installerPublish "VNTextPatchInstaller.exe"
-    if (Test-Path $installerPublish) { Remove-Item -LiteralPath $installerPublish -Recurse -Force }
-    & $dotnet restore $installerProj -r win-x64 --configfile $nugetConfig --ignore-failed-sources $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg
-    if ($LASTEXITCODE -ne 0) { throw "Patch installer restore failed" }
-    & $dotnet publish $installerProj `
-        -c Release -r win-x64 --self-contained true `
-        -p:PublishSingleFile=true `
-        -p:EnableCompressionInSingleFile=true `
-        -p:PublishTrimmed=false $installerTargetsArg $installerObjArg $installerExtensionsArg $installerOutputArg --no-restore -o $installerPublish
-    if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
-    if (-not (Test-Path $installerBuiltExe)) { throw "Patch installer missing: $installerBuiltExe" }
-    Write-Host "Built installer: $installerBuiltExe" -ForegroundColor Green
 } else {
     Write-Host "`n[2-3/5] Build skipped (-SkipBuild)" -ForegroundColor DarkYellow
     if (-not (Test-Path $wpfBuiltExe)) { throw "No WPF publish at $wpfBuiltExe" }
