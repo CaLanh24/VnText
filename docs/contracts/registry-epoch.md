@@ -105,4 +105,3 @@ Historical private registry counts, incident records and cleanup evidence are no
 Owner explicitly defers real-game E2E and defects found there to a later version. Visual/pixel interaction, full-game support and semantic translation quality remain `NOT VERIFIED`; no such capability is implied by portable `RELEASE_VERIFIED`. External publishing requires separate authorization.
 
 **Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py` prospective plan/apply/refusal/idempotency/hash/unknown tests, explicit 0.1.5 transition success/preservation/refusal/rollback and post-run lifecycle verification, affected work-path and artifact-write suites, epoch scope policy/ledger and rollback hashes under `_work`.
-

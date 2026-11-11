@@ -94,4 +94,3 @@ unchanged. Finalize the exact candidate scope only after all children exit and
 evidence is compacted; final inventory must pass at 1 GiB.
 
 **Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; terminal summary is streamed and `TEST_RUN` is absent/empty after feature runs.
-

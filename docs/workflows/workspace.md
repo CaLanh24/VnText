@@ -7,4 +7,3 @@
 - Giữ repository portable: đường dẫn local do Owner chọn chỉ ghi trong `AI_STATE.md`/receipt phù hợp, không trở thành yêu cầu hardcode cho public clone.
 
 Trước DEV validation hoặc game E2E, chốt scope, gate order, run/copy budget, executable provenance, prerequisite và cleanup theo `CONTRACTS.md` §10c; dùng `TEST_MATRIX.md` để chọn gate. Persist evidence từng bước trước bước phụ thuộc; outcome test và cleanup riêng.
-

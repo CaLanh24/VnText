@@ -148,4 +148,3 @@ def project_epoch_chain_manifest(document):
         ]
         return projected
     return document
-

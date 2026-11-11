@@ -8,4 +8,3 @@
 - Báo trạng thái dispose/reset, thao tác còn pending và process app/worker do task sở hữu trong biên bản terminal. Nếu không xác minh được ownership hoặc trạng thái, ghi `UNKNOWN` và nêu giới hạn thay vì tự kết thúc process dùng chung.
 
 Bàn giao ngắn: đã đổi gì, đã kiểm gì trên SHA nào, acceptance còn thiếu và bước tiếp theo. Đánh giá hiệu quả theo task hoàn thành đúng acceptance, thời gian và usage/cost khi có số liệu; số test/token/child không tự là chất lượng. Chỉ đổi model/effort hoặc cơ chế điều phối khi Owner cho phép và có workload/evidence phù hợp; không suy khả năng từ tên model.
-

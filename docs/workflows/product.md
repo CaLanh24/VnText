@@ -7,4 +7,3 @@
 - Route dịch sản phẩm hiện là CTranslate2/OPUS-MT. Không khôi phục Argos hoặc VinAI nếu Owner chưa quyết định lại; Hy-MT2 chỉ test-only.
 - Không đổi worker protocol, semantic workflow, game behavior, model, framework hay architecture nếu task không yêu cầu. Không hạ validator hoặc biến dữ liệu lỗi thành hợp lệ giả.
 - Patch phải qua preflight/gate, backup và verification. Không thử trên game gốc hoặc dữ liệu user; test game chỉ dùng fixture/bản copy được khai báo.
-
