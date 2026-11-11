@@ -1805,6 +1805,20 @@ def scan_root_inventory(
     return output
 
 
+COLD_MISSING_REVIEW_REASON = "cold_missing_records_need_review"
+
+
+def _epoch_blocking_metadata_issues(reconciled: dict) -> list[dict]:
+    """Registry metadata problems that block an epoch plan/transition.
+
+    The compacted (gzip) cold history keeps its original MISSING provenance immutable and authenticated; those records stay REVIEW_REQUIRED for the
+    cleanup report (they are not deletion receipts and are never promoted), exactly like the live MISSING records before compaction, which never
+    blocked an epoch step.  Every OTHER metadata issue (invalid cold archive, hash/count mismatch, malformed entry, ...) still blocks.
+    """
+
+    return [issue for issue in (reconciled.get("metadata_issues") or []) if issue.get("reason") != COLD_MISSING_REVIEW_REASON]
+
+
 def _reconcile_registry_impl(
     *,
     persist: bool = False,
@@ -1836,7 +1850,7 @@ def _reconcile_registry_impl(
     ]
     cold_pending = sum(ref.get("unresolved_missing", 0) for ref in manifest.get("cold_records", []))
     if cold_pending:
-        metadata_issues.append({"path": str(MANIFEST_PATH), "reason": "cold_missing_records_need_review", "count": cold_pending})
+        metadata_issues.append({"path": str(MANIFEST_PATH), "reason": COLD_MISSING_REVIEW_REASON, "count": cold_pending})
     if not isinstance(entries_value, list):
         metadata_issues.append({"path": str(MANIFEST_PATH), "reason": "registry_artifacts_not_a_list"})
     if "archive" in manifest and not isinstance(manifest.get("archive"), list):
@@ -4422,7 +4436,7 @@ def activate_prospective_epoch(
     reconciled = reconcile_registry(persist=False, budget=budget, inventory=inventory)
     if not reconciled.get("inventory_complete"):
         reasons.append("registry_reconciliation_incomplete")
-    if reconciled.get("metadata_issues"):
+    if _epoch_blocking_metadata_issues(reconciled):
         reasons.append("registry_metadata_incomplete")
     items = _classify_prospective_inventory(inventory, reconciled)
     counts = {}

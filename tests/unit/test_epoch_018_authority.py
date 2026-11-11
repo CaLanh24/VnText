@@ -41,3 +41,19 @@ class Epoch018AuthorityTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ColdRegistryEpochTests(unittest.TestCase):
+    def test_cold_missing_review_does_not_block_an_epoch_step_but_every_other_issue_does(self):
+        cold = {"path": "registry", "reason": cleanup.COLD_MISSING_REVIEW_REASON, "count": 28917}
+        self.assertEqual([], cleanup._epoch_blocking_metadata_issues({"metadata_issues": [cold]}))
+        self.assertEqual([], cleanup._epoch_blocking_metadata_issues({}))
+        bad = {"path": "registry", "reason": "registry_entry_missing_id"}
+        self.assertEqual([bad], cleanup._epoch_blocking_metadata_issues({"metadata_issues": [cold, bad]}))
+        # An invalid cold archive is a registry error, reported under its own reason, and still blocks.
+        broken = {"path": "registry", "reason": "cold archive logical hash mismatch"}
+        self.assertEqual([broken], cleanup._epoch_blocking_metadata_issues({"metadata_issues": [broken]}))
+
+    def test_the_cleanup_report_still_surfaces_the_cold_review_reason(self):
+        text = (ROOT / 'tests/tools/cleanup_work_artifacts.py').read_text(encoding='utf-8')
+        self.assertIn('metadata_issues.append({"path": str(MANIFEST_PATH), "reason": COLD_MISSING_REVIEW_REASON', text)
