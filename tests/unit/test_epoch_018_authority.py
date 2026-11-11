@@ -13,7 +13,10 @@ class Epoch018AuthorityTests(unittest.TestCase):
     def test_task_is_supported_with_its_own_limit_and_approval(self):
         task, version, approval = cleanup._release_budget_spec('release-0.1.18')
         self.assertEqual(('release-0.1.18', '0.1.18'), (task, version))
-        self.assertEqual(3 * 1024 ** 3, cleanup._release_task_budget_limit(task))
+        self.assertEqual(int(4.5 * 1024 ** 3), cleanup._release_task_budget_limit(task))            # measured continuation
+        previous = {"limit_bytes": 3 * 1024 ** 3, "owner_approval": cleanup.RELEASE_TASK_0118_PREVIOUS_BUDGET_APPROVAL}
+        self.assertTrue(cleanup._release_budget_record_is_valid(previous, task, approval))             # epochs recorded with the 3 GiB initial ceiling stay verifiable
+        self.assertFalse(cleanup._release_budget_record_is_valid({**previous, "limit_bytes": 4 * 1024 ** 3}, task, approval))
         self.assertIn('Owner 2026-11-12', approval); self.assertIn('2026-10-24', approval); self.assertIn('inherits no 0.1.17', approval)
         self.assertNotEqual(approval, cleanup._release_budget_spec('release-0.1.17')[2])
         self.assertEqual(cleanup._task_scope_path(ROOT, task, version), (ROOT / 'RELEASE_RUN' / 'candidate-0.1.18').resolve())

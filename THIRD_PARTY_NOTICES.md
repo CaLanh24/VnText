@@ -132,6 +132,66 @@ versioned upstream license files:
 - safetensors 0.8.0 and tokenizers 0.23.2 — Apache-2.0 ([safetensors license](https://github.com/safetensors/safetensors/blob/v0.8.0/LICENSE),
   [tokenizers license](https://github.com/huggingface/tokenizers/blob/v0.23.2/LICENSE)).
 
+
+#### Locked Python dependency inventory — release 0.1.18
+
+The 0.1.18 build uses the audited hash locks `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distributions; `tpk_ar` 0.2.4 is the only official source distribution, built with the locked setuptools). This replaces the earlier minimum-version statement for 0.1.18. The table is read from each installed distribution's own metadata (point-in-time, not a legal audit); each wheel's license files stay in its dist-info inside the payload. CTranslate2 (MIT), SentencePiece and Tokenizers (Apache-2.0) are covered by the notices above and `app/licenses`; the FMOD vendor-binary exclusion for `fmod_toolkit` is unchanged. The build-profile distributions (pyinstaller [GPLv2 with its bootloader exception], pyinstaller-hooks-contrib, altgraph, pefile, pywin32-ctypes) are build tools; whether any of them is present in a Setup payload is decided from that exact payload's inventory, not from this table. Tokenizers is 0.23.3 here (same Apache-2.0 license as the 0.23.2 notice).
+
+| Distribution | Version | License (declared) | License text |
+| --- | --- | --- | --- |
+| altgraph | 0.17.5 | MIT | dist-info |
+| annotated_doc | 0.0.6 | MIT | dist-info |
+| annotated_types | 0.8.0 | MIT | dist-info |
+| anyio | 4.16.0 | MIT | dist-info |
+| archspec | 0.2.7 | Apache-2.0 OR MIT | dist-info |
+| astc_encoder_py | 0.1.12 | MIT License | dist-info |
+| attrs | 26.1.0 | MIT | dist-info |
+| brotli | 1.2.1 | MIT | dist-info |
+| click | 8.5.1 | BSD-3-Clause | dist-info |
+| colorama | 0.4.6 | BSD License (classifier) | dist-info |
+| ctranslate2 | 4.8.1 | MIT | upstream notice above/app/licenses |
+| etcpak | 0.9.15 | MIT License | dist-info |
+| filelock | 4.2.10 | MIT | dist-info |
+| fmod_toolkit | 0.1.3 | MIT License | dist-info |
+| fsspec | 2026.9.0 | BSD-3-Clause | dist-info |
+| h11 | 0.16.0 | MIT | dist-info |
+| hf_xet | 1.8.0 | Apache-2.0 | dist-info |
+| httpcore2 | 2.16.0 | BSD-3-Clause | dist-info |
+| httpx2 | 2.16.0 | BSD-3-Clause | dist-info |
+| huggingface_hub | 2.2.0 | Apache-2.0 | dist-info |
+| idna | 3.20 | BSD-3-Clause | dist-info |
+| lz4 | 4.4.5 | BSD License (classifier) | dist-info |
+| markdown_it_py | 4.3.0 | MIT License (classifier) | dist-info |
+| mdurl | 0.1.2 | MIT License (classifier) | dist-info |
+| numpy | 2.5.4 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | dist-info |
+| packaging | 26.3 | Apache-2.0 OR BSD-2-Clause | dist-info |
+| pefile | 2024.8.26 | MIT | dist-info |
+| pillow | 12.3.0 | MIT-CMU | dist-info |
+| pydantic | 2.14.3 | MIT | dist-info |
+| pydantic_core | 2.50.4 | MIT | dist-info |
+| pyfmodex | 0.7.2 | MIT | dist-info |
+| pygments | 2.21.0 | BSD-2-Clause | dist-info |
+| pyinstaller | 6.22.3 | GNU General Public License v2 (GPLv2) (classifier) | dist-info |
+| pyinstaller_hooks_contrib | 2026.10 | Apache Software License; GNU General Public License v2 (GPLv2) (classifier) | dist-info |
+| pywin32_ctypes | 0.2.3 | BSD-3-Clause | dist-info |
+| pyyaml | 6.0.3 | MIT | dist-info |
+| regex | 2026.11.9 | Apache-2.0 AND CNRI-Python | dist-info |
+| rich | 15.0.0 | MIT | dist-info |
+| safetensors | 0.8.0 | Apache Software License (classifier) | dist-info |
+| sentencepiece | 0.2.2 | Apache-2.0 | upstream notice above/app/licenses |
+| setuptools | 84.2.1 | MIT | dist-info |
+| shellingham | 1.5.4 | ISC License | dist-info |
+| texture2ddecoder | 1.0.6 | MIT License | dist-info |
+| tokenizers | 0.23.3 | Apache Software License (classifier) | upstream notice above/app/licenses |
+| tpk_ar | 0.2.4 | MIT License | dist-info |
+| tqdm | 4.70.1 | MPL-2.0 AND MIT | dist-info |
+| transformers | 5.19.0 | Apache 2.0 License | dist-info |
+| truststore | 0.10.5 | MIT | dist-info |
+| typer | 0.29.1 | MIT | dist-info |
+| typing_extensions | 4.16.0 | PSF-2.0 | dist-info |
+| typing_inspection | 0.4.5 | MIT | dist-info |
+| unitypy | 1.25.4 | MIT License | dist-info |
+
 #### Four pinned dependencies — upstream license sources
 
 The upstream tags and license-source hashes below identify the pinned versions;

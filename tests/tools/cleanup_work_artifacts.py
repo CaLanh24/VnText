@@ -193,13 +193,21 @@ RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
 RELEASE_TASK_0117_BUDGET_ID = "release-0.1.17"
 # Release 0.1.18 (the next patch after public 0.1.17; NOT 0.1.8: RELEASE_TASK_018_BUDGET_ID is the historical 0.1.8 task).
 RELEASE_TASK_0118_BUDGET_ID = "release-0.1.18"
-RELEASE_TASK_0118_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_18_initial_bytes"]     # 3 GiB initial ceiling, raised only to a recorded measured need
-RELEASE_TASK_0118_BUDGET_APPROVAL = (
+RELEASE_TASK_0118_PREVIOUS_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_18_initial_bytes"]     # 3 GiB initial ceiling (epochs 029/030 carry it)
+RELEASE_TASK_0118_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_18_measured_bytes"]            # 4.5 GiB measured ceiling (current)
+RELEASE_TASK_0118_PREVIOUS_BUDGET_APPROVAL = (
     "Owner 2026-11-12 ('Xem còn vấn đề gì thì sửa nốt, xong thì release') authorized finishing the remaining issues and releasing the next patch 0.1.18. "
     "Under the standing Owner authorization of 2026-10-24 (temporary release allocation, artifact-retention.md) the Coordinator records a measured 3 GiB "
     "initial project plus owned-external ceiling for the exact registered candidate-0.1.18 scope, 11 GiB shared cache unchanged, 48 MiB guard, terminal "
     "return to the default limit. It inherits no 0.1.17 budget, Setup grant, rebaseline or standing-hop policy and grants no dependency acquisition, "
     "license acceptance, deletion of user data, history or cache, validator weakening, model change or publication before Brain ACCEPT."
+)
+RELEASE_TASK_0118_BUDGET_APPROVAL = (
+    RELEASE_TASK_0118_PREVIOUS_BUDGET_APPROVAL
+    + " Measured continuation (2026-11-12, same standing authority): after extracting the two verified public baselines (0.1.17 584,299,498 B and legacy 0.1.7 "
+    "515,688,819 B expanded; non-exempt checkout 389,086,351 B before them) the build/package/acceptance peak is estimated at about 3.7 GB from the 0.1.17 "
+    "account (about 2.2 GB above a cleaned base plus the baselines); the ceiling is raised to 4.5 GiB (measured need plus reserve and margin), still bound to the "
+    "exact candidate-0.1.18 scope and returned to the default limit at terminal cleanup. No dependency/license/user-data/history/cache/validator/model/publication authority."
 )
 RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2          # 6.25 GiB, recorded in every epoch before the native full-resource run
 RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_17_base_bytes"]
@@ -503,6 +511,10 @@ def _release_budget_record_is_valid(
     ):
         return True
     return (
+        task_id == RELEASE_TASK_0118_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_0118_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_0118_PREVIOUS_BUDGET_APPROVAL
+    ) or (
         task_id == RELEASE_TASK_0117_BUDGET_ID
         and release_budget.get("limit_bytes") == BUDGET_POLICY["closed_temporary_setup_bytes"]
         and release_budget.get("owner_approval") == RELEASE_TASK_0117_CLOSED_SETUP_APPROVAL
