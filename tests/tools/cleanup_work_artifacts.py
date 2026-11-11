@@ -42,6 +42,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+from registry_storage import snapshot_bytes, snapshot_json, verify_cold, cold_records
 from work_paths import (  # noqa: E402
     E2E_GAME_COPY,
     MANIFEST_PATH,
@@ -68,10 +69,11 @@ EVIDENCE = WORK_ROOT / "evidence"
 CLEANUP_MANIFEST = WORK_ROOT / "cleanup_manifest.json"
 SIZE_REPORT = WORK_ROOT / "size_report_before_cleanup.json"
 REPORT_INLINE_RECORD_LIMIT = 100
-PROJECT_SIZE_LIMIT_BYTES = 1024 ** 3
+BUDGET_POLICY = json.loads((ROOT / "release/budget_policy.json").read_text(encoding="utf8"))
+PROJECT_SIZE_LIMIT_BYTES = BUDGET_POLICY["default_project_bytes"]
 # Owner call_4a1f654ae2e3411daf215456e67807d7 (2026-11-03) "Cho phép thử 7B có giới hạn": shared .dev-env cap 6 -> 11 GiB for ONE bounded local test of the official
 # Hy-MT2-7B Q4_K_M GGUF (one model copy, no duplicate).  It does not widen the non-exempt checkout or any release budget.
-PROJECT_EXEMPT_SIZE_LIMIT_BYTES = 11 * 1024 ** 3
+PROJECT_EXEMPT_SIZE_LIMIT_BYTES = BUDGET_POLICY["shared_environment_bytes"]
 RELEASE_TASK_BUDGET_ID = "release-0.1.5"
 RELEASE_TASK_BUDGET_LIMIT_BYTES = 3 * 1024 ** 3
 RELEASE_TASK_BUDGET_APPROVAL = (
@@ -190,7 +192,7 @@ RELEASE_TASK_015_BUDGET_ID = "release-0.1.15"
 RELEASE_TASK_0116_BUDGET_ID = "release-0.1.16"
 RELEASE_TASK_0117_BUDGET_ID = "release-0.1.17"
 RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2          # 6.25 GiB, recorded in every epoch before the native full-resource run
-RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = 6912 * 1024 ** 2                    # 6.75 GiB, temporary (Owner 2026-11-09), exact native Setup run only
+RELEASE_TASK_0117_BUDGET_LIMIT_BYTES = BUDGET_POLICY["release_0_1_17_base_bytes"]
 RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL = (
     "Owner 2026-11-05 requested whole-game verification and 'nếu có vấn đề thì sửa trên 0.1.17', then requested the scoped UI/installer fixes. "
     "Under the standing measured release-allocation authority, preserve the 6.25 GiB project plus owned-external ceiling and 11 GiB shared cache. "
@@ -206,6 +208,9 @@ RELEASE_TASK_0117_BUDGET_APPROVAL = (
     "The ceiling returns to 6.25 GiB after that run's cleanup."
 )
 RELEASE_TASK_0116_BUDGET_LIMIT_BYTES = 6400 * 1024 ** 2  # 6.25 GiB, measured below; Brain/Owner confirm before the first allocation
+# Historical Setup-only approval remains verifiable, but is never the active profile.
+RELEASE_TASK_0117_CLOSED_SETUP_APPROVAL = RELEASE_TASK_0117_BUDGET_APPROVAL
+RELEASE_TASK_0117_BUDGET_APPROVAL = RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL
 RELEASE_TASK_0116_BUDGET_APPROVAL = (
     "Owner 2026-11-02 answered 'nghiệm thu đi, xử lý nốt các vấn đề tồn đọng rồi release' and authorized version 0.1.16 (next patch after the "
     "immutable public 0.1.15), its Setup/updater validation and publication only after Brain ACCEPT. The DEV 3.25 GiB expansion is not inherited "
@@ -484,6 +489,10 @@ def _release_budget_record_is_valid(
     ):
         return True
     return (
+        task_id == RELEASE_TASK_0117_BUDGET_ID
+        and release_budget.get("limit_bytes") == BUDGET_POLICY["closed_temporary_setup_bytes"]
+        and release_budget.get("owner_approval") == RELEASE_TASK_0117_CLOSED_SETUP_APPROVAL
+    ) or (
         task_id == RELEASE_TASK_0117_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL
@@ -1811,6 +1820,9 @@ def _reconcile_registry_impl(
     metadata_issues: list[dict] = [
         {"path": str(MANIFEST_PATH), "reason": reason} for reason in registry_errors
     ]
+    cold_pending = sum(ref.get("unresolved_missing", 0) for ref in manifest.get("cold_records", []))
+    if cold_pending:
+        metadata_issues.append({"path": str(MANIFEST_PATH), "reason": "cold_missing_records_need_review", "count": cold_pending})
     if not isinstance(entries_value, list):
         metadata_issues.append({"path": str(MANIFEST_PATH), "reason": "registry_artifacts_not_a_list"})
     if "archive" in manifest and not isinstance(manifest.get("archive"), list):
@@ -3278,12 +3290,19 @@ def _sha256_file(path: Path) -> str:
         if cached is not None:
             INTEGRITY_STATS["hits"] += 1
             return cached
+    INTEGRITY_STATS["hash_misses"] += 1
     digest = hashlib.sha256()
+    # Epoch hashes authenticate logical bytes across lossless storage migration.
+    if _prospective_epoch_root().resolve() in Path(path).resolve().parents:
+        digest.update(snapshot_bytes(Path(path)))
+        result = digest.hexdigest().upper()
+        if signature is not None and signature == _file_signature(path):
+            _INTEGRITY_CACHE[("sha", signature)] = result
+        return result
     with path.open("rb") as handle:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     result = digest.hexdigest().upper()
-    INTEGRITY_STATS["hash_misses"] += 1
     if signature is not None and signature == _file_signature(path):
         _INTEGRITY_CACHE[("sha", signature)] = result
     return result
@@ -3298,18 +3317,7 @@ EPOCH_RECORD_PREFIX = "artifact-registry-epoch:"
 _JSON_MEMO_BYTES = 0
 
 
-def _project_epoch_chain_manifest(document):
-    """Keep exactly what the epoch chain reads from a PREVIOUS registry: every top-level field, and from ``artifacts`` only the epoch records
-    (the sole artifact records the chain compares).  Anything else, including a non-list ``artifacts``, passes through so the shape checks still fail closed."""
-
-    if isinstance(document, dict) and isinstance(document.get("artifacts"), list):
-        projected = dict(document)
-        projected["artifacts"] = [
-            item for item in document["artifacts"]
-            if isinstance(item, dict) and str(item.get("id") or "").startswith(EPOCH_RECORD_PREFIX)
-        ]
-        return projected
-    return document
+from registry_storage import project_epoch_chain_manifest as _project_epoch_chain_manifest
 
 
 def _read_json_cached(path: Path, project=None):
@@ -3323,15 +3331,15 @@ def _read_json_cached(path: Path, project=None):
     if signature is not None and key in _INTEGRITY_CACHE:
         INTEGRITY_STATS["hits"] += 1
         return _INTEGRITY_CACHE[key]
-    document = json.loads(path.read_text(encoding="utf-8"))
+    document = snapshot_json(path)
     INTEGRITY_STATS["json_misses"] += 1
     if project is not None:
         document = project(document)
     if signature is not None and signature == _file_signature(path):
         size = int(signature[1]) if isinstance(signature, tuple) and len(signature) > 1 and isinstance(signature[1], int) else 0
         # A projection is charged for its REAL size (serialised length), never an assumed small one; an unexpectedly large projection simply stops being memoised once the budget is used.
-        retained = size if project is None else len(json.dumps(document, separators=(",", ":"), default=str))
-        if (project is not None or size <= JSON_MEMO_MAX_SOURCE_BYTES) and _JSON_MEMO_BYTES + retained <= JSON_MEMO_MAX_TOTAL_BYTES:
+        retained = len(json.dumps(document, separators=(",", ":"), default=str))
+        if (project is not None or max(size, retained) <= JSON_MEMO_MAX_SOURCE_BYTES) and _JSON_MEMO_BYTES + retained <= JSON_MEMO_MAX_TOTAL_BYTES:
             _INTEGRITY_CACHE[key] = document
             _JSON_MEMO_BYTES += retained
     return document
@@ -3626,8 +3634,9 @@ def _strict_registry_snapshot() -> tuple[dict, bytes | None, list[str]]:
         manifest = json.loads(raw.decode("utf-8"))
         if not isinstance(manifest, dict):
             return {}, raw, ["registry_manifest_invalid"]
+        verify_cold(manifest, MANIFEST_PATH)
         return manifest, raw, []
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError, KeyError):
         return {}, None, ["registry_manifest_invalid"]
 
 
@@ -3730,7 +3739,7 @@ def _epoch_verify_files(
         failures.append("rollback_snapshot_missing")
     else:
         try:
-            rollback_size = rollback_path.stat().st_size
+            rollback_size = len(snapshot_bytes(rollback_path))
             if _sha256_file(rollback_path) != str(rollback.get("sha256") or "").upper():
                 failures.append("rollback_snapshot_hash_mismatch")
             if rollback_size != rollback.get("bytes"):

@@ -178,6 +178,22 @@ def _batch_translate_chunk_core(
         user_restores[str(row["key"])] = restore
         v2_restores[str(row["key"])] = restore_v2
 
+    def protected_parts(text, restores):
+        # Only this row's exact glossary tokens are technical. Never ask the
+        # model to preserve an alphanumeric sentinel it can rewrite as prose.
+        prepared, parts = split_parts(text, protect_lexical=protect_lexical, inline_names=inline_names)
+        if not restores:
+            return prepared, parts
+        pattern = re.compile("(" + "|".join(re.escape(token) for token in sorted(restores, key=len, reverse=True)) + ")")
+        protected = []
+        for kind, value in parts:
+            if kind != "text":
+                protected.append((kind, value))
+                continue
+            protected.extend(("tech" if piece in restores else "text", piece)
+                             for piece in pattern.split(value) if piece)
+        return prepared, protected
+
     row_structs: list[tuple] = []
     frag_cores: list[str] = []
     frag_refs: list[tuple[int, int, int, int, str, str]] = []
@@ -186,11 +202,12 @@ def _batch_translate_chunk_core(
         src = row["source_text"]
         if src.strip():
             _mt_check.ensure_runtime_common_words()                 # first row that really goes to the model: probe the model once
+        restores = {**user_restores.get(str(row['key']), {}), **v2_restores.get(str(row['key']), {})}
         variants = split_randpick_variants(src)
         if variants:
             variant_parts: list[list[tuple[str, str]]] = []
             for vi, variant in enumerate(variants):
-                _prepared, parts = split_parts(variant, protect_lexical=protect_lexical, inline_names=inline_names)
+                _prepared, parts = protected_parts(variant, restores)
                 variant_parts.append(parts)
                 for pi, (kind, val) in enumerate(parts):
                     if kind != "text" or not val.strip():
@@ -203,7 +220,7 @@ def _batch_translate_chunk_core(
                     frag_refs.append((ri, vi, pi, fi, lead, trail))
             row_structs.append(("randpick", variant_parts))
         else:
-            _prepared, parts = split_parts(src, protect_lexical=protect_lexical, inline_names=inline_names)
+            _prepared, parts = protected_parts(src, restores)
             row_structs.append(("single", parts))
             for pi, (kind, val) in enumerate(parts):
                 if kind != "text" or not val.strip():

@@ -22,8 +22,7 @@ def default_release_task_id():
     explicit = str(os.environ.get(RELEASE_TASK_KEY) or "").strip()
     if explicit:
         return explicit
-    version = (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip()
-    return f"release-{version}"
+    return ""  # normal DEV never borrows a release/Setup grant implicitly
 
 
 def budget_check(task_id):
@@ -41,7 +40,17 @@ def budget_check(task_id):
            "(ordinary same-scope epoch transition for a docs-only HEAD), then tests/tools/cleanup_work_artifacts.py --register-release-task-scope. "
            "The cap, guard and baseline are not changed by this launcher.")
     try:
-        from tests.tools import cleanup_work_artifacts as cleanup
+        import importlib
+        cleanup = importlib.import_module("tests.tools.cleanup_work_artifacts")
+        if not task_id:
+            os.environ.pop(RELEASE_TASK_KEY, None)
+            state = cleanup._git_repository_state()
+            if state.get("dirty"):
+                return False, "DEV source tree is dirty; commit the intended source before launching."
+            inventory = cleanup._project_size_snapshot(timeout_seconds=120)
+            if not inventory.get("complete") or not inventory.get("within_limit"):
+                return False, "Normal DEV budget prerequisite failed; see registry inventory (no release quota is borrowed)."
+            return True, f"normal DEV budget verified at clean HEAD {state['head'][:12]} (cap {cleanup.PROJECT_SIZE_LIMIT_BYTES} bytes)"
         spec_task, version, approval = cleanup._release_budget_spec(task_id)
         manifest, _raw, errors = cleanup._strict_registry_snapshot()
         if errors:
@@ -101,6 +110,8 @@ def owned_build_env(result, output, cache, runtime_root):
         env["VNTEXT_CT2_MODEL"] = result["model"]["path"]
     if result.get("release_task_id"):
         env[RELEASE_TASK_KEY] = result["release_task_id"]   # the Owner-approved project budget; without it every child measures the default 1 GiB cap
+    if not result.get("release_task_id"):
+        env.pop(RELEASE_TASK_KEY, None)
     _sanitize_inherited_path(env)  # process-only: stale repo-owned `.dotnet\\tools` homes are not passed to the SDK
     return env
 
@@ -149,7 +160,8 @@ def safe_output(relative):
 
 def quota(reserve=0):
     sys.path.insert(0, str(ROOT))
-    from tests.tools import cleanup_work_artifacts as cleanup
+    import importlib
+    cleanup = importlib.import_module("tests.tools.cleanup_work_artifacts")
     inventory = cleanup._project_size_snapshot()
     enough = (inventory["complete"] and inventory["within_limit"] and
               inventory["non_exempt_bytes"] + reserve <= inventory["limit_bytes"])
@@ -296,7 +308,9 @@ def write_launcher(output, environment):
         if key in environment:
             value = environment[key].replace("'", "''")
             lines.append(f"$env:{key} = '{value}'")
-    if RELEASE_TASK_KEY in environment and "VNTEXT_WORKER_PYTHON" in environment:
+    if RELEASE_TASK_KEY not in environment:
+        lines.append("Remove-Item Env:VNTEXT_RELEASE_TASK_ID -ErrorAction SilentlyContinue")
+    if "VNTEXT_WORKER_PYTHON" in environment:
         # Fail at startup, not minutes later inside Extract: the approved budget must be active for this exact source.
         lines.append(f"& $env:VNTEXT_WORKER_PYTHON -B '{str(ROOT / 'release/dev_bootstrap.py').replace(chr(39), chr(39) * 2)}' --action budget-check")
         lines.append("if ($LASTEXITCODE -ne 0) { Write-Host 'VNText DEV launcher stopped: approved budget prerequisite missing (see above).'; exit $LASTEXITCODE }")
@@ -332,7 +346,7 @@ def main(argv=None):
     parser.add_argument("--dotnet")
     parser.add_argument("--model")
     parser.add_argument("--shared-root", help="Existing dependency/cache checkout; explicit, never copied")
-    parser.add_argument("--release-task-id", help="Approved task budget id to carry into the launcher (default: env VNTEXT_RELEASE_TASK_ID or release-<VERSION>)")
+    parser.add_argument("--release-task-id", help="Approved task budget id to carry into the launcher (default: explicit env VNTEXT_RELEASE_TASK_ID, otherwise normal DEV cap)")
     args = parser.parse_args(argv)
     result = {}
     if args.action == "budget-check":

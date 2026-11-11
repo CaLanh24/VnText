@@ -134,26 +134,10 @@ def _apply_unity_translation_package(csv_path: str, manifest_path: str, game_roo
     whitelist = load_whitelist(package_dir)
     gate_skipped = 0
 
-    by_file: dict[str, list[tuple[dict, str]]] = {}
-    for entry in entries:
-        key = entry.get("key")
-        if key not in translations:
-            continue
-        if key in review_keys:
-            gate_skipped += 1
-            continue
-        trans = translations[key]["translation"]
-        reason = patch_skip_reason(entry, trans, whitelist, allow_ct2_junk=allow_ct2_junk)
-        if reason:
-            gate_skipped += 1
-            report.append(f"SKIP key {key}: {reason}")
-            continue
-        rel = str(entry.get("file_path", "") or "").replace("\\", "/")
-        while "//" in rel:
-            rel = rel.replace("//", "/")
-        # Keep Windows-style for game tree; collapse accidental doubled separators.
-        rel = rel.replace("/", "\\")
-        by_file.setdefault(rel, []).append((entry, trans))
+    from vntext.patch_plan import group_patch_entries
+    by_file, gate_skipped, gate_report = group_patch_entries(
+        entries, translations, review_keys, whitelist, allow_ct2_junk=allow_ct2_junk)
+    report.extend(gate_report)
 
     file_items = [(rel, items) for rel, items in by_file.items() if rel]
     total_steps = max(1, len(file_items) + 3)

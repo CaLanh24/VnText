@@ -16,6 +16,15 @@ def receipt(stdout="", exit_code=0):
 
 
 class DevBootstrapTests(unittest.TestCase):
+    def setUp(self):
+        environment = patch.dict(dev.os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+
+    def test_normal_dev_never_inherits_a_version_derived_release_budget(self):
+        with patch.dict(dev.os.environ, {}, clear=True):
+            self.assertEqual("", dev.default_release_task_id())
+
     def test_run_overrides_global_tools_guard_without_mutating_the_caller_mapping(self):
         seen = []
 
@@ -77,10 +86,11 @@ class DevBootstrapTests(unittest.TestCase):
         check = script.index("--action budget-check")
         self.assertLess(check, script.index("VNText.Studio.App.exe"))                       # the prerequisite runs BEFORE the app starts
         self.assertIn("if ($LASTEXITCODE -ne 0)", script[check:script.index("VNText.Studio.App.exe")])
-        # Without a task budget there is no check line to carry (the plain launcher is unchanged).
+        # A plain DEV launcher clears stale release authority and checks the normal project cap.
         with patch.object(Path, "write_text") as write:
             dev.write_launcher(Path("owned-output"), {"VNTEXT_WORKER_PYTHON": "C:/py/python.exe"})
-        self.assertNotIn("budget-check", write.call_args_list[0].args[0])
+        self.assertIn("budget-check", write.call_args_list[0].args[0])
+        self.assertIn("Remove-Item Env:VNTEXT_RELEASE_TASK_ID", write.call_args_list[0].args[0])
 
     def test_owned_environment_propagates_the_task_budget(self):
         result = {"python": {"path": "python"}, "model": {"path": ""}, "release_task_id": "release-0.1.17"}

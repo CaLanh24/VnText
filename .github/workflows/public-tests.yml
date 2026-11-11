@@ -1,0 +1,28 @@
+name: Public deterministic tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  unit:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Select locked runtime
+        shell: pwsh
+        run: |
+          $profile = '${{ matrix.python }}'.Replace('.', '')
+          python -m pip install --require-hashes -r "requirements/locks/windows-cp$profile-runtime.txt"
+      - name: Public deterministic groups
+        run: python -B tests/tools/audit_gates.py --report public-gates.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-gates-${{ matrix.python }}
+          path: public-gates*

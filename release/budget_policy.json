@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "default_project_bytes": 1073741824,
+  "shared_environment_bytes": 11811160064,
+  "reserve_bytes": 50331648,
+  "release_0_1_17_base_bytes": 6710886400,
+  "closed_temporary_setup_bytes": 7247757312,
+  "temporary_setup_active": false,
+  "authority": "Owner approved audit R02 on 2026-11-11. Normal DEV uses the default project limit. The original 6.25 GiB release base is distinct from the closed 6.75 GiB Setup-only grant; no audit build borrows either release grant.",
+  "origin": "CONTRACTS.md section10a/10c and retained Owner approval history; original bytes and epoch metadata remain immutable"
+}

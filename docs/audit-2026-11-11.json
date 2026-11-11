@@ -219,5 +219,11 @@
       "vntext/mt_translation_constants.py": "e10d1fb90a01c58d1377362f493b53bfb6df6f07b010cf0744325b4b2c9a05a0",
       "tests/unit/test_audit_regressions.py": "266db556710f47a27d420048b09c08bd5e985c140122bc0f4936679d226aac6a"
     }
+  },
+  "owner_decision": {
+    "date": "2026-11-11",
+    "R01-R12": "APPROVED",
+    "implementation": "audit-2026-11-11-implementation.md",
+    "original_audit_verdict": "PM_DECISION_REQUIRED retained as historical audit result"
   }
 }

@@ -130,3 +130,10 @@ Chỉ đọc theo câu hỏi/task ID. Nội dung evidence của snapshot giữ n
 ## Duy trì bản đồ
 
 Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con trỏ task hiện hành; không thêm một tracker/summary thứ hai. Landing page giữ kết quả/contract còn hiệu lực và đường dẫn archive; archive bất biến, không làm mới chữ pending/current cũ. Lịch sử chưa tách vẫn tra theo heading/câu hỏi; không nhập toàn bộ vào session.
+
+## Audit implementation 2026-11-11
+
+- [R01-R12 implementation ledger](audit-2026-11-11-implementation.md), [original review](audit-2026-11-11.html).
+- Contracts: [retention/budgets](contracts/artifact-retention.md), [epoch authority/history](contracts/registry-epoch.md), [DEV/game validation](contracts/dev-validation.md). Origin SHAs retained in each topic; CONTRACTS keeps compatibility section anchors.
+- WORKFLOW routes bounded operations to workflows/ by owner. No historical task resumes through a router.
+- [Platform dependency locks](../requirements/locks/README.md), [public gate runner](../tests/tools/audit_gates.py), [MT finite corpus](../tests/golden/mt-quality/corpus.json).

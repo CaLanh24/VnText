@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import base64
+import uuid
 import hashlib
 import csv
 import io
@@ -237,6 +239,9 @@ def save_document(
     fields: list[str],
     rows: list[dict],
     expected_sha256: str | None = None,
+    *,
+    _validate_after_write=None,
+    _record_undo: bool = False,
 ) -> dict[str, Any]:
     csv_path = Path(csv_path).resolve()
     try:
@@ -245,6 +250,7 @@ def save_document(
         return {"ok": False, "error": str(exc)}
     if expected_sha256 and hashlib.sha256(baseline_bytes).hexdigest().casefold() != expected_sha256.casefold():
         return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
+    expected_sha256 = expected_sha256 or hashlib.sha256(baseline_bytes).hexdigest()
     required = {"key", "source_text", "translation"}
     field_set = set(fields or [])
     if not required.issubset(field_set):
@@ -275,16 +281,27 @@ def save_document(
         if current_sha256.casefold() != expected_sha256.casefold():
             return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
     backup_path = backup_translation_csv(csv_path)
+    if backup_path.read_bytes() != baseline_bytes:
+        return {"ok": False, "error": "CSV đã thay đổi bên ngoài trong lúc sao lưu", "backup_path": str(backup_path), "rolled_back": False}
     review_path = csv_path.parent / "review_only.csv"
     review_before = review_path.read_bytes() if review_path.is_file() else None
     saved_sha256: str | None = None
     review_writer = _StagedReviewWriter(review_path, review_before)
     try:
         saved_sha256 = _atomic_write_csv(csv_path, fields, rows, expected_sha256=expected_sha256)
+        if _validate_after_write is not None:
+            _validate_after_write()
         review_pruned = 0
         if csv_path.name.casefold() == "translation.csv":
             _fields, saved_rows = _read_editor_csv(csv_path)
             review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows, write_rows=review_writer)
+        if _record_undo:
+            review_after = review_path.read_bytes() if review_path.is_file() else None
+            receipt = {"version": 1, "csv_path": str(csv_path), "backup_sha256": hashlib.sha256(baseline_bytes).hexdigest(),
+                       "committed_sha256": saved_sha256,
+                       "review_before": base64.b64encode(review_before).decode("ascii") if review_before is not None else None,
+                       "review_after_sha256": hashlib.sha256(review_after).hexdigest() if review_after is not None else None}
+            _atomic_write_bytes(backup_path.with_suffix(backup_path.suffix + ".undo.json"), json.dumps(receipt).encode("utf8"))
     except Exception as exc:
         if isinstance(exc, CsvEditorExternalChange):
             return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
@@ -375,7 +392,7 @@ class _StagedReviewWriter:
     def __call__(self, path, fields, rows) -> None:
         if Path(path) != self.review_path:
             raise ValueError("the staged review writer only writes review_only.csv")
-        staging = self.review_path.with_name(f".{self.review_path.name}.{os.getpid()}.staged")
+        staging = self.review_path.with_name(f".{self.review_path.name}.{uuid.uuid4().hex}.staged")
         try:
             write_csv_rows_file(staging, fields, rows)
             data = staging.read_bytes()
@@ -415,7 +432,7 @@ def _atomic_write_csv(
     expected_sha256: str | None = None,
 ) -> str:
     """Write a CSV without leaving a partially-written user file behind."""
-    tmp = csv_path.with_name(f".{csv_path.name}.{os.getpid()}.tmp")
+    tmp = csv_path.with_name(f".{csv_path.name}.{uuid.uuid4().hex}.tmp")
     try:
         write_csv_rows_file(tmp, fields, rows)
         written_sha256 = hashlib.sha256(tmp.read_bytes()).hexdigest()
@@ -433,7 +450,7 @@ def _atomic_write_csv(
 
 
 def _atomic_write_bytes(path: Path, contents: bytes) -> None:
-    tmp = path.with_name(f".{path.name}.{os.getpid()}.restore.tmp")
+    tmp = path.with_name(f".{path.name}.{uuid.uuid4().hex}.restore.tmp")
     try:
         tmp.write_bytes(contents)
         os.replace(tmp, path)
@@ -487,6 +504,7 @@ def replace_translation(
     keys: list[str] | None = None,
     *,
     dry_run: bool = False,
+    expected_sha256: str | None = None,
 ) -> dict[str, Any]:
     csv_path = Path(csv_path).resolve()
     preview = preview_replace_translation(rows, find_text, replacement, keys)
@@ -495,53 +513,76 @@ def replace_translation(
     if not preview["keys"]:
         return {**preview, "dry_run": False, "message": "Không tìm thấy chuỗi trong cột bản dịch."}
 
-    # Validate before and after. A failed post-write validation attempts to
-    # restore the backup rows; report a failed restore instead of claiming it succeeded.
     before = validate_document(csv_path, rows)
     if not before.get("ok"):
         return {"ok": False, "error": before.get("error") or "CSV hiện tại không hợp lệ"}
-    backup_path = backup_translation_csv(csv_path)
+    # Legacy callers may intentionally pass an unsaved draft. Snapshot at entry
+    # when they omit an expected hash; hash-aware callers retain their load-time CAS.
+    expected_sha256 = expected_sha256 or hashlib.sha256(csv_path.read_bytes()).hexdigest()
+    updated = [dict(row) for row in rows]  # a failed operation never mutates the caller's draft
     selected = set(preview["keys"])
-    for row in rows:
-        if str(row.get("key") or "") not in selected:
-            continue
-        row["translation"], _ = _replace_case_insensitive(
-            str(row.get("translation") or ""), find_text, replacement
-        )
-    try:
-        _atomic_write_csv(csv_path, fields, rows)
-        validation = validate_document(csv_path, rows)
+    for row in updated:
+        if str(row.get("key") or "") in selected:
+            row["translation"], _ = _replace_case_insensitive(str(row.get("translation") or ""), find_text, replacement)
+    validation = {}
+    def check_written():
+        nonlocal validation
+        validation = validate_document(csv_path, updated)
         if not validation.get("ok"):
             raise ValueError(validation.get("error") or "Validate sau khi thay thế thất bại")
-        _fields, saved_rows = read_csv_rows_file(csv_path)
-        review_pruned = _reconcile_saved_review_rows(csv_path, saved_rows)
-    except Exception as exc:
-        try:
-            _atomic_write_csv(csv_path, fields, read_csv_rows_file(backup_path)[1])
-        except Exception as rollback_error:
-            return {"ok": False, "error": f"{exc}; rollback thất bại: {rollback_error}",
-                    "backup_path": str(backup_path), "rolled_back": False, "rollback_failed": True}
-        return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
-    return {
-        **preview,
-        "dry_run": False,
-        "backup_path": str(backup_path),
-        "summary": f"Đã thay {preview['replacement_count']} lần trong {preview['count']} dòng; {validation['summary']}",
-        "review_pruned": review_pruned,
-        **{k: validation[k] for k in ("patch_eligible", "patch_blocked", "batch_actionable", "issues_by_key", "issues_display")},
-    }
+    result = save_document(csv_path, fields, updated, expected_sha256,
+                           _validate_after_write=check_written, _record_undo=True)
+    if not result.get("ok"):
+        return result
+    return {**preview, **result, "dry_run": False,
+            "summary": f"Đã thay {preview['replacement_count']} lần trong {preview['count']} dòng; {validation['summary']}",
+            **{k: validation[k] for k in ("patch_eligible", "patch_blocked", "batch_actionable", "issues_by_key", "issues_display")}}
 
 
-def restore_backup(csv_path: str | Path, backup_path: str | Path) -> dict[str, Any]:
-    csv_path = Path(csv_path).resolve()
-    backup = Path(backup_path).resolve()
+def restore_backup(csv_path: str | Path, backup_path: str | Path, expected_sha256: str | None = None) -> dict[str, Any]:
+    """Undo owned bulk writes byte-exactly; old backups require explicit current-hash consent.
+
+    Optimistic CAS is checked immediately before each replace. No cross-file or
+    hostile-writer OS atomicity is promised; a foreign change is never rolled back.
+    """
+    csv_path, backup = Path(csv_path).resolve(), Path(backup_path).resolve()
     if not backup.is_file():
         return {"ok": False, "error": "Không tìm thấy file backup để undo"}
-    fields, rows = read_csv_rows_file(backup)
-    if not rows:
-        return {"ok": False, "error": "File backup không có dữ liệu"}
-    _atomic_write_csv(csv_path, fields, rows)
-    return {"ok": True, "csv_path": str(csv_path), "row_count": len(rows), "restored_from": str(backup)}
+    data = backup.read_bytes()
+    try:
+        _fields, rows = _read_editor_csv_bytes(data)
+        meta = backup.with_suffix(backup.suffix + ".undo.json")
+        receipt = json.loads(meta.read_text(encoding="utf8")) if meta.is_file() else None
+        current = csv_path.read_bytes()
+        current_sha = hashlib.sha256(current).hexdigest()
+        review = csv_path.parent / "review_only.csv"
+        review_now = review.read_bytes() if review.is_file() else None
+        if receipt:
+            if receipt.get("version") != 1 or receipt.get("csv_path") != str(csv_path) or receipt.get("backup_sha256") != hashlib.sha256(data).hexdigest():
+                raise ValueError("Backup/receipt không khớp gói hiện tại")
+            expected_sha256 = expected_sha256 or receipt["committed_sha256"]
+            review_sha = hashlib.sha256(review_now).hexdigest() if review_now is not None else None
+            if review_sha != receipt["review_after_sha256"]:
+                raise ValueError("review_only.csv đã thay đổi bên ngoài — không undo")
+        elif not expected_sha256:
+            raise ValueError("Backup cũ cần expected_sha256 hiện tại trước khi undo")
+        if current_sha.casefold() != expected_sha256.casefold():
+            raise ValueError("CSV đã thay đổi bên ngoài — không undo")
+        if not _replace_bytes_if_unchanged(csv_path, current_sha, data):
+            raise ValueError("CSV đã thay đổi bên ngoài trong lúc undo")
+        try:
+            if receipt and receipt["review_before"] is not None:
+                original_review = base64.b64decode(receipt["review_before"], validate=True)
+                if review_now is None or not _replace_bytes_if_unchanged(review, hashlib.sha256(review_now).hexdigest(), original_review):
+                    raise ValueError("Review đã đổi trong lúc undo; giữ thay đổi ngoài")
+        except Exception:
+            # Restore only bytes this Undo owns, retaining a foreign edit.
+            restored = _replace_bytes_if_unchanged(csv_path, hashlib.sha256(data).hexdigest(), current)
+            return {"ok": False, "error": "Không undo được review ledger", "rolled_back": restored,
+                    "rollback_failed": not restored, "backup_path": str(backup)}
+        return {"ok": True, "csv_path": str(csv_path), "row_count": len(rows), "restored_from": str(backup), "source_sha256": hashlib.sha256(data).hexdigest()}
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return {"ok": False, "error": str(exc), "rolled_back": False}
 
 
 def _row_entry(row: dict) -> dict:
@@ -925,6 +966,8 @@ def main() -> int:
     p_undo = sub.add_parser("undo")
     p_undo.add_argument("csv_path", type=Path)
     p_undo.add_argument("backup_path", type=Path)
+    p_undo.add_argument("--expected-sha256")
+    p_replace.add_argument("--expected-sha256")
 
     args = parser.parse_args()
     try:
@@ -989,10 +1032,10 @@ def main() -> int:
             else:
                 result = replace_translation(
                     args.csv_path, fields, rows, args.find, args.replace, keys,
-                    dry_run=bool(args.dry_run),
+                    dry_run=bool(args.dry_run), expected_sha256=args.expected_sha256,
                 )
         elif args.cmd == "undo":
-            result = restore_backup(args.csv_path, args.backup_path)
+            result = restore_backup(args.csv_path, args.backup_path, args.expected_sha256)
         else:
             rows = None
             if args.payload and args.payload.is_file():

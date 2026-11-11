@@ -119,7 +119,7 @@ class UserGlossaryTests(unittest.TestCase):
         )
         self.assertIn("mị lực", result["k1"])
         self.assertIn("{mName}", result["k1"])
-        self.assertTrue(any("ZZG9000ZZ" in call for call in translator.calls))
+        self.assertFalse(any("ZZG" in call for call in translator.calls))  # sentinels bypass the model
 
     def test_batch_keeps_generic_terms_in_ct2_sentence_context(self):
         translator = FakeTranslator()

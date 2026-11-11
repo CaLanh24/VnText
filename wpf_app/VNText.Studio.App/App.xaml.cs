@@ -7,7 +7,9 @@ namespace VNText.Studio.App;
 
 public partial class App : Application
 {
+#if DEV_PROBES
     private ScrollbarProbe? _scrollbarProbe;
+#endif
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -90,6 +92,7 @@ public partial class App : Application
                 disposable.Dispose();
         };
 
+#if DEV_PROBES
         var workflowE2eIdx = Array.IndexOf(e.Args, "--wpf-workflow-e2e");
         if (workflowE2eIdx >= 0 && workflowE2eIdx + 1 < e.Args.Length)
         {
@@ -471,6 +474,15 @@ public partial class App : Application
             return;
         }
 
+#else
+        if (e.Args.Any(arg => arg.Contains("-probe", StringComparison.Ordinal) || arg == "--wpf-workflow-e2e"))
+        {
+            AppDialogService.Show("Development probes are not included in this build. Use Debug or EnableDevProbes=true.",
+                "Development harness", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown(64);
+            return;
+        }
+#endif
         window.Show();
         MainWindowHandleNormalizer.Schedule(window);
     }

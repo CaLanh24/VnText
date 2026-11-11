@@ -55,7 +55,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         )
         cls._fixture_temp_path = Path(cls._fixture_tempdir.name).resolve()
         paths.register_artifact(
-            artifact_id=f"cleanup-lifecycle-temp:{ambient['scope_id']}",
+            artifact_id=f"cleanup-lifecycle-temp:{ambient['scope_id']}:{cls._fixture_temp_path.name}",
             path=cls._fixture_temp_path,
             kind="test_temp",
             created_by="test_cleanup_work_artifacts",
@@ -246,6 +246,8 @@ class CleanupLifecycleTests(unittest.TestCase):
             harness = Path(tempfile.mkdtemp(prefix="vntext-canonical-runner-", dir=paths.WORK_ROOT))
             for relative in (
                 Path("tests/lib/bootstrap.py"),
+                Path("tests/lib/registry_storage.py"),
+                Path("release/budget_policy.json"),
                 Path("tests/lib/work_paths.py"),
                 Path("tests/lib/path_hygiene.py"),
                 Path("tests/tools/cleanup_work_artifacts.py"),
@@ -3657,7 +3659,7 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual(task_id, new["provenance"]["recovery_of"]); self.assertEqual(digest, new["provenance"]["manifest_sha256_before"])
             limit, error, profile = cleanup._release_task_budget_profile(root)
             self.assertEqual((cleanup._release_task_budget_limit(task_id), None, task_id), (limit, error, profile))
-            self.assertEqual(6912 * 1024 ** 2, limit)                                            # the temporary 6.75 GiB (Owner 2026-11-09); cap arithmetic below keeps the 48 MiB guard
+            self.assertEqual(6400 * 1024 ** 2, limit)                                            # reconciled release base; closed Setup history does not reactivate the grant
             # replay / second generation is refused
             again = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
             self.assertFalse(again["ok"]); self.assertIn("release_scope_recovery_already_active", again["reasons"])
@@ -3710,25 +3712,23 @@ class CleanupLifecycleTests(unittest.TestCase):
             rogue = cleanup.recover_release_task_scope(hashlib.sha256(manifest.read_bytes()).hexdigest(), quote)
             self.assertFalse(rogue["ok"]); self.assertIn("release_scope_recovery_active_scope_exists", rogue["reasons"])
 
-    def test_release_017_temporary_675_gib_budget_keeps_previous_epochs_verifiable_and_exact(self):
+    def test_release_017_closed_setup_budget_keeps_history_verifiable_without_reactivating_it(self):
         task = cleanup.RELEASE_TASK_0117_BUDGET_ID
-        self.assertEqual(6400 * 1024 ** 2, cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES)
-        self.assertEqual(6912 * 1024 ** 2, cleanup.RELEASE_TASK_0117_BUDGET_LIMIT_BYTES)
-        self.assertEqual(cleanup.RELEASE_TASK_0117_BUDGET_LIMIT_BYTES, cleanup._release_task_budget_limit(task))
-        quote = "Cho phép 6,75 GiB, kiểm trọn Setup"
-        self.assertIn(quote, cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL)
-        self.assertTrue(cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL.startswith(cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL))
+        base = 6400 * 1024 ** 2
+        closed = 6912 * 1024 ** 2
+        self.assertEqual(base, cleanup.RELEASE_TASK_0117_BUDGET_LIMIT_BYTES)
+        self.assertEqual(base, cleanup._release_task_budget_limit(task))
         approval = cleanup._release_budget_spec(task)[2]
-        self.assertEqual(cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL, approval)
+        old_approval = cleanup.RELEASE_TASK_0117_CLOSED_SETUP_APPROVAL
+        self.assertIn("Cho phép 6,75 GiB, kiểm trọn Setup", old_approval)
+        self.assertNotIn("Cho phép 6,75 GiB", approval)
         valid = cleanup._release_budget_record_is_valid
-        self.assertTrue(valid({"limit_bytes": cleanup.RELEASE_TASK_0117_BUDGET_LIMIT_BYTES, "owner_approval": approval}, task, approval))
-        self.assertTrue(valid({"limit_bytes": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL}, task, approval))
-        # mixed or other values are refused: the old limit with the new text, the new limit with the old text, another cap, another task
-        self.assertFalse(valid({"limit_bytes": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES, "owner_approval": approval + "x"}, task, approval))
-        self.assertFalse(valid({"limit_bytes": cleanup.RELEASE_TASK_0117_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL}, task, approval))
+        self.assertTrue(valid({"limit_bytes": base, "owner_approval": approval}, task, approval))
+        self.assertTrue(valid({"limit_bytes": closed, "owner_approval": old_approval}, task, approval))
+        self.assertFalse(valid({"limit_bytes": closed, "owner_approval": approval}, task, approval))
+        self.assertFalse(valid({"limit_bytes": base, "owner_approval": old_approval}, task, approval))
         self.assertFalse(valid({"limit_bytes": 7 * 1024 ** 3, "owner_approval": approval}, task, approval))
-        self.assertFalse(valid({"limit_bytes": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0117_PREVIOUS_BUDGET_APPROVAL}, cleanup.RELEASE_TASK_0116_BUDGET_ID, approval))
-        self.assertEqual(cleanup.RELEASE_TASK_0116_BUDGET_LIMIT_BYTES, 6400 * 1024 ** 2)          # no other task changed
+        self.assertEqual(base, cleanup.RELEASE_TASK_0116_BUDGET_LIMIT_BYTES)
 
     def test_release_012_expanded_budget_preserves_old_epoch_verifiability(self):
         task_id = cleanup.RELEASE_TASK_012_BUDGET_ID
@@ -3758,7 +3758,7 @@ class CleanupLifecycleTests(unittest.TestCase):
         task = cleanup.RELEASE_TASK_0117_BUDGET_ID
         self.assertNotEqual(task, cleanup.RELEASE_TASK_017_BUDGET_ID)
         self.assertEqual((task, "0.1.17", cleanup.RELEASE_TASK_0117_BUDGET_APPROVAL), cleanup._release_budget_spec(task))
-        self.assertEqual(6912 * 1024 ** 2, cleanup._release_task_budget_limit(task))
+        self.assertEqual(6400 * 1024 ** 2, cleanup._release_task_budget_limit(task))
         self.assertEqual("0.1.7", cleanup._release_budget_spec(cleanup.RELEASE_TASK_017_BUDGET_ID)[1])
         self.assertTrue(cleanup._epoch_transition_tasks_compatible(cleanup.RELEASE_TASK_0116_BUDGET_ID, task))
         self.assertFalse(cleanup._epoch_transition_tasks_compatible(task, cleanup.RELEASE_TASK_0116_BUDGET_ID))
@@ -5575,7 +5575,7 @@ class ApprovalHistoryDepthTests(unittest.TestCase):
             return epoch
         def used(epoch):
             return cleanup._epoch_rebaseline_approval_used(epoch, manifest={}, authorization_id=approval)
-        with patch.object(Path, "read_text", lambda path, **kwargs: documents[str(path)]):
+        with patch.object(cleanup, "snapshot_json", lambda path: json.loads(documents[str(path)])):
             self.assertFalse(used(history(80)))
             self.assertTrue(used(history(80, used=True)))
             # The former 256-deep cap acted as an indirect approval quota; the depth guard is now only the shared resource bound.

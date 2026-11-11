@@ -191,3 +191,15 @@ Output hiện hành do `release/dev_bootstrap.py` sở hữu là `DEV_RUN/bootst
 Build cũ top-level hoặc `wpf_publish` không đại diện source hiện hành chỉ vì cùng FileVersion. Giữ data/cache/env Owner; chỉ disposal output obsolete sau inventory và bằng chứng owner/permission. Evidence chuẩn bị disposition registry/epoch cũ vẫn ở checkout; không tự xóa epoch protected để làm cleanup xanh. Thứ tự game và evidence lifecycle nằm duy nhất tại `CONTRACTS.md` §10c.
 
 Entrypoint DEV từ môi trường mới: double-click "DEV_RUN/bootstrap-build/Start-DEV.cmd". Launcher do bootstrap tạo giữ runtime8, Python, model và VNTEXT_LOCALAPPDATA trong output checkout; không thay đổi entrypoint Release.
+
+## Audited dependency and harness profiles
+
+Use the [Windows/Python locks](../requirements/locks/README.md) for repeatable worker/builder dependency selection. The default requirements omit optional Qt; legacy Qt uses requirements-legacy-qt.txt, Tk uses Python's optional Tcl/Tk runtime, and explicitly selected QML reports unsupported when its bridge is absent. WPF is the shipped UI.
+
+Normal DEV does not infer a release budget from VERSION. A launcher checks the clean source and default project cap unless an explicit valid release task is supplied. Numeric policy is [budget_policy.json](../release/budget_policy.json); scoped historical approvals remain separately verified. Gzip history is logical-byte compatible, not a new epoch approval.
+
+Debug includes native development probes. Release excludes their source and command entrypoints unless explicitly built with `-p:EnableDevProbes=true`; that build is a harness candidate, not the shipping artifact. Release smoke/verify and the product ImagePackageProbe reader remain included. Keep candidate provenance/config in the receipt. Never call a harness result live native PASS.
+
+Run `python -B tests/tools/audit_gates.py --report <owned-output>/gates.json` for the public deterministic groups. Installed model/native acceptance is separately listed and never implicitly PASS. CI config is read-only and runs the public groups only; this local task does not push or trigger it.
+
+The shared Impeccable package is pinned by release/impeccable-pin.json. `python release/verify_skill.py` verifies it read-only; the small project adapter is .agents/skills/vntext-ui/SKILL.md. No automatic shared-tool installation or launcher download.

@@ -33,6 +33,9 @@ def _ui_backend() -> str:
 
 
 def _launch_qml() -> int:
+    import importlib.util
+    if importlib.util.find_spec("qml_ui") is None or importlib.util.find_spec("qml_ui.bridge") is None:
+        raise RuntimeError("Legacy QML is unsupported in this checkout (qml_ui/bridge.py is absent). Use the WPF launcher, VNTEXT_UI=tk, or optional Qt requirements.")
     from qml_ui.bridge import launch_app
 
     return launch_app(VERSION)
@@ -48,7 +51,7 @@ if is_frozen() and _release_cli_mode() is None:
     if apply_pending_update_on_startup() == "restarting":
         sys.exit(0)
 
-from vntext_studio import VERSION
+from vntext.app_backend import VERSION
 
 
 def _launch_tk() -> None:
@@ -91,18 +94,16 @@ def main() -> None:
     if backend in ("qml", "qml-preview", "quick"):
         try:
             raise SystemExit(_launch_qml())
-        except ImportError:
-            if backend in ("qml", "qml-preview", "quick", "auto", ""):
-                raise SystemExit(_launch_qt())
-            raise
+        except (ImportError, RuntimeError) as exc:
+            raise SystemExit(str(exc)) from exc
     if backend in ("tk", "tkinter"):
         _launch_tk()
         return
     if backend in ("qt", "pyside6"):
         try:
             raise SystemExit(_launch_qt())
-        except ImportError:
-            raise SystemExit(_launch_qml())
+        except ImportError as exc:
+            raise SystemExit("Optional Qt dependencies are missing. Install requirements-legacy-qt.txt or use the WPF launcher.") from exc
     if backend in ("auto", ""):
         try:
             raise SystemExit(_launch_qml())

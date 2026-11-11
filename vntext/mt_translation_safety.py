@@ -36,7 +36,7 @@ def _token_boundary_ok(text, start, end, *, check_before=True):
 
 # Identity of the post-translation repair.  It is part of the translation-cache strategy fingerprint: bump it whenever postprocess() changes what
 # it writes, so validated-only cache records produced by an older repair (structurally valid but corrupted, e.g. "lý làm") are no longer hit.
-POSTPROCESS_VERSION = "rough-draft-lexical-7"
+POSTPROCESS_VERSION = "rough-draft-lexical-8-glossary"
 
 def _blank_bare_tokens(text, bare):
     """Blank a model-echoed copy of a placeholder name.  Word boundaries are Unicode- and combining-mark-aware: an ASCII-only test removed the

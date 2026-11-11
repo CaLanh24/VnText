@@ -11,6 +11,16 @@
     <ApplicationIcon>Assets\vntext_studio.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <EnableDevProbes Condition="'$(EnableDevProbes)' == '' and '$(Configuration)' == 'Debug'">true</EnableDevProbes>
+    <EnableDevProbes Condition="'$(EnableDevProbes)' == ''">false</EnableDevProbes>
+    <DefineConstants Condition="'$(EnableDevProbes)' == 'true'">$(DefineConstants);DEV_PROBES</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(EnableDevProbes)' != 'true'">
+    <Compile Remove="Services\*Probe.cs" />
+    <!-- This is a product package reader, not a development harness. -->
+    <Compile Include="Services\ImagePackageProbe.cs" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Remove="obj\**\*.cs" />
   </ItemGroup>

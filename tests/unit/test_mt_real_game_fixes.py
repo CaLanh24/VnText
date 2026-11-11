@@ -107,7 +107,7 @@ class DateFormatAndNumberedLabelTests(unittest.TestCase):
 
     def test_pure_date_format_strings_are_technical_copy_literal_never_sent_to_the_model(self):
         row = {"key": "k", "source_text": self.FORMAT, "translation": "", "context": "RenPy:game/x.rpy:3:string:y", "file_path": "game/x.rpy", "import_method": "renpy_string"}
-        self.assertEqual(("copy_literal", "date/time format string — giữ nguyên"), classify_row_authoritative(row)[:2])
+        self.assertEqual(("skip_technical", "Ren'Py runtime format/control — not prose"), classify_row_authoritative(row)[:2])
         self.assertFalse(mt_check.is_date_format_string("Saved on %d"))
         self.assertFalse(mt_check.is_date_format_string("You have %d days and %s hours left"))
 

@@ -24,11 +24,12 @@ class ReplaceRollbackTests(unittest.TestCase):
     def _replace(self, rollback_error):
         fields = ["key", "source_text", "translation"]
         rows = [{"key": "k1", "source_text": "Hello", "translation": "Xin chào"}]
+        result = {"ok": False, "error": "write failed", "backup_path": "backup.csv", "rolled_back": rollback_error is None}
+        if rollback_error is not None:
+            result.update(rollback_failed=True, error="write failed; restore denied")
         with patch.object(csv_editor_api, "validate_document", return_value={"ok": True}), \
-             patch.object(csv_editor_api, "backup_translation_csv", return_value=Path("backup.csv")), \
-             patch.object(csv_editor_api, "read_csv_rows_file", return_value=(fields, rows)), \
-             patch.object(csv_editor_api, "_atomic_write_csv", side_effect=[OSError("write failed"), rollback_error]):
-            return csv_editor_api.replace_translation("translation.csv", fields, rows, "chào", "chào bạn")
+             patch.object(csv_editor_api, "save_document", return_value=result):
+            return csv_editor_api.replace_translation("translation.csv", fields, rows, "chào", "chào bạn", expected_sha256="snapshot")
 
     def test_rollback_failure_is_not_reported_as_success(self):
         result = self._replace(OSError("restore denied"))

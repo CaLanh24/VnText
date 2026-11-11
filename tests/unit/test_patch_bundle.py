@@ -111,7 +111,7 @@ class PatchBundleRuntimeTests(unittest.TestCase):
             env = {**os.environ, "VNTEXT_PATCH_STORAGE": str(storage)}
 
             def run(*args, exe_path=exe):
-                return subprocess.run([str(exe_path), *args], capture_output=True, text=True, timeout=120, env=env, stdin=subprocess.DEVNULL)
+                return subprocess.run([str(exe_path), *args], capture_output=True, text=True, encoding="utf8", errors="backslashreplace", timeout=120, env=env, stdin=subprocess.DEVNULL)
 
             first = run("--install", str(game))
             self.assertEqual(0, first.returncode, first.stdout + first.stderr)

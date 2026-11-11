@@ -1,0 +1,10 @@
+<!-- Origin: docs/WORKFLOW.md at 242b5a97244234a4030a2ebf10bfa91ca72317cd; original section sha256 b9045c57cafa30e78ccca3f5187d17189ee153a1a90cebbc98afbdf9b00dbf13. Authority preserved, latest Owner instructions prevail. -->
+
+## Git, dữ liệu và artifacts
+
+Trước lần sửa đầu tiên của task, xác nhận đang ở `main`, checkout sạch và không có writer khác. Nếu không đạt, dừng mutation và báo; không stash/reset/checkout để né trạng thái. Trong task, giữ thay đổi của chính task và kiểm status/diff trước commit; thay đổi lạ hoặc HEAD đổi phải đối chiếu trước khi ghi tiếp. Task docs riêng vẫn phải giữ một source writer; agent đang chạy test/app trên snapshot không tự chứng minh là source writer. Chỉ stage và commit source/test/docs đúng task scope sau validation khi task không chỉ định khác; xem lại status, staged/unstaged diff, `git diff --check` và log trước commit. Không push, merge, force-push, sửa config Git, bỏ hook hoặc rewrite history nếu Owner không yêu cầu rõ.
+
+Khi sửa WPF hoặc runtime app, để lại tối đa một executable thử được trong `DEV_RUN` và chạy `--smoke-worker`; docs/test-only không cần build executable. Dependency Python/SDK/model/cache dùng chung nằm trong `.dev-env/.venv` và các thư mục con `.dev-env`; test runtime chỉ nằm trong `TEST_RUN` và phải tự dọn absent/empty khi terminal; Release task mới được tạo `RELEASE_RUN`. Không bắt đầu task mới khi transient root cũ chưa terminal hoặc còn UNKNOWN. Chi tiết lifecycle, OWNER_TEST_PENDING và giới hạn evidence nằm ở `CONTRACTS.md` §10a.
+
+Chỉ sửa file trong scope; giữ nguyên thay đổi ngoài scope. Không xóa/di chuyển/ghi đè game, save, CSV/glossary user, output hoặc môi trường phát triển nếu chưa được phép. Không commit game, model, release binary, log lớn, cache hay secret. Cleanup/evidence tuân theo `CONTRACTS.md` và gate của `TEST_MATRIX.md`; private historical artifacts không là prerequisite của public clone và việc thiếu chúng không chứng minh PASS hay FAIL hiện tại.
+

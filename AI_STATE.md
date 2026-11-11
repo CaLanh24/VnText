@@ -1,20 +1,17 @@
-# Current checkpoint — 2026-11-11 repository audit
+# Current checkpoint - audit implementation 2026-11-11
 
-Owner: audit the entire C:/v project including AGENTS and skills, fix proven issues, and deliver an HTML review of remaining proposals. No release/push/tag/model change or user-data cleanup authorized by this task.
+Owner approved all R01-R12 in docs/audit-2026-11-11.html. Implement, validate and report; no push/release/tag/model change. No user/game/save deletion.
 
-## Writer / source
-- Base HEAD: `f192638b9b07071d9df7428e4683f1d4eca95836`; main was clean at entry. Audit edits remain uncommitted for review.
-- Root is temporary sole writer. Live Claude DEV `72329c3d-5883-4cc8-8d14-60c73886ebd3` was idle; latest result confirms weekly quota until Nov 12 05:00 Tokyo. Retain session `76922e45` and prior checkpoint cursor `1641`; no new task/session dispatched. Reconcile live state and return writer at a safe boundary after recovery.
+## Writer and source
+Root is temporary sole writer: fixed Claude DEV 72329c3d-5883-4cc8-8d14-60c73886ebd3 / session 76922e45-71b2-47a9-be97-cf18b927ae26 / cursor 1641 was idle and quota-blocked until Nov12 05:00 Tokyo. Return same DEV at safe boundary after recovery. No new writer.
+Prior audited fixes preserved in commit 242b5a9; implementation is uncommitted. Do not reset/stash.
 
-## Audit delivery / acceptance
-- [HTML review](docs/audit-2026-11-11.html) and [structured findings](docs/audit-2026-11-11.json) are the audit ledger: 10 fixed groups, 12 proposals. Outcome: `PM_DECISION_REQUIRED` for proposals; no claim to have proved every behavior in the repository.
-- Fixed: icon alpha, honest CSV rollback failure, 51 redundant dictionary entries (all 951 effective items and order preserved), stale docs/model wording, duplicate ignore rule and skill reading scope.
-- Focused tests: 17 PASS (4 new in-memory regression tests + 13 existing homograph tests). Static scan: 399 Python files at entry, 80 JSON, 17 XML/XAML/SVG; no syntax errors or broken relative Markdown file links outside history. Final diff checks recorded in report.
-- Build/native for audit diff: NOT_RUN. `release/dev_bootstrap.py --action budget-check` refused dirty source. No epoch/budget change. No new candidate, full-suite, installer, gameplay or Release acceptance.
-- Cleanup: read-only inventory only, no deletion. TEST_RUN and shared dependencies contain pre-existing payload/history; see R03 before proposing cleanup.
+## Current work
+R01 transaction and R03 storage regression tests: 14 PASS. CSV/DEV compatibility: 58/59 initially, launcher expectation updated for explicit normal-budget guard. Registry memory compatibility initially found one cache-size regression; fixed and 9 storage/memory tests PASS.
+R03 lossless gzip migration running under registry lock; receipt C:/vnrg/evidence/audit-followup/registry-compaction.json. Keep logical hashes/history/lifecycle and existing epoch metadata unchanged. No build while migration is active.
+R02 canonical release/budget_policy.json separates normal 1GiB project / shared 11GiB / 48MiB reserve from closed Setup-only 6.75GiB and release base 6.25GiB; no new budget authority or rebaseline.
+R04 moved contract topics to docs/contracts with origin SHA and unchanged scoped authority. R05 extracting bounded pure planning/input/storage seams and CSV test members. R07 Qt optional; missing explicit QML reports unsupported. R08 probes compile only Debug/EnableDevProbes; product smoke/verify and ImagePackageProbe reader retained. R10 canonical shared skill pin and small adapter prepared; shared skill untouched. R11 caller projection helper prepared.
+Remaining R06 locks, R09 grouped gates/CI, R12 finite blinded MT evaluation, final compatibility/build/native and cleanup.
 
-## Previous candidate retained with its own provenance
-`DEV_RUN/resources-sixlive-final/Start-DEV.cmd`, source f192638. Prior bounded six-finding acceptance and terminal cleanup followup: `C:/vnrg/evidence/quality-batch/sixlive-final-receipt.json`. That receipt is not acceptance for the new audit diff; DEV worker references the checkout, so source changes also prevent treating a subsequent launch as the old exact-source proof. Do not launch through a failed budget guard.
-
-## Decisions / next step
-Owner reviews R01–R12 in HTML. R01 concerns CSV transaction safety beyond truthful rollback reporting. R02 must reconcile the prior checkpoint's 6.25 GiB description with the receipt's 6.75 GiB launcher cap before any new allocation; neither number here grants authority. Existing owner files, game/saves, immutable epoch history and candidate identity stay protected. Continue only approved proposal scope, then run its required gates on matching source.
+## Evidence boundary
+Prior candidate DEV_RUN/resources-sixlive-final belongs to f192638; not audit acceptance. New audit build/native NOT_RUN. Receipt root C:/vnrg/evidence/audit-followup. Protect existing candidate, Owner artifacts, immutable logical history. Do not call static tests native PASS.

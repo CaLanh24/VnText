@@ -47,5 +47,8 @@ release/tools/
 *.rar
 tests/**/game_copy/
 tests/**/game_test/
-/.agents/
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/vntext-ui/
 /.impeccable/

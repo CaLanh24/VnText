@@ -684,15 +684,8 @@ def _run_ct2_translate_impl(
     from vntext.mt_ct2_io import _ReviewSink, _apply_mapping_memory, _batch_translate_chunk, _flush_csv_atomic, _load_csv
     from vntext.mt_ct2_model import EmptyCsvError, TranslateCancelled, _fast_retry_default, _flush_every_rows, get_translator
     from vntext.mt_ct2_status import _build_translate_result, _clear_known_bad_translations, _count_pending, _count_review_only_rows, _load_human_review_keys, _prune_resolved_review_only, _quarantine_technical_rows, _safe_candidate, reconcile_mirror_translations
-    csv_path = Path(csv_path).resolve()
-    if not csv_path.is_file():
-        raise FileNotFoundError(str(csv_path))
-
-    fields, rows = _load_csv(csv_path)
-    if not fields or "key" not in fields or "translation" not in fields:
-        raise EmptyCsvError("translation.csv header không hợp lệ")
-    if not rows:
-        raise EmptyCsvError("translation.csv không có dòng dữ liệu")
+    from vntext.mt_ct2_input import load_translation_input
+    csv_path, fields, rows = load_translation_input(csv_path)
 
     package_dir = csv_path.parent
     human_review_keys = _load_human_review_keys(package_dir)

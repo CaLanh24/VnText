@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "provenance": {
+    "author": "VNText audit R12, 2026-11-11",
+    "source": "Synthetic sentences authored for this repository; no game/user dialogue",
+    "license": "Repository Apache-2.0",
+    "selection": "Contexts, common idioms, approved glossary and protected spans; finite regression corpus, not representative whole-game sampling"
+  },
+  "criteria": {
+    "basic_vietnamese": "All app outputs must be readable Vietnamese, allowing imperfect idiom/context; no corrupted Vietnamese words introduced by repair.",
+    "protected": "Every explicit protected token and newline must survive with count/order.",
+    "terms": "Explicit user glossary must remain exact.",
+    "semantic": "Reviewer marks draft usability and idiom/context limitations separately; imperfect semantics do not silently become linguistic PASS.",
+    "review": "Randomized opaque arms; reviewer sees source/context and output only; map revealed after saved decisions. Single model-assisted reviewer, not an independent human panel."
+  },
+  "cases": [
+    {
+      "id": "reason",
+      "source": "The reason is simple.",
+      "context": "An explanation; reason means ly do.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "control",
+      "source": "He lost control of the car.",
+      "context": "Driving; control is kiem soat.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "cool",
+      "source": "He was losing his cool.",
+      "context": "A person getting angry; idiom.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "power",
+      "source": "The power-drunk king ignored the warning.",
+      "context": "A ruler intoxicated by authority; idiom.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "menu",
+      "source": "Save the game before leaving.",
+      "context": "Game menu instruction.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "name",
+      "source": "Good morning, Alice.",
+      "context": "Greeting; explicit character name glossary.",
+      "protected": [],
+      "terms": {
+        "Alice": "Alice"
+      }
+    },
+    {
+      "id": "placeholder",
+      "source": "You have {count} coins.",
+      "context": "Game currency count; token must survive.",
+      "protected": [
+        "{count}"
+      ],
+      "terms": {}
+    },
+    {
+      "id": "tag",
+      "source": "{b}Warning{/b}: the door is locked.",
+      "context": "Styled UI warning.",
+      "protected": [
+        "{b}",
+        "{/b}"
+      ],
+      "terms": {}
+    },
+    {
+      "id": "multiline",
+      "source": "Open the door.\nWait for me.",
+      "context": "Two separate instructions; keep line break.",
+      "protected": [
+        "\n"
+      ],
+      "terms": {}
+    },
+    {
+      "id": "term",
+      "source": "The mana crystal is empty.",
+      "context": "Fantasy resource; explicit user term overrides model.",
+      "protected": [],
+      "terms": {
+        "mana crystal": "tinh thạch mana"
+      }
+    },
+    {
+      "id": "money",
+      "source": "The bank closes at five.",
+      "context": "Financial bank, not riverbank.",
+      "protected": [],
+      "terms": {}
+    },
+    {
+      "id": "river",
+      "source": "We rested on the river bank.",
+      "context": "Riverbank, not financial bank.",
+      "protected": [],
+      "terms": {}
+    }
+  ]
+}
