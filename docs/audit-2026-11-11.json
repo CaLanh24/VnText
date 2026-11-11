@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-11",
+  "base_sha": "f192638b9b07071d9df7428e4683f1d4eca95836",
+  "scope": "C:/v",
+  "verdict": "PM_DECISION_REQUIRED",
+  "fixed": [
+    {
+      "id": "F01",
+      "title": "Icon bị giảm alpha hai lần",
+      "path": "release/make_icon.py",
+      "evidence": "Ảnh RGBA (255,0,0,128) thành (128,0,0,64) khi paste dùng chính ảnh làm mask.",
+      "change": "Bỏ mask thừa; pixel giữ nguyên RGB/alpha. Chưa tái tạo icon sản phẩm.",
+      "validation": "2 test pixel trong bộ nhớ PASS."
+    },
+    {
+      "id": "F02",
+      "title": "Báo khôi phục CSV thành công khi restore lỗi",
+      "path": "vntext/csv_editor_api.py",
+      "evidence": "replace_translation nuốt exception của rollback rồi luôn trả rolled_back=True.",
+      "change": "Trả rolled_back=False và rollback_failed=True, giữ lỗi gốc và lỗi restore cùng đường dẫn backup.",
+      "validation": "2 test fault injection PASS; chưa chứng minh giao dịch CSV native."
+    },
+    {
+      "id": "F03",
+      "title": "51 khai báo khóa từ điển bị ghi đè ngầm",
+      "path": "vntext/mt_translation_constants.py",
+      "evidence": "46 khóa trùng; 4 lần trùng đổi giá trị (hahaha, some, vest, mayonnaise).",
+      "change": "Giữ giá trị cuối đang có hiệu lực tại vị trí khóa đầu; xóa 51 khai báo thừa. Không sửa nghĩa bản dịch.",
+      "validation": "So sánh chính xác list(dict.items()) trước/sau: 951 mục bằng nhau; 13 test homograph PASS."
+    },
+    {
+      "id": "F04",
+      "title": "Quy tắc model cũ mâu thuẫn Owner chọn model",
+      "path": "docs/WORKFLOW.md",
+      "evidence": "Workflow còn ghi child tối đa GPT-6 Luna Max, trong khi AGENTS giao model/effort cho Owner.",
+      "change": "Thay model cứng bằng quyền Owner; làm rõ không cấp quyền tạo child mới.",
+      "validation": "Đối chiếu AGENTS và workflow Claude cố định."
+    },
+    {
+      "id": "F05",
+      "title": "Bản đồ kiến trúc trỏ executable đã được dọn",
+      "path": "ARCHITECTURE.md",
+      "evidence": "Hard-code DEV_RUN/bootstrap-build trong khi receipt cleanup xác nhận thư mục đã bị dọn.",
+      "change": "Trỏ AI_STATE và build identity để tìm candidate hiện hành.",
+      "validation": "Đối chiếu receipt sixlive-final, không đổi provenance candidate."
+    },
+    {
+      "id": "F06",
+      "title": "Hướng dẫn cleanup dùng tên root cũ",
+      "path": "tests/README.md",
+      "evidence": "Hướng dẫn nói ngoài _work; work_paths.WORK_ROOT hiện là TEST_RUN.",
+      "change": "Dùng scope đã đăng ký và TEST_RUN trong hướng dẫn người dùng.",
+      "validation": "Đối chiếu tests/lib/work_paths.py và path_under_work."
+    },
+    {
+      "id": "F07",
+      "title": "Skill planning luôn yêu cầu đọc cả ba tài liệu",
+      "path": ".agent/SKILL.md",
+      "evidence": "Spec, tickets và triage dùng chung lệnh nạp ba file dù nhu cầu khác nhau.",
+      "change": "Chọn tài liệu theo workflow; domain là context, tracker cho spec/ticket, labels cho triage/status.",
+      "validation": "Kiểm tra từng file được trỏ tồn tại; không thay quyền thực thi."
+    },
+    {
+      "id": "F08",
+      "title": "Skill dễ mở rộng báo cáo thành task thiết kế sản phẩm",
+      "path": "AGENTS.md",
+      "evidence": "Impeccable context yêu cầu PRODUCT.md/brand interview cho HTML mới; không cần thiết cho báo cáo audit này.",
+      "change": "Thêm scope rõ cho HTML audit độc lập: chỉ trình bày/accessibility; không kéo theo product init, tải tool hoặc thêm agent.",
+      "validation": "Quy tắc riêng của repo; không sửa bản skill toàn máy."
+    },
+    {
+      "id": "F09",
+      "title": "Pattern Git ignore trùng",
+      "path": ".gitignore",
+      "evidence": "*.bundle.bak xuất hiện hai lần.",
+      "change": "Bỏ một dòng trùng; pattern còn lại giữ hiệu lực.",
+      "validation": "git diff --check PASS."
+    },
+    {
+      "id": "F10",
+      "title": "Checkpoint chưa khép task cũ",
+      "path": "AI_STATE.md",
+      "evidence": "Checkpoint còn yêu cầu rerun/final cleanup dù receipt đã ghi terminal sáu finding và cleanup followup.",
+      "change": "Ghi task audit hiện hành, source, writer, receipt và giới hạn kiểm chứng; giữ con trỏ candidate cũ.",
+      "validation": "Đối chiếu Git và receipt; không nâng acceptance của source mới."
+    }
+  ],
+  "review": [
+    {
+      "id": "R01",
+      "priority": "P1",
+      "title": "Gia cố giao dịch thay hàng loạt / undo CSV",
+      "path": "vntext/csv_editor_api.py:481",
+      "evidence": "Nhánh replace tự backup/write/restore, không dùng expected_sha256 và ownership rollback như save_document. Comment cũ còn hứa restore exact bytes trong khi thực tế parse và serialize lại CSV. Sửa F02 chỉ sửa báo cáo lỗi.",
+      "proposal": "Hợp nhất đường ghi có compare-and-swap, staged review ledger và restore nguyên bytes; bổ sung fault injection thay đổi ngoài giữa các bước.",
+      "decision": "Cần chốt hành vi tương thích cho legacy CLI/undo, rồi kiểm cả file CSV lẫn review ledger và WPF. Không tự thay giao dịch dữ liệu trong lượt audit."
+    },
+    {
+      "id": "R02",
+      "priority": "P1",
+      "title": "Ngân sách được ghi không nhất quán",
+      "path": "AI_STATE.md (trước audit); C:/vnrg/evidence/quality-batch/sixlive-final-receipt.json",
+      "evidence": "Checkpoint nói base 6,25 GiB + guard 48 MiB, receipt final_launcher_preflight ghi cap 7247757312 bytes = 6,75 GiB. Đây là mâu thuẫn tài liệu/receipt, chưa phải bằng chứng tiêu vượt quyền.",
+      "proposal": "Đối chiếu Owner approval gốc, active epoch và task registration; chọn một nguồn authority duy nhất và sửa lời mô tả.",
+      "decision": "Không tự nâng/hạ cap, sửa lịch sử epoch hoặc tiếp tục build dựa vào con số thuận tiện."
+    },
+    {
+      "id": "R03",
+      "priority": "P1",
+      "title": "Registry và TEST_RUN phình lớn",
+      "path": "TEST_RUN/artifacts_manifest.json; tests/tools/cleanup_work_artifacts.py",
+      "evidence": "Inventory read-only: TEST_RUN 6.253.481.184 bytes; manifest 52.192.528 bytes. .dev-env 11.280.156.739 bytes. Có dữ liệu được bảo vệ và lịch sử; số lớn không tự chứng minh rác.",
+      "proposal": "Lập plan ownership/consumer từng root; compact lịch sử chỉ bằng migration có hash/CAS và readback, giữ manifest hoạt động gọn.",
+      "decision": "Cần xác minh consumer và quyền retention. Không xóa bulk, môi trường hay lịch sử để giảm số đo."
+    },
+    {
+      "id": "R04",
+      "priority": "P2",
+      "title": "Contract đang chứa quá nhiều lịch sử quyền",
+      "path": "CONTRACTS.md; docs/WORKFLOW.md; docs/RELEASE_0.1.14.md",
+      "evidence": "CONTRACTS 156.209 bytes; WORKFLOW trước sửa 30.875 bytes; ledger 0.1.14 41.884 bytes. Các release và budget cũ nằm xen invariant hiện hành.",
+      "proposal": "Tách authority/history bất biến theo chủ đề; giữ invariant và router ngắn ở canonical. Duy trì origin SHA và liên kết.",
+      "decision": "Không xóa lịch sử quyền. Lợi ích token chưa đo bằng tokenizer; số byte chỉ là chỉ báo, không tỷ lệ tiết kiệm token."
+    },
+    {
+      "id": "R05",
+      "priority": "P2",
+      "title": "Các khối xử lý và test quá tập trung",
+      "path": "vntext/patch_pipeline.py:92; vntext/mt_ct2_pipeline.py:673; wpf_app/VNText.Studio.Workflow.Tests/Program.cs",
+      "evidence": "Hàm Unity patch 952 dòng, CT2 translate 684 dòng; Program.cs khoảng 406 KB; cleanup helper khoảng 316 KB. Đây là rủi ro bảo trì, không tự chứng minh chậm runtime.",
+      "proposal": "Tách các seam validate/plan/write/readback, test fixtures và ledger operations theo owner; giữ characterization test trước refactor.",
+      "decision": "Chốt thứ tự theo rủi ro; không refactor toàn repo chỉ vì độ dài."
+    },
+    {
+      "id": "R06",
+      "priority": "P2",
+      "title": "Dependency nền chưa tái lập hoàn toàn",
+      "path": "requirements.txt; release/dev_bootstrap.py",
+      "evidence": "CT2 pin chính xác nhưng UnityPy, PySide6, transformers, Pillow và phần còn lại dùng lower bound. Hai lần cài có thể lấy cây dependency khác.",
+      "proposal": "Tách lock theo runtime Windows/Python đã hỗ trợ và build/dev optional; lưu hash nguồn dependency trong receipt.",
+      "decision": "Cần xác nhận ma trận Python/Windows và quy trình cập nhật; không tự pin phiên bản đang có thành chuẩn hay tải gói."
+    },
+    {
+      "id": "R07",
+      "priority": "P2",
+      "title": "Legacy Qt/Tk/QML tăng diện tích bảo trì",
+      "path": "app.py; requirements.txt; vntext/release_verify.py:229",
+      "evidence": "WPF là sản phẩm chính nhưng app.py giữ nhiều backend; qml_ui/bridge.py không tồn tại; --release-verify-qml vẫn import nó. PySide6 vẫn là yêu cầu chung.",
+      "proposal": "Chọn giữ legacy như extra riêng hoặc công bố deprecation; làm lỗi thiếu QML rõ ràng và tách dependency khỏi WPF/worker nếu caller cho phép.",
+      "decision": "Cần quyết định hỗ trợ compatibility; không tự xóa Qt/Tk/QML hay PySide6."
+    },
+    {
+      "id": "R08",
+      "priority": "P2",
+      "title": "Probe native đang đi chung app sản phẩm",
+      "path": "wpf_app/VNText.Studio.App/App.xaml.cs:123; wpf_app/VNText.Studio.App/VNText.Studio.App.csproj",
+      "evidence": "App startup đăng ký nhiều --*-probe; project không loại nhóm probe khỏi Compile mặc định (chỉ loại obj).",
+      "proposal": "Tách probe sang assembly/harness riêng hoặc build flag DEV, giữ smoke/verify cần thiết cho Release.",
+      "decision": "Cần map caller publishing/test trước thay đổi; chưa kết luận có lỗ hổng từ sự hiện diện probe."
+    },
+    {
+      "id": "R09",
+      "priority": "P2",
+      "title": "Harness phụ thuộc fixture riêng và thiếu cổng CI công khai",
+      "path": "TEST_MATRIX.md; wpf_app/VNText.Studio.Workflow.Tests/Program.cs",
+      "evidence": "Repo không có .github/workflows; full-app update gate cần baseline/candidate/work-root bên ngoài. Receipt cũ đã nêu stale updater/layout probes, không phải PASS.",
+      "proposal": "Tạo nhóm public deterministic tests và nhóm installed/native có prerequisite rõ; runner tóm tắt PASS/FAIL/SKIP/BLOCKED theo nhóm.",
+      "decision": "Cần quyết định CI runner/cost/quyền publication. Không có workflow trong repo không chứng minh tổ chức không có CI bên ngoài."
+    },
+    {
+      "id": "R10",
+      "priority": "P3",
+      "title": "Hai bản Impeccable giống nhau, local bị ignore",
+      "path": ".agents/skills/impeccable/SKILL.md; .gitignore",
+      "evidence": "Local SKILL và C:/Users/VNTextDev/.codex/skills/impeccable/SKILL.md có cùng SHA256. Local .agents chứa 64 file, 22.675.429 bytes và bị Git ignore.",
+      "proposal": "Chọn nguồn cài canonical, pin version/checksum và có bootstrap gọn; chỉ giữ adapter riêng dự án nếu cần.",
+      "decision": "Không xóa tool dùng chung hoặc sửa skill toàn máy trong scope C:/v; cả hai bản xuất hiện trong catalog có thể làm routing mơ hồ."
+    },
+    {
+      "id": "R11",
+      "priority": "P2",
+      "title": "Không đọc thẳng toàn bộ read_agent vào context",
+      "path": "C:/Users/VNTextDev/.codex/tools/claude-mcp/LOCAL-WORKFLOW.md; bridge read_agent",
+      "evidence": "Trong lượt audit, read_agent(limit=1) vẫn trả danh sách nhiều turn; limit giới hạn events chứ không giới hạn toàn response. Dump này lãng phí context; không phải DEV đang chạy.",
+      "proposal": "Ở caller chọn structuredContent.agent/latest_result và cursor trước khi text(); nếu sửa bridge, thêm projection trả latest turn mặc định và pagination riêng.",
+      "decision": "Bridge ngoài folder dự án: chỉ đề xuất, không restart/reconnect hoặc sửa phiên đang dùng."
+    },
+    {
+      "id": "R12",
+      "priority": "P2",
+      "title": "Từ điển fallback chưa phải bằng chứng chất lượng dịch",
+      "path": "vntext/mt_translation_constants.py; evaluation/translation_*",
+      "evidence": "Đã bỏ trùng nhưng giữ nguyên nghĩa đang chạy. 951 mục và test homograph không chứng minh dịch đúng ngữ cảnh hoặc chất lượng toàn game.",
+      "proposal": "Duyệt riêng tập lỗi ngữ cảnh, thuật ngữ và protected spans bằng corpus có provenance, đánh giá mù và tiêu chí hữu hạn.",
+      "decision": "Cần Owner mở lại research/quality scope nếu muốn thay model hoặc cách dịch; không suy từ audit rằng được đổi công nghệ."
+    }
+  ],
+  "validation": {
+    "focused_tests": 17,
+    "result": "PASS",
+    "python_ast_files": 399,
+    "tracked_at_start": 714,
+    "json_files": 80,
+    "xml_files": 17,
+    "broken_relative_markdown_links": 0,
+    "build_native": "NOT_RUN: budget-check refused dirty source; no new candidate",
+    "cleanup": "No deletion; inventory only",
+    "publication": "No commit/push/tag/release in this audit",
+    "final_static": {
+      "python": 400,
+      "json": 81,
+      "xml": 17,
+      "errors": []
+    },
+    "html_review": "agent-desktop: desktop screenshot 2516x1218 and narrow screenshot 750x978 inspected; search R01 returned 1/22. JSON export source reviewed, download not exercised.",
+    "file_sha256": {
+      "release/make_icon.py": "a9fb7ebdbd793fbf9d96cd0e353521c29b4dc87268c32e9aeab182352f16a995",
+      "vntext/csv_editor_api.py": "26470fdba3e6600ea205c4e1ba12e3d7b0841096db354289f117596fdcf22545",
+      "vntext/mt_translation_constants.py": "e10d1fb90a01c58d1377362f493b53bfb6df6f07b010cf0744325b4b2c9a05a0",
+      "tests/unit/test_audit_regressions.py": "266db556710f47a27d420048b09c08bd5e985c140122bc0f4936679d226aac6a"
+    }
+  }
+}

@@ -46,9 +46,9 @@ package và log nặng sau PASS **lẫn** FAIL/SKIP/TIMEOUT/hủy. `artifact_sco
 gọi cleanup canonical sau PASS hoặc exception, giữ nguyên outcome và exception
 gốc; `START_ERROR` được runner xử lý trước khi body bắt đầu. Nếu process còn
 giữ file hoặc cleanup không chứng minh được, báo `LOCKED`/review-required;
-không xóa game/user data hay nguồn ngoài `_work`. Theo chính sách và ngân sách
+không xóa game/user data hay nguồn ngoài scope đã đăng ký. Theo chính sách và ngân sách
 ở `AGENTS.md`.
-`cleanup_work_artifacts.py --dry-run` chỉ đọc; `--output` ngoài `_work` mới
+`cleanup_work_artifacts.py --dry-run` chỉ đọc; `--output` ngoài `TEST_RUN` mới
 được phép ghi báo cáo dry-run.
 Game-specific runtime probe scripts are tracked in this public source snapshot,
 but game/reference packages and game data are not. The probes are opt-in/manual;

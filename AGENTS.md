@@ -8,6 +8,7 @@
 - [docs/INDEX.md](docs/INDEX.md) là chỉ mục toàn bộ tài liệu theo task/chủ đề; không cần nạp mọi tài liệu vào context.
 - Tra [ARCHITECTURE.md](ARCHITECTURE.md) để tìm owner; chỉ đọc mục liên quan trong [CONTRACTS.md](CONTRACTS.md) và [TEST_MATRIX.md](TEST_MATRIX.md) trước mutation/gate. Source/test/live evidence kiểm chứng behavior; Owner quyết định authority và acceptance. Không sửa behavior chỉ để khớp báo cáo cũ.
 - Quy tắc vận hành chi tiết: [docs/WORKFLOW.md](docs/WORKFLOW.md). Các mục tương ứng ở đó tiếp tục có hiệu lực; đọc theo nhu cầu, không đọc toàn bộ mỗi lượt. Hồ sơ lịch sử không tự cấp quyền mở task, game run, tải/cài hoặc publication mới.
+- Skills chỉ nạp khi phục vụ deliverable hiện tại. Với báo cáo audit HTML độc lập, dùng hướng dẫn trình bày/khả năng truy cập cần thiết; không biến báo cáo thành task thiết kế sản phẩm, tạo PRODUCT/DESIGN, phỏng vấn thương hiệu hay sinh nhiều concept. Không tải/cài launcher hoặc mở agent phụ do skill gợi ý nếu quyền hiện hành chưa cho phép.
 
 ## Điều phối và ngữ cảnh
 

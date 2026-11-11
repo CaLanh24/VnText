@@ -14,6 +14,10 @@
 | Vì sao từng đổi một hành vi? | Topic router ở bảng dưới | Chọn heading/ID trong archive, không đọc toàn file |
 | Khôi phục sau compact/resume? | AGENTS + AI_STATE | Delta/receipt; lịch sử chỉ cho câu hỏi chưa trả lời |
 
+## Audit đang chờ duyệt
+
+- [Rà soát dự án 2026-11-11](audit-2026-11-11.html): phần đã sửa, bằng chứng và 12 đề xuất; [dữ liệu JSON](audit-2026-11-11.json). Phạm vi/giới hạn tại AI_STATE; không là Release acceptance.
+
 ## Tài liệu theo chủ đề
 
 ## Điểm vào và invariant

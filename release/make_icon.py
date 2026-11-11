@@ -52,7 +52,9 @@ def _fit_square(im: Image.Image, size: int, *, padding: float = ICON_PADDING) ->
     target_h = max(1, int(round(im.height * scale)))
     resized = im.resize((target_w, target_h), Image.Resampling.LANCZOS)
     offset = ((size - target_w) // 2, (size - target_h) // 2)
-    canvas.paste(resized, offset, resized)
+    # Copy RGBA pixels directly. Using the image again as a paste mask would
+    # multiply its alpha twice and darken/fade antialiased edges.
+    canvas.paste(resized, offset)
     return canvas
 
 

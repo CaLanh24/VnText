@@ -16,8 +16,9 @@ Choose one workflow matching the Owner's request:
 - **Triage:** check evidence and classify an existing issue using the local
   status vocabulary. Distinguish missing information from a proven blocker.
 
-Read `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` and
-`docs/agents/domain.md` for the selected workflow. Follow `AGENTS.md` and
+Read `docs/agents/domain.md` for project context. For a durable spec or tickets,
+also read `docs/agents/issue-tracker.md`; for triage or ticket status changes,
+read `docs/agents/triage-labels.md`. Do not load all three by default. Follow `AGENTS.md` and
 its context spine; source/test/evidence and Owner decisions outrank planning
 artifacts. No background run, new Coordinator, Worker, release action or
 external publication follows from using this skill.

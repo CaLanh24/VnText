@@ -1,16 +1,20 @@
-# Current checkpoint — 2026-11-10 six-finding live acceptance
+# Current checkpoint — 2026-11-11 repository audit
 
-Owner: finish live six findings and fix remaining; NO release/push/version/tag/model change. Owner files/game/saves read-only. Root sole native owner, temporary source writer because persistent Claude DEV72329c3d/session76922e45 reports weekly quota until Nov12 05:00 Tokyo (cursor1641). Return writer to same DEV on recovery; no new session.
+Owner: audit the entire C:/v project including AGENTS and skills, fix proven issues, and deliver an HTML review of remaining proposals. No release/push/tag/model change or user-data cleanup authorized by this task.
 
-## Current candidate and acceptance source of truth
-Final candidate path: C:/v/DEV_RUN/resources-sixlive-final/Start-DEV.cmd. Exact source/EXE/DLL provenance is its build-identity.json; latest validation and native verdict is C:/vnrg/evidence/quality-batch/sixlive-final-receipt.json (updated by Root at terminal). Read that receipt before claiming acceptance. Prior resources-dev15 is the a24d0f6 candidate; do not confuse it with final.
+## Writer / source
+- Base HEAD: `f192638b9b07071d9df7428e4683f1d4eca95836`; main was clean at entry. Audit edits remain uncommitted for review.
+- Root is temporary sole writer. Live Claude DEV `72329c3d-5883-4cc8-8d14-60c73886ebd3` was idle; latest result confirms weekly quota until Nov 12 05:00 Tokyo. Retain session `76922e45` and prior checkpoint cursor `1641`; no new task/session dispatched. Reconcile live state and return writer at a safe boundary after recovery.
 
-Implemented original six findings: approved DEV budget launcher; nonblocking Analyze/output-only reuse; friendly technical-control label/raw tooltip; wrapping find label; dynamic English readiness/completion; selected package for Import. Root live found two omissions and corrected them: the displayed readiness binding lacked UiTextDynamic; editor selection cleared Patch validation and ResolveActiveCsvPath/GetTranslateReadinessPath silently chose OutputPath. Explicit selected CSV now remains the target, with action-specific manifest/key/source/schema guards unchanged. Final followup uses a localization format for partial Import completion and adds same-file warning catalog entries.
+## Audit delivery / acceptance
+- [HTML review](docs/audit-2026-11-11.html) and [structured findings](docs/audit-2026-11-11.json) are the audit ledger: 10 fixed groups, 12 proposals. Outcome: `PM_DECISION_REQUIRED` for proposals; no claim to have proved every behavior in the repository.
+- Fixed: icon alpha, honest CSV rollback failure, 51 redundant dictionary entries (all 951 effective items and order preserved), stale docs/model wording, duplicate ignore rule and skill reading scope.
+- Focused tests: 17 PASS (4 new in-memory regression tests + 13 existing homograph tests). Static scan: 399 Python files at entry, 80 JSON, 17 XML/XAML/SVG; no syntax errors or broken relative Markdown file links outside history. Final diff checks recorded in report.
+- Build/native for audit diff: NOT_RUN. `release/dev_bootstrap.py --action budget-check` refused dirty source. No epoch/budget change. No new candidate, full-suite, installer, gameplay or Release acceptance.
+- Cleanup: read-only inventory only, no deletion. TEST_RUN and shared dependencies contain pre-existing payload/history; see R03 before proposing cleanup.
 
-## Evidence / checks
-Root native on a24: real four-sentence RenPy Extract COMPLETE4, no default1GiB quota block; Analyze success no modal; output-only change retained six log lines. Actual UI120 verified from saved settings after physical popup selection; find label wraps. Technical-control friendly label/help observed. On9de correction: displayed English readiness319/311 matches chosen CSV, Export ZIP produces canonical package ZIP with English title/body/Close, Import uses selected package rather than unrelated output; same-file refused. Partial Import body was still Vietnamese and is the final copy fix. Final receipt records the recheck rather than upgrading this earlier proof.
-Focused WPF owner-quality build/test passed at9de (sixlive-wpf-result.json); rerun final focused gate only for the last copy change. Worker/OCR/model/installer code unchanged; reuse prior component receipts, no new full-suite claim. Existing stale updater/layout probes remain separate, not PASS.
+## Previous candidate retained with its own provenance
+`DEV_RUN/resources-sixlive-final/Start-DEV.cmd`, source f192638. Prior bounded six-finding acceptance and terminal cleanup followup: `C:/vnrg/evidence/quality-batch/sixlive-final-receipt.json`. That receipt is not acceptance for the new audit diff; DEV worker references the checkout, so source changes also prevent treating a subsequent launch as the old exact-source proof. Do not launch through a failed budget guard.
 
-## Budget / lifecycle
-Base6.25GiB+48MiBguard remains manual limit; oldtemporary6.75metadata is NOT authority to spend beyond it. No rebaseline/guard waiver. Ordinary same-scope continuity only. Latest epoch from registry; launcher's budget-check must pass exact final HEAD.
-Disposed consumed prior candidate payloads (hash receipt sixlive-consumed-candidate-proof.json). Prior run017 native audit bulk compacted LOSSLESSLY, every archived member SHA-verified; proof sixlive-old-native-archive-proof.json, archive C:/vnrg/archive/consumed-native-evidence-sixlive.zip; small original receipts kept. No protected epoch history/unknown/user data removed. Root fixture under resources-dev15/data/root-six-live and focused build quality-sixlive are disposable after terminal native; final receipt owns cleanup outcome and UI end state. No release in this task.
+## Decisions / next step
+Owner reviews R01–R12 in HTML. R01 concerns CSV transaction safety beyond truthful rollback reporting. R02 must reconcile the prior checkpoint's 6.25 GiB description with the receipt's 6.75 GiB launcher cap before any new allocation; neither number here grants authority. Existing owner files, game/saves, immutable epoch history and candidate identity stay protected. Continue only approved proposal scope, then run its required gates on matching source.

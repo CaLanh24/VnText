@@ -495,8 +495,8 @@ def replace_translation(
     if not preview["keys"]:
         return {**preview, "dry_run": False, "message": "Không tìm thấy chuỗi trong cột bản dịch."}
 
-    # Validate before and after.  A failed post-write validation restores the
-    # exact pre-operation bytes from the backup.
+    # Validate before and after. A failed post-write validation attempts to
+    # restore the backup rows; report a failed restore instead of claiming it succeeded.
     before = validate_document(csv_path, rows)
     if not before.get("ok"):
         return {"ok": False, "error": before.get("error") or "CSV hiện tại không hợp lệ"}
@@ -518,8 +518,9 @@ def replace_translation(
     except Exception as exc:
         try:
             _atomic_write_csv(csv_path, fields, read_csv_rows_file(backup_path)[1])
-        except Exception:
-            pass
+        except Exception as rollback_error:
+            return {"ok": False, "error": f"{exc}; rollback thất bại: {rollback_error}",
+                    "backup_path": str(backup_path), "rolled_back": False, "rollback_failed": True}
         return {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
     return {
         **preview,
