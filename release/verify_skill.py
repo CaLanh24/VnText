@@ -15,6 +15,7 @@ def main():
     pin=json.loads((ROOT/'release/impeccable-pin.json').read_text(encoding='utf8'))
     canonical=Path(pin['canonical']).expanduser();verify(canonical,pin)
     local=ROOT/'.agents/skills/impeccable'
+    removed=False
     if args.remove_duplicate and local.exists():
         verify(local,dict(pin,files=pin["legacy_duplicate_files"]))
         # The approved duplicate only; no recursive shell deletion or junction traversal.
@@ -25,5 +26,6 @@ def main():
         for p in sorted(local.rglob('*'),key=lambda p:len(p.parts),reverse=True):
             if p.is_dir():p.rmdir()
         local.rmdir()
-    print(json.dumps({'ok':True,'version':pin['version'],'files':len(pin['files']),'canonical':str(canonical),'duplicate_removed':args.remove_duplicate}))
+        removed=True
+    print(json.dumps({'ok':True,'version':pin['version'],'files':len(pin['files']),'canonical':str(canonical),'duplicate_removed':removed}))
 if __name__=='__main__':main()

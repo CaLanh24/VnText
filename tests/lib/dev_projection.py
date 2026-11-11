@@ -8,4 +8,4 @@ def latest(response):
             'status':agent.get('status',agent.get('state')), 'last_turn_status':agent.get('last_turn_status'), 'cursor':data.get('cursor',agent.get('cursor')),
             'turn_id':result.get('turn_id',payload.get('turn_id')),
             'result':payload.get('result'), 'is_error':payload.get('is_error',result.get('is_error')), 'error':result.get('error'),
-            'structured_available':bool(data)}
+            'has_more':data.get('has_more',False), 'structured_available':bool(data)}
