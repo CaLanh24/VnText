@@ -1,30 +1,50 @@
-# Release 0.1.18 — ledger (PREPUBLICATION, BLOCKED before build)
+# Release 0.1.18 — ledger
 
-Trạng thái: **CHƯA PHÁT HÀNH; Setup/updater CHƯA BUILD (chờ ủy quyền tải phụ thuộc theo lock).** Không push/tag/upload cho tới khi Brain ACCEPT đúng ứng viên. Baseline công khai hiện tại: `v0.1.17` (Latest, 2026-11-08T06:09:40Z; tag chú thích `1ffee3a…` → source `ed3f5b58f1b0540e913785705080a1b3327d0455`; Setup `VNTextStudio-0.1.17-Setup.exe` 285,221,888 B sha256 `4e56da3e960c2030ce6c709bda2475b7c695a4dd680f1a1217817c7b836ccf7f`; updater `full-app-update-0.1.17-d403c45f9fabb262.zip` + `full-app-update-current.json`, và tuyến trực tiếp `…from-0.1.16-to-0.1.17…`). Receipt đo: `C:/vnrg/evidence/release-0.1.18/preflight-blockers.json`.
+Trạng thái: **ỨNG VIÊN TIỀN PHÁT HÀNH (PREPUBLICATION) — chờ Brain ACCEPT đúng payload này.** Chưa push/tag/upload/phát hành. Baseline công khai: `v0.1.17` (Latest, 2026-11-08T06:09:40Z; tag chú thích `1ffee3a…` → source `ed3f5b58f1b0540e913785705080a1b3327d0455`; Setup `VNTextStudio-0.1.17-Setup.exe` 285,221,888 B sha256 `4e56da3e…ccf7f`). Receipt: `C:/vnrg/evidence/release-0.1.18/` (compact; `candidate-receipt.json` là bản tổng hợp).
 
-## Ủy quyền, ngân sách và epoch (đã hòa giải)
-- Ủy quyền: Owner 2026-11-12 ("Xem còn vấn đề gì thì sửa nốt, xong thì release") là ủy quyền phát hành 0.1.18; quyền lưu trữ tạm thời theo mục đứng 2026-10-24 (artifact-retention.md) cho phép Coordinator nâng trần theo nhu cầu đo được, không hỏi lại. Không dùng lại ngân sách 0.1.17 hay khoản 6,75 GiB đã đóng; không tạo rebaseline hay áp dụng chính sách hop đứng của 0.1.17.
-- Mã hỗ trợ (routine, additive): task `release-0.1.18` (trần ban đầu 3 GiB trong `release/budget_policy.json`), quy tắc chuyển tiếp 0.1.17 → 0.1.18 bắt buộc mỗi đầu mút đúng phiên bản, danh sách phiên bản của `publish.ps1`, lựa chọn của `run_with_cleanup.py`. Lịch sử/ngân sách 0.1.17 không đổi.
-- Từ chối thật của guard (không phải thiếu spec): sau khi có spec, kế hoạch chuyển epoch bị chặn bởi `registry_metadata_incomplete` ← `cold_missing_records_need_review` (28.917 bản ghi MISSING lạnh sau nén gzip). Đây là lỗi tương thích cold-registry: bản ghi MISSING lạnh chỉ cần xem xét ở báo cáo cleanup, như bản ghi MISSING sống trước khi nén vốn không chặn bước epoch. Đã sửa hẹp (`_epoch_blocking_metadata_issues`); mọi vấn đề metadata khác vẫn chặn. Có test.
-- Epoch `epoch-20261112-029-release018` đã áp dụng (chuyển tiếp thường, plan/apply receipt trong `C:/vnrg/evidence/release-0.1.18/`), scope `RELEASE_RUN/candidate-0.1.18` đã đăng ký, profile `release-0.1.18` active: trần 3.221.225.472 B, project non-exempt đo được 389.086.351 B, `.dev-env` 11.280.157.835/11.811.160.064 B. Kế hoạch cấp phát/dọn: `allocation-plan-0.1.18.json`.
+## Nguồn và ứng viên
+- Source dựng: `956a7046e3f960f8a08c7338c4cbe50d44cd05cc` (snapshot sạch `RELEASE_RUN/candidate-0.1.18/source`); các commit sau chỉ là tài liệu.
+- Setup: `RELEASE_RUN/candidate-0.1.18/setup-018-956a704/ReleaseRoot/VNTextStudio-0.1.18-Setup.exe`, 286,726,656 B, sha256 `454ef46fa68d6211f22bef02981b8405fa28e4bbb300898a8d3e68e9bc5e930a`; payload 7,327 tệp / 589,162,754 B đã xác minh; `VNText Studio.exe` sha256 `9d0d6f291da5d87bdb6274f04617f39af4b5a9e139e6c80acc25775a0b890156`.
+- Updater (tối thiểu, trong `ReleaseRoot/Updates`): `full-app-update-0.1.18-f875f83f609f3aa2.zip` (86,935,301 B) + `full-app-update-current.json` (tuyến cho client 0.1.7 bất biến); `full-app-update-from-0.1.17-to-0.1.18-3e6a5d4897310aef.zip` (86,801,135 B) + `…-current.json` (tuyến trực tiếp từ bản công khai 0.1.17). Tài sản cũ của 0.1.17 và trước đó giữ nguyên cho client cũ; không nhân bản ZIP cũ.
+- Phụ thuộc Python: khóa băm `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distribution; `tpk_ar` 0.2.4 là sdist chính thức duy nhất, dựng bằng setuptools đã khóa, không tải build-isolation) trong venv mới cô lập `.dev-env/release-venv-0.1.18`; `release/dependency_profiles.py --build --check-installed` PASS, `pip check` sạch. Không sửa `.venv`/`release-venv`/lock. Bảng giấy phép nằm ở `THIRD_PARTY_NOTICES.md`; mọi distribution có license text trong dist-info hoặc trong notice/`app/licenses` (xem `license-files-release-venv-0.1.18.json`).
 
-## Blocker còn lại: cung cấp phụ thuộc theo lock (cần ủy quyền riêng)
-`release/dependency_profiles.py --check-installed` FAIL trên mọi môi trường hiện có (`.venv` 3.14.8: 23 lệch; `release-venv` 3.12.10: 21 lệch, vd pillow 13.0.0≠12.3.0, transformers 5.20.1≠5.19.0, thiếu pydantic/annotated-types/typing-inspection; `python-3.12` trống). Publisher bắt buộc lock + `--require-hashes`. Không có ủy quyền Owner nào đã tìm thấy cho việc tải phụ thuộc build (mục lưu trữ đứng và dev-validation đều nói rõ KHÔNG gồm tải/cài phụ thuộc hay chấp nhận giấy phép; các cho phép trước chỉ về model Hy-MT2/runtime và tải SDK Ren'Py). Chưa tải gì. Kế hoạch: `dependency-acquisition-plan.json` — 52 wheel (75.812.129 B nén, ~289 MB giải nén) từ files.pythonhosted.org vào venv mới cô lập `.dev-env/release-venv-0.1.18`, đỉnh ước tính ~365 MB, `.dev-env` sau đỉnh ~11,65 GB (< trần 11,81 GB). Không sửa `.venv`/`release-venv`/lock.
+## Ủy quyền, ngân sách, epoch
+- Owner 2026-11-12 ("Xem còn vấn đề gì thì sửa nốt, xong thì release") + mục lưu trữ đứng 2026-10-24: task riêng `release-0.1.18`, trần đo được 3 GiB ban đầu rồi 4.5 GiB (4,831,838,208 B) sau khi hai baseline công khai được giải nén (0.1.17: 584,299,498 B; 0.1.7: 515,688,819 B); không kế thừa ngân sách/khoản 6,75 GiB/chính sách hop của 0.1.17; không rebaseline. Tải phụ thuộc theo lock được cho phép bởi ủy quyền lệnh/mạng của DEV (LOCAL-WORKFLOW 2026-10-25) cho release được giao, không suy từ quyền lưu trữ.
+- Epoch chuyển tiếp thường (8-hop quy ước): 029→032 trên `release-0.1.18`; epoch hiện tại gắn source dựng `956a704` (+ hop tài liệu). Lỗi guard thật đã sửa: `registry_metadata_incomplete` do 28.917 bản ghi MISSING lạnh sau nén gzip; mọi vấn đề metadata khác vẫn chặn.
+- Đỉnh dung lượng lấy mẫu (project + `C:/vnrg`): 3,968,864,530 B < ngưỡng hủy 4,781,506,560 B. Mục tiêu dọn cuối: về giới hạn mặc định sau khi consumer kết thúc (xem Cleanup).
 
-## Đã kiểm trong phạm vi độc lập
-- Ranh giới probe của release harness: `App.xaml.cs` chặn `*-probe`/`--wpf-workflow-e2e` khi build không có `DEV_PROBES`; harness release chỉ dùng `--release-version/--release-verify/--smoke-worker` (không bị biên dịch bỏ). Không thấy lỗi cần sửa.
-- Registry gzip/cold: lỗi thật đã sửa (xem trên). Gate không cần tải, trên HEAD mã `4f7630e`: 215 test (cleanup 193+, epoch 017/018, registry storage, cleanup verification, dev bootstrap, dependency profiles, docs version) OK; build Release WPF 0 cảnh báo, không có kiểu probe trong DLL, smoke worker 5 bước exit 0 (`wpf-release-build.json`, `wpf-release-smoke.json`, exe sha256 `4d538b69…5786`).
-- Giấy phép/notice: danh sách lock mới thêm gói runtime (pydantic, pydantic-core, annotated-types, typing-inspection, …) so với bản 0.1.17; cần kiểm dist-info license thực trong payload sau khi dựng (chưa làm được vì mục 2).
+## Sửa lỗi / thay đổi từ v0.1.17
+- **Glossary (lỗi thật mới xác nhận):** thuật ngữ không còn khớp bên trong từ khác ("ass"/"passage"), token sinh ra không bị thay lại bởi thuật ngữ sau, literal `ZZG…` trong nguồn không bị khôi phục nhầm; khớp theo từ/cụm (chữ Unicode + dấu kết hợp, NFC/NFD), không xếp tầng, token không trùng văn bản gốc; áp dụng cho glossary người dùng và v2; chiến lược cache đổi (`glossary-masking-3`), không xóa bản dịch đã lưu/thủ công. 13 test mới + bộ glossary/MT hiện có.
+- **Publisher:** dựng installer patch một-tệp trước smoke worker (smoke Release cần installer này; trước đó smoke patch dừng với "Thiếu installer patch tự chứa").
+- **Registry/epoch:** hỗ trợ task `release-0.1.18`, chuyển tiếp 0.1.17→0.1.18 theo phiên bản từng đầu mút, cold-registry MISSING không chặn bước epoch.
+- **Icon:** icon thương hiệu sinh lại bằng make_icon.py đã sửa (pixel khác bản cũ) và commit trước khi đóng băng nguồn.
+- Từ chu kỳ chất lượng sau 0.1.17 (đã trên `main`): OCR không còn dựng chữ giả trên ảnh không chữ; nhãn "Mã/định dạng game" cho dòng kỹ thuật; patch một phần từ các dòng đủ điều kiện (xác nhận, đếm dòng bỏ qua) với một EXE cài đặt; trạng thái/nhật ký Patch theo bản CSV hiện tại; Analyze thông báo không chặn và tái dùng phân tích khi chỉ đổi thư mục xuất; nhãn tìm CSV xuống dòng; chuyển ngôn ngữ cập nhật trạng thái; nhập bản dịch cũ vào gói đang chọn; Apply/Undo thay thế hàng loạt giữ đúng phiên bản CSV; Setup có điều khoản bản địa hóa; kiểm toán R01–R12.
 
-## Thay đổi từ v0.1.17 (đã có trên `main`, chưa phát hành)
-- Dịch/OCR: phân loại mã/định dạng game (nhãn "Mã/định dạng game" trong CSV, bỏ qua khi patch), OCR chống dương tính giả (ảnh không chữ không còn bị dịch/dựng), dịch nháp offline cục bộ (CT2/OPUS-MT) — **bản nháp thô, không phải bản dịch hoàn chỉnh; cần người rà soát; không công bố chất lượng toàn game**.
-- Patch: patch một phần từ các dòng đủ điều kiện (có xác nhận và đếm dòng bỏ qua), một EXE cài đặt có nhãn; trạng thái Patch theo bản CSV hiện tại; nhật ký có màu mức độ; cảnh báo preflight đến tận log tác vụ.
-- Giao diện: tiến trình Analyze một thanh, thông báo thành công không chặn, tái dùng phân tích khi chỉ đổi thư mục xuất, nhãn tìm CSV xuống dòng, chuyển ngôn ngữ cập nhật trạng thái, nhập bản dịch cũ theo gói đang chọn, Apply/Undo thay thế hàng loạt giữ đúng phiên bản CSV.
-- Setup: hộp thoại điều khoản bản địa hóa; bước tài nguyên; gỡ cài đặt trong khung.
-- Kiểm toán R01–R12: lưu lịch sử registry nén gzip, hồ sơ phụ thuộc có khóa, ranh giới probe Debug/Release, bảo vệ dữ liệu người dùng.
+## Gates (verdict riêng, gắn nguồn)
+- Python công khai (`audit_gates --group public` @ code `ad2b05a`): csv 34, mt 91 (gồm 13 test glossary mới), patch 37, maintenance 44 — PASS, 0 skip; installed-model/native = SKIP có chủ đích. `test_setup_package` 13 PASS (chạy KHÔNG đặt PYTHONUTF8). `test_release_verify` + guard publisher + thứ tự installer 11 test PASS @ `956a704`. 215 test cleanup/epoch/registry/dependency/docs trước đó PASS.
+- Build/package: `publish.ps1` (isolated, preinstalled locked deps) exit 0 @ `956a704`: release_verify tiền build, WPF 0 cảnh báo, smoke worker DEV và smoke Release exit 0, payload 7,327 tệp xác minh băm. Lần publish đầu @ `ad2b05a` dừng ở smoke patch (lỗi thứ tự installer, đã sửa và có test).
+- Updater backend (KHÔNG phải native UI) trên gói thật: tuyến A (payload công khai 0.1.17 → ứng viên) và tuyến B (payload công khai 0.1.7 → ứng viên) — exit 0, version 0.1.18, exe khớp manifest, đọc lại 7,326 tệp 0 lệch, canary dữ liệu người dùng nguyên vẹn, health PASS (`updater018-backend-receipt-route-{A,B}-956a704.json`). Rollback/1175/hash-fail: mã updater app không đổi từ 0.1.17 (`FullAppUpdate*` không có diff) — dùng lại bằng chứng 0.1.17, KHÔNG chạy lại.
+- MT/engine/OCR thật: dùng lại bằng chứng 0.1.17/tuần chất lượng cho phần không đổi; phần glossary mới chỉ chứng minh bằng test round-trip + fake translator, không phải chất lượng dịch toàn game.
+- NOT_PROVEN: Setup cài mới/nâng cấp/gỡ trên máy thật (GUI-only, Root/Brain), cập nhật công khai trong app sau phát hành, mọi DPI/giao diện, âm thanh, game lớn. Không có test nào bị bỏ qua được tính là PASS.
 
 ## Giới hạn phải ghi trong ghi chú phát hành
-Dịch offline thô; patch chỉ phần dòng đủ điều kiện; engine ngoài Ren'Py/Unity đã kiểm chưa được chứng minh; native visual cho sáu sửa đổi gần nhất chưa hoàn tất (desktop khóa); cài native các phụ thuộc theo lock chưa chứng minh.
+Dịch offline chỉ là bản nháp thô, cần người rà soát; patch chỉ gồm các dòng đủ điều kiện; engine ngoài Ren'Py/Unity chưa được chứng minh; chất lượng dịch toàn game không được công bố.
 
-## Tài sản phát hành dự kiến (tối thiểu)
-`VNTextStudio-0.1.18-Setup.exe` + payload updater một-tệp `full-app-update-0.1.18-<digest16>.zip` + manifest `full-app-update-current.json` + tuyến trực tiếp `…from-0.1.17-to-0.1.18…` (bắt buộc cho client 0.1.17 theo quyết định tuyến cập nhật). Không nhân bản ZIP phiên bản cũ.
+## Ghi chú phát hành (nháp, tiếng Việt)
+**VNText Studio 0.1.18** — bản vá chất lượng.
+- Sửa lỗi từ điển người dùng: thuật ngữ chỉ khớp nguyên từ/cụm, không còn chèn nhầm vào từ khác hay làm hỏng dịch.
+- Patch một phần từ các dòng đủ điều kiện (có xác nhận), một EXE cài đặt; nhãn "Mã/định dạng game" cho dòng kỹ thuật; OCR không còn dựng chữ giả trên ảnh không có chữ.
+- Giao diện mượt hơn: Analyze thông báo nhẹ, nhãn tìm CSV không bị cắt, đổi ngôn ngữ cập nhật mọi dòng trạng thái.
+- Cập nhật trong app từ 0.1.17 (và từ 0.1.7). Dữ liệu người dùng được giữ nguyên.
+- Lưu ý: bản dịch offline chỉ là bản nháp thô, cần xem lại; chưa hỗ trợ mọi engine game.
+
+## Checklist native hữu hạn (Root/Brain; DEV không mở UI)
+1. Setup 0.1.18 cài mới vào thư mục cô lập (máy sạch/ thư mục tạm): điều khoản VI/EN, bước tài nguyên, hoàn tất, mở app; tên tệp Setup đúng `VNTextStudio-0.1.18-Setup.exe`.
+2. Nâng cấp: cài Setup công khai 0.1.17 (tải lại bằng `gh release download v0.1.17`, kiểm sha256 `4e56da3e…`), tạo dữ liệu canary trong `data/`, chạy Setup 0.1.18 chồng lên — dữ liệu còn nguyên.
+3. Gỡ cài đặt: từ app/Uninstall khung installer; từ chối khi app đang chạy; thư mục dữ liệu theo lựa chọn.
+4. Cập nhật trong app (sau khi Brain ACCEPT và publish): app 0.1.17 thật nhận lời mời 0.1.18, tải, Restart, dữ liệu giữ nguyên (cần Root, không phải DEV).
+5. Glossary: CSV nhỏ có thuật ngữ "ass" và câu "The passage is clear." — kết quả dịch không chứa "mông" chen giữa; thuật ngữ "Alice" vẫn được thay đúng.
+Fixture: không dùng game thật; thư mục `data/owner-preserve` canary do chính bước kiểm tạo.
+
+## Cleanup
+Đã dọn qua helper: fixture updater, scope publish lỗi, scratch release-check/icon/deps (0 refused). Còn giữ đến khi Brain ACCEPT + publish: `RELEASE_RUN/candidate-0.1.18/{source,setup-018-956a704,release-baselines}`, venv `.dev-env/release-venv-0.1.18`. Sau publish: dispose candidate/baselines/source worktree qua helper, trả project về ≤ 1 GiB, giữ receipt/hash.
