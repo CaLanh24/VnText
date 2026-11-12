@@ -27,10 +27,17 @@ public sealed class AppSettings
     public bool NotifyUpdates { get; set; } = true;
     public string SkippedUpdateVersion { get; set; } = "";
     public string RejectedBaselineFingerprint { get; set; } = "";
+    public List<RejectedBaselineFile> RejectedBaselineFiles { get; set; } = [];
     public string AcknowledgedUpdateTransaction { get; set; } = "";
     public string DownloadedUpdateVersion { get; set; } = "";
     public string DownloadedUpdateNotes { get; set; } = "";
     public List<ReleaseNotesCacheEntry> ReleaseNotesHistory { get; set; } = [];
+}
+
+public sealed class RejectedBaselineFile
+{
+    public string Path { get; set; } = "";
+    public string Kind { get; set; } = "";
 }
 
 public sealed class ReleaseNotesCacheEntry

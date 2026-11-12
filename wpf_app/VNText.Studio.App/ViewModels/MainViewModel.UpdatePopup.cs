@@ -168,7 +168,7 @@ public sealed partial class MainViewModel
             }
             DisposeGitHubUpdatePackageLease();
             if (result.State == GitHubUpdateState.SetupRequired)
-                RememberBaselineRejection(root, _githubUpdateResult);
+                RememberBaselineRejection(root, _githubUpdateResult, result);
             _githubUpdateResult = result;
             _githubUpdateState = result.State;
             CacheReleaseNotes(result);
@@ -189,23 +189,28 @@ public sealed partial class MainViewModel
         }
     }
     // A package rejected for this exact installed baseline must not come back as a normal offer on later
-    // checks; the pair is pinned by hash, so a new offer or a different installed build clears it.
-    private void RememberBaselineRejection(string root, GitHubUpdateCheckResult offer)
+    // checks. The key is the offer plus the actual state of the installed metadata and of the typed files that
+    // failed, so repairing those files, changing the installed revision or a new offer starts a fresh verified retry.
+    private void RememberBaselineRejection(string root, GitHubUpdateCheckResult offer, GitHubUpdateCheckResult rejection)
     {
         if (offer.State != GitHubUpdateState.OfferAvailable) return;
-        var fingerprint = WpfUpdateService.BaselineRejectionFingerprint(root, offer);
+        var files = (rejection.RejectedFiles ?? []).Take(WpfUpdateService.MaxRejectedBaselineFiles).ToList();
+        var fingerprint = WpfUpdateService.BaselineRejectionFingerprint(root, offer, files);
         if (fingerprint.Length == 0 || _settings.RejectedBaselineFingerprint == fingerprint) return;
         _settings.RejectedBaselineFingerprint = fingerprint;
+        _settings.RejectedBaselineFiles = files.Select(file => new RejectedBaselineFile { Path = file.Path, Kind = file.Kind }).ToList();
         SaveSettings();
     }
     private GitHubUpdateCheckResult ApplyBaselineRejection(string root, GitHubUpdateCheckResult result)
     {
         if (_settings.RejectedBaselineFingerprint.Length == 0 || result.State != GitHubUpdateState.OfferAvailable) return result;
-        if (WpfUpdateService.BaselineRejectionFingerprint(root, result) == _settings.RejectedBaselineFingerprint)
+        var files = _settings.RejectedBaselineFiles.Select(file => new BaselineMismatchEntry(file.Path, file.Kind)).ToList();
+        if (WpfUpdateService.BaselineRejectionFingerprint(root, result, files) == _settings.RejectedBaselineFingerprint)
             return new(GitHubUpdateState.SetupRequired, Version: result.Version, ReleasesUrl: result.ReleasesUrl,
                 Message: "This package was already rejected for the installed baseline; install Setup.",
-                ReleaseNotes: result.ReleaseNotes, ReleaseDate: result.ReleaseDate);
+                ReleaseNotes: result.ReleaseNotes, ReleaseDate: result.ReleaseDate, RejectedFiles: files);
         _settings.RejectedBaselineFingerprint = "";
+        _settings.RejectedBaselineFiles = [];
         SaveSettings();
         return result;
     }

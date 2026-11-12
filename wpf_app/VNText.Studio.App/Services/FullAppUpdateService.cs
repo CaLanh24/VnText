@@ -15,7 +15,10 @@ using System.Threading.Tasks;
 namespace VNText.Studio.App.Services;
 
 internal sealed record FullAppUpdateSelection(string PackagePath, string PackageSha256, FullAppUpdateService.FullAppUpdateManifest Manifest);
-internal sealed class FullAppBaselineMismatchException(string message) : Exception(message);
+internal sealed class FullAppBaselineMismatchException(string message, IReadOnlyList<BaselineMismatchEntry>? entries = null) : Exception(message)
+{
+    public IReadOnlyList<BaselineMismatchEntry> Entries { get; } = entries ?? [];
+}
 
 /// <summary>Validates and atomically applies SHA-256-verified full application deltas.</summary>
 internal static class FullAppUpdateService
@@ -636,13 +639,22 @@ internal static class FullAppUpdateService
     private static void VerifyInstalledBaseline(string root, Dictionary<string, FileRecord> expected)
     {
         var actualNames = EnumerateManagedFiles(root).ToHashSet(StringComparer.Ordinal);
-        if (!actualNames.SetEquals(expected.Keys)) throw new FullAppBaselineMismatchException("Installed application file inventory does not match the package baseline.");
+        var mismatches = actualNames.Except(expected.Keys, StringComparer.Ordinal).Select(name => new BaselineMismatchEntry(name, "extra")).ToList();
         foreach (var pair in expected)
         {
+            if (!actualNames.Contains(pair.Key)) { mismatches.Add(new BaselineMismatchEntry(pair.Key, "missing")); continue; }
             var path = SafeTarget(root, pair.Key);
             var info = new FileInfo(path);
             if (info.Length != pair.Value.Size || !FixedEquals(HashFile(path), pair.Value.Sha256))
-                throw new FullAppBaselineMismatchException("Installed baseline file differs: " + pair.Key);
+                mismatches.Add(new BaselineMismatchEntry(pair.Key, "differs"));
+        }
+        if (mismatches.Count > 0)
+        {
+            var bounded = mismatches.OrderBy(entry => entry.Path, StringComparer.Ordinal).Take(WpfUpdateService.MaxRejectedBaselineFiles).ToArray();
+            var inventory = mismatches.Any(entry => entry.Kind != "differs");
+            throw new FullAppBaselineMismatchException(inventory
+                ? "Installed application file inventory does not match the package baseline."
+                : "Installed baseline file differs: " + bounded[0].Path, bounded);
         }
         ValidateInstalledMetadata(root, expected);
     }
@@ -938,7 +950,7 @@ internal static class FullAppUpdateService
             throw new InvalidDataException("Full-app ownership manifest does not match the managed file inventory.");
     }
 
-    private static void ValidateManagedName(string name)
+    internal static void ValidateManagedName(string name)
     {
         if (name != "VNText Studio.exe" && !name.StartsWith("app/", StringComparison.Ordinal))
             throw new InvalidDataException("Full-app update path is outside the managed application tree: " + name);

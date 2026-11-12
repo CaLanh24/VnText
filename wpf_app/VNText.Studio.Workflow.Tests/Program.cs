@@ -5808,6 +5808,58 @@ internal static partial class Program
                 githubHttpHandler: changedHandler, updateInstallRoot: fixture.Root);
             changed.RecheckUpdateCommand.Execute(null); changed.GitHubUpdateCheckTask.GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.OfferAvailable, changed.GitHubUpdateState);
+            changed.Dispose(); changed = null;
+
+            MainViewModel Open() => new(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            GitHubUpdateState Recheck(MainViewModel model)
+            {
+                model.RecheckUpdateCommand.Execute(null); model.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                return model.GitHubUpdateState;
+            }
+            // A different bad value for the same failing file is an actual baseline change: fresh offer, not stale Setup.
+            File.WriteAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt"), "drifted differently");
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            changed.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, changed.GitHubUpdateState);
+            AssertEqual(2, Downloads());
+            AssertEqual(GitHubUpdateState.SetupRequired, Recheck(changed)); AssertEqual(2, Downloads());
+            changed.Dispose(); changed = null;
+            // Repairing the failed non-exe file clears the rejection and permits a fresh, fully verified retry.
+            File.WriteAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt"), "baseline content");
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            changed.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.UpdateAvailable, changed.GitHubUpdateState);
+            AssertTrue(changed.GitHubApplyEnabled); AssertEqual(3, Downloads());
+            changed.Dispose(); changed = null;
+            // An extra file is recorded by name; removing it is a repair too.
+            var extra = Path.Combine(fixture.Root, "app", "unowned.txt");
+            File.WriteAllText(extra, "not in the pinned baseline");
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            changed.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, changed.GitHubUpdateState); AssertEqual(4, Downloads());
+            AssertEqual(GitHubUpdateState.SetupRequired, Recheck(changed)); AssertEqual(4, Downloads());
+            changed.Dispose(); changed = null;
+            File.Delete(extra);
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            changed.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.UpdateAvailable, changed.GitHubUpdateState); AssertEqual(5, Downloads());
+            changed.Dispose(); changed = null;
+            // Changed installed metadata (RELEASE.json) is a different revision identity: a rejected pair is retried.
+            File.WriteAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt"), "drift for metadata case");
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            changed.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, changed.GitHubUpdateState); AssertEqual(6, Downloads());
+            changed.Dispose(); changed = null;
+            File.AppendAllText(Path.Combine(fixture.Root, "app", "RELEASE.json"), " ");
+            changed = Open();
+            AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
+            AssertEqual(6, Downloads());
         }
         finally { vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
     }

@@ -44,7 +44,11 @@ internal sealed record GitHubUpdateCheckResult(
     string ReleaseDate = "",
     bool FullAppRoute = false,
     IReadOnlyList<GitHubUpdateHop>? Route = null,
-    IReadOnlyList<string>? RoutePackagePaths = null);
+    IReadOnlyList<string>? RoutePackagePaths = null,
+    IReadOnlyList<BaselineMismatchEntry>? RejectedFiles = null);
+
+/// <summary>One installed file that failed the package baseline: managed relative path and missing/extra/differs.</summary>
+internal sealed record BaselineMismatchEntry(string Path, string Kind);
 
 internal sealed record GitHubUpdateHop(string FromVersion, string Version, string AssetName,
     string AssetUrl, long AssetSize, string PackageSha256, string PackagePath = "");
@@ -281,19 +285,21 @@ public static class WpfUpdateService
                 }
                 catch (FullAppBaselineMismatchException ex)
                 {
+                    var rejectedFiles = ex.Entries;
                     TryDeleteGitHubPackage(downloadedPackage, source, root);
                     downloadedPackage = null;
                     return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: "This full-app package does not apply to the installed baseline; install Setup. " + ex.Message,
-                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate);
+                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate, RejectedFiles: rejectedFiles);
                 }
                 catch (BaselineMismatchException ex)
                 {
+                    var rejectedFiles = ex.Entries;
                     TryDeleteGitHubPackage(downloadedPackage, source, root);
                     downloadedPackage = null;
                     return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
                         Message: "This WPF package does not apply to the installed baseline; install Setup. " + ex.Message,
-                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate);
+                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate, RejectedFiles: rejectedFiles);
                 }
                 catch (TaskCanceledException)
                 {
@@ -923,18 +929,47 @@ public static class WpfUpdateService
         return FileVersionInfo.GetVersionInfo(fullPath).ProductVersion?.Split('+', 2)[0].Trim();
     }
 
-    /// <summary>Identity of one rejected (installed baseline, offered package) pair; "" when it cannot be computed.</summary>
-    internal static string BaselineRejectionFingerprint(string root, GitHubUpdateCheckResult offer)
+    internal const int MaxRejectedBaselineFiles = 16;
+    private const long MaxRejectedFileStateBytes = 256L * 1024 * 1024;
+    private const long MaxRejectedStateBudgetBytes = 512L * 1024 * 1024;
+
+    /// <summary>
+    /// Identity of one rejected (offer, installed baseline) pair: the offered package plus the actual state of the
+    /// installed metadata files and of the typed files that failed the baseline. Reads are bounded (16 managed paths,
+    /// 512 MiB in total); anything unreadable maps to a stable token so a failure can never look like a repair.
+    /// </summary>
+    internal static string BaselineRejectionFingerprint(string root, GitHubUpdateCheckResult offer, IReadOnlyList<BaselineMismatchEntry>? files)
     {
         if (string.IsNullOrWhiteSpace(offer.PackageSha256) || string.IsNullOrWhiteSpace(offer.AssetUrl)) return "";
+        var text = new System.Text.StringBuilder();
+        text.Append(offer.Version).Append('|').Append(offer.PackageSha256).Append('|').Append(offer.AssetUrl).Append('|')
+            .Append(offer.AssetSize.ToString(System.Globalization.CultureInfo.InvariantCulture)).Append('\n');
+        var budget = MaxRejectedStateBudgetBytes;
+        foreach (var relative in new[] { "app/RELEASE.json", "app/VERSION.txt" })
+            text.Append(relative).Append('=').Append(BoundedFileState(root, relative, ref budget)).Append('\n');
+        foreach (var entry in (files ?? []).OrderBy(entry => entry.Path, StringComparer.Ordinal).Take(MaxRejectedBaselineFiles))
+        {
+            string state;
+            try { FullAppUpdateService.ValidateManagedName(entry.Path); state = BoundedFileState(root, entry.Path, ref budget); }
+            catch (InvalidDataException) { state = "invalid"; }
+            text.Append(entry.Path).Append('|').Append(entry.Kind).Append('=').Append(state).Append('\n');
+        }
+        return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text.ToString()))).ToLowerInvariant();
+    }
+
+    private static string BoundedFileState(string root, string relative, ref long budget)
+    {
         try
         {
-            var exeSha = HashFile(SafeTarget(root, "VNText Studio.exe"));
-            var text = string.Join('|', exeSha, ReadExecutableProductVersion(SafeTarget(root, "VNText Studio.exe")),
-                offer.Version, offer.PackageSha256, offer.AssetUrl, offer.AssetSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+            var path = SafeTarget(root, relative);
+            if (!File.Exists(path)) return "absent";
+            var info = new FileInfo(path);
+            if (info.Length > MaxRejectedFileStateBytes || info.Length > budget)
+                return $"large:{info.Length}:{info.LastWriteTimeUtc.Ticks}";
+            budget -= info.Length;
+            return info.Length + ":" + HashFile(path);
         }
-        catch { return ""; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { return "unreadable"; }
     }
 
     private static bool TryReadInstalledVersion(string root, out string version)
@@ -1211,6 +1246,7 @@ public static class WpfUpdateService
         if (requireNewerVersion && !IsStrictlyNewerVersion(baselineVersion, manifest.Version))
             throw new NoNewerUpdateException("Không có bản cập nhật mới hơn cho phiên bản hiện tại.");
 
+        var differing = new List<BaselineMismatchEntry>();
         foreach (var relative in AllowedFiles)
         {
             var installedPath = SafeTarget(root, relative);
@@ -1218,11 +1254,13 @@ public static class WpfUpdateService
             if (baseline.Size < 0 || !IsSha256(baseline.Sha256))
                 throw new InvalidDataException("Baseline inventory record is invalid: " + relative);
             if (baseline.Size != new FileInfo(installedPath).Length || !FixedEquals(HashFile(installedPath), baseline.Sha256))
-            {
-                if (setupRequiredOnBaselineMismatch)
-                    throw new BaselineMismatchException("The WPF package baseline differs from the installed files.");
-                throw new NoNewerUpdateException("Không có gói cập nhật dành cho baseline của bản cài này.");
-            }
+                differing.Add(new BaselineMismatchEntry(relative, "differs"));
+        }
+        if (differing.Count > 0)
+        {
+            if (setupRequiredOnBaselineMismatch)
+                throw new BaselineMismatchException("The WPF package baseline differs from the installed files.", differing);
+            throw new NoNewerUpdateException("Không có gói cập nhật dành cho baseline của bản cài này.");
         }
 
         if (!FixedEquals(HashFile(packagePath), packageSha256))
@@ -1607,7 +1645,10 @@ public static class WpfUpdateService
 
     private sealed class NoNewerUpdateException(string message) : Exception(message);
 
-    private sealed class BaselineMismatchException(string message) : Exception(message);
+    private sealed class BaselineMismatchException(string message, IReadOnlyList<BaselineMismatchEntry>? entries = null) : Exception(message)
+    {
+        public IReadOnlyList<BaselineMismatchEntry> Entries { get; } = entries ?? [];
+    }
 
     private sealed class UpdateManifest
     {
