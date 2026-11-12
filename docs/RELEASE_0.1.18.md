@@ -1,6 +1,6 @@
 # Release 0.1.18 — ledger
 
-Trạng thái: **ỨNG VIÊN TIỀN PHÁT HÀNH (PREPUBLICATION) — chờ Brain ACCEPT đúng payload này.** Chưa push/tag/upload/phát hành. Baseline công khai: `v0.1.17` (Latest, 2026-11-08T06:09:40Z; tag chú thích `1ffee3a…` → source `ed3f5b58f1b0540e913785705080a1b3327d0455`; Setup `VNTextStudio-0.1.17-Setup.exe` 285,221,888 B sha256 `4e56da3e…ccf7f`). Receipt: `C:/vnrg/evidence/release-0.1.18/` (compact; `candidate-receipt.json` là bản tổng hợp).
+Trạng thái: **ĐÃ PHÁT HÀNH** (2026-11-12T07:02:00Z) — https://github.com/CaLanh24/VnText/releases/tag/v0.1.18 (Latest); tag chú thích `v0.1.18` (`c543869…`) → source dựng `956a7046e3f960f8a08c7338c4cbe50d44cd05cc`; các commit sau trên `main` chỉ là tài liệu. Brain ACCEPT đúng payload này; 5 tài sản tối thiểu đã đọc lại băm từ bản tải công khai (khớp), manifest trỏ đúng ZIP; tài sản/route của v0.1.17 và cũ hơn nguyên vẹn (digest không đổi). Baseline: `v0.1.17` (Setup sha256 `4e56da3e…ccf7f`).
 
 ## Nguồn và ứng viên
 - Source dựng: `956a7046e3f960f8a08c7338c4cbe50d44cd05cc` (snapshot sạch `RELEASE_RUN/candidate-0.1.18/source`); các commit sau chỉ là tài liệu.
@@ -11,7 +11,7 @@ Trạng thái: **ỨNG VIÊN TIỀN PHÁT HÀNH (PREPUBLICATION) — chờ Brain
 ## Ủy quyền, ngân sách, epoch
 - Owner 2026-11-12 ("Xem còn vấn đề gì thì sửa nốt, xong thì release") + mục lưu trữ đứng 2026-10-24: task riêng `release-0.1.18`, trần đo được 3 GiB ban đầu rồi 4.5 GiB (4,831,838,208 B) sau khi hai baseline công khai được giải nén (0.1.17: 584,299,498 B; 0.1.7: 515,688,819 B); không kế thừa ngân sách/khoản 6,75 GiB/chính sách hop của 0.1.17; không rebaseline. Tải phụ thuộc theo lock được cho phép bởi ủy quyền lệnh/mạng của DEV (LOCAL-WORKFLOW 2026-10-25) cho release được giao, không suy từ quyền lưu trữ.
 - Epoch chuyển tiếp thường (8-hop quy ước): 029→032 trên `release-0.1.18`; epoch hiện tại gắn source dựng `956a704` (+ hop tài liệu). Lỗi guard thật đã sửa: `registry_metadata_incomplete` do 28.917 bản ghi MISSING lạnh sau nén gzip; mọi vấn đề metadata khác vẫn chặn.
-- Đỉnh dung lượng lấy mẫu (project + `C:/vnrg`): 3,968,864,530 B < ngưỡng hủy 4,781,506,560 B. Mục tiêu dọn cuối: về giới hạn mặc định sau khi consumer kết thúc (xem Cleanup).
+- Đỉnh dung lượng lấy mẫu (project + `C:/vnrg`): 3,968,864,530 B < ngưỡng hủy thật 4,781,506,560 B (= 4,831,838,208 − 50,331,648). Hiệu chỉnh: công cụ đo phụ `bud.py` từng dùng nhầm trần 6.25 GiB của 0.1.17 nên các số "free_to_abort" trong báo cáo chuẩn bị là SAI; profile thực `release-0.1.18` 4.5 GiB được launcher xác nhận gắn HEAD; số đúng ở `budget-correction.json`; các gate publish/updater dùng đúng trần. Mục tiêu dọn cuối: về giới hạn mặc định sau khi consumer kết thúc (xem Cleanup).
 
 ## Sửa lỗi / thay đổi từ v0.1.17
 - **Glossary (lỗi thật mới xác nhận):** thuật ngữ không còn khớp bên trong từ khác ("ass"/"passage"), token sinh ra không bị thay lại bởi thuật ngữ sau, literal `ZZG…` trong nguồn không bị khôi phục nhầm; khớp theo từ/cụm (chữ Unicode + dấu kết hợp, NFC/NFD), không xếp tầng, token không trùng văn bản gốc; áp dụng cho glossary người dùng và v2; chiến lược cache đổi (`glossary-masking-3`), không xóa bản dịch đã lưu/thủ công. 13 test mới + bộ glossary/MT hiện có.
@@ -48,3 +48,9 @@ Fixture: không dùng game thật; thư mục `data/owner-preserve` canary do ch
 
 ## Cleanup
 Đã dọn qua helper: fixture updater, scope publish lỗi, scratch release-check/icon/deps (0 refused). Còn giữ đến khi Brain ACCEPT + publish: `RELEASE_RUN/candidate-0.1.18/{source,setup-018-956a704,release-baselines}`, venv `.dev-env/release-venv-0.1.18`. Sau publish: dispose candidate/baselines/source worktree qua helper, trả project về ≤ 1 GiB, giữ receipt/hash.
+
+## Nghiệm thu native (Root, UIA chức năng; ảnh chụp NOT_PROVEN)
+Cài mới vào thư mục cô lập: điều khoản/đích tùy chọn, tài nguyên SDK tải thật sẵn sàng (model/renpy/ocr), app mở đúng EXE ứng viên; gỡ khi app chạy bị từ chối, không xóa tệp; gỡ sau khi đóng app hoàn tất, thư mục trống. Nâng cấp: Setup công khai 0.1.17 + 3 canary, Setup 0.1.18 nhận bản cài hiện có, giữ dữ liệu, hoàn tất, ba canary khớp byte, phiên bản/hash đúng, app mở lại. Chụp ảnh thất bại (agent-desktop WGC timeout/BitBlt 0x80070006; Computer Use CreateForMonitor 0x80070057) nên KHÔNG có bằng chứng ảnh/DPI/toàn game. Receipt: `root-native-receipt.json`. Glossary: 6 ca cấu trúc trên model CT2 thật (`glossary-real-model.json`), kèm giới hạn: literal giống sentinel có thể bị model tách khoảng trắng, bản dịch chỉ là nháp thô.
+
+## Sau phát hành
+Rollback updater: dùng lại bằng chứng 0.1.17 (mã `FullAppUpdate*` không đổi), không chạy lại. Đã dispose fixture native (native-upgrade, native-install rỗng, native-upgrade-baseline) qua helper, 0 refused. GIỮ cho tới khi Root xong kiểm tra client công khai trong app: `RELEASE_RUN/candidate-0.1.18/{source,setup-018-956a704,release-baselines}` + venv `.dev-env/release-venv-0.1.18`. Dọn cuối: dispose các mục này qua helper (cần hop epoch hợp lệ cho HEAD tài liệu trước), trả project ≤ 1 GiB.
