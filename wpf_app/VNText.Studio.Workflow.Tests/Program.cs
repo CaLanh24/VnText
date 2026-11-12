@@ -23,11 +23,11 @@ internal static partial class Program
     {
         if (args.Contains("--updater-setup-only", StringComparer.Ordinal))
         {
-            var failures = new List<string>();
-            Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, failures);
-            Run("WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo", WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo, failures);
-            foreach (var failure in failures) Console.Error.WriteLine(failure);
-            return failures.Count == 0 ? 0 : 1;
+            var setupFailures = new List<string>();
+            Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, setupFailures);
+            Run("WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo", WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo, setupFailures);
+            foreach (var failure in setupFailures) Console.Error.WriteLine(failure);
+            return setupFailures.Count == 0 ? 0 : 1;
         }
         if (args.Contains("--resource-flow-only", StringComparer.Ordinal))
             return RunResourceFlows();
