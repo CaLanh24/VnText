@@ -5779,6 +5779,7 @@ internal static partial class Program
             vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
             AssertEqual(GitHubUpdateState.SetupRequired, vm.GitHubUpdateState);
             AssertEqual(1, Downloads()); AssertFalse(vm.GitHubApplyEnabled);
+            var rejectedDate = vm.OfferedReleaseDate;
             // Manual, automatic-style and direct download paths must all stay on Setup without a new download.
             vm.BackgroundUpdateDownload = true;
             for (var i = 0; i < 3; i++)
@@ -5791,7 +5792,7 @@ internal static partial class Program
             }
             AssertEqual(1, Downloads());
             AssertEqual("Full-app notes", vm.UpdateNotes);
-            AssertTrue(!string.IsNullOrWhiteSpace(vm.OfferedReleaseDate));
+            AssertEqual(rejectedDate, vm.OfferedReleaseDate);
             vm.Dispose(); vm = null;
             // A restart reloads the persisted rejection and still does not download the same ZIP.
             restarted = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
