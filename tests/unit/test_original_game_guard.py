@@ -10,6 +10,44 @@ INSTALLER = b"fake exact installer"
 PATCH = ["game/tl/vietnamese/vntext.rpy", "game/zzz_vntext_vietnamese.rpy"]
 
 
+class CanonicalEvidenceRootTests(unittest.TestCase):
+    """Defaults live inside the checkout (TEST_RUN/agent-evidence); no default points at the retired external C:/vnrg root."""
+
+    def test_defaults_are_inside_the_checkout_evidence_root(self):
+        root = guard.AGENT_EVIDENCE
+        self.assertEqual(guard.CHECKOUT / "TEST_RUN" / "agent-evidence", root)
+        for path in (guard.BASELINE_DIR, guard.EVIDENCE, guard.RESULT, guard.PREVIOUS_CHANGED_JSON, guard.LEGACY_RUN017):
+            self.assertIn(root, path.parents, path)
+        # the historical proof is the rehomed byte-exact legacy tree; new outputs are separate from it
+        self.assertEqual(guard.LEGACY_RUN017 / "pre-game-v2", guard.BASELINE_DIR)
+        self.assertNotIn(guard.LEGACY_RUN017, guard.EVIDENCE.parents)
+        self.assertNotIn(guard.LEGACY_RUN017, guard.RESULT.parents)
+
+    def test_no_external_root_remains_in_the_tool(self):
+        import re
+        text = Path(guard.__file__).read_text(encoding="utf-8")
+        self.assertIsNone(re.search(r"[A-Za-z]:[\/]+vnrg", text, re.IGNORECASE))      # only the in-checkout `legacy-vnrg` folder name may remain
+
+    def test_cli_defaults_use_the_canonical_paths(self):
+        import argparse
+        seen = {}
+        original = argparse.ArgumentParser.parse_args
+
+        def capture(self, args=None, namespace=None):
+            ns = original(self, args, namespace)
+            seen.update(vars(ns))
+            raise SystemExit(0)
+
+        argparse.ArgumentParser.parse_args = capture
+        try:
+            with self.assertRaises(SystemExit):
+                guard.main(["verify"])
+        finally:
+            argparse.ArgumentParser.parse_args = original
+        self.assertEqual(str(guard.BASELINE_DIR), seen["baseline_dir"])
+        self.assertEqual(str(guard.PREVIOUS_CHANGED_JSON), seen["previous_changed_json"])
+
+
 class OriginalGameGuardTests(unittest.TestCase):
     def setUp(self):
         self.tmp = work_temp_dir("original-game-guard") / self._testMethodName

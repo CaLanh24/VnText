@@ -20,9 +20,15 @@ BS = chr(92)
 GAME = Path(r"C:\Users\VNTextDev\Desktop\game\Cucked by My Wife")
 OWNER = Path(r"C:\Users\VNTextDev\AppData\Roaming\RenPy")
 RAR = Path(r"C:\Users\VNTextDev\Desktop\game\Cucked_by_My_Wife.rar")
-BASELINE_DIR = Path(r"C:\vnrg\run017\pre-game-v2")
-EVIDENCE = Path(r"C:\vnrg\run017\postgame-evidence-v2")
-RESULT = Path(r"C:\vnrg\evidence\postgame-v2-restore-result.json")
+# Canonical in-checkout evidence root (Owner 2026-11-12: all project artifacts inside the checkout). The historical `run017` proof was rehomed byte-exact (see
+# TEST_RUN/agent-evidence/provenance-index.json for old path / new path / sha256); it is READ-ONLY history, new outputs go to `original-game/`.
+CHECKOUT = Path(__file__).resolve().parents[2]
+AGENT_EVIDENCE = CHECKOUT / "TEST_RUN" / "agent-evidence"
+LEGACY_RUN017 = AGENT_EVIDENCE / "legacy-vnrg" / "run017"
+BASELINE_DIR = LEGACY_RUN017 / "pre-game-v2"
+EVIDENCE = AGENT_EVIDENCE / "original-game" / "postgame-evidence-v2"
+RESULT = AGENT_EVIDENCE / "original-game" / "postgame-v2-restore-result.json"
+PREVIOUS_CHANGED_JSON = LEGACY_RUN017 / "postgame-evidence" / "runtime-hashes.json"
 # What the installed patch adds is read from the package's own patch_manifest.json (exact paths); a run writes saves/ (removed only by this tool) and Ren'Py always compiles
 # a matching .rpyc next to each installed .rpy (removed only for those exact siblings).  Nothing else is ever deleted.
 RUN_OWNED_PREFIX = "game/saves/"
@@ -252,7 +258,7 @@ def main(argv=None):
     ap.add_argument("--execute", action="store_true")
     ap.add_argument("--result-path", help="new result file (never overwritten); default: a UTC-stamped file next to postgame-v2-restore-result.json")
     ap.add_argument("--evidence-dir", help="new directory for archived run-owned files; default: a UTC-stamped sibling of postgame-evidence-v2")
-    ap.add_argument("--previous-changed-json", default=r"C:\vnrg\run017\postgame-evidence\runtime-hashes.json")
+    ap.add_argument("--previous-changed-json", default=str(PREVIOUS_CHANGED_JSON))
     ap.add_argument("--archive-sha256", default="537aaa6eae5f07c21779ed4fcbd4de309b2cb8aebecee52d7bb44a58a8026c98")
     a = ap.parse_args(argv)
     bdir = Path(a.baseline_dir)
@@ -271,6 +277,7 @@ def main(argv=None):
         stamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
         result_path = Path(a.result_path) if a.result_path else RESULT.with_name("postgame-v2-restore-result-%s.json" % stamp)
         evidence = Path(a.evidence_dir) if a.evidence_dir else EVIDENCE.with_name("postgame-evidence-v2-%s" % stamp)
+        result_path.parent.mkdir(parents=True, exist_ok=True)
         r = restore(bdir, GAME, OWNER, RAR, Path(a.pkg or ""), a.installer_sha256 or "", execute=a.execute, evidence=evidence, result_path=result_path)
         print(json.dumps({"mode": r["mode"], "refuse": r["plan"]["refuse"], "restore": len(r["plan"]["restore_from_backup"]), "saves": len(r["plan"]["remove_run_owned_saves"]),
                           "compiled_siblings": r["plan"]["remove_compiled_siblings"], "uninstall_expected": r["plan"]["removed_by_exact_uninstall"], "final": r.get("final")}))
