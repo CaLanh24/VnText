@@ -1,0 +1,50 @@
+# Release 0.1.19 — ledger
+
+Trạng thái: **ỨNG VIÊN ĐÃ DỰNG, CHỜ BRAIN ACCEPT** (chưa push/tag/upload). Bản vá cho vòng lặp cập nhật trong app (0.1.18 công khai chưa chứa bản sửa).
+
+## Nguồn và ứng viên
+- Source dựng: `28f62d348045f7ae2ffd42f47a2db363e44a91c1` (snapshot sạch `RELEASE_RUN/candidate-0.1.19/source`, epoch `epoch-20261112-035-release019`). Commit sau đó trên `main` (`3679a5d`, sửa test harness runner) KHÔNG nằm trong nguồn dựng; không còn hop epoch (giới hạn 8 hop, không nới, không rebaseline), nên giữ làm commit bảo trì sau phát hành.
+- Setup: `RELEASE_RUN/candidate-0.1.19/setup-019-28f62d3/ReleaseRoot/VNTextStudio-0.1.19-Setup.exe`, 286,729,728 B, sha256 `32bc1924f1c821878a3c93bcb00575e978c6f5fb92e68b57583a78e664d05a8c`; payload 7,327 tệp xác minh; `VNText Studio.exe` sha256 `06c64dd2a7f0377698f60cd0d8f52df231a71041fba3c481c1aee326fc4db8f3`.
+- 5 tài sản tối thiểu (`ReleaseRoot/Updates`): `full-app-update-from-0.1.18-to-0.1.19-c3e6a09b94dfa561.zip` (67,361,740 B, sha256 `c3e6a09b…42fa`) + `full-app-update-from-0.1.18-to-0.1.19-current.json` (sha256 `1606adde…eb57`); `full-app-update-0.1.19-407875732fe6bf34.zip` (86,938,209 B, sha256 `40787573…10ab`) + `full-app-update-current.json` (tuyến legacy 0.1.7, sha256 `5a382b4a…2c03`); Setup ở trên. Hash đầy đủ: `TEST_RUN/agent-evidence/release-0.1.19/assets-019.json`. Tuyến 0.1.17 đi chuỗi 17→18 (tài sản công khai có sẵn) rồi 18→19; không thêm ZIP.
+- Phụ thuộc Python: khóa băm `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distribution; `tpk_ar` 0.2.4 sdist chính thức dựng bằng setuptools đã khóa) trong `.dev-env/release-venv` được tái dựng đúng khóa (venv tiền-khóa cũ 2026-10-18, 55 gói, không có tiến trình/consumer, không reparse — kiểm kê lưu ở `old-release-venv-inventory.json`); `dependency_profiles.py --build --check-installed` exit 0, `pip check` exit 0 (`release-venv-after.json`). Không sửa `.venv`/SDK/model/dữ liệu người dùng.
+- Baseline công khai (đã xác minh băm, payload giải nén, KHÔNG phải cài Setup): v0.1.18 590,341,910 B (Setup `454ef46f…930a`), v0.1.17 584,299,498 B (`4e56da3e…cf7f`), v0.1.7 515,688,819 B (`82667f53…90f6`), cộng tài sản công khai 17→18 (zip `3e6a5d48…02f9`, feed `0e64ef01…dc0ac`). `baseline-receipts-019.json`.
+
+## Sửa lỗi
+- **Vòng lặp “tải → cần Setup”:** khi gói không áp dụng được cho bản đang cài, app dừng ở `SetupRequired`: nút “Mở trang tải”, giữ ghi chú và ngày, không tải lại gói đó khi bấm lặp, kiểm tra lại thủ công/tự động/định kỳ/nhắc hoặc khởi động lại.
+- **Khóa từ chối có kiểu, giới hạn:** danh tính (offer: version/sha/URL/size + trạng thái thật của `app/RELEASE.json`, `app/VERSION.txt` và tối đa 16 tệp baseline lệch kèm loại missing/extra/differs, đọc tối đa 512 MiB, token cố định cho tệp không đọc được/quá lớn). Sửa tệp lệch (kể cả không phải exe), đổi bản cài, hay offer mới → khóa đổi → thử lại tải + xác minh đầy đủ. Không đọc đường dẫn tùy ý/reparse/dữ liệu người dùng; không nới guard baseline/hash/readback; lỗi đọc băm không bao giờ thành READY.
+- Cập nhật vẫn chỉ READY khi có lease gói đã xác minh; lỗi mạng/hash/cắt cụt là lỗi hành động được (không phải OfferAvailable), hủy/thử lại và khóa theo CSV chưa lưu được kiểm.
+
+## Ủy quyền, ngân sách, epoch
+- Owner 2026-11-12 (“push lên GitHub rồi release bản sửa …”) + mục lưu trữ đứng 2026-10-24: task riêng `release-0.1.19`, trần đo được 5 GiB (5,368,709,120 B) ghi trước khi cấp (`allocation-plan-0.1.19.json`), guard 48 MiB, shared 11 GiB giữ nguyên; không kế thừa ngân sách/chính sách của 0.1.17/0.1.18; không rebaseline. Trả về 1 GiB mặc định ở dọn cuối.
+- Epoch: hop 035 (`epoch-20261112-035-release019`, nguồn `28f62d3`), chuyển tiếp thường 0.1.18→0.1.19. Hop kế tiếp bị chặn bởi độ sâu 8 (đã chứng minh `transition_active_epoch_integrity_failed`/`epoch_transition_depth_exceeded`); không nới.
+- Đỉnh dung lượng (project non-exempt, không tính `.dev-env`): 4,701,415,615 B trong ma trận updater (< ngưỡng hủy 5,318,377,472 B); tại thời điểm bàn giao: 3,211,968,051 B (candidate 2,245,838,428 B, trong đó baseline 1,779,684,385 B). Shared `.dev-env` 3,308,896,406 B.
+
+## Gates (verdict riêng, gắn nguồn `28f62d3`, cây sạch)
+- Python công khai (`audit_gates --group public`): csv 34, mt 91, patch 37, maintenance 44 — PASS, 0 skip; installed-model/native = SKIP có chủ đích.
+- Release/publisher: epoch 017/018/019 (14), `test_full_app_update_publisher` 2 (807 s), installer order 1, release-root guard, `test_release_verify` 7, mirror 2, cleanup finalize 3, artifact policy 8, work_paths 7 (1 skip) — PASS; `test_release_gui_shutdown` OK nhưng skipped (GUI shutdown không được chạy) — không tính PASS. `test_setup_package` 13 PASS (không đặt PYTHONUTF8), `test_resources_setup` 7 PASS, `test_cleanup_work_artifacts` 157 PASS.
+- **Không PASS (tồn tại trước, không thuộc diff này):** `test_release_regression_runner` 1/6 FAIL (harness lồng không sao chép `release/budget_policy.json` → `RUNNER_ERROR` “Artifact registration failed”); sửa đã chuẩn bị ở commit `3679a5d` (đã chứng minh qua bước runner; phần dọn cuối của test cần cây sạch + epoch khớp) nhưng không thể vào nguồn dựng. `test_wpf_workflow` 34/37: 2 test đọc nguồn XAML/danh mục tiếng Anh (`test_content_disclosures…`, `test_ocr_workspace_text…`) và fixture native `--csv-layout-fixture` (JournalWindow) FAIL ở các tệp 0.1.18→0.1.19 KHÔNG đổi (MainWindow.xaml, catalog; chỉ đổi dịch vụ cập nhật/test). Chưa chạy được với tag 0.1.18 nên “tồn tại trước” là suy luận theo diff, không phải đo.
+- WPF Release build 0 cảnh báo; nhóm `--updater-setup-only` (UpdaterPresentation, Setup-required không retry, **full-app: reject không re-offer qua kiểm tra/khởi động lại, sửa tệp không phải exe → thử lại xác minh, offer mới/metadata/extra file, lỗi mạng/cắt cụt/tamper, hủy+thử lại, chặn CSV chưa lưu, READY chỉ khi có lease**) và `--full-app-update-only` (9) PASS. Các test này dùng harness fake HTTP + fixture gói full-app thật, KHÔNG phải nghiệm thu native.
+- Build/package: `publish.ps1` (isolated, locked deps) exit 0 @ `28f62d3`; payload 7,327 tệp; Full-app Updates 2 gói.
+- Updater backend trên gói thật (KHÔNG phải UI native/Setup): A public 0.1.18→0.1.19, B legacy 0.1.7→0.1.19, C 0.1.17→(17→18 công khai)→0.1.19: exit 0, version 0.1.19, đọc lại manifest 0 lệch, canary `data/owner-preserve` nguyên vẹn, health PASS. Âm tính trên gói thật (mã updater đổi nên không dùng lại bằng chứng 0.1.18): N1 zip bị sửa → exit 5, N2 tệp baseline lệch → exit 5, N3 gián đoạn sau thay thế đầu → `--recover-full-app-update` khôi phục đúng baseline, N4 health lỗi → rollback; cả bốn: cây baseline không đổi, canary nguyên, không journal treo. Receipts: `updater019-backend-{A,B,C,N1,N2,N3,N4}-28f62d3.json`. Lưu ý quy trình: lần chạy đầu thất bại vì watcher của harness tự giết worker health — đã sửa harness (không phải sản phẩm).
+- NOT_PROVEN: Setup cài mới/nâng cấp/gỡ trên máy thật, cập nhật công khai trong app sau phát hành, hiển thị Setup-required trên app native của bản dựng, mọi DPI/giao diện, âm thanh, game lớn, chất lượng dịch toàn game.
+
+## Giới hạn phải ghi trong ghi chú phát hành
+Dịch offline chỉ là bản nháp thô, cần người rà soát; engine ngoài Ren'Py/Unity chưa được chứng minh; chất lượng dịch toàn game không được công bố.
+
+## Ghi chú phát hành (nháp, tiếng Việt)
+**VNText Studio 0.1.19** — bản vá cập nhật trong app.
+- Sửa vòng lặp “Tải về → cần cài lại”: khi gói cập nhật không khớp bản đang cài, app dừng ở bước cần Setup với nút “Mở trang tải”, giữ ghi chú, không tải lại cùng gói khi bấm lặp, kiểm tra lại hoặc mở lại app.
+- Nếu bạn sửa lại tệp lệch hoặc cài lại, app tự thử lại và xác minh gói bình thường.
+- Cập nhật trong app từ 0.1.18 (và từ 0.1.17, 0.1.7). Dữ liệu người dùng được giữ nguyên.
+- Lưu ý: bản dịch offline chỉ là bản nháp thô, cần xem lại; chưa hỗ trợ mọi engine game.
+
+## Checklist native hữu hạn (Root/Brain; DEV không mở UI)
+1. Setup 0.1.19 cài mới vào thư mục cô lập: điều khoản VI/EN, tài nguyên, hoàn tất, mở app; tên tệp đúng `VNTextStudio-0.1.19-Setup.exe`.
+2. Nâng cấp bằng Setup chồng lên bản công khai 0.1.18 với canary trong `data/` — dữ liệu còn nguyên.
+3. Sau publish: app 0.1.18 THẬT (Setup công khai, không phải payload giải nén) nhận lời mời 0.1.19 → Cập nhật ngay → Khởi động lại → hộp thoại thành công, canary nguyên.
+4. Native bản đã cài khác baseline (ví dụ exe bị đổi hoặc tệp `app/` lệch): lời mời → tải → hiện “Mở trang tải” (VI/EN), bấm lặp / “Kiểm tra lại” / đóng-mở lại app KHÔNG tải thêm; sửa tệp lệch → kiểm tra lại cho phép tải xác minh lại.
+5. Cập nhật 0.1.17 thật đi chuỗi 17→18→19 (nếu Root muốn; DEV đã chứng minh bằng backend).
+Không dùng game thật; canary do chính bước kiểm tạo; không động vào `Desktop/vntextapp`.
+
+## Dọn cuối (sau Brain ACCEPT + publish)
+Dispose qua helper (target chính xác, không theo junction): `RELEASE_RUN/candidate-0.1.19` (source worktree → `git worktree prune`, setup, baselines ~1.78 GB, ResourceDump), `TEST_RUN/updater-loop-check`, `.dev-env/release-venv` tạm giữ (consumer: publish lại) — giữ receipt/hash ở `TEST_RUN/agent-evidence/release-0.1.19/`, trả project về ≤ 1 GiB. Còn giữ đến ACCEPT: toàn bộ `candidate-0.1.19`.

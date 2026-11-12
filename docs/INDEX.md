@@ -137,3 +137,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 - Contracts: [retention/budgets](contracts/artifact-retention.md), [epoch authority/history](contracts/registry-epoch.md), [DEV/game validation](contracts/dev-validation.md). Origin SHAs retained in each topic; CONTRACTS keeps compatibility section anchors.
 - WORKFLOW routes bounded operations to workflows/ by owner. No historical task resumes through a router.
 - [Platform dependency locks](../requirements/locks/README.md), [public gate runner](../tests/tools/audit_gates.py), [MT finite corpus](../tests/golden/mt-quality/corpus.json).
+| Release 0.1.19 (hotfix cập nhật) | docs/RELEASE_0.1.19.md | Receipt `TEST_RUN/agent-evidence/release-0.1.19/` |
