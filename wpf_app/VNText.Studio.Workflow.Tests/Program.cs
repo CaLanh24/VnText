@@ -397,7 +397,8 @@ internal static partial class Program
         }
         catch (Exception ex)
         {
-            failures.Add($"{name}: {ex.Message}");
+            failures.Add($"{name}: {ex.Message} @ {ex.StackTrace?.Split('
+').FirstOrDefault(l => l.Contains('Program.'))?.Trim()}");
         }
     }
 
