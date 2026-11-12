@@ -5943,7 +5943,14 @@ internal static partial class Program
             AssertEqual(GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
             AssertTrue(vm.GitHubApplyEnabled); AssertEqual(1, Staged());
         }
-        finally { vm?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
+        finally
+        {
+            vm?.Dispose();
+            var leftover = Path.Combine(fixture.Root, ".update", "work");
+            var present = Directory.Exists(leftover) ? string.Join(",", Directory.GetFiles(leftover).Select(Path.GetFileName)) : "<none>";
+            try { DeleteFullAppUpdateFixture(fixture); }
+            catch (IOException ex) { GC.Collect(); GC.WaitForPendingFinalizers(); var retried = false; try { DeleteFullAppUpdateFixture(fixture); retried = true; } catch (IOException) { } throw new InvalidOperationException($"fixture cleanup: files after dispose [{present}]; gc-retry-ok={retried}; {ex.Message}"); }
+        }
     }
     private static int RunPresentationFixture(string[] args)
     {
