@@ -5847,7 +5847,7 @@ internal static partial class Program
                 window.Dispatcher.BeginInvoke(new Action(() =>
                 {
                     if (current == "success") window.ShowUpdateDialog(false, "0.1.13");
-                    else if (current is "available" or "downloading" or "ready" or "notes") window.ShowUpdateDialog(current == "notes");
+                    else if (current is "available" or "downloading" or "ready" or "notes" or "setup-required") window.ShowUpdateDialog(current == "notes");
                 }));
             };
             window.Closed += (_, _) => { timer.Stop(); if (auto && failed is null) app.Dispatcher.BeginInvoke(new Action(Next)); };
