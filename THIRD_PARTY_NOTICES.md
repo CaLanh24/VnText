@@ -133,9 +133,9 @@ versioned upstream license files:
   [tokenizers license](https://github.com/huggingface/tokenizers/blob/v0.23.2/LICENSE)).
 
 
-#### Locked Python dependency inventory — release 0.1.18
+#### Locked Python dependency inventory — release 0.1.19
 
-The 0.1.18 build uses the audited hash locks `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distributions; `tpk_ar` 0.2.4 is the only official source distribution, built with the locked setuptools). This replaces the earlier minimum-version statement for 0.1.18. The table is read from each installed distribution's own metadata (point-in-time, not a legal audit); each wheel's license files stay in its dist-info inside the payload. CTranslate2 (MIT), SentencePiece and Tokenizers (Apache-2.0) are covered by the notices above and `app/licenses`; the FMOD vendor-binary exclusion for `fmod_toolkit` is unchanged. The build-profile distributions (pyinstaller [GPLv2 with its bootloader exception], pyinstaller-hooks-contrib, altgraph, pefile, pywin32-ctypes) are build tools; whether any of them is present in a Setup payload is decided from that exact payload's inventory, not from this table. Tokenizers is 0.23.3 here (same Apache-2.0 license as the 0.23.2 notice).
+The 0.1.19 build uses the audited hash locks `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distributions; `tpk_ar` 0.2.4 is the only official source distribution, built with the locked setuptools). This replaces the earlier minimum-version statement for 0.1.18. The table is read from each installed distribution's own metadata (point-in-time, not a legal audit); each wheel's license files stay in its dist-info inside the payload. CTranslate2 (MIT), SentencePiece and Tokenizers (Apache-2.0) are covered by the notices above and `app/licenses`; the FMOD vendor-binary exclusion for `fmod_toolkit` is unchanged. The build-profile distributions (pyinstaller [GPLv2 with its bootloader exception], pyinstaller-hooks-contrib, altgraph, pefile, pywin32-ctypes) are build tools; whether any of them is present in a Setup payload is decided from that exact payload's inventory, not from this table. Tokenizers is 0.23.3 here (same Apache-2.0 license as the 0.23.2 notice).
 
 | Distribution | Version | License (declared) | License text |
 | --- | --- | --- | --- |

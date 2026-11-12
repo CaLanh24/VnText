@@ -10,5 +10,7 @@
   "origin": "CONTRACTS.md section10a/10c and retained Owner approval history; original bytes and epoch metadata remain immutable",
   "release_0_1_18_initial_bytes": 3221225472,
   "release_0_1_18_note": "Initial measured ceiling for the Owner-authorized next patch 0.1.18 under the standing temporary release allocation (artifact-retention.md, 2026-10-24); raised only to a measured, recorded need; terminal cleanup returns to the default limit; no inherited 0.1.17 hop policy or Setup grant. Measured continuation 2026-11-12: ceiling 4.5 GiB after the two verified public baselines were extracted.",
-  "release_0_1_18_measured_bytes": 4831838208
+  "release_0_1_18_measured_bytes": 4831838208,
+  "release_0_1_19_measured_bytes": 5368709120,
+  "release_0_1_19_note": "Measured ceiling for the Owner-authorized updater hotfix 0.1.19 under the standing temporary release allocation (artifact-retention.md, 2026-10-24); recorded before allocation, bound to the exact candidate-0.1.19 scope, terminal cleanup returns to the default limit."
 }
