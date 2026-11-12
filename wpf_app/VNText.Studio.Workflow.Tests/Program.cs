@@ -27,6 +27,7 @@ internal static partial class Program
             Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, setupFailures);
             Run("WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo", WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo, setupFailures);
             Run("FullAppUpdate_RejectedBaselineIsNotReofferedAcrossChecksAndRestart", FullAppUpdate_RejectedBaselineIsNotReofferedAcrossChecksAndRestart, setupFailures);
+            Run("FullAppUpdate_FailuresStayRecoverableCancelAndDirtyGuard", FullAppUpdate_FailuresStayRecoverableCancelAndDirtyGuard, setupFailures);
             foreach (var failure in setupFailures) Console.Error.WriteLine(failure);
             return setupFailures.Count == 0 ? 0 : 1;
         }
@@ -5862,6 +5863,87 @@ internal static partial class Program
             AssertEqual(6, Downloads());
         }
         finally { vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
+    }
+    private static void FullAppUpdate_FailuresStayRecoverableCancelAndDirtyGuard()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        MainViewModel? vm = null;
+        try
+        {
+            var bytes = File.ReadAllBytes(fixture.PackagePath);
+            var digest = HashBytes(bytes);
+            var url = FullAppAssetUrl(fixture, digest);
+            _ = CreateFullAppGitHubHandler(fixture, digest, bytes.LongLength, url, bytes);       // writes the GitHub source identity into the fixture
+            var version = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE")!);
+            var baseline = ReadExecutableProductVersion(Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE")!);
+            var assetName = $"full-app-update-from-{baseline}-to-{version}-{digest[..16]}.zip";
+            var releases = JsonSerializer.Serialize(new[] { GitHubRelease("v" + version, false, false, GitHubAsset(assetName, "sha256:" + digest, bytes.LongLength, url)) });
+            var apiUrl = new Uri("https://api.github.com/repos/test-owner/test-repo/releases?per_page=100");
+            var mode = "ok"; var downloads = 0;
+            var handler = new TestHttpMessageHandler((request, _) =>
+            {
+                if (request.RequestUri == apiUrl) return Task.FromResult(JsonResponse(releases));
+                if (request.RequestUri != new Uri(url)) throw new HttpRequestException("Unexpected HTTP target: " + request.RequestUri);
+                downloads++;
+                switch (mode)
+                {
+                    case "offline": throw new HttpRequestException("network down");
+                    case "truncate": return Task.FromResult(BinaryResponse(bytes[..(bytes.Length - 64)]));
+                    case "tamper": { var bad = (byte[])bytes.Clone(); bad[bad.Length / 2] ^= 0x5A; return Task.FromResult(BinaryResponse(bad)); }
+                    case "slow":
+                        {
+                            var content = new StreamContent(new NativeUiDownloadStream(bytes));
+                            content.Headers.ContentLength = bytes.LongLength;
+                            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
+                        }
+                    default: return Task.FromResult(BinaryResponse(bytes));
+                }
+            });
+            vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            var work = Path.Combine(fixture.Root, ".update", "work");
+            int Staged() => Directory.Exists(work) ? Directory.GetFiles(work, "github-update-*.zip").Length : 0;
+            void Offer()
+            {
+                vm.RecheckUpdateCommand.Execute(null); vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                AssertEqual(GitHubUpdateState.OfferAvailable, vm.GitHubUpdateState);
+            }
+            void FailedDownload(string failure)
+            {
+                mode = failure; Offer();
+                vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+                AssertTrue(vm.GitHubUpdateState != GitHubUpdateState.OfferAvailable);
+                AssertTrue(vm.GitHubUpdateState != GitHubUpdateState.UpdateAvailable && vm.GitHubUpdateState != GitHubUpdateState.Current);
+                AssertFalse(vm.GitHubApplyEnabled); AssertEqual(0, Staged());
+            }
+            // Network, truncation and tamper failures are actionable errors (never READY, nothing staged) and retry works.
+            FailedDownload("offline"); AssertEqual(GitHubUpdateState.Offline, vm.GitHubUpdateState);
+            FailedDownload("truncate"); AssertEqual(GitHubUpdateState.InvalidPackage, vm.GitHubUpdateState);
+            FailedDownload("tamper"); AssertEqual(GitHubUpdateState.InvalidPackage, vm.GitHubUpdateState);
+            // Cancel keeps the offer, leaves no staged package and does not block a later retry.
+            mode = "slow"; Offer();
+            var pending = vm.DownloadOfferedUpdateAsync();
+            var waited = 0;
+            while (!vm.DownloadingUpdate && waited++ < 200) Thread.Sleep(10);
+            AssertTrue(vm.DownloadingUpdate);
+            vm.CancelUpdateDownload(); pending.GetAwaiter().GetResult();
+            AssertFalse(vm.DownloadingUpdate); AssertFalse(vm.GitHubApplyEnabled); AssertEqual(0, Staged());
+            AssertEqual(GitHubUpdateState.OfferAvailable, vm.GitHubUpdateState);
+            // A dirty CSV editor blocks the download entirely (guard, not a waiver).
+            mode = "ok";
+            var dirtySetter = typeof(MainViewModel).GetProperty("CsvEditorDirty")!.GetSetMethod(nonPublic: true)!;
+            dirtySetter.Invoke(vm, [true]);
+            var before = downloads;
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(before, downloads); AssertFalse(vm.GitHubApplyEnabled);
+            dirtySetter.Invoke(vm, [false]);
+            // The verified retry reaches READY only through a real lease on a fully verified package.
+            AssertFalse(vm.GitHubApplyEnabled);
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
+            AssertTrue(vm.GitHubApplyEnabled); AssertEqual(1, Staged());
+        }
+        finally { vm?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
     }
     private static int RunPresentationFixture(string[] args)
     {
