@@ -5864,7 +5864,8 @@ internal static partial class Program
         }
         finally
         {
-            (changed ?? restarted ?? vm)?.GetType().GetProperty(nameof(MainViewModel.BackgroundUpdateDownload))?.SetValue(changed ?? restarted ?? vm, false);
+            var toggle = changed ?? restarted ?? vm;
+            if (toggle is not null) toggle.BackgroundUpdateDownload = false;   // settings persist across tests
             vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture);
         }
     }
