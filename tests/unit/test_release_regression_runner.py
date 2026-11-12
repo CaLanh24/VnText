@@ -106,6 +106,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "tests/lib/work_paths.py",
             "tests/lib/bootstrap.py",
             "release/run_regression_child.py",
+            "release/budget_policy.json",  # cleanup_work_artifacts reads it at import time
         ):
             target = harness / relative
             target.parent.mkdir(parents=True, exist_ok=True)
