@@ -26,6 +26,7 @@ internal static partial class Program
             var setupFailures = new List<string>();
             Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, setupFailures);
             Run("WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo", WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo, setupFailures);
+            Run("FullAppUpdate_RejectedBaselineIsNotReofferedAcrossChecksAndRestart", FullAppUpdate_RejectedBaselineIsNotReofferedAcrossChecksAndRestart, setupFailures);
             foreach (var failure in setupFailures) Console.Error.WriteLine(failure);
             return setupFailures.Count == 0 ? 0 : 1;
         }
@@ -5757,6 +5758,57 @@ internal static partial class Program
             AssertFalse(Directory.GetFiles(Path.Combine(fixture.Root, ".update", "work"), "github-update-*.zip").Any());
         }
         finally { vm?.Dispose(); DeleteUpdateFixture(fixture); }
+    }
+    private static void FullAppUpdate_RejectedBaselineIsNotReofferedAcrossChecksAndRestart()
+    {
+        var fixture = CreateFullAppUpdateFixture();
+        MainViewModel? vm = null, restarted = null, changed = null;
+        try
+        {
+            // The installed identity is valid, but a file the package pins as baseline has drifted.
+            File.WriteAllText(Path.Combine(fixture.Root, "app", "worker", "replace.txt"), "locally changed");
+            var bytes = File.ReadAllBytes(fixture.PackagePath);
+            var digest = HashBytes(bytes);
+            var url = FullAppAssetUrl(fixture, digest);
+            var handler = CreateFullAppGitHubHandler(fixture, digest, bytes.LongLength, url, bytes, "Full-app notes");
+            int Downloads() => handler.Requests.Count(uri => uri == new Uri(url));
+            vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            vm.RecheckUpdateCommand.Execute(null); vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.OfferAvailable, vm.GitHubUpdateState);
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, vm.GitHubUpdateState);
+            AssertEqual(1, Downloads()); AssertFalse(vm.GitHubApplyEnabled);
+            // Manual, automatic-style and direct download paths must all stay on Setup without a new download.
+            vm.BackgroundUpdateDownload = true;
+            for (var i = 0; i < 3; i++)
+            {
+                vm.RecheckUpdateCommand.Execute(null); vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+                vm.ResumeDeferredOffer();
+                vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+                AssertEqual(GitHubUpdateState.SetupRequired, vm.GitHubUpdateState);
+                AssertTrue(vm.GitHubSetupRequired); AssertFalse(vm.GitHubApplyEnabled);
+            }
+            AssertEqual(1, Downloads());
+            AssertEqual("Full-app notes", vm.UpdateNotes);
+            AssertTrue(!string.IsNullOrWhiteSpace(vm.OfferedReleaseDate));
+            vm.Dispose(); vm = null;
+            // A restart reloads the persisted rejection and still does not download the same ZIP.
+            restarted = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            restarted.BackgroundUpdateDownload = true;
+            restarted.RecheckUpdateCommand.Execute(null); restarted.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, restarted.GitHubUpdateState);
+            AssertEqual(1, Downloads());
+            restarted.Dispose(); restarted = null;
+            // A different offer for the same installed build is a new offer and must be downloadable again.
+            var changedHandler = CreateFullAppGitHubHandler(fixture, digest, bytes.LongLength + 1, url, bytes, "Full-app notes");
+            changed = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: changedHandler, updateInstallRoot: fixture.Root);
+            changed.RecheckUpdateCommand.Execute(null); changed.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.OfferAvailable, changed.GitHubUpdateState);
+        }
+        finally { vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
     }
     private static int RunPresentationFixture(string[] args)
     {

@@ -26,6 +26,7 @@ public sealed class AppSettings
     public bool AutoCheckUpdates { get; set; } = true;
     public bool NotifyUpdates { get; set; } = true;
     public string SkippedUpdateVersion { get; set; } = "";
+    public string RejectedBaselineFingerprint { get; set; } = "";
     public string AcknowledgedUpdateTransaction { get; set; } = "";
     public string DownloadedUpdateVersion { get; set; } = "";
     public string DownloadedUpdateNotes { get; set; } = "";

@@ -923,6 +923,20 @@ public static class WpfUpdateService
         return FileVersionInfo.GetVersionInfo(fullPath).ProductVersion?.Split('+', 2)[0].Trim();
     }
 
+    /// <summary>Identity of one rejected (installed baseline, offered package) pair; "" when it cannot be computed.</summary>
+    internal static string BaselineRejectionFingerprint(string root, GitHubUpdateCheckResult offer)
+    {
+        if (string.IsNullOrWhiteSpace(offer.PackageSha256) || string.IsNullOrWhiteSpace(offer.AssetUrl)) return "";
+        try
+        {
+            var exeSha = HashFile(SafeTarget(root, "VNText Studio.exe"));
+            var text = string.Join('|', exeSha, ReadExecutableProductVersion(SafeTarget(root, "VNText Studio.exe")),
+                offer.Version, offer.PackageSha256, offer.AssetUrl, offer.AssetSize.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+        }
+        catch { return ""; }
+    }
+
     private static bool TryReadInstalledVersion(string root, out string version)
     {
         version = "";

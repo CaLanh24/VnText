@@ -167,6 +167,8 @@ public sealed partial class MainViewModel
                 return;
             }
             DisposeGitHubUpdatePackageLease();
+            if (result.State == GitHubUpdateState.SetupRequired)
+                RememberBaselineRejection(root, _githubUpdateResult);
             _githubUpdateResult = result;
             _githubUpdateState = result.State;
             CacheReleaseNotes(result);
@@ -185,6 +187,27 @@ public sealed partial class MainViewModel
             if (ReferenceEquals(_githubUpdateCancellation, cancellation)) _githubUpdateCancellation = null;
             cancellation.Dispose();
         }
+    }
+    // A package rejected for this exact installed baseline must not come back as a normal offer on later
+    // checks; the pair is pinned by hash, so a new offer or a different installed build clears it.
+    private void RememberBaselineRejection(string root, GitHubUpdateCheckResult offer)
+    {
+        if (offer.State != GitHubUpdateState.OfferAvailable) return;
+        var fingerprint = WpfUpdateService.BaselineRejectionFingerprint(root, offer);
+        if (fingerprint.Length == 0 || _settings.RejectedBaselineFingerprint == fingerprint) return;
+        _settings.RejectedBaselineFingerprint = fingerprint;
+        SaveSettings();
+    }
+    private GitHubUpdateCheckResult ApplyBaselineRejection(string root, GitHubUpdateCheckResult result)
+    {
+        if (_settings.RejectedBaselineFingerprint.Length == 0 || result.State != GitHubUpdateState.OfferAvailable) return result;
+        if (WpfUpdateService.BaselineRejectionFingerprint(root, result) == _settings.RejectedBaselineFingerprint)
+            return new(GitHubUpdateState.SetupRequired, Version: result.Version, ReleasesUrl: result.ReleasesUrl,
+                Message: "This package was already rejected for the installed baseline; install Setup.",
+                ReleaseNotes: result.ReleaseNotes, ReleaseDate: result.ReleaseDate);
+        _settings.RejectedBaselineFingerprint = "";
+        SaveSettings();
+        return result;
     }
     public void CancelUpdateDownload() => _githubUpdateCancellation?.Cancel();
     public void RestartForUpdate()

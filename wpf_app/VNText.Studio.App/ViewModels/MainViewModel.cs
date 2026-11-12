@@ -1019,6 +1019,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 return;
             }
             DisposeGitHubUpdatePackageLease();
+            if (installRoot is not null) result = ApplyBaselineRejection(installRoot, result);
             if (result.State == GitHubUpdateState.UpdateAvailable && installRoot is not null)
                 _githubUpdatePackageLease = new GitHubUpdatePackageLease(installRoot, result);
             _githubUpdateResult = result;
