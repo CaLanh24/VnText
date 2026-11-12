@@ -1060,7 +1060,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Value="{Binding ExtractProgressPercent, Mode=OneWay}"', xaml)
         self.assertIn('Value="{Binding TranslateProgressPercent, Mode=OneWay}"', xaml)
         self.assertIn('Value="{Binding PatchProgressPercent, Mode=OneWay}"', xaml)
-        self.assertIn('Text="{Binding TranslateWorkflowStatusText}" FontSize="{StaticResource UiCaptionSize}"', xaml)
+        self.assertIn('Text="{Binding TranslateWorkflowStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}"', xaml)   # localized display-time translation
         self.assertIn('RefreshWorkflow();\n                RefreshTranslateReadiness();', view_model)
         self.assertIn('Content="Dịch ảnh…"', xaml)
         self.assertNotIn('Command="{Binding CancelAndExitCommand}"', xaml)

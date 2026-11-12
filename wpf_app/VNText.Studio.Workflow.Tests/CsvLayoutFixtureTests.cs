@@ -274,7 +274,7 @@ internal static partial class Program
                     PumpFixture(200);
                     var regexToggle = FindVisualChildren<ToggleButton>(journal).First(b => b.Content as string == "Biểu thức chính quy");
                     var queryBox = FindVisualChildren<TextBox>(journal).First(b => b.ToolTip as string == "Tìm trong nhật ký");
-                    var logBox = FindVisualChildren<TextBox>(journal).First(b => b.IsReadOnly);
+                    var logBox = FindVisualChildren<VNText.Studio.App.Controls.SeverityLogBox>(journal).First(b => b.IsReadOnly);   // RichTextBox-based, not a TextBox
                     TextBlock? Note() => FindVisualChildren<TextBlock>(journal).FirstOrDefault(b => b.Text == "Biểu thức tìm kiếm không hợp lệ.");
                     queryBox.Text = "[";
                     regexToggle.IsChecked = true;

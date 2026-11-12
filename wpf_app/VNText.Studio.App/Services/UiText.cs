@@ -685,6 +685,7 @@ public static class UiText
         ["Preview vượt 32 MiB."] = "The preview is larger than 32 MiB.",
         ["Preview không hợp lệ hoặc quá 16 triệu pixel."] = "The preview is invalid or over 16 million pixels.",
         ["Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."] = "No text found; choose another crop/image or add a region manually.",
+        ["Kết quả OCR cũ chưa xác nhận được chữ. Hãy lấy text lại để lọc ảnh; không tự dịch hoặc vẽ từ kết quả cũ."] = "The earlier OCR result did not confirm any text. Extract the text again to filter images; do not translate or draw from the earlier result.",
         ["Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."] = "Approve the text/crop and choose exactly one mode: flat background, keep transparent text, replace the region with a solid color, or clone a clean background area (sample X/Y).",
         ["Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong thư mục xuất), hãy dựng lại cho review hiện tại."] = "The review changed during processing; the old result was dropped (files are kept in the output folder) — render again for the current review.",
         ["Ảnh đang chọn đã đổi trong lúc xử lý; kết quả cũ bị bỏ, hãy chạy lại cho ảnh hiện tại."] = "The chosen image changed during processing; the old result was dropped — run again for the current image.",
