@@ -5862,7 +5862,11 @@ internal static partial class Program
             AssertEqual(GitHubUpdateState.OfferAvailable, Recheck(changed));
             AssertEqual(6, Downloads());
         }
-        finally { vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
+        finally
+        {
+            (changed ?? restarted ?? vm)?.GetType().GetProperty(nameof(MainViewModel.BackgroundUpdateDownload))?.SetValue(changed ?? restarted ?? vm, false);
+            vm?.Dispose(); restarted?.Dispose(); changed?.Dispose(); DeleteFullAppUpdateFixture(fixture);
+        }
     }
     private static void FullAppUpdate_FailuresStayRecoverableCancelAndDirtyGuard()
     {
@@ -5901,6 +5905,7 @@ internal static partial class Program
             });
             vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
                 githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            vm.BackgroundUpdateDownload = false;   // settings persist across tests; a resumed deferred offer must not download behind the explicit steps
             var work = Path.Combine(fixture.Root, ".update", "work");
             int Staged() => Directory.Exists(work) ? Directory.GetFiles(work, "github-update-*.zip").Length : 0;
             void Offer()
@@ -5943,14 +5948,7 @@ internal static partial class Program
             AssertEqual(GitHubUpdateState.UpdateAvailable, vm.GitHubUpdateState);
             AssertTrue(vm.GitHubApplyEnabled); AssertEqual(1, Staged());
         }
-        finally
-        {
-            vm?.Dispose();
-            var leftover = Path.Combine(fixture.Root, ".update", "work");
-            var present = Directory.Exists(leftover) ? string.Join(",", Directory.GetFiles(leftover).Select(Path.GetFileName)) : "<none>";
-            try { DeleteFullAppUpdateFixture(fixture); }
-            catch (IOException ex) { GC.Collect(); GC.WaitForPendingFinalizers(); var retried = false; try { DeleteFullAppUpdateFixture(fixture); retried = true; } catch (IOException) { } throw new InvalidOperationException($"fixture cleanup: files after dispose [{present}]; gc-retry-ok={retried}; {ex.Message}"); }
-        }
+        finally { vm?.Dispose(); DeleteFullAppUpdateFixture(fixture); }
     }
     private static int RunPresentationFixture(string[] args)
     {
