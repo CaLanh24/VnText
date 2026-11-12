@@ -21,6 +21,14 @@ internal static partial class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--updater-setup-only", StringComparer.Ordinal))
+        {
+            var failures = new List<string>();
+            Run("UpdaterPresentation_DynamicStatesAndSafeActions", UpdaterPresentation_DynamicStatesAndSafeActions, failures);
+            Run("WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo", WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo, failures);
+            foreach (var failure in failures) Console.Error.WriteLine(failure);
+            return failures.Count == 0 ? 0 : 1;
+        }
         if (args.Contains("--resource-flow-only", StringComparer.Ordinal))
             return RunResourceFlows();
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
@@ -5653,11 +5661,12 @@ internal static partial class Program
         public bool Available { get; private set; }
         public bool Downloading { get; private set; }
         public bool Ready { get; private set; }
+        public bool RequiresSetup { get; private set; }
         public long Received { get; private set; }
         public long Total { get; private set; }
         public bool CanStart => !Downloading;
         public bool IsTestFixture => true;
-        public int Starts, Cancels, Restarts, Checks;
+        public int Starts, Cancels, Restarts, Checks, SetupOpens;
         private TaskCompletionSource? _pending;
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public event Action? OfferRequested;
@@ -5671,10 +5680,12 @@ internal static partial class Program
         public void Cancel() { Cancels++; Downloading = false; Status = "TEST ONLY — đã hủy"; _pending?.TrySetResult(); Notify(); }
         public void Defer(bool skip) { Status = skip ? "TEST ONLY — skip không ghi settings" : "TEST ONLY — để sau"; Notify(); }
         public void Restart() { if (Ready) { Restarts++; Status = "TEST ONLY — restart được ghi nhận, không chạy process"; Notify(); } }
+        public void OpenSetup() { SetupOpens++; }
         public void SetState(string state)
         {
             Available = state is "available" or "downloading" or "ready" or "about-ready" or "notes";
             Downloading = state == "downloading"; Ready = state is "ready" or "about-ready";
+            RequiresSetup = state == "setup-required";
             Total = Downloading ? 1000 : 0; Received = Downloading ? 420 : 0;
             Status = "TEST ONLY — " + state;
             if (Ready) _pending?.TrySetResult(); Notify();
@@ -5698,12 +5709,60 @@ internal static partial class Program
         AssertTrue(ready.Ready); AssertEqual("Khởi động lại", ready.PrimaryLabel);
         source.Restart(); AssertEqual(1, source.Restarts); source.Defer(true);
         AssertTrue(source.Status.Contains("không ghi settings", StringComparison.Ordinal));
+        source.SetState("setup-required");
+        var setup = VNText.Studio.App.UpdateViewState.From(source);
+        AssertTrue(setup.RequiresSetup); AssertFalse(setup.Ready);
+        AssertEqual("Mở trang tải", setup.PrimaryLabel);
+        VNText.Studio.App.UpdateWindow.ExecutePrimaryActionAsync(source).GetAwaiter().GetResult();
+        VNText.Studio.App.UpdateWindow.ExecutePrimaryActionAsync(source).GetAwaiter().GetResult();
+        AssertEqual(2, source.SetupOpens); AssertEqual(1, source.Starts); AssertEqual(1, source.Restarts);
+    }
+    private static void WpfUpdate_SetupRequiredDoesNotRetryAndKeepsReleaseInfo()
+    {
+        var fixture = CreateUpdateFixture("1.0.1");
+        MainViewModel? vm = null;
+        try
+        {
+            ConfigureGitHubSource(fixture, "test-owner", "test-repo");
+            File.AppendAllText(Path.Combine(fixture.Root, "app", "RELEASE.json"), " ");
+            var bytes = File.ReadAllBytes(fixture.PackagePath);
+            var digest = HashBytes(bytes);
+            var name = $"wpf-update-1.0.1-{digest[..16]}.zip";
+            var url = $"https://github.com/test-owner/test-repo/releases/download/v1.0.1/{name}";
+            var nodes = System.Text.Json.Nodes.JsonNode.Parse(GitHubReleaseListWithAsset("v1.0.1", name, "sha256:" + digest, bytes.LongLength, url))!;
+            nodes[0]!["body"] = "Retained release notes";
+            nodes[0]!["published_at"] = "2026-11-12T07:02:00Z";
+            var requests = 0;
+            var downloads = 0;
+            var handler = new TestHttpMessageHandler((request, _) =>
+            {
+                requests++;
+                if (request.RequestUri == new Uri(url)) { downloads++; return Task.FromResult(BinaryResponse(bytes)); }
+                return Task.FromResult(JsonResponse(nodes.ToJsonString()));
+            });
+            vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false,
+                githubHttpHandler: handler, updateInstallRoot: fixture.Root);
+            vm.RecheckUpdateCommand.Execute(null);
+            vm.GitHubUpdateCheckTask.GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.OfferAvailable, vm.GitHubUpdateState);
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(GitHubUpdateState.SetupRequired, vm.GitHubUpdateState);
+            AssertFalse(vm.GitHubApplyEnabled); AssertEqual(1, downloads);
+            AssertEqual("Retained release notes", vm.UpdateNotes);
+            AssertTrue(!string.IsNullOrWhiteSpace(vm.OfferedReleaseDate));
+            var beforeRetry = requests;
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            vm.DownloadOfferedUpdateAsync().GetAwaiter().GetResult();
+            AssertEqual(beforeRetry, requests); AssertEqual(1, downloads);
+            AssertFalse(Directory.GetFiles(Path.Combine(fixture.Root, ".update", "work"), "github-update-*.zip").Any());
+        }
+        finally { vm?.Dispose(); DeleteUpdateFixture(fixture); }
     }
     private static int RunPresentationFixture(string[] args)
     {
         string Value(string flag, string fallback) { var i = Array.IndexOf(args, flag); return i >= 0 && i + 1 < args.Length ? args[i + 1] : fallback; }
         var state = Value("--presentation-state", "about");
-        if (!new[] { "about", "available", "downloading", "ready", "notes", "about-ready", "success" }.Contains(state)) throw new ArgumentException("Unsupported TEST ONLY presentation state");
+        if (!new[] { "about", "available", "downloading", "ready", "notes", "about-ready", "success", "setup-required" }.Contains(state)) throw new ArgumentException("Unsupported TEST ONLY presentation state");
         var auto = args.Contains("--presentation-smoke", StringComparer.Ordinal);
         var app = new Application { ShutdownMode = auto ? ShutdownMode.OnExplicitShutdown : ShutdownMode.OnMainWindowClose };
         foreach (var dictionary in new[] { "DesignTokens", "IconGeometries", "ControlStyles" })

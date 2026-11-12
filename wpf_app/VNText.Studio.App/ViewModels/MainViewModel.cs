@@ -1075,7 +1075,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             GitHubUpdateState.Current => UiText.Msg("Đã là bản mới nhất v{0}", version),
             GitHubUpdateState.OfferAvailable => "Có bản cập nhật mới; chưa tải gói.",
             GitHubUpdateState.UpdateAvailable => "Đã kiểm tra gói. Sẵn sàng cập nhật.",
-            GitHubUpdateState.SetupRequired => "Bản cập nhật này cần bộ cài mới.",
+            GitHubUpdateState.SetupRequired => UiText.Translate("Bản đang cài không tương thích với gói cập nhật này. Hãy tải bộ cài mới và cài vào thư mục ứng dụng hiện tại."),
             _ => "Chưa thể kiểm tra cập nhật.",
         };
     }

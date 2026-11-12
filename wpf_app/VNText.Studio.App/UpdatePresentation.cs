@@ -16,6 +16,7 @@ public interface IUpdatePresentation : INotifyPropertyChanged, IDisposable
     bool Available { get; }
     bool Downloading { get; }
     bool Ready { get; }
+    bool RequiresSetup { get; }
     long Received { get; }
     long Total { get; }
     bool CanStart { get; }
@@ -26,6 +27,7 @@ public interface IUpdatePresentation : INotifyPropertyChanged, IDisposable
     void Cancel();
     void Defer(bool skip);
     void Restart();
+    void OpenSetup();
 }
 
 internal sealed class ViewModelUpdatePresentation : IUpdatePresentation
@@ -43,6 +45,7 @@ internal sealed class ViewModelUpdatePresentation : IUpdatePresentation
     public bool Available => _vm.GitHubUpdateState == GitHubUpdateState.OfferAvailable || Ready;
     public bool Downloading => _vm.DownloadingUpdate;
     public bool Ready => _vm.GitHubApplyEnabled;
+    public bool RequiresSetup => _vm.GitHubSetupRequired;
     public long Received => _vm.DownloadReceived;
     public long Total => _vm.DownloadTotal;
     public bool CanStart => !_vm.Busy && !_vm.CsvEditorDirty && !_vm.GitHubUpdateChecking && !Downloading;
@@ -56,5 +59,6 @@ internal sealed class ViewModelUpdatePresentation : IUpdatePresentation
     public void Cancel() => _vm.CancelUpdateDownload();
     public void Defer(bool skip) => _vm.DeferUpdate(skip);
     public void Restart() => _vm.RestartForUpdate();
+    public void OpenSetup() => _vm.OpenGitHubSetupCommand.Execute(null);
     public void Dispose() { _vm.PropertyChanged -= Changed; _vm.UpdatePopupRequested -= Offer; }
 }

@@ -510,6 +510,7 @@ public static class UiText
         ["Tải phiên bản {0}"] = "Download version {0}",
         ["Không mở được trang tải. Hãy thử lại khi trình duyệt sẵn sàng."] = "The download page could not be opened. Try again when the browser is ready.",
         ["Mở trang tải"] = "Open the download page",
+        ["Bản đang cài không tương thích với gói cập nhật này. Hãy tải bộ cài mới và cài vào thư mục ứng dụng hiện tại."] = "The installed build does not match this update. Download Setup and install it into the current application folder.",
         ["Chưa có ghi chú được lưu. Kết nối mạng và kiểm tra cập nhật để tải lịch sử; sau đó bạn có thể xem lại khi ngoại tuyến."] = "No saved notes yet. Connect to the network and check for updates to load the history; you can then read it offline.",
         ["Không"] = "No",
         ["Có"] = "Yes",

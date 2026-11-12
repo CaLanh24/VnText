@@ -284,14 +284,16 @@ public static class WpfUpdateService
                     TryDeleteGitHubPackage(downloadedPackage, source, root);
                     downloadedPackage = null;
                     return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
-                        Message: "This full-app package does not apply to the installed baseline; install Setup. " + ex.Message);
+                        Message: "This full-app package does not apply to the installed baseline; install Setup. " + ex.Message,
+                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate);
                 }
                 catch (BaselineMismatchException ex)
                 {
                     TryDeleteGitHubPackage(downloadedPackage, source, root);
                     downloadedPackage = null;
                     return new(GitHubUpdateState.SetupRequired, Version: release.VersionText, ReleasesUrl: releasesUrl,
-                        Message: "This WPF package does not apply to the installed baseline; install Setup. " + ex.Message);
+                        Message: "This WPF package does not apply to the installed baseline; install Setup. " + ex.Message,
+                        ReleaseNotes: release.Notes, ReleaseDate: release.PublishedDate);
                 }
                 catch (TaskCanceledException)
                 {

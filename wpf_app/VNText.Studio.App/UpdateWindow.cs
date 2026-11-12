@@ -15,12 +15,12 @@ using VNText.Studio.App.Services;
 namespace VNText.Studio.App;
 
 internal sealed record UpdateViewState(string Version, string Current, string Notes, string Status,
-    bool Downloading, bool Ready, bool Available, bool CanStart, bool Indeterminate, double Percent)
+    bool Downloading, bool Ready, bool Available, bool CanStart, bool Indeterminate, double Percent, bool RequiresSetup)
 {
     internal static UpdateViewState From(IUpdatePresentation source) => new(source.Version, source.CurrentVersion,
         source.Notes, source.Status, source.Downloading, source.Ready, source.Available, source.CanStart,
-        source.Total <= 0, source.Total <= 0 ? 0 : Math.Clamp(100d * source.Received / source.Total, 0, 100));
-    internal string PrimaryLabel => Downloading ? "Đang tải xuống..." : Ready ? "Khởi động lại" : "Cập nhật ngay";
+        source.Total <= 0, source.Total <= 0 ? 0 : Math.Clamp(100d * source.Received / source.Total, 0, 100), source.RequiresSetup);
+    internal string PrimaryLabel => Downloading ? "Đang tải xuống..." : Ready ? "Khởi động lại" : RequiresSetup ? "Mở trang tải" : "Cập nhật ngay";
 }
 
 internal sealed class UpdateWindow : Window
@@ -122,9 +122,8 @@ internal sealed class UpdateWindow : Window
         _primary.Click += async (_, _) =>
         {
             if (_starting || source.Downloading || !source.CanStart) return;
-            if (source.Ready) { try { source.Restart(); } catch (Exception ex) { _status.Text = ex.Message; } return; }
             _starting = true; _primary.IsEnabled = false;
-            try { await source.DownloadAsync(); } catch (Exception ex) { _status.Text = UiText.Format("Không tải được cập nhật: {0}", ex.Message); }
+            try { await ExecutePrimaryActionAsync(source); } catch (Exception ex) { _status.Text = UiText.Format("Không tải được cập nhật: {0}", ex.Message); }
             finally { _starting = false; if (IsVisible) Refresh(); }
         };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { e.Handled = true; Close(); } };
@@ -165,6 +164,13 @@ internal sealed class UpdateWindow : Window
     private void HistoryChanged(object? sender, NotifyCollectionChangedEventArgs e) { _renderedNotes = null; Changed(sender, new PropertyChangedEventArgs("ReleaseNotesHistory")); }
     // Test-visible view of what the person sees / what UI Automation reports.
     internal string StatusText => _status.Text;
+    internal static async Task ExecutePrimaryActionAsync(IUpdatePresentation source)
+    {
+        if (!source.CanStart || source.Downloading) return;
+        if (source.Ready) source.Restart();
+        else if (source.RequiresSetup) source.OpenSetup();
+        else await source.DownloadAsync();
+    }
     internal bool StatusShown => _status.Visibility == Visibility.Visible;
     internal string PrimaryAutomationName => AutomationProperties.GetName(_primary);
     internal string LaterText => _later.Content as string ?? "";

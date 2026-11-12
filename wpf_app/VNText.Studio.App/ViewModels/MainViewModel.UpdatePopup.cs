@@ -136,6 +136,9 @@ public sealed partial class MainViewModel
     public async Task DownloadOfferedUpdateAsync()
     {
         if (DownloadingUpdate || _githubUpdateChecking || Busy || CsvEditorDirty) return;
+        // A rejected baseline needs Setup. Rechecking here would offer and download
+        // the same incompatible package forever; only the explicit Setup action may proceed.
+        if (_githubUpdateResult.State == GitHubUpdateState.SetupRequired) return;
         if (_githubUpdateResult.State != GitHubUpdateState.OfferAvailable)
         {
             StartGitHubUpdateCheck(metadataOnly: true);
