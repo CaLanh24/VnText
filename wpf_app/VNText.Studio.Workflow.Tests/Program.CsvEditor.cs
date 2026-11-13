@@ -48,8 +48,7 @@ internal static partial class Program
         {
             var csv = Path.Combine(root, "translation.csv");
             File.WriteAllText(csv,
-                "key,source_text,translation,context,file_path,import_method
-" +
+                "key,source_text,translation,context,file_path,import_method\r\n" +
                 "k1,Hello,Xin chao,UI:Text,game/a.rpy,renpy_string\r\n" +
                 "k2,<,,UI:Text,game/a.rpy,renpy_string\r\n" +
                 "k3,\"Line one\nline two {w} [name]\",\"Dong mot\ndong hai {w} [name]\",UI:Text,game/a.rpy,renpy_string\r\n",
