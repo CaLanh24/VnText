@@ -225,6 +225,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 UpdateHeroForTab();
                 if (value == WorkflowTabs.EditCsv)
                     OnCsvEditorTabSelected();
+                if (value == WorkflowTabs.Settings)
+                    AutoCheckResourcesOnce();
                 // Do not cancel in-flight CSV load when leaving the tab — populate yields
                 // and must be allowed to finish for large packages (~27k rows).
             }

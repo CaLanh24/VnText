@@ -1523,6 +1523,9 @@ public sealed partial class MainViewModel
             TranslationCsvPath = path;
             if (savedCurrentPatchCsv) RefreshWorkflow();      // an older Patch folder no longer reads as "finished" for this revision
         }
+        // A manual edit is a translation: the translated/total counts and the safe-subset Patch availability follow the saved file immediately.
+        RefreshTranslateReadiness();
+        RaiseSafeSubsetPatch();
         var unchanged = editGeneration == Volatile.Read(ref _csvEditorEditGeneration)
             && string.Equals(path, CsvEditorPath, StringComparison.OrdinalIgnoreCase);
         if (unchanged)

@@ -19,6 +19,20 @@ public sealed partial class MainViewModel
     public int ResourceProgressPercent { get => _resourceProgressPercent; private set => Set(ref _resourceProgressPercent, value); }
     public string ResourceProgressText => UiText.Translate(_resourceProgressText);
     public RelayCommand CancelResourcesCommand { get; private set; } = null!;
+    // Real readiness is READ (check-only task) when the Settings page is first opened; nothing is downloaded until the user asks for recovery.
+    private bool _resourcesChecked, _resourcesAllReady, _resourceAutoCheckStarted;
+    public bool ResourcesNeedRecovery => _resourcesChecked && !_resourcesAllReady;
+    public bool ResourcesAllReady => _resourcesChecked && _resourcesAllReady;
+    internal void AutoCheckResourcesOnce()
+    {
+        if (_resourceAutoCheckStarted || Busy || _disposed != 0) return;
+        _resourceAutoCheckStarted = true;
+        StartResources(false);
+    }
+    private void RaiseResourceReadiness()
+    {
+        Raise(nameof(ResourcesNeedRecovery)); Raise(nameof(ResourcesAllReady));
+    }
     internal void RefreshResourcesActive()
     {
         Raise(nameof(ResourcesActive));
@@ -52,6 +66,7 @@ public sealed partial class MainViewModel
         if (!evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true)
         {
             ResourceStatus = "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ.";
+            RaiseResourceReadiness();
             AppendLog(ResourceStatus);
             return;
         }
@@ -60,20 +75,27 @@ public sealed partial class MainViewModel
         {
             using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkerPaths.AppDataRoot(), "resource-status.json")));
             var lines = new List<string>();
+            var allReady = true; var count = 0;
             foreach (var resource in report.RootElement.GetProperty("resources").EnumerateArray())
             {
                 var name = resource.GetProperty("resource").GetString();
                 var ready = resource.GetProperty("ready").GetBoolean();
+                allReady &= ready; count++;
                 var detail = ready ? resource.GetProperty("path").GetString() : resource.GetProperty("error").GetString();
                 lines.Add($"{name}: {(ready ? "Sẵn sàng" : "Chưa sẵn sàng")} · {detail}");
                 if (name == "renpy" && ready) { RenpySdkPath = detail ?? ""; RenpySdkAction = "existing"; RenpySdkError = ""; }
             }
-            ResourceStatus = string.Join("\n", lines);
+            _resourcesChecked = count > 0; _resourcesAllReady = count > 0 && allReady;
+            AppendLog(string.Join("\n", lines));      // the per-resource detail stays in the log; the page shows one brief state
+            ResourceStatus = _resourcesAllReady
+                ? "Sẵn sàng · mô hình dịch, Ren’Py SDK và OCR đã cài trên máy."
+                : "Còn thiếu hoặc hỏng tài nguyên — dùng “Sửa/tải tài nguyên còn thiếu”. Phần đã cài được giữ nguyên.\n" + string.Join("\n", lines.Where(line => line.Contains("Chưa sẵn sàng")));
+            RaiseResourceReadiness();
         }
         catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { AppendLog("Không đọc được trạng thái tài nguyên: " + ex.Message); }
         if (!evt.Ok) { ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
-        AppendLog(ResourceStatus);
+        if (!_resourcesAllReady) AppendLog(ResourceStatus);
         CheckResourcesCommand.RaiseCanExecuteChanged(); DownloadResourcesCommand.RaiseCanExecuteChanged();
         _ = LoadModelStatusAsync();
     }

@@ -1183,7 +1183,8 @@
                                                 <TextBlock Text="Chuẩn bị tài nguyên sau khi cài ứng dụng" Style="{StaticResource SettingsRowLabelTextStyle}" />
                                                 <TextBlock Text="{Binding ResourceStatus}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,12" />
                                                 <WrapPanel>
-                                                    <Button Content="Tải tất cả tài nguyên" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+                                                    <Button Content="Sửa/tải tài nguyên còn thiếu" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                                                            Visibility="{Binding ResourcesNeedRecovery, Converter={StaticResource BoolToVis}}" />
                                                     <Button Content="Kiểm tra tài nguyên" Command="{Binding CheckResourcesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                     <Button Content="Chọn SDK đã cài…" Command="{Binding ChooseRenpySdkCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                     <Button x:Name="ResourceCancelButton" Content="Hủy" Command="{Binding CancelResourcesCommand}" Visibility="{Binding ResourcesActive, Converter={StaticResource BoolToVis}}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
