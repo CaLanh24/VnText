@@ -199,6 +199,16 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertFalse(item['human_approved'])
         self.assertEqual(self.source.read_bytes(),self.data)
 
+    def test_no_text_counts_as_scanned_in_both_result_summaries(self):
+        for translate in (False, True):
+            with self.subTest(translate=translate), patch('vntext.image_batch.recognize_image', side_effect=lambda path, **kw: {**self.ocr(path), 'regions': []}), patch('vntext.image_batch._translator', side_effect=AssertionError('no text must not load MT')):
+                result = run_image_batch(self.source, self.package, translate=translate)
+                summary = (Path(result['output']) / 'ket-qua.txt').read_text(encoding='utf-8')
+                self.assertIn('Chưa xử lý: 0.', summary)
+                self.assertIn('Bỏ qua — không có chữ', summary)
+                self.assertNotIn('OCR chưa xong', summary)
+                self.assertEqual(0, result['total'])
+                self.assertEqual(self.data, self.source.read_bytes())
     def test_duplicate_filenames_safe_and_report_maps_sources(self):
         other=self.root/'other';other.mkdir();second=other/'source.png';second.write_bytes(self.data)
         result=self.run_batch(sources=[str(self.source),str(second)])

@@ -409,18 +409,19 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
         report['total']=sum(bool(i.get('text_detected')) for i in report['items'])
         report['candidates']=len(inventory['image_paths'])
         save()
+        remaining = max(0, report['candidates'] - report['scanned'])
         if translate:
             lines=['KẾT QUẢ DỊCH ẢNH',
                    f"Đã tạo {report['translated']} ảnh dịch nháp; {report['untranslated']} ảnh chưa dịch.",
                    'original: ảnh gốc. translated: ảnh dịch tự động, cần tự xem lại. untranslated: ảnh chưa dịch, giữ nguyên nội dung.',
-                   'Ảnh nguồn và game không bị sửa. Để thử lại, chọn ảnh gốc bằng nút Dịch ảnh… trong bước Dịch.',
-                   f"Trạng thái: {report['status']}. Chưa xử lý: {report['total']-len(report['items'])}.",'']
-            lines.extend(f"{Path(item['source']).name}: {'Đã dịch nháp' if item['status']=='TRANSLATED_DRAFT' else 'Chưa dịch — '+item['reason']}" for item in report['items'])
+                   'Ảnh nguồn và game không bị sửa. Để thử lại, mở tab Dịch ảnh và chọn ảnh cần sửa.',
+                   f"Trạng thái: {report['status']}. Chưa xử lý: {remaining}.",'']
+            lines.extend(f"{Path(item['source']).name}: {'Bỏ qua — không có chữ' if item['status']=='NO_TEXT' else 'Đã dịch nháp' if item['status']=='TRANSLATED_DRAFT' else 'Chưa dịch — '+item['reason']}" for item in report['items'])
         else:
             lines=['KẾT QUẢ OCR ẢNH',
-                   f"Đã OCR {report['ocr_ready']} ảnh; OCR lỗi/chưa nhận diện được chữ ở {report['ocr_failed']} ảnh.",
+                   f"Đã OCR {report['ocr_ready']} ảnh có chữ; bỏ qua {report['no_text']} ảnh không có chữ; {report['ocr_failed']} ảnh lỗi OCR.",
                    'Ảnh gốc được giữ nguyên. Không chạy dịch máy hoặc render trong bước Lấy text.',
-                   f"Trạng thái: {report['status']}. Chưa xử lý: {report['total']-len(report['items'])}.",'']
-            lines.extend(f"{Path(item['source']).name}: {'OCR sẵn sàng' if item['status']=='OCR_READY' else 'OCR chưa xong — '+item['reason']}" for item in report['items'])
+                   f"Trạng thái: {report['status']}. Chưa xử lý: {remaining}.",'']
+            lines.extend(f"{Path(item['source']).name}: {'Bỏ qua — không có chữ' if item['status']=='NO_TEXT' else 'OCR sẵn sàng' if item['status']=='OCR_READY' else 'OCR chưa xong — '+item['reason']}" for item in report['items'])
         (root/'ket-qua.txt').write_text('\n'.join(lines),encoding='utf-8')
     return {k:report[k] for k in ('translated','untranslated','total','ocr_ready','ocr_failed')}|{'output':str(root),'cancelled':report['status']=='CANCELLED'}
