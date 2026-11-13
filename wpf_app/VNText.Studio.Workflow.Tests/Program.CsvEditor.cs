@@ -50,17 +50,11 @@ internal static partial class Program
             File.WriteAllText(csv,
                 "key,source_text,translation,context,file_path,import_method
 " +
-                "k1,Hello,Xin chao,UI:Text,game/a.rpy,renpy_string
-" +
-                "k2,<,,UI:Text,game/a.rpy,renpy_string
-" +
-                "k3,\"Line one
-line two {w} [name]\",\"Dong mot
-dong hai {w} [name]\",UI:Text,game/a.rpy,renpy_string
-",
+                "k1,Hello,Xin chao,UI:Text,game/a.rpy,renpy_string\r\n" +
+                "k2,<,,UI:Text,game/a.rpy,renpy_string\r\n" +
+                "k3,\"Line one\nline two {w} [name]\",\"Dong mot\ndong hai {w} [name]\",UI:Text,game/a.rpy,renpy_string\r\n",
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"<"},{"key":"k3","source_text":"Line one
-line two {w} [name]"}]}""", Encoding.UTF8);
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"<"},{"key":"k3","source_text":"Line one\nline two {w} [name]"}]}""", Encoding.UTF8);
             using var worker = new PythonWorkerHost();
             using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
             vm.OpenCsvEditorFileCommand.Execute(null);
@@ -83,8 +77,7 @@ line two {w} [name]"}]}""", Encoding.UTF8);
             AssertTrue(removed.Ok); AssertEqual(1, removed.Removed); AssertEqual(2, removed.Remaining);
             var text = File.ReadAllText(csv);
             Require(text.Contains("k1,Hello,Xin chao", StringComparison.Ordinal) && text.Contains("{w} [name]", StringComparison.Ordinal), "other rows intact");
-            Require(!text.Contains("
-k2,", StringComparison.Ordinal), "k2 removed");
+            Require(!text.Contains("\nk2,", StringComparison.Ordinal), "k2 removed");
             Require(File.ReadAllText(Path.Combine(root, "user_exclusions.json")).Contains("\"k2\"", StringComparison.Ordinal), "decision recorded");
         }
         finally { try { Directory.Delete(root, recursive: true); } catch (IOException) { } }
