@@ -54,8 +54,9 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 run_extract_task(str(root),str(Path(temp)/"out"),"safe","balanced",True,
                                  progress=lambda _:None,log=lambda _:None,complete=completed.append)
             self.assertTrue(completed)
-            self.assertFalse(completed[0].get("ok"),completed[0])
-            self.assertEqual(completed[0]["extract_status"],"PARTIAL")
+            self.assertTrue(completed[0].get("ok"),completed[0])            # recovered archive source is provenance (audit note), not a blocker
+            self.assertEqual(completed[0]["extract_status"],"COMPLETE")
+            self.assertIn("ARCHIVE_SOURCE_RUNTIME_UNPROVEN",{item["code"] for item in json.loads((Path(temp)/"out/extract_status.json").read_text(encoding="utf-8"))["audit_notes"]})
             document=json.loads((Path(temp)/"out/manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(len(document["entries"]),1)
             provenance=document["entries"][0]["native_contract"]["provenance"]["source_container"]
@@ -246,31 +247,28 @@ class RenPyExtractTaskTests(unittest.TestCase):
             status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
         return completed[-1], status
 
-    def test_archive_recovery_and_dynamic_text_are_one_neutral_partial_warning_not_errors(self):
+    def test_archive_recovery_and_dynamic_text_are_audit_notes_not_completion_blockers(self):
         nl = chr(10)
         archived = ("label start:" + nl + '    e "Archive line"' + nl + "screen s():" + nl + "    text runtime_name" + nl).encode("utf-8")
         template = ("# game/archived.rpy:2" + nl + "translate vietnamese archive_line:" + nl + nl + '    # e "Archive line"' + nl + '    e ""' + nl)
         result, status = self._run_sdk_extract({"script.rpy": 'label x:' + nl + '    "x"' + nl}, template, archive={"game/archived.rpy": archived})
-        self.assertEqual("PARTIAL", result["extract_status"])
-        self.assertFalse(result["complete"])                                  # never promoted to a clean PASS
-        self.assertFalse(result["ok"])
-        self.assertEqual(0, status["errors"])                                 # expected limits are NOT discovery errors
-        self.assertEqual("warning", result["severity"])
-        self.assertEqual("warning", status["severity"])
-        codes = {item["code"] for item in status["limitations"]}
+        # Owner product acceptance 2026-11-13: runtime-generated expressions (no static text) and a recovered archive source are machine AUDIT facts,
+        # not translation work.  The finished extraction is COMPLETE; the facts stay on record and are stated (never hidden) in the summary.
+        self.assertEqual("COMPLETE", result["extract_status"])
+        self.assertTrue(result["complete"]); self.assertTrue(result["ok"])
+        self.assertEqual(0, status["errors"])
+        self.assertEqual("ok", result["severity"]); self.assertEqual("ok", status["severity"])
+        self.assertEqual([], status["limitations"])
+        codes = {item["code"] for item in status["audit_notes"]}
         self.assertEqual({"ARCHIVE_SOURCE_RUNTIME_UNPROVEN", "RUNTIME_DYNAMIC_UNRESOLVED"}, codes)
-        self.assertNotIn("lỗi discovery/extract", result["error"])
+        self.assertEqual(1, status["runtime_dynamic_unresolved"])
         self.assertNotIn("lỗi discovery/extract", result["summary"])
-        self.assertIn("chưa được chứng minh", result["error"])                # the unproven-runtime limitation is stated, not hidden
-        self.assertIn("không chạy mã game", result["error"])
-        # Owner decision 2026-11-02: PARTIAL coverage, but the SDK-verified MAIN subset is patch-eligible (and only through the gate's scoped rule)
+        self.assertIn("chưa được chứng minh", result["summary"])              # the unproven-runtime fact is stated, not hidden
+        self.assertIn("không chạy mã game", result["summary"])
         from vntext.patch_gate import scoped_patch_eligible
-        self.assertEqual("VERIFIED_MAIN_SUBSET", status["patch_scope"])
-        self.assertEqual("VERIFIED_MAIN_SUBSET", result["patch_scope"])
-        self.assertTrue(scoped_patch_eligible(status))
-        self.assertIn("có đủ bằng chứng để dịch", result["error"])
-        self.assertNotIn("cần xử lý trước khi dịch", result["error"])
-        self.assertIn("PARTIAL", result["error"])
+        self.assertEqual("NONE", status["patch_scope"])                       # a COMPLETE package needs no scoped exception
+        self.assertFalse(scoped_patch_eligible(status))
+        self.assertEqual("", result["error"])
 
     def test_genuine_discovery_failure_stays_an_error_even_beside_a_partial_package(self):
         nl = chr(10)
@@ -307,7 +305,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertIn("unsupported RPA format", result["error"])
         self.assertEqual("FAILED", result["diagnostic_status"])
 
-    def test_runtime_dynamic_screen_text_gives_an_honest_partial_not_a_discovery_error(self):
+    def test_runtime_dynamic_screen_text_is_a_recorded_audit_fact_not_an_incomplete_extraction(self):
         # Owner screenshot (achievements.rpy dynamic `text` expressions): the static text is extracted, the runtime-only expressions are
         # reported as a review diagnostic; nothing is evaluated or invented and the run is neither a fake error nor a fake complete.
         nl = chr(10)
@@ -339,12 +337,13 @@ class RenPyExtractTaskTests(unittest.TestCase):
             result = completed[-1]
             status = json.loads((out / "extract_status.json").read_text(encoding="utf-8"))
             diagnostic = json.loads((out / "renpy_runtime_dynamic.json").read_text(encoding="utf-8"))
-        self.assertEqual("PARTIAL", result["extract_status"])                     # honest: not COMPLETE, not FAILED
-        self.assertFalse(result["complete"])
+        self.assertEqual("COMPLETE", result["extract_status"])                    # Owner 2026-11-13: no static text exists to be missing; the fact stays audited
+        self.assertTrue(result["complete"])
         self.assertEqual(0, status["errors"])                                      # not counted as a discovery/extract error
         self.assertEqual(2, status["runtime_dynamic_unresolved"])
-        self.assertNotIn("lỗi discovery/extract", result["error"])
-        self.assertIn("không chạy mã game", result["error"])
+        self.assertEqual(["RUNTIME_DYNAMIC_UNRESOLVED"], [item["code"] for item in status["audit_notes"]])
+        self.assertNotIn("lỗi discovery/extract", result["summary"])
+        self.assertIn("không chạy mã game", result["summary"])
         self.assertEqual(2, diagnostic["count"])
         self.assertIn("never evaluated", diagnostic["policy"])
         self.assertEqual({3, 4}, {item["line"] for item in diagnostic["entries"]})

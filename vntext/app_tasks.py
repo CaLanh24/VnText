@@ -1339,12 +1339,24 @@ def _run_extract_task_impl(
         # never discovery errors; only genuine failures stay in extract_errors.
         limitations = [dict(item) for item in (stats.get("limitations") or []) if isinstance(item, dict) and str(item.get("message") or "").strip()]
         runtime_dynamic = [item for item in (stats.get("renpy_static_ui_runtime_unresolved") or []) if isinstance(item, dict)]
+        technical_ui = [item for item in (stats.get("renpy_static_ui_technical_excluded") or []) if isinstance(item, dict)]
+        # Owner product acceptance (2026-11-13): machine facts are AUDIT, not translation work.  A runtime-generated expression has no static text to
+        # extract and a recovered archive source is only provenance; neither makes a finished extraction "incomplete".  They stay on record
+        # (audit_notes / renpy_runtime_dynamic.json) and every genuinely missing or unproven human-text row still blocks as before.
+        _audit_only_codes = {"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN"}
+        audit_notes = [item for item in limitations if item.get("code") in _audit_only_codes]
+        limitations = [item for item in limitations if item.get("code") not in _audit_only_codes]
         # Review rows that are ONLY unpromoted static screen candidates are excluded coverage of the verified subset, not a blocker for it.
         screen_review = sum(1 for item in (review or []) if (item.get("import_method") if isinstance(item, dict) else getattr(item, "import_method", "")) == "renpy_screen_candidate")
         if review_count and screen_review == review_count and not renpy_sdk_missing:
             limitations.append({"code": "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", "count": review_count,
                                 "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) được đánh dấu cần xem lại trong tài liệu; chưa thể tạo patch cho các dòng này."})
-        dynamic_note = " ".join(str(item["message"]) for item in limitations)
+        dynamic_note = " ".join(str(item["message"]) for item in audit_notes + limitations)
+        if technical_ui:
+            (Path(out) / "renpy_technical_excluded.json").write_text(json.dumps(
+                {"count": len(technical_ui), "policy": "machine-excluded (no player-readable words, or engine-owned metadata); internal audit only, never a translation-review item",
+                 "entries": technical_ui}, ensure_ascii=False, indent=2), encoding="utf-8")
+        audit_summary = [{"code": str(item.get("code") or ""), "count": int(item.get("count") or 0)} for item in audit_notes]
         if runtime_dynamic:
             (Path(out) / "renpy_runtime_dynamic.json").write_text(json.dumps(
                 {"count": len(runtime_dynamic), "policy": "diagnostic only: never evaluated, never promoted to MAIN", "entries": runtime_dynamic},
@@ -1437,6 +1449,8 @@ def _run_extract_task_impl(
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
+            "excluded_technical_ui": len(technical_ui),
+            "audit_notes": audit_summary,
             "limitations": limitations,
             "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
             "patch_scope": "VERIFIED_MAIN_SUBSET" if scoped_patch else "NONE",
@@ -1450,6 +1464,8 @@ def _run_extract_task_impl(
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
+            "excluded_technical_ui": len(technical_ui),
+            "audit_notes": audit_summary,
             "limitations": limitations,
             "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
             "patch_scope": "VERIFIED_MAIN_SUBSET" if scoped_patch else "NONE",

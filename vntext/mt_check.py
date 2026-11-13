@@ -21,6 +21,8 @@ TAG = re.compile(r'</?[A-Za-z#][^<>]*>')
 WORD = re.compile(r'[^\W\d_]+', re.UNICODE)
 HEART = '\u2661'
 BRACKET_TOKEN = re.compile(r'\[[A-Za-z][A-Za-z0-9_:-]*\]')
+# Ren'Py interpolation: [player_name], [config.version!t], [a.stat_progress]. The inside is code, never prose, so it must not be read as English words.
+RENPY_INTERPOLATION = re.compile(r'\[[A-Za-z_][^\[\]\n]{0,80}\]')
 # Hashtags are protected display labels, not English prose tokens.
 HASHTAG = re.compile(r'#[A-Za-z0-9_À-ỹ]+')
 
@@ -611,6 +613,7 @@ def strip_technical(text):
     t = PRINTF_RX.sub(' ', t)
     t = TAG.sub(' ', t)
     t = BRACKET_TOKEN.sub(' ', t)
+    t = RENPY_INTERPOLATION.sub(' ', t)
     t = HASHTAG.sub(' ', t)
     t = t.replace('\\n', ' ')
     return t

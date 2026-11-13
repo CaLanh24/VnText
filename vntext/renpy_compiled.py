@@ -341,7 +341,7 @@ def extract_compiled_source(root, is_cancelled=None):
     from vntext.patchability import make_renpy_contract, renpy_contract_fingerprint, validate_renpy_contract, RENPY_DIALOGUE_PATCH_PROOF
     root=_regular(root).resolve(); game=_regular(root/'game')
     target_state=existing_translation_inventory(root)
-    entries=[]; reviews=[]; errors=[]; expression_unresolved=[]; files=0; total_bytes=0; identifiers=set()
+    entries=[]; reviews=[]; errors=[]; expression_unresolved=[]; technical_ui=[]; files=0; total_bytes=0; identifiers=set()
     for path in sorted(game.rglob('*')):
         if is_cancelled and is_cancelled(): raise ValueError('cancelled')
         if not path.is_file() or 'tl' in {part.casefold()for part in path.relative_to(game).parts}: continue
@@ -374,7 +374,13 @@ def extract_compiled_source(root, is_cancelled=None):
             display_rows=compiled_display_candidates(data,local_unresolved)
             expression_unresolved.extend({**item,'file_path':relative,'source_sha256':digest,'source_container':container}for item in local_unresolved)
             errors.extend(f'{relative}:{item["line"]}: {item["reason"]}'for item in local_unresolved)
+            from vntext.renpy_static import classify_ui_text
             for row in display_rows:
+                kind,reason=classify_ui_text(row['text'])
+                if kind=='TECHNICAL':
+                    technical_ui.append({'file_path':relative,'line':row.get('line'),'screen':None,'source_text':row['text'],'raw_expression':row.get('raw_expression'),
+                        'reason':reason,'source_sha256':digest,'policy':'machine-excluded: no player-readable words (glyph/number/interpolation only) or engine-owned metadata; audit only, never user review'})
+                    continue
                 candidate=Entry(row['text'],relative,f'RenPyCompiledCandidate:{relative}:{row["kind"]}:{row["ordinal"]}',
                     object_info=row['kind'],import_method='renpy_compiled_candidate',backend='renpy_compiled_static_inventory',
                     safety='review',review_only=True,locator={**row,'source_sha256':digest,
@@ -410,6 +416,7 @@ def extract_compiled_source(root, is_cancelled=None):
         'errors':errors,'compiled_reader':'static-opcodes-slot-2',
         'renpy_non_native_review_entries':len(reviews),
         'renpy_compiled_expression_unresolved':expression_unresolved,
+        'renpy_static_ui_technical_excluded':technical_ui,
         'renpy_existing_translations':{kind:[{'identity':identity,**{key:str(value)if isinstance(value,Path)else value for key,value in record.items()}}
             for identity,record in target_state[kind].items()]for kind in ('dialogues','strings')},
         'renpy_compiled_display_candidates':[

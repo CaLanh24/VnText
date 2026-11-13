@@ -476,6 +476,15 @@ def static_screen_candidates(script: str, file_path: str, source_sha256: str, un
                 elif token.string in {')',']','}'}:depth-=1
         overrides=[i for i,t in enumerate(tokens[:-1])if t.type==tokenize.NAME and t.string in {'substitute','text_substitute'}]
         enabled=all(tokens[i+1].string=='True'for i in overrides)
+        # A statement that opens a property block ("textbutton _('Mute All'):") is judged by its WHOLE block: the global display mapping is proven only
+        # when no child line disables substitution.  (Before, any block statement was unconditionally review.)
+        scan=number;block_ok=True
+        while scan<len(lines) and scan-number<256:
+            child=lines[scan]
+            if child.strip() and not child.strip().startswith('#'):
+                if len(child)-len(child.lstrip())<=indent:break
+                if any(m.group(2)!='True' for m in re.finditer(r'\b(substitute|text_substitute)\s+(\w+)',child)):block_ok=False
+            scan+=1
         for i in slots:
             if i+1>=len(tokens):unknown('', 'missing display expression');continue
             begin=offset(tokens[i+1].start);chosen=None
@@ -500,7 +509,7 @@ def static_screen_candidates(script: str, file_path: str, source_sha256: str, un
                 'end_line':span['end_line'],'end_column':span['end_column'],'span':span,
                 'kind':tokens[i].string,'screen':screen[0],'source_sha256':source_sha256,
                 'raw_expression':raw,'classification':string_classification(value),
-                'runtime_mapping_proven':False,'native_global_eligible':enabled and tokens[-1].string!=':'}
+                'runtime_mapping_proven':False,'native_global_eligible':enabled and block_ok}
             rows.append(Entry(value,file_path,f'RenPyScreen:{file_path}:{locator["line"]}:{locator["column"]}',
                 object_info=f'screen {screen[0]} / {tokens[i].string}',import_method='renpy_screen_candidate',
                 backend='renpy_static_ui_inventory',safety='review',locator=locator,review_only=True).finalize())
@@ -1085,9 +1094,24 @@ def extract_native_template_entries(
         try:ui_candidates.extend(static_screen_candidates(script,path.relative_to(game_root).as_posix(),digest,ui_unresolved))
         except ValueError as exc:ui_errors.append(str(exc))
     ui_native=[];ui_review=[]
-    sdk_string_sources={unit.source_text for unit in units if unit.unit_kind==RENPY_STRING_UNIT}
+    # A game display slot is already covered ONLY by a game-owned SDK string.  A string that merely also exists in the engine's common scripts
+    # ("Return", "Skip"...) is engine-owned and excluded from the game text scope, so the game's own slot must stay a candidate (and be promoted
+    # when proven); otherwise a visible game label such as "Return" would never be translated.
+    sdk_string_sources={entry.source_text for entry in string_entries
+        if entry.native_contract.get("provenance",{}).get("owner")==RENPY_GAME_OWNED and not entry.review_only}
     ui_candidates=[candidate for candidate in ui_candidates if not (
         candidate.locator['native_global_eligible']and candidate.source_text in sdk_string_sources)]
+    from vntext.renpy_static import classify_ui_text
+    ui_technical=[];ui_human=[]
+    for candidate in ui_candidates:
+        kind,reason=classify_ui_text(candidate.source_text)
+        if kind=='TECHNICAL':
+            ui_technical.append({'file_path':candidate.file_path,'line':candidate.locator.get('line'),'screen':candidate.locator.get('screen'),
+                'source_text':candidate.source_text,'raw_expression':candidate.locator.get('raw_expression'),'reason':reason,
+                'source_sha256':candidate.locator.get('source_sha256'),
+                'policy':'machine-excluded: no player-readable words (glyph/number/interpolation only) or engine-owned metadata; audit only, never user review'})
+        else:ui_human.append(candidate)
+    ui_candidates=ui_human
     for candidate in ui_candidates:
         if candidate.locator['native_global_eligible']and (game_root/candidate.file_path).is_file():
             ui_native.append(native_global_display_entry(candidate,backend='renpy_loose_source'))
@@ -1148,9 +1172,10 @@ def extract_native_template_entries(
         "renpy_static_ui_runtime_unresolved":[{'file_path':item['file_path'],'line':item['line'],'end_line':item['end_line'],'reason':item['reason'],
             'raw_expression':str(item.get('raw_expression') or '')[:300]}for item in ui_unresolved if item.get('classification')=='RUNTIME_GENERATED'],
         "renpy_static_ui_engine_framework_excluded":ui_engine_excluded,
+        "renpy_static_ui_technical_excluded":ui_technical,
         # Expected, documented limits of static extraction (NOT discovery failures): they keep the run PARTIAL with a review warning.
         "limitations":[],
-        "renpy_static_ui_inventory_scope":"Single-line literal slots use native global mapping at Text display time when substitution is proven enabled; block/dynamic/disabled substitution remains review.",
+        "renpy_static_ui_inventory_scope":"Literal slots (single-line or with a property block that does not disable substitution) use native global mapping at Text display time when substitution is proven enabled; player-readable text is translated, technical syntax is excluded and audited, dynamic/disabled substitution stays unresolved.",
     }
     runtime_dynamic=stats["renpy_static_ui_runtime_unresolved"]
     if runtime_dynamic:

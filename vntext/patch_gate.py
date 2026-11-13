@@ -98,6 +98,9 @@ def has_garbage_repetition(text: str) -> bool:
         return False
     # Bỏ thẻ TMP/HTML trước khi đếm '/' — tránh false positive trên </color>.
     plain = re.sub(r"</?[^>\s][^>]*>", "", text)
+    # Ren'Py text tags ({a=https://...}, {/a}, {w}) and bare URLs are markup, not prose: their '/' characters are not CT2 filler.
+    plain = re.sub(r"\{[^{}]*\}", "", plain)
+    plain = re.sub(r"(?i)\bhttps?://\S+", "", plain)
     # *GLRK* *GLRK* *GLRK* / *SQUISH*×3 — sfx có chủ đích, không phải rác CT2.
     plain = re.sub(r"(?:\*\s*[A-Za-z]{2,16}\s*\*\s*){2,}", " ", plain)
     if plain.count("/") >= 5:
