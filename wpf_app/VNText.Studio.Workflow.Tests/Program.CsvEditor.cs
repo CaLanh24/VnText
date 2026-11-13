@@ -19,6 +19,43 @@ namespace VNText.Studio.Workflow.Tests;
 
 internal static partial class Program
 {
+    private static void Workflow_NoticesStayWithTheirOperationAndSurviveNavigation()
+    {
+        using var worker = new PythonWorkerHost();
+        using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
+        vm.SelectedTab = WorkflowTabs.Extract;
+        vm.AcknowledgePersistentError();
+        vm.RecordPersistentError("translate", "translation failure");
+        AssertFalse(vm.HasPagePersistentError);
+        vm.SelectedTab = WorkflowTabs.Translate;
+        AssertTrue(vm.HasPagePersistentError);
+        AssertEqual("translation failure", vm.PersistentErrorText);
+        vm.RecordPersistentNotice("image_batch", "image needs another attempt");
+        AssertTrue(vm.HasPagePersistentError);
+        AssertEqual("translation failure", vm.PersistentErrorText);
+        vm.SelectedTab = WorkflowTabs.Images;
+        AssertTrue(vm.HasPagePersistentError);
+        AssertTrue(vm.PersistentErrorIsWarning);
+        vm.SelectedTab = WorkflowTabs.Translate;
+        AssertEqual("translation failure", vm.PersistentErrorText);
+        vm.ResolvePersistentErrorIfSameTask("image_batch");
+        AssertTrue(vm.HasPagePersistentError);
+        vm.SelectedTab = WorkflowTabs.Images;
+        AssertFalse(vm.HasPagePersistentError);
+        vm.SelectedTab = WorkflowTabs.Translate;
+        vm.AcknowledgePersistentError();
+    }
+
+    private static void CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue()
+    {
+        var row = new CsvEditorRow();
+        AssertEqual(UiText.Translate("Chưa dịch"), row.IssueShort);
+        row.Translation = "Xin chào";
+        AssertEqual(UiText.Translate("Đã dịch"), row.IssueShort);
+        row.SetIssueSilent("placeholder", "Mất/sai placeholder {…}");
+        AssertTrue(row.HasIssue);
+        AssertEqual(UiText.Translate("Sai placeholder"), row.IssueShort);
+    }
     private static void CsvEditor_BulkRefusesChangedOpenedRevision()
     {
         var root = Path.Combine(TestTempRoot(), "bulk-cas-" + Guid.NewGuid().ToString("N"));

@@ -16,10 +16,37 @@ public sealed partial class MainViewModel
     private string _persistentErrorTime = "";
     private string _persistentErrorHint = "";
     private bool _persistentIsWarning;
+    private sealed record SavedNotice(string Task, string Time, string Text, string Hint, bool Warning);
+    private readonly Dictionary<string, SavedNotice> _pageNotices = new(StringComparer.Ordinal);
+
+    private void SelectPersistentErrorForPage()
+    {
+        if (_pageNotices.TryGetValue(SelectedTab, out var notice))
+        {
+            _persistentErrorTask = notice.Task; _persistentErrorTime = notice.Time;
+            _persistentErrorText = notice.Text; _persistentErrorHint = notice.Hint; _persistentIsWarning = notice.Warning;
+        }
+        else
+        {
+            _persistentErrorTask = _persistentErrorTime = _persistentErrorText = _persistentErrorHint = "";
+            _persistentIsWarning = false;
+        }
+        RaisePersistentError();
+    }
 
     internal string LastErrorFilePath => Path.Combine(WorkerPaths.AppDataRoot(), "last_error.json");
 
     public bool HasPersistentError => _persistentErrorText.Length > 0;
+    public bool HasPagePersistentError => HasPersistentError && SelectedTab == ErrorTab(_persistentErrorTask);
+    internal static string ErrorTab(string task) => task switch
+    {
+        "analyze" or "extract" => WorkflowTabs.Extract,
+        "patch" or "patch_preflight" => WorkflowTabs.Patch,
+        "resources" => WorkflowTabs.Settings,
+        _ when task.StartsWith("image_", StringComparison.Ordinal) => WorkflowTabs.Images,
+        _ when task.StartsWith("csv_", StringComparison.Ordinal) => WorkflowTabs.EditCsv,
+        _ => WorkflowTabs.Translate,
+    };
     public string PersistentErrorText => _persistentErrorText;
     public string PersistentNoticeSummary
     {
@@ -57,6 +84,8 @@ public sealed partial class MainViewModel
         "translate" => "dịch tự động",
         "patch" => "tạo patch",
         "analyze" => "phân tích game",
+        "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback" => "dịch ảnh",
+        "resources" => "tài nguyên",
         "" => "tác vụ",
         _ => task,
     };
@@ -75,27 +104,33 @@ public sealed partial class MainViewModel
         _persistentErrorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
         _persistentErrorHint = hint;
         _persistentIsWarning = warning;
+        _pageNotices[ErrorTab(_persistentErrorTask)] = new(_persistentErrorTask, _persistentErrorTime, text, hint, warning);
         WriteLastErrorFile();
-        RaisePersistentError();
+        SelectPersistentErrorForPage();
     }
 
     /// <summary>The same kind of task finished successfully: the earlier error is resolved (it stays in the journal history).</summary>
     internal void ResolvePersistentErrorIfSameTask(string? task)
     {
-        if (HasPersistentError && string.Equals(_persistentErrorTask, task ?? "", StringComparison.Ordinal))
-            AcknowledgePersistentError();
+        if (_pageNotices.TryGetValue(ErrorTab(task ?? ""), out var notice) && notice.Task == (task ?? ""))
+        {
+            _pageNotices.Remove(ErrorTab(task ?? ""));
+            SelectPersistentErrorForPage();
+            WriteLastErrorFile();
+        }
     }
 
     internal void AcknowledgePersistentError()
     {
         if (!HasPersistentError) return;
+        _pageNotices.Remove(ErrorTab(_persistentErrorTask));
         AppendLog($"Đã xác nhận lỗi {PersistentErrorStage(_persistentErrorTask)} ({_persistentErrorTime}); nội dung đầy đủ vẫn nằm trong Nhật ký.");
         _persistentErrorText = "";
         _persistentErrorTask = "";
         _persistentErrorTime = "";
         _persistentErrorHint = "";
         _persistentIsWarning = false;
-        try { if (File.Exists(LastErrorFilePath)) File.Delete(LastErrorFilePath); }
+        try { if (_pageNotices.Count == 0 && File.Exists(LastErrorFilePath)) File.Delete(LastErrorFilePath); else WriteLastErrorFile(); }
         catch (IOException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
         catch (UnauthorizedAccessException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
         RaisePersistentError();
@@ -116,6 +151,7 @@ public sealed partial class MainViewModel
     private void RaisePersistentError()
     {
         Raise(nameof(HasPersistentError));
+        Raise(nameof(HasPagePersistentError));
         Raise(nameof(PersistentErrorText)); Raise(nameof(PersistentNoticeSummary));
         Raise(nameof(PersistentErrorHeading));
         Raise(nameof(PersistentErrorIsWarning));
@@ -130,7 +166,7 @@ public sealed partial class MainViewModel
         {
             Directory.CreateDirectory(Path.GetDirectoryName(LastErrorFilePath)!);
             var temp = LastErrorFilePath + ".tmp";
-            File.WriteAllText(temp, JsonSerializer.Serialize(new { task = _persistentErrorTask, time = _persistentErrorTime, text = _persistentErrorText, hint = _persistentErrorHint, severity = _persistentIsWarning ? "warning" : "error" }));
+            File.WriteAllText(temp, JsonSerializer.Serialize(new { task = _persistentErrorTask, time = _persistentErrorTime, text = _persistentErrorText, hint = _persistentErrorHint, severity = _persistentIsWarning ? "warning" : "error", notices = _pageNotices }));
             File.Move(temp, LastErrorFilePath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -151,6 +187,12 @@ public sealed partial class MainViewModel
             _persistentErrorTime = root.TryGetProperty("time", out var time) ? time.GetString() ?? "" : "";
             _persistentErrorHint = root.TryGetProperty("hint", out var hint) ? hint.GetString() ?? "" : "";
             _persistentIsWarning = root.TryGetProperty("severity", out var severity) && severity.GetString() == "warning";
+            if (root.TryGetProperty("notices", out var notices))
+                foreach (var pair in JsonSerializer.Deserialize<Dictionary<string, SavedNotice>>(notices.GetRawText()) ?? [])
+                    _pageNotices[ErrorTab(pair.Value.Task)] = pair.Value;
+            else if (_persistentErrorText.Length > 0)
+                _pageNotices[ErrorTab(_persistentErrorTask)] = new(_persistentErrorTask, _persistentErrorTime, _persistentErrorText, _persistentErrorHint, _persistentIsWarning);
+            SelectPersistentErrorForPage();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

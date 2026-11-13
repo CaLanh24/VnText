@@ -33,6 +33,7 @@ _ESCAPED_BRACKET = "\x00"
 _INTERPOLATION = re.compile(r"\[[^\[\]]+\]")
 _MARKUP_TAG = re.compile(r"\{/?[A-Za-z#!][^{}]*\}|\{\}")
 _ENGINE_INTERPOLATION = re.compile(r"\[(?:renpy\.(?:version|license|copyright)\w*|config\.(?:renpy_version|engine_version))\b")
+_VERSION_CHROME = re.compile(r"\s*(?:version|v)\s*\[config\.version(?:!t)?\]\s*", re.IGNORECASE)
 _RESOURCE_NAME = re.compile(r"[\w./\\-]+\.(?:png|jpe?g|webp|gif|ogg|mp3|wav|opus|ttf|otf|webm|mp4|rpy|rpyc)", re.IGNORECASE)
 _WORD = re.compile(r"[^\W\d_]{2,}", re.UNICODE)
 
@@ -50,7 +51,7 @@ def classify_ui_text(value):
     if not isinstance(value, str) or not value.strip():
         return "TECHNICAL", "empty"
     raw = value.replace("[[", _ESCAPED_BRACKET)
-    if _ENGINE_INTERPOLATION.search(raw):
+    if _ENGINE_INTERPOLATION.search(raw) or _VERSION_CHROME.fullmatch(raw):
         return "TECHNICAL", "engine_metadata"          # Ren'Py version/licence credit boilerplate: engine-owned, not game text
     visible = visible_ui_text(value)
     stripped = visible.strip()

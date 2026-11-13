@@ -55,9 +55,7 @@ public partial class MainWindow : Window
             HookExtractLogFollow(vm);
             vm.ImageWorkspaceRequested += () =>
             {
-                var dialog = new AppDialogWindow(this, "Text trong ảnh", new VNText.Studio.App.Controls.ImageWorkspacePanel { DataContext = vm }, 1040);
-                dialog.AddButton(UiText.Translate("Đóng"), () => { });
-                dialog.ShowDialog();
+                vm.NavigateTab(WorkflowTabs.Images);
             };
             vm.RestoreWindow(this);
             StateChanged += (_, _) => { if (WindowState == WindowState.Normal) vm.RefitWindow(this); };

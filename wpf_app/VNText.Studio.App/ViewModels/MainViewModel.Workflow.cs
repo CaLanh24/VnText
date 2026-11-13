@@ -235,7 +235,7 @@ public sealed partial class MainViewModel
         CurrentWorkflowStep = snap.Current;
         StepStatusLine = snap.StepStatusLine;
         HasExtract = snap.HasExtract;
-        ReadyForPatch = snap.ReadyForPatch;
+        ReadyForPatch = snap.ReadyForPatch || (PatchPreflightEvaluated && PatchPreflightOk && !_patchSourceStale && PatchEligibleCount > 0);
         _hasTranslations = snap.HasTranslations;
 
         if (string.IsNullOrEmpty(TranslationCsvPath) && snap.HasExtract)
@@ -268,6 +268,11 @@ public sealed partial class MainViewModel
     {
         switch (SelectedTab)
         {
+            case WorkflowTabs.Images:
+                HeroTitle = "Dịch ảnh";
+                HeroIcon = "translate";
+                HeroHint = "Dịch ảnh có chữ; chỉ sửa khi bạn muốn thay đổi kết quả.";
+                break;
             case WorkflowTabs.Translate:
                 HeroTitle = "Dịch tự động";
                 HeroIcon = "translate";
@@ -578,6 +583,11 @@ public sealed partial class MainViewModel
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (CsvEditorDirty && !await SaveCsvEditorAsync()) return;
         if (Busy) return;
+        if (!ReadyForPatch && CanPatchSafeSubset)
+        {
+            RunPatchSafeSubset();
+            return;
+        }
         SelectedTab = WorkflowTabs.Patch;
         if (string.IsNullOrWhiteSpace(InputPath))
         {
@@ -607,6 +617,7 @@ public sealed partial class MainViewModel
             @out = OutputPath,
             csv_path = csv,
             manifest_path = manifest,
+            partial_override = true,
         }, "Đang tạo patch…");
     }
 

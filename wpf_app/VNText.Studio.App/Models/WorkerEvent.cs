@@ -24,6 +24,8 @@ public sealed class WorkerEvent
     public int ReviewOnly { get; set; }
     public int Blocked { get; set; }
     public int Translated { get; set; }
+    public string ImageSummary { get; set; } = "";
+    public int ImagePending { get; set; }
     public int Applied { get; set; }
     public int HumanReviewRequiredCount { get; set; }
     public string Summary { get; set; } = "";
@@ -66,6 +68,8 @@ public sealed class WorkerEvent
                     _ => null,
                 };
             if (root.TryGetProperty("ok", out var okEl)) evt.Ok = okEl.GetBoolean();
+            if (root.TryGetProperty("image_summary", out var imageSummary)) evt.ImageSummary = imageSummary.GetString() ?? "";
+            if (root.TryGetProperty("image_pending", out var imagePending)) evt.ImagePending = imagePending.GetInt32();
             if (root.TryGetProperty("complete", out var compEl)) evt.Complete = compEl.GetBoolean();
             if (root.TryGetProperty("renpy_sdk_missing", out var renpySdkEl)) evt.RenpySdkMissing = renpySdkEl.GetBoolean();
             if (root.TryGetProperty("pending", out var pendEl)) evt.Pending = pendEl.GetInt32();

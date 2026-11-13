@@ -223,7 +223,7 @@ public sealed partial class MainViewModel
         ImageRegions.CollectionChanged += OnImageRegionsChanged;
         EnterImageEditCommand = new RelayCommand(_ => ImageEditMode = true, _ => !Busy && !_imageEditMode);
         LeaveImageEditCommand = new RelayCommand(_ => ImageEditMode = false, _ => !Busy && _imageEditMode);
-        OpenImageWorkspaceCommand = new RelayCommand(_ => { ImageEditMode = false; RefreshImageWorkspace(); ImageWorkspaceRequested?.Invoke(); }, _ => !Busy);
+        OpenImageWorkspaceCommand = new RelayCommand(_ => { ImageEditMode = false; NavigateTab(WorkflowTabs.Images); }, _ => !Busy);
         RetryImageCommand = new RelayCommand(_ =>
         {
             var image = _pathPicker.PickImageFile();
@@ -446,6 +446,6 @@ public sealed partial class MainViewModel
             else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã render"), _imageTaskRoot); }
         }
         catch (Exception e) { ImageStatus = UiText.Msg("Không đọc được kết quả ảnh: {0}", e.Message); }
-            finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Translate; RefreshImageCommands(); }
+            finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Images; RefreshImageCommands(); }
     }
 }

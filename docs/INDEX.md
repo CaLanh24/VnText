@@ -7,6 +7,7 @@
 | Câu hỏi | Đọc trước | Chỉ mở thêm nếu cần |
 |---|---|---|
 | Đang làm gì, quyền gì, bước kế tiếp? | AI_STATE | Receipt/live DEV delta từ cursor |
+| Batch đơn giản hóa CSV/ảnh/Patch 2026-11-13? | [Usability batch](USABILITY_2026-11-13.md) | AI_STATE và evidence; chưa nghiệm thu candidate |
 | Source owner/caller ở đâu? | ARCHITECTURE theo heading | Source/tests ở owner đó |
 | Invariant/cleanup/epoch/quyền đang có? | CONTRACTS đúng § | Authority/receipt mà § trỏ tới |
 | Cần chạy gate nào? | TEST_MATRIX theo vùng thay đổi | Script/harness tương ứng; không mọi history |

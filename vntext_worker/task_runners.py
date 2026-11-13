@@ -52,6 +52,9 @@ def _make_callbacks(
 
     def complete(payload: dict) -> None:
         extra: dict[str, Any] = {}
+        for key in ("image_summary", "image_pending", "operation_scope", "selected_total", "selected_done", "package_counts"):
+            if key in payload:
+                extra[key] = payload[key]
         if "complete" in payload:
             extra["complete"] = bool(payload.get("complete"))
             extra["pending"] = int(payload.get("pending") or 0)
@@ -294,6 +297,7 @@ def run_translate_worker(
                 package_dir,
                 keys,
                 model_dir=model_dir,
+                selection_only=params.get("selection_only") is True,
                 human_review_required=human_review_required,
                 progress=progress,
                 log=log,
@@ -315,15 +319,14 @@ def run_translate_worker(
                     images = translate_cached_images(package_dir, is_cancelled=is_cancelled, progress=progress)
                     detail = f"Ảnh: {images['translated']}/{images['total']} bản dịch nháp; {images['untranslated']} cần xem lại. {images['output']}"
                     log(detail)
-                    payload['summary'] = (str(payload.get('summary') or '') + chr(10) + detail).strip()
+                    payload['image_summary'] = detail
+                    payload['image_pending'] = images['untranslated']
                     if images['cancelled']:
                         payload.update(ok=False, error='cancelled')
-                    elif images['untranslated']:
-                        payload.update(ok=False, complete=False, error=detail)
                 except Exception as exc:
                     detail = 'Chưa dịch xong ảnh: ' + str(exc)
                     log(detail)
-                    payload.update(ok=False, error=detail)
+                    payload.update(image_summary=detail, image_pending=1)
                 return payload
 
             try:

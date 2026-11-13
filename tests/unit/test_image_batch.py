@@ -264,15 +264,15 @@ class AutomaticImageTests(unittest.TestCase):
             run_extract_task(str(game),str(self.package),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=completed.append)
         return completed
 
-    def test_extract_automatically_translates_text_bearing_images(self):
+    def test_extract_prepares_ocr_without_running_image_translation(self):
         image_batch=Mock(return_value={'total':1,'ocr_ready':1,'translated':0,'untranslated':0,'output':'image-ocr'})
         batch=patch('vntext.image_batch.run_image_batch', image_batch)
         completed=self._extract(batch)
         self.assertTrue(completed[0]['ok'],completed)
         self.assertTrue((self.package/'translation.csv').exists())
         image_batch.assert_called_once()
-        self.assertTrue(image_batch.call_args.kwargs['translate'])
-        self.assertIn('bản dịch tự động',completed[0]['summary'])
+        self.assertFalse(image_batch.call_args.kwargs['translate'])
+        self.assertIn('Mở tab Dịch ảnh',completed[0]['summary'])
 
     def _extract_raw(self, game, batch=None):
         from vntext.app_tasks import run_extract_task
@@ -301,8 +301,8 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertFalse(completed[0]['ok'])
         self.assertEqual(completed[0]['extract_status'],'EMPTY')
         self.assertIn('Không có text sử dụng được',completed[0]['error'])
-        self.assertIn('Ảnh có chữ: 0/3',completed[0]['error'])
-        self.assertTrue(batch.call_args.kwargs['translate'])
+        self.assertIn('Đã tìm thấy 3 ảnh có chữ',completed[0]['error'])
+        self.assertFalse(batch.call_args.kwargs['translate'])
 
     def test_real_worker_image_retry_protocol_twice(self):
         if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')

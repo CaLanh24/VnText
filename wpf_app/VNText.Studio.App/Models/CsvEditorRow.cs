@@ -40,6 +40,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
             _translation = value ?? "";
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Translation)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsEmpty)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IssueShort)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasIssue)));
         }
     }
@@ -70,7 +71,10 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
 
     /// <summary>Short status label for the narrow column; the full diagnostic stays in <see cref="IssueDisplay"/> (tooltip, accessible help text).
     /// Only the known long labels are shortened; any other text is passed through unchanged (the column trims it with an ellipsis).</summary>
-    public string IssueShort => UiText.TranslateDynamic(ShortenIssue(_issueDisplay));
+    public string IssueShort => string.IsNullOrWhiteSpace(_issueLabel) || _issueLabel == "no_translation"
+        ? UiText.Translate(IsEmpty ? "Chưa dịch" : "Đã dịch")
+        : IsEmpty || _issueDisplay == "Mất/sai placeholder {…}" ? UiText.TranslateDynamic(ShortenIssue(_issueDisplay))
+        : UiText.Translate("Đã dịch") + " · " + UiText.TranslateDynamic(ShortenIssue(_issueDisplay));
 
     internal static string ShortenIssue(string display) => display switch
     {

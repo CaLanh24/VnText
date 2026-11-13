@@ -126,7 +126,12 @@ public sealed partial class MainViewModel
         catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
     }
 
-    private void InvalidatePatchSourceState(bool csvRevisionChanged = false)
+    /// <summary>
+    /// Drops the OLD patch presentation/artifact claims (delivery text, preflight, results, "ready").  <paramref name="keepCsvValidation"/> keeps the validity of the
+    /// CURRENT picked CSV: a selected translate/delete changes that file's revision but does not make the file the user picked invalid, so its validation state and
+    /// message are left to the readiness refresh instead of being wiped (CSV SAVE still clears them: the saved text must be re-validated).
+    /// </summary>
+    private void InvalidatePatchSourceState(bool csvRevisionChanged = false, bool keepCsvValidation = false)
     {
         var hadState = PatchResultsAvailable || PatchPreflightEvaluated || PatchDeliveryReady || CsvValidationOk;
         PatchDeliveryReady = false;
@@ -135,8 +140,11 @@ public sealed partial class MainViewModel
         if (csvRevisionChanged) _patchArtifactBehindCsv = true;
         if (!hadState && !csvRevisionChanged) return;
         _patchSourceStale = true;
-        CsvValidationOk = false;
-        CsvValidationMessage = "";
+        if (!keepCsvValidation)
+        {
+            CsvValidationOk = false;
+            CsvValidationMessage = "";
+        }
         ReadyForPatch = false;
         PatchPreflightOk = false;
         PatchPreflightEvaluated = false;
@@ -355,7 +363,7 @@ public sealed partial class MainViewModel
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
         // Translation completion is advisory. The current CSV and manifest, not an
         // older MT run's pending/review counts, decide which rows can be patched.
-        var result = PatchPreflightService.Run(csv, manifest);
+        var result = PatchPreflightService.Run(csv, manifest, partialOverride: true);
         _patchSourceStale = false;
         PatchPreflightOk = result.Ok;
         ReadyForPatch = result.Ok;

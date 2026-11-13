@@ -162,6 +162,20 @@
                         </StackPanel>
                     </Button>
 
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="images" AutomationProperties.Name="Dịch ảnh">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
+                                <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=images}" />
+                                <Setter Property="Tag" Value="{Binding SelectedTab, Converter={StaticResource StrMatch}, ConverterParameter=images}" />
+                                <Setter Property="Foreground" Value="{Binding SelectedTab, Converter={StaticResource NavFg}, ConverterParameter=images}" />
+                            </Style>
+                        </Button.Style>
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
+                            <TextBlock Text="Dịch ảnh" />
+                        </StackPanel>
+                    </Button>
+
                     <Button Command="{Binding NavigateTabCommand}" CommandParameter="editcsv" AutomationProperties.Name="Sửa CSV">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
@@ -256,6 +270,43 @@
         <ScrollViewer x:Name="PageScrollViewer"
                       Style="{StaticResource OverlayAutoHideScrollViewer}"
                       VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel>
+                        <Border x:Name="ExtractErrorBanner" Margin="0,0,0,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
+                                AutomationProperties.Name="Thông báo tác vụ chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
+                            <Border.Style>
+                                <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock x:Name="ExtractBannerHeading" Text="{Binding PersistentErrorHeading}" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBox x:Name="ExtractErrorText" Text="{Binding PersistentErrorText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" BorderThickness="0" Background="Transparent"
+                                         FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" MaxHeight="150" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" AutomationProperties.Name="Nội dung lỗi đầy đủ" />
+                                <TextBlock Text="{Binding PersistentErrorHint}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                <WrapPanel Margin="0,10,0,0">
+                                    <Button Content="Chép lỗi" Style="{StaticResource OutlineButton}" Command="{Binding CopyErrorCommand}" Margin="0,0,10,0" />
+                                    <Button Content="Mở Nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding OpenErrorJournalCommand}" Margin="0,0,10,0" />
+                                    <Button Content="Đã xem" Style="{StaticResource OutlineButton}" Command="{Binding DismissErrorCommand}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
                 <Grid>
 
                     <!-- Extract page -->
@@ -478,42 +529,6 @@
                         </Border>
 
                         <StackPanel Grid.Row="1">
-                        <Border x:Name="ExtractErrorBanner" Margin="0,0,0,16" Visibility="{Binding HasPersistentError, Converter={StaticResource BoolToVis}}"
-                                AutomationProperties.Name="Thông báo lấy text chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
-                            <Border.Style>
-                                <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
-                                    <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}" />
-                                    <Setter Property="BorderThickness" Value="1" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                            <StackPanel>
-                                <TextBlock x:Name="ExtractBannerHeading" Text="{Binding PersistentErrorHeading}" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" TextWrapping="Wrap">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding PersistentErrorIsWarning}" Value="True">
-                                                    <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBox x:Name="ExtractErrorText" Text="{Binding PersistentErrorText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" BorderThickness="0" Background="Transparent"
-                                         FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" MaxHeight="150" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0" AutomationProperties.Name="Nội dung lỗi đầy đủ" />
-                                <TextBlock Text="{Binding PersistentErrorHint}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0" />
-                                <WrapPanel Margin="0,10,0,0">
-                                    <Button Content="Chép lỗi" Style="{StaticResource OutlineButton}" Command="{Binding CopyErrorCommand}" Margin="0,0,10,0" />
-                                    <Button Content="Mở Nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding OpenErrorJournalCommand}" Margin="0,0,10,0" />
-                                    <Button Content="Đã xem" Style="{StaticResource OutlineButton}" Command="{Binding DismissErrorCommand}" />
-                                </WrapPanel>
-                            </StackPanel>
-                        </Border>
                         <Border x:Name="ExtractLogCard" Style="{StaticResource CardShadowBorder}" Margin="0">
                             <Grid>
                                 <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
@@ -537,6 +552,12 @@
                             </Grid>
                         </Border>
                         </StackPanel>
+                    </Grid>
+
+                    <Grid x:Name="ImagesPage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=images}">
+                        <Border Style="{StaticResource CardShadowBorder}">
+                            <ctrl:ImageWorkspacePanel />
+                        </Border>
                     </Grid>
 
                     <!-- Translate page -->
@@ -650,10 +671,6 @@
                                                 <TextBlock Text="{Binding TranslateWorkflowStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,12,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                <Button Content="Text trong ảnh…" ToolTip="OCR, duyệt, dựng và cài ảnh (không cần dòng text trong CSV)." AutomationProperties.Name="Mở Text trong ảnh"
-                                                        Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding OpenImageWorkspaceCommand}" />
-                                                <Button Content="Dịch ảnh…" ToolTip="Chọn ảnh để tạo bản dịch nháp; việc này chỉ chạy khi bạn yêu cầu trong bước Dịch."
-                                                        Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding RetryImageCommand}" />
                                                 <Button Content="Bắt đầu dịch" Style="{StaticResource PrimaryButton}" Command="{Binding RunTranslateCommand}" />
                                             </StackPanel>
                                         </Grid>
@@ -843,9 +860,6 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Button Grid.Column="0" HorizontalAlignment="Left" Content="Patch phần an toàn" Style="{StaticResource SecondaryButton}" Command="{Binding RunPatchSafeSubsetCommand}"
-                                            Visibility="{Binding ShowSafeSubsetPatch, Converter={StaticResource BoolToVis}}" AutomationProperties.Name="Patch phần an toàn"
-                                            ToolTip="Chỉ patch các dòng đã dịch và qua mọi kiểm tra; dòng còn lại giữ nguyên. Không phải bản Việt hóa đầy đủ." />
                                     <Button Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 
@@ -1330,12 +1344,12 @@
                     </ScrollViewer>
 
                 </Grid>
-            </ScrollViewer>
+                            </StackPanel>
+</ScrollViewer>
 
                     <!-- CSV editor: outside PageScrollViewer so DataGrid virtualization works -->
                     <Grid Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=editcsv}">
                         <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
@@ -1368,6 +1382,7 @@
                         <Border Grid.Row="1" x:Name="CsvEditorCard" Style="{StaticResource CardShadowBorder}" Padding="{Binding CsvCardPadding}">
                             <Grid>
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                     <RowDefinition Height="Auto" />
@@ -1562,17 +1577,17 @@
                                 <Border x:Name="CsvSelectionBar" Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="12,4" Margin="0,0,0,6"
                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}">
                                     <WrapPanel VerticalAlignment="Center">
-                                        <Button Content="Chọn tất cả đang lọc" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
-                                        <Button Content="Bỏ chọn" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvClearCheckedCommand}" />
+                                        <Button Content="Chọn đang lọc" ToolTip="Chọn tất cả đang lọc" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
+                                        <Button Content="Bỏ chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvClearCheckedCommand}" />
                                         <TextBlock Text="{Binding CsvCheckedText}" VerticalAlignment="Center" Margin="0,0,14,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
-                                        <Button Content="Dịch dòng đã chọn" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvTranslateCheckedCommand}"
+                                        <Button Content="Dịch đã chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvTranslateCheckedCommand}"
                                                 ToolTip="Dịch offline (OPUS-MT) chỉ các dòng đã tích; lưu vào chính file CSV này." />
-                                        <Button Content="Xóa dòng đã chọn" Style="{StaticResource OutlineButton}" Margin="0,2,0,2" Command="{Binding CsvDeleteCheckedCommand}"
+                                        <Button Content="Xóa đã chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,0,2" Command="{Binding CsvDeleteCheckedCommand}"
                                                 ToolTip="Xóa các dòng đã tích khỏi CSV (không phải text game); không hiện lại khi lấy text lại." />
                                     </WrapPanel>
                                 </Border>
 
-                                <Border x:Name="CsvEmptyState" Grid.Row="2" Margin="0,8,0,0" MinHeight="150" Style="{StaticResource SubtlePanelBorder}"
+                                <Border x:Name="CsvEmptyState" Grid.Row="2" Margin="0,8,0,0" Height="{Binding CsvGridMinHeight}" VerticalAlignment="Top" Style="{StaticResource SubtlePanelBorder}"
                                         Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource InvBoolToVis}}">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource BlueSoftBrush}" HorizontalAlignment="Center">
@@ -1639,7 +1654,7 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="BẢN DỊCH TIẾNG VIỆT" Binding="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="220">
+                                        <DataGridTextColumn Header="BẢN DỊCH TIẾNG VIỆT" Binding="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" Width="3*" MinWidth="190">
                                             <DataGridTextColumn.EditingElementStyle>
                                                 <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource CsvCellEditor}" />
                                             </DataGridTextColumn.EditingElementStyle>
@@ -1671,7 +1686,7 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <StackPanel Grid.Row="2" x:Name="CsvEditorFooter" Margin="0,6,0,0">
+                                <StackPanel Grid.Row="3" x:Name="CsvEditorFooter" Margin="0,6,0,0">
 <TextBlock Text="{Binding CsvEditorGateStats, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
 <TextBlock Text="{Binding CsvEditorSelectionDetails, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
            Visibility="{Binding CsvEditorSelectionDetailsVisible, Converter={StaticResource BoolToVis}}"/>

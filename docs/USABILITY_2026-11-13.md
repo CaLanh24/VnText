@@ -1,0 +1,40 @@
+# Usability batch — 2026-11-13 (not accepted yet)
+
+Owner requests a simple extract → translate/edit one CSV → create patch workflow, with image translation on its own page. No game execution or game testing in this batch. Public release 0.1.19 is unchanged; no new publication is authorized.
+
+Baseline local HEAD: `723f9293d9ef414d3d2eab12eef768e0acf7797d`. Later Root fixes remain uncommitted. Claude DEV quota reset is 22:50 Asia/Tokyo; Root temporarily owns source writes under the AGENTS exception.
+
+| Area | Change | Verification |
+|---|---|---|
+| RenPy extraction | Automatically separate technical syntax/engine metadata; recognize proved screen text and ordinary labels. Persist user exclusions across extraction. | Representative inert source fixture with official SDK source tooling; no game run. |
+| One CSV | Row checkboxes, translate selected with existing OPUS, save into the same file, conflict-protected delete/exclude. | Real OPUS selected-row test preserves unselected manual multiline translation and empty rows. |
+| Status | Update translated status/counts after editing; retain real structural diagnostics. | WPF behavior tests. |
+| Patch | One visible packaging action, explicitly opting into valid translated subset; unrelated review/pending rows do not veto it. Keep per-row identity/hash/placeholder/writeback checks. | Guard tests and per-key CSV-to-payload readback; no game install. |
+| Images | First-class sidebar page, cached results first; no redundant image buttons on Translate. Extract caches OCR; translation reuses it without rescanning. | Worker operation ownership tests; WPF fixture/native candidate still separate. |
+| Notifications | Durable per-page notices; image failures do not fail text completion or appear on Extract. | Protocol and WPF navigation tests. |
+| Resources | Read actual readiness; hide download when ready and repair only missing resources. | Focused resource/WPF tests. |
+| Small CSV layout | Correct selection-bar/table/footer rows and use compact selection utilities. | WPF layout fixture in progress; earlier failed layouts are not PASS. |
+
+## CSV and translation evidence
+
+Small ignored evidence: `TEST_RUN/agent-evidence/usability-csv-quality/` contains fresh fixture CSV, technical exclusion audit, extraction status, per-key patch readback and `quality-review.json`.
+
+The existing Owner CSV was **read only**: SHA256 `8e5d0e849a504b3e8354f676037e2c1ee55aaf5d2635cccb1e9a95a73a1bb0ef`, 319 rows, 311 nonempty translations. Its eight empty rows include seven technical strings and the misclassified “Mute All”. No replacement characters were found. Lexical flags include loanwords/scientific terms; flags alone do not establish bad translation. The 1,464-row CSV from the other machine is unavailable locally.
+
+Fresh fixture review confirms readable rough Vietnamese, protected tags/placeholders and exact CSV-to-patch payload equality. “Return” originally became “Trả lại”; recognizing `RenPyScreen` as UI now gives “Quay lại”. “The Claiming” remains context-dependent; “Prologue” is retained as a name-like token. No claim of perfect semantics, every sentence being Vietnamese, whole-game coverage or gameplay quality is made.
+
+## Gates / limits
+
+- Focused Python run: 62 tests, two explicit native OCR skips; one test assertion used the wrong ledger path. After correcting it, the selected real-OPUS/protocol group passes 3/3. Other product checks in that run passed.
+- Text integrity/catalog group: 31/31 PASS, including Vietnamese homographs, structure and newlines.
+- WPF source/build/interaction/layout fixtures: **37/37 PASS**, final log `usability-20261114-wpf21.log`. Cancelled selected translation retains the picked CSV validity while withdrawing old patch claims. Selected/delete mutation uses the same separation; Delete dialog native behavior remains untested.
+- Related Python: **97 PASS, 2 explicit native OCR skips**. Public groups CSV34/MT91/Patch37/maintenance44 PASS. Existing text-integrity31 PASS retained.
+- Debug candidate build and OPUS smoke exit0 at `C:/v/DEV_RUN/bootstrap-build/VNText.Studio.App.exe`; EXE SHA256 `a36ac0b5e799ff2fb8194b3dfa40dfdf9f274d1245140456f9875957a7fd8f51`. This depends on the installed runtime and `.dev-env`, so it is not a portable build.
+- Root tried the actual `Start-DEV.ps1`: **exit1**, clean-source guard refuses the uncommitted tree. It is not yet a usable Owner test handoff. Missing Git author name/email is the current blocker; no identity/config was invented and no guard was bypassed. Receipt `TEST_RUN/agent-evidence/usability-20261114-root-launcher.json`.
+- Packaged candidate/native acceptance: **NOT PROVEN**. Owner approved temporary2.5GiB, but the Debug candidate fits the default1GiB and did not activate that grant. After author metadata/commit and launcher validation, perform the native checklist; no game run or release.
+- No push, release, version change, Owner data mutation or game run.
+
+## DEV handback delta (2026-11-14)
+- **Regression fixed:** Root's patch invalidation for selected translate/Delete cleared the picked CSV's validity (`CancelledTranslate_KeepsThePickedCsvAndRestoresReadiness` failed). `InvalidatePatchSourceState` now has `keepCsvValidation`: old patch presentation/artifact claims are dropped (delivery withdrawn, preflight cleared, artifact marked behind, workflow not "done") while the current CSV stays valid and retryable; CSV SAVE still clears validation. New regression `SelectedTranslate_KeepsTheCurrentCsvValidButMarksTheOldPatchBehind`. WPF 37/37.
+- **Budget/cleanup:** the default 1 GiB cap held for the DEV build after freeing owned disposable test scratch through the helper (127 dirs; 852 own stale MISSING records reclassified by the documented routine). No temporary budget was registered or needed.
+- **Limits:** native/live acceptance is NOT_PROVEN; no game was run; the only Owner CSV used was local read-only (319 rows, 311 non-empty, 8 legacy-empty); the other-machine 1464-row CSV is absent. Candidate, launcher and fixture evidence: ignored receipts `TEST_RUN/agent-evidence/usability-20261114-final-*.json`.

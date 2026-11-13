@@ -176,7 +176,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
-        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && ReadyForPatch);
+        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && (ReadyForPatch || CanPatchSafeSubset));
         RunPatchSafeSubsetCommand = new RelayCommand(_ => RunPatchSafeSubset(), _ => CanPatchSafeSubset);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);
@@ -223,6 +223,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _selectedTab, value))
             {
                 UpdateHeroForTab();
+                SelectPersistentErrorForPage();
+                if (value == WorkflowTabs.Images)
+                    RefreshImageWorkspace();
                 if (value == WorkflowTabs.EditCsv)
                     OnCsvEditorTabSelected();
                 if (value == WorkflowTabs.Settings)

@@ -250,10 +250,14 @@ public sealed partial class MainViewModel
                     var imageCancelled = !evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
                     SetOwnedProgress(completedTask, evt.Ok ? 100 : null, evt.Ok ? "Hoàn tất" : imageCancelled ? "Đã hủy" : "Đã dừng — xem Nhật ký");
                     CompleteImageTask(completedTask, evt);
+                    if (!imageCancelled)
+                        RequestCompletion("VNText Studio — Dịch ảnh", ImageStatus, evt.Ok ? "info" : "error");
                     FinishCancelAndExit();
                     break;
                 }
                 ApplyDiagnostic(evt);
+                if (completedTask == "translate" && evt.ImagePending > 0 && !string.IsNullOrWhiteSpace(evt.ImageSummary))
+                    RecordPersistentNotice("image_batch", evt.ImageSummary);
                 if (completedTask == "extract" && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) != true
                     && !CsvEditorDirty && SameCsvPath(CsvEditorPath, Path.Combine(OutputPath, "translation.csv"))
                     && File.Exists(CsvEditorPath))
@@ -508,6 +512,7 @@ public sealed partial class MainViewModel
                 }
                 if (completedTask == "translate")
                 {
+                    InvalidatePatchSourceState(csvRevisionChanged: true, keepCsvValidation: true);
                     if (!retranslateOwnsEditorReload)
                         _ = RefreshCsvEditorAfterTranslateAsync(TranslationCsvPath);
                     PatchResultsAvailable = true;

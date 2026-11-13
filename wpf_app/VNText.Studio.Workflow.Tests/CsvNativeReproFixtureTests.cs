@@ -117,7 +117,7 @@ if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Con
                             }
                         Require(vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal), "the real Preview produced examples");
                         // acceptance: at least three ordinary one-line rows are fully visible INSIDE the client area after Preview, with the tools open
-                        report += $" cardBottom={Math.Round(cardBottom)} footer={Math.Round(footerTop)}-{Math.Round(footerBottom)}";
+                        report += $" cardBottom={Math.Round(cardBottom)} footer={Math.Round(footerTop)}-{Math.Round(footerBottom)} selectionH={Named("CsvSelectionBar").ActualHeight:0.0} bulkH={Named("CsvBulkReplacePanel").ActualHeight:0.0} previewH={Named("CsvBulkPreviewScroll").ActualHeight:0.0} selectionW={Named("CsvSelectionBar").ActualWidth:0.0}";
                         Require(full >= 3, "native repro " + report);
                         Require(footerBottom <= cardBottom + 0.5 && footerBottom <= client + 0.5, "the grid footer stays inside the card and the client area " + report);
                         // Every find/replace/scope/Preview/Apply/Undo control lies fully inside the bulk panel AND the client area (width and height), and nothing overlaps the examples column.

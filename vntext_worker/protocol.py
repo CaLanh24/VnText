@@ -81,6 +81,12 @@ def emit_complete(
     patch_delivery: str | None = None,
     patch_payload_path: str | None = None,
     patch_install_instructions: str | None = None,
+    image_summary: str | None = None,
+    image_pending: int | None = None,
+    operation_scope: str | None = None,
+    selected_total: int | None = None,
+    selected_done: int | None = None,
+    package_counts: dict[str, int] | None = None,
 ) -> None:
     msg: dict[str, Any] = {
         "type": "complete",
@@ -131,6 +137,11 @@ def emit_complete(
     }
     for key, value in patch_fields.items():
         if value is not None and value != "":
+            msg[key] = value
+    for key, value in {"image_summary": image_summary, "image_pending": image_pending,
+                       "operation_scope": operation_scope, "selected_total": selected_total,
+                       "selected_done": selected_done, "package_counts": package_counts}.items():
+        if value is not None:
             msg[key] = value
     emit(msg)
 

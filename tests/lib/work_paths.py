@@ -302,7 +302,10 @@ def _load_manifest() -> dict:
         or ("archive" in doc and not isinstance(doc["archive"], list))
     ):
         raise ValueError(f"artifact registry structure is invalid: {MANIFEST_PATH}")
-    from registry_storage import verify_cold
+    try:
+        from .registry_storage import verify_cold
+    except ImportError:  # supported direct-script/flat test-tool entry point
+        from registry_storage import verify_cold
     verify_cold(doc, MANIFEST_PATH)
     return doc
 
@@ -649,7 +652,10 @@ def register_artifacts(registrations: list[dict], *, expected_manifest_sha256: s
             if previous:
                 entry["created_at"] = previous[0].get("created_at") or entry["created_at"]
 
-        from registry_storage import cold_records
+        try:
+            from .registry_storage import cold_records
+        except ImportError:
+            from registry_storage import cold_records
         for historical in cold_records(doc, MANIFEST_PATH):
             artifact_id = str(historical.get("id") or "")
             if artifact_id in prepared and Path(historical["path"]).resolve() != Path(prepared[artifact_id]["path"]):

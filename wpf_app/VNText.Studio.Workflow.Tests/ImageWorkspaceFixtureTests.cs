@@ -453,11 +453,9 @@ internal static partial class Program
                 RenderOk("render-7");                                                   // a fresh render restores readiness
                 AssertTrue(vm.CreateImageDeliveryCommand.CanExecute(null));
 
-                // Both entry points reach the same dialog through one command.
-                var requested = 0;
-                vm.ImageWorkspaceRequested += () => requested++;
+                // Image translation is a first-class page; no second modal is opened.
                 vm.OpenImageWorkspaceCommand.Execute(null);
-                AssertEqual(1, requested);
+                AssertEqual(WorkflowTabs.Images, vm.SelectedTab);
 
                 // Esc dismisses the themed shell like every other dialog.
                 dialog.Dismiss();

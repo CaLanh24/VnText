@@ -104,7 +104,7 @@ def is_ui_label_context(context: str) -> bool:
     if "choice" in lowered or "dialog" in lowered:
         return False
     # ``:string:`` is the Ren'Py translatable-string table (``_("...")`` in screens/gui); story dialogue and menu choices never use it.
-    return context.startswith("UI:") or "textbutton" in lowered or lowered.startswith("screen") or ":screen" in lowered or ":string:" in lowered
+    return context.startswith("UI:") or "textbutton" in lowered or lowered.startswith(("screen", "renpyscreen:")) or ":screen" in lowered or ":string:" in lowered
 
 
 def resolve_ui_label_translation(src: str, context: str = "") -> str | None:

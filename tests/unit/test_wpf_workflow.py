@@ -679,7 +679,7 @@ class WpfWorkflowTests(unittest.TestCase):
         scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
         # 0.1.17 small-window fix: the bound is 120 at a normal height and 64 at a low height (examples beside the find/replace group) (still visible, scrollable), via the view model
         self.assertIn('MaxHeight="{Binding CsvPreviewMaxHeight}"', scroll)
-        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 64 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
+        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("CsvBulkPreviewDetailOpen", scroll)
         self.assertIn("public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;", vm)
         # the stored preview, the Apply guard and its signature are untouched
@@ -726,7 +726,7 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertIn("public Thickness %s" % binding, vm)
         # columns fit the small card: minimum widths 150 + 220 + status 120 stay under the ~560 DIP card of a 1043 px window at UI 120%
         self.assertIn('Width="2*" MinWidth="150"', xaml)
-        self.assertIn('Width="3*" MinWidth="220"', xaml)
+        self.assertIn('Width="3*" MinWidth="190"', xaml)
         self.assertIn('Binding="{Binding IssueShort}" IsReadOnly="True" Width="140" MinWidth="120"', xaml)
 
     def test_six_qa_findings_are_wired_without_touching_shared_styles_or_guards(self):
@@ -1062,7 +1062,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('Value="{Binding PatchProgressPercent, Mode=OneWay}"', xaml)
         self.assertIn('Text="{Binding TranslateWorkflowStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}"', xaml)   # localized display-time translation
         self.assertIn('RefreshWorkflow();\n                RefreshTranslateReadiness();', view_model)
-        self.assertIn('Content="Dịch ảnh…"', xaml)
+        self.assertIn('CommandParameter="images"', xaml)
         self.assertNotIn('Command="{Binding CancelAndExitCommand}"', xaml)
         self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
         window_code = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
@@ -1145,9 +1145,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertEqual(4, panel.count('GroupName="RegionBackgroundMode"'))
         self.assertEqual(4, panel.count('Click="OnBackgroundModeClick"'))
         # The workspace is opened through the shared themed dialog shell from both entry points.
-        self.assertGreaterEqual(len(re.findall(r"Command=\"\{Binding OpenImageWorkspaceCommand\}\"", window)), 1)
-        self.assertIn("new AppDialogWindow(this", window_code)
-        self.assertIn("ImageWorkspacePanel", window_code)
+        self.assertIn('CommandParameter="images"', window)
+        self.assertIn('<ctrl:ImageWorkspacePanel />', window)
+        self.assertIn("vm.NavigateTab(WorkflowTabs.Images)", window_code)
         self.assertIn("ImageWorkspaceRequested", window_code)
         # The modal has its own Cancel (the owner window, with its Cancel button, is disabled while a modal is open),
         # shows the owning task and the progress/cancel-acknowledgement line, and offers a spinner only while Busy.

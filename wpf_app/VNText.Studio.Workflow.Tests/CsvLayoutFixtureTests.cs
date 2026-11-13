@@ -145,7 +145,7 @@ internal static partial class Program
                     var warningRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromIndex(0);
                     Require(warningRow.ActualHeight <= 40, "the placeholder warning row stays a single-line row (got " + warningRow.ActualHeight + ")");
                     // status label: the whole short label fits its cell, at the real font and DPI
-                    var statusCell = (TextBlock)grid.Columns[3].GetCellContent(rows[0]);
+                    var statusCell = (TextBlock)grid.Columns.Single(c => c is DataGridTextColumn textColumn && textColumn.Binding is System.Windows.Data.Binding binding && binding.Path.Path == "IssueShort").GetCellContent(rows[0]);
                     var typeface = new System.Windows.Media.Typeface(statusCell.FontFamily, statusCell.FontStyle, statusCell.FontWeight, statusCell.FontStretch);
                     var labelWidth = new System.Windows.Media.FormattedText(statusCell.Text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, typeface, statusCell.FontSize,
                         System.Windows.Media.Brushes.Black, System.Windows.Media.VisualTreeHelper.GetDpi(statusCell).PixelsPerDip).Width;
@@ -176,7 +176,7 @@ internal static partial class Program
                     // Low height trades vertical space only: no control is hidden, the section keeps its accessible name, the examples stay in a bounded scroller.
                     Require(!Named("CsvBulkTitleText").IsVisible && System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")) == "Tìm và thay thế bản dịch", "low height: the redundant title yields to the group's accessible name");
                     Require(Named("CsvBulkFindTextBox").IsVisible && Named("CsvBulkReplaceTextBox").IsVisible && Named("CsvBulkScopeComboBox").IsVisible && Named("CsvBulkPreviewButton").IsVisible
-                        && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 64, "low height: every bulk control stays visible and the examples scroller is bounded");
+                        && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight is >= 40 and <= 64, "low height: every bulk control stays visible and the examples scroller is bounded");
                     vm.SetCsvLowHeight(false);
                     window.UpdateLayout();
                     Require(Named("CsvBulkTitleText").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 120, "normal height: the title and the full-size examples scroller come back");

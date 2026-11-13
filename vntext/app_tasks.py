@@ -1509,9 +1509,9 @@ def _run_extract_task_impl(
         # and rendering stay behind the explicit Translate action.
         try:
             from vntext.image_batch import run_image_batch
-            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=True)
+            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=False)
             if images['total']:
-                note = f"Ảnh có chữ: {images['translated']}/{images['total']} bản dịch tự động; {images['untranslated']} cần xem lại. {images['output']}"
+                note = f"Đã tìm thấy {images['total']} ảnh có chữ. Mở tab Dịch ảnh để dịch. {images['output']}"
                 log(note)
                 payload['summary'] += " " + note
                 # A text-less container whose images were OCR'd must not read as "nothing happened".
@@ -1836,6 +1836,7 @@ def run_translate_keys_ct2_task(
     keys: list[str],
     *,
     model_dir: str = "",
+    selection_only: bool = False,
     human_review_required: bool = False,
     progress: ProgressFn,
     log: LogFn,
@@ -2069,6 +2070,20 @@ def run_translate_keys_ct2_task(
             translated=payload["translated"],
             human_review_required_count=human_review_count,
         )
+        if selection_only:
+            # The job owns only checked rows. Preserve the measured package ledger above;
+            # unrelated pending rows must not turn a successful selected-row job into an error.
+            from vntext.package_io import read_csv_rows_file
+            selected = [row for row in read_csv_rows_file(csv_path)[1] if row.get("key") in set(keys)]
+            selected_done = sum(bool(row.get("translation", "").strip()) for row in selected)
+            selection_ok = bool(result.get("ok")) and len(selected) == len(set(keys)) and selected_done == len(selected)
+            package_counts = {name: payload[name] for name in ("pending", "review_only", "blocked", "translated")}
+            payload.update(operation_scope="selected_rows", selected_total=len(set(keys)), selected_done=selected_done,
+                           package_counts=package_counts, ok=selection_ok, complete=selection_ok,
+                           pending=0 if selection_ok else max(1, len(set(keys)) - selected_done),
+                           review_only=0, blocked=0 if selection_ok else 1,
+                           error="" if selection_ok else "Chưa dịch xong các dòng đã chọn.",
+                           summary=f"Đã dịch {selected_done}/{len(set(keys))} dòng đã chọn và lưu CSV.")
         complete(payload)
     except TranslateCancelled:
         _emit_complete(

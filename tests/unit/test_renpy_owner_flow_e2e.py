@@ -1,11 +1,12 @@
 """Owner acceptance flow on a representative Ren'Py fixture (no real game, no gameplay): extract -> translate EVERY CSV row with the product
 OPUS-MT model -> build the patch -> per-key payload read-back.  Human text (dialogue, menu, screen text, tagged prose, "Mute All", "Return",
-"Chapter 1", "Version [config.version!t]", the accessibility sentence) is translated and written back with placeholders/tags intact;
-technical syntax (glyphs, interpolation-only, engine credit) is excluded automatically and audited, never a user review item."""
+"Chapter 1", the accessibility sentence) is translated and written back with placeholders/tags intact;
+technical syntax (glyphs, interpolation-only, version chrome, engine credit) is excluded automatically and audited, never a user review item."""
 import csv
 import json
 import os
 import re
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,8 +18,8 @@ ROOT = Path(__file__).resolve().parents[2]
 MODEL_DIR = Path(os.environ.get("VNTEXT_CT2_MODEL", str(ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8")))
 SDK_OK = (renpy_native_sdk() / "renpy.py").is_file()
 HUMAN = ["Prologue", "Welcome to the village, traveler.", "You go north.", "Take the north road", "Mute All", "Chapter 1", "The Claiming", "Return",
-         "Version [config.version!t]", "Toggles assistive {a=https://www.renpy.org/l/voicing}self-voicing{/a}."]
-TECHNICAL = ["<", "{#auto_page}A", "[page]", "[config.name!t]"]
+         "Toggles assistive {a=https://www.renpy.org/l/voicing}self-voicing{/a}."]
+TECHNICAL = ["<", "{#auto_page}A", "[page]", "[config.name!t]", "Version [config.version!t]"]
 ENGINE_CREDIT = "Made with {a=https://www.renpy.org/}Ren'Py{/a} [renpy.version_only].\\n\\n[renpy.license!t]"
 SCRIPT = f'''define e = Character("Eileen")
 label start:
@@ -76,7 +77,8 @@ class RenPyOwnerFlowTests(unittest.TestCase):
         reasons = {entry["source_text"]: entry["reason"] for entry in audit["entries"]}
         self.assertEqual(set(TECHNICAL) | {ENGINE_CREDIT.replace("\\n", "\n")} if False else set(TECHNICAL), {k for k in reasons if k in TECHNICAL})
         self.assertEqual("engine_metadata", next(v for k, v in reasons.items() if k.startswith("Made with")))
-        self.assertTrue(all(reasons[k] == "no_visible_words" for k in TECHNICAL))
+        self.assertTrue(all(reasons[k] == "no_visible_words" for k in TECHNICAL[:-1]))
+        self.assertEqual("engine_metadata", reasons[TECHNICAL[-1]])
         status = json.loads((package / "extract_status.json").read_text(encoding="utf-8"))
         self.assertEqual(len(audit["entries"]), status["excluded_technical_ui"])                   # the counter is the audit, never invented
 
@@ -119,6 +121,40 @@ class RenPyOwnerFlowTests(unittest.TestCase):
             self.assertNotIn(f'old "{text}"', overlay)                                               # excluded technical syntax is never written
         self.assertEqual(before, source.read_bytes())                                                # the original game is untouched
         self.assertEqual(set(rows), {row["key"] for row in csv_rows})
+        evidence = os.environ.get("VNTEXT_OWNER_FLOW_EVIDENCE")
+        if evidence:
+            destination = Path(evidence).resolve()
+            destination.relative_to((ROOT / "TEST_RUN").resolve())
+            destination.mkdir(parents=True, exist_ok=True)
+            for filename in ("translation.csv", "renpy_technical_excluded.json", "extract_status.json"):
+                shutil.copy2(package / filename, destination / filename)
+            shutil.copy2(output / "patch_verification.json", destination / "patch_verification.json")
+
+    @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
+    def test_selected_translation_succeeds_without_overwriting_other_rows_or_package_counts(self):
+        from vntext.app_tasks import run_translate_keys_ct2_task
+        _root, _game, _source, package, _done = self.extract()
+        path = package / "translation.csv"
+        rows = self.rows(package)
+        rows[2]["translation"] = "Bản dịch tự sửa.\nGiữ nguyên dòng này."
+        with path.open("w", encoding="utf-8-sig", newline="") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+            writer.writeheader(); writer.writerows(rows)
+        events = []
+        selected_indices = {0, 1, 4}  # intentional keep, real MT sentence, exact UI catalog label
+        run_translate_keys_ct2_task(path, package, [rows[i]["key"] for i in sorted(selected_indices)], model_dir=str(MODEL_DIR), selection_only=True,
+                                   progress=lambda _: None, log=lambda _: None, complete=events.append)
+        done = events[-1]
+        self.assertTrue(done["ok"], done)
+        self.assertEqual((3, 3, "selected_rows"), (done["selected_total"], done["selected_done"], done["operation_scope"]))
+        after = self.rows(package)
+        self.assertTrue(after[1]["translation"].strip())
+        self.assertEqual("Tắt tiếng tất cả", after[4]["translation"])
+        self.assertEqual([r for i, r in enumerate(rows) if i not in selected_indices],
+                         [r for i, r in enumerate(after) if i not in selected_indices])
+        self.assertGreater(done["package_counts"]["pending"], 0)
+        ledger = json.loads((package / ".mt" / "translate_status.json").read_text(encoding="utf-8"))
+        self.assertFalse(ledger["complete"])
 
 
 if __name__ == "__main__":

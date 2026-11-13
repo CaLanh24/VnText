@@ -42,6 +42,8 @@ class UiLabelCatalogTests(unittest.TestCase):
         self.assertEqual("TÚI ĐỒ", resolve_ui_label_translation("INVENTORY", "UI:Menu"))      # ALL-CAPS art stays in capitals
         self.assertEqual("Túi đồ", resolve_ui_label_translation("  inventory ", "UI:Menu"))   # case/space tolerant, still exact
         self.assertEqual("Lưu game", resolve_ui_label_translation("Save   Game", "UI:Menu"))
+        self.assertEqual("Quay lại", resolve_ui_label_translation("Return", "RenPyScreen:game/screens.rpy:14:15"))
+        self.assertIsNone(resolve_ui_label_translation("Return", "RenPy:game/story.rpy:14:start"))
 
     def test_ambiguous_prose_choices_tokens_and_unknown_contexts_never_force_the_catalog(self):
         ui = "UI:Menu"

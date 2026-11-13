@@ -1428,6 +1428,8 @@ def _run_ct2_translate_keys_impl(
         backup_translation_csv(csv_path)
 
     mt_targets: list[dict] = []
+    selected_copy_map: dict[str, str] = {}
+    selected_copy_applied = selected_copy_blocked = 0
     for row in rows:
         if row["key"] not in keys_set:
             continue
@@ -1439,16 +1441,29 @@ def _run_ct2_translate_keys_impl(
             emit(f"Bỏ qua synonym {row['key']} — cần dịch thủ công")
             continue
         action, _reason, _decision = classify_row_authoritative({**row, "translation": ""})
+        if action in {"copy_source", "copy_literal", "skip_ui_label"}:
+            selected_copy_map[row["key"]] = row["source_text"]
+            continue
+        if action == "ui_label_fixed" and not _glossary_owns_label(row, user_glossary, glossary_v2):
+            selected_copy_map[row["key"]] = _reason
+            continue
         if action not in {"translate", "translate_synonym", "ui_label_fixed"}:
             continue
         mt_targets.append(row)
 
+    if selected_copy_map:
+        if is_cancelled is not None and is_cancelled():
+            raise TranslateCancelled()
+        selected_copy_applied, selected_copy_blocked, _ = _apply_mapping_memory(
+            {r["key"]: r for r in rows}, selected_copy_map, allow_overwrite=allow_overwrite, whitelist=whitelist)
+        _flush_csv_atomic(csv_path, fields, rows)
+
     if not mt_targets:
         existing_review_count = _count_human_review_rows(package_dir)
         return {
-            "ok": existing_review_count == 0,
-            "applied": 0,
-            "blocked": 0,
+            "ok": existing_review_count == 0 and selected_copy_blocked == 0,
+            "applied": selected_copy_applied,
+            "blocked": selected_copy_blocked,
             "summary": (
                 f"Không có dòng MT để dịch lại. Cần duyệt thủ công {existing_review_count} dòng trước khi Patch"
                 if existing_review_count

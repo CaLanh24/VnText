@@ -94,6 +94,7 @@ public sealed partial class MainViewModel
         {
             csv_path = CsvEditorPath,
             keys = keys.ToArray(),
+            selection_only = true,
             overwrite = true,
             human_review_required = HumanReviewRequired,
             model = "ct2",
@@ -129,6 +130,9 @@ public sealed partial class MainViewModel
         SetCheckedForFiltered(false, all: true);
         CsvEditorDirty = false;
         LoadCsvEditor(CsvEditorPath, reload: true);
+        if (SameCsvPath(TranslationCsvPath, CsvEditorPath))
+            InvalidatePatchSourceState(csvRevisionChanged: true, keepCsvValidation: true);
+        RefreshWorkflow();
         RefreshTranslateReadiness();
         RaiseSafeSubsetPatch();
     }

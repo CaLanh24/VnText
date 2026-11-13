@@ -128,6 +128,8 @@ internal static partial class Program
             var csvFailures = new List<string>();
             Run("CsvEditor_BulkRefusesChangedOpenedRevision", CsvEditor_BulkRefusesChangedOpenedRevision, csvFailures);
             Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, csvFailures);
+            Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, csvFailures);
+            Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, csvFailures);
             Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
@@ -287,6 +289,7 @@ internal static partial class Program
         Run("CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue", CsvFilter_ShowsAReadableLabelAndKeepsTheStoredValue, failures);
         Run("PatchState_FollowsTheSourceAndRequiresACurrentCheck", PatchState_FollowsTheSourceAndRequiresACurrentCheck, failures);
         Run("PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource", PatchState_CsvSaveInvalidatesOnlyTheCurrentPatchSource, failures);
+        Run("SelectedTranslate_KeepsTheCurrentCsvValidButMarksTheOldPatchBehind", SelectedTranslate_KeepsTheCurrentCsvValidButMarksTheOldPatchBehind, failures);
         Run("UiText_FormatKeyFirstWithRawArgumentsAndLocalizedPickers", UiText_FormatKeyFirstWithRawArgumentsAndLocalizedPickers, failures);
         Run("PatchBadge_KindFollowsTheCurrentReadiness", PatchBadge_KindFollowsTheCurrentReadiness, failures);
         Run("UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone", UiText_ImageMessagesTranslateExactlyAndLeaveUserTextAlone, failures);
@@ -313,6 +316,9 @@ internal static partial class Program
         Run("NavigateTab_EditCsv", NavigateTab_EditCsv, failures);
         Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, failures);
         Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, failures);
+        Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, failures);
+        Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, failures);
+        Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, failures);
         Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
         Run("CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty", CsvEditor_SaveExternalEditFailsClosedAndKeepsDirty, failures);
         Run("CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave", CsvEditor_BusyTaskLocksEditingAndRefusesDirectSave, failures);
@@ -924,6 +930,48 @@ internal static partial class Program
             AssertTrue(vm.CsvValidationOk);                      // still the file the user picked
             AssertEqual(csv, vm.TranslationCsvPath);
             AssertTrue(vm.RunTranslateCommand.CanExecute(null)); // Start is available again without reselecting
+        }
+        finally
+        {
+            Directory.Delete(package, true);
+        }
+    }
+
+    private static void SelectedTranslate_KeepsTheCurrentCsvValidButMarksTheOldPatchBehind()
+    {
+        // A selected-row translate (or delete) changes the picked CSV's revision: the OLD patch artifact is behind and no longer "done", but the file
+        // the user picked stays valid and usable (no re-pick, no wiped validation), exactly as after a cancelled run.
+        const string okPayload = "{\"v\":1,\"type\":\"complete\",\"id\":\"sel-ok\",\"ok\":true,\"summary\":\"Đã dịch 1 dòng\",\"error\":\"\",\"complete\":true,\"pending\":0,\"review_only\":0,\"blocked\":0,\"translated\":1}";
+        var terminal = WorkerEvent.FromJson(okPayload);
+        AssertTrue(terminal is not null);
+        var package = CreatePackage(withTranslation: true, withPatch: true);
+        try
+        {
+            var csv = Path.Combine(package, "translation.csv");
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, new PythonWorkerHost(), startWorker: false);
+            vm.TestSetTranslationModelReady(true);
+            vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
+            vm.ChooseTranslationCsvCommand.Execute(null);
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+            AssertTrue(vm.CsvValidationOk);
+            vm.OutputPath = package; vm.InputPath = package;
+            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            AssertTrue(vm.PatchDeliveryReady);
+            Require(!(vm.PatchArtifactBehindCsv), "expected false: vm.PatchArtifactBehindCsv");
+
+            vm.TestBeginTaskLog("sel-ok", "translate");
+            vm.TestSetActiveTask("sel-ok", "translate");
+            vm.TestHandleWorkerEvent(terminal!);
+
+            Require(!(vm.Busy), "expected false: vm.Busy");
+            AssertTrue(vm.PatchArtifactBehindCsv);                 // the artifact on disk belongs to the previous revision
+            Require(!(vm.PatchDeliveryReady), "expected false: vm.PatchDeliveryReady");                    // its delivery card is withdrawn
+            Require(!(vm.PatchPreflightEvaluated), "expected false: the old preflight result");        // the old preflight describes the previous revision; Patch re-checks the new one
+            AssertTrue(vm.CsvValidationOk);                        // ...but the picked CSV itself stays valid
+            AssertEqual(csv, vm.TranslationCsvPath);
+            AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
+            vm.TestRefreshWorkflow();
+            AssertTrue(vm.CurrentWorkflowStep != "done");          // a behind artifact never reads as a finished patch
         }
         finally
         {
@@ -1642,7 +1690,7 @@ internal static partial class Program
         {
             ("proven scoped subset with an excluded review screen", false, true, true),
             ("one MAIN row blank: build the eligible subset", true, true, true),
-            ("review row without a verified scope", false, false, false),
+            ("explicit UI subset choice skips unverified review rows", false, false, true),
         };
         foreach (var (name, blank, scoped, build) in cases)
         {
@@ -2416,6 +2464,11 @@ internal static partial class Program
             AssertFalse(vm.PatchArtifactBehindCsv);
             AssertEqual("done", vm.CurrentWorkflowStep);
             vm.TestMarkTaskTerminal("patch-rev2");
+            // Selected-row OPUS writes this CSV through the worker instead of the editor Save command.
+            vm.TestSimulateTaskComplete("translate", new WorkerEvent { Type = "complete", Id = "selected-revision", Ok = true, Complete = true, Translated = 1 });
+            AssertTrue(vm.PatchArtifactBehindCsv);
+            AssertFalse(vm.PatchDeliveryReady);
+            Require(vm.CurrentWorkflowStep != "done", "translation cannot leave an older patch certified as current");
             // Saving again after that Build makes the artifact older again.
             EditAndSave(csvA, "Hộ tống lần ba");
             AssertTrue(vm.PatchArtifactBehindCsv && vm.PatchRecheckNeeded);
