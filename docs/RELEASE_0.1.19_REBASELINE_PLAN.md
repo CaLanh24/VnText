@@ -1,6 +1,6 @@
 # Release 0.1.19 — kế hoạch rebaseline một lần (CHƯA ÁP DỤNG, chờ Owner)
 
-Trạng thái: **DỰ THẢO để Brain xin quyền Owner**. Không có mã, epoch hay registry nào bị đổi bởi tài liệu này. Không áp dụng khi chưa có câu trả lời trực tiếp của Owner.
+Trạng thái: **ĐÃ ÁP DỤNG MỘT LẦN (2026-11-13, Owner “cho phép”) — quyền đã tiêu thụ; epoch `epoch-20261113-037-rb-release019` @ `4c88acc`**. (Nội dung dưới đây là kế hoạch gốc.) Không có mã, epoch hay registry nào bị đổi bởi tài liệu này. Không áp dụng khi chưa có câu trả lời trực tiếp của Owner.
 
 ## Vì sao
 Epoch hiện tại `epoch-20261112-035-release019` (nguồn dựng `28f62d3`) đã ở giới hạn độ sâu 8 hop: hop thường kế tiếp bị chặn (`epoch_transition_depth_exceeded`). Nguồn bảo trì đã chuẩn bị (`main`) có sửa thật (mục danh mục tiếng Anh cho lỗi OCR `vntext/image_batch.py:74`, tồn tại từ 0.1.18) và sửa harness test; muốn đưa vào bản phát hành thì phải dựng lại từ nguồn mới, nên cần một epoch gắn nguồn đó. Cách duy nhất không nới 8 hop là một rebaseline một lần, đúng mẫu 0.1.16/0.1.17.
