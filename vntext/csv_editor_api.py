@@ -963,6 +963,11 @@ def main() -> int:
     p_replace = sub.add_parser("replace")
     add_replace_arg(p_replace)
 
+    p_excl = sub.add_parser("exclude-rows")
+    p_excl.add_argument("csv_path", type=Path)
+    p_excl.add_argument("--keys", type=Path, required=True, help="JSON array of row keys to remove")
+    p_excl.add_argument("--expected-sha256", required=True)
+
     p_undo = sub.add_parser("undo")
     p_undo.add_argument("csv_path", type=Path)
     p_undo.add_argument("backup_path", type=Path)
@@ -1034,6 +1039,11 @@ def main() -> int:
                     args.csv_path, fields, rows, args.find, args.replace, keys,
                     dry_run=bool(args.dry_run), expected_sha256=args.expected_sha256,
                 )
+        elif args.cmd == "exclude-rows":
+            from vntext.user_exclusions import exclude_rows
+
+            keys = json.loads(args.keys.read_text(encoding="utf-8"))
+            result = {"ok": True, **exclude_rows(args.csv_path, keys, args.expected_sha256)}
         elif args.cmd == "undo":
             result = restore_backup(args.csv_path, args.backup_path, args.expected_sha256)
         else:

@@ -1234,6 +1234,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
+        DisposeCsvSelection();
         try { _liveRunWriter?.Dispose(); } catch (IOException) { }
         _liveRunWriter = null;
         _translateElapsedTimer?.Stop();

@@ -1336,6 +1336,7 @@
                     <Grid Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=editcsv}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
@@ -1558,7 +1559,20 @@
 
                                 </Grid>
 
-                                <Border x:Name="CsvEmptyState" Grid.Row="1" Margin="0,8,0,0" MinHeight="150" Style="{StaticResource SubtlePanelBorder}"
+                                <Border x:Name="CsvSelectionBar" Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="12,4" Margin="0,0,0,6"
+                                        BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}">
+                                    <WrapPanel VerticalAlignment="Center">
+                                        <Button Content="Chọn tất cả đang lọc" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
+                                        <Button Content="Bỏ chọn" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvClearCheckedCommand}" />
+                                        <TextBlock Text="{Binding CsvCheckedText}" VerticalAlignment="Center" Margin="0,0,14,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
+                                        <Button Content="Dịch dòng đã chọn" Style="{StaticResource OutlineButton}" Margin="0,2,8,2" Command="{Binding CsvTranslateCheckedCommand}"
+                                                ToolTip="Dịch offline (OPUS-MT) chỉ các dòng đã tích; lưu vào chính file CSV này." />
+                                        <Button Content="Xóa dòng đã chọn" Style="{StaticResource OutlineButton}" Margin="0,2,0,2" Command="{Binding CsvDeleteCheckedCommand}"
+                                                ToolTip="Xóa các dòng đã tích khỏi CSV (không phải text game); không hiện lại khi lấy text lại." />
+                                    </WrapPanel>
+                                </Border>
+
+                                <Border x:Name="CsvEmptyState" Grid.Row="2" Margin="0,8,0,0" MinHeight="150" Style="{StaticResource SubtlePanelBorder}"
                                         Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource InvBoolToVis}}">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource BlueSoftBrush}" HorizontalAlignment="Center">
@@ -1569,7 +1583,7 @@
                                         <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </StackPanel>
                                 </Border>
-                                <DataGrid Grid.Row="1" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="{Binding CsvGridMinHeight}"
+                                <DataGrid Grid.Row="2" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="{Binding CsvGridMinHeight}"
                                           Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
@@ -1599,6 +1613,14 @@
                                         <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource ContentPanelScrollBar}" />
                                     </DataGrid.Resources>
                                     <DataGrid.Columns>
+                                        <DataGridTemplateColumn Header="CHỌN" Width="Auto" MinWidth="52" CanUserSort="False" CanUserResize="False">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              AutomationProperties.Name="Chọn dòng" ToolTip="Chọn dòng này cho Dịch/Xóa dòng đã chọn" />
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                         <DataGridTextColumn Header="MÃ DÒNG" Binding="{Binding Key}" IsReadOnly="True" Width="0" MinWidth="0" Visibility="Collapsed">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="{x:Type TextBlock}">

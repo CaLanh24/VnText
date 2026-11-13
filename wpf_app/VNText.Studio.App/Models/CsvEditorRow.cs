@@ -10,6 +10,21 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     private string _issueLabel = "";
     private string _issueDisplay = "";
 
+    private bool _isSelected;
+    /// <summary>Checkbox selection for batch actions; independent of the grid focus/highlight.</summary>
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected == value) return;
+            _isSelected = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+            SelectionChanged?.Invoke(value);
+        }
+    }
+    public static event Action<bool>? SelectionChanged;
+
     public int Index { get; init; }
     public string Key { get; init; } = "";
     public string SourceText { get; init; } = "";

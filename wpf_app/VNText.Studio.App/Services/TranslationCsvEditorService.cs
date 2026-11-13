@@ -317,6 +317,26 @@ public static class TranslationCsvEditorService
         return ParseReplaceResult(RunReplace("replace", csvPath, fields, rows, findText, replacement, keys, dryRun: false, expectedSha256: expectedSha256));
     }
 
+    /// <summary>"Xóa dòng đã chọn": conflict-protected removal of the selected rows from THIS CSV with a persisted decision (user_exclusions.json).</summary>
+    public static (bool Ok, string? Error, int Removed, int Remaining, string? Sha256) ExcludeRows(string csvPath, IReadOnlyList<string> keys, string expectedSha256)
+    {
+        string? keysPath = null;
+        try
+        {
+            keysPath = Path.Combine(WorkerPaths.WorkArtifactsRoot(), $"csv_exclude_keys_{Guid.NewGuid():N}.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(keysPath)!);
+            File.WriteAllText(keysPath, JsonSerializer.Serialize(keys), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            var json = RunPython("exclude-rows", csvPath, null, keysPath, extraArgs: new[] { "--expected-sha256", expectedSha256 });
+            using var doc = JsonDocument.Parse(json.Substring(Math.Max(0, json.IndexOf('{'))));
+            var root = doc.RootElement;
+            var ok = root.TryGetProperty("ok", out var okEl) && okEl.GetBoolean();
+            if (!ok) return (false, root.TryGetProperty("error", out var err) ? err.GetString() : "Không xóa được dòng.", 0, 0, null);
+            return (true, null, root.GetProperty("removed").GetInt32(), root.GetProperty("remaining").GetInt32(), root.GetProperty("csv_sha256").GetString());
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { return (false, ex.Message, 0, 0, null); }
+        finally { if (keysPath is not null) { try { File.Delete(keysPath); } catch (IOException) { } } }
+    }
+
     public static CsvEditorSaveResult Undo(string csvPath, string backupPath, string? expectedSha256 = null)
     {
         try
