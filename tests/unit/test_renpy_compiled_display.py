@@ -32,7 +32,7 @@ class RenPyCompiledDisplayTests(unittest.TestCase):
             self.assertNotIn('dynamic_value',{r['text']for r in rows})
             events=[]
             run_extract_task(str(game),str(root/'package'),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=events.append)
-            self.assertEqual(events[-1]['extract_status'],'PARTIAL',events[-1])
+            self.assertEqual(events[-1]['extract_status'],'COMPLETE',events[-1])   # Owner 2026-11-13: the dynamic expression is a ledgered audit fact
             manifest=json.loads((root/'package/manifest.json').read_text(encoding='utf-8'))
             candidates=[e for e in manifest['entries']if e['import_method']=='renpy_string']
             self.assertTrue({'Menu option','Localized setting','Plain screen','Wrapped button','Plain tooltip'}<={r['source_text']for r in candidates})
@@ -40,13 +40,13 @@ class RenPyCompiledDisplayTests(unittest.TestCase):
             self.assertTrue(all(e['native_contract']['precondition']['source_sha256']==hashlib.sha256(before).hexdigest()for e in candidates))
             self.assertEqual(compiled.read_bytes(),before)
             from vntext.patch_pipeline import apply_translation_package
-            with self.assertRaisesRegex(ValueError,'Extraction is incomplete'):
+            with self.assertRaisesRegex(Exception,'đủ điều kiện|eligible'):          # nothing translated yet: no eligible row, never an empty patch
                 apply_translation_package(str(root/'package/translation.csv'),str(root/'package/manifest.json'),str(game),str(root/'patch'))
             self.assertFalse((root/'patch/COPY_TO_GAME_ROOT').exists())
             compiled.unlink();archive=game/'game/archive.rpa';write_rpa(archive,{'script.rpyc':before})
             archive_before=archive.read_bytes();events=[]
             run_extract_task(str(game),str(root/'archive-package'),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=events.append)
-            self.assertEqual(events[-1]['extract_status'],'PARTIAL',events[-1])
+            self.assertEqual(events[-1]['extract_status'],'COMPLETE',events[-1])   # Owner 2026-11-13: the dynamic expression is a ledgered audit fact
             archived=json.loads((root/'archive-package/manifest.json').read_text(encoding='utf-8'))
             native=next(e for e in archived['entries']if e['import_method']=='renpy_dialogue')
             self.assertEqual(native['file_path'],'game/script.rpyc')

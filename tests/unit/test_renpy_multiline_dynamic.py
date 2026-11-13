@@ -84,7 +84,9 @@ class MultilineDynamicTests(unittest.TestCase):
                 else:shutil.copy2(origin/('game/script.rpy'if kind=='loose'else 'game/script.rpyc'),game/'game')
                 before={p:p.read_bytes()for p in (game/'game').iterdir()if p.is_file()};events=[];package=root/(kind+'package')
                 run_extract_task(str(game),str(package),'safe','balanced',True,renpy_sdk_path=str(SDK),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
-                self.assertEqual(events[-1]['extract_status'],'PARTIAL',events[-1])
+                # Owner 2026-11-13: runtime-generated expressions are an audited machine fact (the exact ledger below), not an incomplete extraction.
+                self.assertEqual(events[-1]['extract_status'],'COMPLETE',events[-1])
+                self.assertIn('RUNTIME_DYNAMIC_UNRESOLVED',{item['code']for item in json.loads((package/'extract_status.json').read_text(encoding='utf-8'))['audit_notes']})
                 manifest=json.loads((package/'manifest.json').read_text(encoding='utf-8'))
                 ledger=manifest['stats']['renpy_static_ui_unresolved'if kind=='loose'else 'renpy_compiled_expression_unresolved']
                 self.assertEqual(len(ledger),3,ledger)
@@ -93,7 +95,8 @@ class MultilineDynamicTests(unittest.TestCase):
                 self.assertTrue(all(item['source_sha256']and item['span']and item['classification']=='RUNTIME_GENERATED'for item in ledger))
                 self.assertFalse({'Hello ','Left','Right','Player','PLAYER'}&{e['source_text']for e in manifest['entries']})
                 self.assertIn('Recoverable template [player]',{e['source_text']for e in manifest['entries']})
-                with self.assertRaisesRegex(ValueError,'Extraction is incomplete'):
+                # Owner 2026-11-02/13: unresolved runtime expressions never blanket-block the verified subset; with NOTHING translated there is simply no eligible row.
+                with self.assertRaisesRegex(Exception,'đủ điều kiện|eligible'):
                     apply_translation_package(str(package/'translation.csv'),str(package/'manifest.json'),str(game),str(root/(kind+'patch')))
                 self.assertTrue(all(p.read_bytes()==raw for p,raw in before.items()))
                 shutil.rmtree(game)

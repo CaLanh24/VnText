@@ -701,6 +701,9 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             if prior is not None and prior != translation:
                 raise RenPyPatchError(f"conflicting Ren'Py string translations for {source!r}")
             requested_strings[string_identity] = translation
+    if not dialogues and not requested_strings:
+        # Every row was omitted (untranslated / unsafe): there is nothing to write.  Never emit an empty overlay that could read back as a patch.
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để patch (chưa có dòng nào được dịch và qua kiểm tra); không tạo patch rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
     for archive_path, expected_hash in archive_identities.items():
         if RenPyArchive(archive_path).container_sha256 != expected_hash:
             raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")

@@ -28,7 +28,8 @@ class RenPyUiInventoryTests(unittest.TestCase):
             disabled=next(e for e in manifest['entries']if e['source_text']=='Disabled label')
             self.assertTrue(disabled['review_only']);self.assertFalse(disabled.get('patch_proof'))
             self.assertEqual(len(manifest['stats']['renpy_static_ui_unresolved']),1)
-            with self.assertRaisesRegex(ValueError,'Extraction is incomplete'):
+            # Owner 2026-11-02/13: the unproven (disabled-substitution) row is excluded coverage, not a blanket block; with nothing translated there is no eligible row.
+            with self.assertRaisesRegex(Exception,'đủ điều kiện|eligible'):
                 apply_translation_package(str(root/'package/translation.csv'),str(root/'package/manifest.json'),str(game),str(root/'patch'))
 
     @unittest.skipUnless((renpy_native_sdk()/'renpy.py').is_file(),'Official SDK8.5.3 absent')

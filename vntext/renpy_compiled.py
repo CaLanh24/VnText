@@ -368,12 +368,16 @@ def extract_compiled_source(root, is_cancelled=None):
             total_bytes+=len(data)
             if files>2000 or total_bytes>128*1024*1024: raise ValueError('Compiled project inspection budget exceeded')
             rows,unresolved=compiled_dialogues(data)
-            errors.extend(f'{relative}: static compiled coverage unresolved: {kind}' for kind in unresolved)
             digest=hashlib.sha256(data).hexdigest()
             local_unresolved=[]
             display_rows=compiled_display_candidates(data,local_unresolved)
             expression_unresolved.extend({**item,'file_path':relative,'source_sha256':digest,'source_container':container}for item in local_unresolved)
-            errors.extend(f'{relative}:{item["line"]}: {item["reason"]}'for item in local_unresolved)
+            # Same contract as the loose-source path (Owner 2026-11-13): a runtime-generated expression has no static text; it is a ledgered AUDIT fact,
+            # not a discovery error, and a Screen node is "unresolved" only because of those ledgered expressions when the file has some.
+            runtime_generated=[item for item in local_unresolved if item.get('classification')=='RUNTIME_GENERATED']
+            errors.extend(f'{relative}: static compiled coverage unresolved: {kind}' for kind in unresolved
+                          if not (kind=='renpy.ast.Screen' and runtime_generated))
+            errors.extend(f'{relative}:{item["line"]}: {item["reason"]}'for item in local_unresolved if item.get('classification')!='RUNTIME_GENERATED')
             from vntext.renpy_static import classify_ui_text
             for row in display_rows:
                 kind,reason=classify_ui_text(row['text'])
@@ -417,6 +421,11 @@ def extract_compiled_source(root, is_cancelled=None):
         'renpy_non_native_review_entries':len(reviews),
         'renpy_compiled_expression_unresolved':expression_unresolved,
         'renpy_static_ui_technical_excluded':technical_ui,
+        'renpy_static_ui_runtime_unresolved':[{'file_path':item['file_path'],'line':item['line'],'end_line':item.get('end_line',item['line']),'reason':item['reason'],
+            'raw_expression':str(item.get('raw_expression') or '')[:300]}for item in expression_unresolved if item.get('classification')=='RUNTIME_GENERATED'],
+        'limitations':([{'code':'RUNTIME_DYNAMIC_UNRESOLVED','count':sum(1 for item in expression_unresolved if item.get('classification')=='RUNTIME_GENERATED'),
+            'message':'Biểu thức động chỉ có giá trị lúc chạy game không thể trích tĩnh; đã ghi vào renpy_runtime_dynamic.json, không chạy mã game và không tạo text giả.'}]
+            if any(item.get('classification')=='RUNTIME_GENERATED' for item in expression_unresolved) else []),
         'renpy_existing_translations':{kind:[{'identity':identity,**{key:str(value)if isinstance(value,Path)else value for key,value in record.items()}}
             for identity,record in target_state[kind].items()]for kind in ('dialogues','strings')},
         'renpy_compiled_display_candidates':[
