@@ -127,6 +127,7 @@ internal static partial class Program
         {
             var csvFailures = new List<string>();
             Run("CsvEditor_BulkRefusesChangedOpenedRevision", CsvEditor_BulkRefusesChangedOpenedRevision, csvFailures);
+            Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, csvFailures);
             Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);

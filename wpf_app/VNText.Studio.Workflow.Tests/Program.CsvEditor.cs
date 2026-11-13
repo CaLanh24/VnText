@@ -40,6 +40,56 @@ internal static partial class Program
     }
 
 
+    private static void CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected()
+    {
+        var root = Path.Combine(TestTempRoot(), "vntext_wpf_select_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var csv = Path.Combine(root, "translation.csv");
+            File.WriteAllText(csv,
+                "key,source_text,translation,context,file_path,import_method
+" +
+                "k1,Hello,Xin chao,UI:Text,game/a.rpy,renpy_string
+" +
+                "k2,<,,UI:Text,game/a.rpy,renpy_string
+" +
+                "k3,\"Line one
+line two {w} [name]\",\"Dong mot
+dong hai {w} [name]\",UI:Text,game/a.rpy,renpy_string
+",
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+            File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"<"},{"key":"k3","source_text":"Line one
+line two {w} [name]"}]}""", Encoding.UTF8);
+            using var worker = new PythonWorkerHost();
+            using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            AssertEqual(3, vm.CsvEditorRows.Count);
+            // The checkbox selection is its own state: counting, select-all-filtered and clear.
+            AssertEqual(0, vm.CsvCheckedCount); AssertFalse(vm.CsvHasChecked);
+            vm.CsvEditorRows.First(row => row.Key == "k2").IsSelected = true;
+            AssertEqual(1, vm.CsvCheckedCount); AssertTrue(vm.CsvHasChecked);
+            vm.CsvSelectAllFilteredCommand.Execute(null);
+            AssertEqual(3, vm.CsvCheckedCount);
+            vm.CsvClearCheckedCommand.Execute(null);
+            AssertEqual(0, vm.CsvCheckedCount);
+            AssertFalse(vm.CsvEditorRows.Any(row => row.IsSelected));
+            // Deleting is conflict-protected, keeps every other row intact and records the decision.
+            var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(csv))).ToLowerInvariant();
+            var stale = TranslationCsvEditorService.ExcludeRows(csv, ["k2"], new string('0', 64));
+            AssertFalse(stale.Ok);
+            AssertEqual(sha, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(csv))).ToLowerInvariant());   // nothing changed
+            var removed = TranslationCsvEditorService.ExcludeRows(csv, ["k2"], sha);
+            AssertTrue(removed.Ok); AssertEqual(1, removed.Removed); AssertEqual(2, removed.Remaining);
+            var text = File.ReadAllText(csv);
+            Require(text.Contains("k1,Hello,Xin chao", StringComparison.Ordinal) && text.Contains("{w} [name]", StringComparison.Ordinal), "other rows intact");
+            Require(!text.Contains("
+k2,", StringComparison.Ordinal), "k2 removed");
+            Require(File.ReadAllText(Path.Combine(root, "user_exclusions.json")).Contains("\"k2\"", StringComparison.Ordinal), "decision recorded");
+        }
+        finally { try { Directory.Delete(root, recursive: true); } catch (IOException) { } }
+    }
+
     private static void CsvEditor_RejectedFileKeepsOpenDocumentAndShowsInlineError()
     {
         var root = Path.Combine(TestTempRoot(), "vntext_wpf_reject_" + Guid.NewGuid().ToString("N"));
