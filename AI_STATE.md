@@ -32,4 +32,3 @@ Remaining native checklist on corrected candidate: select-all/clear/translate/de
 ## Cleanup and next action
 DEV disposed127 owned scratch roots,0refused;852 own stale MISSING records reconciled (usability-20261114-scratch-cleanup.json). Measured project695199317B/default1073741824B. Candidate retained; TEST_RUN/updater-loop-check29MB retained for consumer/guard; synthetic native fixture~1.1MB registered retained for Root and disposable after QA. Owner app/data untouched.
 Finish focused gate -> commit intended correction using established per-command identity -> rebuild clean candidate -> actual launcher smoke -> Root native. Keep tracked tree clean after final commit; subsequent native state goes in ignored evidence receipt and this checkpoint's linked receipt, not an uncommitted docs mutation that blocks the launcher. See docs/USABILITY_2026-11-13.md for scope/history.
-
