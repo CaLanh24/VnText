@@ -93,8 +93,12 @@ internal static partial class Program
             File.WriteAllText(Path.Combine(root, "manifest.json"), """{"entries":[{"key":"k1","source_text":"Hello"},{"key":"k2","source_text":"<"},{"key":"k3","source_text":"Line one\nline two {w} [name]"}]}""", Encoding.UTF8);
             using var worker = new PythonWorkerHost();
             using var vm = new MainViewModel(new FakePathPicker { TranslationCsv = csv }, worker, startWorker: false);
+            var selectNotifications = 0;
+            vm.CsvSelectAllFilteredCommand.CanExecuteChanged += (_, _) => selectNotifications++;
             vm.OpenCsvEditorFileCommand.Execute(null);
             AssertEqual(3, vm.CsvEditorRows.Count);
+            AssertTrue(selectNotifications > 0);
+            AssertTrue(vm.CsvSelectAllFilteredCommand.CanExecute(null));
             // The checkbox selection is its own state: counting, select-all-filtered and clear.
             AssertEqual(0, vm.CsvCheckedCount); AssertFalse(vm.CsvHasChecked);
             vm.CsvEditorRows.First(row => row.Key == "k2").IsSelected = true;
@@ -104,6 +108,10 @@ internal static partial class Program
             vm.CsvClearCheckedCommand.Execute(null);
             AssertEqual(0, vm.CsvCheckedCount);
             AssertFalse(vm.CsvEditorRows.Any(row => row.IsSelected));
+            vm.CsvEditorRows[0].IsSelected = true;
+            vm.TestLoadCsvRows(Path.Combine(root, "other.csv"), [new CsvEditorRow { Key = "other", SourceText = "Other" }], "");
+            AssertEqual(0, vm.CsvCheckedCount);
+            AssertFalse(vm.CsvTranslateCheckedCommand.CanExecute(null));
             // Deleting is conflict-protected, keeps every other row intact and records the decision.
             var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(csv))).ToLowerInvariant();
             var stale = TranslationCsvEditorService.ExcludeRows(csv, ["k2"], new string('0', 64));

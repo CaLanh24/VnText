@@ -33,6 +33,12 @@ public sealed partial class MainViewModel
         CsvTranslateCheckedCommand = new RelayCommand(_ => _ = TranslateCheckedCsvRowsAsync(), _ => CsvHasChecked && CanRunCsvBatchAction(allowDirty: true));
         CsvDeleteCheckedCommand = new RelayCommand(_ => _ = DeleteCheckedCsvRowsAsync(), _ => CsvHasChecked && CanRunCsvBatchAction(allowDirty: true));
         CsvEditorRow.SelectionChanged += OnCsvRowCheckedChanged;
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(Busy) or nameof(CsvEditorLoading) or nameof(CsvEditorSaving)
+                or nameof(CsvEditorPath) or nameof(CsvEditorHasDocument))
+                RecountChecked();
+        };
     }
 
     private void DisposeCsvSelection() => CsvEditorRow.SelectionChanged -= OnCsvRowCheckedChanged;
@@ -46,6 +52,7 @@ public sealed partial class MainViewModel
     {
         _csvCheckedCount = _csvEditorRows.Count(row => row.IsSelected);
         Raise(nameof(CsvCheckedCount)); Raise(nameof(CsvHasChecked)); Raise(nameof(CsvCheckedText));
+        CsvSelectAllFilteredCommand?.RaiseCanExecuteChanged();
         CsvClearCheckedCommand?.RaiseCanExecuteChanged(); CsvTranslateCheckedCommand?.RaiseCanExecuteChanged(); CsvDeleteCheckedCommand?.RaiseCanExecuteChanged();
     }
 
