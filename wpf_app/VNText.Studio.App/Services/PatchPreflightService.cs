@@ -53,7 +53,7 @@ public sealed record PatchPreflightResult(
 
 public static class PatchPreflightService
 {
-    public static PatchPreflightResult Run(string? csvPath, string? manifestPath)
+    public static PatchPreflightResult Run(string? csvPath, string? manifestPath, bool partialOverride = false)
     {
         var csv = (csvPath ?? "").Trim().Trim('"');
         var manifest = (manifestPath ?? "").Trim().Trim('"');
@@ -71,7 +71,7 @@ public static class PatchPreflightService
             var psi = new ProcessStartInfo
             {
                 FileName = WorkerPaths.PythonExecutable(),
-                Arguments = $"-m vntext.patch_gate --json \"{csv}\" \"{manifest}\"",
+                Arguments = $"-m vntext.patch_gate --json {(partialOverride ? "--partial-override " : "")}\"{csv}\" \"{manifest}\"",
                 WorkingDirectory = WorkerPaths.RepoRoot(),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,

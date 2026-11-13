@@ -2419,6 +2419,16 @@ def _scoped_patch_excluded_coverage(package_dir: Path) -> list[dict]:
     return excluded_coverage(status) if scoped_patch_eligible(status) else []
 
 
+def _partial_override_coverage(package_dir: Path) -> list[dict]:
+    from vntext.patch_gate import partial_override_coverage, partial_override_eligible
+
+    sidecar = Path(package_dir) / "extract_status.json"
+    if not sidecar.is_file():
+        return []
+    status = json.loads(sidecar.read_text(encoding="utf-8-sig"))
+    return partial_override_coverage(status) if partial_override_eligible(status) else []
+
+
 def run_patch_task(
     csv_path: Path,
     manifest_path: Path,
@@ -2432,6 +2442,31 @@ def run_patch_task(
     include_installer: bool = True,
     write_manifest_file: bool = True,
     enable_trace: bool = False,
+    partial_override: bool = False,
+) -> None:
+    """Build a patch.  ``partial_override`` is the explicit, user-confirmed safe-subset action (see patch_gate.partial_patch_override)."""
+    from vntext.patch_gate import partial_patch_override
+
+    with partial_patch_override(partial_override):
+        _run_patch_task_impl(csv_path, manifest_path, src, out, progress=progress, log=log, complete=complete,
+                             patch_out_override=patch_out_override, include_installer=include_installer,
+                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override)
+
+
+def _run_patch_task_impl(
+    csv_path: Path,
+    manifest_path: Path,
+    src: str,
+    out: str,
+    *,
+    progress: ProgressFn,
+    log: LogFn,
+    complete: CompleteFn,
+    patch_out_override: str | Path | None = None,
+    include_installer: bool = True,
+    write_manifest_file: bool = True,
+    enable_trace: bool = False,
+    partial_override: bool = False,
 ) -> None:
     trace = None
     patch_out: Path | None = None
@@ -2481,6 +2516,10 @@ def run_patch_task(
         from vntext.patch_safety import validate_patch_output
         validate_patch_package_identity(csv_path, manifest_for_delivery)
         patch_excluded = _scoped_patch_excluded_coverage(Path(csv_path).parent)
+        patch_override_used = False
+        if partial_override and not patch_excluded:
+            patch_excluded = _partial_override_coverage(Path(csv_path).parent)
+            patch_override_used = bool(patch_excluded)
         patch_out = (
             Path(patch_out_override)
             if patch_out_override is not None
@@ -2569,12 +2608,22 @@ def run_patch_task(
                     summary = patch_install_instructions
                     (patch_out / "HUONG_DAN_CAI_PATCH.txt").write_text(patch_install_instructions + "\n", encoding="utf-8")
         if patch_excluded:
-            (patch_out / "patch_coverage.json").write_text(json.dumps({
-                "scope": "VERIFIED_MAIN_SUBSET",
+            coverage_doc: dict = {
+                "scope": "USER_SAFE_SUBSET" if patch_override_used else "VERIFIED_MAIN_SUBSET",
                 "statement": "Patch covers the verified MAIN rows only; this is NOT a full-game PASS. The coverage below was excluded and is unpatched.",
                 "excluded_coverage": patch_excluded,
-            }, ensure_ascii=False, indent=2), encoding="utf-8")
-            summary += f" Phạm vi: chỉ các dòng MAIN đã xác minh; {len(patch_excluded)} nhóm chưa phủ được ghi trong patch_coverage.json (không phải PASS toàn game)."
+            }
+            if patch_override_used:
+                results = patch_verification.get("results") if isinstance(patch_verification, dict) else None
+                coverage_doc.update({
+                    "owner_override": True,
+                    "statement": "Owner-confirmed safe-subset Patch: only rows passing every per-row check were patched; this is NOT a full-game PASS and no review-only or unproven row was treated as patchable.",
+                    "included_rows": len(results) if isinstance(results, list) else None,
+                    "omitted_by_reason": (patch_verification.get("omitted_by_reason") or {}) if isinstance(patch_verification, dict) else {},
+                    "review_only_skipped": (patch_verification.get("review_only_skipped") or 0) if isinstance(patch_verification, dict) else 0,
+                })
+            (patch_out / "patch_coverage.json").write_text(json.dumps(coverage_doc, ensure_ascii=False, indent=2), encoding="utf-8")
+            summary += f" Phạm vi: chỉ các dòng đã xác minh; {len(patch_excluded)} nhóm chưa phủ được ghi trong patch_coverage.json (không phải PASS toàn game)."
         if late_cancel:
             # The cancel arrived after the output was complete and verified: say so instead of
             # reporting a cancellation over a finished patch.

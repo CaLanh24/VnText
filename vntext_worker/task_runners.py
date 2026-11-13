@@ -404,8 +404,12 @@ def run_patch_worker(
 
     from vntext.patch_gate import audit_patch_package, format_preflight_log
 
+    partial_override = params.get("partial_override") is True
+    from vntext.patch_gate import partial_patch_override
+
     try:
-        preflight = audit_patch_package(csv_path, manifest_path, game_root=src)
+        with partial_patch_override(partial_override):
+            preflight = audit_patch_package(csv_path, manifest_path, game_root=src)
         # Rows omitted from the patch make the preflight a warning, decided here from the audit counts (not from the text).
         preflight_text = format_preflight_log(preflight)
         if int(preflight.get("blocked", 0) or 0) > 0:
@@ -413,7 +417,7 @@ def run_patch_worker(
         else:
             log(preflight_text)
         if preflight.get("eligible", 0) <= 0:
-            msg = "Không có dòng hợp lệ để patch sau kiểm tra chất lượng"
+            msg = "Không có dòng đủ điều kiện để patch sau kiểm tra chất lượng. Hãy dịch hoặc duyệt thêm dòng trong CSV rồi thử lại; không tạo patch rỗng."
             emit_error(task_id, msg)
             emit_complete(task_id, ok=False, error=msg)
             return
@@ -473,6 +477,7 @@ def run_patch_worker(
             # that callers and installers cannot find.
             patch_out_override=str(build_dir),
             enable_trace=True,
+            partial_override=partial_override,
         )
     except WorkerCancelled:
         _finish_cancelled(task_id)

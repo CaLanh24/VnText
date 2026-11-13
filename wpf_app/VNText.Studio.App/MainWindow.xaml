@@ -843,6 +843,9 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" HorizontalAlignment="Left" Content="Patch phần an toàn" Style="{StaticResource SecondaryButton}" Command="{Binding RunPatchSafeSubsetCommand}"
+                                            Visibility="{Binding ShowSafeSubsetPatch, Converter={StaticResource BoolToVis}}" AutomationProperties.Name="Patch phần an toàn"
+                                            ToolTip="Chỉ patch các dòng đã dịch và qua mọi kiểm tra; dòng còn lại giữ nguyên. Không phải bản Việt hóa đầy đủ." />
                                     <Button Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 

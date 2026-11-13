@@ -1,6 +1,8 @@
 """Patch eligibility gate — read-only audit; never mutates translation.csv."""
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import csv
 import hashlib
 import json
@@ -530,6 +532,34 @@ EXPECTED_PATCH_LIMITATIONS = frozenset({"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_S
 REVIEW_SCREEN_LIMITATION = "REVIEW_SCREEN_CANDIDATES_UNPROMOTED"
 
 
+_PARTIAL_PATCH_OVERRIDE: contextvars.ContextVar[bool] = contextvars.ContextVar("vntext_partial_patch_override", default=False)
+
+
+@contextlib.contextmanager
+def partial_patch_override(enabled: bool):
+    """Owner-confirmed 'patch only the safe valid subset'.  It relaxes ONLY the extraction-status check of validate_patch_package_identity:
+    every per-row structural/hash/schema/path/placeholder/locator check and the row-level skip rules still apply to each included row."""
+    token = _PARTIAL_PATCH_OVERRIDE.set(bool(enabled))
+    try:
+        yield
+    finally:
+        _PARTIAL_PATCH_OVERRIDE.reset(token)
+
+
+def partial_override_eligible(status: dict) -> bool:
+    """A user override may relax a PARTIAL extraction only; FAILED/EMPTY/unknown/COMPLETE-with-flags stay with the normal rules."""
+    return isinstance(status, dict) and status.get("status") == "PARTIAL" and status.get("complete") is False
+
+
+def partial_override_coverage(status: dict) -> list[dict]:
+    """Excluded coverage of an override patch: the recorded limitations, or one honest generic record when the sidecar lists none."""
+    recorded = excluded_coverage(status)
+    if recorded:
+        return recorded
+    return [{"code": "USER_PARTIAL_OVERRIDE", "count": 0,
+             "message": "Extraction was PARTIAL; only rows that pass every per-row check were patched, everything else is unpatched."}]
+
+
 def scoped_patch_eligible(status: dict) -> bool:
     """True only for: PARTIAL, no error, SDK-backed (no review-only rows), native accounting complete, non-empty MAIN, and at least one
     limitation, all from the expected set.  Anything else (errors, no-SDK/review rows, EMPTY/FAILED, unknown limitation) stays blocked."""
@@ -583,8 +613,9 @@ def validate_patch_package_identity(csv_path: str | Path, manifest: dict) -> Non
     sidecar = Path(csv_path).parent / "extract_status.json"
     if sidecar.is_file():
         status = json.loads(sidecar.read_text(encoding="utf-8-sig"))
-        if not (status.get("status") == "COMPLETE" and status.get("complete") is True) and not scoped_patch_eligible(status):
-            raise ValueError("Extraction is incomplete; final Patch is blocked")
+        if (not (status.get("status") == "COMPLETE" and status.get("complete") is True) and not scoped_patch_eligible(status)
+                and not (_PARTIAL_PATCH_OVERRIDE.get() and partial_override_eligible(status))):
+            raise ValueError("Extraction is incomplete; final Patch is blocked (choose the explicit safe-subset Patch to patch only verified rows)")
 
 
 def audit_patch_package(
@@ -737,8 +768,11 @@ def main() -> int:
         help="Optional selected game root for profile-aware policy checks",
     )
     parser.add_argument("--json", action="store_true", help="Print JSON to stdout")
+    parser.add_argument("--partial-override", action="store_true",
+                        help="Owner-confirmed safe-subset preflight: relax ONLY the PARTIAL extraction-status check")
     args = parser.parse_args()
-    result = audit_patch_package(args.csv_path, args.manifest_path, game_root=args.game_root)
+    with partial_patch_override(args.partial_override):
+        result = audit_patch_package(args.csv_path, args.manifest_path, game_root=args.game_root)
     if args.json:
         sys.stdout.write(json.dumps(result, ensure_ascii=False) + "\n")
     else:

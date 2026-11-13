@@ -578,7 +578,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         eligible_entries.append(entry)
     entries = eligible_entries
     if not entries:
-        raise RenPyPatchError("package has no eligible Ren'Py patchable entries")
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để patch (chỉ có dòng xem lại/chưa chứng minh); hãy dịch/duyệt trong CSV rồi thử lại. [package has no eligible Ren'Py patchable entries]")
     dialogues: list[tuple[dict, str]] = []
     requested_strings: dict[tuple[str, str], str] = {}
     native_ids: set[str] = set()

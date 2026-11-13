@@ -177,6 +177,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && ReadyForPatch);
+        RunPatchSafeSubsetCommand = new RelayCommand(_ => RunPatchSafeSubset(), _ => CanPatchSafeSubset);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);
         ChooseInputCommand = new RelayCommand(_ => ChooseInput(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
@@ -498,7 +499,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         get => _readyForPatch;
         private set
         {
-            if (Set(ref _readyForPatch, value)) RunPatchCommand?.RaiseCanExecuteChanged();
+            if (Set(ref _readyForPatch, value)) { RunPatchCommand?.RaiseCanExecuteChanged(); RaiseSafeSubsetPatch(); }
         }
     }
 
@@ -788,7 +789,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 RunTranslateCommand.RaiseCanExecuteChanged();
                 ExportCloudRepairPackageCommand.RaiseCanExecuteChanged();
                 ImportExistingTranslationCommand.RaiseCanExecuteChanged();
-                RunPatchCommand.RaiseCanExecuteChanged();
+                RunPatchCommand.RaiseCanExecuteChanged(); RaiseSafeSubsetPatch();
                 DownloadRenpySdkCommand.RaiseCanExecuteChanged();
                 ContinueWithoutRenpySdkCommand.RaiseCanExecuteChanged();
                 CheckResourcesCommand?.RaiseCanExecuteChanged();
@@ -878,6 +879,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public RelayCommand ExportCloudRepairPackageCommand { get; }
     public RelayCommand ImportExistingTranslationCommand { get; }
     public RelayCommand RunPatchCommand { get; }
+    public RelayCommand RunPatchSafeSubsetCommand { get; }
     public RelayCommand CancelCommand { get; }
     public RelayCommand CancelAndExitCommand { get; }
     public event EventHandler? ExitAfterTaskRequested;

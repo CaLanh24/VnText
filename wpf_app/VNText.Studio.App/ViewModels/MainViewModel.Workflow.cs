@@ -610,6 +610,54 @@ public sealed partial class MainViewModel
         }, "Đang tạo patch…");
     }
 
+    /// <summary>
+    /// The explicit Owner-confirmed action for a PARTIAL extraction / pending rows: offered only while the normal Patch is not ready, there is a CSV with
+    /// translated rows and nothing is running.  It never replaces the normal Patch; the Python gate keeps every per-row check.
+    /// </summary>
+    public bool CanPatchSafeSubset => !Busy && !CsvEditorSaving && !CsvEditorDirty && !ReadyForPatch && _hasTranslations && !string.IsNullOrWhiteSpace(InputPath);
+    public bool ShowSafeSubsetPatch => !ReadyForPatch && _hasTranslations && !string.IsNullOrWhiteSpace(InputPath);
+    private void RaiseSafeSubsetPatch()
+    {
+        RunPatchSafeSubsetCommand?.RaiseCanExecuteChanged();
+        Raise(nameof(CanPatchSafeSubset)); Raise(nameof(ShowSafeSubsetPatch));
+    }
+
+    private void RunPatchSafeSubset()
+    {
+        if (!CanPatchSafeSubset) return;
+        SelectedTab = WorkflowTabs.Patch;
+        if (!ValidateTranslationCsv(silent: false))
+        {
+            StatusText = "CSV chưa hợp lệ";
+            return;
+        }
+        var csv = ResolveActiveCsvPath();
+        var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
+        var preflight = PatchPreflightService.Run(csv, manifest, partialOverride: true);
+        PatchEligibleCount = preflight.Eligible; PatchBlockedCount = preflight.Blocked;
+        PatchPreflightMessage = preflight.DetailMessage;
+        if (!preflight.Ok || preflight.Eligible <= 0)
+        {
+            StatusText = "Chưa có dòng đủ điều kiện";
+            AppendLog(UiText.Msg("Không có dòng nào đủ điều kiện để patch an toàn. Hãy dịch hoặc duyệt thêm dòng trong CSV; sẽ không tạo patch rỗng. {0}", preflight.Error ?? preflight.Summary), "WARN");
+            AppDialogService.Show(UiText.Msg("Không có dòng nào đủ điều kiện để patch an toàn. Hãy dịch hoặc duyệt thêm dòng trong CSV; sẽ không tạo patch rỗng."),
+                "Patch phần an toàn", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        if (AppDialogService.Show(
+                UiText.Msg("Chỉ patch {0} dòng đủ điều kiện (đã dịch và qua mọi kiểm tra). {1} dòng còn lại bị bỏ qua và game giữ nguyên các dòng đó; đây KHÔNG phải bản Việt hóa đầy đủ.", preflight.Eligible, preflight.Blocked),
+                "Patch phần an toàn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+        BeginTask("patch", new
+        {
+            src = InputPath,
+            @out = OutputPath,
+            csv_path = csv,
+            manifest_path = manifest,
+            partial_override = true,
+        }, "Đang tạo patch phần an toàn…");
+    }
+
     private string ResolveActiveCsvPath()
     {
         // Selection is independent of Patch validation. CSV-editor loading clears that
