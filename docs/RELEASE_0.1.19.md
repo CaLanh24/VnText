@@ -1,6 +1,6 @@
 # Release 0.1.19 — ledger
 
-Trạng thái: **ỨNG VIÊN MỚI ĐÃ DỰNG TỪ NGUỒN SAU REBASELINE, CHỜ ROOT NATIVE + BRAIN ACCEPT** (chưa push/tag/upload). Bản vá vòng lặp cập nhật trong app (0.1.18 công khai chưa chứa bản sửa). Ứng viên cũ `28f62d3` (và Setup `32bc1924…`, `native019`) đã bị thay thế và dọn; hash của nó giữ ở `assets-019-28f62d3-superseded.json`/`candidate-receipt-28f62d3-superseded.json`.
+Trạng thái: **ĐÃ PHÁT HÀNH 2026-11-13** — https://github.com/CaLanh24/VnText/releases/tag/v0.1.19 (Latest); tag chú thích `v0.1.19` (`8611b551…`) → nguồn dựng `4c88acc0a16a347074f66f44f42d32142ce1c8fb`; `main` đẩy fast-forward tới `11e4faa`. Brain ACCEPT đúng ứng viên; 5 tài sản đọc lại băm từ bản tải công khai (khớp). **Cập nhật in-app công khai 18→19 (apply/restart) và dọn cuối vẫn do Root xác nhận — chưa coi là xác minh đầy đủ.** Bản vá vòng lặp cập nhật trong app (0.1.18 công khai chưa chứa bản sửa). Ứng viên cũ `28f62d3` (và Setup `32bc1924…`, `native019`) đã bị thay thế và dọn; hash của nó giữ ở `assets-019-28f62d3-superseded.json`/`candidate-receipt-28f62d3-superseded.json`.
 
 ## Nguồn và ứng viên (ĐÚNG MỘT nguồn dựng)
 - Source dựng và epoch: **`4c88acc0a16a347074f66f44f42d32142ce1c8fb`** (commit quyền, hậu duệ của nguồn chuẩn bị `cba2a806fe111fb889267a363decad1d7f96904f`; epoch `epoch-20261113-037-rb-release019`). Snapshot sạch: `RELEASE_RUN/candidate-0.1.19/source`. Mọi gate/backend/hash dưới đây gắn đúng SHA này. Các commit tài liệu sau đó trên `main` không đổi nguồn dựng; tag phải trỏ `4c88acc`.
@@ -56,3 +56,8 @@ Dispose qua helper (target chính xác, không theo junction): `RELEASE_RUN/cand
 - Root báo (chưa kiểm bởi DEV trừ hash): Setup mới `3ddebffc…` cài tương tác vào `native-final` (SDK/tài nguyên tải thật xong, EXE `da27e77b…`, app mở), **gỡ cài đặt 0.1.19 hoàn tất** (UI tiếng Anh; installer xóa toàn bộ thư mục test, không dữ liệu Owner; `native-final` rỗng sau khi đóng). Ảnh: `native-final-setup-state/ready/uninstall.png`. Root cũng tải Setup công khai 0.1.18 (`454ef46f…` — DEV khớp hash) và cài `native-upgrade` (EXE `9d0d6f29…`, canary `data/native-owner-canary.txt`), đã đóng. Receipts/manifest dọn: `native-root-receipts-and-cleanup-manifest.json`, `native-upgrade-copy-receipt.json`.
 - DEV chuẩn bị (không mở UI, không dựng lại): bản sao byte-giống `native-upgrade-copy` (10,556 tệp, 0 hardlink/reparse) để Setup 18→19; giữ nguyên `native-upgrade` cho cập nhật in-app công khai; fixture `--native-update-ui` mã MỚI + launcher có log bền (`native-update-ui/README-ROOT.txt`, `harness-binding.json`). Đã đăng ký các root native; đã dispose baseline giải nén 0.1.17 và 0.1.7 (không còn consumer backend). Project 4,308,755,095 B < 5 GiB.
 - Còn NOT_PROVEN: Setup 18→19 native, Setup-required native (mã mới), cập nhật in-app công khai 18→19.
+
+## Phát hành (2026-11-13)
+- Root receipt `root-prepublication-accept.json`: Setup mới + SDK thật + app PASS; gỡ cài đặt PASS; Setup 18→19 trên bản sao byte-giống bản 0.1.18 thật PASS (canary nguyên, 3228 tệp dữ liệu không mất); fixture Setup-required mã mới (TEST_ONLY, HTTP giả) PASS.
+- Đã dọn trước publish: `native-upgrade-copy`, baseline 0.1.18 giải nén, public hop. Giữ: `native-upgrade` (0.1.18 thật + canary) và Setup chính thức 0.1.18 cho Root cập nhật in-app công khai.
+- Readback công khai: `public-readback-receipt.json` (5/5 khớp, không tệp thừa); tệp tải đã dispose.
