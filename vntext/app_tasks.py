@@ -1144,10 +1144,16 @@ def run_extract_task(
         nested = find_nested_runtime(src)
         if nested is not None:
             raise ValueError(f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
-        refresh_extract(src, out, lambda stage, done, stage_log: _run_extract_task_impl(
-            src, str(stage), mode, level, separate_review, renpy_sdk_path, renpy_sdk_action,
-            progress=progress, log=stage_log, complete=done, is_cancelled=is_cancelled),
-            complete, log, is_cancelled)
+        def _staged_extract(stage, done, stage_log):
+            # The staging folder is new: carry the user's recorded row removals into it so the re-extraction honors them (and republishes them).
+            from vntext.user_exclusions import EXCLUSIONS_FILE
+            previous = Path(out) / EXCLUSIONS_FILE
+            if previous.is_file():
+                import shutil
+                shutil.copy2(previous, Path(stage) / EXCLUSIONS_FILE)
+            _run_extract_task_impl(src, str(stage), mode, level, separate_review, renpy_sdk_path, renpy_sdk_action,
+                                   progress=progress, log=stage_log, complete=done, is_cancelled=is_cancelled)
+        refresh_extract(src, out, _staged_extract, complete, log, is_cancelled)
     except Exception as exc:
         complete({"ok": False, "complete": False, "error": str(exc), "severity": "error",
                   "extract_status": "FAILED", "patch_scope": "NONE", "pending": 1, "review_only": 0, "blocked": 1})
@@ -1312,6 +1318,14 @@ def _run_extract_task_impl(
         # compatibility default; the GUI worker uses the strict boundary.
         if is_cancelled and is_cancelled():
             raise UnityAnalysisCancelled("cancelled")
+        # Rows the user removed from this CSV earlier ("Xóa dòng đã chọn") are not resurrected by a re-extraction of the same package
+        # while their source text is unchanged; the decision is recorded in user_exclusions.json.
+        from vntext.user_exclusions import filter_excluded_entries
+
+        main, _dropped_main = filter_excluded_entries(main, out)
+        review, _dropped_review = filter_excluded_entries(review, out)
+        if _dropped_main or _dropped_review:
+            log(f"Giữ {len(_dropped_main) + len(_dropped_review)} dòng bạn đã xóa trước đó (user_exclusions.json) ngoài CSV.")
         package_stats = write_package(
             out,
             main,
