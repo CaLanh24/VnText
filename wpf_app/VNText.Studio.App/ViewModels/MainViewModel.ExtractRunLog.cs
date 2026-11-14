@@ -215,7 +215,7 @@ public sealed partial class MainViewModel
     private void CopyExtractLog()
     {
         try { Clipboard.SetText(string.Join(Environment.NewLine, ExtractLogShown.Cast<string>())); }
-        catch (System.Runtime.InteropServices.ExternalException ex) { AppendLog($"Không chép được nhật ký lấy text: {ex.Message}"); }
+        catch (System.Runtime.InteropServices.ExternalException ex) { AppendLog($"Không chép được nhật ký lấy text: {ex.Message}", "WARN"); }
     }
 
     internal void RefreshExtractLogLanguage()

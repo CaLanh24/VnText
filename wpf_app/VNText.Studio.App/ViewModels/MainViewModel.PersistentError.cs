@@ -124,15 +124,15 @@ public sealed partial class MainViewModel
     {
         if (!HasPersistentError) return;
         _pageNotices.Remove(ErrorTab(_persistentErrorTask));
-        AppendLog($"Đã xác nhận lỗi {PersistentErrorStage(_persistentErrorTask)} ({_persistentErrorTime}); nội dung đầy đủ vẫn nằm trong Nhật ký.");
+        AppendLog($"Đã xác nhận lỗi {PersistentErrorStage(_persistentErrorTask)} ({_persistentErrorTime}); nội dung đầy đủ vẫn nằm trong Nhật ký.", "INFO");
         _persistentErrorText = "";
         _persistentErrorTask = "";
         _persistentErrorTime = "";
         _persistentErrorHint = "";
         _persistentIsWarning = false;
         try { if (_pageNotices.Count == 0 && File.Exists(LastErrorFilePath)) File.Delete(LastErrorFilePath); else WriteLastErrorFile(); }
-        catch (IOException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
-        catch (UnauthorizedAccessException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}"); }
+        catch (IOException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}", "WARN"); }
+        catch (UnauthorizedAccessException ex) { AppendLog($"Không xóa được trạng thái lỗi chưa xác nhận: {ex.Message}", "WARN"); }
         RaisePersistentError();
     }
 
@@ -144,7 +144,7 @@ public sealed partial class MainViewModel
         }
         catch (System.Runtime.InteropServices.ExternalException ex)
         {
-            AppendLog($"Không chép được lỗi vào clipboard: {ex.Message}");
+            AppendLog($"Không chép được lỗi vào clipboard: {ex.Message}", "WARN");
         }
     }
 
@@ -171,7 +171,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            AppendLog($"Không lưu được trạng thái lỗi chưa xác nhận: {ex.Message}");
+            AppendLog($"Không lưu được trạng thái lỗi chưa xác nhận: {ex.Message}", "WARN");
         }
     }
 

@@ -34,7 +34,7 @@ internal sealed class AppJournalStore
         lock(_gate)
         {
             var text=message.Length>MaxMessageChars ? message[..MaxMessageChars]+$" […đã cắt {message.Length-MaxMessageChars} ký tự vượt giới hạn một dòng nhật ký]" : message;
-            var line=$"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} {(level is "ERROR" or "WARN" ? level : Level(text))} {text.Replace("\r","").Replace("\n"," ↵ ")}{Environment.NewLine}";
+            var line=$"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff zzz} {(level is "ERROR" or "WARN" or "INFO" or "DEBUG" ? level : Level(text))} {text.Replace("\r","").Replace("\n"," ↵ ")}{Environment.NewLine}";
             var bytes=Encoding.UTF8.GetBytes(line);
             Check(Path.Combine(Root,"placeholder"));Directory.CreateDirectory(Root);
             var stem=$"app.log.{DateTime.Now:yyyy-MM-dd}";
@@ -68,8 +68,12 @@ internal sealed class AppJournalStore
         var scanErrors = Regex.Match(text, @"\bscan_errors=(?<count>\d+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         if (scanErrors.Success && int.TryParse(scanErrors.Groups["count"].Value, out var scanErrorCount) && scanErrorCount > 0)
             return "ERROR";
-        if(text.Contains("[error]",StringComparison.OrdinalIgnoreCase)||text.Contains("lỗi",StringComparison.OrdinalIgnoreCase)||text.Contains("exception",StringComparison.OrdinalIgnoreCase)||Regex.IsMatch(text,@"\berrors?\b",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant)||text.StartsWith("Không ",StringComparison.OrdinalIgnoreCase)) return "ERROR";
-        if(text.Contains("[warning]",StringComparison.OrdinalIgnoreCase)||text.Contains("cảnh báo",StringComparison.OrdinalIgnoreCase)||text.Contains("[stderr]",StringComparison.OrdinalIgnoreCase)) return "WARN";
+        // Bracket tags are structured producer tokens; everything else is judged by the anchored classifier the page uses, so the page and the saved
+        // journal agree.  A free substring (a valid result saying "không phát hiện lỗi", a source sentence containing "error") never makes a line red.
+        if(text.Contains("[error]",StringComparison.OrdinalIgnoreCase)) return "ERROR";
+        if(text.Contains("[warning]",StringComparison.OrdinalIgnoreCase)||text.Contains("[stderr]",StringComparison.OrdinalIgnoreCase)) return "WARN";
+        var judged = VNText.Studio.App.Converters.LogSeverityConverter.ClassifyText(text);
+        if(judged is "ERROR" or "WARN") return judged;
         return text.StartsWith("[tab]",StringComparison.Ordinal) ? "DEBUG" : "INFO";
     }
     internal static string[] Filter(string text,string query,string level,bool regex)

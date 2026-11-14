@@ -47,6 +47,7 @@ public partial class MainWindow : Window
         _presentationFixture = presentation?.IsTestFixture == true;
         UiText.Install(); UiText.SetLanguage(currentVm.Language);
         InitializeComponent();
+        HookCsvLayoutBudget();
         if (DataContext is MainViewModel vm)
         {
             vm.CompletionRequested += OnCompletionRequested;

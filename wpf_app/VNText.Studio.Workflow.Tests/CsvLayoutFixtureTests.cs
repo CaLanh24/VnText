@@ -56,7 +56,10 @@ internal static partial class Program
                     vm.TestSetCsvEditorPath(Path.Combine(Path.GetTempPath(), "translation.csv"));
                     window.UpdateLayout();
                     PumpFixture(150);
-                    Require(Named("CsvBulkReplacePanel").IsVisible, "the find/replace tools are always visible once a CSV is open (no collapse)");
+                    // V1: open whenever there is room; at this small presentation the MEASURED table viewport cannot keep three rows beside them, so they fold into ONE bar
+                    // (nothing removed); the explicit control opens them again with the typed text intact.
+                    if (vm.CsvToolsTight) { Require(Named("CsvToolsBar").IsVisible, "folded: one bar with the explicit open control"); vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
+                    Require(Named("CsvBulkReplacePanel").IsVisible, "the find/replace tools are visible (open, or one explicit click from the fold bar)");
                     Require(grid.IsVisible && !Named("CsvEmptyState").IsVisible, "a loaded CSV shows the table, not the empty state");
                     Require(grid.ActualHeight >= 150, "the table keeps a finite viewport of at least three rows plus the header (got " + grid.ActualHeight + ")");
                     // The find label must wrap, not clip, at the reviewed small presentation (UI 120%): its text fits the width it was given.
@@ -123,7 +126,10 @@ internal static partial class Program
                         double H(string n) => Named(n).ActualHeight;
                         Console.WriteLine($"DIAG window={window.ActualHeight} card={H("CsvEditorCard")} cardTop={Named("CsvEditorCard").TranslatePoint(new Point(0, 0), window).Y} bulk={H("CsvBulkReplacePanel")} preview={H("CsvBulkPreviewScroll")} previewHeader={H("CsvBulkPreviewHeader")} grid={grid.ActualHeight} gridTop={grid.TranslatePoint(new Point(0, 0), window).Y} valFull={H("CsvEditorValidationText")} valShort={H("CsvEditorValidationShortText")} lowHeight={vm.CsvEditorValidationCompact}");
                     }
-                    // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, tools and preview always open ----
+                    // V1: the default state of a small window is the folded tools bar; the row floor is measured there (the opened state keeps three SINGLE-line rows only).
+                    var reopenTools = vm.CsvToolsTight && vm.CsvToolsOpen;
+                    if (reopenTools) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); window.UpdateLayout(); }
+                    // ---- measured at the live presentation: 1043x720 DIP window, UI scale 1.2, tools folded (the default there) ----
                     var viewportBottom = Math.Min(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y, ClientH());
                     Require(grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y <= ClientH(), "the table ends inside the window (bottom " + grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y + " of " + ClientH() + ")");
                     var fullRows = 0;
@@ -140,6 +146,7 @@ internal static partial class Program
                     var slack = viewportBottom - thirdBottom;
                     Require(rowsShown >= 3, "three FULL rows are visible after preview + collapse (full " + rowsShown + ", bottoms " + string.Join("/", rowBottoms.Select(b => Math.Round(b))) + ", viewportBottom " + Math.Round(viewportBottom) + ", gridH " + Math.Round(grid.ActualHeight) + ")");
                     Require(slack >= 12, "a real margin (not one pixel) remains below the third full row (slack " + Math.Round(slack, 1) + " DIP)");
+                    if (reopenTools) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); window.UpdateLayout(); }
                     var gridScroll = FindVisualChildren<ScrollViewer>(grid).First();
                     Require(gridScroll.ScrollableWidth < 1, "the three columns fit the small card without a horizontal scroll (" + gridScroll.ScrollableWidth + ")");
                     var warningRow = (DataGridRow)grid.ItemContainerGenerator.ContainerFromIndex(0);
@@ -177,11 +184,15 @@ internal static partial class Program
                     Require(!Named("CsvBulkTitleText").IsVisible && System.Windows.Automation.AutomationProperties.GetName(Named("CsvBulkReplacePanel")) == "Tìm và thay thế bản dịch", "low height: the redundant title yields to the group's accessible name");
                     Require(Named("CsvBulkFindTextBox").IsVisible && Named("CsvBulkReplaceTextBox").IsVisible && Named("CsvBulkScopeComboBox").IsVisible && Named("CsvBulkPreviewButton").IsVisible
                         && Named("CsvBulkApplyButton").IsVisible && Named("CsvBulkUndoButton").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight is >= 40 and <= 64, "low height: every bulk control stays visible and the examples scroller is bounded");
+                    // The window stays small, so only the PRESENTATION mapping is asserted for a normal height (the layout budget would fold the tools again at this window size).
+                    var wasTight = vm.CsvToolsTight;
+                    vm.SetCsvToolsTight(false);
                     vm.SetCsvLowHeight(false);
+                    Require(vm.CsvBulkTitleVisible && vm.CsvPreviewMaxHeight == 120 && vm.CsvBulkPanelVisible, "normal height: the title and the full-size examples scroller come back");
                     window.UpdateLayout();
-                    Require(Named("CsvBulkTitleText").IsVisible && Named("CsvBulkPreviewScroll").MaxHeight == 120, "normal height: the title and the full-size examples scroller come back");
                     Require(fullWarning.IsVisible && !shortWarning.IsVisible && fullWarning.TextWrapping == TextWrapping.Wrap && fullWarning.Text == vm.CsvEditorUserValidationMessage, "at a normal height the whole message wraps");
                     vm.SetCsvLowHeight(true);
+                    if (wasTight) vm.SetCsvToolsTight(true);
                     window.UpdateLayout();
                     // ---- Patch badge: text AND local colour follow the same current readiness (Light and Dark) ----
                     var packageA = CreatePatchSourcePackage("Hộ tống");

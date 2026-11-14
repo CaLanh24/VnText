@@ -56,7 +56,7 @@
         <LinearGradientBrush x:Key="UpdaterGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
         <LinearGradientBrush x:Key="UpdaterReadyGradient" StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#00B5CD" Offset="1" /></LinearGradientBrush>
         <Style x:Key="AboutDestinationStyle" TargetType="Button" BasedOn="{StaticResource AboutActionSurfaceButton}">
-            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" /><Setter Property="BorderBrush" Value="#F0F1F5" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -171,7 +171,7 @@
                             </Style>
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
-                            <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
+                            <Path Data="{StaticResource ImageIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
                             <TextBlock Text="Dịch ảnh" />
                         </StackPanel>
                     </Button>
@@ -1380,7 +1380,7 @@
                         </Border>
 
                         <Border Grid.Row="1" x:Name="CsvEditorCard" Style="{StaticResource CardShadowBorder}" Padding="{Binding CsvCardPadding}">
-                            <Grid>
+                            <Grid x:Name="CsvEditorCardGrid">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="Auto" />
@@ -1432,7 +1432,8 @@
                                         <TextBlock Text="{Binding CsvEditorSaveError, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     </Border>
                                 </StackPanel>
-<Grid Grid.Row="2" x:Name="CsvBulkArea">
+<ScrollViewer Grid.Row="2" x:Name="CsvToolsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" CanContentScroll="False">
+<Grid x:Name="CsvBulkArea">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
     <StackPanel Margin="{Binding CsvBulkAreaMargin}">
@@ -1448,10 +1449,20 @@
         </Style.Triggers>
     </Style>
 </StackPanel.Style>
+<Border x:Name="CsvToolsBar" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,2,6,2" AutomationProperties.Name="Tìm và thay thế bản dịch"
+        Visibility="{Binding CsvToolsBarVisible, Converter={StaticResource BoolToVis}}">
+    <Grid>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <TextBlock Text="Tìm và thay thế bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+        <Button x:Name="CsvToolsToggleButton" Grid.Column="1" Content="{Binding CsvToolsToggleText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleCsvToolsCommand}"
+                Style="{StaticResource CompactOutlineButton}" Margin="8,2,0,2" AutomationProperties.Name="Tìm và thay thế bản dịch" />
+    </Grid>
+</Border>
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="{Binding CsvBulkPanelPadding}" AutomationProperties.Name="Tìm và thay thế bản dịch"
                                         Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
                                     <Grid>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
@@ -1464,16 +1475,14 @@
                                                    FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource InkBrush}" Margin="0,0,0,4" />
 
-                                        <StackPanel Grid.Row="1" Margin="0,0,7,0">
-                                            <TextBlock Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
-                                            <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
-                                        </StackPanel>
-                                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="7,0,7,0">
-                                            <TextBlock Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
-                                            <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Margin="0,2,0,0" Height="{StaticResource UiControlHeightStandard}" />
-                                        </StackPanel>
+                                        <!-- V2: both labels share ONE Auto row and both inputs share the next, so a label that wraps to two lines (Vietnamese/English, any UI scale)
+                                             can never push only its own input down. -->
+                                        <TextBlock x:Name="CsvBulkFindLabel" Grid.Row="1" Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,7,0" VerticalAlignment="Bottom" />
+                                        <TextBlock x:Name="CsvBulkReplaceLabel" Grid.Row="1" Grid.Column="1" Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="7,0,7,0" VerticalAlignment="Bottom" />
+                                        <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Grid.Row="2" Margin="0,2,7,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
+                                        <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Grid.Row="2" Grid.Column="1" Margin="7,2,7,0" Height="{StaticResource UiControlHeightStandard}" />
                                         <!-- Wrap (not clip): at the narrow native width the scope select and the three buttons flow onto a second line instead of running under the examples column. -->
-<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">
+<WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">
 <ComboBox Margin="0,0,8,3" x:Name="CsvBulkScopeComboBox" AutomationProperties.Name="Phạm vi thay thế"
                                                       ItemsSource="{Binding CsvBulkScopeOptions}" SelectedValue="{Binding CsvBulkScope, Mode=TwoWay}"
                                                       SelectedValuePath="Value" DisplayMemberPath="Label" Width="144" Height="{StaticResource UiControlHeightStandard}"
@@ -1486,7 +1495,7 @@
                                 </Border>
 
     </StackPanel>
-    <StackPanel x:Name="CsvPreviewArea" Margin="{Binding CsvPreviewAreaMargin}">
+    <StackPanel x:Name="CsvPreviewArea" Margin="{Binding CsvPreviewAreaMargin}" Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
 <StackPanel.Style>
     <Style TargetType="StackPanel">
         <Setter Property="Grid.Row" Value="1" />
@@ -1529,6 +1538,7 @@
                                     </ScrollViewer>
     </StackPanel>
 </Grid>
+</ScrollViewer>
 <StackPanel Grid.Row="3" Margin="{Binding CsvValidationAreaMargin}">
                                     <TextBlock x:Name="CsvEditorValidationText" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0"
                                                Text="{Binding CsvEditorUserValidationMessage, Converter={StaticResource UiTextDynamic}}" ToolTip="{Binding CsvEditorValidationMessage, Converter={StaticResource UiTextDynamic}}"
@@ -1574,7 +1584,7 @@
 
                                 </Grid>
 
-                                <Border x:Name="CsvSelectionBar" Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="12,4" Margin="0,0,0,6"
+                                <Border x:Name="CsvSelectionBar" Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="{Binding CsvSelectionBarPadding}" Margin="{Binding CsvSelectionBarMargin}"
                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}">
                                     <WrapPanel VerticalAlignment="Center">
                                         <Button Content="Chọn đang lọc" ToolTip="Chọn tất cả đang lọc" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
@@ -1598,7 +1608,7 @@
                                         <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </StackPanel>
                                 </Border>
-                                <DataGrid Grid.Row="2" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="{Binding CsvGridMinHeight}"
+                                <DataGrid Grid.Row="2" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="0"
                                           Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}"
                                           Style="{StaticResource CsvDataGridStyle}"
                                           ItemsSource="{Binding CsvEditorView}"
@@ -1612,6 +1622,7 @@
                                           VirtualizingPanel.IsVirtualizing="True"
                                           VirtualizingPanel.VirtualizationMode="Recycling"
                                           VirtualizingPanel.IsContainerVirtualizable="True"
+                                          VirtualizingPanel.ScrollUnit="Pixel"
                                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           ScrollViewer.CanContentScroll="True"
@@ -1631,7 +1642,7 @@
                                         <DataGridTemplateColumn Header="CHỌN" Width="Auto" MinWidth="52" CanUserSort="False" CanUserResize="False">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    <CheckBox Style="{StaticResource CsvRowCheckBoxStyle}" IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                               AutomationProperties.Name="Chọn dòng" ToolTip="Chọn dòng này cho Dịch/Xóa dòng đã chọn" />
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>

@@ -50,6 +50,53 @@ public static class ImagePackageProbe
     }
     public readonly record struct Summary(int Total, int OcrReady, int TranslatedDrafts);
 
+    /// <summary>No report yet, a report that cannot be read, or a valid report (its own counts).  Only a valid report may back a "scanned" claim.</summary>
+    public enum ReportKind { Missing, Unreadable, Valid }
+    /// <summary>Counts straight from ONE report: Scanned images listed, Detected with text, Drafts translated, NoText confirmed without text.</summary>
+    public readonly record struct ReportInfo(ReportKind Kind, int Scanned, int Detected, int Drafts, int NoText);
+
+    public static ReportInfo ReadReport(string? packageDir)
+    {
+        if (string.IsNullOrWhiteSpace(packageDir)) return new ReportInfo(ReportKind.Missing, 0, 0, 0, 0);
+        try
+        {
+            var images = Path.Combine(packageDir, "images");
+            if (!Directory.Exists(images)) return new ReportInfo(ReportKind.Missing, 0, 0, 0, 0);
+            var reports = new List<string>();
+            var first = Path.Combine(images, "report.json");
+            if (File.Exists(first)) reports.Add(first);
+            foreach (var retry in Directory.EnumerateDirectories(images, "retry-*").Take(MaxRetryDirectories))
+            {
+                var candidate = Path.Combine(retry, "report.json");
+                if (File.Exists(candidate)) reports.Add(candidate);
+            }
+            var latest = reports.OrderByDescending(File.GetLastWriteTimeUtc).ThenBy(path => path, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
+            if (latest is null) return new ReportInfo(ReportKind.Missing, 0, 0, 0, 0);
+            if (new FileInfo(latest).Length > MaxReportBytes) return new ReportInfo(ReportKind.Unreadable, 0, 0, 0, 0);
+            using var doc = JsonDocument.Parse(File.ReadAllText(latest));
+            if (doc.RootElement.ValueKind != JsonValueKind.Object || !doc.RootElement.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array)
+                return new ReportInfo(ReportKind.Unreadable, 0, 0, 0, 0);
+            int scanned = 0, detected = 0, drafts = 0, noText = 0;
+            foreach (var item in items.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object) continue;
+                scanned++;
+                var status = item.TryGetProperty("status", out var s) && s.ValueKind == JsonValueKind.String ? s.GetString() : "";
+                if (status == "NO_TEXT") { noText++; continue; }
+                if (status is "OCR_READY" or "TRANSLATED_DRAFT" || (item.TryGetProperty("text_detected", out var d) && d.ValueKind == JsonValueKind.True))
+                {
+                    detected++;
+                    if (status == "TRANSLATED_DRAFT") drafts++;
+                }
+            }
+            return new ReportInfo(ReportKind.Valid, scanned, detected, drafts, noText);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new ReportInfo(ReportKind.Unreadable, 0, 0, 0, 0);
+        }
+    }
+
     public const int MaxRetryDirectories = 64;
     public const long MaxReportBytes = 4L * 1024 * 1024;
     public const int MaxItems = 100_000;

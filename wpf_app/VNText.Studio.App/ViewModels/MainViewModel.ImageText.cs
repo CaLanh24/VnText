@@ -62,6 +62,7 @@ public sealed partial class MainViewModel
     internal void RaiseImageLanguageText()
     {
         Raise(nameof(ImageStatus)); Raise(nameof(ImageEmptyHint)); Raise(nameof(ImageWorkspaceSummary)); Raise(nameof(ImageWorkspaceTaskText)); Raise(nameof(ImageWorkspaceProgressText));
+        Raise(nameof(ImagePageHeadline)); Raise(nameof(ImagePageDetail)); Raise(nameof(ImageDetailsToggleText));
         foreach (var region in ImageRegions) region.RaiseLanguageText();
     }
     private void RaiseImageContentState()
@@ -102,8 +103,37 @@ public sealed partial class MainViewModel
     public RelayCommand RetryImageCommand { get; private set; } = null!;
     public RelayCommand OpenImageWorkspaceCommand { get; private set; } = null!;
     internal event Action? ImageWorkspaceRequested;
-    private string _imageWorkspaceSummary = "";
-    public string ImageWorkspaceSummary { get => _imageWorkspaceSummary; private set => Set(ref _imageWorkspaceSummary, value); }
+    // The summary and the page state text are produced on demand in the CURRENT language (a hot language switch re-reads them), never cached as a translated string.
+    private Func<string> _imageWorkspaceSummary = static () => "";
+    public string ImageWorkspaceSummary => _imageWorkspaceSummary();
+    private void SetImageSummary(Func<string> summary) { _imageWorkspaceSummary = summary; Raise(nameof(ImageWorkspaceSummary)); }
+
+    // ---- Images page state (V5).  Exactly one state describes the page; counts and "scanned" wording exist ONLY for a state backed by a valid report. ----
+    /// <summary>NoSource: no game/folder; NoOutput: no export folder; NoReport: nothing scanned yet; Unreadable: the report cannot be read;
+    /// NoText: a valid report whose scan found no image with text (a COMPLETED scan); Results: images with text were found.</summary>
+    public enum ImagePageKind { NoSource, NoOutput, NoReport, Unreadable, NoText, Results }
+    private ImagePageKind _imagePage = ImagePageKind.NoSource;
+    private Func<string> _imagePageHeadline = static () => "", _imagePageDetail = static () => "";
+    private bool _imageDetailsOpen;
+    public ImagePageKind ImagePage => _imagePage;
+    public string ImagePageHeadline => _imagePageHeadline();
+    public string ImagePageDetail => _imagePageDetail();
+    /// <summary>Only the states that need the user to go and choose/scan show a next action; it opens the Extract step.</summary>
+    public bool ImagePageHasAction => _imagePage is ImagePageKind.NoSource or ImagePageKind.NoOutput or ImagePageKind.NoReport or ImagePageKind.Unreadable;
+    /// <summary>The package counts/path line belongs to the states that have a report.</summary>
+    public bool ImageSummaryVisible => _imagePage is ImagePageKind.Results or ImagePageKind.NoText;
+    public RelayCommand OpenExtractForImagesCommand { get; private set; } = null!;
+    /// <summary>The long safety/format/workflow explanation lives behind this one explicit control; it never changes the page state.</summary>
+    public bool ImageDetailsOpen { get => _imageDetailsOpen; private set { if (Set(ref _imageDetailsOpen, value)) { Raise(nameof(ImageDetailsToggleText)); } } }
+    public string ImageDetailsToggleText => _imageDetailsOpen ? "Ẩn chi tiết" : "Chi tiết";
+    public RelayCommand ToggleImageDetailsCommand { get; private set; } = null!;
+    private void SetImagePage(ImagePageKind kind, Func<string> headline, Func<string> detail)
+    {
+        _imagePage = kind;
+        _imagePageHeadline = headline;
+        _imagePageDetail = detail;
+        Raise(nameof(ImagePage)); Raise(nameof(ImagePageHeadline)); Raise(nameof(ImagePageDetail)); Raise(nameof(ImagePageHasAction)); Raise(nameof(ImageSummaryVisible));
+    }
     /// <summary>The region grid is editable only while no worker task owns the package.</summary>
     public bool ImageGridEnabled => !Busy;
 
@@ -148,16 +178,47 @@ public sealed partial class MainViewModel
     /// <summary>Explicit (not getter-driven) refresh of the package image summary shown in the workspace.</summary>
     internal void RefreshImageWorkspace()
     {
-        if (string.IsNullOrWhiteSpace(InputPath)) { ImageWorkspaceSummary = "Chưa chọn game / thư mục chứa ảnh."; return; }
-        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageWorkspaceSummary = "Chưa chọn thư mục xuất."; return; }
-        var images = ImagePackageProbe.Read(WorkflowStatus.ResolvePackageDir(OutputPath));
+        if (string.IsNullOrWhiteSpace(InputPath))
+        {
+            ImageResults.Clear(); RaiseImageViewState();
+            SetImageSummary(static () => "Chưa chọn game / thư mục chứa ảnh.");
+            SetImagePage(ImagePageKind.NoSource, static () => "Chưa chọn game / thư mục chứa ảnh.", static () => "Chọn nguồn ở bước Lấy text; ảnh có chữ được quét ở đó.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(OutputPath))
+        {
+            ImageResults.Clear(); RaiseImageViewState();
+            SetImageSummary(static () => "Chưa chọn thư mục xuất.");
+            SetImagePage(ImagePageKind.NoOutput, static () => "Chưa chọn thư mục xuất.", static () => "Chọn thư mục xuất ở bước Lấy text; báo cáo ảnh nằm trong gói xuất.");
+            return;
+        }
+        var packageDir = WorkflowStatus.ResolvePackageDir(OutputPath);
+        var report = ImagePackageProbe.ReadReport(packageDir);
+        var images = ImagePackageProbe.Read(packageDir);
         ImageResults.Clear();
-        foreach (var result in ImagePackageProbe.ReadResults(WorkflowStatus.ResolvePackageDir(OutputPath))) ImageResults.Add(result);
+        foreach (var result in ImagePackageProbe.ReadResults(packageDir)) ImageResults.Add(result);
         RaiseImageViewState();
+        switch (report.Kind)
+        {
+            case ImagePackageProbe.ReportKind.Missing:
+                SetImageSummary(static () => "Chưa có báo cáo ảnh cho gói này.");
+                SetImagePage(ImagePageKind.NoReport, static () => "Chưa có báo cáo ảnh cho gói này.", static () => "Báo cáo được tạo khi Lấy text quét ảnh; chưa quét thì chưa có số ảnh.");
+                return;
+            case ImagePackageProbe.ReportKind.Unreadable:
+                SetImageSummary(static () => "Không đọc được báo cáo ảnh.");
+                SetImagePage(ImagePageKind.Unreadable, static () => "Không đọc được báo cáo ảnh.", static () => "Báo cáo hỏng hoặc quá lớn; Lấy text lại để tạo báo cáo mới.");
+                return;
+            case ImagePackageProbe.ReportKind.Valid when images.Total == 0:
+                var scannedText = report.Scanned.ToString("N0");
+                SetImageSummary(() => UiText.Msg("Đã quét {0} ảnh: không ảnh nào chứa chữ cần dịch.", scannedText));
+                SetImagePage(ImagePageKind.NoText, static () => "Quét xong: không có ảnh chứa chữ.", static () => "Không cần OCR hay dịch ảnh cho gói này. Bạn vẫn có thể sửa ảnh thủ công.");
+                return;
+        }
+        var detectedText = images.Total.ToString("N0");
+        SetImagePage(ImagePageKind.Results, () => UiText.Msg("{0} ảnh có chữ trong gói.", detectedText), static () => "Bản dịch nháp được tạo ở bước Dịch; chọn ảnh bên dưới nếu muốn sửa.");
         if (_selectedImageResult is null && !ImageHasPreview && ImageResults.Count > 0) SelectedImageResult = ImageResults[0];      // show the first result right away
-        ImageWorkspaceSummary = images.Total == 0
-            ? "Không có ảnh phát hiện chữ trong kết quả Lấy text."
-            : $"{images.Total:N0} ảnh có chữ · {images.TranslatedDrafts:N0} bản dịch nháp · {images.Total - images.TranslatedDrafts:N0} cần dịch / xem lại.\nKết quả: {Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "images")}\nBấm Dịch ở tab Dịch để dịch cả text và ảnh. Chọn một ảnh bên dưới để xem hoặc sửa.";
+        var resultsSummary = $"{images.Total:N0} ảnh có chữ · {images.TranslatedDrafts:N0} bản dịch nháp · {images.Total - images.TranslatedDrafts:N0} cần dịch / xem lại.\nKết quả: {Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "images")}\nBấm Dịch ở tab Dịch để dịch cả text và ảnh. Chọn một ảnh bên dưới để xem hoặc sửa.";
+        SetImageSummary(() => resultsSummary);
     }
     private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException(UiText.Msg("Chọn thư mục xuất trước.")) : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
@@ -224,6 +285,8 @@ public sealed partial class MainViewModel
         EnterImageEditCommand = new RelayCommand(_ => ImageEditMode = true, _ => !Busy && !_imageEditMode);
         LeaveImageEditCommand = new RelayCommand(_ => ImageEditMode = false, _ => !Busy && _imageEditMode);
         OpenImageWorkspaceCommand = new RelayCommand(_ => { ImageEditMode = false; NavigateTab(WorkflowTabs.Images); }, _ => !Busy);
+        OpenExtractForImagesCommand = new RelayCommand(_ => NavigateTab(WorkflowTabs.Extract));
+        ToggleImageDetailsCommand = new RelayCommand(_ => ImageDetailsOpen = !ImageDetailsOpen);
         RetryImageCommand = new RelayCommand(_ =>
         {
             var image = _pathPicker.PickImageFile();

@@ -43,6 +43,10 @@ internal static partial class Program
             return RunCsvLayoutFixture();
         if (args.Contains("--csv-native-repro-fixture", StringComparer.Ordinal))
             return RunCsvNativeReproFixture();
+        if (args.Contains("--csv-budget-fixture", StringComparer.Ordinal))
+            return RunCsvBudgetFixture();
+        if (args.Contains("--v-batch-fixture", StringComparer.Ordinal))
+            return RunVBatchFixture();
         if (args.Contains("--update-window-success-fixture", StringComparer.Ordinal))
             return RunUpdateWindowSuccessFixture();
         if (args.Contains("--update-window-transition-fixture", StringComparer.Ordinal))

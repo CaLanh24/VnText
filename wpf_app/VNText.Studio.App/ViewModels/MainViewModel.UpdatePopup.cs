@@ -83,7 +83,7 @@ public sealed partial class MainViewModel
             _settings.AcknowledgedUpdateTransaction = transaction;
             SaveSettings();
         }
-        catch (Exception ex) { AppendLog("Không xác minh được receipt cập nhật: " + ex.Message); }
+        catch (Exception ex) { AppendLog("Không xác minh được receipt cập nhật: " + ex.Message, "WARN"); }
     }
     internal void ResumeDeferredOffer()
     {

@@ -45,14 +45,26 @@
         </Style>
     </UserControl.Resources>
     <StackPanel>
-        <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,4"
-                   Text="Ảnh có chữ đã được lọc khi Lấy text. Bước Dịch tự tạo bản dịch nháp; chọn ảnh bên dưới nếu muốn sửa." />
-        <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
-                   Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
+        <!-- V5: ONE honest state first (headline + a short line + the next action), driven by the package report; the long safety/workflow help is behind
+             the "Chi tiết" control and never competes with the state.  Counts and "scanned" claims appear only for a state backed by a valid report. -->
+        <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,2"
+                   Text="{Binding ImagePageHeadline, Converter={StaticResource UiTextDynamic}}" AutomationProperties.Name="Trạng thái ảnh" />
+        <TextBlock x:Name="StateDetailText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8"
+                   Text="{Binding ImagePageDetail, Converter={StaticResource UiTextDynamic}}" />
+        <WrapPanel Margin="0,0,0,8">
+            <Button x:Name="ImageNextActionButton" Content="Mở bước Lấy text" Command="{Binding OpenExtractForImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                    Visibility="{Binding ImagePageHasAction, Converter={StaticResource PanelBoolToVis}}" AutomationProperties.Name="Mở bước Lấy text" />
+            <Button x:Name="ImageDetailsButton" Content="{Binding ImageDetailsToggleText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleImageDetailsCommand}"
+                    Style="{StaticResource CompactOutlineButton}" Margin="0,0,8,0" AutomationProperties.Name="Chi tiết an toàn và quy trình" />
+        </WrapPanel>
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
-        <Border x:Name="IntroDetails" Visibility="Collapsed" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
+        <Border x:Name="IntroDetails" Visibility="{Binding ImageDetailsOpen, Converter={StaticResource PanelBoolToVis}}" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
+            <StackPanel>
+            <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
+                       Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
                        Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
+            </StackPanel>
         </Border>
 
         <!-- Owning task, progress / cancel acknowledgement and an in-panel Cancel: the owner window is disabled while this modal is open. -->
@@ -72,7 +84,7 @@
             </Grid>
         </Border>
 
-        <Border Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
+        <Border x:Name="WorkspaceSummaryCard" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12" Visibility="{Binding ImageSummaryVisible, Converter={StaticResource PanelBoolToVis}}">
             <TextBlock x:Name="WorkspaceSummary" Text="{Binding ImageWorkspaceSummary, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Style="{StaticResource UiBodyTextStyle}"
                        AutomationProperties.Name="Tình trạng ảnh trong gói" />
         </Border>

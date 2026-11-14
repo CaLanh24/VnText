@@ -85,7 +85,7 @@ public sealed partial class MainViewModel
 
     /// <summary>A CSV is open (the path stays through a failed reload); without one the editor shows only its empty state.</summary>
     /// <summary>At low heights the "pick a row" hint line is dropped while nothing is selected, so the table keeps its rows; a selection shows its details again.</summary>
-    public bool CsvEditorSelectionDetailsVisible => !(_csvLowHeight && _csvEditorSelectedKeys.Count == 0);
+    public bool CsvEditorSelectionDetailsVisible => !(CsvCompact && _csvEditorSelectedKeys.Count == 0);
 
     public bool CsvEditorHasDocument => !string.IsNullOrWhiteSpace(_csvEditorPath);
 
@@ -104,8 +104,41 @@ public sealed partial class MainViewModel
         }
     }
     // Owner 2026-11-02: the find/replace tools are never a collapsible disclosure; they are visible whenever a CSV is open.
-    public bool CsvBulkPanelVisible => CsvEditorHasDocument;
+    // V1 (tight tier).  Owner 2026-11-02 kept the find/replace tools open whenever there is room.  When the MEASURED table viewport (after UI scaling and with
+    // the real, possibly wrapped toolbars) would keep fewer than three full rows, the group folds into ONE header line with an explicit "Mở rộng" control:
+    // nothing is removed, the typed find/replace text and the preview stay in the view model, and an opened group is height-capped so the table keeps its rows.
+    private bool _csvToolsTight, _csvToolsOpen;
+    public bool CsvToolsTight => _csvToolsTight;
+    public bool CsvToolsOpen => _csvToolsOpen;
+    public bool CsvToolsBarVisible => CsvEditorHasDocument && _csvToolsTight;
+    public string CsvToolsToggleText => _csvToolsOpen ? "Thu gọn" : "Mở rộng";
+    public RelayCommand ToggleCsvToolsCommand { get; private set; } = null!;
+    public bool CsvBulkPanelVisible => CsvEditorHasDocument && (!_csvToolsTight || _csvToolsOpen);
     public bool CsvBulkSummaryVisible => false;
+    private bool CsvCompact => _csvLowHeight || _csvToolsTight;
+
+    /// <summary>Layout hook: the table viewport cannot show three full rows with the tools open, so fold them (or unfold when the window gives the room back).</summary>
+    internal void SetCsvToolsTight(bool tight)
+    {
+        if (_csvToolsTight == tight) return;
+        _csvToolsTight = tight;
+        _csvToolsOpen = false;
+        RaiseCsvToolsState();
+        RaiseCsvCompactLayout();
+    }
+
+    private void ToggleCsvTools()
+    {
+        if (!_csvToolsTight) return;
+        _csvToolsOpen = !_csvToolsOpen;
+        RaiseCsvToolsState();
+    }
+
+    private void RaiseCsvToolsState()
+    {
+        Raise(nameof(CsvToolsTight)); Raise(nameof(CsvToolsOpen)); Raise(nameof(CsvToolsBarVisible)); Raise(nameof(CsvToolsToggleText));
+        Raise(nameof(CsvBulkPanelVisible)); Raise(nameof(CsvBulkSummaryVisible));
+    }
 
     /// <summary>Low window heights leave the table fewer than ~3 rows; until the user chooses, the tools start collapsed there (and when no CSV is open).</summary>
     internal void SetCsvLowHeight(bool low)
@@ -118,28 +151,32 @@ public sealed partial class MainViewModel
     }
 
     // Low-height presentation: tighter vertical gaps only (controls keep their 36/30 DIP sizes) and a one-line validation summary.
-    public Thickness CsvBannerMargin => new(0, _csvLowHeight ? 2 : 6, 0, 0);
-    public Thickness CsvBulkAreaMargin => new(0, _csvLowHeight ? 2 : 5, 0, 0);
-    public Thickness CsvPreviewAreaMargin => _csvLowHeight ? new Thickness(8, 3, 0, 0) : new Thickness(0, 6, 0, 0);
-    public Thickness CsvGridMargin => new(0, _csvLowHeight ? 4 : 8, 0, 0);
+    public Thickness CsvBannerMargin => new(0, CsvCompact ? 2 : 6, 0, 0);
+    public Thickness CsvBulkAreaMargin => new(0, CsvCompact ? 2 : 5, 0, 0);
+    public Thickness CsvPreviewAreaMargin => CsvCompact ? new Thickness(8, 3, 0, 0) : new Thickness(0, 6, 0, 0);
+    public Thickness CsvGridMargin => new(0, CsvCompact ? 4 : 8, 0, 0);
     // Owner 2026-11-07 native finding (1565x1080 @ OS 150%, UI 120%): with the always-open tools the table kept ~1.5 rows and ran past the window.
     // At a low height only vertical space is traded: the redundant section title yields to the group's accessible name, and the Trước/Sau examples
     // stay visible in a shorter bounded scroller.  No control is hidden, resized or collapsed.
-    public bool CsvBulkTitleVisible => !_csvLowHeight;
-    public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;
-    public Thickness CsvBulkPanelPadding => _csvLowHeight ? new Thickness(8, 3, 8, 3) : new Thickness(8, 4, 8, 4);
+    public bool CsvBulkTitleVisible => !CsvCompact;
+    public double CsvPreviewMaxHeight => CsvCompact ? 48 : 120;
+    public Thickness CsvBulkPanelPadding => CsvCompact ? new Thickness(8, 3, 8, 3) : new Thickness(8, 4, 8, 4);
     // Native repro (0.1.17 / 369adc5, 1043x720 DIP, UI 120%): the visible body is the CLIENT area; page header, card padding, the stacked preview and a 158-unit table
     // minimum left one row.  Low height therefore also tightens the page header and card padding, seats the examples beside the find/replace group, and keeps
     // a table viewport that shows the header plus three ordinary rows.
-    public Thickness PageHeaderMargin => _csvLowHeight ? new Thickness(0, 8, 0, 2) : new Thickness(0, 38, 0, 32);
-    public double PageHeaderMinHeight => _csvLowHeight ? 44 : 58;
-    public Thickness CsvCardPadding => _csvLowHeight ? new Thickness(24, 6, 24, 6) : new Thickness(24, 20, 24, 20);
-    public Thickness CsvValidationAreaMargin => new(0, _csvLowHeight ? 0 : 2, 0, 0);
-    public double CsvGridMinHeight => _csvLowHeight ? 156 : 158;
-    public Thickness CsvBulkButtonRowMargin => new(0, _csvLowHeight ? 3 : 5, 0, 0);
+    public Thickness PageHeaderMargin => CsvCompact ? new Thickness(0, 8, 0, 2) : new Thickness(0, 38, 0, 32);
+    public double PageHeaderMinHeight => CsvCompact ? 44 : 58;
+    public Thickness CsvCardPadding => CsvCompact ? new Thickness(24, 6, 24, 6) : new Thickness(24, 20, 24, 20);
+    public Thickness CsvValidationAreaMargin => new(0, CsvCompact ? 0 : 2, 0, 0);
+    /// <summary>Height of the "no CSV yet" panel only.  The table itself has NO forced minimum (that pushed it past the window); its three-row floor is guaranteed by the layout budget.</summary>
+    public double CsvGridMinHeight => CsvCompact ? 156 : 158;
+    public Thickness CsvBulkButtonRowMargin => new(0, CsvCompact ? 3 : 5, 0, 0);
+    /// <summary>Selection toolbar: one tight line at a compact height, its usual padding otherwise.</summary>
+    public Thickness CsvSelectionBarPadding => CsvCompact ? new Thickness(10, 1, 10, 1) : new Thickness(12, 4, 12, 4);
+    public Thickness CsvSelectionBarMargin => new(0, 0, 0, CsvCompact ? 2 : 6);
 
     /// <summary>With the tools collapsed (or at a low height) the validation message is ONE line; the whole message stays in the tooltip and the accessible help text.</summary>
-    public bool CsvEditorValidationCompact => _csvLowHeight;
+    public bool CsvEditorValidationCompact => CsvCompact;
 
     public string CsvEditorUserValidationShort
     {
@@ -172,6 +209,8 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvGridMinHeight));
         Raise(nameof(CsvBulkPanelPadding));
         Raise(nameof(CsvBulkButtonRowMargin));
+        Raise(nameof(CsvSelectionBarPadding));
+        Raise(nameof(CsvSelectionBarMargin));
         Raise(nameof(CsvEditorValidationCompact));
     }
 
@@ -180,6 +219,7 @@ public sealed partial class MainViewModel
         CsvBulkExpanded = CsvEditorHasDocument;
         Raise(nameof(CsvBulkPanelVisible));
         Raise(nameof(CsvBulkSummaryVisible));
+        Raise(nameof(CsvToolsBarVisible));
         Raise(nameof(CsvEditorValidationCompact));
     }
 
@@ -537,6 +577,7 @@ public sealed partial class MainViewModel
             }
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
+        ToggleCsvToolsCommand = new RelayCommand(_ => ToggleCsvTools(), _ => _csvToolsTight);
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort));
@@ -762,7 +803,7 @@ public sealed partial class MainViewModel
             : UiText.Msg("đang giữ {0}", Path.GetFileName(CsvEditorPath));
         CsvEditorLoadError = UiText.Msg("Không mở được {0}: {1} ({2}).", rejected, UiText.Key(reason), UiText.Key(keeping));
         CsvEditorStatus = CsvEditorLoadError;
-        AppendLog($"CSV editor: {CsvEditorLoadError}");
+        AppendLog($"CSV editor: {CsvEditorLoadError}", "WARN");
         ShowToast(CsvEditorLoadError, "error");
         SaveCsvEditorCommand?.RaiseCanExecuteChanged();
     }
@@ -1289,7 +1330,7 @@ public sealed partial class MainViewModel
         {
             CsvEditorValidationMessage = result.Error ?? "Kiểm tra thất bại";
             if (showLog)
-                AppendLog(CsvEditorValidationMessage);
+                AppendLog(CsvEditorValidationMessage, "ERROR");
             return;
         }
 
@@ -1332,11 +1373,12 @@ public sealed partial class MainViewModel
         LastCsvTiming = timing;
         Raise(nameof(LastCsvTiming));
 
+        // Severity comes from the STRUCTURED validation outcome, never from the words of its summary: timing is diagnostic, and only blocked rows are a warning.
         AppendLog(
             $"[csv-timing] validate_worker={validateMs}ms apply_bg={applyMs}ms " +
-            $"bind={bindMs}ms refresh={filterMs}ms — {result.Summary}");
+            $"bind={bindMs}ms refresh={filterMs}ms — {result.Summary}", "DEBUG");
         if (showLog)
-            AppendLog($"Kiểm tra CSV: {result.Summary}");
+            AppendLog($"Kiểm tra CSV: {result.Summary}", result.PatchBlocked > 0 ? "WARN" : "INFO");
     }
 
     private static List<Dictionary<string, string>> BuildCsvSaveRowsFrom(
@@ -1607,7 +1649,7 @@ public sealed partial class MainViewModel
         if (!result.Ok)
         {
             ShowToast(result.Error ?? "Xóa bản dịch thất bại", "error");
-            AppendLog(result.Error ?? "Xóa bản dịch lỗi thất bại");
+            AppendLog(result.Error ?? "Xóa bản dịch lỗi thất bại", "WARN");
             return;
         }
 

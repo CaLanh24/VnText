@@ -38,6 +38,7 @@ internal static partial class Program
                     foreach (var (outerHeight, scale, label) in new[] { (720.0, 1.2, "native 1043x720 UI120"), (883.0, 1.2, "tallest here UI120"), (720.0, 1.0, "720 UI100"), (760.0, 1.0, "760 UI100 (former threshold)"), (780.0, 1.0, "780 UI100"), (800.0, 1.0, "800 UI100"), (883.0, 1.0, "883 UI100") }.Where(sc => sc.Item1 <= SystemParameters.WorkArea.Height + 0.5))     // a window taller than the display cannot occur; those cases are skipped on small displays (observed to stall here)
                     {
                         vm.UiScale = scale;
+                        vm.SetCsvToolsTight(false);   // each presentation measures from the default (tools open); the view model is shared between cases
                         var window = new MainWindow(vm, new FixtureUpdatePresentation());
                         window.WindowState = WindowState.Normal;
                         window.Width = 1043;
@@ -120,6 +121,22 @@ if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Con
                         report += $" cardBottom={Math.Round(cardBottom)} footer={Math.Round(footerTop)}-{Math.Round(footerBottom)} selectionH={Named("CsvSelectionBar").ActualHeight:0.0} bulkH={Named("CsvBulkReplacePanel").ActualHeight:0.0} previewH={Named("CsvBulkPreviewScroll").ActualHeight:0.0} selectionW={Named("CsvSelectionBar").ActualWidth:0.0}";
                         Require(full >= 3, "native repro " + report);
                         Require(footerBottom <= cardBottom + 0.5 && footerBottom <= client + 0.5, "the grid footer stays inside the card and the client area " + report);
+                        // V1: when the MEASURED table viewport could not keep three rows beside the open tools, the group is folded into one bar (nothing removed).
+                        // Opening it must keep the typed text and the table's three-row floor (the tools scroll inside a cap).
+                        if (vm.CsvToolsTight)
+                        {
+                            Require(Named("CsvToolsBar").IsVisible && !Named("CsvBulkReplacePanel").IsVisible, "folded: the bar replaces the panel " + label);
+                            Require(vm.CsvBulkFind == "kiểm tra" && vm.CsvToolsToggleText == "Mở rộng", "folded: the typed find text is retained " + label);
+                            vm.ToggleCsvToolsCommand.Execute(null);
+                            window.UpdateLayout(); PumpFixture(400); window.UpdateLayout(); PumpFixture(300);
+                            var openedClient = ((FrameworkElement)window.Content).ActualHeight * scale;
+                            var openedVisibleBottom = Math.Min(Math.Min(openedClient, grid.TranslatePoint(new Point(0, grid.ActualHeight), window).Y), footer.TranslatePoint(new Point(0, 0), window).Y);
+                            var openedFull = 0;
+                            for (var i = 0; i < rows.Count; i++)
+                                if (grid.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow { IsVisible: true } r2 && r2.TranslatePoint(new Point(0, r2.ActualHeight), window).Y <= openedVisibleBottom + 0.5) openedFull++;
+                            Require(openedFull >= 3, "opened tools keep three full rows " + label + " (" + openedFull + ")");
+                            Require(Named("CsvBulkReplacePanel").IsVisible && vm.CsvBulkFind == "kiểm tra", "opened: the panel and its typed text are back " + label);
+                        }
                         // Every find/replace/scope/Preview/Apply/Undo control lies fully inside the bulk panel AND the client area (width and height), and nothing overlaps the examples column.
                         double ClientW() => ((FrameworkElement)window.Content).ActualWidth * scale;
                         Rect Box(FrameworkElement e) { var p = e.TranslatePoint(new Point(0, 0), window); return new Rect(p.X, p.Y, e.ActualWidth * scale, e.ActualHeight * scale); }

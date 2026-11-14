@@ -1606,6 +1606,59 @@
 
     </Style>
 
+    <!-- CSV row selector (scoped: only the grid's CheckBox uses it).  Tokens only; idle/hover/checked/keyboard-focus/disabled are distinct in Light and Dark.
+         The 20 DIP box area keeps a one-line row at its normal height (a larger control made every row ~10 DIP taller and cost the table rows); the focus ring is a
+         separate layer drawn OUTSIDE that area (negative margin), so it never changes the size. -->
+    <Style x:Key="CsvRowCheckBoxStyle" TargetType="{x:Type CheckBox}">
+        <Setter Property="Focusable" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Background" Value="{DynamicResource FieldBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type CheckBox}">
+                    <Grid Width="20" Height="20" Background="Transparent">
+                        <Border x:Name="FocusRing" Margin="-3" CornerRadius="9" BorderThickness="2" BorderBrush="Transparent" IsHitTestVisible="False" />
+                        <Border x:Name="Box" Width="18" Height="18" CornerRadius="5" BorderThickness="1.5"
+                                Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}">
+                            <Path x:Name="Mark" Data="M3.8,8.9 L7.2,12 L13.6,5" Stroke="{DynamicResource SurfaceBrush}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Width="18" Height="18" Visibility="Collapsed" />
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource BlueSoftBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource BlueBrush}" />
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+                            <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsChecked" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Box" Property="Opacity" Value="0.86" />
+                        </MultiTrigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="FocusRing" Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Box" Property="BorderBrush" Value="{DynamicResource DisabledBorderBrush}" />
+                            <Setter TargetName="Box" Property="Background" Value="{DynamicResource DisabledBackgroundBrush}" />
+                            <Setter Property="Cursor" Value="Arrow" />
+                            <Setter TargetName="Mark" Property="Stroke" Value="{DynamicResource DisabledForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
 
 

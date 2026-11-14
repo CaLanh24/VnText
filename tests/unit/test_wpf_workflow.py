@@ -638,7 +638,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn('Content="Mở công cụ"', xaml)
         self.assertNotIn('Content="Thu gọn"', xaml)
         self.assertIn('Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}"', xaml)
-        self.assertIn("public bool CsvBulkPanelVisible => CsvEditorHasDocument;", vm)
+        self.assertIn("public bool CsvBulkPanelVisible => CsvEditorHasDocument && (!_csvToolsTight || _csvToolsOpen);", vm)   # open whenever there is room; V1 folds it into one bar only when the MEASURED table viewport cannot keep three rows
         self.assertNotIn("ToggleCsvBulkCommand", vm)
         self.assertNotIn("ToggleCsvBulkCommand", xaml)
         self.assertIn("SetCsvLowHeight(ActualHeight / Math.Max(1, UiAppearance.Scale) < 900)", code)
@@ -679,7 +679,7 @@ class WpfWorkflowTests(unittest.TestCase):
         scroll = xaml[xaml.index('x:Name="CsvBulkPreviewScroll"'):xaml.index("</ScrollViewer>", xaml.index('x:Name="CsvBulkPreviewScroll"'))]
         # 0.1.17 small-window fix: the bound is 120 at a normal height and 64 at a low height (examples beside the find/replace group) (still visible, scrollable), via the view model
         self.assertIn('MaxHeight="{Binding CsvPreviewMaxHeight}"', scroll)
-        self.assertIn("public double CsvPreviewMaxHeight => _csvLowHeight ? 48 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
+        self.assertIn("public double CsvPreviewMaxHeight => CsvCompact ? 48 : 120;", (app / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("CsvBulkPreviewDetailOpen", scroll)
         self.assertIn("public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;", vm)
         # the stored preview, the Apply guard and its signature are untouched
@@ -878,7 +878,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('x:Name="CsvEditorCard"', xaml)
         self.assertIn('x:Name="CsvEditorSearchBox"', xaml)
         self.assertNotIn('<UniformGrid Grid.Column="1" Columns="3"', xaml)
-        self.assertIn('<WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">', xaml)     # scope + Preview/Apply/Undo wrap instead of running under the examples column
+        self.assertIn('<WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="{Binding CsvBulkButtonRowMargin}">', xaml)     # scope + Preview/Apply/Undo wrap instead of running under the examples column
         self.assertIn('x:Name="CsvBulkFindTextBox"', xaml)
         self.assertIn('x:Name="CsvBulkReplaceTextBox"', xaml)
         self.assertIn('Text="Tìm nguyên bản hoặc bản dịch"', xaml)
@@ -1205,7 +1205,8 @@ class WpfWorkflowTests(unittest.TestCase):
         journal = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppJournalStore.cs").read_text(encoding="utf-8")
         self.assertIn(r"scan_errors=(?<count>\d+)", journal)
         self.assertIn("scanErrorCount > 0", journal)
-        self.assertIn(r"\berrors?\b", journal)
+        self.assertNotIn(r"\berrors?\b", journal)                                       # V4: no free substring inference of ERROR from wording
+        self.assertIn("LogSeverityConverter.ClassifyText(text)", journal)                  # one anchored classifier for page and persisted journal
 
     def test_cloud_repair_controls_route_and_preserve_active_csv_on_failure(self):
         view_model = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.cs").read_text(encoding="utf-8")
@@ -1493,6 +1494,12 @@ class WpfWorkflowTests(unittest.TestCase):
             native_repro_proc = _run_harness(harness_env, artifacts_root, ["--csv-native-repro-fixture"])
             self.assertEqual(0, native_repro_proc.returncode, (native_repro_proc.stdout or "") + (native_repro_proc.stderr or ""))
             self.assertIn("WPF CSV native-repro fixture: PASS", native_repro_proc.stdout)
+            csv_budget_proc = _run_harness(harness_env, artifacts_root, ["--csv-budget-fixture"])
+            self.assertEqual(0, csv_budget_proc.returncode, (csv_budget_proc.stdout or "") + (csv_budget_proc.stderr or ""))
+            self.assertIn("WPF CSV budget fixture: PASS", csv_budget_proc.stdout)
+            v_batch_proc = _run_harness(harness_env, artifacts_root, ["--v-batch-fixture"])
+            self.assertEqual(0, v_batch_proc.returncode, (v_batch_proc.stdout or "") + (v_batch_proc.stderr or ""))
+            self.assertIn("WPF V-batch fixture: PASS", v_batch_proc.stdout)
             transition_proc = _run_harness(harness_env, artifacts_root, ["--update-window-transition-fixture"])
             self.assertEqual(0, transition_proc.returncode, (transition_proc.stdout or "") + (transition_proc.stderr or ""))
             self.assertIn("WPF update window transition fixture: PASS", transition_proc.stdout)

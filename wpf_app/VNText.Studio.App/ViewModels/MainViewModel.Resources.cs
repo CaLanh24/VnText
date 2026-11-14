@@ -92,7 +92,7 @@ public sealed partial class MainViewModel
                 : "Còn thiếu hoặc hỏng tài nguyên — dùng “Sửa/tải tài nguyên còn thiếu”. Phần đã cài được giữ nguyên.\n" + string.Join("\n", lines.Where(line => line.Contains("Chưa sẵn sàng")));
             RaiseResourceReadiness();
         }
-        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { AppendLog("Không đọc được trạng thái tài nguyên: " + ex.Message); }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { AppendLog("Không đọc được trạng thái tài nguyên: " + ex.Message, "WARN"); }
         if (!evt.Ok) { ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);

@@ -60,3 +60,18 @@ Fresh fixture review confirms readable rough Vietnamese, protected tags/placehol
 - Bounds (tests): unknown context, dialogue and menu-choice contexts never match; only an exact standalone label does ("The Prologue", "Prologue [name]", "Prologue {b}..{/b}", "Prologue\nTwo", "Prologue: Kai" stay untouched); a dialogue "Prologue" remains a `copy_literal` name keep. The real OPUS selected-translate route yields Lời mở đầu / Lời kết / Thoát next to Chương 1 / Tắt tiếng tất cả / Cài đặt.
 - Gates for this diff: legacy+catalog 18 OK; owner-flow e2e 4 OK; public-mt PASS. Earlier related157 (2 skips), WPF37 and public groups remain valid (no WPF/UI source change).
 - Native: Root verified stale-selected refusal and unchanged external bytes plus a 7-row selected retry; native cancel remains NOT PROVEN (fixture/capture limits, no app defect diagnosed).
+
+## UI batch V1–V7 (2026-11-14, base `e41df9c`)
+Owner/QA findings (`TEST_RUN/agent-evidence/uiqa1114-review.json`) fixed together; nothing outside them redesigned. Fonts, palette, radii, elevation, navigation and the 30/36 DIP control roles are unchanged.
+
+| Finding | Files | Regression |
+|---|---|---|
+| V1 CSV table floor | `MainWindow.xaml`, `MainWindow.CsvLayout.cs`, `Services/CsvEditorLayoutBudget.cs`, `ViewModels/MainViewModel.CsvEditor.cs` | `--csv-budget-fixture`, `--csv-native-repro-fixture`, `--csv-layout-fixture` |
+| V2 find/replace alignment | `MainWindow.xaml` | `--csv-budget-fixture` (labels of one/two lines, both languages) |
+| V3 row checkbox | `Themes/ControlStyles.xaml`, `MainWindow.xaml` | `--csv-budget-fixture` (token brushes, idle/checked/disabled, IsSelected) |
+| V4 journal severity | `Converters/LogSeverityConverter.cs`, `Services/AppJournalStore.cs`, producers in `MainViewModel*.cs` | `--v-batch-fixture` (typed + content-negative, page == saved journal) |
+| V5 Images states | `Services/ImagePackageProbe.cs`, `ViewModels/MainViewModel.ImageText.cs`, `Controls/ImageWorkspacePanel.xaml`, `Services/UiText.cs` | `--v-batch-fixture` (six states, Details, manual editor, English), `--region-grid-fixture` |
+| V6 About border | `MainWindow.xaml` | `--v-batch-fixture` (Light/Dark token, hover unchanged, no layout shift) |
+| V7 image icon | `Themes/IconGeometries.xaml`, `MainWindow.xaml` | `--v-batch-fixture` (distinct, centred, route/order/label unchanged) |
+
+Design notes: the table has no forced minimum height; its three-row floor is measured from the real layout (UI scale applied, wrapped toolbars included). The find/replace group stays open whenever there is room (Owner 2026-11-02) and folds into one bar only when the measured viewport would otherwise keep fewer than three single-line rows. A one-line row is ~42 units; a larger selector control made every row ~10 taller, so the row checkbox keeps a 20-unit box area.

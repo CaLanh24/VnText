@@ -165,7 +165,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         // Owner-selected product default: exhaustive extraction. Older persisted choices are ignored.
         _extractLevel = ExtractLevels.Exhaustive;
         LogLines = new ObservableCollection<string>();
-        if (!string.IsNullOrWhiteSpace(settingsError)) AppendLog(settingsError);
+        if (!string.IsNullOrWhiteSpace(settingsError)) AppendLog(settingsError, "WARN");
         LoadVersion();
         NavigateTabCommand = new RelayCommand(p => NavigateTab(p as string));
         InitializePersistentError();
@@ -1206,6 +1206,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal void TestAppendLog(string line, string? level = null) => AppendLog(line, level);
     internal void TestMarkRetranslatePending(string path) { _csvEditorRetranslatePending = true; _csvEditorRetranslatePath = path; }
     internal void TestReportCancelTimeout(string id) => ReportCancelTimeout(id, CancellationToken.None);
     internal void TestBeginCancelAndExit() => CancelAndExit();
@@ -1215,7 +1216,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     internal void TestMarkTaskStarted() => Interlocked.Increment(ref _taskStartGeneration);
     internal void TestSetBusy(bool busy) => Busy = busy;
     internal void TestMarkTaskTerminal(string id) { MarkTaskTerminal(id); Busy = false; _runningTask = null; }
-    internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}");
+    internal void RecordAppError(Exception error) => AppendLog($"Lỗi ứng dụng: {error}", "ERROR");
 
     internal void TestSetCloudRepairPackagePath(string path) => CloudRepairPackagePath = path;
 
