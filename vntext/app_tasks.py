@@ -1633,6 +1633,18 @@ def run_asset_index_task(
         _emit_complete(complete, ok=False, error=str(exc))
 
 
+def _exclude_legacy_machine_rows(csv_path: Path, log: LogFn) -> None:
+    """Legacy packages list static-display syntax ("<", "[page]") as review rows; exclude them automatically (audited) before translating."""
+    try:
+        from vntext.user_exclusions import exclude_machine_technical
+
+        removed = exclude_machine_technical(csv_path)
+        if removed:
+            log(f"Đã tự loại {removed} dòng chỉ là cú pháp/kỹ thuật khỏi CSV (ghi trong user_exclusions.json); bạn không cần phân loại chúng.")
+    except Exception as exc:  # never block a translation on the cleanup; the rows then simply stay skip_technical
+        log(f"Không tự loại được dòng kỹ thuật cũ: {exc}")
+
+
 def run_translate_ct2_task(
     csv_path: Path,
     package_dir: Path,
@@ -1647,6 +1659,7 @@ def run_translate_ct2_task(
 ) -> None:
     try:
         log("Đang dịch offline CTranslate2 + OPUS-MT en→vi (INT8). Lần đầu có thể tải model.")
+        _exclude_legacy_machine_rows(csv_path, log)
         log("Đang kiểm tra cấu hình runtime và phiên bản model để ghi vào nhật ký.")
         trace_model_revision = _ct2_trace_model_revision(model_dir)
         translate_kwargs = {
@@ -1845,6 +1858,7 @@ def run_translate_keys_ct2_task(
 ) -> None:
     try:
         log(f"Đang dịch lại {len(keys)} dòng lỗi bằng CTranslate2 + OPUS-MT en→vi (INT8).")
+        _exclude_legacy_machine_rows(csv_path, log)
         trace_model_revision = _ct2_trace_model_revision(model_dir)
         translate_kwargs = {
             "allow_overwrite": True,
@@ -2030,6 +2044,13 @@ def run_translate_keys_ct2_task(
                 )
                 if human_review_count:
                     payload["error"] = f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
+                elif payload["pending"] == 0 and int(measured_status["review_only"]) == 0 and payload["review_only"] > 0:
+                    # The measured package has NOTHING left to review: the remaining "review" rows are drafted rows whose writeback path is not proven
+                    # (older package).  Say that, and what fixes it, instead of asking for a review that does not exist.
+                    payload["error"] += (
+                        f" — bản nháp đã xong; {payload['review_only']} dòng chưa có đường ghi patch được chứng minh (gói trích xuất cũ) nên Patch sẽ bỏ qua. "
+                        "Chạy lại Extract để có đường ghi đã chứng minh; không cần duyệt thủ công."
+                    )
         if (
             not payload["ok"]
             or not payload["complete"]

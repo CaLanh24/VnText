@@ -121,3 +121,26 @@ def filter_excluded_entries(entries, package_dir: str | Path):
         else:
             kept.append(entry)
     return kept, dropped
+
+
+STATIC_CANDIDATE_METHODS = ("renpy_screen_candidate", "renpy_compiled_candidate")
+
+
+def exclude_machine_technical(csv_path: str | Path) -> int:
+    """Legacy packages (written before display-purpose classification) list static screen candidates such as "<", "[page]" or "{#auto_page}A" as
+    review rows.  They are machine syntax, never player text: record them as machine exclusions and drop them from the CSV so the user never triages
+    syntax.  Only rows whose method is a static-display candidate AND whose visible content has no player-readable words are touched; every other row
+    (including human candidates like "Mute All") is left exactly as it is.  Returns the number of rows excluded."""
+    from vntext.renpy_static import classify_ui_text
+
+    csv_path = Path(csv_path)
+    raw = csv_path.read_bytes()
+    reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig"), newline=""))
+    if "key" not in (reader.fieldnames or []) or "import_method" not in (reader.fieldnames or []):
+        return 0
+    keys = [row["key"] for row in reader
+            if row.get("import_method") in STATIC_CANDIDATE_METHODS and not (row.get("translation") or "").strip()
+            and classify_ui_text(row.get("source_text") or "")[0] == "TECHNICAL"]
+    if not keys:
+        return 0
+    return exclude_rows(csv_path, keys, _sha(raw), reason="machine_technical")["removed"]

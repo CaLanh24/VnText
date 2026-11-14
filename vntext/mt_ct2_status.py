@@ -103,7 +103,29 @@ def _safe_candidate(
 
 
 def _load_human_review_keys(package_dir: Path) -> set[str]:
-    """Return keys whose persisted review provenance requires human promotion."""
+    """Return keys whose persisted review provenance requires human promotion.
+
+    Static screen/compiled display CANDIDATES are machine triage, not human work: their player text is drafted by the normal route (the draft is never
+    patched until the writeback proof exists: the patch gate reads the review ledger itself) and their syntax is excluded automatically."""
+    return _effective_review_keys(package_dir, _load_human_review_keys_raw(package_dir))
+
+
+def _effective_review_keys(package_dir: Path, keys: set[str]) -> set[str]:
+    """Review keys that are really HUMAN work: not static-display machine triage, and not rows the user/the machine already removed from the CSV."""
+    if not keys:
+        return keys
+    from vntext.user_exclusions import load_exclusions
+
+    keys = keys - set(load_exclusions(package_dir))
+    try:
+        entries = json.loads((package_dir / 'manifest.json').read_text(encoding='utf-8-sig')).get('entries') or []
+    except (OSError, ValueError):
+        return keys
+    machine = {str(e.get('key')) for e in entries if isinstance(e, dict) and e.get('import_method') in ('renpy_screen_candidate', 'renpy_compiled_candidate')}
+    return keys - machine
+
+
+def _load_human_review_keys_raw(package_dir: Path) -> set[str]:
     manifest_path = package_dir / 'manifest.json'
     if manifest_path.is_file() and json.loads(manifest_path.read_text(encoding='utf-8-sig')).get('unified_document') is True:
         from vntext.patch_gate import load_review_only_keys
@@ -509,7 +531,7 @@ def _count_review_only_rows(package_dir: Path) -> int:
     manifest_path = package_dir / 'manifest.json'
     if manifest_path.is_file() and json.loads(manifest_path.read_text(encoding='utf-8-sig')).get('unified_document') is True:
         from vntext.patch_gate import load_review_only_keys
-        return len(load_review_only_keys(package_dir))
+        return len(_effective_review_keys(package_dir, set(load_review_only_keys(package_dir))))
     review_path = package_dir / "review_only.csv"
     if not review_path.is_file():
         return 0
