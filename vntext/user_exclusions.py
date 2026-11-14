@@ -100,9 +100,23 @@ def exclude_rows(csv_path: str | Path, keys: list[str], expected_sha256: str, *,
                                 "source_preview": row["source_text"][:80]}
     document = json.dumps({"schema": SCHEMA, "policy": "user-removed rows; honored on re-extraction while the source text (sha256) is unchanged",
                            "rows": sorted(previous.values(), key=lambda item: item["key"])}, ensure_ascii=False, indent=2).encode("utf-8")
-    # Record the decision FIRST: if the CSV write then fails the row stays in the CSV and is merely also listed (harmless, re-applied on retry).
-    _atomic_write(package_dir / EXCLUSIONS_FILE, document)
-    _atomic_write(csv_path, payload)
+    # Two files, one decision.  A ledger entry whose row is still in the CSV would suppress that row on the next extraction and change review
+    # counts, so the pair is transactional: if the CSV write fails the ledger is put back byte-for-byte (a ledger this call created is removed;
+    # an existing one is never deleted).  If even the rollback fails the error names the ledger so the state is never silently inconsistent.
+    ledger_path = package_dir / EXCLUSIONS_FILE
+    previous_ledger = ledger_path.read_bytes() if ledger_path.is_file() else None
+    _atomic_write(ledger_path, document)
+    try:
+        _atomic_write(csv_path, payload)
+    except BaseException as exc:
+        try:
+            if previous_ledger is None:
+                ledger_path.unlink(missing_ok=True)
+            else:
+                _atomic_write(ledger_path, previous_ledger)
+        except OSError as rollback:
+            raise ExclusionConflict(f"Không ghi được CSV ({exc}) và cũng không hoàn tác được {EXCLUSIONS_FILE} ({rollback}); hãy kiểm tra thư mục package trước khi chạy lại.") from exc
+        raise
     return {"removed": len(removed), "remaining": len(keep), "csv_sha256": _sha(payload), "exclusions": len(previous)}
 
 

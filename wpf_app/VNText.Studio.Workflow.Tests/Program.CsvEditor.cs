@@ -325,6 +325,73 @@ internal static partial class Program
             AssertTrue(vm.CsvEditorStaleOnDisk);
             AssertTrue(vm.CsvEditorStatus.Contains("Tải lại", StringComparison.Ordinal));
             AssertTrue(diskBefore.AsSpan().SequenceEqual(File.ReadAllBytes(csv)));
+
+            // ---- selected translate: the payload carries the opened revision (stale-before-start protection) ----
+            vm.TestClearCsvDirty();
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            var openedSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(csv))).ToLowerInvariant();
+            var payload = System.Text.Json.JsonSerializer.Serialize(vm.BuildSelectedTranslateParams(["k1"]));
+            Require(payload.Contains("\"expected_csv_sha256\":\"" + openedSha + "\"", StringComparison.OrdinalIgnoreCase), "payload lacks the opened CSV revision: " + payload);
+            Require(payload.Contains("\"selection_only\":true", StringComparison.Ordinal), "payload is not selection-only: " + payload);
+
+            // ---- terminal outcomes that left persisted rows on disk (checkpoint flush / machine exclusion): the editor reconciles the OWNED path ----
+            static string Terminal(string id, bool ok, string error, bool complete) =>
+                "{\"v\":1,\"type\":\"complete\",\"id\":\"" + id + "\",\"ok\":" + (ok ? "true" : "false") + ",\"summary\":\"\",\"error\":\"" + error
+                + "\",\"complete\":" + (complete ? "true" : "false") + ",\"pending\":1,\"review_only\":0,\"blocked\":1,\"translated\":0}";
+            void Finish(string id, bool ok, string error, bool complete, string ownedPath)
+            {
+                vm.TestBeginTaskLog(id, "translate");
+                vm.TestSetActiveTask(id, "translate");
+                vm.TestMarkRetranslatePending(ownedPath);
+                vm.TestHandleWorkerEvent(WorkerEvent.FromJson(Terminal(id, ok, error, complete))!);
+            }
+            void PumpUntil(Func<bool> condition, int milliseconds = 5000)
+            {
+                var deadline = DateTime.UtcNow.AddMilliseconds(milliseconds);
+                while (!condition() && DateTime.UtcNow < deadline)
+                {
+                    var frame = new DispatcherFrame();
+                    dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => frame.Continue = false));
+                    Dispatcher.PushFrame(frame);
+                    Thread.Sleep(15);
+                }
+            }
+            foreach (var (id, ok, error, complete) in new[] { ("rt-cancel", false, "cancelled", false), ("rt-error", false, "Lỗi ghi", false), ("rt-partial", true, "", false) })
+            {
+                // clean editor: the persisted rows appear (counts/source SHA follow the saved revision), no success is claimed
+                vm.TestClearCsvDirty();
+                vm.OpenCsvEditorFileCommand.Execute(null);
+                File.WriteAllText(csv, Csv("Đã lưu giữa chừng " + id), utf8Bom);
+                Finish(id, ok, error, complete, csv);
+                PumpUntil(() => vm.CsvEditorRows[0].Translation.EndsWith(id, StringComparison.Ordinal));
+                AssertEqual("Đã lưu giữa chừng " + id, vm.CsvEditorRows[0].Translation);
+                AssertFalse(vm.CsvEditorDirty);
+                AssertFalse(vm.CsvEditorStaleOnDisk);
+                var reloadedPayload = System.Text.Json.JsonSerializer.Serialize(vm.BuildSelectedTranslateParams(["k1"]));
+                var newSha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(csv))).ToLowerInvariant();
+                Require(reloadedPayload.Contains(newSha, StringComparison.OrdinalIgnoreCase), "the editor's revision did not follow the persisted CSV after " + id);
+
+                // dirty editor: unsaved user edit and the file on disk are both preserved; the view is marked stale, nothing is reloaded over it
+                vm.CsvEditorRows[0].Translation = "Sửa tay " + id;
+                vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[0]);
+                File.WriteAllText(csv, Csv("Đĩa đổi " + id), utf8Bom);
+                var disk = File.ReadAllBytes(csv);
+                Finish(id + "-dirty", ok, error, complete, csv);
+                PumpUntil(() => vm.CsvEditorStaleOnDisk);
+                AssertTrue(vm.CsvEditorStaleOnDisk);
+                AssertEqual("Sửa tay " + id, vm.CsvEditorRows[0].Translation);
+                AssertTrue(vm.CsvEditorDirty);
+                AssertTrue(disk.AsSpan().SequenceEqual(File.ReadAllBytes(csv)));
+            }
+            // an unrelated owned path never reloads or marks the open CSV
+            vm.TestClearCsvDirty();
+            vm.OpenCsvEditorFileCommand.Execute(null);
+            var shown = vm.CsvEditorRows[0].Translation;
+            File.WriteAllText(csv, Csv("Không liên quan"), utf8Bom);
+            Finish("rt-other", false, "cancelled", false, other);
+            PumpUntil(() => false, 400);
+            AssertEqual(shown, vm.CsvEditorRows[0].Translation);
+            AssertFalse(vm.CsvEditorStaleOnDisk);
         }
         finally
         {

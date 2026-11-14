@@ -130,6 +130,7 @@ internal static partial class Program
             Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, csvFailures);
             Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, csvFailures);
             Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, csvFailures);
+            Run("CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate", CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate, csvFailures);
             Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, csvFailures);
             Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, csvFailures);
             Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, csvFailures);
@@ -145,7 +146,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (14)");
+                Console.WriteLine("Focused CSV editor protection checks: PASS (15)");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);

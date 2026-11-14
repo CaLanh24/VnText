@@ -38,6 +38,10 @@ class TranslateCancelled(MtCt2Error):
     pass
 
 
+class CsvRevisionConflict(MtCt2Error):
+    """The CSV on disk is no longer the revision this task was started from; nothing was (or will be) overwritten."""
+
+
 def _join_translated_budget_parts(sources: list[str], translations: list[str]) -> str:
     """Restore source separators lost by decoding already-required budget chunks."""
     if len(sources) != len(translations):
@@ -520,4 +524,4 @@ def reset_translator_cache() -> None:
     _TRANSLATOR = None
     _TRANSLATOR_DIR = None
 
-__all__ = ['MtCt2Error', 'ModelNotReadyError', 'EmptyCsvError', 'TranslateCancelled', '_default_inter_threads', '_default_batch_size', '_flush_every_rows', '_fast_retry_default', '_split_text_under_token_limit', '_repo_root', 'resolve_model_dir', 'ensure_model', 'Ct2Translator', 'model_status', 'get_translator', 'reset_translator_cache']
+__all__ = ['MtCt2Error', 'ModelNotReadyError', 'EmptyCsvError', 'TranslateCancelled', 'CsvRevisionConflict', '_default_inter_threads', '_default_batch_size', '_flush_every_rows', '_fast_retry_default', '_split_text_under_token_limit', '_repo_root', 'resolve_model_dir', 'ensure_model', 'Ct2Translator', 'model_status', 'get_translator', 'reset_translator_cache']

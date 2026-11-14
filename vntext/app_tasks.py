@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable
 
 from vntext.mt_ct2 import (
+    CsvRevisionConflict,
     EmptyCsvError,
     ModelNotReadyError,
     TranslateStatusError,
@@ -1633,16 +1634,29 @@ def run_asset_index_task(
         _emit_complete(complete, ok=False, error=str(exc))
 
 
-def _exclude_legacy_machine_rows(csv_path: Path, log: LogFn) -> None:
-    """Legacy packages list static-display syntax ("<", "[page]") as review rows; exclude them automatically (audited) before translating."""
-    try:
-        from vntext.user_exclusions import exclude_machine_technical
+def _exclude_legacy_machine_rows(csv_path: Path, log: LogFn, expected_sha256: str | None = None) -> str | None:
+    """Legacy packages list static-display syntax ("<", "[page]") as review rows; exclude them automatically (audited) before translating.
 
+    Compare-and-swap on the revision the user opened: a changed CSV refuses with NO mutation (the conflict propagates, translation does not start).
+    Returns the CSV sha256 the translation must continue from (None when no revision was supplied)."""
+    import hashlib
+
+    from vntext.mt_ct2_model import CsvRevisionConflict
+    from vntext.user_exclusions import ExclusionConflict, exclude_machine_technical
+
+    if not Path(csv_path).is_file():
+        return expected_sha256 or None                       # nothing to clean; the translation step reports a missing CSV itself
+    if expected_sha256 and hashlib.sha256(Path(csv_path).read_bytes()).hexdigest() != str(expected_sha256).lower():
+        raise CsvRevisionConflict("CSV đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); không dịch và không thay đổi gì. Hãy tải lại CSV rồi chọn lại.")
+    try:
         removed = exclude_machine_technical(csv_path)
-        if removed:
-            log(f"Đã tự loại {removed} dòng chỉ là cú pháp/kỹ thuật khỏi CSV (ghi trong user_exclusions.json); bạn không cần phân loại chúng.")
-    except Exception as exc:  # never block a translation on the cleanup; the rows then simply stay skip_technical
-        log(f"Không tự loại được dòng kỹ thuật cũ: {exc}")
+    except ExclusionConflict as exc:
+        raise CsvRevisionConflict(str(exc)) from exc
+    if removed:
+        log(f"Đã tự loại {removed} dòng chỉ là cú pháp/kỹ thuật khỏi CSV (ghi trong user_exclusions.json); bạn không cần phân loại chúng.")
+    if not expected_sha256:
+        return None
+    return hashlib.sha256(Path(csv_path).read_bytes()).hexdigest()
 
 
 def run_translate_ct2_task(
@@ -1790,6 +1804,23 @@ def run_translate_ct2_task(
             )
         )
         complete(payload)
+    except CsvRevisionConflict as exc:
+        _emit_complete(
+            complete,
+            ok=False,
+            error=str(exc),
+            complete=False,
+            pending=1,
+            review_only=1,
+            blocked=1,
+            **_diagnostic_completion_fields(
+                package_dir,
+                fallback_stage="TRANSLATE",
+                fallback_root_cause="UNKNOWN",
+                fallback_affected_count=1,
+                fallback_action="Reload the CSV and select the rows again; the file on disk was not overwritten.",
+            ),
+        )
     except EmptyCsvError as exc:
         _emit_complete(
             complete,
@@ -1851,6 +1882,7 @@ def run_translate_keys_ct2_task(
     model_dir: str = "",
     selection_only: bool = False,
     human_review_required: bool = False,
+    expected_csv_sha256: str | None = None,
     progress: ProgressFn,
     log: LogFn,
     complete: CompleteFn,
@@ -1858,11 +1890,12 @@ def run_translate_keys_ct2_task(
 ) -> None:
     try:
         log(f"Đang dịch lại {len(keys)} dòng lỗi bằng CTranslate2 + OPUS-MT en→vi (INT8).")
-        _exclude_legacy_machine_rows(csv_path, log)
+        csv_sha256 = _exclude_legacy_machine_rows(csv_path, log, expected_csv_sha256)
         trace_model_revision = _ct2_trace_model_revision(model_dir)
         translate_kwargs = {
             "allow_overwrite": True,
             "backup": True,
+            "expected_sha256": csv_sha256,
             "human_review_required": bool(human_review_required),
             "is_cancelled": is_cancelled,
             "progress": progress,
@@ -2105,6 +2138,11 @@ def run_translate_keys_ct2_task(
                            review_only=0, blocked=0 if selection_ok else 1,
                            error="" if selection_ok else "Chưa dịch xong các dòng đã chọn.",
                            summary=f"Đã dịch {selected_done}/{len(set(keys))} dòng đã chọn và lưu CSV.")
+            omitted = max(package_counts["pending"], package_counts["review_only"], package_counts["blocked"])
+            if selection_ok and omitted > 0:
+                # Draft saved is one fact; "the patch will skip other rows" is another. Never an error for the selected draft, never patch proof.
+                payload["patch_omissions"] = omitted
+                payload["summary"] += f" Bản nháp đã lưu; Patch sẽ bỏ qua {omitted} dòng khác chưa đủ điều kiện (chưa dịch hoặc chưa có đường ghi được chứng minh)."
         complete(payload)
     except TranslateCancelled:
         _emit_complete(
@@ -2143,6 +2181,23 @@ def run_translate_keys_ct2_task(
             )
         )
         complete(payload)
+    except CsvRevisionConflict as exc:
+        _emit_complete(
+            complete,
+            ok=False,
+            error=str(exc),
+            complete=False,
+            pending=1,
+            review_only=1,
+            blocked=1,
+            **_diagnostic_completion_fields(
+                package_dir,
+                fallback_stage="TRANSLATE",
+                fallback_root_cause="UNKNOWN",
+                fallback_affected_count=1,
+                fallback_action="Reload the CSV and select the rows again; the file on disk was not overwritten.",
+            ),
+        )
     except EmptyCsvError as exc:
         _emit_complete(
             complete,

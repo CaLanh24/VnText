@@ -298,6 +298,7 @@ def run_translate_worker(
                 keys,
                 model_dir=model_dir,
                 selection_only=params.get("selection_only") is True,
+                expected_csv_sha256=str(params.get("expected_csv_sha256") or "") or None,
                 human_review_required=human_review_required,
                 progress=progress,
                 log=log,

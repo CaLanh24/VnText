@@ -96,18 +96,28 @@ public sealed partial class MainViewModel
             "Kết quả được lưu vào chính file CSV này, có sao lưu và kiểm tra cấu trúc sau khi dịch.");
         if (CsvEditorMessageBox(message, "Dịch dòng đã chọn", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
-        _csvEditorRetranslatePending = true;
-        BeginTask("translate", new
+        if (string.IsNullOrWhiteSpace(_csvEditorSourceSha256) || !File.Exists(CsvEditorPath))
         {
-            csv_path = CsvEditorPath,
-            keys = keys.ToArray(),
-            selection_only = true,
-            overwrite = true,
-            human_review_required = HumanReviewRequired,
-            model = "ct2",
-            model_dir = TranslationModelDir,
-        }, UiText.Msg("Đang dịch {0} dòng đã chọn…", keys.Count.ToString("N0")));
+            ShowToast("Không xác minh được bản CSV đang mở; hãy tải lại CSV rồi chọn lại.", "error");
+            return;
+        }
+        _csvEditorRetranslatePending = true;
+        _csvEditorRetranslatePath = CsvEditorPath;
+        BeginTask("translate", BuildSelectedTranslateParams(keys), UiText.Msg("Đang dịch {0} dòng đã chọn…", keys.Count.ToString("N0")));
     }
+
+    /// <summary>Worker payload for "translate the checked rows": carries the CSV revision the user opened so the worker refuses (no mutation) if the file changed.</summary>
+    internal object BuildSelectedTranslateParams(IReadOnlyCollection<string> keys) => new
+    {
+        csv_path = CsvEditorPath,
+        keys = keys.ToArray(),
+        selection_only = true,
+        expected_csv_sha256 = _csvEditorSourceSha256,
+        overwrite = true,
+        human_review_required = HumanReviewRequired,
+        model = "ct2",
+        model_dir = TranslationModelDir,
+    };
 
     internal async Task DeleteCheckedCsvRowsAsync()
     {

@@ -482,16 +482,13 @@ public sealed partial class MainViewModel
                     }
                     else if (completedTask == "translate" && _csvEditorRetranslatePending)
                     {
-                        OnCsvEditorRetranslateComplete(evt.Ok && fullyComplete);
+                        // partial: persisted rows may exist; reconcile the owned path safely instead of skipping the reload
+                        _ = ReconcileCsvEditorAfterIncompleteRetranslateAsync();
                     }
                 }
-                else if (cancelled && _csvEditorRetranslatePending)
+                else if ((cancelled || !evt.Ok) && _csvEditorRetranslatePending)
                 {
-                    _csvEditorRetranslatePending = false;
-                }
-                else if (!evt.Ok && _csvEditorRetranslatePending)
-                {
-                    _csvEditorRetranslatePending = false;
+                    _ = ReconcileCsvEditorAfterIncompleteRetranslateAsync();
                 }
 
                 if (completedTask == "analyze")

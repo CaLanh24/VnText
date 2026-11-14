@@ -1363,13 +1363,14 @@ def _run_ct2_translate_keys_impl(
     human_review_required: bool = False,
     allow_overwrite: bool = True,
     backup: bool = True,
+    expected_sha256: str | None = None,
     is_cancelled: CancelFn | None = None,
     progress: ProgressFn | None = None,
     log: LogFn | None = None,
 ) -> dict:
     """Dịch lại một tập key — dùng cho tab Sửa CSV (xử lý dòng bị gate chặn)."""
     from vntext.mt_ct2_io import _ReviewSink, _apply_mapping_memory, _batch_translate_chunk, _flush_csv_atomic, _load_csv
-    from vntext.mt_ct2_model import EmptyCsvError, TranslateCancelled, _flush_every_rows, get_translator
+    from vntext.mt_ct2_model import CsvRevisionConflict, EmptyCsvError, TranslateCancelled, _flush_every_rows, get_translator
     from vntext.mt_ct2_status import _load_human_review_keys, _safe_candidate
     from vntext.package_io import backup_translation_csv
 
@@ -1389,9 +1390,29 @@ def _run_ct2_translate_keys_impl(
             "cache_fingerprints": {},
         }
 
+    # Compare-and-swap on the CSV revision the user opened: a task started from a stale view must not mutate anything, and every checkpoint
+    # (selected copies, periodic flush, cancel, final) re-verifies that the file is still exactly what THIS task last wrote.
+    revision = {"sha": str(expected_sha256).lower() if expected_sha256 else None}
+
+    def disk_sha() -> str:
+        return hashlib.sha256(csv_path.read_bytes()).hexdigest()
+
+    def conflict() -> CsvRevisionConflict:
+        return CsvRevisionConflict("CSV đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); dừng dịch và KHÔNG ghi đè. Hãy tải lại CSV rồi chọn lại.")
+
+    if revision["sha"] is not None and disk_sha() != revision["sha"]:
+        raise conflict()
+
     fields, rows = _load_csv(csv_path)
     if not fields or "key" not in fields or "translation" not in fields:
         raise EmptyCsvError("translation.csv header không hợp lệ")
+
+    def flush_csv() -> None:
+        if revision["sha"] is not None and disk_sha() != revision["sha"]:
+            raise conflict()
+        _flush_csv_atomic(csv_path, fields, rows)
+        if revision["sha"] is not None:
+            revision["sha"] = disk_sha()
 
     package_dir = csv_path.parent
     human_review_keys = _load_human_review_keys(package_dir)
@@ -1456,7 +1477,7 @@ def _run_ct2_translate_keys_impl(
             raise TranslateCancelled()
         selected_copy_applied, selected_copy_blocked, _ = _apply_mapping_memory(
             {r["key"]: r for r in rows}, selected_copy_map, allow_overwrite=allow_overwrite, whitelist=whitelist)
-        _flush_csv_atomic(csv_path, fields, rows)
+        flush_csv()
 
     if not mt_targets:
         existing_review_count = _count_human_review_rows(package_dir)
@@ -1508,7 +1529,7 @@ def _run_ct2_translate_keys_impl(
     def cancel_checkpoint() -> None:
         if not is_cancelled or not is_cancelled():
             return
-        _flush_csv_atomic(csv_path, fields, rows)
+        flush_csv()
         review_sink.flush(package_dir)
         if cache is not None:
             cache.close()
@@ -1696,7 +1717,7 @@ def _run_ct2_translate_keys_impl(
 
         pending_flush += chunk_applied
         if pending_flush >= flush_every:
-            _flush_csv_atomic(csv_path, fields, rows)
+            flush_csv()
             review_sink.flush(package_dir)
             pending_flush = 0
 
@@ -1707,7 +1728,7 @@ def _run_ct2_translate_keys_impl(
             item=f"{min(start + len(chunk), len(mt_targets))}/{total}",
         )
 
-    _flush_csv_atomic(csv_path, fields, rows)
+    flush_csv()
     review_sink.flush(package_dir)
     if blocker_records:
         _merge_blocker_inventory(package_dir, blocker_records)
@@ -1731,6 +1752,8 @@ def _run_ct2_translate_keys_impl(
         "pipeline_liveness": True,
         "human_review_required_count": human_review_count,
     }
+    if revision["sha"] is not None:
+        result["csv_sha256"] = revision["sha"]
     from vntext.mt_ct2_status import snapshot_translate_status
 
     status = snapshot_translate_status(package_dir, csv_path)

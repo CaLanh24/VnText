@@ -128,6 +128,29 @@ class SubsetPatchE2ETests(unittest.TestCase):
         self.assertIn("đủ điều kiện", done.get("error", "") + done.get("summary", ""))                 # "no eligible row", never an empty patch
         self.assertFalse((self.package / "Patch_Viet_Hoa" / "COPY_TO_GAME_ROOT").exists())
 
+    def test_failed_exclusion_write_does_not_suppress_the_row_on_the_next_real_extraction(self):
+        from unittest.mock import patch
+        from vntext.app_tasks import run_extract_task
+        from vntext.user_exclusions import EXCLUSIONS_FILE, exclude_rows
+        import hashlib, os
+        key = next(row["key"] for row in self.rows() if row["source_text"] == "Chapter 1")
+        csv_before = self.csv.read_bytes()
+        real_replace = os.replace
+
+        def failing(src, dst, *a, **k):
+            if str(dst).endswith("translation.csv"):
+                raise OSError("injected: disk full")
+            return real_replace(src, dst, *a, **k)
+        with patch("os.replace", failing), self.assertRaises(OSError):
+            exclude_rows(self.csv, [key], hashlib.sha256(csv_before).hexdigest())
+        self.assertEqual(csv_before, self.csv.read_bytes())
+        self.assertFalse((self.package / EXCLUSIONS_FILE).exists())                                     # nothing left behind to suppress the next extract
+        events = []
+        run_extract_task(str(self.game), str(self.package), "safe", "balanced", True, renpy_sdk_path=str(renpy_native_sdk()), renpy_sdk_action="existing",
+                         progress=lambda _: None, log=lambda _: None, complete=events.append)
+        self.assertIn("Chapter 1", [row["source_text"] for row in self.rows()])                         # re-extraction still lists the row
+        self.assertNotEqual("", events[-1].get("extract_status", ""))
+
 
 if __name__ == "__main__":
     unittest.main()

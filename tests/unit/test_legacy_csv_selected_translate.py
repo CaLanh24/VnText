@@ -97,6 +97,162 @@ class LegacyCsvSelectedTranslateTests(unittest.TestCase):
         audit = audit_patch_package(self.csv, self.package / "manifest.json")
         self.assertEqual(0, audit["eligible"])
 
+    # ---- revision CAS (stale before MT / during MT), transactional exclusions, legacy selected completion ----
+    def sha(self):
+        return hashlib.sha256(self.csv.read_bytes()).hexdigest()
+
+    def external_manual_edit(self):
+        rows = self.rows()
+        for row in rows:
+            if row["key"] == "d1":
+                row["translation"] = "Sửa tay bên ngoài ứng dụng."
+        write_csv_rows_file(self.csv, CSV_FIELDS, rows)
+
+    def run_selected(self, keys, expected, *, progress=lambda _: None):
+        from vntext.app_tasks import run_translate_keys_ct2_task
+        events = []
+        run_translate_keys_ct2_task(self.csv, self.package, keys, model_dir=str(MODEL_DIR), selection_only=True, expected_csv_sha256=expected,
+                                    progress=progress, log=lambda _: None, complete=events.append)
+        return events[-1]
+
+    def test_stale_revision_before_mt_refuses_with_no_mutation_including_machine_exclusions(self):
+        opened = self.sha()
+        self.external_manual_edit()                                                                 # disk changed AFTER the user's selection
+        csv_before, manifest_before = self.csv.read_bytes(), (self.package / "manifest.json").read_bytes()
+        done = self.run_selected(["s1", "s2", "s4"], opened)                                          # s2/s4/... would otherwise be auto-excluded
+        self.assertFalse(done["ok"], done)
+        self.assertIn("không thay đổi gì", done["error"])
+        self.assertEqual(csv_before, self.csv.read_bytes())                                           # byte-identical: the external edit survives
+        self.assertEqual(manifest_before, (self.package / "manifest.json").read_bytes())
+        self.assertFalse((self.package / EXCLUSIONS_FILE).exists())                                   # no automatic exclusion recorded for a stale view
+        self.assertEqual(6, len(self.rows()))
+        self.assertNotIn("Traceback", json.dumps(done))
+
+    @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
+    def test_external_change_during_mt_is_never_overwritten(self):
+        exclude_machine_technical(self.csv)
+        opened = self.sha()
+        changed = []
+
+        def edit_midway(_progress):
+            if not changed:
+                changed.append(True)
+                self.external_manual_edit()                                                           # a second writer lands while inference runs
+        done = self.run_selected(["s1"], opened, progress=edit_midway)
+        self.assertTrue(changed)
+        self.assertFalse(done["ok"], done)
+        self.assertIn("ngoài ứng dụng", done["error"])
+        rows = {r["key"]: r for r in self.rows()}
+        self.assertEqual("Sửa tay bên ngoài ứng dụng.", rows["d1"]["translation"])                     # the external edit is intact
+        self.assertEqual("", rows["s1"]["translation"])                                               # our draft was NOT written over a revision we did not see
+
+    @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
+    def test_selected_only_legacy_draft_succeeds_and_reports_patch_omissions_without_proof(self):
+        done = self.run_selected(["s1"], self.sha())
+        self.assertTrue(done["ok"] and done["complete"], done)                                         # the selected draft is the whole job
+        self.assertEqual(1, done["selected_done"])
+        self.assertEqual("", done["error"])
+        self.assertIn("Bản nháp đã lưu", done["summary"])
+        self.assertIn("Patch sẽ bỏ qua", done["summary"])
+        self.assertTrue({r["key"]: r for r in self.rows()}["s1"]["translation"].strip())
+        from vntext.patch_gate import audit_patch_package
+        self.assertEqual(1, audit_patch_package(self.csv, self.package / "manifest.json")["eligible"])  # only the dialogue row d1; the drafted legacy row s1 is still not patch proof
+
+    def test_failed_csv_write_rolls_the_exclusion_ledger_back_and_next_status_is_unchanged(self):
+        from unittest.mock import patch
+        from vntext.mt_ct2_status import _load_human_review_keys
+        from vntext.user_exclusions import ExclusionConflict, exclude_rows, filter_excluded_entries
+        ledger = self.package / EXCLUSIONS_FILE
+        real_replace = os.replace
+
+        def failing(src, dst, *a, **k):
+            if str(dst).endswith("translation.csv"):
+                raise OSError("injected: disk full")
+            return real_replace(src, dst, *a, **k)
+        # (a) no ledger yet: a failed operation leaves none behind
+        before = self.csv.read_bytes()
+        with patch("os.replace", failing), self.assertRaises(OSError):
+            exclude_rows(self.csv, ["s2"], self.sha())
+        self.assertEqual(before, self.csv.read_bytes())
+        self.assertFalse(ledger.exists())
+        self.assertEqual([], filter_excluded_entries([{"key": "s2", "source_text": "<"}], self.package)[1])   # the next extraction would NOT suppress s2
+        # (b) an existing ledger survives byte-for-byte
+        exclude_rows(self.csv, ["s3"], self.sha())
+        ledger_before, csv_before = ledger.read_bytes(), self.csv.read_bytes()
+        keys_before = _load_human_review_keys(self.package)
+        with patch("os.replace", failing), self.assertRaises(OSError):
+            exclude_rows(self.csv, ["s2"], self.sha())
+        self.assertEqual(ledger_before, ledger.read_bytes())
+        self.assertEqual(csv_before, self.csv.read_bytes())
+        self.assertEqual(keys_before, _load_human_review_keys(self.package))                          # review counts unchanged by the failed attempt
+        probe = [{"key": "s3", "source_text": "{#auto_page}A"}, {"key": "s2", "source_text": "<"}]
+        self.assertEqual(["s3"], filter_excluded_entries(probe, self.package)[1])
+        # (c) a rollback that itself fails is reported, never silent
+        state = {"n": 0}
+
+        def rollback_fails(src, dst, *a, **k):
+            if str(dst).endswith("translation.csv"):
+                raise OSError("injected csv")
+            if str(dst).endswith(EXCLUSIONS_FILE):
+                state["n"] += 1
+                if state["n"] == 2:
+                    raise OSError("injected rollback")
+            return real_replace(src, dst, *a, **k)
+        with patch("os.replace", rollback_fails), self.assertRaises(ExclusionConflict) as caught:
+            exclude_rows(self.csv, ["s2"], self.sha())
+        self.assertIn(EXCLUSIONS_FILE, str(caught.exception))
+
+    def test_automatic_exclusion_failure_refuses_translation_and_persists_nothing(self):
+        from unittest.mock import patch
+        before = self.csv.read_bytes()
+        real_replace = os.replace
+
+        def failing(src, dst, *a, **k):
+            if str(dst).endswith("translation.csv"):
+                raise OSError("injected: disk full")
+            return real_replace(src, dst, *a, **k)
+        with patch("os.replace", failing):
+            done = self.run_selected(["s1"], self.sha())
+        self.assertFalse(done["ok"], done)
+        self.assertEqual(before, self.csv.read_bytes())
+        self.assertFalse((self.package / EXCLUSIONS_FILE).exists())
+        self.assertNotIn("Traceback", json.dumps(done))
+
+    def test_worker_forwards_the_opened_revision_to_the_selected_task(self):
+        from unittest.mock import patch
+        from vntext_worker.task_runners import run_translate_worker
+        seen = {}
+        with patch("vntext_worker.task_runners.run_translate_keys_ct2_task", lambda *a, **k: seen.update(k)):
+            run_translate_worker("t1", {"csv_path": str(self.csv), "keys": ["s1"], "selection_only": True, "expected_csv_sha256": "ABC123", "model": "ct2",
+                                        "model_dir": str(MODEL_DIR)}, lambda: False)
+        self.assertEqual("ABC123", seen.get("expected_csv_sha256"))
+        self.assertIs(True, seen.get("selection_only"))
+
+    @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
+    def test_generic_screen_labels_through_the_real_route_are_translated_or_documented_keeps(self):
+        # Real OPUS-MT + the generic UI-label catalog, no title-specific rule: each row ends non-empty with no corruption.  "Prologue"/"Epilogue" have no
+        # catalog entry and a single capitalised word is classified as a name, so the product KEEPS them as English (copy_literal) - recorded here as
+        # a documented keep, not as a translation.
+        from vntext.mt_classify import classify_row_authoritative
+        labels = ["Chapter 1", "Mute All", "Settings", "Prologue"]
+        rows = [{field: "" for field in CSV_FIELDS} | {"key": f"g{i}", "source_text": s, "import_method": "renpy_screen_text", "context": "UI:screen",
+                                                       "file_path": "game/screens.rpy", "backend": "renpy_loose_source"} for i, s in enumerate(labels)]
+        write_csv_rows_file(self.csv, CSV_FIELDS, rows)
+        entries = [{"key": r["key"], "source_text": r["source_text"], "file_path": "game/screens.rpy", "import_method": "renpy_screen_text", "safety": "safe",
+                    "locator": {"line": 1}, "backend": "renpy_loose_source"} for r in rows]
+        (self.package / "manifest.json").write_text(json.dumps({"format": 2, "unified_document": True, "version": "0.1.17", "entries": entries, "technical_skipped": [], "stats": {}}), encoding="utf-8")
+        done = self.run_selected([r["key"] for r in rows], self.sha())
+        self.assertTrue(done["ok"], done)
+        got = {r["source_text"]: r["translation"] for r in self.rows()}
+        self.assertEqual("Chương 1", got["Chapter 1"])
+        self.assertEqual("Tắt tiếng tất cả", got["Mute All"])
+        self.assertEqual("Cài đặt", got["Settings"])
+        self.assertEqual("Prologue", got["Prologue"])
+        self.assertEqual("copy_literal", classify_row_authoritative(rows[3])[0])                       # a documented keep (name-like), not a silent claim of translation
+        for text in got.values():
+            self.assertTrue(text.strip())
+            self.assertNotIn("�", text)
+
 
 if __name__ == "__main__":
     unittest.main()

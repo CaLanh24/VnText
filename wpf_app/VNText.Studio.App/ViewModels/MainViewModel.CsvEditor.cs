@@ -41,6 +41,7 @@ public sealed partial class MainViewModel
     private bool _csvEditorAllTranslationsEmpty;
     private readonly List<string> _csvEditorSelectedKeys = [];
     private bool _csvEditorRetranslatePending;
+    private string? _csvEditorRetranslatePath;
     private int _csvLoadGeneration;
     private CancellationTokenSource? _csvLoadCts;
     private bool _csvEditorLoading;
@@ -1667,10 +1668,12 @@ public sealed partial class MainViewModel
         }
 
         _csvEditorRetranslatePending = true;
+        _csvEditorRetranslatePath = CsvEditorPath;
         BeginTask("translate", new
         {
             csv_path = CsvEditorPath,
             keys = preview.Keys.ToArray(),
+            expected_csv_sha256 = _csvEditorSourceSha256,
             overwrite = true,
             human_review_required = HumanReviewRequired,
             model = "ct2",
@@ -1745,10 +1748,24 @@ public sealed partial class MainViewModel
         if (!_csvEditorRetranslatePending)
             return;
         _csvEditorRetranslatePending = false;
+        _csvEditorRetranslatePath = null;
         if (!ok || string.IsNullOrWhiteSpace(CsvEditorPath))
             return;
         LoadCsvEditor(CsvEditorPath, reload: true);
         AppendLog("Đã dịch lại và kiểm tra CSV.");
+    }
+
+    /// <summary>
+    /// A selected/retry translation ended WITHOUT a full success (cancelled, failed, partial).  The worker may still have persisted rows (checkpoint
+    /// flushes, automatic machine exclusions), so the editor's rows/counts/source SHA can be stale.  Reconcile ONLY the exact path the task owned:
+    /// reload when the editor is clean, otherwise keep the user's unsaved edits and mark it stale.  An unrelated open CSV is never touched.
+    /// </summary>
+    internal Task ReconcileCsvEditorAfterIncompleteRetranslateAsync()
+    {
+        var owned = _csvEditorRetranslatePath;
+        _csvEditorRetranslatePending = false;
+        _csvEditorRetranslatePath = null;
+        return string.IsNullOrWhiteSpace(owned) ? Task.CompletedTask : RefreshCsvEditorAfterTranslateAsync(owned);
     }
 
     private void ApplyValidationFromBatch(

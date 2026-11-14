@@ -1206,6 +1206,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal void TestMarkRetranslatePending(string path) { _csvEditorRetranslatePending = true; _csvEditorRetranslatePath = path; }
     internal void TestReportCancelTimeout(string id) => ReportCancelTimeout(id, CancellationToken.None);
     internal void TestBeginCancelAndExit() => CancelAndExit();
     internal void TestMarkAnalyzeStarted() { _analyzeIdentity = AnalyzeIdentityOf(InputPath, OutputPath); _analyzeRejectLate = false; }
