@@ -85,8 +85,7 @@
         </Border>
 
         <Border x:Name="WorkspaceSummaryCard" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12" Visibility="{Binding ImageSummaryVisible, Converter={StaticResource PanelBoolToVis}}">
-            <TextBlock x:Name="WorkspaceSummary" Text="{Binding ImageWorkspaceSummary, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Style="{StaticResource UiBodyTextStyle}"
-                       AutomationProperties.Name="Tình trạng ảnh trong gói" />
+            <TextBlock x:Name="WorkspaceSummary" Text="{Binding ImageWorkspaceSummary, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Style="{StaticResource UiBodyTextStyle}"/>
         </Border>
 
         <!-- Results first: counts above, the images with text and their results, ONE clear action.  Manual OCR / crop / font / mode / render / package
