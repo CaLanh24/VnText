@@ -138,6 +138,7 @@ public sealed partial class MainViewModel
     {
         Raise(nameof(CsvToolsTight)); Raise(nameof(CsvToolsOpen)); Raise(nameof(CsvToolsBarVisible)); Raise(nameof(CsvToolsToggleText));
         Raise(nameof(CsvBulkPanelVisible)); Raise(nameof(CsvBulkSummaryVisible));
+        ToggleCsvToolsCommand?.RaiseCanExecuteChanged();        // the fold bar's button must be enabled as soon as the group folds (a live check found it stayed disabled)
     }
 
     /// <summary>Low window heights leave the table fewer than ~3 rows; until the user chooses, the tools start collapsed there (and when no CSV is open).</summary>

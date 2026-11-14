@@ -139,7 +139,14 @@ internal static partial class Program
 
                         Time("// ---------- V2: the two fields share t");
                         // ---------- V2: the two fields share top and height, labels of one or two lines ----------
-                        if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(135); window.UpdateLayout(); PumpFixture(67); }
+                        if (vm.CsvToolsTight && !vm.CsvToolsOpen)
+                        {
+                            var toggle = (Button)Named("CsvToolsToggleButton");
+                            Require(toggle.IsEnabled && toggle.IsVisible, "V1: the fold bar's open button is enabled and visible " + label);
+                            // the real control path (UI Automation Invoke), not the command object: a disabled button refuses it
+                            ((System.Windows.Automation.Provider.IInvokeProvider)new System.Windows.Automation.Peers.ButtonAutomationPeer(toggle).GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke)).Invoke();
+                            window.UpdateLayout(); PumpFixture(135); window.UpdateLayout(); PumpFixture(67);
+                        }
                         var findBox = Named("CsvBulkFindTextBox"); var replaceBox = Named("CsvBulkReplaceTextBox");
                         var findLabel = Named("CsvBulkFindLabel"); var replaceLabel = Named("CsvBulkReplaceLabel");
                         var findTop = findBox.TranslatePoint(new Point(0, 0), window).Y; var replaceTop = replaceBox.TranslatePoint(new Point(0, 0), window).Y;
