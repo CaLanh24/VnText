@@ -48,14 +48,14 @@
         <!-- V5: ONE honest state first (headline + a short line + the next action), driven by the package report; the long safety/workflow help is behind
              the "Chi tiết" control and never competes with the state.  Counts and "scanned" claims appear only for a state backed by a valid report. -->
         <TextBlock x:Name="LeadText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,2"
-                   Text="{Binding ImagePageHeadline, Converter={StaticResource UiTextDynamic}}" AutomationProperties.Name="Trạng thái ảnh" />
+                   Text="{Binding ImagePageHeadline, Converter={StaticResource UiTextDynamic}}" />
         <TextBlock x:Name="StateDetailText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8"
                    Text="{Binding ImagePageDetail, Converter={StaticResource UiTextDynamic}}" />
         <WrapPanel Margin="0,0,0,8">
             <Button x:Name="ImageNextActionButton" Content="Mở bước Lấy text" Command="{Binding OpenExtractForImagesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
                     Visibility="{Binding ImagePageHasAction, Converter={StaticResource PanelBoolToVis}}" AutomationProperties.Name="Mở bước Lấy text" />
             <Button x:Name="ImageDetailsButton" Content="{Binding ImageDetailsToggleText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleImageDetailsCommand}"
-                    Style="{StaticResource CompactOutlineButton}" Margin="0,0,8,0" AutomationProperties.Name="Chi tiết an toàn và quy trình" />
+                    Style="{StaticResource CompactOutlineButton}" Margin="0,0,8,0" AutomationProperties.HelpText="Chi tiết an toàn và quy trình" />
         </WrapPanel>
         <!-- The complete safety/format/workflow explanation stays here, unchanged, behind one explicit control. -->
         <Border x:Name="IntroDetails" Visibility="{Binding ImageDetailsOpen, Converter={StaticResource PanelBoolToVis}}" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
