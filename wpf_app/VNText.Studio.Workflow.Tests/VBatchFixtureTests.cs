@@ -45,6 +45,28 @@ internal static partial class Program
                     AssertEqual("WARN", AppJournalStore.Level("[stderr] something"));
                     AssertEqual("ERROR", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; scan_errors=2"));
                     AssertEqual("INFO", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; scan_errors=0"));
+                    // Embedded producer-looking tokens are source data. Both live colour and
+                    // persisted severity must agree, including after timestamp/task wrappers.
+                    var quotedSources = new[] {
+                        "Câu nguồn: [error] is printed on the screen",
+                        "Source: [warning] and [stderr] are literal text",
+                        "Source: scan_errors=2 is an example, not an analyzer result"
+                    };
+                    var sourceJournal = new AppJournalStore(Path.Combine(work, "source-journal"));
+                    foreach (var source in quotedSources)
+                    {
+                        AssertEqual("INFO", AppJournalStore.Level(source));
+                        AssertEqual("INFO", LogSeverityConverter.Severity("[12:34:56] [task fixture] " + source));
+                        sourceJournal.Append(source);
+                    }
+                    foreach (var savedLine in sourceJournal.Files().SelectMany(f => sourceJournal.Read(f).Split('\n', StringSplitOptions.RemoveEmptyEntries)))
+                    {
+                        Require(savedLine.Contains(" INFO "), "source tokens must persist as INFO: " + savedLine);
+                        AssertEqual("INFO", LogSeverityConverter.Severity(savedLine));
+                    }
+                    AssertEqual("ERROR", LogSeverityConverter.Severity("[12:34:56] [task fixture] [error] actual failure"));
+                    AssertEqual("WARN", LogSeverityConverter.Severity("[12:34:56] [task fixture] [stderr] actual diagnostic"));
+                    AssertEqual("ERROR", LogSeverityConverter.Severity("[12:34:56] Unity analyzer: NOT_DETECTED; scan_errors=2"));
                     // the page classifier agrees on the same wording (one anchored rule set)
                     foreach (var line in new[] { "Kiểm tra CSV: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi", "Câu nguồn: The error in the sentence", "Lỗi: không ghi được CSV", "Cảnh báo: 1 dòng cần xem lại" })
                         AssertEqual(AppJournalStore.Level(line), LogSeverityConverter.Severity(line) == "SUCCESS" ? "INFO" : LogSeverityConverter.Severity(line));
@@ -94,12 +116,15 @@ internal static partial class Program
                         if (report is not null) File.WriteAllText(Path.Combine(dir, "images", "report.json"), report, Encoding.UTF8);
                         return dir;
                     }
+                    // Mirrors vntext/image_batch.py: text_detected is set ONLY for a confirmed text-bearing image (OCR_READY/TRANSLATED_DRAFT, or UNTRANSLATED after a
+                    // successful OCR); an image whose OCR/decoding FAILED stays status UNTRANSLATED with no text_detected; a confirmed blank image is NO_TEXT.
                     string Report(params string[] statuses) => "{\"text_detection_policy\":\"crop-consensus-1\",\"items\":[" + string.Join(",", statuses.Select((s, i) =>
-                        $"{{\"source\":\"img{i}.png\",\"status\":\"{s}\",\"text_detected\":{(s == "NO_TEXT" ? "false" : "true")},\"ocr_result\":\"\",\"translated\":\"\"}}")) + "]}";
+                        $"{{\"source\":\"img{i}.png\",\"status\":\"{s}\"" + (s is "OCR_READY" or "TRANSLATED_DRAFT" ? ",\"text_detected\":true" : s == "NO_TEXT" ? ",\"text_detected\":false" : "") + ",\"ocr_result\":\"\",\"translated\":\"\"}")) + "]}";
                     var noReportPkg = Package("pkg-noreport", null);
                     var noTextPkg = Package("pkg-notext", Report("NO_TEXT", "NO_TEXT", "NO_TEXT"));
                     var resultsPkg = Package("pkg-results", Report("TRANSLATED_DRAFT", "OCR_READY", "NO_TEXT"));
                     var brokenPkg = Package("pkg-broken", "{ not json");
+                    var failedScanPkg = Package("pkg-failed-scan", Report("UNTRANSLATED", "NO_TEXT"));
                     var neverPkg = Path.Combine(work, "pkg-never"); Directory.CreateDirectory(neverPkg);   // an export folder without even an images directory
 
                     foreach (var theme in new[] { "light", "dark" })
@@ -173,8 +198,17 @@ internal static partial class Program
                         vm.OutputPath = brokenPkg; Refresh();
                         AssertEqual(MainViewModel.ImagePageKind.Unreadable, vm.ImagePage);
                         Require(PanelPart("ImageNextActionButton").IsVisible, "V5 unreadable: next action: " + State());
+                        // A parseable report is not proof of a successful negative scan: failed
+                        // images must never become the completed NO_TEXT state.
+                        vm.OutputPath = failedScanPkg; Refresh();
+                        AssertEqual(MainViewModel.ImagePageKind.ScanFailed, vm.ImagePage);
+                        Require(PanelPart("ImageNextActionButton").IsVisible && !PanelPart("WorkspaceSummaryCard").IsVisible,
+                            "V5 failed scan offers recovery and no successful counts: " + State());
+                        Require(!State().Contains("không có ảnh chứa chữ", StringComparison.OrdinalIgnoreCase), "V5 failed scan is not NO_TEXT");
+                        Require(PanelPart("EditImagesButton").IsVisible && vm.EnterImageEditCommand.CanExecute(null), "V5 failed scan retains the manual editor");
                         // English text of every state is catalogued
                         vm.Language = "en"; PumpFixture(250); Refresh();
+                        AssertEqual("Image scanning could not finish.", PanelText("LeadText").Text);
                         Require(!PanelText("LeadText").Text.Contains("báo cáo", StringComparison.OrdinalIgnoreCase) && !PanelText("StateDetailText").Text.Contains("Báo cáo", StringComparison.Ordinal), "V5: English state text: " + State());
                         vm.OutputPath = resultsPkg; Refresh();
                         AssertEqual("2 images with text in the package.", PanelText("LeadText").Text);

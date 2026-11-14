@@ -1203,8 +1203,9 @@ class WpfWorkflowTests(unittest.TestCase):
 
     def test_non_applicable_unity_scan_summary_is_not_an_error_log(self):
         journal = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "AppJournalStore.cs").read_text(encoding="utf-8")
-        self.assertIn(r"scan_errors=(?<count>\d+)", journal)
-        self.assertIn("scanErrorCount > 0", journal)
+        classifier = (ROOT / "wpf_app" / "VNText.Studio.App" / "Converters" / "LogSeverityConverter.cs").read_text(encoding="utf-8")
+        self.assertIn(r"scan_errors=(?<count>\d+)", classifier)
+        self.assertIn('text.StartsWith("Unity analyzer:"', classifier)
         self.assertNotIn(r"\berrors?\b", journal)                                       # V4: no free substring inference of ERROR from wording
         self.assertIn("LogSeverityConverter.ClassifyText(text)", journal)                  # one anchored classifier for page and persisted journal
 

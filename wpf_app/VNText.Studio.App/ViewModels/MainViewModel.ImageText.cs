@@ -111,7 +111,7 @@ public sealed partial class MainViewModel
     // ---- Images page state (V5).  Exactly one state describes the page; counts and "scanned" wording exist ONLY for a state backed by a valid report. ----
     /// <summary>NoSource: no game/folder; NoOutput: no export folder; NoReport: nothing scanned yet; Unreadable: the report cannot be read;
     /// NoText: a valid report whose scan found no image with text (a COMPLETED scan); Results: images with text were found.</summary>
-    public enum ImagePageKind { NoSource, NoOutput, NoReport, Unreadable, NoText, Results }
+    public enum ImagePageKind { NoSource, NoOutput, NoReport, Unreadable, ScanFailed, NoText, Results }
     private ImagePageKind _imagePage = ImagePageKind.NoSource;
     private Func<string> _imagePageHeadline = static () => "", _imagePageDetail = static () => "";
     private bool _imageDetailsOpen;
@@ -119,7 +119,7 @@ public sealed partial class MainViewModel
     public string ImagePageHeadline => _imagePageHeadline();
     public string ImagePageDetail => _imagePageDetail();
     /// <summary>Only the states that need the user to go and choose/scan show a next action; it opens the Extract step.</summary>
-    public bool ImagePageHasAction => _imagePage is ImagePageKind.NoSource or ImagePageKind.NoOutput or ImagePageKind.NoReport or ImagePageKind.Unreadable;
+    public bool ImagePageHasAction => _imagePage is ImagePageKind.NoSource or ImagePageKind.NoOutput or ImagePageKind.NoReport or ImagePageKind.Unreadable or ImagePageKind.ScanFailed;
     /// <summary>The package counts/path line belongs to the states that have a report.</summary>
     public bool ImageSummaryVisible => _imagePage is ImagePageKind.Results or ImagePageKind.NoText;
     public RelayCommand OpenExtractForImagesCommand { get; private set; } = null!;
@@ -207,6 +207,10 @@ public sealed partial class MainViewModel
             case ImagePackageProbe.ReportKind.Unreadable:
                 SetImageSummary(static () => "Không đọc được báo cáo ảnh.");
                 SetImagePage(ImagePageKind.Unreadable, static () => "Không đọc được báo cáo ảnh.", static () => "Báo cáo hỏng hoặc quá lớn; Lấy text lại để tạo báo cáo mới.");
+                return;
+            case ImagePackageProbe.ReportKind.Valid when images.Total == 0 && report.NoText < report.Scanned:
+                SetImageSummary(static () => "Quét ảnh chưa hoàn tất.");
+                SetImagePage(ImagePageKind.ScanFailed, static () => "Quét ảnh chưa hoàn tất.", static () => "Một số ảnh chưa kiểm tra được. Lấy text lại hoặc mở Sửa ảnh.");
                 return;
             case ImagePackageProbe.ReportKind.Valid when images.Total == 0:
                 var scannedText = report.Scanned.ToString("N0");

@@ -63,15 +63,8 @@ internal sealed class AppJournalStore
     }
     internal static string Level(string text)
     {
-        // Analyzer summaries include the field name `scan_errors=0`. Do not
-        // classify that machine-readable counter as an error by substring.
-        var scanErrors = Regex.Match(text, @"\bscan_errors=(?<count>\d+)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        if (scanErrors.Success && int.TryParse(scanErrors.Groups["count"].Value, out var scanErrorCount) && scanErrorCount > 0)
-            return "ERROR";
-        // Bracket tags are structured producer tokens; everything else is judged by the anchored classifier the page uses, so the page and the saved
-        // journal agree.  A free substring (a valid result saying "không phát hiện lỗi", a source sentence containing "error") never makes a line red.
-        if(text.Contains("[error]",StringComparison.OrdinalIgnoreCase)) return "ERROR";
-        if(text.Contains("[warning]",StringComparison.OrdinalIgnoreCase)||text.Contains("[stderr]",StringComparison.OrdinalIgnoreCase)) return "WARN";
+        // Use the same anchored producer envelope as the page. Tags or counters embedded
+        // in quoted source text are data, never severity metadata.
         var judged = VNText.Studio.App.Converters.LogSeverityConverter.ClassifyText(text);
         if(judged is "ERROR" or "WARN") return judged;
         return text.StartsWith("[tab]",StringComparison.Ordinal) ? "DEBUG" : "INFO";

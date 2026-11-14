@@ -675,6 +675,8 @@ public static class UiText
         ["Báo cáo hỏng hoặc quá lớn; Lấy text lại để tạo báo cáo mới."] = "The report is damaged or too large; run Extract text again to create a new one.",
         ["Đã quét {0} ảnh: không ảnh nào chứa chữ cần dịch."] = "Scanned {0} images: none contain text to translate.",
         ["Quét xong: không có ảnh chứa chữ."] = "Scan finished: no image contains text.",
+        ["Quét ảnh chưa hoàn tất."] = "Image scanning could not finish.",
+        ["Một số ảnh chưa kiểm tra được. Lấy text lại hoặc mở Sửa ảnh."] = "Some images could not be checked. Run Extract again or open Edit images.",
         ["Không cần OCR hay dịch ảnh cho gói này. Bạn vẫn có thể sửa ảnh thủ công."] = "No OCR or image translation is needed for this package. You can still edit an image manually.",
         ["{0} ảnh có chữ trong gói."] = "{0} images with text in the package.",
         ["Bản dịch nháp được tạo ở bước Dịch; chọn ảnh bên dưới nếu muốn sửa."] = "Draft translations are created in the Translate step; choose an image below to edit it.",
