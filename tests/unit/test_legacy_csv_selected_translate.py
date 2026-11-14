@@ -230,11 +230,9 @@ class LegacyCsvSelectedTranslateTests(unittest.TestCase):
 
     @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
     def test_generic_screen_labels_through_the_real_route_are_translated_or_documented_keeps(self):
-        # Real OPUS-MT + the generic UI-label catalog, no title-specific rule: each row ends non-empty with no corruption.  "Prologue"/"Epilogue" have no
-        # catalog entry and a single capitalised word is classified as a name, so the product KEEPS them as English (copy_literal) - recorded here as
-        # a documented keep, not as a translation.
+        # Real OPUS-MT route + the generic UI-label catalog, no title-specific rule: each row ends non-empty with no corruption.
         from vntext.mt_classify import classify_row_authoritative
-        labels = ["Chapter 1", "Mute All", "Settings", "Prologue"]
+        labels = ["Chapter 1", "Mute All", "Settings", "Prologue", "Epilogue", "Quit"]
         rows = [{field: "" for field in CSV_FIELDS} | {"key": f"g{i}", "source_text": s, "import_method": "renpy_screen_text", "context": "UI:screen",
                                                        "file_path": "game/screens.rpy", "backend": "renpy_loose_source"} for i, s in enumerate(labels)]
         write_csv_rows_file(self.csv, CSV_FIELDS, rows)
@@ -247,11 +245,29 @@ class LegacyCsvSelectedTranslateTests(unittest.TestCase):
         self.assertEqual("Chương 1", got["Chapter 1"])
         self.assertEqual("Tắt tiếng tất cả", got["Mute All"])
         self.assertEqual("Cài đặt", got["Settings"])
-        self.assertEqual("Prologue", got["Prologue"])
-        self.assertEqual("copy_literal", classify_row_authoritative(rows[3])[0])                       # a documented keep (name-like), not a silent claim of translation
+        self.assertEqual("Lời mở đầu", got["Prologue"])                                                # exact standard UI labels, proven UI context only
+        self.assertEqual("Lời kết", got["Epilogue"])
+        self.assertEqual("Thoát", got["Quit"])
+        self.assertEqual("ui_label_fixed", classify_row_authoritative(rows[3])[0])
         for text in got.values():
             self.assertTrue(text.strip())
             self.assertNotIn("�", text)
+
+    def test_standard_labels_are_context_bounded_dialogue_and_names_are_never_rewritten(self):
+        from vntext.mt_classify import classify_row_authoritative
+        from vntext.ui_labels import resolve_ui_label_translation
+
+        def row(text, context, method):
+            return {field: "" for field in CSV_FIELDS} | {"key": "k", "source_text": text, "import_method": method, "context": context, "file_path": "game/script.rpy"}
+        for label, expected in (("Prologue", "Lời mở đầu"), ("Epilogue", "Lời kết"), ("Quit", "Thoát"), ("PROLOGUE", "LỜI MỞ ĐẦU")):
+            self.assertEqual(expected, resolve_ui_label_translation(label, "UI:screen"))
+            self.assertIsNone(resolve_ui_label_translation(label, ""))                                # unknown context
+            self.assertIsNone(resolve_ui_label_translation(label, "dialogue:Eileen"))                  # story dialogue
+            self.assertIsNone(resolve_ui_label_translation(label, "UI:screen:choice"))                 # menu choice
+        for text in ("The Prologue", "Prologue [name]", "Prologue {b}one{/b}", "Prologue\nTwo", "Prologue: Kai"):
+            self.assertIsNone(resolve_ui_label_translation(text, "UI:screen"))                         # not an exact standalone label: tokens/newline/prose untouched
+        self.assertEqual("copy_literal", classify_row_authoritative(row("Prologue", "dialogue:Eileen", "renpy_dialogue"))[0])   # a proper name in dialogue keeps its form
+        self.assertEqual("ui_label_fixed", classify_row_authoritative(row("Prologue", "UI:screen", "renpy_screen_text"))[0])
 
 
 if __name__ == "__main__":

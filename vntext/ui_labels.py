@@ -28,6 +28,8 @@ UI_LABEL_CATALOG: dict[str, str] = {
     "start": "Bắt đầu",
     "start game": "Bắt đầu game",
     "quit": "Thoát",
+    "prologue": "Lời mở đầu",
+    "epilogue": "Lời kết",
     "exit": "Thoát",
     "back": "Quay lại",
     "return": "Quay lại",
