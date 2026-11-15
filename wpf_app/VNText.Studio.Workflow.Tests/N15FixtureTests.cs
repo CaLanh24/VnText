@@ -83,7 +83,15 @@ internal static partial class Program
                         vm.CsvEditorRows[0].IsSelected = true; window.UpdateLayout(); PumpFixture(100);
                         var checkedText = FindVisualChildren<TextBlock>(Named("CsvSelectionBar")).First(t => t.Text.Contains("1", StringComparison.Ordinal) && (t.Text.Contains("chọn", StringComparison.OrdinalIgnoreCase) || t.Text.Contains("select", StringComparison.OrdinalIgnoreCase))).Text;
                         Require(language == "vi" ? checkedText.StartsWith("Đã chọn", StringComparison.Ordinal) : checkedText.Contains("selected", StringComparison.Ordinal) && !checkedText.Contains("chọn", StringComparison.Ordinal), $"{tag} N5: the selected-row count is localized ('{checkedText}')");
+                        AssertEqual(language == "vi" ? "Đã chọn 1 dòng" : "1 row selected", vm.CsvCheckedText);
+                        vm.Language = language == "vi" ? "en" : "vi"; PumpFixture(60);
+                        AssertEqual(language == "vi" ? "1 row selected" : "Đã chọn 1 dòng", vm.CsvCheckedText);
+                        vm.Language = language;
+                        vm.CsvEditorRows[1].IsSelected = true; PumpFixture(60);
+                        AssertEqual(language == "vi" ? "Đã chọn 2 dòng" : "2 rows selected", vm.CsvCheckedText);
+                        vm.CsvEditorRows[1].IsSelected = false;
                         vm.CsvEditorRows[0].IsSelected = false;
+                        AssertEqual(language == "vi" ? "Chưa chọn dòng nào" : "No rows selected", vm.CsvCheckedText);
                         Require(language == "vi" || UiText.Translate("Chọn thư mục game") != "Chọn thư mục game", $"{tag} N5: the folder picker title is catalogued");
                         Require(language == "vi" || (UiText.Translate("Chọn file asset / bundle") != "Chọn file asset / bundle" && UiText.Translate("Chọn thư mục xuất gói dịch") != "Chọn thư mục xuất gói dịch"), $"{tag} N5: the other picker titles are catalogued");
                         // user data is never translated: a CSV row whose text equals a catalog key stays exactly as the user has it
@@ -122,6 +130,22 @@ internal static partial class Program
                         var chooseButton = (Button)Named("ChooseInputButton");
                         var menu = MainWindow.BuildInputChoiceMenu(vm, chooseButton);
                         AssertEqual(2, menu.Items.Count);
+                        menu.IsOpen = true; PumpFixture(100); menu.UpdateLayout();
+                        AssertEqual(window.FindResource("SurfaceBrush"), menu.Background);
+                        AssertEqual(window.FindResource("InkBrush"), menu.Foreground);
+                        AssertEqual(window.FindResource("AppFont"), menu.FontFamily);
+                        AssertEqual((double)window.FindResource("UiBodySize"), menu.FontSize);
+                        AssertEqual(vm.UiScale, ((System.Windows.Media.ScaleTransform)menu.LayoutTransform).ScaleX);
+                        foreach (MenuItem route in menu.Items)
+                        {
+                            route.ApplyTemplate();
+                            Require(route.ActualHeight >= 36 && route.Padding.Left >= 12, "Q1: route keeps app-sized target and padding");
+                            Require(route.Template.FindName("RouteSurface", route) is Border, "Q1: source route uses its scoped template");
+                            route.IsEnabled = false; PumpFixture(20);
+                            AssertEqual(window.FindResource("DisabledForegroundBrush"), route.Foreground);
+                            route.IsEnabled = true;
+                        }
+                        menu.IsOpen = false;
                         AssertEqual(language == "vi" ? "Chọn thư mục game…" : "Choose game folder…", (string)((MenuItem)menu.Items[0]).Header);
                         AssertEqual(language == "vi" ? "Chọn file asset / bundle…" : "Choose asset / bundle file…", (string)((MenuItem)menu.Items[1]).Header);
                         picker.AssetFile = picture;

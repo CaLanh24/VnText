@@ -844,6 +844,7 @@ public static class UiText
         ["Xóa đã chọn"] = "Delete selected",
         ["Bỏ chọn"] = "Clear selection",
         ["Chưa chọn dòng nào"] = "No rows selected",
+        ["Đã chọn 1 dòng"] = "1 row selected",
         ["Đã chọn {0} dòng"] = "{0} rows selected",
         ["Dịch dòng đã chọn"] = "Translate selected rows",
         ["Dịch offline (OPUS-MT) chỉ các dòng đã tích; lưu vào chính file CSV này."] = "Translates only the checked rows offline (OPUS-MT) and saves into this same CSV.",

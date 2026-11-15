@@ -95,3 +95,6 @@ Report `TEST_RUN/agent-evidence/fresh15-review-report.{html,json}`; V1–V7 acce
 | N8 picker | Folder and asset-file are two explicit routes (small menu on "Chọn..."); Cancel returns null and opens nothing else | `Services/*PathPickerService.cs`, `MainWindow.InputChoice.cs`, `MainViewModel.Paths.cs` | `--n15-fixture`; pin test |
 | N9 names | Localized, distinct accessible names for the source/output Open/Choose buttons | `MainWindow.xaml`, `UiText.cs` | `--n15-fixture` |
 | N10 journal | "Xóa tìm kiếm / Clear search" vs "Xóa nhật ký / Delete log" with a tooltip; the file-deletion confirmation is unchanged | `JournalWindow.cs` | `--n15-fixture` |
+
+## Q1–Q2 scoped follow-up (2026-11-15)
+Source chooser popup uses keyed InputChoiceMenuStyle/InputChoiceMenuItemStyle, shared semantic theme brushes/AppFont/UiBodySize and app UI scale; keyboard navigation and both commands remain native MenuItem behavior. No implicit/global menu style. CSV checked count has singular English for one, zero/plural retained and language refresh unchanged. `--n15-fixture` covers 0/1/2 selection and live language switch, popup theme/type/scale/target and disabled appearance. Native evidence and exact candidate SHA belong to ignored q15 receipts; this document does not claim Release acceptance.

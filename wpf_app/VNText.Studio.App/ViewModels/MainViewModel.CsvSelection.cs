@@ -19,6 +19,7 @@ public sealed partial class MainViewModel
     public bool CsvHasChecked => _csvCheckedCount > 0;
     public string CsvCheckedText => _csvCheckedCount == 0
         ? UiText.Translate("Chưa chọn dòng nào")
+        : _csvCheckedCount == 1 ? UiText.Translate("Đã chọn 1 dòng")
         : UiText.Msg("Đã chọn {0} dòng", _csvCheckedCount.ToString("N0"));
 
     public RelayCommand CsvSelectAllFilteredCommand { get; private set; } = null!;

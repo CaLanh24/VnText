@@ -17,7 +17,15 @@ public partial class MainWindow
 
     internal static ContextMenu BuildInputChoiceMenu(MainViewModel vm, FrameworkElement target)
     {
-        var menu = new ContextMenu { PlacementTarget = target, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        var menu = new ContextMenu
+        {
+            PlacementTarget = target,
+            Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
+            Style = (Style)target.FindResource("InputChoiceMenuStyle"),
+            ItemContainerStyle = (Style)target.FindResource("InputChoiceMenuItemStyle"),
+            // Popup HWNDs do not inherit the page's layout transform.
+            LayoutTransform = new System.Windows.Media.ScaleTransform(vm.UiScale, vm.UiScale)
+        };
         menu.Items.Add(new MenuItem { Header = UiText.Translate("Chọn thư mục game…"), Command = vm.ChooseInputCommand });
         menu.Items.Add(new MenuItem { Header = UiText.Translate("Chọn file asset / bundle…"), Command = vm.ChooseInputAssetCommand });
         return menu;
