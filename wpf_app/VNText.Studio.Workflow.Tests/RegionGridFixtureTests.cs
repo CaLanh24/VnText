@@ -94,6 +94,9 @@ internal static partial class Program
                         var headerRoom = header.ActualWidth - header.Padding.Left - header.Padding.Right - header.BorderThickness.Left - header.BorderThickness.Right;
                         Require(headerRoom >= headerInk.WidthIncludingTrailingWhitespace - 0.5, $"{label}: the header \"{text}\" is fully painted (text {Math.Round(headerInk.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(headerRoom, 1)})");
                     }
+                    // the mode summary ("No background mode chosen") wraps instead of clipping, with its full text in a tooltip
+                    var modeCell = FindVisualChildren<TextBlock>(grid).First(t => t.Text.Length > 8 && (t.Text.StartsWith("No background", StringComparison.Ordinal) || t.Text.StartsWith("Chưa chọn chế độ nền", StringComparison.Ordinal)));
+                    Require(modeCell.TextWrapping == TextWrapping.Wrap && modeCell.ToolTip is string, $"{label}: the background-mode summary wraps and keeps its full text in a tooltip");
                     var sourceCell = FindVisualChildren<TextBlock>(grid).First(t => t.Text == "Hello, adventurer.");
                     Require(sourceCell.TextWrapping == TextWrapping.Wrap && (sourceCell.ToolTip as string) == "Hello, adventurer.", $"{label}: the OCR source wraps and keeps its full text in the tooltip");
                     // ---- N4: the Approved selector is the scoped themed checkbox (display), idle tokens, and its binding is unchanged ----
