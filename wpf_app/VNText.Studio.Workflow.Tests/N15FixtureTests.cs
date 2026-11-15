@@ -83,15 +83,15 @@ internal static partial class Program
                         vm.CsvEditorRows[0].IsSelected = true; window.UpdateLayout(); PumpFixture(100);
                         var checkedText = FindVisualChildren<TextBlock>(Named("CsvSelectionBar")).First(t => t.Text.Contains("1", StringComparison.Ordinal) && (t.Text.Contains("chọn", StringComparison.OrdinalIgnoreCase) || t.Text.Contains("select", StringComparison.OrdinalIgnoreCase))).Text;
                         Require(language == "vi" ? checkedText.StartsWith("Đã chọn", StringComparison.Ordinal) : checkedText.Contains("selected", StringComparison.Ordinal) && !checkedText.Contains("chọn", StringComparison.Ordinal), $"{tag} N5: the selected-row count is localized ('{checkedText}')");
-                        AssertEqual(language == "vi" ? "Đã chọn 1 dòng" : "1 row selected", vm.CsvCheckedText);
+                        AssertEqual(language == "vi" ? "Đã chọn 1 dòng" : "1 row selected", UiText.TranslateDynamic(vm.CsvCheckedText));
                         vm.Language = language == "vi" ? "en" : "vi"; PumpFixture(60);
-                        AssertEqual(language == "vi" ? "1 row selected" : "Đã chọn 1 dòng", vm.CsvCheckedText);
+                        AssertEqual(language == "vi" ? "1 row selected" : "Đã chọn 1 dòng", UiText.TranslateDynamic(vm.CsvCheckedText));
                         vm.Language = language;
                         vm.CsvEditorRows[1].IsSelected = true; PumpFixture(60);
-                        AssertEqual(language == "vi" ? "Đã chọn 2 dòng" : "2 rows selected", vm.CsvCheckedText);
+                        AssertEqual(language == "vi" ? "Đã chọn 2 dòng" : "2 rows selected", UiText.TranslateDynamic(vm.CsvCheckedText));
                         vm.CsvEditorRows[1].IsSelected = false;
                         vm.CsvEditorRows[0].IsSelected = false;
-                        AssertEqual(language == "vi" ? "Chưa chọn dòng nào" : "No rows selected", vm.CsvCheckedText);
+                        AssertEqual(language == "vi" ? "Chưa chọn dòng nào" : "No rows selected", UiText.TranslateDynamic(vm.CsvCheckedText));
                         Require(language == "vi" || UiText.Translate("Chọn thư mục game") != "Chọn thư mục game", $"{tag} N5: the folder picker title is catalogued");
                         Require(language == "vi" || (UiText.Translate("Chọn file asset / bundle") != "Chọn file asset / bundle" && UiText.Translate("Chọn thư mục xuất gói dịch") != "Chọn thư mục xuất gói dịch"), $"{tag} N5: the other picker titles are catalogued");
                         // user data is never translated: a CSV row whose text equals a catalog key stays exactly as the user has it
