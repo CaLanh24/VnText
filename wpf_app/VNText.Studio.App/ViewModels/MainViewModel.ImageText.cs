@@ -259,10 +259,20 @@ public sealed partial class MainViewModel
         OnImageReviewChanged();
     }
     private bool CanCreateImageDelivery() =>
-        !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot)
+        !_imageDraftInvalid && !Busy && !string.IsNullOrWhiteSpace(OutputPath) && File.Exists(_renderedImage) && Directory.Exists(_renderGameRoot)
         && _renderedReviewVersion == _imageReviewVersion;
+    private bool _imageDraftInvalid;
+    /// <summary>True while a numeric field of the region editor shows a rejected draft (the model still holds its last valid number); set by the panel from the live validation state.</summary>
+    public bool ImageDraftInvalid { get => _imageDraftInvalid; internal set { if (Set(ref _imageDraftInvalid, value)) RefreshImageCommands(); } }
+    private bool RefuseDraftImageAction(string action)
+    {
+        if (!_imageDraftInvalid) return false;
+        ImageStatus = UiText.Msg("Chưa thể {0}: một ô số trong chi tiết vùng đang báo lỗi. Hãy sửa giá trị (hoặc chọn vùng khác) trước.", UiText.Key(action));
+        StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
+        return true;
+    }
     private bool CanInstallImageDelivery() =>
-        !Busy && !string.IsNullOrWhiteSpace(OutputPath) && Directory.Exists(_imagePackage) && _packageReviewVersion == _imageReviewVersion;
+        !_imageDraftInvalid && !Busy && !string.IsNullOrWhiteSpace(OutputPath) && Directory.Exists(_imagePackage) && _packageReviewVersion == _imageReviewVersion;
     private void RefuseStaleImageAction(string action)
     {
         ImageStatus = Busy
@@ -302,6 +312,7 @@ public sealed partial class MainViewModel
         CreateImageDeliveryCommand = new RelayCommand(_ =>
         {
             // RelayCommand.Execute does not consult CanExecute, so the readiness is re-checked here, before any root/task exists.
+            if (RefuseDraftImageAction("tạo gói ảnh")) return;
             if (!CanCreateImageDelivery()) { RefuseStaleImageAction("tạo gói ảnh"); return; }
             _imageTaskRoot = NewImageRoot();
             MarkImageTaskIdentity();
@@ -311,6 +322,7 @@ public sealed partial class MainViewModel
         InstallImageDeliveryCommand = new RelayCommand(_ =>
         {
             // Before the folder picker: a stale or missing package must not even ask for a game.
+            if (RefuseDraftImageAction("cài gói vào game")) return;
             if (!CanInstallImageDelivery()) { RefuseStaleImageAction("cài gói vào game"); return; }
             var copy = _pathPicker.PickInputPath(); if (copy is null) return;
             _imageTaskRoot = NewImageRoot();
@@ -331,8 +343,8 @@ public sealed partial class MainViewModel
         }, _ => !Busy && Directory.Exists(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
         OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p, fromSavedReview: true); }, _ => !Busy);
-        SaveImageReviewCommand = new RelayCommand(_ => SaveImageReview(), _ => !Busy && _imageDocument is not null);
-        RenderImageCommand = new RelayCommand(_ => RenderReviewedImage(), _ => !Busy && _imageDocument is not null);
+        SaveImageReviewCommand = new RelayCommand(_ => SaveImageReview(), _ => !Busy && !_imageDraftInvalid && _imageDocument is not null);
+        RenderImageCommand = new RelayCommand(_ => RenderReviewedImage(), _ => !Busy && !_imageDraftInvalid && _imageDocument is not null);
         AddImageRegionCommand = new RelayCommand(_ => ImageRegions.Add(new ImageTextRegion { Id = "manual-" + Guid.NewGuid().ToString("N") }), _ => !Busy && _imageDocument is not null);
         RemoveImageRegionCommand = new RelayCommand(item => { if (item is ImageTextRegion region) ImageRegions.Remove(region); }, _ => !Busy);
     }
@@ -438,6 +450,7 @@ public sealed partial class MainViewModel
     }
     private void SaveImageReview()
     {
+        if (RefuseDraftImageAction("lưu review riêng")) return;          // RelayCommand.Execute does not consult CanExecute
         try
         {
             var root = NewImageRoot(); Directory.CreateDirectory(root);
@@ -455,6 +468,7 @@ public sealed partial class MainViewModel
     }
     private void RenderReviewedImage()
     {
+        if (RefuseDraftImageAction("dựng ảnh từ bản dịch đã duyệt")) return;
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
         if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved, r.CloneBackgroundApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
         { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."; return; }

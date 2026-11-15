@@ -282,7 +282,7 @@ internal static partial class Program
                         radio.IsEnabled = false; approve.IsEnabled = false; window.UpdateLayout();
                         AssertEqual(Hex(Token("DisabledBackgroundBrush")), Hex(Rgb(Disc(radio).Fill)));
                         AssertEqual(Hex(Token("DisabledBorderBrush")), Hex(Rgb(Box(approve).BorderBrush)));
-                        radio.IsEnabled = true; approve.IsEnabled = true;
+                        radio.ClearValue(UIElement.IsEnabledProperty); approve.ClearValue(UIElement.IsEnabledProperty);
                         var radioFaceBefore = Hex(Rgb(Disc(radio).Fill)); var boxBefore = Hex(Rgb(Box(approve).Background));
                         // (the live switch of an unchecked control) — use another unchecked radio so the instance exists across the switch
                         var transparentRadio = (RadioButton)imagePanel.FindName("TransparentModeBox"); transparentRadio.UpdateLayout();
@@ -296,6 +296,41 @@ internal static partial class Program
                         // U3 numeric validation
                         var numericBoxes = new[] { ("RegionXBox", 0, 99999), ("RegionYBox", 0, 99999), ("RegionWidthBox", 1, 99999), ("RegionHeightBox", 1, 99999), ("RegionFontBox", 1, 999), ("DonorXBox", 0, 99999), ("DonorYBox", 0, 99999) };
                         var fontBox = T("RegionFontBox");
+                        // ---- U3 execution defence: a rejected draft must not let Save/Render/package/install/approval run on the stale (last valid) model ----
+                        region.FlatBackgroundApproved = true; region.Approved = true; vm.OutputPath = work;
+                        Require(!vm.ImageDraftInvalid && vm.SaveImageReviewCommand.CanExecute(null) && vm.RenderImageCommand.CanExecute(null) && approve.IsEnabled, $"{tag} U3 guard: a valid approved region keeps the actions available");
+                        var reviewDirs = () => Directory.GetDirectories(work, "image-review-*").Length;
+                        var dirsBefore = reviewDirs();
+                        foreach (var draft in new[] { "abc", "", "1000", "0" })
+                        {
+                            fontBox.Text = draft; window.UpdateLayout(); PumpFixture(60);
+                            Require(Validation.GetHasError(fontBox) && vm.ImageDraftInvalid, $"{tag} U3 guard: '{draft}' marks the draft invalid in the VM");
+                            Require(region.FontSize == 24 && region.Approved && region.FlatBackgroundApproved, $"{tag} U3 guard: the model keeps its last valid number and approval (no coercion)");
+                            Require(!vm.SaveImageReviewCommand.CanExecute(null) && !vm.RenderImageCommand.CanExecute(null) && !vm.CreateImageDeliveryCommand.CanExecute(null) && !vm.InstallImageDeliveryCommand.CanExecute(null), $"{tag} U3 guard: Save/Render/package/install are disabled");
+                            Require(!approve.IsEnabled, $"{tag} U3 guard: the approval box is disabled");
+                            vm.SaveImageReviewCommand.Execute(null); vm.RenderImageCommand.Execute(null);        // Execute ignores CanExecute: the command body must refuse too
+                            Require(reviewDirs() == dirsBefore && !vm.Busy, $"{tag} U3 guard: no review folder written and no render task started");
+                            Require(UiText.TranslateDynamic(vm.ImageStatus).StartsWith(language == "vi" ? "Chưa thể" : "Cannot", StringComparison.Ordinal), $"{tag} U3 guard: the refusal is explained ({vm.ImageStatus})");
+                        }
+                        fontBox.Text = "24"; window.UpdateLayout(); PumpFixture(60);              // corrected (same number): drafting ends, the actions return
+                        Require(!vm.ImageDraftInvalid && vm.SaveImageReviewCommand.CanExecute(null) && vm.RenderImageCommand.CanExecute(null) && approve.IsEnabled, $"{tag} U3 guard: a corrected value clears the block");
+                        fontBox.Text = "abc"; window.UpdateLayout(); PumpFixture(60);
+                        var second = new ImageTextRegion { Id = "r2", Box = new[] { 10, 60, 100, 30 }, SourceText = "World" }; vm.ImageRegions.Add(second);
+                        vm.SelectedImageRegion = second; window.UpdateLayout(); PumpFixture(120); window.UpdateLayout();
+                        Require(!vm.ImageDraftInvalid && vm.SaveImageReviewCommand.CanExecute(null), $"{tag} U3 guard: selecting another region clears the draft block");
+                        vm.SelectedImageRegion = region; window.UpdateLayout(); PumpFixture(120); window.UpdateLayout();
+                        Require(T("RegionFontBox").Text == "24" && !vm.ImageDraftInvalid, $"{tag} U3 guard: the dropped draft is gone, the model value is shown");
+                        T("RegionXBox").Text = "x"; window.UpdateLayout(); PumpFixture(60);
+                        Require(vm.ImageDraftInvalid, $"{tag} U3 guard: any numeric field counts (X)");
+                        Require(vm.TryLoadImageReview(review), $"{tag} U3 guard: reload"); window.UpdateLayout(); PumpFixture(150);
+                        Require(!vm.ImageDraftInvalid && vm.SaveImageReviewCommand.CanExecute(null), $"{tag} U3 guard: a review reload clears the draft block");
+                        region = vm.ImageRegions[0]; vm.SelectedImageRegion = region; window.UpdateLayout(); PumpFixture(150); fontBox = T("RegionFontBox");
+                        fontBox.Text = "abc"; window.UpdateLayout(); PumpFixture(60);
+                        Require(vm.ImageDraftInvalid, $"{tag} U3 guard: draft again before unload");
+                        vm.ImageRegions.Clear(); vm.SelectedImageRegion = null; window.UpdateLayout(); PumpFixture(150); window.UpdateLayout();
+                        Require(!vm.ImageDraftInvalid, $"{tag} U3 guard: unloading the regions clears the draft block (no stale global block)");
+                        Require(vm.TryLoadImageReview(review), $"{tag} U3 guard: reload after unload"); window.UpdateLayout(); PumpFixture(150);
+                        region = vm.ImageRegions[0]; vm.SelectedImageRegion = region; window.UpdateLayout(); PumpFixture(150); fontBox = T("RegionFontBox"); approve = (CheckBox)imagePanel.FindName("ApproveBox"); radio = (RadioButton)imagePanel.FindName("FlatModeBox");
                         var heightBefore = fontBox.ActualHeight; var parent = (FrameworkElement)fontBox.Parent; var parentHeightBefore = parent.ActualHeight;
                         var oldFont = region.FontSize;
                         foreach (var (text, kind) in new[] { ("", "whole"), ("abc", "whole"), ("12.5", "whole"), ("0", "range"), ("1000", "range"), ("-5", "range") })

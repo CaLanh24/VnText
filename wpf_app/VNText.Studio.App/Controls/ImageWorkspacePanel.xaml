@@ -41,6 +41,11 @@
             <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
             <Setter Property="SelectionOpacity" Value="0.4" />
         </Style>
+        <Style x:Key="ApproveBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ThemedCheckBoxStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding DataContext.ImageDraftInvalid, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="FormField" TargetType="StackPanel">
             <Setter Property="Margin" Value="0,0,14,16" />
         </Style>
@@ -219,6 +224,10 @@
                         <Style TargetType="CheckBox" BasedOn="{StaticResource CsvRowCheckBoxStyle}">
                             <Setter Property="HorizontalAlignment" Value="Center" />
                             <Setter Property="VerticalAlignment" Value="Center" />
+                            <Style.Triggers>
+                                <!-- U3: while a numeric field shows an invalid draft the approval cannot be given on the stale model value -->
+                                <DataTrigger Binding="{Binding DataContext.ImageDraftInvalid, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True"><Setter Property="IsEnabled" Value="False" /></DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGridCheckBoxColumn.EditingElementStyle>
                 </DataGridCheckBoxColumn>
@@ -251,24 +260,24 @@
                         </Style>
                     </TextBlock.Style>
                 </TextBlock>
-                <StackPanel x:Name="RegionDetailsForm" DataContext="{Binding SelectedImageRegion}"
+                <StackPanel x:Name="RegionDetailsForm" DataContext="{Binding SelectedImageRegion}" Validation.Error="OnRegionDraftValidationError" DataContextChanged="OnRegionFormDataContextChanged"
                             Visibility="{Binding DataContext.HasSelectedImageRegion, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PanelBoolToVis}}">
                     <TextBlock Text="Chi tiết vùng đang chọn" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,8" />
                     <WrapPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionXBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X của vùng, pixel gốc">
-                            <TextBox.Text><Binding Path="X" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="X" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionYBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y của vùng, pixel gốc">
-                            <TextBox.Text><Binding Path="Y" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="Y" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Rộng" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionWidthBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Chiều rộng của vùng">
-                            <TextBox.Text><Binding Path="Width" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="Width" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Cao" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionHeightBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Chiều cao của vùng">
-                            <TextBox.Text><Binding Path="Height" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="Height" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Cỡ chữ" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionFontBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Cỡ chữ">
-                            <TextBox.Text><Binding Path="FontSize" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="FontSize" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="1" Maximum="999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Màu nền (RGB)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionBackgroundBox" Width="110" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Background, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Màu nền RGB" /></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Màu chữ (RGB)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionForegroundBox" Width="110" Style="{StaticResource CompactFieldTextBoxStyle}" Text="{Binding Foreground, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Màu chữ RGB" /></StackPanel>
@@ -286,12 +295,12 @@
                     </WrapPanel>
                     <WrapPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X nền mẫu">
-                            <TextBox.Text><Binding Path="DonorX" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="DonorX" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorYBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y nền mẫu">
-                            <TextBox.Text><Binding Path="DonorY" UpdateSourceTrigger="PropertyChanged"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
+                            <TextBox.Text><Binding Path="DonorY" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
-                        <CheckBox x:Name="ApproveBox" Style="{StaticResource ThemedCheckBoxStyle}" Content="Duyệt text/crop của vùng này" IsChecked="{Binding Approved}" VerticalAlignment="Bottom" Margin="8,0,0,14" FontWeight="SemiBold" AutomationProperties.Name="Duyệt text và crop của vùng" />
+                        <CheckBox x:Name="ApproveBox" Style="{StaticResource ApproveBoxStyle}" Content="Duyệt text/crop của vùng này" IsChecked="{Binding Approved}" VerticalAlignment="Bottom" Margin="8,0,0,14" FontWeight="SemiBold" AutomationProperties.Name="Duyệt text và crop của vùng" />
                     </WrapPanel>
                 </StackPanel>
             </StackPanel>
