@@ -1840,6 +1840,8 @@
                             <Style TargetType="{x:Type ListBoxItem}">
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                                 <Setter Property="Padding" Value="0" />
+                                <!-- U1: keyboard focus on a row (Tab / arrows) selects it, so the detail strip follows the focused pair without a mouse -->
+                                <EventSetter Event="GotKeyboardFocus" Handler="GlossaryItem_GotKeyboardFocus" />
                             </Style>
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>

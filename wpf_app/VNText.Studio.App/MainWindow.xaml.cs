@@ -320,6 +320,11 @@ public partial class MainWindow : Window
 
     private void GlossaryCloseButton_Click(object sender, RoutedEventArgs e) => CloseGlossaryOverlay();
 
+    private void GlossaryItem_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is ListBoxItem item && !item.IsSelected) item.IsSelected = true;
+    }
+
     // The empty-state action only moves focus into the existing add form (no second Add button).
     private void GlossaryEmptyFocusButton_Click(object sender, RoutedEventArgs e) => GlossaryTermTextBox.Focus();
 

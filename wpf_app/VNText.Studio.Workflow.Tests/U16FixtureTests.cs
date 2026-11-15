@@ -384,6 +384,10 @@ internal static partial class Program
                         AssertEqual("short", ((TextBlock)Named("GlossaryDetailTerm")).Text);
                         list.SelectedIndex = -1; window.UpdateLayout(); PumpFixture(60);
                         Require(!strip.IsVisible, $"{tag} U1: the strip hides with no row");
+                        firstRow.RaiseEvent(new System.Windows.Input.KeyboardFocusChangedEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, 0, null, firstRow) { RoutedEvent = UIElement.GotKeyboardFocusEvent });
+                        window.UpdateLayout(); PumpFixture(60);
+                        Require(strip.IsVisible && list.SelectedIndex == 0, $"{tag} U1: keyboard focus on the row selects it and opens the strip");
+                        list.SelectedIndex = -1; window.UpdateLayout(); PumpFixture(60);
                         Require(FindVisualChildren<Button>(firstRow).Any(b => b.Command == vm.RemoveGlossaryEntryCommand), $"{tag} U1: the delete command stays on the row");
                         ((Button)Named("GlossaryCloseButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); PumpFixture(100);
                         vm.GlossaryEntries.Clear();
