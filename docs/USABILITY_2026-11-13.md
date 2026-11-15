@@ -98,3 +98,26 @@ Report `TEST_RUN/agent-evidence/fresh15-review-report.{html,json}`; V1–V7 acce
 
 ## Q1–Q2 scoped follow-up (2026-11-15)
 Source chooser popup uses keyed InputChoiceMenuStyle/InputChoiceMenuItemStyle, shared semantic theme brushes/AppFont/UiBodySize and app UI scale; keyboard navigation and both commands remain native MenuItem behavior. No implicit/global menu style. CSV checked count has singular English for one, zero/plural retained and language refresh unchanged. `--n15-fixture` covers 0/1/2 selection and live language switch, popup theme/type/scale/target and disabled appearance. Native evidence and exact candidate SHA belong to ignored q15 receipts; this document does not claim Release acceptance.
+
+## Polish batch U1–U9 / C1–C6 (2026-11-16, base `8dc6888`)
+Report `TEST_RUN/agent-evidence/polish16-combined-review.{html,json}` (candidate values from the Owner task; not accepted until independent QA). Limited polish; no redesign, no backend/schema/worker change.
+
+| ID | Change | Files | Regression |
+|---|---|---|---|
+| U1 glossary | Row tooltip with both full sides; selecting/focusing a row fills a wrapped detail strip under the list (keyboard path); rows keep ellipsis/density; delete/validation untouched | `MainWindow.xaml`, `Converters/NullToCollapsedConverter.cs` | `--u16-fixture` |
+| U2 choice controls | Keyed `ThemedRadioButtonStyle` / `ThemedCheckBoxStyle` (semantic brushes, hover/focus ring/disabled) replace the stock-white implicit styles in the region details; grid checkbox untouched | `Themes/ControlStyles.xaml`, `Controls/ImageWorkspacePanel.xaml` | `--u16-fixture` (live theme switch) |
+| U3 numeric fields | `IntegerRangeRule` rejects empty/text/out-of-range before the model update (nothing coerced); rounded error surface + hint adorner in the gap under the field (no layout shift); X/Y/DonorX/DonorY 0–99999, Width/Height 1–99999, Font 1–999 | `Validation/IntegerRangeRule.cs`, `ImageWorkspacePanel.xaml`, `ControlStyles.xaml`, `UiText.cs` | `--u16-fixture` |
+| U4 CSV tools label | `CsvToolsToggleText` raised on language change; the label is a bound `TextBlock` (a bare string Content let `UiText.Apply` replay the first catalogued string, so the drawn label stayed stale after open/close); same for the Images "Chi tiết" | `MainViewModel.Settings.cs`, `MainWindow.xaml`, `ImageWorkspacePanel.xaml` | `--u16-fixture` (VI↔EN, open/closed) |
+| U5 form width | One `FormWidthCap` (1120 DIP, left axis) on Extract/Translate/Patch pages, the persistent error banner and the Settings tab content; CSV table and image page stay full width | `Converters/CapWidthConverter.cs`, `MainWindow.xaml` | `--u16-fixture` |
+| U6 translate axis | The "Nguồn dịch" group drops its extra 10 DIP side padding, sharing the left axis of the other headings | `MainWindow.xaml` | `--u16-fixture` (heading X spread < 1 DIP) |
+| U7 images actions | One action row (primary next step, results actions, "Sửa ảnh", "Quay lại"); "Chi tiết" is a light disclosure above it; OCR state machine and commands unchanged | `ImageWorkspacePanel.xaml` | `--u16-fixture` (large and 1055×720) |
+| U8 release notes | 700 DIP column, height ≤ 85% of the owner and the work area, body scrolls, header/footer fixed, tighter bullet/paragraph rhythm; other dialogs unchanged | `UpdateWindow.cs` | `--u16-fixture` |
+| U9 journal title | Header "Nhật ký — Khắc phục lỗi" / "Journal — Troubleshooting" | `JournalWindow.cs` | `--u16-fixture` |
+| C1 primary gradient | Idle/hover/pressed gradients per Owner token table (pressed is a new `PrimaryFillPressedBrush`); white label ≥ 4.5:1 along the whole gradient and on rendered pixels | `UiAppearance.cs`, `DesignTokens.xaml`, `ControlStyles.xaml` | `--u16-fixture` |
+| C2 WARN | `LogWarningForegroundBrush` (Light #9A5B00, Dark #E0A33A) for log/Journal WARN; toast border untouched | `SeverityLogBox.cs`, `MainWindow.xaml`, tokens | `--u16-fixture` |
+| C3 switch | `SwitchStyle` uses `SwitchOff*/SwitchOn*` DynamicResource tokens, focus ring and disabled state; follows a live theme switch | `ControlStyles.xaml`, tokens | `--u16-fixture` |
+| C4 control border | `CtrlBorderBrush` / `SettingsPreferenceBorderBrush` (Light #7B8798, Dark #71829C) used by outline buttons, text inputs and Settings combos; card/line stay soft; focus colours unchanged | `UiAppearance.cs`, `ControlStyles.xaml` | `--u16-fixture` (rendered pixels ≥ 3:1) |
+| C5 disabled primary | Neutral fill/text/border via `DisabledPrimary*` tokens and a non-layout edge layer | `ControlStyles.xaml`, tokens | `--u16-fixture` |
+| C6 hover Light | Settings row #F0F5FC, navigation #DFE7F2, secondary hover #EFF5FF + control border; Dark values kept | `UiAppearance.cs`, `ControlStyles.xaml` | `--u16-fixture` (tokens) + native hover |
+
+Known limits: the `ToggleSwitch` UserControl in `Controls/` is unused (the live switches are `SwitchStyle` check boxes) and was not touched; the release-notes work-area clamp uses the primary work area and only follows an owner that is on screen.

@@ -37,25 +37,31 @@ public static class UiAppearance
         Set("SoftTextBrush", C("#94A3B8", "#9AACC4"));
         foreach (var key in new[] { "SurfaceBrush", "WindowBrush" }) Set(key, C("#FFFFFF", "#202B3C"));
         foreach (var key in new[] { "FieldBackgroundBrush", "SubtlePanelBrush", "LogPanelBrush", "PillBackgroundBrush", "ProjectCardBrush", "TableHeaderBrush" }) Set(key, C("#F5F7FB", "#273448"));
-        foreach (var key in new[] { "LineBrush", "BorderBrush", "CardBorderBrush", "CtrlBorderBrush" }) Set(key, C("#E5E7EB", "#3B4B63"));
+        foreach (var key in new[] { "LineBrush", "BorderBrush", "CardBorderBrush" }) Set(key, C("#E5E7EB", "#3B4B63"));
+        // Control boundaries are separated from card/separator lines: idle inputs and outline buttons stay recognisable (>= 3:1 on their field surface).
+        Set("CtrlBorderBrush", C("#7B8798", "#71829C"));
         Set("SettingsPreferenceFieldBrush", C("#EEF2F7", "#273448"));
-        Set("SettingsPreferenceBorderBrush", C("#D1D8E2", "#3B4B63"));
+        Set("SettingsPreferenceBorderBrush", C("#7B8798", "#71829C"));
         Set("BlueSoftBrush", C("#E9F1FF", "#28436C"));
         Set("BlueBrush", C("#2868E8", "#8CB5FF"));
         _overrides["SettingsTitleBrush"] = new LinearGradientBrush(
             (Color)ColorConverter.ConvertFromString(C("#2563EB", "#8CB5FF")),
             (Color)ColorConverter.ConvertFromString(C("#089DB2", "#65D6E8")), 0);
         _overrides["PrimaryFillBrush"] = new LinearGradientBrush(
-            (Color)ColorConverter.ConvertFromString(C("#2563EB", "#3A74E8")),
-            (Color)ColorConverter.ConvertFromString(C("#0A93AB", "#158FA6")), 0);
+            (Color)ColorConverter.ConvertFromString(C("#2563EB", "#3264C8")),
+            (Color)ColorConverter.ConvertFromString(C("#087C91", "#0E7490")), 0);
         _overrides["PrimaryFillHoverBrush"] = new LinearGradientBrush(
-            (Color)ColorConverter.ConvertFromString(C("#1D4FD0", "#2E63CF")),
-            (Color)ColorConverter.ConvertFromString(C("#077C91", "#10788C")), 0);
+            (Color)ColorConverter.ConvertFromString(C("#1D4ED8", "#2855B0")),
+            (Color)ColorConverter.ConvertFromString(C("#0E6F80", "#155E75")), 0);
+        _overrides["PrimaryFillPressedBrush"] = new LinearGradientBrush(
+            (Color)ColorConverter.ConvertFromString("#1E40AF"),
+            (Color)ColorConverter.ConvertFromString("#155E75"), 0);
         Set("NavActiveBackgroundBrush", C("#212563EB", "#2B4772"));
         Set("NavActiveForegroundBrush", C("#2454EE", "#8CB5FF"));
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));
-        Set("NavHoverBrush", C("#0E000000", "#354258"));
-        Set("SettingsRowHoverBrush", C("#F0F0F0", "#2A394F"));
+        Set("NavHoverBrush", C("#DFE7F2", "#354258"));
+        Set("SettingsRowHoverBrush", C("#F0F5FC", "#2A394F"));
+        Set("SecondaryHoverBackgroundBrush", C("#EFF5FF", "#273448"));
         Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"));
         Set("HoverBorderBrush", C("#C5D7EC", "#5A7396"));
         Set("ToastInfoBackgroundBrush", C("#E9F1FF", "#28436C"));
@@ -68,6 +74,7 @@ public static class UiAppearance
         Set("ToastWarningBackgroundBrush", C("#FFF4DF", "#4A3410"));
         Set("ToastWarningForegroundBrush", C("#111827", "#FFF1D6"));
         Set("ToastWarningBorderBrush", C("#B56D00", "#E0A33A"));
+        Set("LogWarningForegroundBrush", C("#9A5B00", "#E0A33A"));
         Set("ToastErrorBackgroundBrush", C("#FFF0F0", "#4A1F24"));
         Set("ToastErrorForegroundBrush", C("#111827", "#FFE4E4"));
         Set("ToastErrorBorderBrush", C("#C84040", "#FF8A8A"));
@@ -77,10 +84,23 @@ public static class UiAppearance
         Set("AboutCurrentBackgroundBrush", C("#D8EDE1", "#173D32"));
         Set("AboutCurrentBorderBrush", C("#A1E2BA", "#418C63"));
         Set("AboutCurrentTextBrush", C("#22C55E", "#7BDEA7"));
+        Set("SwitchOffTrackBrush", C("#CBD5E1", "#344258"));
+        Set("SwitchOffBorderBrush", C("#B5C0D0", "#506078"));
+        Set("SwitchOffKnobBrush", C("#FFFFFF", "#CBD5E1"));
+        Set("SwitchOffHoverBrush", C("#BBC8D9", "#42536C"));
+        Set("SwitchOnTrackBrush", C("#2563EB", "#3A74E8"));
+        Set("SwitchOnKnobBrush", "#FFFFFF");
+        Set("SwitchOffBrush", C("#CBD5E1", "#344258"));
+        Set("InputErrorForegroundBrush", C("#B42318", "#FDA29B"));
+        Set("InputErrorBorderBrush", C("#B42318", "#FDA29B"));
+        Set("InputErrorSurfaceBrush", C("#FEF3F2", "#4A1F24"));
+        // Disabled primary is neutral (not the selected/brand hue) so it never reads as a selected item.
+        Set("DisabledPrimaryBackgroundBrush", C("#E7EBF1", "#2B3545"));
+        Set("DisabledPrimaryBorderBrush", C("#D6DDE7", "#42506A"));
+        Set("DisabledPrimaryForegroundBrush", C("#64748B", "#9AA7BA"));
         if (dark)
         {
             Set("DisabledBackgroundBrush", "#263247");
-            Set("DisabledPrimaryBackgroundBrush", "#2C4265");
             Set("DisabledBorderBrush", "#39485E");
             Set("DisabledForegroundBrush", "#94A1B5");
             Set("ProgressTrackBrush", "#344258");

@@ -31,6 +31,9 @@
         <conv:IntToPercentConverter x:Key="Pct" />
         <conv:LogStateTextConverter x:Key="LogState" />
         <conv:CountZeroToVisibilityConverter x:Key="EmptyLogVis" />
+        <conv:NullToCollapsedConverter x:Key="NullToCollapsed" />
+        <!-- U5: one shared width cap (first value 1120 DIP) for the simple forms: Extract, Auto translate, Patch, Settings. CSV table and image preview keep the full area. -->
+        <conv:CapWidthConverter x:Key="FormWidthCap" Max="1120" />
         <conv:CountNonZeroToVisibilityConverter x:Key="LogVis" />
         <conv:StringMatchConverter x:Key="StrMatch" />
         <conv:TabEqualsToNavBackgroundConverter x:Key="NavBg" />
@@ -46,7 +49,7 @@
                     <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="SUCCESS"><Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" /></DataTrigger>
-                        <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="WARN"><Setter Property="Foreground" Value="{DynamicResource ToastWarningBorderBrush}" /></DataTrigger>
+                        <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="WARN"><Setter Property="Foreground" Value="{DynamicResource LogWarningForegroundBrush}" /></DataTrigger>
                         <DataTrigger Binding="{Binding Converter={StaticResource LogSeverity}}" Value="ERROR"><Setter Property="Foreground" Value="{DynamicResource ToastErrorBorderBrush}" /></DataTrigger>
                     </Style.Triggers>
                 </Style></TextBlock.Style>
@@ -271,7 +274,7 @@
                       Style="{StaticResource OverlayAutoHideScrollViewer}"
                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                        <Border x:Name="ExtractErrorBanner" Margin="0,0,0,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
+                        <Border x:Name="ExtractErrorBanner" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Margin="0,0,0,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
                                 AutomationProperties.Name="Thông báo tác vụ chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
@@ -310,7 +313,7 @@
                 <Grid>
 
                     <!-- Extract page -->
-                    <Grid x:Name="ExtractPage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
+                    <Grid x:Name="ExtractPage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -562,7 +565,7 @@
                     </Grid>
 
                     <!-- Translate page -->
-                    <Grid x:Name="TranslatePage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=translate}">
+                    <Grid x:Name="TranslatePage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=translate}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.06*" />
                             <ColumnDefinition Width="0.94*" />
@@ -578,7 +581,8 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                <Border Grid.Row="0" Style="{StaticResource SubtlePanelBorder}">
+                                <!-- U6: no extra 10 DIP side padding, so "Nguồn dịch" / "Mô hình dịch" share the left axis of "Tiến trình dịch" / "Thuật ngữ" / "Quy tắc". -->
+                                <Border Grid.Row="0" Style="{StaticResource SubtlePanelBorder}" Padding="0,8">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -732,7 +736,7 @@
                     </Grid>
 
                     <!-- Patch page -->
-                    <Grid x:Name="PatchPage" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=patch}">
+                    <Grid x:Name="PatchPage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=patch}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.06*" />
                             <ColumnDefinition Width="0.94*" />
@@ -1049,7 +1053,8 @@
                                                     </Border>
                                                 </StackPanel>
                                             </Grid>
-                                            <ContentPresenter Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" />
+                                            <ContentPresenter x:Name="SettingsContentHost" Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" HorizontalAlignment="Left"
+                                                              Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=TabControl}, Converter={StaticResource FormWidthCap}}" />
                                         </Grid>
                                     </ControlTemplate>
                                 </TabControl.Template>
@@ -1458,8 +1463,11 @@
     <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
         <TextBlock Text="Tìm và thay thế bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-        <Button x:Name="CsvToolsToggleButton" Grid.Column="1" Content="{Binding CsvToolsToggleText, Converter={StaticResource UiTextDynamic}}" Command="{Binding ToggleCsvToolsCommand}"
-                Style="{StaticResource CompactOutlineButton}" Margin="8,2,0,2" AutomationProperties.Name="Tìm và thay thế bản dịch" />
+        <!-- U4: the label is a bound TextBlock (not a bare string Content): UiText.Apply never replays a catalogued first string onto a bound element, so open/closed and EN/VI stay in step. -->
+        <Button x:Name="CsvToolsToggleButton" Grid.Column="1" Command="{Binding ToggleCsvToolsCommand}"
+                Style="{StaticResource CompactOutlineButton}" Margin="8,2,0,2" AutomationProperties.Name="Tìm và thay thế bản dịch">
+            <TextBlock Text="{Binding CsvToolsToggleText, Converter={StaticResource UiTextDynamic}}" />
+        </Button>
     </Grid>
 </Border>
 <Border x:Name="CsvBulkReplacePanel" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="{Binding CsvBulkPanelPadding}" AutomationProperties.Name="Tìm và thay thế bản dịch"
@@ -1811,6 +1819,7 @@
                                 Command="{Binding AddGlossaryEntryCommand}" IsDefault="True" />
                     </Grid>
                     <Grid Grid.Row="2" Margin="28,16,28,28">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                     <ListBox x:Name="GlossaryListBox" ItemsSource="{Binding GlossaryEntries}"
                              Margin="0" BorderBrush="{DynamicResource LineBrush}"
                              BorderThickness="1" Background="{DynamicResource SurfaceBrush}"
@@ -1832,7 +1841,18 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="8,4">
+                                <Grid Margin="8,4" Background="Transparent">
+                                    <!-- U1: a clipped pair is readable in full by hover (this tooltip) and by keyboard (selecting the row fills the detail strip under the list). -->
+                                    <Grid.ToolTip>
+                                        <ToolTip MaxWidth="460">
+                                            <StackPanel>
+                                                <TextBlock Text="Từ trong game" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Term}" TextWrapping="Wrap" Margin="0,0,0,6" />
+                                                <TextBlock Text="Dịch thành" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Translation}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </Grid.ToolTip>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
@@ -1848,6 +1868,19 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
+                    <Border x:Name="GlossaryDetailStrip" Grid.Row="1" Margin="0,8,0,0" Padding="10,8" CornerRadius="8" BorderThickness="1"
+                            Background="{DynamicResource FieldBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
+                            Visibility="{Binding SelectedItem, ElementName=GlossaryListBox, Converter={StaticResource NullToCollapsed}}"
+                            AutomationProperties.Name="Chi tiết thuật ngữ đang chọn">
+                        <ScrollViewer MaxHeight="110" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                            <StackPanel>
+                                <TextBlock Text="Từ trong game" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock x:Name="GlossaryDetailTerm" Text="{Binding SelectedItem.Term, ElementName=GlossaryListBox}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+                                <TextBlock Text="Dịch thành" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock x:Name="GlossaryDetailTranslation" Text="{Binding SelectedItem.Translation, ElementName=GlossaryListBox}" TextWrapping="Wrap" Foreground="{DynamicResource BlueBrush}" />
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
                     <StackPanel x:Name="GlossaryEmptyState" HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Visibility="{Binding GlossaryEntries.Count, Converter={StaticResource EmptyLogVis}}">
                         <TextBlock Text="Chưa có thuật ngữ nào. Nhập từ trong game và cách dịch ở trên, rồi bấm Thêm." TextWrapping="Wrap" TextAlignment="Center" MaxWidth="440"

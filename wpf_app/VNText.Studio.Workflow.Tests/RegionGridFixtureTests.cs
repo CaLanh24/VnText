@@ -121,7 +121,7 @@ internal static partial class Program
                     Require(editor.Foreground is SolidColorBrush foreground && foreground.Color == Brush("InkBrush").Color, $"{label}: editor text is the themed ink");
                     Require(editor.CaretBrush is SolidColorBrush caret && caret.Color == Brush("InkBrush").Color, $"{label}: the caret follows the theme ink");
                     Require(editor.SelectionBrush is SolidColorBrush selection && selection.Color == Brush("BlueBrush").Color && editor.SelectionOpacity > 0 && editor.SelectionOpacity < 1, $"{label}: the selection is the themed accent at partial opacity");
-                    Require(editor.BorderBrush is SolidColorBrush border && border.Color == Brush("LineBrush").Color, $"{label}: editor border is the themed line");
+                    Require(editor.BorderBrush is SolidColorBrush border && border.Color == Brush("CtrlBorderBrush").Color, $"{label}: editor border is the themed control border (C4)");
                     Require(theme != "dark" || (((SolidColorBrush)editor.Background).Color != Colors.White && ContrastRatio(((SolidColorBrush)editor.Background).Color, Colors.White) > 1.3), $"{label}: no default white editor in Dark");
                     var ratio = ContrastRatio(((SolidColorBrush)editor.Foreground).Color, ((SolidColorBrush)editor.Background).Color);
                     Require(ratio >= 4.5, $"{label}: editor text contrast {Math.Round(ratio, 1)}:1");

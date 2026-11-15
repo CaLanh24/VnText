@@ -155,7 +155,7 @@
 
     <Color x:Key="SuccessColor">#12C96B</Color>
 
-    <Color x:Key="CtrlBorderColor">#E7E9EE</Color>
+    <Color x:Key="CtrlBorderColor">#7B8798</Color>
 
     <Color x:Key="TextTerColor">#A1A7B2</Color>
 
@@ -222,11 +222,28 @@
 
     <!-- Primary action fill (blue to cyan, the Cockpit reference grammar, same endpoints family as SettingsTitleBrush) + elevation. -->
     <LinearGradientBrush x:Key="PrimaryFillBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#0A93AB" Offset="1" />
+        <GradientStop Color="#2563EB" Offset="0" /><GradientStop Color="#087C91" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="PrimaryFillHoverBrush" StartPoint="0,0" EndPoint="1,0">
-        <GradientStop Color="#1D4FD0" Offset="0" /><GradientStop Color="#077C91" Offset="1" />
+        <GradientStop Color="#1D4ED8" Offset="0" /><GradientStop Color="#0E6F80" Offset="1" />
     </LinearGradientBrush>
+    <LinearGradientBrush x:Key="PrimaryFillPressedBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#1E40AF" Offset="0" /><GradientStop Color="#155E75" Offset="1" />
+    </LinearGradientBrush>
+    <!-- Polish batch U/C: semantic state brushes. Apply() in UiAppearance overrides each one per theme, so DynamicResource users follow a live theme switch. -->
+    <SolidColorBrush x:Key="DisabledPrimaryBorderBrush" Color="#D6DDE7" />
+    <SolidColorBrush x:Key="DisabledPrimaryForegroundBrush" Color="#64748B" />
+    <SolidColorBrush x:Key="SecondaryHoverBackgroundBrush" Color="#EFF5FF" />
+    <SolidColorBrush x:Key="LogWarningForegroundBrush" Color="#9A5B00" />
+    <SolidColorBrush x:Key="SwitchOffTrackBrush" Color="#CBD5E1" />
+    <SolidColorBrush x:Key="SwitchOffBorderBrush" Color="#B5C0D0" />
+    <SolidColorBrush x:Key="SwitchOffKnobBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SwitchOffHoverBrush" Color="#BBC8D9" />
+    <SolidColorBrush x:Key="SwitchOnTrackBrush" Color="#2563EB" />
+    <SolidColorBrush x:Key="SwitchOnKnobBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="InputErrorForegroundBrush" Color="#B42318" />
+    <SolidColorBrush x:Key="InputErrorBorderBrush" Color="#B42318" />
+    <SolidColorBrush x:Key="InputErrorSurfaceBrush" Color="#FEF3F2" />
     <DropShadowEffect x:Key="PrimaryElevation" Color="#2563EB" BlurRadius="12" ShadowDepth="3" Direction="270" Opacity="0.28" />
     <SolidColorBrush x:Key="BlueBrush" Color="{StaticResource BlueColor}" />
 

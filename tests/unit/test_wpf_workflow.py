@@ -612,8 +612,9 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("FitToWorkArea();", dialog)
         # (3) image choices follow the theme
         self.assertIn('Foreground="{DynamicResource InkBrush}"', panel)
-        self.assertIn('<Style TargetType="CheckBox">', panel)
-        self.assertIn("DisabledForegroundBrush", panel)
+        self.assertIn('<Style TargetType="RadioButton" BasedOn="{StaticResource ThemedRadioButtonStyle}" />', panel)      # U2: scoped semantic templates, no stock white face
+        self.assertIn('Style="{StaticResource ThemedCheckBoxStyle}"', panel)
+        self.assertIn("DisabledForegroundBrush", (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8"))
         # (4) the two Lấy text actions share one row and one centre line; the status has its own row
         self.assertNotIn('x:Name="ExtractImageTextButton"', xaml)         # the image workspace lives only in Translate; Extract has one action
         row = xaml[xaml.index('x:Name="ExtractRunButton"'):xaml.index("Lấy text\" Foreground=\"White\"")]
@@ -1165,7 +1166,7 @@ class WpfWorkflowTests(unittest.TestCase):
         grid_xaml = panel[panel.index('x:Name="RegionGrid"'):panel.index("</DataGrid>")]
         self.assertLessEqual(grid_xaml.count("<DataGridTextColumn ") + grid_xaml.count("<DataGridCheckBoxColumn ") + grid_xaml.count("<DataGridTemplateColumn "), 5)
         for field in ("X", "Y", "Width", "Height", "FontSize", "Background", "Foreground", "DonorX", "DonorY"):
-            self.assertIn("Text=\"{Binding " + field + ",", panel)
+            self.assertRegex(panel, r'(Text="\{Binding ' + field + r',|<Binding Path="' + field + '")')      # U3: numeric fields bind through a rule-carrying Binding element
         # The candidate source cannot change while a task runs, cancellation is its own state, and a cancelled/failed OCR keeps the source.
         self.assertRegex(panel, r'x:Name="ImageResultList"[^>]*IsEnabled="\{Binding ImageGridEnabled\}"')
         complete = image_vm[image_vm.index("private void CompleteImageTask"):]
@@ -1509,6 +1510,9 @@ class WpfWorkflowTests(unittest.TestCase):
             n15_proc = _run_harness(harness_env, artifacts_root, ["--n15-fixture"])
             self.assertEqual(0, n15_proc.returncode, (n15_proc.stdout or "") + (n15_proc.stderr or ""))
             self.assertIn("WPF N1-N10 fixture: PASS", n15_proc.stdout)
+            u16_proc = _run_harness(harness_env, artifacts_root, ["--u16-fixture"])
+            self.assertEqual(0, u16_proc.returncode, (u16_proc.stdout or "") + (u16_proc.stderr or ""))
+            self.assertIn("WPF U1-U9/C1-C6 fixture: PASS", u16_proc.stdout)
             transition_proc = _run_harness(harness_env, artifacts_root, ["--update-window-transition-fixture"])
             self.assertEqual(0, transition_proc.returncode, (transition_proc.stdout or "") + (transition_proc.stderr or ""))
             self.assertIn("WPF update window transition fixture: PASS", transition_proc.stdout)

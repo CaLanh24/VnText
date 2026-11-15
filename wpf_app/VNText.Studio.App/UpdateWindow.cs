@@ -45,9 +45,10 @@ internal sealed class UpdateWindow : Window
     {
         _source = source; _notesOnly = notesOnly; _successVersion = successVersion;
         Owner = owner; UiText.SetAppText(this, TitleProperty, notesOnly ? "Ghi chú phát hành" : "Cập nhật VNText Studio");
-        Width = notesOnly ? 880 : 620; SizeToContent = SizeToContent.Height;
-        if (notesOnly) { Height = Math.Max(280, Math.Min(720, owner.ActualHeight - 24)); SizeToContent = SizeToContent.Manual; }
-        MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = Math.Max(300, owner.ActualHeight - 24);
+        // U8: the release-notes reader is a 700 DIP column and at most 85% of the owner (and inside the work area); its body scrolls, header/footer stay.  Other dialogs keep their own size.
+        Width = notesOnly ? 700 : 620; SizeToContent = SizeToContent.Height;
+        if (notesOnly) { Height = Math.Min(720, NotesMaxHeight(owner)); SizeToContent = SizeToContent.Manual; }
+        MaxWidth = Math.Max(320, owner.ActualWidth - 24); MaxHeight = notesOnly ? NotesMaxHeight(owner) : Math.Max(300, owner.ActualHeight - 24);
         WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None;
         ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent;
         ShowInTaskbar = false; FontFamily = owner.FontFamily; FontSize = 13;
@@ -61,7 +62,7 @@ internal sealed class UpdateWindow : Window
         {
             surface.LayoutTransform = new ScaleTransform(UiAppearance.Scale, UiAppearance.Scale);
             Width *= UiAppearance.Scale;
-            if (notesOnly) Height *= UiAppearance.Scale;
+            if (notesOnly) Height = Math.Min(Height * UiAppearance.Scale, NotesMaxHeight(owner));
         }
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -152,9 +153,20 @@ internal sealed class UpdateWindow : Window
         {
             if (!IsVisible) return;
             AppDialogWindow.CenterOverOwner(this, owner);
+            if (notesOnly) KeepInsideWorkArea();
         };
-        Loaded += (_, _) => AppDialogWindow.CenterOverOwner(this, owner);
+        Loaded += (_, _) => { AppDialogWindow.CenterOverOwner(this, owner); if (notesOnly) KeepInsideWorkArea(); };
         source.PropertyChanged += Changed; Refresh();
+    }
+    /// <summary>85% of the owner, never taller than the work area minus a small margin (and never absurdly short).</summary>
+    private static double NotesMaxHeight(Window owner) => Math.Max(280, Math.Min(owner.ActualHeight * .85, SystemParameters.WorkArea.Height - 24));
+    private void KeepInsideWorkArea()
+    {
+        var work = SystemParameters.WorkArea;
+        // Only a visible owner is followed into the work area (an off-screen test owner keeps its dialog off-screen too).
+        if (Owner is null || !work.IntersectsWith(new Rect(Owner.Left, Owner.Top, Math.Max(1, Owner.ActualWidth), Math.Max(1, Owner.ActualHeight)))) return;
+        Left = Math.Max(work.Left, Math.Min(Left, work.Right - ActualWidth));
+        Top = Math.Max(work.Top, Math.Min(Top, work.Bottom - ActualHeight));
     }
     private void Changed(object? sender, PropertyChangedEventArgs e)
     {
@@ -214,7 +226,7 @@ internal sealed class UpdateWindow : Window
         _status.Visibility = string.IsNullOrWhiteSpace(_status.Text) ? Visibility.Collapsed : Visibility.Visible;
         // Measure actual short content; cap only long release bodies. State rows add their own height.
         _notes.MaxHeight = _notesOnly ? double.PositiveInfinity : Math.Min(145, Math.Max(90, Owner.ActualHeight * .22));
-        MaxHeight = _notesOnly ? Math.Max(280, Owner.ActualHeight - 24) : Math.Max(300, Owner.ActualHeight * .80);
+        MaxHeight = _notesOnly ? NotesMaxHeight(Owner) : Math.Max(300, Owner.ActualHeight * .80);
         var primaryContents = new StackPanel { Orientation = Orientation.Horizontal };
         var glyph = new TextBlock { Text = state.Downloading ? "◌" : state.Ready ? "↻" : "↓", Margin = new Thickness(0, 0, 8, 0), RenderTransformOrigin = new Point(.5, .5) };
         if (state.Downloading) { var rotation = new RotateTransform(); glyph.RenderTransform = rotation; rotation.BeginAnimation(RotateTransform.AngleProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 360, TimeSpan.FromSeconds(1.2)) { RepeatBehavior = System.Windows.Media.Animation.RepeatBehavior.Forever }); }
@@ -303,7 +315,7 @@ internal sealed class UpdateWindow : Window
             var heading = line.StartsWith('#'); var bullet = line.StartsWith("- ") || line.StartsWith("* ");
             var visible = heading ? line.TrimStart('#', ' ') : bullet ? "• " + line[2..] : line;
             var block = new TextBlock { TextWrapping = TextWrapping.Wrap,
-                FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal, FontSize = 13, Margin = new Thickness(bullet ? 7 : 0, heading ? 8 : 2, 0, 3), LineHeight = 20 };
+                FontWeight = heading ? FontWeights.SemiBold : FontWeights.Normal, FontSize = 13, Margin = new Thickness(bullet ? 12 : 0, heading ? 12 : 2, 0, heading ? 4 : bullet ? 3 : 6), LineHeight = 20 };
             block.SetResourceReference(TextBlock.ForegroundProperty, "InkBrush");
             var chunks = visible.Split("**", StringSplitOptions.None);
             for (var i = 0; i < chunks.Length; i++)

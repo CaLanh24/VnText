@@ -21,7 +21,7 @@ internal sealed class SeverityLogBox : RichTextBox
                 var run = new Run(line.TrimEnd('\r'));
                 run.SetResourceReference(TextElement.ForegroundProperty, LogSeverityConverter.Severity(line) switch
                 {
-                    "ERROR" => "ToastErrorBorderBrush", "WARN" => "ToastWarningBorderBrush", "SUCCESS" => "GreenDarkBrush", _ => "InkBrush"
+                    "ERROR" => "ToastErrorBorderBrush", "WARN" => "LogWarningForegroundBrush", "SUCCESS" => "GreenDarkBrush", _ => "InkBrush"
                 });
                 Document.Blocks.Add(new Paragraph(run) { Margin = new Thickness(0, 0, 0, 3) });
             }

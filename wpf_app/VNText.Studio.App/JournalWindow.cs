@@ -82,7 +82,7 @@ internal sealed class JournalWindow : Window
         grid.RowDefinitions.Add(new(){Height=GridLength.Auto});grid.RowDefinitions.Add(new());grid.RowDefinitions.Add(new(){Height=GridLength.Auto});
         var header=new DockPanel{Margin=AppDialogWindow.HeaderPadding};
         var close=Button("×",Close);close.Content=new TextBlock{Text="×",FontSize=20,VerticalAlignment=VerticalAlignment.Center};close.Style=(Style)owner.FindResource("DialogCloseButton");close.Width=32;close.Height=32;close.ToolTip="Đóng (Esc)";System.Windows.Automation.AutomationProperties.SetName(close,"Đóng Nhật ký");DockPanel.SetDock(close,Dock.Right);header.Children.Add(close);
-        header.Children.Add(new TextBlock{Text="khắc phục lỗi",FontSize=AppDialogWindow.HeaderTitleSize,FontWeight=FontWeights.Bold,Foreground=B("InkBrush"),VerticalAlignment=VerticalAlignment.Center});
+        header.Children.Add(new TextBlock{Text="Nhật ký — Khắc phục lỗi",FontSize=AppDialogWindow.HeaderTitleSize,FontWeight=FontWeights.Bold,Foreground=B("InkBrush"),VerticalAlignment=VerticalAlignment.Center});
         grid.Children.Add(new Border{Child=header,BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,0,0,1)});
         var body=new Grid{Margin=AppDialogWindow.BodyPadding};Grid.SetRow(body,1);grid.Children.Add(body);
         for(var i=0;i<3;i++)body.RowDefinitions.Add(new(){Height=GridLength.Auto});body.RowDefinitions.Add(new());
