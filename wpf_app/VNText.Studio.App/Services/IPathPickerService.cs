@@ -2,8 +2,11 @@ namespace VNText.Studio.App.Services;
 
 public interface IPathPickerService
 {
-    /// <summary>Folder first, then single file asset fallback (Qt parity).</summary>
+    /// <summary>The game FOLDER picker.  Cancel returns null and nothing else opens (N8: no silent second picker).</summary>
     string? PickInputPath();
+
+    /// <summary>The explicit single asset / bundle FILE picker (a separate choice from the folder).</summary>
+    string? PickInputAssetFile();
 
     string? PickOutputFolder();
 

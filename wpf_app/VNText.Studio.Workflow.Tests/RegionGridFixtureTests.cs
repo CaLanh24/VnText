@@ -85,6 +85,24 @@ internal static partial class Program
                         }
                     }
                     CheckDeleteButtons("idle");
+                    // ---- N3: every column header reads in full (EN is the longer one), the source wraps with its full text in a tooltip ----
+                    foreach (var header in FindVisualChildren<System.Windows.Controls.Primitives.DataGridColumnHeader>(grid).Where(h => h.Content is string))
+                    {
+                        var text = (string)header.Content;
+                        var headerInk = new FormattedText(text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                            new Typeface(header.FontFamily, header.FontStyle, header.FontWeight, header.FontStretch), header.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(header).PixelsPerDip);
+                        var headerRoom = header.ActualWidth - header.Padding.Left - header.Padding.Right - header.BorderThickness.Left - header.BorderThickness.Right;
+                        Require(headerRoom >= headerInk.WidthIncludingTrailingWhitespace - 0.5, $"{label}: the header \"{text}\" is fully painted (text {Math.Round(headerInk.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(headerRoom, 1)})");
+                    }
+                    var sourceCell = FindVisualChildren<TextBlock>(grid).First(t => t.Text == "Hello, adventurer.");
+                    Require(sourceCell.TextWrapping == TextWrapping.Wrap && (sourceCell.ToolTip as string) == "Hello, adventurer.", $"{label}: the OCR source wraps and keeps its full text in the tooltip");
+                    // ---- N4: the Approved selector is the scoped themed checkbox (display), idle tokens, and its binding is unchanged ----
+                    var approvedBox = FindVisualChildren<CheckBox>(grid).First();
+                    Require(approvedBox.Style.BasedOn == panel.FindResource("CsvRowCheckBoxStyle") || ReferenceEquals(approvedBox.Style.BasedOn, panel.FindResource("CsvRowCheckBoxStyle")), $"{label}: the Approved display checkbox is based on the scoped themed style");
+                    approvedBox.ApplyTemplate();
+                    var approvedFrame = (Border)approvedBox.Template.FindName("Box", approvedBox);
+                    Require(((SolidColorBrush)approvedFrame.Background).Color == ((SolidColorBrush)panel.FindResource("FieldBackgroundBrush")).Color && ((SolidColorBrush)approvedFrame.BorderBrush).Color == ((SolidColorBrush)panel.FindResource("MutedBrush")).Color,
+                        $"{label}: the Approved box idles on the themed field/muted tokens (not the stock white box)");
                     vm.SelectedImageRegion = first;
                     dialog.UpdateLayout();
                     PumpFixture(80);
@@ -113,6 +131,39 @@ internal static partial class Program
                     CheckDeleteButtons("editing");
                     grid.CommitEdit(DataGridEditingUnit.Cell, true);
                     grid.CommitEdit(DataGridEditingUnit.Row, true);
+                    // ---- N4: the Approved cell EDITS through the same themed checkbox; toggling writes the binding (no automatic approval anywhere) ----
+                    Require(!first.Approved, $"{label}: nothing is approved automatically");
+                    grid.CurrentCell = new DataGridCellInfo(first, grid.Columns[3]);
+                    Require(grid.BeginEdit(), $"{label}: the Approved cell enters edit mode");
+                    dialog.UpdateLayout(); PumpFixture(60);
+                    var editBox = grid.Columns[3].GetCellContent(first) as CheckBox ?? FindVisualChildren<CheckBox>(grid.Columns[3].GetCellContent(first)).First();
+                    Require(editBox.Style.BasedOn is not null && ReferenceEquals(editBox.Style.BasedOn, panel.FindResource("CsvRowCheckBoxStyle")), $"{label}: the Approved editing checkbox is based on the scoped themed style");
+                    editBox.ApplyTemplate();
+                    var editFrame = (Border)editBox.Template.FindName("Box", editBox);
+                    var editMark = (System.Windows.Shapes.Path)editBox.Template.FindName("Mark", editBox);
+                    Require(((SolidColorBrush)editFrame.Background).Color == ((SolidColorBrush)panel.FindResource("FieldBackgroundBrush")).Color && editMark.Visibility != Visibility.Visible, $"{label}: editing idle state");
+                    ((System.Windows.Automation.Provider.IToggleProvider)new System.Windows.Automation.Peers.CheckBoxAutomationPeer(editBox).GetPattern(System.Windows.Automation.Peers.PatternInterface.Toggle)).Toggle();
+                    dialog.UpdateLayout(); PumpFixture(40);
+                    Require(editBox.IsChecked == true && ((SolidColorBrush)editFrame.Background).Color == ((SolidColorBrush)panel.FindResource("BlueBrush")).Color && editMark.Visibility == Visibility.Visible, $"{label}: checked fills with the accent and shows the check");
+                    Require(!first.Approved, $"{label}: the column's own commit semantics are unchanged (the binding writes when the cell commits)");
+                    // a REAL Space key (routed KeyDown/KeyUp on the focused checkbox) toggles it back
+                    editBox.Focus();
+                    var spaceSource = PresentationSource.FromVisual(editBox);
+                    if (spaceSource is not null)
+                    {
+                        editBox.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, spaceSource, 0, System.Windows.Input.Key.Space) { RoutedEvent = System.Windows.Input.Keyboard.KeyDownEvent });
+                        editBox.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, spaceSource, 0, System.Windows.Input.Key.Space) { RoutedEvent = System.Windows.Input.Keyboard.KeyUpEvent });
+                        PumpFixture(40);
+                    }
+                    editBox.IsEnabled = false;
+                    editBox.UpdateLayout();
+                    grid.IsEnabled = true;
+                    Require(((SolidColorBrush)editFrame.BorderBrush).Color == ((SolidColorBrush)panel.FindResource("DisabledBorderBrush")).Color, $"{label}: disabled uses the disabled tokens");
+                    editBox.IsEnabled = true;
+                    grid.CommitEdit(DataGridEditingUnit.Cell, true);
+                    Require(first.Approved == (editBox.IsChecked == true), $"{label}: committing the cell writes the Approved binding exactly as before");
+                    first.Approved = false;
+                    grid.CommitEdit(DataGridEditingUnit.Row, true);
                     first.Translation = "Xin chào, nhà thám hiểm. Đây là một bản dịch khá dài để ô tự xuống dòng.";
                     // the dialog footer stays reachable inside the window at every presentation (the English labels are the longer ones)
                     var closeButton = dialog.ButtonPanel.Children.OfType<Button>().Single();
@@ -121,6 +172,41 @@ internal static partial class Program
                     dialog.Close();
                     owner.Close();
                     report.Add(label);
+                }
+                // ---- N3 at the REAL native card width: the Images page card is about 590 units wide at 1565x1071 client / UI120 (the dialog cases above are wider) ----
+                foreach (var (theme, language) in new[] { ("dark", "en"), ("light", "vi") })
+                {
+                    UiText.SetLanguage(language);
+                    UiAppearance.Apply(theme, 100);
+                    UiAppearance.Scale = 1.2;
+                    var narrowLabel = $"{theme}/{language} native card 590";
+                    var narrowWindow = new Window { Width = 700, Height = 720, Content = new Border { Width = 590, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top } };
+                    var narrowPanel = new ImageWorkspacePanel { DataContext = vm };
+                    ((Border)narrowWindow.Content).Child = narrowPanel;
+                    if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { narrowWindow.WindowStartupLocation = WindowStartupLocation.Manual; narrowWindow.Left = -4000; narrowWindow.Top = 0; narrowWindow.ShowActivated = false; narrowWindow.ShowInTaskbar = false; }
+                    narrowWindow.Show(); narrowWindow.UpdateLayout(); PumpFixture(150);
+                    UiText.Apply(narrowWindow);
+                    vm.EnterImageEditCommand.Execute(null); narrowWindow.UpdateLayout(); PumpFixture(100);
+                    var narrowGrid = (DataGrid)narrowPanel.FindName("RegionGrid");
+                    var narrowScroller = FindVisualChildren<ScrollViewer>(narrowGrid).First();
+                    foreach (var header in FindVisualChildren<System.Windows.Controls.Primitives.DataGridColumnHeader>(narrowGrid).Where(h => h.Content is string))
+                    {
+                        var text = (string)header.Content;
+                        var headerInk = new FormattedText(text, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                            new Typeface(header.FontFamily, header.FontStyle, header.FontWeight, header.FontStretch), header.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(header).PixelsPerDip);
+                        var headerRoom = header.ActualWidth - header.Padding.Left - header.Padding.Right - header.BorderThickness.Left - header.BorderThickness.Right;
+                        Require(headerRoom >= headerInk.WidthIncludingTrailingWhitespace - 0.5, $"{narrowLabel}: the header \"{text}\" reads in full (text {Math.Round(headerInk.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(headerRoom, 1)}; columns {string.Join("/", narrowGrid.Columns.Select(c => Math.Round(c.ActualWidth)))}, scroll {Math.Round(narrowScroller.ScrollableWidth)})");
+                    }
+                    foreach (var button in FindVisualChildren<Button>(narrowGrid).Where(x => System.Windows.Automation.AutomationProperties.GetName(x) is "Xóa vùng" or "Delete region"))
+                    {
+                        var shown = button.Content as string ?? "";
+                        var ink = new FormattedText(shown, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface(button.FontFamily, button.FontStyle, button.FontWeight, button.FontStretch), button.FontSize, Brushes.Black, VisualTreeHelper.GetDpi(button).PixelsPerDip);
+                        var room = button.ActualWidth - button.Padding.Left - button.Padding.Right - button.BorderThickness.Left - button.BorderThickness.Right;
+                        Require(room >= ink.WidthIncludingTrailingWhitespace - 0.5, $"{narrowLabel}: the delete label \"{shown}\" reads in full ({Math.Round(ink.WidthIncludingTrailingWhitespace, 1)} in {Math.Round(room, 1)})");
+                    }
+                    vm.LeaveImageEditCommand.Execute(null);
+                    narrowWindow.Close();
+                    report.Add(narrowLabel);
                 }
                 UiText.SetLanguage("vi");
                 UiAppearance.Scale = 1;

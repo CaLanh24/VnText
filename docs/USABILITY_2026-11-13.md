@@ -79,3 +79,19 @@ Design notes: the table has no forced minimum height; its three-row floor is mea
 ### V4/V5 corrections after independent review (2026-11-15)
 - V4: `AppJournalStore.Level` no longer searches for `[error]`/`[warning]`/`[stderr]`/`scan_errors` anywhere in a line; page and saved journal both use `LogSeverityConverter.ClassifyText`, which normalises only leading timestamp/task wrappers, honours a leading `[stderr]` producer tag, and treats `scan_errors>0` only inside the `Unity analyzer:` envelope. Quoted source text carrying such tokens stays INFO in both places (`--v-batch-fixture`).
 - V5: a parseable report whose images all failed (producer semantics in `vntext/image_batch.py`: failed OCR keeps status `UNTRANSLATED` with no `text_detected`) is `ImagePageKind.ScanFailed` (recovery action, no counts, manual editor kept), not the completed NO_TEXT state; a report whose images are all `NO_TEXT` stays completed. The fixture report helper now mirrors the producer (it had marked every non-NO_TEXT item `text_detected=true`, which made the failed case internally inconsistent). Report/hash/OCR guards are unchanged.
+
+## Fresh review N1–N10 (2026-11-15, base `168354484d1e`)
+Report `TEST_RUN/agent-evidence/fresh15-review-report.{html,json}`; V1–V7 acceptance is preserved (`vqa15-independent-acceptance.json`).
+
+| Finding | Change | Files | Regression |
+|---|---|---|---|
+| N1 header | The compact header serves the CSV page only (`PageHeaderCompact` = compact AND tab == editcsv); other workflow pages keep the incumbent 38/32 DIP rhythm; `SelectedTab` raises it | `ViewModels/MainViewModel.CsvEditor.cs`, `MainViewModel.cs` | `--n15-fixture` (after fold + resize round trip) |
+| N2 scroll thumb | `PageScrollViewer` is `Auto` on the existing overlay scroller (no gutter, no width jump); CSV grid/virtualization untouched | `MainWindow.xaml` | `--n15-fixture` |
+| N3 OCR grid | Fixed action columns reserve measured width (`Auto` + `MinWidth`), text columns give way, source wraps with a tooltip, horizontal scroll is the fallback; font size unchanged | `Controls/ImageWorkspacePanel.xaml` | `--region-grid-fixture` (EN/UI120, dialog widths AND the real ~590-unit card width) |
+| N4 OCR checkbox | Approved display/editing use the scoped `CsvRowCheckBoxStyle`; binding and commit semantics unchanged | same | `--region-grid-fixture` (tokens, toggle, Space, disabled, Light/Dark) |
+| N5 English | Root causes: `CsvCheckedText` had no dynamic localizer; picker titles lacked catalog keys; the new hint/menu strings are catalogued (no duplicate keys); CSV/game content is never localized | `MainWindow.xaml`, `Services/UiText.cs`, `WpfPathPickerService.cs` | `--n15-fixture` EN |
+| N6 image identity | The chosen image's name (full path tooltip) shows in the manual editor before OCR; no OCR/review state is reused | `MainViewModel.ImageText.cs`, `ImageWorkspacePanel.xaml` | `--n15-fixture` |
+| N7 patch source | `HasPatchSource` (exists) gates `RunPatchCommand`; a localized hint explains the missing/absent source; `RunPatch` keeps its guard; valid-subset path unchanged | `MainViewModel.cs`, `MainWindow.xaml` | `--n15-fixture`; patch preflight tests set an existing source |
+| N8 picker | Folder and asset-file are two explicit routes (small menu on "Chọn..."); Cancel returns null and opens nothing else | `Services/*PathPickerService.cs`, `MainWindow.InputChoice.cs`, `MainViewModel.Paths.cs` | `--n15-fixture`; pin test |
+| N9 names | Localized, distinct accessible names for the source/output Open/Choose buttons | `MainWindow.xaml`, `UiText.cs` | `--n15-fixture` |
+| N10 journal | "Xóa tìm kiếm / Clear search" vs "Xóa nhật ký / Delete log" with a tooltip; the file-deletion confirmation is unchanged | `JournalWindow.cs` | `--n15-fixture` |

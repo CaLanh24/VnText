@@ -39,7 +39,7 @@ public sealed partial class MainViewModel
         Raise(nameof(LocalProcessingLabel)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(ToastMessage));
         // Computed status lines are re-read so a language switch never leaves a stale-language sentence (readiness, workflow, analysis, patch card).
         Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText)); Raise(nameof(TranslateProgressSubtitle));
-        Raise(nameof(AnalyzeNextActionText)); Raise(nameof(PatchStatusText)); Raise(nameof(PatchBlockedLabel)); Raise(nameof(ExtractStatusText)); Raise(nameof(OutputDisplay));
+        Raise(nameof(AnalyzeNextActionText)); Raise(nameof(PatchSourceHint)); Raise(nameof(CsvCheckedText)); Raise(nameof(PatchStatusText)); Raise(nameof(PatchBlockedLabel)); Raise(nameof(ExtractStatusText)); Raise(nameof(OutputDisplay));
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
         Raise(nameof(ResourceStatus)); Raise(nameof(ProgressSubtitle)); RefreshExtractLogLanguage();

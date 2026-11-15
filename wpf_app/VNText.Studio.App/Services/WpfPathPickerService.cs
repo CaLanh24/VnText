@@ -21,12 +21,14 @@ public sealed class WpfPathPickerService : IPathPickerService
             Title = UiText.Translate("Chọn thư mục game"),
             Multiselect = false,
         };
-        if (folderDlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(folderDlg.FolderName))
-            return folderDlg.FolderName;
+        return folderDlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(folderDlg.FolderName) ? folderDlg.FolderName : null;
+    }
 
+    public string? PickInputAssetFile()
+    {
         var fileDlg = new OpenFileDialog
         {
-            Title = UiText.Translate("Hoặc chọn file asset / bundle"),
+            Title = UiText.Translate("Chọn file asset / bundle"),
             CheckFileExists = true,
         };
         return fileDlg.ShowDialog() == true ? fileDlg.FileName : null;

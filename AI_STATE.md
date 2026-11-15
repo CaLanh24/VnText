@@ -1,11 +1,14 @@
-# Current checkpoint — UI batch V1–V7, 2026-11-14
+# Current checkpoint — UI batches V1–V7 (accepted) and N1–N10, 2026-11-15
 
 ## Authority / writer
 Owner requested the independent QA findings V1–V7 (`TEST_RUN/agent-evidence/uiqa1114-review.json`) fixed as ONE batch on clean `e41df9c`, keeping every KEEP/FREEZE guard (CSV Save/CAS/dirty, selected MT/delete/exclusion rollback, bulk preview/apply/undo, partial patch/readback, source/schema/placeholder/identity guards, native cancel/retry PASS on `e41df9c`). No push/release/tag/version change, no real game, no Owner app/data.
 Writer: the fixed Claude DEV (agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`) recovered from the quota failure (Owner correction 2026-11-15) and is again the sole source writer and sole UI owner; Root stops mutations/UI. Root's temporary review corrections (V4 anchored severity shared by page and saved journal; V5 ScanFailed state) were reconciled by DEV into the next commit. DEV PASS is not independent QA acceptance. Evidence: ignored receipts under `TEST_RUN/agent-evidence/` (`v-batch-*`, `vbatch-live/`, `vbatch-root-*`); verify actual outcome there.
 Git: per-command `git -c user.name=Calanh -c user.email=316325487+CaLanh24@users.noreply.github.com commit`; Git config is never edited.
 
-## Batch content (source map in docs/USABILITY_2026-11-13.md, section "UI batch V1–V7")
+## Current task: fresh review N1–N10 (base `168354484d1e`, one batch, same DEV)
+Owner asked to fix the whole fresh N1–N10 report (`TEST_RUN/agent-evidence/fresh15-review-report.{html,json}`); V1–V7 were independently accepted (`vqa15-independent-acceptance.json`) and stay frozen. Source map and regressions: docs/USABILITY_2026-11-13.md section "Fresh review N1–N10" (`--n15-fixture`, extended `--region-grid-fixture`). Native proof, hashes and cleanup are in the ignored receipts `TEST_RUN/agent-evidence/n15-*`; verify those, not this text.
+
+## Batch content V1–V7 (source map in docs/USABILITY_2026-11-13.md, section "UI batch V1–V7")
 - V1 CSV table budget: layout is measured (`MainWindow.CsvLayout.cs`, `Services/CsvEditorLayoutBudget.cs`) after UI scaling with the real, possibly wrapped toolbars; the table has no forced MinHeight; when it cannot keep header + three single-line rows the find/replace group folds into one bar (explicit "Mở rộng"), an opened group scrolls inside a cap that keeps the floor; selection/typed text are view-model state and survive.
 - V2 shared label row/input row for find/replace. V3 scoped `CsvRowCheckBoxStyle` (token brushes, one-line row height kept). V4 typed journal severity (explicit INFO/DEBUG/WARN/ERROR from producers; one anchored classifier for page and saved journal; tags/counters embedded in quoted source text stay INFO; historic logs untouched). V5 typed Images page states (NoSource/NoOutput/NoReport/Unreadable/ScanFailed/NoText/Results; failed images are never reported as a completed NO_TEXT scan) from the package report, long help behind "Chi tiết", manual editor kept. V6 About destination idle border = `CardBorderBrush`. V7 `ImageIconGeometry` for the Images nav item.
 

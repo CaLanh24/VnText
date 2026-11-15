@@ -18,7 +18,9 @@ public sealed partial class MainViewModel
     private JsonElement _renderedDocument;
     private ImageSource? _imagePreview;
     private BitmapSource? _imageSourcePreview;
-    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); RaiseImageContentState(); } } }
+    public string ImageFileName => string.IsNullOrWhiteSpace(_imagePath) ? "" : Path.GetFileName(_imagePath);
+    public bool ImageHasSelectedFile => !string.IsNullOrWhiteSpace(_imagePath);
+    public string ImagePath { get => _imagePath; set { if (Set(ref _imagePath, value)) { Raise(nameof(ImageFileName)); Raise(nameof(ImageHasSelectedFile)); _renderedImage = ""; _imagePackage = ""; _renderedDocument = default; _imageDocument = null; _imageSourcePreview = null; ImageRegions.Clear(); SelectedImageRegion = null; ImagePreview = null; RefreshImageCommands(); RaiseImageContentState(); } } }
     public string ImageStatus { get => _imageStatus; private set { if (Set(ref _imageStatus, value)) Raise(nameof(ImageShowStatus)); } }
     /// <summary>The initial manual-OCR hint is shown only in the edit view; any real status (task result, error) is shown in both views.</summary>
     public bool ImageShowStatus => _imageEditMode || _imageStatus != DefaultImageStatus;

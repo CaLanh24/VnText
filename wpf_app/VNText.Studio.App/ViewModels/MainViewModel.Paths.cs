@@ -27,14 +27,21 @@ public sealed partial class MainViewModel
         LoadCsvEditor(CsvEditorPath, reload: true);
         return true;
     }
-    private async void ChooseInput()
+    private void ChooseInput() => ApplyChosenInput(_pathPicker.PickInputPath);
+    private void ChooseInputAsset() => ApplyChosenInput(_pathPicker.PickInputAssetFile);
+
+    private async void ApplyChosenInput(Func<string?> pick)
     {
         if (Busy) return;
-        var path = _pathPicker.PickInputPath();
+        var path = pick();                                    // Cancel/Escape returns null: nothing else opens, nothing is analysed or extracted
         if (!string.IsNullOrWhiteSpace(path) && !string.Equals(path, InputPath, StringComparison.OrdinalIgnoreCase)
             && await ConfirmCsvBeforeSourceChangeAsync())
             InputPath = path;
     }
+
+    /// <summary>The source "Chọn..." affordance offers the two supported routes explicitly (folder / asset file); the window shows the small menu.</summary>
+    internal event Action<object?>? InputChoiceRequested;
+    internal void TestRequestInputChoice(object? anchor) => InputChoiceRequested?.Invoke(anchor);
 
     private async void ChooseOutput()
     {

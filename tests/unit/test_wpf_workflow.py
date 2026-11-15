@@ -929,9 +929,14 @@ class WpfWorkflowTests(unittest.TestCase):
 
     def test_path_picker_cancellation_does_not_prompt_about_or_discard_csv_edits(self):
         paths = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Paths.cs").read_text(encoding="utf-8")
-        input_method = paths.split("private async void ChooseInput()", 1)[1].split("private async void ChooseOutput()", 1)[0]
+        # N8: folder and asset-file are two explicit routes sharing ONE apply method; Cancel (null) never reaches the CSV prompt and opens no second picker.
+        self.assertIn("private void ChooseInput() => ApplyChosenInput(_pathPicker.PickInputPath);", paths)
+        self.assertIn("private void ChooseInputAsset() => ApplyChosenInput(_pathPicker.PickInputAssetFile);", paths)
+        input_method = paths.split("private async void ApplyChosenInput(Func<string?> pick)", 1)[1].split("private async void ChooseOutput()", 1)[0]
         output_method = paths.split("private async void ChooseOutput()", 1)[1].split("private void ChooseTranslationCsv()", 1)[0]
-        for method, picker in ((input_method, "PickInputPath"), (output_method, "PickOutputFolder")):
+        picker_service = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "WpfPathPickerService.cs").read_text(encoding="utf-8")
+        self.assertNotIn("OpenFileDialog", picker_service.split("public string? PickInputPath()", 1)[1].split("public string? PickInputAssetFile()", 1)[0])
+        for method, picker in ((input_method, "pick()"), (output_method, "PickOutputFolder")):
             self.assertLess(method.index(picker), method.index("ConfirmCsvBeforeSourceChange"))
             self.assertIn("!string.IsNullOrWhiteSpace(path)", method)
             self.assertIn("StringComparison.OrdinalIgnoreCase", method)
@@ -1158,7 +1163,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # Compact main grid; crop/font/colour/background options are in a labelled detail form bound to the selection.
         self.assertIn("SelectedItem=\"{Binding SelectedImageRegion", panel)
         grid_xaml = panel[panel.index('x:Name="RegionGrid"'):panel.index("</DataGrid>")]
-        self.assertLessEqual(grid_xaml.count("<DataGridTextColumn") + grid_xaml.count("<DataGridCheckBoxColumn") + grid_xaml.count("<DataGridTemplateColumn "), 5)
+        self.assertLessEqual(grid_xaml.count("<DataGridTextColumn ") + grid_xaml.count("<DataGridCheckBoxColumn ") + grid_xaml.count("<DataGridTemplateColumn "), 5)
         for field in ("X", "Y", "Width", "Height", "FontSize", "Background", "Foreground", "DonorX", "DonorY"):
             self.assertIn("Text=\"{Binding " + field + ",", panel)
         # The candidate source cannot change while a task runs, cancellation is its own state, and a cancelled/failed OCR keeps the source.
@@ -1347,7 +1352,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("x:Name=\"PatchRecheckNote\"", xaml)
         self.assertIn("patchArtifactCurrent && Directory.Exists(patchDir)", (app / "Services" / "WorkflowStatus.cs").read_text(encoding="utf-8"))
         self.assertIn("void FitFooter()", (app / "JournalWindow.cs").read_text(encoding="utf-8"))
-        self.assertIn("<DataGridTemplateColumn Header=\"XÓA\" Width=\"96\">", panel)
+        self.assertIn("<DataGridTemplateColumn Header=\"XÓA\" Width=\"Auto\" MinWidth=\"112\">", panel)       # N3: reserved measured width, not a fixed 96
         self.assertNotRegex(csv_vm, r"\n\s{8}TranslationCsvPath = path;\s*\n\s*var unchanged")
 
     def test_wpf_workflow_harness_passes(self):
@@ -1501,6 +1506,9 @@ class WpfWorkflowTests(unittest.TestCase):
             v_batch_proc = _run_harness(harness_env, artifacts_root, ["--v-batch-fixture"])
             self.assertEqual(0, v_batch_proc.returncode, (v_batch_proc.stdout or "") + (v_batch_proc.stderr or ""))
             self.assertIn("WPF V-batch fixture: PASS", v_batch_proc.stdout)
+            n15_proc = _run_harness(harness_env, artifacts_root, ["--n15-fixture"])
+            self.assertEqual(0, n15_proc.returncode, (n15_proc.stdout or "") + (n15_proc.stderr or ""))
+            self.assertIn("WPF N1-N10 fixture: PASS", n15_proc.stdout)
             transition_proc = _run_harness(harness_env, artifacts_root, ["--update-window-transition-fixture"])
             self.assertEqual(0, transition_proc.returncode, (transition_proc.stdout or "") + (transition_proc.stderr or ""))
             self.assertIn("WPF update window transition fixture: PASS", transition_proc.stdout)

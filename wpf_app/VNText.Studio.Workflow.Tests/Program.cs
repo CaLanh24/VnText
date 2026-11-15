@@ -47,6 +47,8 @@ internal static partial class Program
             return RunCsvBudgetFixture();
         if (args.Contains("--v-batch-fixture", StringComparer.Ordinal))
             return RunVBatchFixture();
+        if (args.Contains("--n15-fixture", StringComparer.Ordinal))
+            return RunN15Fixture();
         if (args.Contains("--update-window-success-fixture", StringComparer.Ordinal))
             return RunUpdateWindowSuccessFixture();
         if (args.Contains("--update-window-transition-fixture", StringComparer.Ordinal))
@@ -1728,6 +1730,7 @@ internal static partial class Program
         using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root };
         vm.NavigateTabCommand.Execute("patch");
         vm.ChooseTranslationCsvCommand.Execute(null);
+        vm.InputPath = root;                                                  // N7: the primary action also needs an existing source (the owned fixture folder)
         if (vm.ReadyForPatch != build) throw new InvalidOperationException(name + ": ReadyForPatch expected " + build + " (" + vm.PatchPreflightMessage + ")");
         if (vm.PatchPreflightOk != build) throw new InvalidOperationException(name + ": PatchPreflightOk expected " + build + " (" + vm.PatchPreflightMessage + ")");
         if (vm.RunPatchCommand.CanExecute(null) != build) throw new InvalidOperationException(name + ": Create Patch command expected enabled=" + build);
@@ -2569,6 +2572,7 @@ internal static partial class Program
             Directory.Delete(emptyFolder, true);
             vm.ChooseTranslationCsvCommand.Execute(null);                       // A: current preflight is ready
             AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
+            vm.InputPath = packageA;                                             // N7: Build patch also needs an EXISTING game/asset source
             AssertTrue(vm.RunPatchCommand.CanExecute(null) || vm.Busy);
             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));   // source changed, nothing checked yet
             AssertEqual("stale", vm.PatchBadgeKind); AssertEqual("CẦN KIỂM TRA LẠI", vm.PatchBadgeText);
@@ -6180,6 +6184,9 @@ internal static partial class Program
         public string? RenpySdkFolder { get; set; }
         public int InputPicks { get; private set; }
         public string? PickInputPath() { InputPicks++; return InputPath; }
+        public string? AssetFile { get; set; }
+        public int AssetPicks { get; private set; }
+        public string? PickInputAssetFile() { AssetPicks++; return AssetFile; }
         public string? PickOutputFolder() => OutputFolder;
         public string? LastCsvTitle { get; set; }
         public string? PickTranslationCsvFile(string? title = null) { LastCsvTitle = title; return TranslationCsv; }

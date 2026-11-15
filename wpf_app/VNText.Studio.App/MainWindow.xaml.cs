@@ -54,6 +54,7 @@ public partial class MainWindow : Window
             vm.ExitAfterTaskRequested += OnExitAfterTaskRequested;
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
             HookExtractLogFollow(vm);
+            vm.InputChoiceRequested += ShowInputChoiceMenu;
             vm.ImageWorkspaceRequested += () =>
             {
                 vm.NavigateTab(WorkflowTabs.Images);

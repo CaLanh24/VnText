@@ -108,12 +108,12 @@ internal sealed class JournalWindow : Window
         var placeholder=new TextBlock{Text="Tìm trong nhật ký",IsHitTestVisible=false,Foreground=B("MutedBrush"),Margin=new Thickness(12,0,0,0),VerticalAlignment=VerticalAlignment.Center};search.Children.Add(placeholder);
         _query.TextChanged+=(_,_)=>placeholder.Visibility=_query.Text.Length==0 ? Visibility.Visible : Visibility.Collapsed;
         _regex.Margin=new Thickness(12,0,8,0);Grid.SetColumn(_regex,1);search.Children.Add(_regex);
-        var reset=Button("Xóa",()=>_query.Clear());reset.IsEnabled=false;_query.TextChanged+=(_,_)=>reset.IsEnabled=_query.Text.Length>0;Grid.SetColumn(reset,2);search.Children.Add(reset);
+        var reset=Button("Xóa tìm kiếm",()=>_query.Clear());reset.ToolTip=UiText.Translate("Chỉ xóa nội dung ô tìm kiếm; không xóa nhật ký.");reset.IsEnabled=false;_query.TextChanged+=(_,_)=>reset.IsEnabled=_query.Text.Length>0;Grid.SetColumn(reset,2);search.Children.Add(reset);
         var terminal=new Border{Background=_content.Background,CornerRadius=new CornerRadius(9),ClipToBounds=true,Child=_content};Grid.SetRow(terminal,3);body.Children.Add(terminal);terminal.SizeChanged+=(_,_)=>terminal.Clip=new RectangleGeometry(new Rect(0,0,terminal.ActualWidth,terminal.ActualHeight),9,9);
         var footer=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(20,20,28,20)};
         var footerSurface=new Border{Child=footer,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(0,0,AppDialogWindow.CardRadius,AppDialogWindow.CardRadius),BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,1,0,0)};Grid.SetRow(footerSurface,2);grid.Children.Add(footerSurface);
         footer.Children.Add(Button("Đóng",Close));footer.Children.Add(Button("Làm mới",Refresh));
-        footer.Children.Add(Button("Xóa",()=>
+        footer.Children.Add(Button("Xóa nhật ký",()=>
         {
             if(_files.SelectedItem is string name && AppDialogService.Show(UiText.Msg("Xóa tệp nhật ký {0}?", name),"Nhật ký",MessageBoxButton.YesNo,MessageBoxImage.Question,this)==MessageBoxResult.Yes){_store.Clear(name);Refresh();}
         }));

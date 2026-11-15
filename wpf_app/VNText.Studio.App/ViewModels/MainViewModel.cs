@@ -176,11 +176,13 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
-        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && (ReadyForPatch || CanPatchSafeSubset));
+        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && HasPatchSource && (ReadyForPatch || CanPatchSafeSubset));
         RunPatchSafeSubsetCommand = new RelayCommand(_ => RunPatchSafeSubset(), _ => CanPatchSafeSubset);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);
         ChooseInputCommand = new RelayCommand(_ => ChooseInput(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
+        ChooseInputAssetCommand = new RelayCommand(_ => ChooseInputAsset(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
+        ChooseInputMenuCommand = new RelayCommand(anchor => InputChoiceRequested?.Invoke(anchor), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
         ChooseOutputCommand = new RelayCommand(_ => ChooseOutput(), _ => !Busy && !CsvEditorLoading && !CsvEditorSaving);
         OpenInputCommand = new RelayCommand(_ => OpenInput(), _ => CanOpenInput());
         OpenOutputCommand = new RelayCommand(_ => OpenOutput(), _ => CanOpenOutput());
@@ -223,6 +225,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             if (Set(ref _selectedTab, value))
             {
                 UpdateHeroForTab();
+                RaisePageHeaderForTab();
                 SelectPersistentErrorForPage();
                 if (value == WorkflowTabs.Images)
                     RefreshImageWorkspace();
@@ -253,8 +256,22 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 OpenInputCommand?.RaiseCanExecuteChanged();
                 AnalyzeCommand?.RaiseCanExecuteChanged();
                 RefreshImageCommands();
+                RaisePatchSource();
             }
         }
+    }
+
+    // N7: the patch needs a game/asset source that EXISTS; without one the primary action is disabled and the page says what to do (the execution guard in
+    // RunPatch stays as defense).  Raised whenever the source changes.
+    public bool HasPatchSource => !string.IsNullOrWhiteSpace(_inputPath) && (Directory.Exists(_inputPath.Trim().Trim('"')) || File.Exists(_inputPath.Trim().Trim('"')));
+    public string PatchSourceHint => HasPatchSource ? ""
+        : string.IsNullOrWhiteSpace(_inputPath) ? "Chọn game hoặc asset ở bước Lấy text để tạo patch."
+        : "Không tìm thấy game/asset đã chọn; chọn lại ở bước Lấy text.";
+    public bool PatchSourceHintVisible => !HasPatchSource;
+    private void RaisePatchSource()
+    {
+        Raise(nameof(HasPatchSource)); Raise(nameof(PatchSourceHint)); Raise(nameof(PatchSourceHintVisible));
+        RunPatchCommand?.RaiseCanExecuteChanged();
     }
 
     public string OutputPath
@@ -786,6 +803,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 Raise(nameof(TranslateWorkflowStatusText));
                 RunExtractCommand.RaiseCanExecuteChanged();
                 ChooseInputCommand.RaiseCanExecuteChanged();
+                ChooseInputAssetCommand?.RaiseCanExecuteChanged();
+                ChooseInputMenuCommand?.RaiseCanExecuteChanged();
                 ChooseOutputCommand.RaiseCanExecuteChanged();
                 ChooseRenpySdkCommand.RaiseCanExecuteChanged();
                 AnalyzeCommand.RaiseCanExecuteChanged();
@@ -889,6 +908,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public RelayCommand CancelAndExitCommand { get; }
     public event EventHandler? ExitAfterTaskRequested;
     public RelayCommand ChooseInputCommand { get; }
+    public RelayCommand ChooseInputAssetCommand { get; private set; } = null!;
+    public RelayCommand ChooseInputMenuCommand { get; private set; } = null!;
     public RelayCommand ChooseOutputCommand { get; }
     public RelayCommand OpenInputCommand { get; }
     public RelayCommand OpenOutputCommand { get; }

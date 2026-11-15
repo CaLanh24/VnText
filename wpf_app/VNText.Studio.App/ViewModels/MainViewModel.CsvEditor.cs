@@ -165,8 +165,12 @@ public sealed partial class MainViewModel
     // Native repro (0.1.17 / 369adc5, 1043x720 DIP, UI 120%): the visible body is the CLIENT area; page header, card padding, the stacked preview and a 158-unit table
     // minimum left one row.  Low height therefore also tightens the page header and card padding, seats the examples beside the find/replace group, and keeps
     // a table viewport that shows the header plus three ordinary rows.
-    public Thickness PageHeaderMargin => CsvCompact ? new Thickness(0, 8, 0, 2) : new Thickness(0, 38, 0, 32);
-    public double PageHeaderMinHeight => CsvCompact ? 44 : 58;
+    // N1: the compact header serves the CSV table's row floor ONLY; every other workflow page keeps the incumbent header rhythm (the same 38/32 DIP the Settings
+    // header uses), and returning to a page restores it (SelectedTab raises these).
+    private bool PageHeaderCompact => CsvCompact && SelectedTab == WorkflowTabs.EditCsv;
+    public Thickness PageHeaderMargin => PageHeaderCompact ? new Thickness(0, 8, 0, 2) : new Thickness(0, 38, 0, 32);
+    public double PageHeaderMinHeight => PageHeaderCompact ? 44 : 58;
+    internal void RaisePageHeaderForTab() { Raise(nameof(PageHeaderMargin)); Raise(nameof(PageHeaderMinHeight)); }
     public Thickness CsvCardPadding => CsvCompact ? new Thickness(24, 6, 24, 6) : new Thickness(24, 20, 24, 20);
     public Thickness CsvValidationAreaMargin => new(0, CsvCompact ? 0 : 2, 0, 0);
     /// <summary>Height of the "no CSV yet" panel only.  The table itself has NO forced minimum (that pushed it past the window); its three-row floor is guaranteed by the layout budget.</summary>

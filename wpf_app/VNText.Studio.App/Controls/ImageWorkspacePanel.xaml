@@ -122,6 +122,11 @@
             <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
             <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
+        <!-- N6: the chosen image is named (full path in the tooltip) BEFORE any OCR; this is identity only: no OCR/review result is reused or implied. -->
+        <StackPanel x:Name="SelectedImageRow" Orientation="Horizontal" Margin="0,0,0,8" Visibility="{Binding ImageHasSelectedFile, Converter={StaticResource PanelBoolToVis}}">
+            <TextBlock Text="Ảnh đã chọn:" Foreground="{DynamicResource MutedBrush}" Margin="0,0,8,0" />
+            <TextBlock x:Name="SelectedImageName" Text="{Binding ImageFileName}" ToolTip="{Binding ImagePath}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
         <TextBlock Text="2 · Xem lại và duyệt" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <Border x:Name="ImageEmptyState" Style="{StaticResource SubtlePanelBorder}" Padding="16,14" Margin="0,0,0,8"
                 Visibility="{Binding ImageShowEmptyState, Converter={StaticResource PanelBoolToVis}}">
@@ -168,17 +173,45 @@
                   Style="{StaticResource CsvDataGridStyle}" AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single"
                   Height="170" MinRowHeight="32" IsEnabled="{Binding ImageGridEnabled}"
                   Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto"
                   AutomationProperties.Name="Vùng chữ trong ảnh">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="TEXT OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="140" />
-                <DataGridTemplateColumn Header="BẢN DỊCH" Width="1.5*" MinWidth="180">
+                <!-- N3: the fixed action columns reserve their measured label width (Auto + MinWidth) and the flexible text columns give way, so "APPROVED"/"DELETE" and the
+                     Delete button read in full at EN/UI120; the source text wraps like the translation and carries its full text in a tooltip; if even the minima cannot fit
+                     the grid scrolls horizontally instead of clipping labels. -->
+                <DataGridTextColumn Header="TEXT OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="*" MinWidth="96">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="TextWrapping" Value="Wrap" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                            <Setter Property="ToolTip" Value="{Binding SourceText}" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTemplateColumn Header="BẢN DỊCH" Width="1.5*" MinWidth="130">
                     <DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Translation}" TextWrapping="Wrap" VerticalAlignment="Center" /></DataTemplate></DataGridTemplateColumn.CellTemplate>
                     <DataGridTemplateColumn.CellEditingTemplate><DataTemplate><TextBox Style="{StaticResource RegionTranslationEditor}" Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" /></DataTemplate></DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="CHẾ ĐỘ NỀN" Binding="{Binding ModeSummary, Mode=OneWay, Converter={StaticResource UiTextDynamic}}" IsReadOnly="True" Width="*" MinWidth="130" />
-                <DataGridCheckBoxColumn Header="DUYỆT" Binding="{Binding Approved}" Width="80" />
-                <DataGridTemplateColumn Header="XÓA" Width="96">
+                <DataGridTextColumn Header="CHẾ ĐỘ NỀN" Binding="{Binding ModeSummary, Mode=OneWay, Converter={StaticResource UiTextDynamic}}" IsReadOnly="True" Width="*" MinWidth="128" />
+                <!-- N4: the Approved selector uses the scoped themed checkbox (CsvRowCheckBoxStyle) for display AND editing; the binding is unchanged.  The display element keeps the
+                     column's default non-interactive behaviour (a click enters the cell, the editing element toggles). -->
+                <DataGridCheckBoxColumn Header="DUYỆT" Binding="{Binding Approved}" Width="Auto" MinWidth="104">
+                    <DataGridCheckBoxColumn.ElementStyle>
+                        <Style TargetType="CheckBox" BasedOn="{StaticResource CsvRowCheckBoxStyle}">
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                            <Setter Property="IsHitTestVisible" Value="False" />
+                            <Setter Property="Focusable" Value="False" />
+                        </Style>
+                    </DataGridCheckBoxColumn.ElementStyle>
+                    <DataGridCheckBoxColumn.EditingElementStyle>
+                        <Style TargetType="CheckBox" BasedOn="{StaticResource CsvRowCheckBoxStyle}">
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                            <Setter Property="VerticalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridCheckBoxColumn.EditingElementStyle>
+                </DataGridCheckBoxColumn>
+                <DataGridTemplateColumn Header="XÓA" Width="Auto" MinWidth="112">
                     <DataGridTemplateColumn.CellStyle>
                         <!-- The shared cell keeps 12 DIP padding each side, which left the action only 55 DIP: English "Delete" painted as "Dele". This column reserves room for its real labels. -->
                         <Style TargetType="DataGridCell" BasedOn="{StaticResource CsvDataGridCell}"><Setter Property="Padding" Value="4,6" /></Style>
