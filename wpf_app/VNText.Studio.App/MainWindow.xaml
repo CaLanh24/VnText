@@ -1819,17 +1819,20 @@
                                 Command="{Binding AddGlossaryEntryCommand}" IsDefault="True" />
                     </Grid>
                     <Grid Grid.Row="2" Margin="28,16,28,28">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                     <ListBox x:Name="GlossaryListBox" ItemsSource="{Binding GlossaryEntries}"
                              Margin="0" BorderBrush="{DynamicResource LineBrush}"
                              BorderThickness="1" Background="{DynamicResource SurfaceBrush}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                         <ListBox.Style>
                             <Style TargetType="{x:Type ListBox}">
-                                <Setter Property="Height" Value="300" />
+                                <!-- U1: the list yields height to the detail strip inside the card's fixed MaxHeight (a fixed 300 pushed the strip out of view on small windows) -->
+                                <Setter Property="MaxHeight" Value="300" />
+                                <Setter Property="VerticalAlignment" Value="Top" />
+                                <Setter Property="MinHeight" Value="110" />
                                 <Style.Triggers>
                                     <!-- no entries: a compact region that carries its own instruction instead of 300 blank DIP -->
-                                    <DataTrigger Binding="{Binding GlossaryEntries.Count}" Value="0"><Setter Property="Height" Value="150" /></DataTrigger>
+                                    <DataTrigger Binding="{Binding GlossaryEntries.Count}" Value="0"><Setter Property="MaxHeight" Value="150" /><Setter Property="MinHeight" Value="150" /></DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ListBox.Style>
@@ -1844,7 +1847,7 @@
                                 <Grid Margin="8,4" Background="Transparent">
                                     <!-- U1: a clipped pair is readable in full by hover (this tooltip) and by keyboard (selecting the row fills the detail strip under the list). -->
                                     <Grid.ToolTip>
-                                        <ToolTip MaxWidth="460">
+                                        <ToolTip MaxWidth="460" ContentTemplate="{x:Null}">
                                             <StackPanel>
                                                 <TextBlock Text="Từ trong game" FontWeight="SemiBold" />
                                                 <TextBlock Text="{Binding Term}" TextWrapping="Wrap" Margin="0,0,0,6" />

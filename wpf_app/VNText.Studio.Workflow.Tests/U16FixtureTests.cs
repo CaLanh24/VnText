@@ -365,7 +365,7 @@ internal static partial class Program
                         Require(!strip.IsVisible, $"{tag} U1: no detail strip until a row is focused/selected");
                         var firstRow = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
                         var rowGrid = FindVisualChildren<Grid>(firstRow).First(g => g.ToolTip is ToolTip);
-                        var rowTooltip = (ToolTip)rowGrid.ToolTip; rowTooltip.DataContext = rowGrid.DataContext;          // what the tooltip service does when it opens over the row
+                        var rowTooltip = (ToolTip)rowGrid.ToolTip; Require(rowTooltip.ContentTemplate is null && rowTooltip.Content is StackPanel, $"{tag} U1: the tooltip shows its own content (the global ToolTip style would otherwise print the type name)"); rowTooltip.DataContext = rowGrid.DataContext;          // what the tooltip service does when it opens over the row
                         static IEnumerable<TextBlock> LogicalTexts(DependencyObject node) { if (node is TextBlock block) yield return block; foreach (var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>()) foreach (var inner in LogicalTexts(child)) yield return inner; }
                         var tipTexts = LogicalTexts((DependencyObject)rowTooltip.Content).Select(t => t.Text).ToList();
                         Require(tipTexts.Contains(longTerm) && tipTexts.Contains(longTranslation), $"{tag} U1: the tooltip carries both full sides");
@@ -375,6 +375,9 @@ internal static partial class Program
                         Require(strip.IsVisible, $"{tag} U1: keyboard selection opens the detail strip");
                         AssertEqual(longTerm, ((TextBlock)Named("GlossaryDetailTerm")).Text); AssertEqual(longTranslation, ((TextBlock)Named("GlossaryDetailTranslation")).Text);
                         Require(strip.ActualHeight > 40, $"{tag} U1: the strip shows the wrapped pair");
+                        var stripBottom = strip.TranslatePoint(new Point(0, strip.ActualHeight), window).Y;
+                        var card = (FrameworkElement)Named("GlossaryOverlay"); var cardBox = FindVisualChildren<Border>(card).First(b => b.MaxHeight == 610);
+                        Require(stripBottom <= cardBox.TranslatePoint(new Point(0, cardBox.ActualHeight), window).Y + 0.5 && stripBottom <= window.ActualHeight, $"{tag} U1: the strip is inside the dialog card and the window (bottom {stripBottom:0.#}, card {cardBox.ActualHeight:0.#})");
                         var entriesBefore = vm.GlossaryEntries.Count;
                         Require(vm.GlossaryEntries[0].Term == longTerm && vm.GlossaryEntries[0].Translation == longTranslation && vm.GlossaryEntries.Count == entriesBefore, $"{tag} U1: reading changes nothing");
                         list.SelectedIndex = 1; window.UpdateLayout(); PumpFixture(60);
