@@ -613,7 +613,8 @@ class WpfWorkflowTests(unittest.TestCase):
         # (3) image choices follow the theme
         self.assertIn('Foreground="{DynamicResource InkBrush}"', panel)
         self.assertIn('<Style TargetType="RadioButton" BasedOn="{StaticResource ThemedRadioButtonStyle}" />', panel)      # U2: scoped semantic templates, no stock white face
-        self.assertIn('Style="{StaticResource ThemedCheckBoxStyle}"', panel)
+        self.assertIn('x:Key="ApproveBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ThemedCheckBoxStyle}"', panel)      # U3: approval follows the themed template and disables while a draft is invalid
+        self.assertIn('Style="{StaticResource ApproveBoxStyle}"', panel)
         self.assertIn("DisabledForegroundBrush", (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8"))
         # (4) the two Lấy text actions share one row and one centre line; the status has its own row
         self.assertNotIn('x:Name="ExtractImageTextButton"', xaml)         # the image workspace lives only in Translate; Extract has one action
