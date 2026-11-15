@@ -1877,7 +1877,9 @@
                             Background="{DynamicResource FieldBackgroundBrush}" BorderBrush="{DynamicResource CardBorderBrush}"
                             Visibility="{Binding SelectedItem, ElementName=GlossaryListBox, Converter={StaticResource NullToCollapsed}}"
                             AutomationProperties.Name="Chi tiết thuật ngữ đang chọn">
-                        <ScrollViewer MaxHeight="110" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False">
+                        <!-- U1: a pair longer than the strip is read with the keyboard: the viewer is a Tab stop with a focus ring and its own accessible name; arrows/PageUp/PageDown/Home/End scroll IT (the list keeps the selection). -->
+                        <ScrollViewer x:Name="GlossaryDetailScroll" PreviewKeyDown="GlossaryDetailScroll_PreviewKeyDown" MaxHeight="110" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True" IsTabStop="True"
+                                      FocusVisualStyle="{StaticResource KeyboardFocusStyle}" AutomationProperties.Name="Đọc chi tiết thuật ngữ đang chọn (cuộn bằng phím mũi tên)">
                             <StackPanel>
                                 <TextBlock Text="Từ trong game" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
                                 <TextBlock x:Name="GlossaryDetailTerm" Text="{Binding SelectedItem.Term, ElementName=GlossaryListBox}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />

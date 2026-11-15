@@ -320,6 +320,14 @@ public partial class MainWindow : Window
 
     private void GlossaryCloseButton_Click(object sender, RoutedEventArgs e) => CloseGlossaryOverlay();
 
+    // Home/End read the top/bottom of the focused detail viewer (a ScrollViewer maps them to the horizontal extent); the selected pair never changes.
+    private void GlossaryDetailScroll_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not ScrollViewer viewer || Keyboard.Modifiers != ModifierKeys.None) return;
+        if (e.Key == Key.End) { viewer.ScrollToBottom(); e.Handled = true; }
+        else if (e.Key == Key.Home) { viewer.ScrollToTop(); e.Handled = true; }
+    }
+
     private void GlossaryItem_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         if (sender is ListBoxItem item && !item.IsSelected) item.IsSelected = true;

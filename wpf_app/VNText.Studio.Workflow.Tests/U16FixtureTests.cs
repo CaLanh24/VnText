@@ -423,6 +423,34 @@ internal static partial class Program
                         window.UpdateLayout(); PumpFixture(60);
                         Require(strip.IsVisible && list.SelectedIndex == 0, $"{tag} U1: keyboard focus on the row selects it and opens the strip");
                         list.SelectedIndex = -1; window.UpdateLayout(); PumpFixture(60);
+                        // ---- U1 overflow: a pair longer than the strip is read with the KEYBOARD (focusable viewer), without changing the selected pair ----
+                        var hugeTerm = string.Join(" ", Enumerable.Repeat("overflowing-term", 60)); var hugeTranslation = string.Join(" ", Enumerable.Repeat("bản-dịch-rất-dài", 60)) + " CUỐI";
+                        vm.GlossaryEntries.Add(new GlossaryItem(hugeTerm, hugeTranslation));
+                        window.UpdateLayout(); PumpFixture(100);
+                        list.SelectedIndex = vm.GlossaryEntries.Count - 1; window.UpdateLayout(); PumpFixture(150); window.UpdateLayout();
+                        var detail = (ScrollViewer)Named("GlossaryDetailScroll");
+                        Require(detail.ScrollableHeight > 20 && detail.ActualHeight <= 110.5, $"{tag} U1: the long pair overflows the strip and the strip stays bounded ({detail.ScrollableHeight:0.#}/{detail.ActualHeight:0.#})");
+                        Require(detail.Focusable && detail.IsTabStop && detail.FocusVisualStyle is not null && !string.IsNullOrWhiteSpace(System.Windows.Automation.AutomationProperties.GetName(detail)), $"{tag} U1: the detail viewer is a named, focusable Tab stop with a focus visual");
+                        Require(language == "vi" || UiText.Translate(System.Windows.Automation.AutomationProperties.GetName(detail)) != System.Windows.Automation.AutomationProperties.GetName(detail) || System.Windows.Automation.AutomationProperties.GetName(detail).StartsWith("Read", StringComparison.Ordinal), $"{tag} U1: the viewer name is localized");
+                        var cardTab = FindVisualChildren<Border>(card).First(b => b.MaxHeight == 610);
+                        Require(System.Windows.Input.KeyboardNavigation.GetTabNavigation(cardTab) == System.Windows.Input.KeyboardNavigationMode.Cycle && FindVisualChildren<ScrollViewer>(cardTab).Contains(detail), $"{tag} U1: the viewer sits inside the dialog's cycling tab scope (focus stays in the dialog)");
+                        var selectedBefore = list.SelectedItem; var offsetBefore = detail.VerticalOffset;
+                        void Key(System.Windows.Input.Key key)
+                        {
+                            var source = PresentationSource.FromVisual(window)!;
+                            var preview = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
+                            detail.RaiseEvent(preview);                                                                 // real input tunnels first, then bubbles
+                            if (!preview.Handled) detail.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, source, 0, key) { RoutedEvent = System.Windows.Input.Keyboard.KeyDownEvent });
+                            PumpFixture(40);
+                        }
+                        Key(System.Windows.Input.Key.PageDown);
+                        Require(detail.VerticalOffset > offsetBefore + 1, $"{tag} U1: PageDown scrolls the detail ({detail.VerticalOffset:0.#})");
+                        Key(System.Windows.Input.Key.End);
+                        Require(detail.VerticalOffset >= detail.ScrollableHeight - 0.5, $"{tag} U1: End reaches the bottom of the translation ({detail.VerticalOffset:0.#}/{detail.ScrollableHeight:0.#})");
+                        Require(ReferenceEquals(list.SelectedItem, selectedBefore), $"{tag} U1: keyboard reading does not change the selected pair");
+                        Key(System.Windows.Input.Key.Home);
+                        Require(detail.VerticalOffset < 0.5 && vm.GlossaryEntries.Count == 3 && vm.GlossaryEntries[2].Translation == hugeTranslation, $"{tag} U1: Home returns to the top; nothing edited");
+                        vm.GlossaryEntries.RemoveAt(2); list.SelectedIndex = -1; window.UpdateLayout(); PumpFixture(60);
                         Require(FindVisualChildren<Button>(firstRow).Any(b => b.Command == vm.RemoveGlossaryEntryCommand), $"{tag} U1: the delete command stays on the row");
                         ((Button)Named("GlossaryCloseButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); PumpFixture(100);
                         vm.GlossaryEntries.Clear();
