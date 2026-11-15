@@ -605,7 +605,7 @@ public static class UiText
         ["Vùng chữ trong ảnh"] = "Text regions in the image",
         ["TEXT OCR"] = "OCR TEXT",
         ["BẢN DỊCH"] = "TRANSLATION",
-        ["CHẾ ĐỘ NỀN"] = "BACKGROUND MODE",
+        ["CHẾ ĐỘ NỀN"] = "BACKGROUND",
         ["DUYỆT"] = "APPROVED",
         ["XÓA"] = "DELETE",
         ["Xóa vùng"] = "Delete region",

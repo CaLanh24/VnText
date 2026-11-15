@@ -785,6 +785,8 @@
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
+                                        <TextBlock x:Name="PatchSourceHintText" Text="{Binding PatchSourceHint, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                               FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding PatchSourceHintVisible, Converter={StaticResource BoolToVis}}" />
                                         <TextBlock Text="Thư mục xuất / gói dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
@@ -862,8 +864,6 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock x:Name="PatchSourceHintText" Text="{Binding PatchSourceHint, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,16,0"
-                                               FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding PatchSourceHintVisible, Converter={StaticResource BoolToVis}}" />
                                     <Button x:Name="PatchBuildButton" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 

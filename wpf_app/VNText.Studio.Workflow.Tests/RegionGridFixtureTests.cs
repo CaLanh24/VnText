@@ -179,8 +179,8 @@ internal static partial class Program
                     UiText.SetLanguage(language);
                     UiAppearance.Apply(theme, 100);
                     UiAppearance.Scale = 1.2;
-                    var narrowLabel = $"{theme}/{language} native card 590";
-                    var narrowWindow = new Window { Width = 700, Height = 720, Content = new Border { Width = 590, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top } };
+                    var narrowLabel = $"{theme}/{language} native card 566";
+                    var narrowWindow = new Window { Width = 700, Height = 720, Content = new Border { Width = 566, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top } };
                     var narrowPanel = new ImageWorkspacePanel { DataContext = vm };
                     ((Border)narrowWindow.Content).Child = narrowPanel;
                     if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { narrowWindow.WindowStartupLocation = WindowStartupLocation.Manual; narrowWindow.Left = -4000; narrowWindow.Top = 0; narrowWindow.ShowActivated = false; narrowWindow.ShowInTaskbar = false; }
@@ -189,6 +189,7 @@ internal static partial class Program
                     vm.EnterImageEditCommand.Execute(null); narrowWindow.UpdateLayout(); PumpFixture(100);
                     var narrowGrid = (DataGrid)narrowPanel.FindName("RegionGrid");
                     var narrowScroller = FindVisualChildren<ScrollViewer>(narrowGrid).First();
+                    Require(narrowScroller.ScrollableWidth < 1, $"{narrowLabel}: no horizontal scroll is needed at the real card width (scrollable {Math.Round(narrowScroller.ScrollableWidth, 1)})");
                     foreach (var header in FindVisualChildren<System.Windows.Controls.Primitives.DataGridColumnHeader>(narrowGrid).Where(h => h.Content is string))
                     {
                         var text = (string)header.Content;

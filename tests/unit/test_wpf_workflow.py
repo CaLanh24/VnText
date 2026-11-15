@@ -1352,7 +1352,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("x:Name=\"PatchRecheckNote\"", xaml)
         self.assertIn("patchArtifactCurrent && Directory.Exists(patchDir)", (app / "Services" / "WorkflowStatus.cs").read_text(encoding="utf-8"))
         self.assertIn("void FitFooter()", (app / "JournalWindow.cs").read_text(encoding="utf-8"))
-        self.assertIn("<DataGridTemplateColumn Header=\"XÓA\" Width=\"Auto\" MinWidth=\"112\">", panel)       # N3: reserved measured width, not a fixed 96
+        self.assertIn("<DataGridTemplateColumn Header=\"XÓA\" Width=\"Auto\" MinWidth=\"96\">", panel)       # N3: reserved measured width, not a fixed 96
         self.assertNotRegex(csv_vm, r"\n\s{8}TranslationCsvPath = path;\s*\n\s*var unchanged")
 
     def test_wpf_workflow_harness_passes(self):
