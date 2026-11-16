@@ -11,5 +11,8 @@ docs/USABILITY_2026-11-13.md section "Settings header badge (qa-header19)"; regr
 ## Verification and limits
 Evidence (ignored): `TEST_RUN/agent-evidence/qa-header19-*` and `DEV_RUN/bootstrap-build/build-identity.json`; read those receipts, not this text. Pressed/animation NOT PROVEN. Independent QA must re-open the built app.
 
+## Result
+Fix `ad3d7c3` (SettingsHeaderPanel). New candidate source `ad3d7c3b463be18da6294c5e16d7a8d47354e8b3` EXE `b7e9ad48250979c56de2bc0e317643df400158aac7db8ba6f1245208ea8166e0` DLL `e3d0778d51510848d009a2d6a2d7b8ef8b745eb1c0ccae9543ffd62b2b9ce488`; before 12/72 native cells clipped (EN/UI120 small+restore), after 0/72. Receipt `TEST_RUN/agent-evidence/qa-header19-final-receipt.json`. This AI_STATE-only commit does not rebuild the candidate. DEV native PASS is not independent QA.
+
 ## Candidate / retention
 Candidate `DEV_RUN/bootstrap-build/Start-DEV.cmd` (Debug; isolated data under that folder). Owner CSV remains read-only (SHA `8e5d0e849a504b3e8354f676037e2c1ee55aaf5d2635cccb1e9a95a73a1bb0ef`).
