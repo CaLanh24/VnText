@@ -1031,18 +1031,14 @@
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="*" />
                                             </Grid.RowDefinitions>
-                                            <Grid x:Name="SettingsPageHeader" Margin="0,38,0,32">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
+                                            <!-- qa-header19: the status cluster gets its desired width first; the centred tab strip stacks under the title only when a slot would be too small -->
+                                            <ctrl:SettingsHeaderPanel x:Name="SettingsPageHeader" Margin="0,38,0,32">
                                                 <HeaderedContentControl Header="{Binding HeroTitle}" VerticalAlignment="Center" Focusable="False" IsTabStop="False"
                                                                       Template="{StaticResource AboutPageHeaderTemplate}" />
-                                                <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="24" Padding="6" VerticalAlignment="Center" Effect="{StaticResource SettingsSegmentedShadow}">
+                                                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="24" Padding="6" VerticalAlignment="Center" Effect="{StaticResource SettingsSegmentedShadow}">
                                                     <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
                                                 </Border>
-                                                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="16,0,0,0">
                                                     <Button Content="Hủy tác vụ" Style="{StaticResource OutlineButton}" Margin="0,0,10,0" Command="{Binding CancelCommand}" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                                     <Border Background="{DynamicResource GreenSoftBrush}" CornerRadius="12" Padding="13,10">
                                                         <StackPanel Orientation="Horizontal">
@@ -1051,7 +1047,7 @@
                                                         </StackPanel>
                                                     </Border>
                                                 </StackPanel>
-                                            </Grid>
+                                            </ctrl:SettingsHeaderPanel>
                                             <ContentPresenter x:Name="SettingsContentHost" Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" Margin="0,0,10,0" />
                                         </Grid>
                                     </ControlTemplate>
