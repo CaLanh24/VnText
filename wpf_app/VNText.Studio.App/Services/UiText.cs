@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -766,6 +766,7 @@ public static class UiText
         ["Đang kiểm tra tài nguyên…"] = "Checking resources…",
         ["Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ."] = "Resource setup was cancelled; you can download again. Installed resources are kept.",
         ["Đã kiểm tra tài nguyên."] = "Resources checked.",
+        ["Không đọc được trạng thái tài nguyên: {0}"] = "Could not read resource status: {0}",
         ["Tài nguyên đã sẵn sàng."] = "Resources are ready.",
         ["Tài nguyên chưa đầy đủ."] = "Resources are incomplete.",
         ["Chọn ảnh, chạy OCR, sửa và duyệt từng vùng rồi dựng ảnh."] = "Choose an image, run OCR, edit and approve each region, then render.",

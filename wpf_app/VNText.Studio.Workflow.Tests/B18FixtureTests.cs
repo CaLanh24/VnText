@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text;
 using VNText.Studio.App.Models;
 using VNText.Studio.App.Services;
@@ -24,7 +24,10 @@ internal static partial class Program
                 var work = Path.Combine(TestTempRoot(), "b18_" + Guid.NewGuid().ToString("N"));
                 Directory.CreateDirectory(work);
                 var game = Path.Combine(work, "game"); Directory.CreateDirectory(game);
-                var statusFile = Path.Combine(WorkerPaths.AppDataRoot(), "resource-status.json");
+                var previousDataRoot = Environment.GetEnvironmentVariable("VNTEXT_DATA_ROOT");
+                var workerDataRoot = Path.Combine(work, "worker-data");
+                Environment.SetEnvironmentVariable("VNTEXT_DATA_ROOT", workerDataRoot);
+                var statusFile = Path.Combine(workerDataRoot, "resource-status.json");
                 Directory.CreateDirectory(Path.GetDirectoryName(statusFile)!);
                 var previousStatusFile = File.Exists(statusFile) ? File.ReadAllBytes(statusFile) : null;
                 string Report(bool ready) => "{\"resources\":[{\"resource\":\"model\",\"ready\":" + (ready ? "true" : "false") + ",\"path\":\"x\",\"error\":\"missing\"},{\"resource\":\"renpy\",\"ready\":" + (ready ? "true" : "false") + ",\"path\":\"y\",\"error\":\"missing\"}]}";
@@ -95,6 +98,18 @@ internal static partial class Program
                         vmMissing.TestClaimResourcesStatus(false); Finish(vmMissing, true);
                         Require(vmMissing.StatusText == "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." && vmMissing.ResourcesNeedRecovery, $"{language} Q1: a completed check that finds missing resources says so (not 'ready', not running)");
 
+                        // A successful worker event cannot hide a missing or malformed report.
+                        foreach (var malformed in new[] { false, true })
+                        {
+                            if (malformed) File.WriteAllText(statusFile, "{}", new UTF8Encoding(false));
+                            else File.Delete(statusFile);
+                            using var vmUnreadable = Fresh("Sẵn sàng");
+                            vmUnreadable.TestClaimResourcesStatus(false); Finish(vmUnreadable, true);
+                            Require(vmUnreadable.ResourcesNeedRecovery && !vmUnreadable.ResourcesAllReady, "unreadable report clears stale readiness");
+                            Require(vmUnreadable.ResourceStatus.StartsWith(language == "vi" ? "Không đọc được trạng thái tài nguyên:" : "Could not read resource status:", StringComparison.Ordinal), "read failure has a localized diagnostic, not a successful summary");
+                        }
+                        File.WriteAllText(statusFile, Report(true), new UTF8Encoding(false));
+
                         // ---- cancel ----
                         var vmCancel = Fresh("Sẵn sàng");
                         vmCancel.TestClaimResourcesStatus(true);
@@ -137,6 +152,7 @@ internal static partial class Program
                     using (var restore = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false)) { restore.Language = "vi"; restore.Theme = "light"; restore.UiScale = 1; }      // the isolated settings return to the defaults (later fixtures read them)
                     if (previousStatusFile is null) { try { File.Delete(statusFile); } catch (IOException) { } } else File.WriteAllBytes(statusFile, previousStatusFile);
                     try { Directory.Delete(work, true); } catch (IOException) { }
+                    Environment.SetEnvironmentVariable("VNTEXT_DATA_ROOT", previousDataRoot);
                     app.Shutdown();
                 }
             }

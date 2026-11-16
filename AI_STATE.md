@@ -2,7 +2,7 @@
 
 ## Authority / writer
 Owner assigned ONE batch B1+Q1 from `TEST_RUN/agent-evidence/b18-whole-border-review.{html,json}` on clean `3deca67`: scoped idle stroke families for inputs (#E2E3E5/#394352) and selects (#D3D7DE/#445266), never changing `CtrlBorderBrush`; and the resources task terminal status on Extract. R1/R2 stay frozen. No release/push/tag/version, no game/Owner CSV writes, no download/install. Old u16-focused / r17b-focused roots are policy-blocked: not reused, not retried.
-Writer: the fixed Claude DEV (agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`) is sole source writer and sole UI owner; Root reviews. DEV PASS is not QA acceptance.
+Writer: Root temporarily owns source/UI after fixed DEV hit explicit quota (429; reset 2026-11-16 20:20 JST; cursor 1900). Return at safe recovery boundary. Fixed Claude DEV (agent `72329c3d-5883-4cc8-8d14-60c73886ebd3`, session `76922e45-71b2-47a9-be97-cf18b927ae26`) remains the only DEV session; no parallel writer. DEV PASS is not QA acceptance.
 Git: per-command `git -c user.name=Calanh -c user.email=316325487+CaLanh24@users.noreply.github.com commit`; Git config is never edited.
 
 ## Scope and map
@@ -13,3 +13,5 @@ Evidence (ignored): `TEST_RUN/agent-evidence/b18-*` and `DEV_RUN/bootstrap-build
 
 ## Candidate / retention
 Candidate `DEV_RUN/bootstrap-build/Start-DEV.cmd` (Debug; isolated data under that folder). Owner CSV remains read-only (SHA `8e5d0e849a504b3e8354f676037e2c1ee55aaf5d2635cccb1e9a95a73a1bb0ef`).
+
+Root correction: real cancel/ack/watchdog ownership fixed at eea681b; focused gates and native report-root mismatch evidence under `TEST_RUN/agent-evidence/b18-root-*`. Current Q1 correction reads resource report from configured VNTEXT_DATA_ROOT and shows report-read errors; focused/native verification pending. No downloads or Owner CSV writes.

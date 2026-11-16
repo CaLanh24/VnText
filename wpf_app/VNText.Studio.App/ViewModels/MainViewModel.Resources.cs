@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 using VNText.Studio.App.Services;
 
@@ -108,7 +108,9 @@ public sealed partial class MainViewModel
         ResourceStatus = evt.Summary ?? "Đã kiểm tra tài nguyên.";
         try
         {
-            using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(WorkerPaths.AppDataRoot(), "resource-status.json")));
+            var dataRoot = Environment.GetEnvironmentVariable("VNTEXT_DATA_ROOT");
+            if (string.IsNullOrWhiteSpace(dataRoot)) dataRoot = WorkerPaths.AppDataRoot();
+            using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(dataRoot, "resource-status.json")));
             var lines = new List<string>();
             var allReady = true; var count = 0;
             foreach (var resource in report.RootElement.GetProperty("resources").EnumerateArray())
@@ -127,7 +129,13 @@ public sealed partial class MainViewModel
                 : "Còn thiếu hoặc hỏng tài nguyên — dùng “Sửa/tải tài nguyên còn thiếu”. Phần đã cài được giữ nguyên.\n" + string.Join("\n", lines.Where(line => line.Contains("Chưa sẵn sàng")));
             RaiseResourceReadiness();
         }
-        catch (Exception ex) when (ex is IOException or JsonException or InvalidOperationException) { AppendLog("Không đọc được trạng thái tài nguyên: " + ex.Message, "WARN"); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or KeyNotFoundException)
+        {
+            _resourcesChecked = true; _resourcesAllReady = false;
+            ResourceStatus = UiText.Msg("Không đọc được trạng thái tài nguyên: {0}", ex.Message);
+            RaiseResourceReadiness();
+            AppendLog(ResourceStatus, "WARN");
+        }
         if (!evt.Ok) { ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);
