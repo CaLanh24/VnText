@@ -59,7 +59,29 @@ public sealed partial class MainViewModel
     {
         if (Busy) return;
         ResourceStatus = download ? "Đang chuẩn bị tài nguyên… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra tài nguyên…";
+        _statusBeforeResources = StatusText;                 // Q1: what the status line said before this task claimed it
         BeginTask("resources", new { download }, ResourceStatus);
+        _resourcesRunningStatus = StatusText;                // the exact text THIS task published (identity of its ownership)
+    }
+    private string _statusBeforeResources = "", _resourcesRunningStatus = "";
+    /// <summary>Test seam for the status ownership of <see cref="StartResources"/> without a worker (BeginTask publishes the label as StatusText).</summary>
+    internal void TestClaimResourcesStatus(bool download)
+    {
+        ResourceStatus = download ? "Đang chuẩn bị tài nguyên… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra tài nguyên…";
+        _statusBeforeResources = StatusText; StatusText = ResourceStatus; _resourcesRunningStatus = StatusText;
+    }
+    /// <summary>Q1: the resources task ends with a terminal status.  Only if the status line is still the running text this task published is it replaced
+    /// (the earlier status when there was one, "ready" otherwise, or a short blocked/cancelled line); any other task's status stays untouched, and a late
+    /// completion never replays the running text.  The detail stays in <c>ResourceStatus</c>/the log; errors stay in the persistent banner.</summary>
+    private void SettleResourcesStatus(VNText.Studio.App.Models.WorkerEvent evt)
+    {
+        var owned = _resourcesRunningStatus; var before = _statusBeforeResources;
+        _resourcesRunningStatus = ""; _statusBeforeResources = "";
+        if (string.IsNullOrEmpty(owned) || StatusText != owned) return;
+        var cancelled = !evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
+        StatusText = cancelled ? "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ."
+            : !evt.Ok || !_resourcesAllReady ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."
+            : !string.IsNullOrEmpty(before) && before != owned ? before : "Sẵn sàng";
     }
     private void CompleteResources(VNText.Studio.App.Models.WorkerEvent evt)
     {

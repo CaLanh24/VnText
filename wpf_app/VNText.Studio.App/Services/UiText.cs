@@ -847,6 +847,7 @@ public static class UiText
         ["Đã chọn 1 dòng"] = "1 row selected",
         ["Nhập số nguyên hợp lệ"] = "Enter a valid whole number",
         ["Chi tiết thuật ngữ đang chọn"] = "Selected glossary term details",
+        ["Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."] = "Resources are not ready — see Settings › Data.",
         ["Đọc chi tiết thuật ngữ đang chọn (cuộn bằng phím mũi tên)"] = "Read the selected glossary term (scroll with the arrow keys)",
         ["Chưa thể {0}: một ô số trong chi tiết vùng đang báo lỗi. Hãy sửa giá trị (hoặc chọn vùng khác) trước."] = "Cannot {0}: a numeric field in the region details shows an error. Correct the value (or select another region) first.",
         ["lưu review riêng"] = "save the review separately",

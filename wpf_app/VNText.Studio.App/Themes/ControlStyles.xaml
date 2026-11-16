@@ -655,7 +655,7 @@
     <Style x:Key="FieldTextBoxStyle" TargetType="{x:Type TextBox}">
         <Setter Property="Background" Value="{DynamicResource FieldBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CtrlBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource InputIdleBorderBrush}" />
         <Setter Property="Validation.ErrorTemplate" Value="{StaticResource FieldErrorSilentTemplate}" />
 
         <Setter Property="BorderThickness" Value="1" />
@@ -767,13 +767,13 @@
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter TargetName="ComboToggleSurface" Property="Background" Value="{DynamicResource SurfaceBrush}" />
 
-                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{DynamicResource SettingsPreferenceBorderBrush}" />
+                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{DynamicResource SelectIdleBorderBrush}" />
 
             </Trigger>
 
             <Trigger Property="IsChecked" Value="True">
 
-                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{DynamicResource SettingsPreferenceBorderBrush}" />
+                <Setter TargetName="ComboToggleSurface" Property="BorderBrush" Value="{DynamicResource SelectIdleBorderBrush}" />
 
                 <Setter TargetName="ComboToggleSurface" Property="Background" Value="{DynamicResource SurfaceBrush}" />
 
@@ -856,7 +856,7 @@
         <Setter Property="Padding" Value="12,0,30,0" />
         <Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CtrlBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectIdleBorderBrush}" />
 
         <Setter Property="BorderThickness" Value="1" />
 
@@ -942,12 +942,11 @@
 
     </Style>
     <SolidColorBrush x:Key="SettingsPreferenceFieldBrush" Color="#EEF2F7" />
-    <SolidColorBrush x:Key="SettingsPreferenceBorderBrush" Color="#7B8798" />
     <Style x:Key="SettingsPreferenceCombo" TargetType="ComboBox" BasedOn="{StaticResource SettingsCombo}">
         <Setter Property="Height" Value="30" />
         <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Background" Value="{DynamicResource SettingsPreferenceFieldBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource SettingsPreferenceBorderBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectIdleBorderBrush}" />
     </Style>
 
 

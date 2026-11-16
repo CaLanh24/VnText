@@ -1227,6 +1227,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     internal void TestHandleWorkerEvent(WorkerEvent evt) => HandleWorkerEvent(evt);
+    internal string TestActiveTaskId => _activeTaskId ?? "";
     internal void TestAppendLog(string line, string? level = null) => AppendLog(line, level);
     internal void TestMarkRetranslatePending(string path) { _csvEditorRetranslatePending = true; _csvEditorRetranslatePath = path; }
     internal void TestReportCancelTimeout(string id) => ReportCancelTimeout(id, CancellationToken.None);

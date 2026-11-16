@@ -240,6 +240,7 @@ public sealed partial class MainViewModel
                 if (completedTask == "resources")
                 {
                     CompleteResources(evt);
+                    SettleResourcesStatus(evt);
                     AddTaskProgress(evt.Id, evt.Ok ? "Tài nguyên sẵn sàng" : evt.Error ?? "Tài nguyên chưa sẵn sàng", completedTask);
                     break;
                 }

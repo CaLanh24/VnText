@@ -240,6 +240,9 @@
     <SolidColorBrush x:Key="SecondaryButtonHoverTextBrush" Color="#0F172A" />
     <!-- Light-only mild elevation matching the measured reference falloff below the edge; never PrimaryElevation. -->
     <DropShadowEffect x:Key="SecondaryElevation" Color="#000000" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.10" />
+    <!-- B1 idle strokes of the two field families (rendered-pixel targets); CtrlBorderBrush stays for check box / radio. -->
+    <SolidColorBrush x:Key="InputIdleBorderBrush" Color="#E2E3E5" />
+    <SolidColorBrush x:Key="SelectIdleBorderBrush" Color="#D3D7DE" />
     <SolidColorBrush x:Key="DisabledPrimaryBorderBrush" Color="#D6DDE7" />
     <SolidColorBrush x:Key="DisabledPrimaryForegroundBrush" Color="#64748B" />
     <SolidColorBrush x:Key="LogWarningForegroundBrush" Color="#9A5B00" />

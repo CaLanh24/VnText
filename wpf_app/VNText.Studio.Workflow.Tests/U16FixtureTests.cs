@@ -91,7 +91,7 @@ internal static partial class Program
 
                     var expectedTokens = new Dictionary<string, (string Light, string Dark)>
                     {
-                        ["CtrlBorderBrush"] = ("#7B8798", "#71829C"), ["SettingsPreferenceBorderBrush"] = ("#7B8798", "#71829C"),
+                        ["CtrlBorderBrush"] = ("#7B8798", "#71829C"), ["InputIdleBorderBrush"] = ("#E2E3E5", "#394352"), ["SelectIdleBorderBrush"] = ("#D3D7DE", "#445266"),
                         ["LineBrush"] = ("#E5E7EB", "#3B4B63"), ["CardBorderBrush"] = ("#E5E7EB", "#3B4B63"),                     // card/separator stay soft
                         ["BlueBrush"] = ("#2868E8", "#8CB5FF"),                                                                   // focus colour unchanged
                         ["SwitchOffTrackBrush"] = ("#CBD5E1", "#344258"), ["SwitchOffBorderBrush"] = ("#B5C0D0", "#506078"), ["SwitchOffKnobBrush"] = ("#FFFFFF", "#CBD5E1"),
@@ -169,8 +169,7 @@ internal static partial class Program
                         var fieldShot = RenderPixels(field, 120, 32);
                         var fieldInterior = PixelAt(fieldShot, 60, 16);
                         var borderPixel = Enumerable.Range(0, 2).Select(y => PixelAt(fieldShot, 60, y)).OrderByDescending(p => Contrast(p, fieldInterior)).First();
-                        Require(Hex(borderPixel) == (dark ? "#71829C" : "#7B8798"), $"{tag} C4: the rendered text-input border is the control token ({Hex(borderPixel)})");
-                        Require(Contrast(borderPixel, fieldInterior) >= 3.0, $"{tag} C4: idle input border is >= 3:1 on its field ({Contrast(borderPixel, fieldInterior):0.00})");
+                        Require(Hex(borderPixel) == (dark ? "#394352" : "#E2E3E5"), $"{tag} B1: the rendered text-input idle border is the input family token ({Hex(borderPixel)})");
                         // ---------- R1: the secondary button family has its own fill/edge/text, ONE full-tone edge pixel at 150% OS, no control-border token, light-only mild elevation ----------
                         foreach (var styleKey in new[] { "OutlineButton", "SecondaryButton", "CompactOutlineButton", "AboutUtilityButton" })
                         {
@@ -193,7 +192,26 @@ internal static partial class Program
                             else if (!dark && styleKey == "AboutUtilityButton") Require(below.All(p => NearColor(p, r1Fill, 2)), $"{tag} R1 {styleKey}: the utility pill carries no elevation");
                             else if (dark) Require(below.All(p => NearColor(p, r1Fill, 2)), $"{tag} R1 {styleKey}: Dark carries no shadow ({string.Join(" ", below.Select(Hex))})");
                         }
-                        Require(Hex(Token("CtrlBorderBrush")) == (dark ? "#71829C" : "#7B8798"), $"{tag} R1: inputs/selects keep the control-border token");
+                        Require(Hex(Token("CtrlBorderBrush")) == (dark ? "#71829C" : "#7B8798"), $"{tag} B1: CtrlBorderBrush itself is unchanged (check box / radio keep it)");
+                        // ---------- B1: scoped idle strokes of the two field families, rendered at 150% OS; the old heavy hex must be gone from every input/select style ----------
+                        var oldHeavy = rgbOf(dark ? "#71829C" : "#7B8798");
+                        var inputExpected = rgbOf(dark ? "#394352" : "#E2E3E5"); var selectExpected = rgbOf(dark ? "#445266" : "#D3D7DE");
+                        var b1Subjects = new List<(string Name, FrameworkElement Element, Color Expected)>
+                        {
+                            ("FieldTextBoxStyle", new TextBox { Style = (Style)app.FindResource("FieldTextBoxStyle"), Width = 140 }, inputExpected),
+                            ("CompactFieldTextBoxStyle", new TextBox { Style = (Style)app.FindResource("CompactFieldTextBoxStyle"), Width = 140 }, inputExpected),
+                            ("CsvCellEditor", new TextBox { Style = (Style)window.FindResource("CsvCellEditor"), Width = 140, Height = 36 }, inputExpected),
+                            ("SettingsCombo", new ComboBox { Style = (Style)app.FindResource("SettingsCombo"), Width = 140 }, selectExpected),
+                            ("SettingsPreferenceCombo", new ComboBox { Style = (Style)app.FindResource("SettingsPreferenceCombo"), Width = 140 }, selectExpected),
+                        };
+                        foreach (var (b1Name, b1Element, b1Expected) in b1Subjects)
+                        {
+                            var b1Card = new Border { Background = (Brush)app.FindResource("SurfaceBrush"), Padding = new Thickness(20), Child = b1Element };
+                            var b1Shot = RenderPixels150(b1Card, 180, 80);
+                            var b1Mid = (int)((20 + 70) * 1.5); var b1Top = 30;
+                            var b1Rows = Enumerable.Range(8, 100).Where(y => y < b1Shot.Height).Select(y => PixelAt(b1Shot, b1Mid, y)).ToArray();
+                            Require(b1Rows.Any(p => NearColor(p, b1Expected, 2)) && !b1Rows.Any(p => NearColor(p, oldHeavy, 2)), $"{tag} B1 {b1Name}: idle edge {Hex(b1Expected)} and not the old {Hex(oldHeavy)} (column distinct {string.Join(" ", b1Rows.Select(Hex).Distinct().Take(8))})");
+                        }
                         Require(Contrast(Token("CardBorderBrush"), Token("SurfaceBrush")) < 2.0, $"{tag} C4: the card border stays soft");
                         Require(Hex(Token("BlueBrush")) == (dark ? "#8CB5FF" : "#2868E8"), $"{tag} C4: focus colour unchanged");
 
@@ -382,7 +400,7 @@ internal static partial class Program
                         Require(Contrast(Rgb((Brush)window.FindResource("InputErrorForegroundBrush")), Rgb((Brush)window.FindResource("SurfaceBrush"))) >= 4.5, $"{tag} U3: hint foreground is readable on the card");
                         fontBox.Text = "30"; window.UpdateLayout(); PumpFixture(60);
                         Require(!Validation.GetHasError(fontBox) && region.FontSize == 30, $"{tag} U3: fixing the value clears the error and applies it");
-                        AssertEqual(Hex(Token("CtrlBorderBrush")), Hex(Rgb(((Border)fontBox.Template.FindName("FieldSurface", fontBox)).BorderBrush)));
+                        AssertEqual(Hex(Token("InputIdleBorderBrush")), Hex(Rgb(((Border)fontBox.Template.FindName("FieldSurface", fontBox)).BorderBrush)));
                         foreach (var (name, minimum, maximum) in numericBoxes)
                         {
                             var box = T(name);
