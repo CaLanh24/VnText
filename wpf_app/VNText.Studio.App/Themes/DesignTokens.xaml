@@ -231,9 +231,17 @@
         <GradientStop Color="#1E40AF" Offset="0" /><GradientStop Color="#155E75" Offset="1" />
     </LinearGradientBrush>
     <!-- Polish batch U/C: semantic state brushes. Apply() in UiAppearance overrides each one per theme, so DynamicResource users follow a live theme switch. -->
+    <!-- R1 secondary button family (rendered-pixel targets: fill / edge / text); detached from CtrlBorderBrush, which text inputs and selects keep. -->
+    <SolidColorBrush x:Key="SecondaryButtonFillBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="SecondaryButtonEdgeBrush" Color="#E2E3E5" />
+    <SolidColorBrush x:Key="SecondaryButtonTextBrush" Color="#475569" />
+    <SolidColorBrush x:Key="SecondaryButtonHoverFillBrush" Color="#EEF2F7" />
+    <SolidColorBrush x:Key="SecondaryButtonHoverEdgeBrush" Color="#D3D7DE" />
+    <SolidColorBrush x:Key="SecondaryButtonHoverTextBrush" Color="#0F172A" />
+    <!-- Light-only mild elevation matching the measured reference falloff below the edge; never PrimaryElevation. -->
+    <DropShadowEffect x:Key="SecondaryElevation" Color="#000000" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity="0.10" />
     <SolidColorBrush x:Key="DisabledPrimaryBorderBrush" Color="#D6DDE7" />
     <SolidColorBrush x:Key="DisabledPrimaryForegroundBrush" Color="#64748B" />
-    <SolidColorBrush x:Key="SecondaryHoverBackgroundBrush" Color="#EFF5FF" />
     <SolidColorBrush x:Key="LogWarningForegroundBrush" Color="#9A5B00" />
     <SolidColorBrush x:Key="SwitchOffTrackBrush" Color="#CBD5E1" />
     <SolidColorBrush x:Key="SwitchOffBorderBrush" Color="#B5C0D0" />

@@ -505,11 +505,11 @@
 
     <Style x:Key="GuiOutlineButtonStyle" TargetType="{x:Type Button}">
 
-        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-
-        <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource CtrlBorderBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource SecondaryButtonFillBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryButtonTextBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SecondaryButtonEdgeBrush}" />
+        <!-- one device pixel at 100% UI / 150% OS (a 1 DIP stroke rendered as two full-tone rows); layout rounding snaps it -->
+        <Setter Property="BorderThickness" Value="0.667" />
         <Setter Property="MinHeight" Value="{StaticResource UiControlHeightStandard}" />
 
         <Setter Property="VerticalAlignment" Value="Center" />
@@ -532,25 +532,17 @@
 
                 <ControlTemplate TargetType="{x:Type Button}">
 
-                    <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}"
-
+                    <Border x:Name="ButtonSurface" Background="{TemplateBinding Background}" UseLayoutRounding="True" SnapsToDevicePixels="True" Effect="{DynamicResource SecondaryElevation}"
                             BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
-
                             CornerRadius="{StaticResource UiControlRadius}">
-
                         <ContentPresenter Margin="{TemplateBinding Padding}"
-
                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
-
                     </Border>
-
                     <ControlTemplate.Triggers>
-
                         <Trigger Property="IsMouseOver" Value="True">
-
-                            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{DynamicResource CtrlBorderBrush}" />
-                            <Setter TargetName="ButtonSurface" Property="Background" Value="{DynamicResource SecondaryHoverBackgroundBrush}" />
-
+                            <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{DynamicResource SecondaryButtonHoverEdgeBrush}" />
+                            <Setter TargetName="ButtonSurface" Property="Background" Value="{DynamicResource SecondaryButtonHoverFillBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource SecondaryButtonHoverTextBrush}" />
                         </Trigger>
 
                         <Trigger Property="IsPressed" Value="True">
@@ -564,23 +556,14 @@
                             <Setter TargetName="ButtonSurface" Property="Background" Value="{DynamicResource DisabledBackgroundBrush}" />
 
                             <Setter TargetName="ButtonSurface" Property="BorderBrush" Value="{DynamicResource DisabledBorderBrush}" />
-
+                            <Setter TargetName="ButtonSurface" Property="Effect" Value="{x:Null}" />
                             <Setter Property="Foreground" Value="{DynamicResource DisabledForegroundBrush}" />
-
                         </Trigger>
-
                     </ControlTemplate.Triggers>
-
                 </ControlTemplate>
-
             </Setter.Value>
-
         </Setter>
-
     </Style>
-
-
-
     <Style x:Key="GuiPrimaryButtonStyle" TargetType="{x:Type Button}">
         <Setter Property="Background" Value="{DynamicResource PrimaryFillBrush}" />
 
@@ -1455,15 +1438,16 @@
 
     <Style x:Key="AboutUtilityButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="{DynamicResource MutedBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryButtonTextBrush}" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-            <Border x:Name="UtilitySurface" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="14" Padding="{TemplateBinding Padding}">
+            <Border x:Name="UtilitySurface" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource SecondaryButtonEdgeBrush}" BorderThickness="0.667" UseLayoutRounding="True" SnapsToDevicePixels="True" CornerRadius="14" Padding="{TemplateBinding Padding}">
                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="UtilitySurface" Property="Background" Value="{DynamicResource SettingsPreferenceFieldBrush}" />
-                <Setter Property="Foreground" Value="{DynamicResource InkBrush}" />
+                <Setter TargetName="UtilitySurface" Property="Background" Value="{DynamicResource SecondaryButtonHoverFillBrush}" />
+                <Setter TargetName="UtilitySurface" Property="BorderBrush" Value="{DynamicResource SecondaryButtonHoverEdgeBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource SecondaryButtonHoverTextBrush}" />
             </Trigger></ControlTemplate.Triggers>
         </ControlTemplate></Setter.Value></Setter>
     </Style>

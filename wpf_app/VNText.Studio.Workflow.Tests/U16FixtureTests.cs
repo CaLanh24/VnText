@@ -42,6 +42,17 @@ internal static partial class Program
         var pixels = new byte[(int)width * (int)height * 4]; bitmap.CopyPixels(pixels, (int)width * 4, 0);
         return (pixels, (int)width, (int)height);
     }
+    private static Color rgbOf(string hex) => (Color)ColorConverter.ConvertFromString(hex);
+    private static bool NearColor(Color a, Color b, int tolerance) => Math.Abs(a.R - b.R) <= tolerance && Math.Abs(a.G - b.G) <= tolerance && Math.Abs(a.B - b.B) <= tolerance;
+    /// <summary>Renders at 144 dpi (OS 150%): the element is laid out and snapped in device pixels like the running app; the returned bitmap is in PHYSICAL pixels.</summary>
+    private static (byte[] Pixels, int Width, int Height) RenderPixels150(FrameworkElement element, double widthDip, double heightDip)
+    {
+        element.Measure(new Size(widthDip, heightDip)); element.Arrange(new Rect(0, 0, widthDip, heightDip)); element.UpdateLayout();
+        var width = (int)Math.Ceiling(widthDip * 1.5); var height = (int)Math.Ceiling(heightDip * 1.5);
+        var bitmap = new RenderTargetBitmap(width, height, 144, 144, PixelFormats.Pbgra32); bitmap.Render(element);
+        var pixels = new byte[width * height * 4]; bitmap.CopyPixels(pixels, width * 4, 0);
+        return (pixels, width, height);
+    }
     private static Color PixelAt((byte[] Pixels, int Width, int Height) image, int x, int y) { var i = (y * image.Width + x) * 4; return Color.FromRgb(image.Pixels[i + 2], image.Pixels[i + 1], image.Pixels[i]); }
 
     /// <summary>
@@ -88,7 +99,9 @@ internal static partial class Program
                         ["InputErrorForegroundBrush"] = ("#B42318", "#FDA29B"), ["InputErrorBorderBrush"] = ("#B42318", "#FDA29B"), ["InputErrorSurfaceBrush"] = ("#FEF3F2", "#4A1F24"),
                         ["LogWarningForegroundBrush"] = ("#9A5B00", "#E0A33A"), ["ToastWarningBorderBrush"] = ("#B56D00", "#E0A33A"),
                         ["DisabledPrimaryBackgroundBrush"] = ("#E7EBF1", "#2B3545"), ["DisabledPrimaryForegroundBrush"] = ("#64748B", "#9AA7BA"), ["DisabledPrimaryBorderBrush"] = ("#D6DDE7", "#42506A"),
-                        ["SettingsRowHoverBrush"] = ("#F0F5FC", "#2A394F"), ["NavHoverBrush"] = ("#DFE7F2", "#354258"), ["SecondaryHoverBackgroundBrush"] = ("#EFF5FF", "#273448"),
+                        ["SettingsRowHoverBrush"] = ("#F0F5FC", "#2A394F"), ["NavHoverBrush"] = ("#DFE7F2", "#354258"),
+                        ["SecondaryButtonFillBrush"] = ("#FFFFFF", "#1E293B"), ["SecondaryButtonEdgeBrush"] = ("#E2E3E5", "#394352"), ["SecondaryButtonTextBrush"] = ("#475569", "#94A3B8"),
+                        ["SecondaryButtonHoverFillBrush"] = ("#EEF2F7", "#334155"), ["SecondaryButtonHoverEdgeBrush"] = ("#D3D7DE", "#4B5869"), ["SecondaryButtonHoverTextBrush"] = ("#0F172A", "#F1F5F9"),
                     };
                     var expectedGradients = new Dictionary<string, (string[] Light, string[] Dark)>
                     {
@@ -158,10 +171,28 @@ internal static partial class Program
                         var borderPixel = Enumerable.Range(0, 2).Select(y => PixelAt(fieldShot, 60, y)).OrderByDescending(p => Contrast(p, fieldInterior)).First();
                         Require(Hex(borderPixel) == (dark ? "#71829C" : "#7B8798"), $"{tag} C4: the rendered text-input border is the control token ({Hex(borderPixel)})");
                         Require(Contrast(borderPixel, fieldInterior) >= 3.0, $"{tag} C4: idle input border is >= 3:1 on its field ({Contrast(borderPixel, fieldInterior):0.00})");
-                        var outline = new Button { Style = (Style)app.FindResource("OutlineButton"), Content = "Sửa ảnh", Width = 120, Height = 36 };
-                        var outlineShot = RenderPixels(outline, 120, 36);
-                        var outlineBorder = Enumerable.Range(0, 2).Select(y => PixelAt(outlineShot, 60, y)).OrderByDescending(p => Contrast(p, Token("SurfaceBrush"))).First();
-                        Require(Hex(outlineBorder) == (dark ? "#71829C" : "#7B8798") && Contrast(outlineBorder, Token("SurfaceBrush")) >= 3.0, $"{tag} C4: the rendered outline-button border ({Hex(outlineBorder)}) is the control token and >= 3:1 on the card");
+                        // ---------- R1: the secondary button family has its own fill/edge/text, ONE full-tone edge pixel at 150% OS, no control-border token, light-only mild elevation ----------
+                        foreach (var styleKey in new[] { "OutlineButton", "SecondaryButton", "CompactOutlineButton" })
+                        {
+                            var compact = styleKey == "CompactOutlineButton"; var heightDip = compact ? 30.0 : 36.0;
+                            var secondary = new Button { Style = (Style)app.FindResource(styleKey), Content = "Sửa ảnh", Width = 120, Height = heightDip };
+                            var r1Card = new Border { Background = (Brush)app.FindResource("SurfaceBrush"), Padding = new Thickness(20), Child = secondary };
+                            var hiDpi = RenderPixels150(r1Card, 160, heightDip + 40);
+                            var top = (20 * 3) / 2; var mid = (int)((20 + 60) * 1.5); var left = (20 * 3) / 2;      // physical px of the button's top r1Edge / centre column / left r1Edge at 150%
+                            var r1Edge = rgbOf(dark ? "#394352" : "#E2E3E5"); var r1Fill = rgbOf(dark ? "#1E293B" : "#FFFFFF");
+                            Require(NearColor(PixelAt(hiDpi, mid, top), r1Edge, 3) && NearColor(PixelAt(hiDpi, mid, top + 1), r1Fill, 3) && NearColor(PixelAt(hiDpi, mid, top + 2), r1Fill, 3), $"{tag} R1 {styleKey}: ONE full-tone r1Edge row then r1Fill (rows {Hex(PixelAt(hiDpi, mid, top - 1))}/{Hex(PixelAt(hiDpi, mid, top))}/{Hex(PixelAt(hiDpi, mid, top + 1))})");
+                            Require(NearColor(PixelAt(hiDpi, left, (int)((20 + heightDip / 2) * 1.5)), r1Edge, 3) && NearColor(PixelAt(hiDpi, left + 1, (int)((20 + heightDip / 2) * 1.5)), r1Fill, 3), $"{tag} R1 {styleKey}: one-pixel left r1Edge");
+                            Require(Rgb(secondary.Foreground) == rgbOf(dark ? "#94A3B8" : "#475569") && Hex(Rgb(secondary.BorderBrush)) != Hex(Token("CtrlBorderBrush")), $"{tag} R1 {styleKey}: text token and detached r1Edge");
+                            var bottomEdge = top + (int)(heightDip * 1.5) - 1;
+                            var below = new[] { 1, 3, 5, 7, 9, 11 }.Select(d => PixelAt(hiDpi, mid, bottomEdge + d)).ToArray();
+                            if (!dark && !compact)
+                            {
+                                var r1Wanted = new[] { "#F1F2F3", "#F5F6F6", "#F8F8F9", "#FBFBFB", "#FDFDFD", "#FFFFFF" };
+                                Require(below.Select((p, i) => NearColor(p, rgbOf(r1Wanted[i]), 5)).All(x => x), $"{tag} R1 {styleKey}: Light elevation follows the measured falloff ({string.Join(" ", below.Select(Hex))})");
+                            }
+                            else if (dark) Require(below.All(p => NearColor(p, r1Fill, 2)), $"{tag} R1 {styleKey}: Dark carries no shadow ({string.Join(" ", below.Select(Hex))})");
+                        }
+                        Require(Hex(Token("CtrlBorderBrush")) == (dark ? "#71829C" : "#7B8798"), $"{tag} R1: inputs/selects keep the control-border token");
                         Require(Contrast(Token("CardBorderBrush"), Token("SurfaceBrush")) < 2.0, $"{tag} C4: the card border stays soft");
                         Require(Hex(Token("BlueBrush")) == (dark ? "#8CB5FF" : "#2868E8"), $"{tag} C4: focus colour unchanged");
 
@@ -220,16 +251,16 @@ internal static partial class Program
                         {
                             window.Width = 1055; window.Height = 720; Page(tab);
                             var scroller = (ScrollViewer)Named("PageScrollViewer"); var page = Named(pageName);
-                            Require(Math.Abs(page.ActualWidth - scroller.ViewportWidth) < 1.0 && scroller.ScrollableWidth < 0.5, $"{tag} U5: {pageName} follows a small window ({page.ActualWidth:0}/{scroller.ViewportWidth:0}, no horizontal scroll)");
+                            Require(Math.Abs(page.ActualWidth - (scroller.ViewportWidth - 10)) < 1.0 && scroller.ScrollableWidth < 0.5, $"{tag} R2: {pageName} stretches to the viewport minus the shared 10 DIP inset ({page.ActualWidth:0}/{scroller.ViewportWidth:0}, no horizontal scroll)");
                             window.Width = 2400; window.Height = 900; Page(tab);
-                            Require(page.ActualWidth <= 1120.5 && Math.Abs(page.ActualWidth - Math.Min(scroller.ViewportWidth, 1120)) < 1.0, $"{tag} U5: {pageName} is min(viewport {scroller.ViewportWidth:0.#}, shared 1120 DIP cap) = {page.ActualWidth:0.#}");
+                            Require(Math.Abs(page.ActualWidth - (scroller.ViewportWidth - 10)) < 1.0, $"{tag} R2: {pageName} has no width cap on a wide window (viewport {scroller.ViewportWidth:0.#}, card host {page.ActualWidth:0.#})");
                             Require(Math.Abs(page.TranslatePoint(new Point(0, 0), scroller).X) < 1.0, $"{tag} U5: {pageName} keeps the left content axis");
                             Require(scroller.ScrollableWidth < 0.5, $"{tag} U5: no horizontal scroll on a wide window");
                         }
                         Page("settings");
                         var settingsTabs = FindVisualChildren<TabControl>(Named("SettingsScrollViewer")).First();
                         var settingsHost = (FrameworkElement)settingsTabs.Template.FindName("SettingsContentHost", settingsTabs);
-                        Require(settingsHost.ActualWidth <= 1120.5 && Math.Abs(settingsHost.ActualWidth - Math.Min(settingsTabs.ActualWidth, 1120)) < 1.0, $"{tag} U5: Settings content is min(width {settingsTabs.ActualWidth:0.#}, 1120) = {settingsHost.ActualWidth:0.#}");
+                        Require(Math.Abs(settingsHost.ActualWidth - (settingsTabs.ActualWidth - 10)) < 1.0, $"{tag} R2: Settings content stretches (tabs {settingsTabs.ActualWidth:0.#}, host {settingsHost.ActualWidth:0.#})");
                         Page("editcsv");
                         vm.TestLoadCsvRows(Path.Combine(work, "translation.csv"), Enumerable.Range(1, 7).Select(i => new CsvEditorRow { Index = i, Key = "k" + i, SourceText = "Hello " + i, Translation = "Xin chào " + i }).ToList(), "OK");
                         window.UpdateLayout(); PumpFixture(250);

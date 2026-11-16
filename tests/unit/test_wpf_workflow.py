@@ -653,7 +653,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('x:Name="GlossaryEmptyState"', xaml)
         self.assertEqual(1, xaml.count('Command="{Binding AddGlossaryEntryCommand}"'))           # no second Add button
         self.assertIn("GlossaryTermTextBox.Focus()", code)
-        self.assertIn('Binding GlossaryEntries.Count}" Value="0"><Setter Property="Height" Value="150"', xaml)
+        self.assertIn('Binding GlossaryEntries.Count}" Value="0"><Setter Property="MaxHeight" Value="150" /><Setter Property="MinHeight" Value="150"', xaml)      # the empty list is compact; a filled list yields height to the detail strip
         # (N3) OCR: short lead + one safety sentence, the complete original text unchanged inside Details
         self.assertIn('x:Name="LeadText"', panel)
         self.assertIn('x:Name="SafetyText"', panel)

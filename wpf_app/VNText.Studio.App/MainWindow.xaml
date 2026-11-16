@@ -32,8 +32,7 @@
         <conv:LogStateTextConverter x:Key="LogState" />
         <conv:CountZeroToVisibilityConverter x:Key="EmptyLogVis" />
         <conv:NullToCollapsedConverter x:Key="NullToCollapsed" />
-        <!-- U5: one shared width cap (first value 1120 DIP) for the simple forms: Extract, Auto translate, Patch, Settings. CSV table and image preview keep the full area. -->
-        <conv:CapWidthConverter x:Key="FormWidthCap" Max="1120" />
+        <!-- R2 (supersedes U5): the form hosts stretch to the viewport; one shared 10 DIP (15 px at 150%) right inset on Extract/Translate/Patch/Settings/error banner gives the measured reference card gap. -->
         <conv:CountNonZeroToVisibilityConverter x:Key="LogVis" />
         <conv:StringMatchConverter x:Key="StrMatch" />
         <conv:TabEqualsToNavBackgroundConverter x:Key="NavBg" />
@@ -274,7 +273,7 @@
                       Style="{StaticResource OverlayAutoHideScrollViewer}"
                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                        <Border x:Name="ExtractErrorBanner" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Margin="0,0,0,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
+                        <Border x:Name="ExtractErrorBanner" Margin="0,0,10,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
                                 AutomationProperties.Name="Thông báo tác vụ chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
@@ -313,7 +312,7 @@
                 <Grid>
 
                     <!-- Extract page -->
-                    <Grid x:Name="ExtractPage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
+                    <Grid x:Name="ExtractPage" Margin="0,0,10,0" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=extract}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -565,7 +564,7 @@
                     </Grid>
 
                     <!-- Translate page -->
-                    <Grid x:Name="TranslatePage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=translate}">
+                    <Grid x:Name="TranslatePage" Margin="0,0,10,0" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=translate}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.06*" />
                             <ColumnDefinition Width="0.94*" />
@@ -736,7 +735,7 @@
                     </Grid>
 
                     <!-- Patch page -->
-                    <Grid x:Name="PatchPage" HorizontalAlignment="Left" Width="{Binding ViewportWidth, ElementName=PageScrollViewer, Converter={StaticResource FormWidthCap}}" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=patch}">
+                    <Grid x:Name="PatchPage" Margin="0,0,10,0" Visibility="{Binding SelectedTab, Converter={StaticResource TabVis}, ConverterParameter=patch}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1.06*" />
                             <ColumnDefinition Width="0.94*" />
@@ -1053,8 +1052,7 @@
                                                     </Border>
                                                 </StackPanel>
                                             </Grid>
-                                            <ContentPresenter x:Name="SettingsContentHost" Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" HorizontalAlignment="Left"
-                                                              Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=TabControl}, Converter={StaticResource FormWidthCap}}" />
+                                            <ContentPresenter x:Name="SettingsContentHost" Grid.Row="1" ContentSource="SelectedContent" KeyboardNavigation.TabIndex="2" Margin="0,0,10,0" />
                                         </Grid>
                                     </ControlTemplate>
                                 </TabControl.Template>

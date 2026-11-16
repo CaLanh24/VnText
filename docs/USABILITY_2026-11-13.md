@@ -121,3 +121,12 @@ Report `TEST_RUN/agent-evidence/polish16-combined-review.{html,json}` (candidate
 | C6 hover Light | Settings row #F0F5FC, navigation #DFE7F2, secondary hover #EFF5FF + control border; Dark values kept | `UiAppearance.cs`, `ControlStyles.xaml` | `--u16-fixture` (tokens) + native hover |
 
 Known limits: the `ToggleSwitch` UserControl in `Controls/` is unused (the live switches are `SwitchStyle` check boxes) and was not touched; the release-notes work-area clamp uses the primary work area and only follows an owner that is on screen.
+
+## R1–R2 reference-fidelity correction (2026-11-16, base `5971d93`)
+Task `TEST_RUN/agent-evidence/ref17-live-comparison-task.{html,json}` (raw measured pixels; not CSS claims). Supersedes U5 (1120 DIP cap) and the C4/C6 secondary-button border/hover for BUTTONS only; inputs/selects keep `CtrlBorderBrush`.
+
+| ID | Change | Files | Regression |
+|---|---|---|---|
+| R1 secondary buttons | Own tokens `SecondaryButton{Fill,Edge,Text,HoverFill,HoverEdge,HoverText}Brush` (Light idle #FFFFFF/#E2E3E5/#475569, hover #EEF2F7/#D3D7DE/#0F172A; Dark idle #1E293B/#394352/#94A3B8, hover #334155/#4B5869/#F1F5F9); `GuiOutlineButtonStyle` (Secondary/Outline/Compact) and `AboutUtilityButton` use them; edge stroke 0.667 DIP + layout rounding = ONE device pixel at UI100/OS150; Light-only mild `SecondaryElevation` fitted to the measured falloff (never `PrimaryElevation`; Dark none; disabled none); size/radius/commands/disabled/blue focus unchanged | `DesignTokens.xaml`, `UiAppearance.cs`, `ControlStyles.xaml` | `--u16-fixture` (rendered at 144 dpi: one edge row then fill, left edge, falloff, Dark no shadow, tokens) |
+| R2 form hosts | `FormWidthCap`/`CapWidthConverter` removed; Extract/Translate/Patch/Settings hosts and the error banner stretch with the current left axis and one shared 10 DIP (15 px at OS150) right inset; CSV table and image page untouched | `MainWindow.xaml` | `--u16-fixture` (host = viewport − 10 DIP, left axis, no horizontal scroll) |
+Not proven: pressed state, animation, every secondary button, UI120 pixel equality; reference apps were not re-measured by DEV (raw report measurements used).

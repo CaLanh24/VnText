@@ -61,7 +61,13 @@ public static class UiAppearance
         Set("NavDividerBrush", C("#D0D6E3", "#3B4B63"));
         Set("NavHoverBrush", C("#DFE7F2", "#354258"));
         Set("SettingsRowHoverBrush", C("#F0F5FC", "#2A394F"));
-        Set("SecondaryHoverBackgroundBrush", C("#EFF5FF", "#273448"));
+        Set("SecondaryButtonFillBrush", C("#FFFFFF", "#1E293B"));
+        Set("SecondaryButtonEdgeBrush", C("#E2E3E5", "#394352"));
+        Set("SecondaryButtonTextBrush", C("#475569", "#94A3B8"));
+        Set("SecondaryButtonHoverFillBrush", C("#EEF2F7", "#334155"));
+        Set("SecondaryButtonHoverEdgeBrush", C("#D3D7DE", "#4B5869"));
+        Set("SecondaryButtonHoverTextBrush", C("#0F172A", "#F1F5F9"));
+        _overrides["SecondaryElevation"] = new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 10, ShadowDepth = 2, Direction = 270, Opacity = dark ? 0 : 0.10 };
         Set("HoverSurfaceBrush", C("#F0F6FC", "#354258"));
         Set("HoverBorderBrush", C("#C5D7EC", "#5A7396"));
         Set("ToastInfoBackgroundBrush", C("#E9F1FF", "#28436C"));
