@@ -42,7 +42,7 @@ internal static partial class Program
                         }
                         void Finish(MainViewModel vm, bool ok, string? error = null)
                         {
-                            vm.TestSimulateTaskComplete("resources", new WorkerEvent { Type = "complete", Id = vm.TestActiveTaskId, Ok = ok, Error = error, Summary = ok ? "checked" : null });
+                            vm.TestHandleWorkerEvent(new WorkerEvent { Type = "complete", Id = vm.TestActiveTaskId, Ok = ok, Error = error, Summary = ok ? "checked" : null });
                         }
 
                         // ---- success: running text while it runs, then NOT the running text on the Extract page ----
@@ -101,6 +101,31 @@ internal static partial class Program
                         Require(vmCancel.StatusText == vmCancel.ResourceStatus && vmCancel.StatusText != runningShown, $"{language} Q1: the prepare task publishes its own running text");
                         Finish(vmCancel, false, "cancelled");
                         Require(vmCancel.StatusText == "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ.", $"{language} Q1: cancel ends the running status ('{Shown(vmCancel)}')");
+                        // Exercise the real cancellation handlers, not just running -> complete.
+                        using var vmLifecycle = Fresh("Sẵn sàng");
+                        vmLifecycle.TestClaimResourcesStatus(true);
+                        var cancellingId = vmLifecycle.TestActiveTaskId;
+                        vmLifecycle.CancelCommand.Execute(null); // no worker in this fixture: also exercises the send-failure status/log
+                        Require(vmLifecycle.Busy, "cancel request must not fake terminal completion");
+                        vmLifecycle.TestHandleWorkerEvent(new WorkerEvent { Type = "cancel_ack", Id = cancellingId, State = "accepted" });
+                        Require(vmLifecycle.StatusText.Contains("đang chờ", StringComparison.Ordinal), "accepted ack is an owned pending status");
+                        vmLifecycle.TestReportCancelTimeout(cancellingId);
+                        Require(vmLifecycle.StatusText == "Hủy vẫn đang chờ tác vụ dừng an toàn", "watchdog remains pending until real completion");
+                        Finish(vmLifecycle, false, "cancelled");
+                        Require(!vmLifecycle.Busy && vmLifecycle.StatusText == vmCancel.StatusText, "cancel/ack/watchdog/complete must settle the resource status");
+                        Require(language == "vi" || !Shown(vmLifecycle).Contains("Đã hủy", StringComparison.Ordinal), "cancel terminal text follows English");
+
+                        using var vmRace = Fresh("Đã lấy text xong: 120 dòng");
+                        vmRace.TestClaimResourcesStatus(false);
+                        var oldId = vmRace.TestActiveTaskId;
+                        vmRace.TestClaimResourcesStatus(false); // distinct resource task identity
+                        var newId = vmRace.TestActiveTaskId;
+                        vmRace.TestHandleWorkerEvent(new WorkerEvent { Type = "complete", Id = oldId, Ok = true });
+                        Require(vmRace.Busy && vmRace.TestActiveTaskId == newId && vmRace.StatusText == vmRace.ResourceStatus, "late resource completion cannot settle a new resource task");
+                        vmRace.TestSetActiveTask("other-translate", "translate"); vmRace.StatusText = "Translation result";
+                        vmRace.TestHandleWorkerEvent(new WorkerEvent { Type = "complete", Id = newId, Ok = true });
+                        Require(vmRace.Busy && vmRace.StatusText == "Translation result", "late resource completion cannot change another active task");
+                        vmRace.TestSetBusy(false);
                         report.Add(language);
                     }
                     UiText.SetLanguage("vi");

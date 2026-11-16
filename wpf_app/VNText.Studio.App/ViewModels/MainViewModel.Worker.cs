@@ -129,7 +129,7 @@ public sealed partial class MainViewModel
                     && evt.State == "accepted")
                 {
                     AppendLog("Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
-                    StatusText = "Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
+                    SetTaskLifecycleStatus("Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
                     ProgressSubtitle = "Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
                     SetOwnedProgress(_runningTask, text: ProgressSubtitle);
                     AddTaskProgress(evt.Id, ProgressSubtitle);

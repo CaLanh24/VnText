@@ -798,7 +798,7 @@ public sealed partial class MainViewModel
     {
         if (!Busy) return;
         AppendLog("Yêu cầu hủy tác vụ…");
-        StatusText = "Đang hủy…";
+        SetTaskLifecycleStatus("Đang hủy…");
         ProgressSubtitle = "Đã yêu cầu hủy; đang chờ worker xác nhận…";
         var taskId = _activeTaskId;
         SetOwnedProgress(_runningTask, text: ProgressSubtitle);
@@ -812,7 +812,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception ex)
         {
-            StatusText = "Chưa gửi được yêu cầu hủy";
+            SetTaskLifecycleStatus("Chưa gửi được yêu cầu hủy");
             AppendLog($"Không gửi được yêu cầu hủy: {ex.Message}");
         }
     }
@@ -861,7 +861,7 @@ public sealed partial class MainViewModel
         if (!token.IsCancellationRequested && Busy
             && string.Equals(taskId, _activeTaskId, StringComparison.Ordinal))
         {
-            StatusText = "Hủy vẫn đang chờ tác vụ dừng an toàn";
+            SetTaskLifecycleStatus("Hủy vẫn đang chờ tác vụ dừng an toàn");
             ProgressSubtitle = "Chưa có kết quả cuối sau 30 giây; hãy tiếp tục chờ và không đóng ứng dụng cưỡng bức.";
             SetOwnedProgress(_runningTask, text: ProgressSubtitle);
             AddTaskProgress(taskId, ProgressSubtitle);
