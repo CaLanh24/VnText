@@ -71,6 +71,20 @@ internal static partial class Program
                         Finish(vmOther, true);
                         Require(vmOther.StatusText == "Cảnh báo: thiếu file bắt buộc", $"{language} Q1: an unrelated status is preserved ({vmOther.StatusText})");
 
+                        // ---- the Extract page's drawn status line (real window, UiTextDynamic converter) follows the language ----
+                        {
+                            var vmDraw = Fresh("Sẵn sàng"); vmDraw.TestClaimResourcesStatus(false); Finish(vmDraw, false, "boom");
+                            var window = new VNText.Studio.App.MainWindow(vmDraw, new FixtureUpdatePresentation());
+                            window.WindowState = System.Windows.WindowState.Normal; window.Width = 1055; window.Height = 720;
+                            if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = System.Windows.WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                            vmDraw.NavigateTabCommand.Execute("extract"); window.Show(); window.UpdateLayout(); PumpFixture(250);
+                            var line = (System.Windows.Controls.TextBlock)window.FindName("ExtractStatusLine");
+                            Require(line.Text == (language == "vi" ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." : "Resources are not ready — see Settings › Data."), $"{language} Q1: the drawn Extract status line is localized ('{line.Text}')");
+                            vmDraw.Language = language == "vi" ? "en" : "vi"; UiText.SetLanguage(vmDraw.Language); PumpFixture(100); window.UpdateLayout();
+                            Require(line.Text == (language == "vi" ? "Resources are not ready — see Settings › Data." : "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."), $"{language} Q1: a language switch refreshes the Extract status line ('{line.Text}')");
+                            window.Close(); vmDraw.Language = language; UiText.SetLanguage(language); vmDraw.Dispose();
+                        }
+
                         // ---- not ready / error: a short blocked line, banner + Settings detail kept, never the running text ----
                         File.WriteAllText(statusFile, Report(false), new UTF8Encoding(false));
                         var vmBad = Fresh("Sẵn sàng");
