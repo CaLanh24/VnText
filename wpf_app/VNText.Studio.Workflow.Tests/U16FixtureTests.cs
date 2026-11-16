@@ -172,10 +172,10 @@ internal static partial class Program
                         Require(Hex(borderPixel) == (dark ? "#71829C" : "#7B8798"), $"{tag} C4: the rendered text-input border is the control token ({Hex(borderPixel)})");
                         Require(Contrast(borderPixel, fieldInterior) >= 3.0, $"{tag} C4: idle input border is >= 3:1 on its field ({Contrast(borderPixel, fieldInterior):0.00})");
                         // ---------- R1: the secondary button family has its own fill/edge/text, ONE full-tone edge pixel at 150% OS, no control-border token, light-only mild elevation ----------
-                        foreach (var styleKey in new[] { "OutlineButton", "SecondaryButton", "CompactOutlineButton" })
+                        foreach (var styleKey in new[] { "OutlineButton", "SecondaryButton", "CompactOutlineButton", "AboutUtilityButton" })
                         {
-                            var compact = styleKey == "CompactOutlineButton"; var heightDip = compact ? 30.0 : 36.0;
-                            var secondary = new Button { Style = (Style)app.FindResource(styleKey), Content = "Sửa ảnh", Width = 120, Height = heightDip };
+                            var compact = styleKey is "CompactOutlineButton" or "AboutUtilityButton"; var heightDip = styleKey == "CompactOutlineButton" ? 30.0 : styleKey == "AboutUtilityButton" ? 32.0 : 36.0;
+                            var secondary = new Button { Style = (Style)app.FindResource(styleKey), Content = "Sửa ảnh", Width = 120, Height = heightDip, MinHeight = heightDip };
                             var r1Card = new Border { Background = (Brush)app.FindResource("SurfaceBrush"), Padding = new Thickness(20), Child = secondary };
                             var hiDpi = RenderPixels150(r1Card, 160, heightDip + 40);
                             var top = (20 * 3) / 2; var mid = (int)((20 + 60) * 1.5); var left = (20 * 3) / 2;      // physical px of the button's top r1Edge / centre column / left r1Edge at 150%
@@ -190,6 +190,7 @@ internal static partial class Program
                                 var r1Wanted = new[] { "#F1F2F3", "#F5F6F6", "#F8F8F9", "#FBFBFB", "#FDFDFD", "#FFFFFF" };
                                 Require(below.Select((p, i) => NearColor(p, rgbOf(r1Wanted[i]), 5)).All(x => x), $"{tag} R1 {styleKey}: Light elevation follows the measured falloff ({string.Join(" ", below.Select(Hex))})");
                             }
+                            else if (!dark && styleKey == "AboutUtilityButton") Require(below.All(p => NearColor(p, r1Fill, 2)), $"{tag} R1 {styleKey}: the utility pill carries no elevation");
                             else if (dark) Require(below.All(p => NearColor(p, r1Fill, 2)), $"{tag} R1 {styleKey}: Dark carries no shadow ({string.Join(" ", below.Select(Hex))})");
                         }
                         Require(Hex(Token("CtrlBorderBrush")) == (dark ? "#71829C" : "#7B8798"), $"{tag} R1: inputs/selects keep the control-border token");
