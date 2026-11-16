@@ -7,7 +7,7 @@ namespace VNText.Studio.App.ViewModels;
 public sealed partial class MainViewModel
 {
     private string _resourceStatus = "Chuẩn bị mô hình dịch và Ren’Py SDK trước khi chọn game. OCR dùng gói tiếng Anh của Windows.";
-    public string ResourceStatus { get => UiText.Translate(_resourceStatus); private set => Set(ref _resourceStatus, value); }
+    public string ResourceStatus { get => UiText.TranslateDynamic(_resourceStatus); private set => Set(ref _resourceStatus, value); }
     public RelayCommand CheckResourcesCommand { get; private set; } = null!;
     public RelayCommand DownloadResourcesCommand { get; private set; } = null!;
     public RelayCommand OpenResourcesCommand { get; private set; } = null!;
