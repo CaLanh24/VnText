@@ -12,7 +12,7 @@ docs/USABILITY_2026-11-13.md section "Settings header badge (qa-header19)"; regr
 Evidence (ignored): `TEST_RUN/agent-evidence/qa-header19-*` and `DEV_RUN/bootstrap-build/build-identity.json`; read those receipts, not this text. Pressed/animation NOT PROVEN. Independent QA must re-open the built app.
 
 ## Result
-full20 F1-F5 fixed in `18b5d03` + `ec7e131`; candidate source `ec7e131d933322414a8852985d6e76a1362b0da9` (Debug, clean) at `DEV_RUN/bootstrap-build/Start-DEV.cmd`, EXE/DLL hashes in `DEV_RUN/bootstrap-build/build-identity.json`. Receipt `TEST_RUN/agent-evidence/full20-dev-final-receipt.json` (before = retained `candidate-008cd10`). DEV native PASS is not independent QA; tooltip capture, Journal empty-file and Busy log are NOT PROVEN natively.
+full20 F1-F5 + Root correction: source HEAD `17f7f9e`; packaged candidate `092de2374a8788a070fc49493e85eb56692202fe` (does NOT include the final F2 editor fix 17f7f9e). Receipt `TEST_RUN/agent-evidence/full20-dev-final-receipt.json`. Open prerequisite: the bootstrap build itself writes the policy-blocked App `obj`; a rebuild for native F2 editor re-proof needs Owner/Root authorization (no further builds attempted). DEV evidence is not independent QA.
 
 ## Candidate / retention
 Candidate `DEV_RUN/bootstrap-build/Start-DEV.cmd` (Debug; isolated data under that folder). Owner CSV remains read-only (SHA `8e5d0e849a504b3e8354f676037e2c1ee55aaf5d2635cccb1e9a95a73a1bb0ef`).
