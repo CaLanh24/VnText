@@ -160,7 +160,7 @@ internal sealed class JournalWindow : Window
     }
     private void Safe(Action action)
     {
-        try{action();}catch(Exception ex){_status.Text=ex.Message;_content.Text=UiText.Format("Không đọc được nhật ký: {0}",ex.Message);}
+        try{action();}catch(Exception ex){_noMatch.Visibility=Visibility.Collapsed;_status.Text=ex.Message;_content.Text=UiText.Format("Không đọc được nhật ký: {0}",ex.Message);}
     }
     private void Refresh()
     {
@@ -172,7 +172,7 @@ internal sealed class JournalWindow : Window
     private void Render()
     {
         if(_loading)return;
-        if(_files.SelectedItem is not string file){_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text=UiText.Translate("Chưa có tệp nhật ký");return;}
+        if(_files.SelectedItem is not string file){_noMatch.Visibility=Visibility.Collapsed;_content.Text=_vm.JournalWriteFailed ? string.Join(Environment.NewLine,_vm.LogLines) : "";_status.Text=UiText.Translate("Chưa có tệp nhật ký");return;}
         var levels=new[]{"ALL","INFO","WARN","ERROR","DEBUG"};var size=_size.SelectedItem is int value ? value : 200;
         _pageSizeLabel.Text=UiText.Format("{0} bản ghi/trang", size);
         // An invalid search expression is the user's input, not a log read failure: say so beside the field and keep the log readable (level filter only).

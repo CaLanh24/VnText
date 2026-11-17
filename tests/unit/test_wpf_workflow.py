@@ -1071,7 +1071,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('RefreshWorkflow();\n                RefreshTranslateReadiness();', view_model)
         self.assertIn('CommandParameter="images"', xaml)
         self.assertNotIn('Command="{Binding CancelAndExitCommand}"', xaml)
-        self.assertIn('Text="{Binding ExtractStatusText}"', xaml)
+        self.assertIn('x:Name="ExtractStatusLine" Text="{Binding ExtractStatusText, Converter={StaticResource UiTextDynamic}}"', xaml)   # the Extract status line stays bound to the real status, localized at display time
         window_code = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml.cs").read_text(encoding="utf-8")
         self.assertIn("vm.CancelAndExitCommand.Execute(null)", window_code)
         self.assertIn("await vm.TrySaveCsvEditorForExitAsync()", window_code)

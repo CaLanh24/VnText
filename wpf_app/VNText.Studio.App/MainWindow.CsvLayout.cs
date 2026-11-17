@@ -91,6 +91,10 @@ public partial class MainWindow
             return;
         }
         // Opened by the user while tight: the tools scroll inside a cap that always leaves the table its floor.
-        CsvToolsScroll.MaxHeight = CsvEditorLayoutBudget.ToolsCap(card.ActualHeight, viewport, CsvToolsScroll.ActualHeight, required);
+        var cap = CsvEditorLayoutBudget.ToolsCap(card.ActualHeight, viewport, CsvToolsScroll.ActualHeight, required);
+        // The form itself (find/replace/scope and the Preview/Apply/Undo row) is never cut: only the preview text below it may scroll inside the cap.
+        if (CsvBulkReplacePanel.IsVisible && CsvBulkReplacePanel.TransformToAncestor(CsvBulkArea).Transform(new Point(0, CsvBulkReplacePanel.ActualHeight)).Y is var formBottom and > 0)
+            cap = Math.Max(cap, Math.Ceiling(formBottom) + 3);
+        CsvToolsScroll.MaxHeight = cap;
     }
 }

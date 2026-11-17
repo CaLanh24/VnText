@@ -72,6 +72,42 @@ internal static partial class Program
                         Require(Named("TranslateLogEmptyHint").IsVisible && !Named("TranslateLogBody").IsVisible, tag + ": F5 cleared + idle returns to the hint");
                         window.Close(); vm.Language = "vi"; vm.Theme = "light"; vm.UiScale = 1; vm.Dispose();
                     }
+                    {
+                        // F5 (Root correction): a stale no-match overlay must never cover a read failure or the no-file state (owned fixture log only).
+                        var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                        var window = new MainWindow(vm, new FixtureUpdatePresentation());
+                        window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 720;
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                        window.Show(); window.UpdateLayout(); PumpFixture(200);
+                        Directory.CreateDirectory(vm.JournalStore.Root);
+                        var logPath = Path.Combine(vm.JournalStore.Root, "app.log." + DateTime.Now.ToString("yyyy-MM-dd"));
+                        Require(Path.GetFullPath(logPath).Contains(Path.DirectorySeparatorChar + "TEST_RUN" + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase), "the Journal fixture log lives in the TEST_RUN isolation");
+                        File.WriteAllText(logPath, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff zzz") + " INFO alpha line one" + Environment.NewLine);
+                        var journal = new JournalWindow(window, vm);
+                        journal.Show(); journal.UpdateLayout(); PumpFixture(250);
+                        var queryBox = FindVisualChildren<TextBox>(journal).First(b => b.ToolTip as string == "Tìm trong nhật ký");
+                        bool NoMatchShown() => FindVisualChildren<TextBlock>(journal).Any(t => t.IsVisible && t.Text.StartsWith("Không có bản ghi khớp", StringComparison.Ordinal));
+                        bool EmptyShown() => FindVisualChildren<TextBlock>(journal).Any(t => t.IsVisible && t.Text.StartsWith("Chưa có bản ghi nào", StringComparison.Ordinal));
+                        queryBox.Text = "zzz-none"; PumpFixture(150);
+                        Require(NoMatchShown(), "F5: the filter with no match says so");
+                        using (var locked = new FileStream(logPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                        {
+                            queryBox.Text = "zzz-none-2"; PumpFixture(150);
+                            Require(!NoMatchShown() && !EmptyShown(), "F5: a read failure is not covered by a stale no-match overlay");
+                            var logBox = FindVisualChildren<VNText.Studio.App.Controls.SeverityLogBox>(journal).First(b => b.IsReadOnly);
+                            Require(logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal), "F5: the read failure message is visible");
+                        }
+                        queryBox.Text = "alpha"; PumpFixture(150);
+                        Require(!NoMatchShown() && !EmptyShown(), "F5: after the lock is released the log reads again");
+                        queryBox.Text = "zzz-none"; PumpFixture(150);
+                        Require(NoMatchShown(), "F5: no-match again");
+                        File.Delete(logPath);
+                        FindVisualChildren<Button>(journal).First(b => b.Content as string == "Làm mới").Command?.Execute(null);
+                        var refresh = FindVisualChildren<Button>(journal).First(b => b.Content as string == "Làm mới");
+                        refresh.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); PumpFixture(250);
+                        Require(!NoMatchShown(), "F5: the no-file state is not covered by a stale no-match overlay");
+                        journal.Close(); window.Close(); vm.Dispose();
+                    }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
                 }

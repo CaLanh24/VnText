@@ -112,6 +112,31 @@ internal static partial class Program
                     PumpFixture(200);
                     // The warning row above can fold the tools into the one bar (the table floor wins); the explicit control opens them again.
                     if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
+                    // F1 (Root correction): open -> typed/preview -> collapse -> reopen keeps every action INSIDE the visible tools host (no half-cut button row), also with a one-row filter.
+                    void ActionsInsideHost(string step)
+                    {
+                        var host = Named("CsvToolsScroll");
+                        foreach (var name in new[] { "CsvBulkFindTextBox", "CsvBulkReplaceTextBox", "CsvBulkScopeComboBox", "CsvBulkPreviewButton", "CsvBulkApplyButton", "CsvBulkUndoButton" })
+                        {
+                            var b = Named(name);
+                            var r = b.TransformToAncestor(host).TransformBounds(new Rect(0, 0, b.ActualWidth, b.ActualHeight));
+                            Require(b.IsVisible && b.ActualHeight > 8 && r.Top >= -0.5 && r.Bottom <= host.ActualHeight + 0.5 && r.Left >= -0.5 && r.Right <= host.ActualWidth + 0.5, $"F1 {step}: {name} is whole inside the visible tools host ({r} in {host.ActualWidth:0.#}x{host.ActualHeight:0.#})");
+                        }
+                    }
+                    foreach (var filter in new[] { "", "Hello" })
+                    {
+                        vm.CsvEditorSearch = filter; window.UpdateLayout(); PumpFixture(150);
+                        if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
+                        ActionsInsideHost("open filter='" + filter + "'");
+                        if (vm.CsvToolsTight)
+                        {
+                            vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(200);
+                            Require(Named("CsvToolsBar").IsVisible && !Named("CsvBulkReplacePanel").IsVisible, "F1: collapsed = the one fold bar");
+                            vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250);
+                            ActionsInsideHost("reopened filter='" + filter + "'");
+                        }
+                    }
+                    vm.CsvEditorSearch = ""; window.UpdateLayout(); PumpFixture(100);
                     Require(Grid.GetColumn(Named("CsvPreviewArea")) == 0 && Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2, "F1: examples sit below the full-width form, never in a reserved column beside it");
                     Require(vm.CsvBulkExpanded, "the tools stay visible after loading rows");
                     // Finding 1: the collapsed state keeps ONE preview line; the examples need the explicit button.

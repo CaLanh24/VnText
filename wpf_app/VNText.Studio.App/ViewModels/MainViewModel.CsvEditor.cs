@@ -110,7 +110,7 @@ public sealed partial class MainViewModel
     private bool _csvToolsTight, _csvToolsOpen;
     public bool CsvToolsTight => _csvToolsTight;
     public bool CsvToolsOpen => _csvToolsOpen;
-    public bool CsvToolsBarVisible => CsvEditorHasDocument && _csvToolsTight;
+    public bool CsvToolsBarVisible => CsvEditorHasDocument && _csvToolsTight && !_csvToolsOpen;   // the fold bar exists only while folded; an opened group carries its own Collapse control (F1: no extra row)
     public string CsvToolsToggleText => _csvToolsOpen ? "Thu gọn" : "Mở rộng";
     public RelayCommand ToggleCsvToolsCommand { get; private set; } = null!;
     public bool CsvBulkPanelVisible => CsvEditorHasDocument && (!_csvToolsTight || _csvToolsOpen);

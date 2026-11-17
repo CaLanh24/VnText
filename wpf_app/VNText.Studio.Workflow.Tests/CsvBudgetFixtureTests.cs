@@ -113,7 +113,7 @@ internal static partial class Program
                         var box = (Border)checkbox.Template.FindName("Box", checkbox);
                         var mark = (System.Windows.Shapes.Path)checkbox.Template.FindName("Mark", checkbox);
                         Require(((SolidColorBrush)box.Background).Color == Token("FieldBackgroundBrush") && ((SolidColorBrush)box.BorderBrush).Color == Token("MutedBrush") && mark.Visibility != Visibility.Visible,
-                            "V3: idle box uses FieldBackground/Muted tokens, not the stock white box " + label);
+                            "V3: idle box uses FieldBackground/Muted tokens, not the stock white box " + label + $" bg={box.Background} border={box.BorderBrush} mark={mark.Visibility} checked={checkbox.IsChecked} over={checkbox.IsMouseOver} pressed={checkbox.IsPressed} focus={checkbox.IsKeyboardFocused} tok={Token("FieldBackgroundBrush")}/{Token("MutedBrush")}");
                         Require(ContrastRatio(Token("MutedBrush"), Token("FieldBackgroundBrush")) >= 3.0, "V3: the idle outline is a readable (>=3:1) component boundary " + label);
                         checkbox.IsChecked = true; window.UpdateLayout(); PumpFixture(30);
                         Require(shortRows[0].IsSelected && ((SolidColorBrush)box.Background).Color == Token("BlueBrush") && mark.Visibility == Visibility.Visible, "V3: checked fills with the accent and shows the check, and IsSelected follows " + label);

@@ -1542,6 +1542,11 @@
                                              can never push only its own input down. -->
                                         <TextBlock x:Name="CsvBulkFindLabel" Grid.Row="1" Text="Tìm nguyên bản hoặc bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,0,7,0" VerticalAlignment="Bottom" />
                                         <TextBlock x:Name="CsvBulkReplaceLabel" Grid.Row="1" Grid.Column="1" Text="Thay bằng" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="7,0,7,0" VerticalAlignment="Bottom" />
+                                        <Button x:Name="CsvToolsCollapseButton" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Command="{Binding ToggleCsvToolsCommand}"
+                                                Style="{StaticResource CompactOutlineButton}" Margin="8,0,0,0" AutomationProperties.Name="Thu gọn"
+                                                Visibility="{Binding CsvToolsTight, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding CsvToolsToggleText, Converter={StaticResource UiTextDynamic}}" />
+                                        </Button>
                                         <TextBox x:Name="CsvBulkFindTextBox" Text="{Binding CsvBulkFind, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Grid.Row="2" Margin="0,2,7,0" Height="{StaticResource UiControlHeightStandard}" ToolTip="Tìm trong nguyên bản và bản dịch; Thay bằng chỉ sửa bản dịch." />
                                         <TextBox x:Name="CsvBulkReplaceTextBox" Text="{Binding CsvBulkReplace, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource CompactFieldTextBoxStyle}" Grid.Row="2" Grid.Column="1" Margin="7,2,7,0" Height="{StaticResource UiControlHeightStandard}" />
                                         <!-- Wrap (not clip): at the narrow native width the scope select and the three buttons flow onto a second line instead of running under the examples column. -->
