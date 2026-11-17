@@ -724,7 +724,38 @@
                         <Border x:Name="TranslateLogCard" Grid.Column="1" Style="{StaticResource CardShadowBorder}" Margin="10,0,0,0">
                             <StackPanel>
     <TextBlock Text="Nhật ký" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
+    <!-- F5: no entries and nothing running = a short hint instead of an empty 220 DIP frame; any entry or a running task keeps the log view (and its follow/severity behaviour) exactly as before. -->
+    <TextBlock x:Name="TranslateLogEmptyHint" Text="Chưa có nhật ký. Nhật ký hiện ở đây khi có tác vụ chạy." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0"
+               AutomationProperties.Name="Nhật ký đang trống">
+        <TextBlock.Style>
+            <Style TargetType="TextBlock">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding TranslateLogLines.Count}" Value="0" />
+                            <Condition Binding="{Binding Busy}" Value="False" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Visibility" Value="Visible" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </TextBlock.Style>
+    </TextBlock>
+    <Border x:Name="TranslateLogBody" Height="220" Margin="0,16,0,0">
+        <Border.Style>
+            <Style TargetType="Border" BasedOn="{StaticResource LogPanelBorderStyle}">
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding TranslateLogLines.Count}" Value="0" />
+                            <Condition Binding="{Binding Busy}" Value="False" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
         <ScrollViewer x:Name="TranslateLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding TranslateLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
         </ScrollViewer>
@@ -1002,7 +1033,38 @@
                         </Border>
 <Border x:Name="PatchLogCard" Grid.Row="2" Style="{StaticResource CardShadowBorder}" Margin="0,24,0,0"><StackPanel>
     <TextBlock Text="Nhật ký" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-    <Border Style="{StaticResource LogPanelBorderStyle}" Height="220" Margin="0,16,0,0">
+    <!-- F5: no entries and nothing running = a short hint instead of an empty 220 DIP frame; any entry or a running task keeps the log view (and its follow/severity behaviour) exactly as before. -->
+    <TextBlock x:Name="PatchLogEmptyHint" Text="Chưa có nhật ký. Nhật ký hiện ở đây khi có tác vụ chạy." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0"
+               AutomationProperties.Name="Nhật ký đang trống">
+        <TextBlock.Style>
+            <Style TargetType="TextBlock">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding PatchLogLines.Count}" Value="0" />
+                            <Condition Binding="{Binding Busy}" Value="False" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Visibility" Value="Visible" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </TextBlock.Style>
+    </TextBlock>
+    <Border x:Name="PatchLogBody" Height="220" Margin="0,16,0,0">
+        <Border.Style>
+            <Style TargetType="Border" BasedOn="{StaticResource LogPanelBorderStyle}">
+                <Style.Triggers>
+                    <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                            <Condition Binding="{Binding PatchLogLines.Count}" Value="0" />
+                            <Condition Binding="{Binding Busy}" Value="False" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </MultiDataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
         <ScrollViewer x:Name="PatchLogScrollViewer" Style="{StaticResource ContentPanelScrollViewer}" VerticalScrollBarVisibility="Auto">
             <ItemsControl ItemsSource="{Binding PatchLogLines}" ItemTemplate="{StaticResource JournalLineTemplate}" Margin="14,12" />
         </ScrollViewer>
@@ -1446,9 +1508,14 @@
         <Setter Property="Grid.Column" Value="0" />
         <Setter Property="Grid.ColumnSpan" Value="2" />
         <Style.Triggers>
-            <DataTrigger Binding="{Binding CsvEditorValidationCompact}" Value="True">
+            <!-- F1: the form gives up width only while a preview really sits beside it. -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding CsvEditorValidationCompact}" Value="True" />
+                    <Condition Binding="{Binding CsvBulkHasPreviewDetail}" Value="True" />
+                </MultiDataTrigger.Conditions>
                 <Setter Property="Grid.ColumnSpan" Value="1" />
-            </DataTrigger>
+            </MultiDataTrigger>
         </Style.Triggers>
     </Style>
 </StackPanel.Style>
@@ -1501,20 +1568,33 @@
                                 </Border>
 
     </StackPanel>
-    <StackPanel x:Name="CsvPreviewArea" Margin="{Binding CsvPreviewAreaMargin}" Visibility="{Binding CsvBulkPanelVisible, Converter={StaticResource BoolToVis}}">
+    <StackPanel x:Name="CsvPreviewArea" Margin="{Binding CsvPreviewAreaMargin}">
 <StackPanel.Style>
     <Style TargetType="StackPanel">
         <Setter Property="Grid.Row" Value="1" />
         <Setter Property="Grid.Column" Value="0" />
         <Setter Property="Grid.ColumnSpan" Value="2" />
+        <Setter Property="Visibility" Value="Collapsed" />
         <Style.Triggers>
+            <!-- F1: no preview yet (or the tools are closed) = no preview area and no reserved column. -->
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding CsvBulkPanelVisible}" Value="True" />
+                    <Condition Binding="{Binding CsvBulkHasPreviewContent}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Visibility" Value="Visible" />
+            </MultiDataTrigger>
             <!-- Low height: the examples sit BESIDE the find/replace group (same controls, same content) so the table keeps its rows. -->
-            <DataTrigger Binding="{Binding CsvEditorValidationCompact}" Value="True">
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding CsvEditorValidationCompact}" Value="True" />
+                    <Condition Binding="{Binding CsvBulkHasPreviewDetail}" Value="True" />
+                </MultiDataTrigger.Conditions>
                 <Setter Property="Grid.Row" Value="0" />
                 <Setter Property="Grid.Column" Value="1" />
                 <Setter Property="Grid.ColumnSpan" Value="1" />
                 <Setter Property="Width" Value="200" />
-            </DataTrigger>
+            </MultiDataTrigger>
         </Style.Triggers>
     </Style>
 </StackPanel.Style>

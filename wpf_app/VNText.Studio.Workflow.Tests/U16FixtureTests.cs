@@ -421,6 +421,7 @@ internal static partial class Program
                         vm.TestLoadCsvRows(Path.Combine(work, "translation.csv"), Enumerable.Range(1, 7).Select(i => new CsvEditorRow { Index = i, Key = "k" + i, SourceText = "Hello " + i, Translation = "Xin chào " + i }).ToList(), "OK");
                         window.UpdateLayout(); PumpFixture(300); window.UpdateLayout(); PumpFixture(150);
                         if (!vm.CsvToolsTight && scale < 1.1) { vm.UiScale = 1.2; window.UpdateLayout(); PumpFixture(300); window.UpdateLayout(); PumpFixture(150); }   // 1055x720 folds the tools at 120%, as the N-batch fixture relies on
+                        if (!vm.CsvToolsTight) { vm.TestSetCsvBulkPreview("Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).\nTrước: Hello 1\nSau: Xin chào 1\nTrước: Hello 2\nSau: Xin chào 2"); window.UpdateLayout(); PumpFixture(300); window.UpdateLayout(); PumpFixture(150); }   // full20 F1: the full-width form is shorter, so real examples beside the form are needed to force the fold
                         Require(vm.CsvToolsTight, $"{tag} U4: precondition: a small window folds the tools (the table budget wins)");
                         string ToggleText() { window.UpdateLayout(); PumpFixture(120); window.UpdateLayout(); return FindVisualChildren<TextBlock>(Named("CsvToolsToggleButton")).First().Text; }
                         string Expect(string vi, string en, string lang) => lang == "vi" ? vi : en;

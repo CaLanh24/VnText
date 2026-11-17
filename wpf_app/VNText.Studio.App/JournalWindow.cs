@@ -23,6 +23,7 @@ internal sealed class JournalWindow : Window
     private Button? _previousPage, _nextPage;
     private readonly TextBlock _pageSizeLabel=new(){VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(12,0,8,0)};
     private readonly TextBlock _status=new(){VerticalAlignment=VerticalAlignment.Center}, _modified=new(){VerticalAlignment=VerticalAlignment.Center};
+    private readonly TextBlock _noMatch=new(){Visibility=Visibility.Collapsed,TextWrapping=TextWrapping.Wrap,TextAlignment=TextAlignment.Center,HorizontalAlignment=HorizontalAlignment.Center,VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(24),IsHitTestVisible=false,FontSize=13};
     private readonly TextBlock _searchNote=new(){Visibility=Visibility.Collapsed,FontSize=12,Margin=new Thickness(0,4,0,0),TextWrapping=TextWrapping.Wrap};
     private int _page;
     private bool _loading;
@@ -102,14 +103,15 @@ internal sealed class JournalWindow : Window
         _status.Visibility=Visibility.Collapsed;options.Children.Add(_status);
         var search=new Grid{Margin=new Thickness(0,0,0,10)};Grid.SetRow(search,2);body.Children.Add(search);
         search.RowDefinitions.Add(new(){Height=GridLength.Auto});search.RowDefinitions.Add(new(){Height=GridLength.Auto});
-        _searchNote.Foreground=B("ErrorBrush");Grid.SetRow(_searchNote,1);Grid.SetColumnSpan(_searchNote,3);search.Children.Add(_searchNote);
+        _searchNote.SetResourceReference(TextBlock.ForegroundProperty,"InputErrorForegroundBrush");      // validation text token (Dark #FDA29B / Light #B42318), not the global ErrorBrush
+        _noMatch.SetResourceReference(TextBlock.ForegroundProperty,"MutedBrush");Grid.SetRow(_searchNote,1);Grid.SetColumnSpan(_searchNote,3);search.Children.Add(_searchNote);
         search.ColumnDefinitions.Add(new());search.ColumnDefinitions.Add(new(){Width=GridLength.Auto});search.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
         _query.ToolTip="Tìm trong nhật ký";search.Children.Add(_query);
         var placeholder=new TextBlock{Text="Tìm trong nhật ký",IsHitTestVisible=false,Foreground=B("MutedBrush"),Margin=new Thickness(12,0,0,0),VerticalAlignment=VerticalAlignment.Center};search.Children.Add(placeholder);
         _query.TextChanged+=(_,_)=>placeholder.Visibility=_query.Text.Length==0 ? Visibility.Visible : Visibility.Collapsed;
         _regex.Margin=new Thickness(12,0,8,0);Grid.SetColumn(_regex,1);search.Children.Add(_regex);
         var reset=Button("Xóa tìm kiếm",()=>_query.Clear());reset.ToolTip=UiText.Translate("Chỉ xóa nội dung ô tìm kiếm; không xóa nhật ký.");reset.IsEnabled=false;_query.TextChanged+=(_,_)=>reset.IsEnabled=_query.Text.Length>0;Grid.SetColumn(reset,2);search.Children.Add(reset);
-        var terminal=new Border{Background=_content.Background,CornerRadius=new CornerRadius(9),ClipToBounds=true,Child=_content};Grid.SetRow(terminal,3);body.Children.Add(terminal);terminal.SizeChanged+=(_,_)=>terminal.Clip=new RectangleGeometry(new Rect(0,0,terminal.ActualWidth,terminal.ActualHeight),9,9);
+        var terminal=new Border{Background=_content.Background,CornerRadius=new CornerRadius(9),ClipToBounds=true,Child=new Grid{Children={_content,_noMatch}}};Grid.SetRow(terminal,3);body.Children.Add(terminal);terminal.SizeChanged+=(_,_)=>terminal.Clip=new RectangleGeometry(new Rect(0,0,terminal.ActualWidth,terminal.ActualHeight),9,9);
         var footer=new StackPanel{Orientation=Orientation.Horizontal,HorizontalAlignment=HorizontalAlignment.Right,Margin=new Thickness(20,20,28,20)};
         var footerSurface=new Border{Child=footer,Background=B("SubtlePanelBrush"),CornerRadius=new CornerRadius(0,0,AppDialogWindow.CardRadius,AppDialogWindow.CardRadius),BorderBrush=B("LineBrush"),BorderThickness=new Thickness(0,1,0,0)};Grid.SetRow(footerSurface,2);grid.Children.Add(footerSurface);
         footer.Children.Add(Button("Đóng",Close));footer.Children.Add(Button("Làm mới",Refresh));
@@ -186,6 +188,13 @@ internal sealed class JournalWindow : Window
         var pages=Math.Max(1,(lines.Length+size-1)/size);_page=Math.Clamp(_page,0,pages-1);
         if(_previousPage is not null){_previousPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_previousPage.IsEnabled=_page>0;}
         if(_nextPage is not null){_nextPage.Visibility=pages>1?Visibility.Visible:Visibility.Collapsed;_nextPage.IsEnabled=_page<pages-1;}
+        // Empty vs filtered-empty are different statements; neither touches the query/level the user typed, and an invalid-expression note above stays visible.
+        if(lines.Length==0)
+        {
+            var everything=_store.Read(file);var filtered=levels[Math.Max(0,_level.SelectedIndex)]!="ALL"||(query.Length>0&&expressionError.Length==0);
+            _noMatch.Text=UiText.Translate(filtered&&everything.Length>0?"Không có bản ghi khớp bộ lọc. Đổi mức hoặc từ khóa để xem thêm.":"Chưa có bản ghi nào trong tệp này.");_noMatch.Visibility=Visibility.Visible;
+        }
+        else _noMatch.Visibility=Visibility.Collapsed;
         var start=Math.Max(0,lines.Length-(_page+1)*size);
         _content.Text=string.Join(Environment.NewLine,lines.Skip(start).Take(Math.Min(size,lines.Length-_page*size)));_content.ScrollToEnd();
         _status.Text=UiText.Format("{0} bản ghi · {1}/{2}", lines.Length, _page+1, pages);_modified.Text=UiText.FormatLocalTime(File.GetLastWriteTime(_store.FilePath(file)));

@@ -127,6 +127,17 @@ public sealed partial class MainViewModel
         RaiseCsvCompactLayout();
     }
 
+    /// <summary>Bulk-replace copy with the match count and the row count pluralised INDEPENDENTLY.  A count of 1 is written into the catalog key itself (the Vietnamese text is
+    /// unchanged), so the English side can say "once" / "1 row"; any other count keeps the {n} placeholder.  Template tokens: {M} matches, {R} rows, {T0}.. extra arguments.</summary>
+    internal static string BulkReplaceMsg(string template, long matches, long rows, params object[] tail)
+    {
+        var args = new List<object?>(); var format = template;
+        if (matches == 1) format = format.Replace("{M}", "1"); else { format = format.Replace("{M}", "{" + args.Count + "}"); args.Add(matches.ToString("N0")); }
+        if (rows == 1) format = format.Replace("{R}", "1"); else { format = format.Replace("{R}", "{" + args.Count + "}"); args.Add(rows.ToString("N0")); }
+        for (var i = 0; i < tail.Length; i++) { format = format.Replace("{T" + i + "}", "{" + args.Count + "}"); args.Add(tail[i]); }
+        return UiText.Msg(format, args.ToArray());
+    }
+
     private void ToggleCsvTools()
     {
         if (!_csvToolsTight) return;
@@ -422,6 +433,8 @@ public sealed partial class MainViewModel
         get => UiText.SplitFirstLine(_csvBulkPreview ?? "").Remainder;
     }
     public bool CsvBulkHasPreviewDetail => CsvBulkPreviewDetail.Length > 0;
+    /// <summary>F1: the preview column (and its reserved width beside the form) exists only once a preview has produced a summary.</summary>
+    public bool CsvBulkHasPreviewContent => !string.Equals(_csvBulkPreview, "Nhập chuỗi rồi bấm Xem trước.", StringComparison.Ordinal) && (_csvBulkPreview ?? "").Length > 0;
     public bool CsvBulkPreviewDetailOpen => CsvBulkHasPreviewDetail;      // the examples are always shown (bounded scroller), never behind a button
     public string CsvBulkPreviewDetailButtonText => CsvBulkPreviewDetailOpen ? "Ẩn ví dụ" : "Xem ví dụ";
 
@@ -430,6 +443,7 @@ public sealed partial class MainViewModel
         Raise(nameof(CsvBulkPreviewSummary));
         Raise(nameof(CsvBulkPreviewDetail));
         Raise(nameof(CsvBulkHasPreviewDetail));
+        Raise(nameof(CsvBulkHasPreviewContent));
         Raise(nameof(CsvBulkPreviewDetailOpen));
         Raise(nameof(CsvBulkPreviewDetailButtonText));
     }
@@ -1082,7 +1096,7 @@ public sealed partial class MainViewModel
         ApplyBulkReplaceCsvCommand?.RaiseCanExecuteChanged();
         CsvBulkPreview = preview.Count == 0
             ? "Không tìm thấy chuỗi trong cột Bản dịch."
-            : UiText.Msg("Sẽ thay {0} lần trong {1} dòng ({2}).", preview.ReplacementCount.ToString("N0"), preview.Count.ToString("N0"), UiText.Key(keys is null ? "toàn bộ CSV" : "dòng đang lọc"));
+            : BulkReplaceMsg("Sẽ thay {M} lần trong {R} dòng ({T0}).", preview.ReplacementCount, preview.Count, UiText.Key(keys is null ? "toàn bộ CSV" : "dòng đang lọc"));
         if (preview.Count > 0)
         {
             var samples = rows.Where(row => row.TryGetValue("key", out var key) && preview.Keys.Contains(key))
@@ -1128,7 +1142,7 @@ public sealed partial class MainViewModel
             return;
         }
         var confirm = UiText.Lines(
-            UiText.Msg("Thay thế {0} lần trong {1} dòng?", preview.ReplacementCount.ToString("N0"), preview.Count.ToString("N0")),
+            BulkReplaceMsg("Thay thế {M} lần trong {R} dòng?", preview.ReplacementCount, preview.Count),
             "",
             UiText.Msg("Tìm: {0}" + "\n" + "Thay bằng: {1}", applyFind, applyReplace),
             "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.",
@@ -1162,7 +1176,7 @@ public sealed partial class MainViewModel
         CsvEditorDirty = false;
         ApplyValidationFromBatch(result.IssuesByKey, result.IssuesDisplayByKey, result.Summary,
             result.PatchEligible, result.PatchBlocked, result.BatchActionable);
-        CsvBulkPreview = UiText.Msg("Đã thay {0} lần trong {1} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục.", result.ReplacementCount.ToString("N0"), result.Count.ToString("N0"));
+        CsvBulkPreview = BulkReplaceMsg("Đã thay {M} lần trong {R} dòng. Có thể hoàn tác; đã tạo bản lưu khôi phục.", result.ReplacementCount, result.Count);
         AppendLog($"Bulk replace translation: {CsvBulkPreview} Backup={result.BackupPath}");
         ShowToast(CsvBulkPreview, result.PatchBlocked > 0 ? "warning" : "success");
         LoadCsvEditor(applyPath, reload: true);

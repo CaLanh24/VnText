@@ -70,11 +70,14 @@ internal static partial class Program
                     Require(findLabel.TranslatePoint(new System.Windows.Point(0, findLabel.ActualHeight), window).Y <= findBox.TranslatePoint(new System.Windows.Point(0, 0), window).Y + 1, "the label ends above its field (no overlap after wrapping)");
                     Require(Math.Abs(grid.ActualHeight - emptyHeight) <= Math.Max(60, emptyHeight * 0.5), "the table viewport does not jump against the empty state");
 
+                    // F1: with no preview text at all the find/replace group owns the whole width (no reserved preview column).
+                    Require(!Named("CsvPreviewArea").IsVisible, "F1: no preview, no preview area");
+                    Require(Named("CsvBulkReplacePanel").ActualWidth >= Named("CsvBulkArea").ActualWidth - 8, "F1: without a preview the find/replace panel spans the whole tools width (" + Named("CsvBulkReplacePanel").ActualWidth + " of " + Named("CsvBulkArea").ActualWidth + ")");
                     vm.CsvBulkFind = "cửa";
                     vm.CsvBulkReplace = "cổng";
                     window.UpdateLayout();
                     PumpFixture(100);
-                    Require(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible, "the tools are open without any action");
+                    Require(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible, "the tools are open without any action (expanded=" + vm.CsvBulkExpanded + " visible=" + Named("CsvBulkReplacePanel").IsVisible + " tight=" + vm.CsvToolsTight + " open=" + vm.CsvToolsOpen + " grid=" + grid.ActualHeight + " tools=" + Named("CsvToolsScroll").ActualHeight + " panelW=" + Named("CsvBulkReplacePanel").ActualWidth + " areaW=" + Named("CsvBulkArea").ActualWidth + ")");
                     Require(Named("CsvBulkScopeComboBox").Height == 36, "bulk scope select is the 36 DIP standard size");
                     window.UpdateLayout();
                     PumpFixture(100);
@@ -100,9 +103,16 @@ internal static partial class Program
                     vm.CsvFilterMode = "all";
                     vm.CsvEditorSearch = "";
                     vm.TestLoadCsvRows(Path.Combine(Path.GetTempPath(), "translation.csv"), rows, warning);
+                    // F1: a one-line hint (typed text invalidated the preview) sits BELOW the full-width form; the 200 DIP column beside it is reserved only for real examples.
+                    window.UpdateLayout(); PumpFixture(150);
+                    Require(Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2 && Named("CsvBulkReplacePanel").ActualWidth >= Named("CsvBulkArea").ActualWidth - 8, "F1: a summary-only preview does not narrow the find/replace panel");
+                    Require(grid.ActualHeight >= 150, "F1: the table row floor holds with the hint");
                     vm.TestSetCsvBulkPreview(examples);
                     window.UpdateLayout();
                     PumpFixture(200);
+                    // The warning row above can fold the tools into the one bar (the table floor wins); the explicit control opens them again.
+                    if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
+                    Require(Grid.GetColumn(Named("CsvPreviewArea")) == 1 && (Named("CsvPreviewArea").IsVisible || !Named("CsvBulkReplacePanel").IsVisible), "F1: examples sit beside the form at low height (compact=" + vm.CsvEditorValidationCompact + " col=" + Grid.GetColumn(Named("CsvPreviewArea")) + " vis=" + Named("CsvPreviewArea").IsVisible + ")");
                     Require(vm.CsvBulkExpanded, "the tools stay visible after loading rows");
                     // Finding 1: the collapsed state keeps ONE preview line; the examples need the explicit button.
                     var summaryText = Named("CsvBulkPreviewSummaryText");
@@ -293,9 +303,15 @@ internal static partial class Program
                     PumpFixture(150);
                     Require(Note() is { IsVisible: true } note && note.ToolTip is string detail && detail.Length > 0, "an invalid expression shows its own message beside the search field, with the technical detail kept in the tooltip");
                     Require(!logBox.Text.Contains("Không đọc được nhật ký", StringComparison.Ordinal) && logBox.Text.Contains("alpha line one", StringComparison.Ordinal), "the log stays readable and is not reported as a read failure");
+                    // F3: only this message uses the validation-text token (not the global error colour).
+                    Require(Note() is { } fnote && fnote.Foreground is System.Windows.Media.SolidColorBrush fb && journal.TryFindResource("InputErrorForegroundBrush") is System.Windows.Media.SolidColorBrush eb && fb.Color == eb.Color, "F3: the invalid-expression message uses InputErrorForegroundBrush");
+                    Require(!FindVisualChildren<TextBlock>(journal).Any(t => t.IsVisible && t.Text.StartsWith("Không có bản ghi khớp", StringComparison.Ordinal)), "F5: an invalid expression shows its error, never a contradicting no-match hint");
                     queryBox.Text = "al.ha";
                     PumpFixture(150);
                     Require(Note() is not { IsVisible: true } && logBox.Text.Contains("alpha line one", StringComparison.Ordinal) && !logBox.Text.Contains("beta", StringComparison.Ordinal), "fixing the expression restores the regex search");
+                    queryBox.Text = "zzz-no-such-entry"; PumpFixture(150);
+                    Require(FindVisualChildren<TextBlock>(journal).Any(t => t.IsVisible && t.Text.StartsWith("Không có bản ghi khớp", StringComparison.Ordinal)) && queryBox.Text == "zzz-no-such-entry", "F5: a filter with no matches says so, without resetting the query");
+                    queryBox.Text = "al.ha"; PumpFixture(150);
                     queryBox.Text = "[";
                     PumpFixture(100);
                     regexToggle.IsChecked = false;

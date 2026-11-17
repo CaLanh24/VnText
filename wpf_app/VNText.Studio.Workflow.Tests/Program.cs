@@ -55,6 +55,8 @@ internal static partial class Program
             return RunB18Fixture();
         if (args.Contains("--h19-fixture", StringComparer.Ordinal))
             return RunH19Fixture();
+        if (args.Contains("--f20-fixture", StringComparer.Ordinal))
+            return RunF20Fixture();
         if (args.Contains("--update-window-success-fixture", StringComparer.Ordinal))
             return RunUpdateWindowSuccessFixture();
         if (args.Contains("--update-window-transition-fixture", StringComparer.Ordinal))
