@@ -103,7 +103,7 @@ internal static partial class Program
                     vm.CsvFilterMode = "all";
                     vm.CsvEditorSearch = "";
                     vm.TestLoadCsvRows(Path.Combine(Path.GetTempPath(), "translation.csv"), rows, warning);
-                    // F1: a one-line hint (typed text invalidated the preview) sits BELOW the full-width form; the 200 DIP column beside it is reserved only for real examples.
+                    // F1: the preview (hint or examples) always sits BELOW the full-width form; there is no reserved column beside it.
                     window.UpdateLayout(); PumpFixture(150);
                     Require(Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2 && Named("CsvBulkReplacePanel").ActualWidth >= Named("CsvBulkArea").ActualWidth - 8, "F1: a summary-only preview does not narrow the find/replace panel");
                     Require(grid.ActualHeight >= 150, "F1: the table row floor holds with the hint");
@@ -112,7 +112,7 @@ internal static partial class Program
                     PumpFixture(200);
                     // The warning row above can fold the tools into the one bar (the table floor wins); the explicit control opens them again.
                     if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
-                    Require(Grid.GetColumn(Named("CsvPreviewArea")) == 1 && (Named("CsvPreviewArea").IsVisible || !Named("CsvBulkReplacePanel").IsVisible), "F1: examples sit beside the form at low height (compact=" + vm.CsvEditorValidationCompact + " col=" + Grid.GetColumn(Named("CsvPreviewArea")) + " vis=" + Named("CsvPreviewArea").IsVisible + ")");
+                    Require(Grid.GetColumn(Named("CsvPreviewArea")) == 0 && Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2, "F1: examples sit below the full-width form, never in a reserved column beside it");
                     Require(vm.CsvBulkExpanded, "the tools stay visible after loading rows");
                     // Finding 1: the collapsed state keeps ONE preview line; the examples need the explicit button.
                     var summaryText = Named("CsvBulkPreviewSummaryText");

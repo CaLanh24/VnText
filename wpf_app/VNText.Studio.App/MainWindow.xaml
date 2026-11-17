@@ -1507,16 +1507,6 @@
         <Setter Property="Grid.Row" Value="0" />
         <Setter Property="Grid.Column" Value="0" />
         <Setter Property="Grid.ColumnSpan" Value="2" />
-        <Style.Triggers>
-            <!-- F1: the form gives up width only while a preview really sits beside it. -->
-            <MultiDataTrigger>
-                <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding CsvEditorValidationCompact}" Value="True" />
-                    <Condition Binding="{Binding CsvBulkHasPreviewDetail}" Value="True" />
-                </MultiDataTrigger.Conditions>
-                <Setter Property="Grid.ColumnSpan" Value="1" />
-            </MultiDataTrigger>
-        </Style.Triggers>
     </Style>
 </StackPanel.Style>
 <Border x:Name="CsvToolsBar" Style="{StaticResource SubtlePanelBorder}" Margin="0,3,0,0" Padding="8,2,6,2" AutomationProperties.Name="Tìm và thay thế bản dịch"
@@ -1584,17 +1574,7 @@
                 </MultiDataTrigger.Conditions>
                 <Setter Property="Visibility" Value="Visible" />
             </MultiDataTrigger>
-            <!-- Low height: the examples sit BESIDE the find/replace group (same controls, same content) so the table keeps its rows. -->
-            <MultiDataTrigger>
-                <MultiDataTrigger.Conditions>
-                    <Condition Binding="{Binding CsvEditorValidationCompact}" Value="True" />
-                    <Condition Binding="{Binding CsvBulkHasPreviewDetail}" Value="True" />
-                </MultiDataTrigger.Conditions>
-                <Setter Property="Grid.Row" Value="0" />
-                <Setter Property="Grid.Column" Value="1" />
-                <Setter Property="Grid.ColumnSpan" Value="1" />
-                <Setter Property="Width" Value="200" />
-            </MultiDataTrigger>
+            <!-- F1: examples always sit BELOW the full-width form (never a reserved column beside it); the tools scroller cap keeps the table floor. -->
         </Style.Triggers>
     </Style>
 </StackPanel.Style>

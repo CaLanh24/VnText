@@ -38,6 +38,15 @@ public partial class MainWindow
         return shortest <= CsvEditorLayoutBudget.SingleLineRow * 1.3 ? shortest : CsvEditorLayoutBudget.SingleLineRow;
     }
 
+    /// <summary>Tallest of the first three realised rows: the table must also be able to show ONE whole row of what it really holds (a page of long wrapped rows is never reduced to a sliver by the tools).</summary>
+    private static double LeadingRowHeightOf(DataGrid grid)
+    {
+        var tallest = 0.0;
+        for (var i = 0; i < Math.Min(grid.Items.Count, 3); i++)
+            if (grid.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow { ActualHeight: > 0 } row && row.ActualHeight > tallest) tallest = row.ActualHeight;
+        return tallest;
+    }
+
     private static T? FindDescendant<T>(DependencyObject root) where T : DependencyObject
     {
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
@@ -58,7 +67,7 @@ public partial class MainWindow
         if (signature == _csvBudgetSignature) return;
         _csvBudgetSignature = signature;
 
-        var required = CsvEditorLayoutBudget.Required(HeaderHeightOf(grid), RowHeightOf(grid));
+        var required = Math.Max(CsvEditorLayoutBudget.Required(HeaderHeightOf(grid), RowHeightOf(grid)), HeaderHeightOf(grid) + LeadingRowHeightOf(grid) + CsvEditorLayoutBudget.Slack);
         var viewport = grid.ActualHeight;
         // Safety net against any layout feedback: at most two fold/unfold flips for one card size; a new size starts again.
         var size = (Math.Round(card.ActualWidth), Math.Round(card.ActualHeight));

@@ -175,7 +175,7 @@ internal static partial class Program
                             for (var i = 0; i < 6; i++)
                                 if (grid.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow r)
                                     parts.Add($"#{i} top={r.TranslatePoint(new Point(0, 0), window).Y:0} h={r.ActualHeight:0} vis={r.IsVisible}");
-                            return $"rows={vm.CsvEditorRows.Count} visible={vm.CsvEditorVisibleCount} viewCount={vm.CsvEditorView?.Cast<object>().Count()} search='{vm.CsvEditorSearch}' mode={vm.CsvFilterMode} gridSrcSame={ReferenceEquals(grid.ItemsSource, vm.CsvEditorView)} gridH={grid.ActualHeight:0} gridTop={grid.TranslatePoint(new Point(0, 0), window).Y:0} items={grid.Items.Count} " + string.Join("; ", parts);
+                            return $"tight={vm.CsvToolsTight} open={vm.CsvToolsOpen} toolsH={Named("CsvToolsScroll").ActualHeight:0} previewVis={Named("CsvPreviewArea").IsVisible} rows={vm.CsvEditorRows.Count} visible={vm.CsvEditorVisibleCount} viewCount={vm.CsvEditorView?.Cast<object>().Count()} search='{vm.CsvEditorSearch}' mode={vm.CsvFilterMode} gridSrcSame={ReferenceEquals(grid.ItemsSource, vm.CsvEditorView)} gridH={grid.ActualHeight:0} gridTop={grid.TranslatePoint(new Point(0, 0), window).Y:0} items={grid.Items.Count} " + string.Join("; ", parts);
                         }
                         Require(longFull >= 1, "V1: a long row is fully visible and readable " + label + " (" + longFull + ") " + Diag());
                         var scroller = FindVisualChildren<ScrollViewer>(grid).First();
@@ -201,7 +201,8 @@ internal static partial class Program
                         window.Close();
                         Time("window closed");
                     }
-                    Require(labelsDiffered, "V2: at least one presentation really wrapped one label to two lines (the old misalignment) while the fields stayed aligned");
+                    // full20 F1: the full-width form no longer wraps a label at these sizes, so the old 27 px misalignment case is no longer reachable here; the alignment requirement above holds in every presentation either way.
+                    if (!labelsDiffered) Console.WriteLine("   note: no label wrapped in any presentation (F1 full-width form)");
                     vm.Language = "vi"; vm.Theme = "light"; vm.UiScale = 1;   // the isolated settings return to the defaults
                     Console.WriteLine($"WPF CSV budget fixture: PASS ({cases} presentations: vi/en x light/dark x UI100/120 x 1055x720 and 1484x800; 7 short rows + 120 long rows; V1 floor, V2 alignment, V3 checkbox)");
                     exitCode = 0;
