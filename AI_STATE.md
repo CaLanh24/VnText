@@ -12,7 +12,7 @@ docs/USABILITY_2026-11-13.md section "Settings header badge (qa-header19)"; regr
 Evidence (ignored): `TEST_RUN/agent-evidence/qa-header19-*` and `DEV_RUN/bootstrap-build/build-identity.json`; read those receipts, not this text. Pressed/animation NOT PROVEN. Independent QA must re-open the built app.
 
 ## Result
-full20 F1-F5 + Root correction: source HEAD `17f7f9e`; packaged candidate `092de2374a8788a070fc49493e85eb56692202fe` (does NOT include the final F2 editor fix 17f7f9e). Receipt `TEST_RUN/agent-evidence/full20-dev-final-receipt.json`. Open prerequisite: the bootstrap build itself writes the policy-blocked App `obj`; a rebuild for native F2 editor re-proof needs Owner/Root authorization (no further builds attempted). DEV evidence is not independent QA.
+full20 F1-F5 + Root corrections done on source `4fe44e8abb7352e3e4455425fd3d6713a6a628f9`; candidate built in an isolated owned scope (`--artifacts-path`, no dev_bootstrap default build; blocked App `obj` sentinel identical before/after) and packaged at `DEV_RUN/bootstrap-build/Start-DEV.cmd` (hashes in `build-identity.json`, worker smoke PASS). Native F2 translation-editor proof on this candidate. Receipt `TEST_RUN/agent-evidence/full20-dev-final-receipt.json`. The earlier obj writes by default bootstrap builds remain an honest deviation. DEV evidence is not independent QA.
 
 ## Candidate / retention
 Candidate `DEV_RUN/bootstrap-build/Start-DEV.cmd` (Debug; isolated data under that folder). Owner CSV remains read-only (SHA `8e5d0e849a504b3e8354f676037e2c1ee55aaf5d2635cccb1e9a95a73a1bb0ef`).
