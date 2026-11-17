@@ -41,6 +41,31 @@
             <Setter Property="CaretBrush" Value="{DynamicResource InkBrush}" />
             <Setter Property="SelectionBrush" Value="{DynamicResource BlueBrush}" />
             <Setter Property="SelectionOpacity" Value="0.4" />
+            <!-- F2: a very long translation never grows the editing row past the grid body: the editor is bounded (about four lines) and scrolls its own text, so Ctrl+End / arrows / PageDown still reach the end. -->
+            <Setter Property="MaxHeight" Value="112" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="FieldSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9">
+                            <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Foreground="{TemplateBinding Foreground}" TextElement.Foreground="{TemplateBinding Foreground}" TextElement.FontFamily="{TemplateBinding FontFamily}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}" TextElement.FontWeight="{TemplateBinding FontWeight}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="FieldSurface" Property="BorderBrush" Value="{DynamicResource BlueBrush}" />
+                                <Setter TargetName="FieldSurface" Property="Background" Value="{DynamicResource SurfaceBrush}" />
+                            </Trigger>
+                            <Trigger Property="Validation.HasError" Value="True">
+                                <Setter TargetName="FieldSurface" Property="BorderBrush" Value="{DynamicResource InputErrorBorderBrush}" />
+                                <Setter TargetName="FieldSurface" Property="Background" Value="{DynamicResource InputErrorSurfaceBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="ApproveBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource ThemedCheckBoxStyle}">
             <Style.Triggers>

@@ -108,6 +108,20 @@ internal static partial class Program
                         Require(!NoMatchShown(), "F5: the no-file state is not covered by a stale no-match overlay");
                         journal.Close(); window.Close(); vm.Dispose();
                     }
+                    {
+                        // F2 (Root correction): the in-grid translation editor of a very long text is bounded and scrolls its own text (keyboard reaches the end), the data is untouched.
+                        var host = new Window { Width = 400, Height = 300, ShowActivated = false, ShowInTaskbar = false, WindowStartupLocation = WindowStartupLocation.Manual, Left = -4000, Top = 0 };
+                        var panel = new ImageWorkspacePanel();
+                        var longText = string.Join(" ", Enumerable.Repeat("Bảng thông báo ghi rõ từng quy định của ngôi làng rất chi tiết, hãy đọc kỹ từng dòng trước khi rời đi.", 8));
+                        var editor = new TextBox { Style = (Style)panel.FindResource("RegionTranslationEditor"), Text = longText, Width = 170 };
+                        host.Content = editor; host.Show(); host.UpdateLayout(); PumpFixture(150);
+                        var scroller = (ScrollViewer)editor.Template.FindName("PART_ContentHost", editor);
+                        Require(editor.ActualHeight <= 112.5, "F2: the long-translation editor is bounded (" + editor.ActualHeight + ")");
+                        Require(scroller.VerticalScrollBarVisibility == ScrollBarVisibility.Auto && scroller.ScrollableHeight > 0, "F2: the bounded editor scrolls its own text (" + scroller.ScrollableHeight + ")");
+                        editor.Focus(); editor.CaretIndex = editor.Text.Length; editor.ScrollToEnd(); host.UpdateLayout(); PumpFixture(100);
+                        Require(scroller.VerticalOffset >= scroller.ScrollableHeight - 1 && editor.Text == longText, "F2: the end of the full text is reachable and the data is unchanged");
+                        host.Close();
+                    }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
                 }
