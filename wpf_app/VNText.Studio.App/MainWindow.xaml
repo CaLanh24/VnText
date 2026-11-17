@@ -940,6 +940,7 @@
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Background" Value="{DynamicResource GreenSoftBrush}" /></DataTrigger>
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
+                                                    <DataTrigger Binding="{Binding PatchBadgeKind}" Value="nosource"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
                                                     <DataTrigger Binding="{Binding PatchBadgeKind}" Value="idle"><Setter Property="Background" Value="{DynamicResource SubtlePanelBrush}" /></DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -952,6 +953,7 @@
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="ready"><Setter Property="Foreground" Value="{DynamicResource GreenDarkBrush}" /></DataTrigger>
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="csvok"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="stale"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
+                                                        <DataTrigger Binding="{Binding PatchBadgeKind}" Value="nosource"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                         <DataTrigger Binding="{Binding PatchBadgeKind}" Value="idle"><Setter Property="Foreground" Value="{DynamicResource MutedBrush}" /></DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -1769,6 +1771,12 @@
                                         </DataGridTextColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
+                                <!-- A2: loaded, settled document, filter shows nothing: say so in the body and offer the reset (search + status filter only). -->
+                                <StackPanel x:Name="CsvNoMatchHint" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="12,64,12,0"
+                                            Visibility="{Binding CsvEditorNoMatchVisible, Converter={StaticResource BoolToVis}}">
+                                    <TextBlock x:Name="CsvNoMatchText" Text="{Binding CsvEditorNoMatchText, Converter={StaticResource UiTextDynamic}}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+                                    <Button x:Name="CsvClearFiltersButton" Content="Xóa tìm kiếm và bộ lọc" Margin="0,8,0,0" HorizontalAlignment="Center" Style="{StaticResource CompactOutlineButton}" Command="{Binding ClearCsvFiltersCommand}" />
+                                </StackPanel>
 
                                 <StackPanel Grid.Row="3" x:Name="CsvEditorFooter" Margin="0,6,0,0">
 <TextBlock Text="{Binding CsvEditorGateStats, Converter={StaticResource UiTextDynamic}}" FontSize="12" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>

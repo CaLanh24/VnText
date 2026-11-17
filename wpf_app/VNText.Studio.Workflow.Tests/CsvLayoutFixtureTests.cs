@@ -259,6 +259,10 @@ internal static partial class Program
                             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Require(Named("PatchBadge").IsVisible, $"{badgeTheme}: the badge is shown once a source was checked");
+                            vm.InputPath = "";
+                            Badge("CẦN CHỌN GAME", "SubtlePanelBrush", "MutedBrush", "valid CSV without source");
+                            Require(!vm.RunPatchCommand.CanExecute(null), "missing source keeps Build locked");
+                            vm.InputPath = packageA;
                             Badge("SẴN SÀNG", "GreenSoftBrush", "GreenDarkBrush", "A ready");
                             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));
                             Badge("CẦN KIỂM TRA LẠI", "SubtlePanelBrush", "MutedBrush", "B invalidated");

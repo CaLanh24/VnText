@@ -74,6 +74,7 @@ public sealed partial class MainViewModel
                 Raise(nameof(CsvEditorPathDisplay));
                 Raise(nameof(CsvEditorPathToolTip));
                 Raise(nameof(CsvEditorHasDocument));
+                RaiseCsvNoMatch();
                 ApplyCsvBulkDefault();
             }
         }
@@ -327,6 +328,7 @@ public sealed partial class MainViewModel
             if (Set(ref _csvEditorSearch, value))
             {
                 ApplyCsvEditorFilter();
+                RaiseCsvNoMatch();
                 if (_csvBulkPendingPreview is not null) InvalidateCsvBulkPreview("Đã đổi nội dung lọc — hãy xem trước lại.");
             }
         }
@@ -341,6 +343,7 @@ public sealed partial class MainViewModel
             if (Set(ref _csvFilterMode, normalized))
             {
                 ApplyCsvEditorFilter();
+                RaiseCsvNoMatch();
                 if (_csvBulkPendingPreview is not null) InvalidateCsvBulkPreview("Đã đổi bộ lọc — hãy xem trước lại.");
             }
         }
@@ -454,8 +457,16 @@ public sealed partial class MainViewModel
     public int CsvEditorVisibleCount
     {
         get => _csvEditorVisibleCount;
-        private set { if (Set(ref _csvEditorVisibleCount, value)) Raise(nameof(CsvEditorGateStats)); }
+        private set { if (Set(ref _csvEditorVisibleCount, value)) { Raise(nameof(CsvEditorGateStats)); RaiseCsvNoMatch(); } }
     }
+
+    /// <summary>A loaded, settled document whose current search/status filter shows no row (the document itself is not empty).  Distinct from "no document" and from loading.</summary>
+    public bool CsvEditorNoMatchVisible => CsvEditorHasDocument && !CsvEditorLoading && _csvEditorRows.Count > 0 && CsvEditorVisibleCount == 0;
+    public string CsvEditorNoMatchText => (_csvEditorSearch ?? "").Trim().Length > 0 ? "Không tìm thấy dòng phù hợp." : "Không có dòng nào trong bộ lọc hiện tại.";
+    public RelayCommand ClearCsvFiltersCommand { get; private set; } = null!;
+    private void RaiseCsvNoMatch() { Raise(nameof(CsvEditorNoMatchVisible)); Raise(nameof(CsvEditorNoMatchText)); ClearCsvFiltersCommand?.RaiseCanExecuteChanged(); }
+    /// <summary>Resets ONLY the search text and the status filter: the document, its edits, checked rows, schema and counts stay as they are.</summary>
+    private void ClearCsvFilters() { CsvEditorSearch = ""; CsvFilterMode = CsvFilterModes.All; }
 
     public int CsvEditorPatchEligible
     {
@@ -493,6 +504,7 @@ public sealed partial class MainViewModel
         {
             if (Set(ref _csvEditorLoading, value))
             {
+                RaiseCsvNoMatch();
                 ChooseInputCommand.RaiseCanExecuteChanged();
                 ChooseOutputCommand.RaiseCanExecuteChanged();
                 ReloadCsvEditorCommand.RaiseCanExecuteChanged();
@@ -597,6 +609,7 @@ public sealed partial class MainViewModel
         };
         OpenCsvEditorFileCommand = new RelayCommand(_ => ChooseCsvEditorFile(), _ => !CsvEditorSaving && !CsvEditorLoading);
         ToggleCsvToolsCommand = new RelayCommand(_ => ToggleCsvTools(), _ => _csvToolsTight);
+        ClearCsvFiltersCommand = new RelayCommand(_ => ClearCsvFilters(), _ => CsvEditorNoMatchVisible);
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(CsvEditorUserValidationMessage)) Raise(nameof(CsvEditorUserValidationShort));

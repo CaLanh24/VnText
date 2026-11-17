@@ -162,6 +162,46 @@ internal static partial class Program
                         Require((string)new VNText.Studio.App.Converters.UiTextConverter().Convert("Đang dịch offline…", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture) == "Đang dịch offline…", "F21: VI status unchanged");
                         vm.Language = "vi"; vm.GlossaryEntries.Clear(); window.Close(); vm.Dispose();
                     }
+                    {
+                        // f23 A2: a loaded, settled document with zero filtered rows says so and offers the reset; no document / loading / empty document do not show it.
+                        var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                        vm.UiScale = 1.2; vm.NavigateTabCommand.Execute("editcsv");
+                        var window = new MainWindow(vm, new FixtureUpdatePresentation());
+                        window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 720;
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                        window.Show(); window.UpdateLayout(); PumpFixture(250);
+                        FrameworkElement Named(string name) => (FrameworkElement)(window.FindName(name) ?? throw new InvalidOperationException(name));
+                        Require(!Named("CsvNoMatchHint").IsVisible, "A2: no document -> no no-match hint");
+                        Console.Error.WriteLine("A2 step 0"); var rows = Enumerable.Range(1, 7).Select(i => new CsvEditorRow { Index = i, Key = "k" + i, SourceText = "Hello " + i, Translation = "Xin chào " + i }).ToList();
+                        vm.TestLoadCsvRows(Path.Combine(Path.GetTempPath(), "translation.csv"), rows, "OK"); window.UpdateLayout(); PumpFixture(250);
+                        Require(!Named("CsvNoMatchHint").IsVisible && vm.CsvEditorVisibleCount == 7, "A2: 7/7 rows shown -> no hint");
+                        Console.Error.WriteLine("A2 step 1"); vm.CsvEditorRows[2].IsSelected = true;
+                        vm.CsvEditorRows[1].Translation = "Đã sửa"; vm.OnCsvEditorTranslationChanged(vm.CsvEditorRows[1]);
+                        Console.Error.WriteLine("A2 step 2"); var dirtyBefore = vm.CsvEditorDirty; var selectedBefore = vm.CsvEditorRows.Count(r => r.IsSelected);
+                        Require(dirtyBefore, "A2 precondition: an unsaved edit exists");
+                        Console.Error.WriteLine("A2 step 3"); foreach (var lang in new[] { "vi", "en" })
+                        {
+                            vm.Language = lang; PumpFixture(120);
+                            var en = lang == "en";
+                            // query with no match
+                            Console.Error.WriteLine("A2 step 4"); vm.CsvFilterMode = CsvFilterModes.All; vm.CsvEditorSearch = "zzz-none"; window.UpdateLayout(); PumpFixture(150);
+                            Require(Named("CsvNoMatchHint").IsVisible && vm.CsvEditorVisibleCount == 0, "A2 " + lang + ": query with no match shows the hint");
+                            Require(((Button)Named("CsvClearFiltersButton")).IsEnabled, "A2: reset button becomes enabled when no-match appears");
+                            Require(((TextBlock)Named("CsvNoMatchText")).Text == (en ? "No matching rows found." : "Không tìm thấy dòng phù hợp."), "A2 " + lang + ": hint text '" + ((TextBlock)Named("CsvNoMatchText")).Text + "'");
+                            Require(((Button)Named("CsvClearFiltersButton")).Content as string == (en ? "Clear search and filters" : "Xóa tìm kiếm và bộ lọc"), "A2 " + lang + ": action label");
+                            // status filter with no match (all 7 rows are valid, so "errors only" is empty)
+                            Console.Error.WriteLine("A2 step 5"); vm.CsvEditorSearch = ""; vm.CsvFilterMode = CsvFilterModes.Errors; window.UpdateLayout(); PumpFixture(150);
+                            Require(Named("CsvNoMatchHint").IsVisible && ((TextBlock)Named("CsvNoMatchText")).Text == (en ? "No rows in the current filter." : "Không có dòng nào trong bộ lọc hiện tại."), "A2 " + lang + ": status filter with no match");
+                            // combined
+                            vm.CsvEditorSearch = "zzz-none"; window.UpdateLayout(); PumpFixture(100);
+                            Require(Named("CsvNoMatchHint").IsVisible, "A2 " + lang + ": combined filters");
+                            Require(vm.CsvEditorRows.Count == 7 && vm.CsvEditorDirty == dirtyBefore && vm.CsvEditorRows.Count(r => r.IsSelected) == selectedBefore && vm.CsvEditorRows[1].Translation == "Đã sửa", "A2 " + lang + ": document, dirty edit and selection untouched while filtered");
+                            Console.Error.WriteLine("A2 step 6"); vm.ClearCsvFiltersCommand.Execute(null); window.UpdateLayout(); PumpFixture(200);
+                            Require(!Named("CsvNoMatchHint").IsVisible && vm.CsvEditorVisibleCount == 7 && vm.CsvEditorSearch == "" && vm.CsvFilterMode == CsvFilterModes.All, "A2 " + lang + ": reset restores 7/7");
+                            Require(vm.CsvEditorDirty == dirtyBefore && vm.CsvEditorRows.Count(r => r.IsSelected) == selectedBefore && vm.CsvEditorRows[1].Translation == "Đã sửa" && vm.CsvEditorRows.Count == 7, "A2 " + lang + ": reset keeps dirty edits, selection and the document");
+                        }
+                        vm.Language = "vi"; vm.TestClearCsvDirty(); window.Close(); vm.Dispose();
+                    }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
                 }

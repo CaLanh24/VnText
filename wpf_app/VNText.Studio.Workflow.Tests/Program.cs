@@ -1755,7 +1755,7 @@ internal static partial class Program
         {
             var picker = new FakePathPicker { TranslationCsv = Path.Combine(root, "translation.csv") };
             using var worker = new PythonWorkerHost();
-            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root };
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = root, InputPath = root };
             vm.NavigateTabCommand.Execute("patch");
             vm.ChooseTranslationCsvCommand.Execute(null);
             AssertTrue(vm.PatchPreflightOk && vm.PatchPartialReady);
@@ -2399,7 +2399,7 @@ internal static partial class Program
             var csvC = Path.Combine(packageC, "translation.csv");
             var picker = new FakePathPicker { TranslationCsv = csvA };
             using var worker = new PythonWorkerHost();
-            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA };
+            using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = packageA, InputPath = packageA };
             vm.NavigateTabCommand.Execute("patch");
             vm.ChooseTranslationCsvCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
@@ -2579,8 +2579,26 @@ internal static partial class Program
             vm.OutputPath = packageA;
             Directory.Delete(emptyFolder, true);
             vm.ChooseTranslationCsvCommand.Execute(null);                       // A: current preflight is ready
-            AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
+            // f23 A1: the CSV passes but there is no game/asset: neutral "choose game", never the green ready; the guards are unchanged.
+            AssertTrue(vm.PatchPreflightOk && !vm.HasPatchSource);
+            AssertEqual("nosource", vm.PatchBadgeKind); AssertEqual("CẦN CHỌN GAME", vm.PatchBadgeText);
+            AssertEqual("CSV hợp lệ — chọn game/asset để tạo patch", vm.PatchStatusText);
+            AssertFalse(vm.RunPatchCommand.CanExecute(null));
+            var seenA1 = new List<string>(); vm.PropertyChanged += (_, e) => seenA1.Add(e.PropertyName ?? "");
+            vm.InputPath = Path.Combine(TestTempRoot(), "vntext_missing_" + Guid.NewGuid().ToString("N"));   // a path that does not exist is still no source
+            AssertEqual("nosource", vm.PatchBadgeKind); AssertTrue(seenA1.Contains(nameof(vm.PatchBadgeKind)) && seenA1.Contains(nameof(vm.PatchStatusText)));
+            {
+                var previousA1 = UiText.Language;
+                try { UiText.SetLanguage("en"); AssertEqual("CHOOSE GAME", UiText.TranslateDynamic(vm.PatchBadgeText)); AssertEqual("CSV valid — choose a game/asset to build the patch", UiText.TranslateDynamic(vm.PatchStatusText)); }
+                finally { UiText.SetLanguage(previousA1); }
+            }
+            seenA1.Clear();
             vm.InputPath = packageA;                                             // N7: Build patch also needs an EXISTING game/asset source
+            AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
+            AssertTrue(seenA1.Contains(nameof(vm.PatchBadgeKind)) && vm.PatchStatusText.StartsWith("Sẵn sàng tạo patch", StringComparison.Ordinal));
+            vm.InputPath = "";                                                   // the source disappears again: the badge follows, the CSV checks stay
+            AssertEqual("nosource", vm.PatchBadgeKind); AssertTrue(vm.PatchPreflightOk);
+            vm.InputPath = packageA;
             AssertTrue(vm.RunPatchCommand.CanExecute(null) || vm.Busy);
             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));   // source changed, nothing checked yet
             AssertEqual("stale", vm.PatchBadgeKind); AssertEqual("CẦN KIỂM TRA LẠI", vm.PatchBadgeText);

@@ -66,8 +66,12 @@ public sealed partial class MainViewModel
     private bool _patchSourceStale;
 
     /// <summary>One readiness state for the Patch badge: ready | review | csvok | stale. Text AND colour in the view both follow this value.</summary>
+    /// <summary>A passing check without an existing game/asset source (and no patch built from this revision) is not "ready to build": the CSV rows are fine, the package is not.</summary>
+    private bool PatchNeedsSource => PatchPreflightOk && !HasPatchSource && !(PatchDeliveryReady && !_patchArtifactBehindCsv);
+
     public string PatchBadgeKind =>
-        PatchPreflightOk ? (PatchBlockedCount > 0 ? "partial" : "ready")
+        PatchNeedsSource ? "nosource"                           // CSV rows pass, no game/asset to build from (neutral, never the green ready)
+        : PatchPreflightOk ? (PatchBlockedCount > 0 ? "partial" : "ready")
         : PatchPreflightEvaluated ? "review"                 // judged and blocked
         : _patchSourceStale ? "stale"                          // source changed, no check yet
         : CsvValidationOk ? "csvok"                            // CSV valid, preflight not run
@@ -79,6 +83,7 @@ public sealed partial class MainViewModel
         "ready" => "SẴN SÀNG",
         "partial" => "PATCH MỘT PHẦN",
         "csvok" => "CSV HỢP LỆ",
+        "nosource" => "CẦN CHỌN GAME",
         "stale" => "CẦN KIỂM TRA LẠI",
         "idle" => "CHƯA KIỂM TRA",
         _ => "CẦN XEM LẠI",
@@ -108,6 +113,7 @@ public sealed partial class MainViewModel
             if (Busy && _runningTask == "patch") return "Đang tạo patch…";
             if (!PatchPreflightEvaluated) return "Cần kiểm tra lại CSV hiện tại";
             if (!PatchPreflightOk) return "Chưa thể tạo patch — không có dòng nào đủ điều kiện";
+            if (PatchNeedsSource) return "CSV hợp lệ — chọn game/asset để tạo patch";
             if (PatchDeliveryReady && !_patchArtifactBehindCsv)
                 return PatchBlockedCount > 0
                     ? UiText.Msg("Đã tạo patch từ CSV hiện tại — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
