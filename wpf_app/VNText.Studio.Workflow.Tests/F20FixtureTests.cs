@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using VNText.Studio.App;
 using VNText.Studio.App.Controls;
+using VNText.Studio.App.Models;
 using VNText.Studio.App.Services;
 using VNText.Studio.App.ViewModels;
 
@@ -121,6 +122,43 @@ internal static partial class Program
                         editor.Focus(); editor.CaretIndex = editor.Text.Length; editor.ScrollToEnd(); host.UpdateLayout(); PumpFixture(100);
                         Require(scroller.VerticalOffset >= scroller.ScrollableHeight - 1 && editor.Text == longText, "F2: the end of the full text is reachable and the data is unchanged");
                         host.Close();
+                    }
+                    {
+                        // F21: the Glossary row buttons/tooltips and detail labels re-localize live (existing rows included) on every VI<->EN switch; one mapping serves status and step.
+                        var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                        vm.GlossaryEntries.Clear(); vm.GlossaryEntries.Add(new GlossaryItem("Start", "Bắt đầu")); vm.GlossaryEntries.Add(new GlossaryItem("Quit", "Thoát"));
+                        vm.NavigateTabCommand.Execute("translate");
+                        var window = new MainWindow(vm, new FixtureUpdatePresentation());
+                        window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 900;
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                        window.Show(); window.UpdateLayout(); PumpFixture(250);
+                        ((Button)window.FindName("GlossaryEditButton")!).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); window.UpdateLayout(); PumpFixture(250); window.UpdateLayout();
+                        var list = (ListBox)window.FindName("GlossaryListBox")!;
+                        list.SelectedIndex = 0; window.UpdateLayout(); PumpFixture(150);
+                        string RowDelete() => (string)FindVisualChildren<Button>((ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(1)).First(b => b.Command == vm.RemoveGlossaryEntryCommand).Content;
+                        object RowTip() => FindVisualChildren<Button>((ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(1)).First(b => b.Command == vm.RemoveGlossaryEntryCommand).ToolTip;
+                        var strip = (FrameworkElement)window.FindName("GlossaryDetailStrip")!;
+                        List<string> Labels() => FindVisualChildren<TextBlock>(strip).Select(t => t.Text).ToList();
+                        Require(RowDelete() == "Xóa" && (string)RowTip() == "Xóa thuật ngữ này" && Labels().Contains("Từ trong game") && Labels().Contains("Dịch thành"), "F21: VI labels unchanged");
+                        foreach (var lang in new[] { "en", "vi", "en" })
+                        {
+                            vm.Language = lang; PumpFixture(150); window.UpdateLayout(); PumpFixture(100);
+                            var en = lang == "en";
+                            Require(RowDelete() == (en ? "Delete" : "Xóa") && (string)RowTip() == (en ? "Remove this term" : "Xóa thuật ngữ này"), "F21: existing row button/tooltip follow " + lang + " (" + RowDelete() + ")");
+                            Require(Labels().Contains(en ? "In-game term" : "Từ trong game") && Labels().Contains(en ? "Translation" : "Dịch thành") && !Labels().Contains(en ? "Từ trong game" : "In-game term"), "F21: detail labels follow " + lang);
+                        }
+                        vm.GlossaryEntries.Add(new GlossaryItem("New", "Mới")); window.UpdateLayout(); PumpFixture(150);
+                        Require(FindVisualChildren<Button>((ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(2)).First(b => b.Command == vm.RemoveGlossaryEntryCommand).Content as string == "Delete", "F21: a row added in English is English");
+                        Require(vm.GlossaryEntries[0].Term == "Start" && vm.GlossaryEntries[0].Translation == "Bắt đầu", "F21: glossary data untouched");
+                        // status and step share one mapping; unmapped (real warning/error) text passes through
+                        UiText.SetLanguage("en");
+                        var status = new VNText.Studio.App.Converters.UiTextConverter().Convert("Đang dịch offline…", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture);
+                        var step = new VNText.Studio.App.Converters.UiTextFormatConverter { SemanticArgument = true }.Convert("Đang dịch offline…", typeof(string), "Bước: {0}", System.Globalization.CultureInfo.InvariantCulture);
+                        var warn = new VNText.Studio.App.Converters.UiTextConverter().Convert("Cảnh báo giả: không có bản dịch", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture);
+                        Require((string)status == "Translating offline…" && (string)step == "Step: Translating offline…" && (string)warn == "Cảnh báo giả: không có bản dịch", "F21: EN status/step '" + status + "' / '" + step + "'; unmapped text kept");
+                        UiText.SetLanguage("vi");
+                        Require((string)new VNText.Studio.App.Converters.UiTextConverter().Convert("Đang dịch offline…", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture) == "Đang dịch offline…", "F21: VI status unchanged");
+                        vm.Language = "vi"; vm.GlossaryEntries.Clear(); window.Close(); vm.Dispose();
                     }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;

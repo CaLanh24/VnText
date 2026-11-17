@@ -1023,6 +1023,7 @@ public static class UiText
         ["X nền mẫu"] = "Sample background X",
         ["Y nền mẫu"] = "Sample background Y",
         ["Xóa thuật ngữ này"] = "Remove this term",
+        ["Đang dịch offline…"] = "Translating offline…",
         ["Chọn thư mục game..."] = "Select game folder...",
         ["Chưa phân tích game"] = "Game not analyzed",
         ["Đã lưu cài đặt."] = "Settings saved.",
@@ -1240,6 +1241,7 @@ public static class UiText
     public static void SetLanguage(string language)
     {
         Language = language == "en" ? "en" : "vi";
+        UiLanguageSource.Instance.Raise();      // bound literals (templated rows, tooltips) re-translate on every switch
         if (Application.Current is { } app && app.Dispatcher.CheckAccess() && !app.Dispatcher.HasShutdownStarted)
             foreach (var window in app.Windows.OfType<Window>().ToArray()) Apply(window);
     }
@@ -1307,4 +1309,13 @@ public static class UiText
         }
         element.SetCurrentValue(property, Translate(original));
     }
+}
+
+/// <summary>Change notification for the display language, so XAML literals that live in templates or tooltips (outside the one-shot Apply walk) re-translate on every switch.</summary>
+public sealed class UiLanguageSource : System.ComponentModel.INotifyPropertyChanged
+{
+    public static UiLanguageSource Instance { get; } = new();
+    public string Current => UiText.Language;
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+    internal void Raise() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(Current)));
 }

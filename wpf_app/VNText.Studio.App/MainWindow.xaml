@@ -4,6 +4,7 @@
         xmlns:vm="clr-namespace:VNText.Studio.App.ViewModels"
         xmlns:conv="clr-namespace:VNText.Studio.App.Converters"
         xmlns:ctrl="clr-namespace:VNText.Studio.App.Controls"
+        xmlns:svc="clr-namespace:VNText.Studio.App.Services"
         Title="VNText Studio"
         Width="1440" Height="920" MinWidth="1040" MinHeight="720"
         WindowStartupLocation="CenterScreen"
@@ -18,6 +19,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis" />
         <conv:UiTextConverter x:Key="UiTextDynamic" />
+        <conv:UiTextLiteralConverter x:Key="UiTextLiteral" />
         <conv:UiTextFormatConverter x:Key="UiTextFormat" />
         <conv:UiTextFormatConverter x:Key="UiTextFormatLabel" SemanticArgument="True" />
         <conv:StepStateToDotBrushConverter x:Key="StepDot" />
@@ -1910,9 +1912,9 @@
                                     <Grid.ToolTip>
                                         <ToolTip MaxWidth="460" ContentTemplate="{x:Null}">
                                             <StackPanel>
-                                                <TextBlock Text="Từ trong game" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Từ trong game'}" FontWeight="SemiBold" />
                                                 <TextBlock Text="{Binding Term}" TextWrapping="Wrap" Margin="0,0,0,6" />
-                                                <TextBlock Text="Dịch thành" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Dịch thành'}" FontWeight="SemiBold" />
                                                 <TextBlock Text="{Binding Translation}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </ToolTip>
@@ -1926,8 +1928,8 @@
                                     <TextBlock Text="{Binding Term}" FontSize="12" Foreground="{DynamicResource InkBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Text="→" FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="10,0" VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="2" Text="{Binding Translation}" FontSize="12" Foreground="{DynamicResource BlueBrush}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                    <Button Grid.Column="3" Content="Xóa" MinWidth="52" FontSize="12" VerticalAlignment="Center" Style="{StaticResource CompactOutlineButton}"
-                                            ToolTip="Xóa thuật ngữ này" Command="{Binding DataContext.RemoveGlossaryEntryCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" CommandParameter="{Binding}" />
+                                    <Button Grid.Column="3" Content="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Xóa'}" MinWidth="52" FontSize="12" VerticalAlignment="Center" Style="{StaticResource CompactOutlineButton}"
+                                            ToolTip="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Xóa thuật ngữ này'}" Command="{Binding DataContext.RemoveGlossaryEntryCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" CommandParameter="{Binding}" />
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -1940,9 +1942,9 @@
                         <ScrollViewer x:Name="GlossaryDetailScroll" PreviewKeyDown="GlossaryDetailScroll_PreviewKeyDown" MaxHeight="110" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="True" IsTabStop="True"
                                       FocusVisualStyle="{StaticResource KeyboardFocusStyle}" AutomationProperties.Name="Đọc chi tiết thuật ngữ đang chọn (cuộn bằng phím mũi tên)">
                             <StackPanel>
-                                <TextBlock Text="Từ trong game" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Text="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Từ trong game'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
                                 <TextBlock x:Name="GlossaryDetailTerm" Text="{Binding SelectedItem.Term, ElementName=GlossaryListBox}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
-                                <TextBlock Text="Dịch thành" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Text="{Binding Current, Source={x:Static svc:UiLanguageSource.Instance}, Converter={StaticResource UiTextLiteral}, ConverterParameter='Dịch thành'}" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" />
                                 <TextBlock x:Name="GlossaryDetailTranslation" Text="{Binding SelectedItem.Translation, ElementName=GlossaryListBox}" TextWrapping="Wrap" Foreground="{DynamicResource BlueBrush}" />
                             </StackPanel>
                         </ScrollViewer>

@@ -756,7 +756,7 @@ class WpfWorkflowTests(unittest.TestCase):
         editor = panel[panel.index('x:Key="RegionTranslationEditor"'):panel.index('<Style x:Key="FormField"')]
         for part in ('BasedOn="{StaticResource FieldTextBoxStyle}"', 'CaretBrush" Value="{DynamicResource InkBrush}"', 'SelectionBrush" Value="{DynamicResource BlueBrush}"', 'AcceptsReturn" Value="True"', 'TextWrapping" Value="Wrap"'):
             self.assertIn(part, editor)
-        self.assertIn('<TextBox Style="{StaticResource RegionTranslationEditor}" Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" />', panel)
+        self.assertIn('<TextBox Style="{StaticResource RegionTranslationEditor}" Loaded="OnRegionTranslationEditorLoaded" Text="{Binding Translation, UpdateSourceTrigger=PropertyChanged}" />', panel)
         self.assertIn('Content="Xóa" Style="{StaticResource CompactOutlineButton}" MinWidth="0" Padding="10,3"', panel)
         compact = styles[styles.index('x:Key="CompactOutlineButton"'):styles.index("</Style>", styles.index('x:Key="CompactOutlineButton"'))]
         self.assertNotIn("MinWidth", compact)                       # the shared style was not changed to cure one table

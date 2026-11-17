@@ -322,3 +322,11 @@ public sealed class UiTextFormatConverter : IValueConverter
             SemanticArgument && value is string text ? VNText.Studio.App.Services.UiText.Key(text) : value);
     public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
 }
+
+/// <summary>A literal catalog key (ConverterParameter) shown in the current language; the bound value only exists to re-evaluate on a language switch.</summary>
+public sealed class UiTextLiteralConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) =>
+        VNText.Studio.App.Services.UiText.Translate(parameter as string ?? "");
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}
