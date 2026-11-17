@@ -76,7 +76,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16', 'candidate-0.1.17', 'candidate-0.1.18', 'candidate-0.1.19') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16', 'candidate-0.1.17', 'candidate-0.1.18', 'candidate-0.1.19', 'candidate-0.1.20') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
