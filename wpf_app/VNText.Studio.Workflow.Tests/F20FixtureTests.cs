@@ -156,6 +156,8 @@ internal static partial class Program
                         var step = new VNText.Studio.App.Converters.UiTextFormatConverter { SemanticArgument = true }.Convert("Đang dịch offline…", typeof(string), "Bước: {0}", System.Globalization.CultureInfo.InvariantCulture);
                         var warn = new VNText.Studio.App.Converters.UiTextConverter().Convert("Cảnh báo giả: không có bản dịch", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture);
                         Require((string)status == "Translating offline…" && (string)step == "Step: Translating offline…" && (string)warn == "Cảnh báo giả: không có bản dịch", "F21: EN status/step '" + status + "' / '" + step + "'; unmapped text kept");
+                        vm.TestShowTranslateRunningState(7, 7);
+                        Require(UiText.TranslateDynamic(vm.CsvValidationMessage) == "Translating — 7/7 rows already have a safe earlier translation; new results appear when the task finishes.", "F21: the running-state line is English: " + UiText.TranslateDynamic(vm.CsvValidationMessage));
                         UiText.SetLanguage("vi");
                         Require((string)new VNText.Studio.App.Converters.UiTextConverter().Convert("Đang dịch offline…", typeof(string), "", System.Globalization.CultureInfo.InvariantCulture) == "Đang dịch offline…", "F21: VI status unchanged");
                         vm.Language = "vi"; vm.GlossaryEntries.Clear(); window.Close(); vm.Dispose();

@@ -1024,6 +1024,8 @@ public static class UiText
         ["Y nền mẫu"] = "Sample background Y",
         ["Xóa thuật ngữ này"] = "Remove this term",
         ["Đang dịch offline…"] = "Translating offline…",
+        ["Đang dịch…"] = "Translating…",
+        ["Đang dịch — {0}/{1} dòng đã có bản dịch an toàn từ trước; kết quả mới hiện khi tác vụ xong."] = "Translating — {0}/{1} rows already have a safe earlier translation; new results appear when the task finishes.",
         ["Chọn thư mục game..."] = "Select game folder...",
         ["Chưa phân tích game"] = "Game not analyzed",
         ["Đã lưu cài đặt."] = "Settings saved.",

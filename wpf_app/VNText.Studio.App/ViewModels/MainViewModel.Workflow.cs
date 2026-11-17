@@ -696,10 +696,11 @@ public sealed partial class MainViewModel
     internal void ShowTranslateRunningState()
     {
         CsvValidationMessage = _translatePackageRowCount > 0
-            ? $"Đang dịch — {_translatePackageTranslatedCount:N0}/{_translatePackageRowCount:N0} dòng đã có bản dịch an toàn từ trước; kết quả mới hiện khi tác vụ xong."
+            ? UiText.Msg("Đang dịch — {0}/{1} dòng đã có bản dịch an toàn từ trước; kết quả mới hiện khi tác vụ xong.", _translatePackageTranslatedCount.ToString("N0"), _translatePackageRowCount.ToString("N0"))
             : "Đang dịch…";
     }
 
+    internal void TestShowTranslateRunningState(int translated, int rows) { _translatePackageTranslatedCount = translated; _translatePackageRowCount = rows; ShowTranslateRunningState(); }
     internal void TestRefreshTranslateReadiness(bool cancelledSummary) => RefreshTranslateReadiness(cancelledSummary: cancelledSummary);
 
     private void BeginTask(string task, object parameters, string statusLabel, string? workerTask = null)
