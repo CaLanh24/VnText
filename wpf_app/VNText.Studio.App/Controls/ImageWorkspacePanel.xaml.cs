@@ -20,6 +20,11 @@ public partial class ImageWorkspacePanel : UserControl
         UpdateDraftState();
         Dispatcher.BeginInvoke(new Action(UpdateDraftState), System.Windows.Threading.DispatcherPriority.DataBind);   // after the rebinding has cleared the old errors
     }
+    /// <summary>F2: a template-column editor does not take keyboard focus by itself; without it Ctrl+End / PageDown would drive the grid instead of the text being edited.</summary>
+    private void OnRegionTranslationEditorLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox box) box.Dispatcher.BeginInvoke(new Action(() => { if (box.IsLoaded) { box.Focus(); System.Windows.Input.Keyboard.Focus(box); } }), System.Windows.Threading.DispatcherPriority.Input);
+    }
     private void UpdateDraftState()
     {
         if (DataContext is not ViewModels.MainViewModel vm) return;
