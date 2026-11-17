@@ -266,7 +266,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16', '0.1.17', '0.1.18', '0.1.19') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16', '0.1.17', '0.1.18', '0.1.19', '0.1.20') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }

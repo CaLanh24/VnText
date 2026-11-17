@@ -397,11 +397,24 @@ class MtStrategiesTests(unittest.TestCase):
     def test_translate_glrk_br_keeps_prefix(self):
         src = "*GLRK* *GLRK* *GLRK*[br](Hello {mName} world)"
         tr = MagicMock()
-        tr.translate.return_value = "Xin chào thế giới"
+        # The protected-span fallback translates each prose fragment. Returning
+        # the full sentence for BOTH fragments invents a repeated translation,
+        # which the production junk guard correctly refuses.
+        tr.translate.side_effect = lambda text: {
+            "(Hello": "(Xin chào",
+            "world)": "thế giới)",
+        }.get(text, "Xin chào thế giới")  # drops bracket marker -> guarded fallback
         out = translate_glrk_br_ct2(src, tr)
         self.assertTrue(out.startswith("*GLRK* *GLRK* *GLRK*[br]"))
         self.assertIn("{mName}", out)
         self.assertIn("Xin chào", out)
+        self.assertEqual(1, out.count("Xin chào"))
+
+    def test_inline_placeholder_rejects_repeated_full_sentence_fragments(self):
+        src = "(Hello {mName} world)"
+        tr = MagicMock()
+        tr.translate.return_value = "Xin chào thế giới"
+        self.assertEqual(src, translate_inline_placeholders_ct2(src, tr))
 
     def test_split_parts_restores_generic_terms_before_ct2(self):
         _prepared, parts = split_parts("Stalker gains Corruption+ and Pheromones+.")
