@@ -46,9 +46,10 @@ class QtAppWorkflowTests(unittest.TestCase):
         win = VNTextQtApp()
         try:
             with tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
+                root = Path(tmp) / "source"
+                root.mkdir()
                 (root / "sample.txt").write_text("NPC: Hello there\n", encoding="utf-8")
-                out = root / "package"
+                out = Path(tmp) / "package"
                 win.input_field.setText(str(root))
                 win.output_field.setText(str(out))
 

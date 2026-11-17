@@ -105,6 +105,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             "tests/tools/cleanup_work_artifacts.py",
             "tests/lib/work_paths.py",
             "tests/lib/bootstrap.py",
+            "tests/lib/registry_storage.py",
             "release/run_regression_child.py",
             "release/budget_policy.json",  # cleanup_work_artifacts reads it at import time
         ):
@@ -236,7 +237,7 @@ class ReleaseRegressionRunnerTests(unittest.TestCase):
             summaries = list(log_root.rglob("REGRESSION_COMPLETE.json"))
             self.assertEqual(1, len(summaries), result.stdout + result.stderr)
             summary = json.loads(summaries[0].read_text(encoding="utf-8"))
-            self.assertEqual("FAIL", summary["status"])
+            self.assertEqual("FAIL", summary["status"], result.stdout + result.stderr + failure_evidence)
             self.assertEqual(1, summary["exit_code"])
             self.assertEqual(2, len(summary["results"]))
             self.assertEqual("PASS", summary["results"][0]["status"])
