@@ -246,6 +246,28 @@ internal static partial class Program
                         Require(((TextBlock)Named("PatchFontModeText")).Text == "Bundled Vietnamese font (default)" && ((TextBlock)Named("PatchFontNoticeText")).Text == "Selected: bundled Vietnamese font.", "DQ4 en: labels follow the language");
                         vm.Language = "vi"; window.Close(); vm.Dispose();
                     }
+                    {
+                        // Fonts picker: installed fonts resolve to REAL .ttf/.otf files (collections/bitmap/missing/duplicates dropped), read-only; cancel keeps the current choice.
+                        var dir = Path.Combine(Path.GetTempPath(), "fpfonts-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dir);
+                        try
+                        {
+                            foreach (var name in new[] { "a.ttf", "b.otf", "c.ttc", "d.fon" }) File.WriteAllBytes(Path.Combine(dir, name), new byte[] { 0 });
+                            var before = Directory.GetFiles(dir).Select(f => (f, File.GetLastWriteTimeUtc(f), new FileInfo(f).Length)).OrderBy(x => x.f).ToList();
+                            var found = InstalledFontCatalog.Resolve(new[] { ("Zed (TrueType)", "a.ttf"), ("Alpha (OpenType)", "b.otf"), ("Coll (TrueType)", "c.ttc"), ("Bitmap", "d.fon"), ("Gone (TrueType)", "gone.ttf"), ("Zed again (TrueType)", Path.Combine(dir, "a.ttf")), ("", "") }, dir);
+                            Require(found.Count == 2 && found[0].Display == "Alpha" && found[1].Display == "Zed" && found.All(f => File.Exists(f.Path) && Path.IsPathRooted(f.Path)), "Fonts picker: only real ttf/otf files, de-duplicated, registered names tidied (" + string.Join("|", found.Select(f => f.Display)) + ")");
+                            var after = Directory.GetFiles(dir).Select(f => (f, File.GetLastWriteTimeUtc(f), new FileInfo(f).Length)).OrderBy(x => x.f).ToList();
+                            Require(before.SequenceEqual(after), "Fonts picker: resolving never writes, copies or bundles a font");
+                            Require(InstalledFontCatalog.Enumerate().All(f => Path.GetExtension(f.Path).ToLowerInvariant() is ".ttf" or ".otf" && File.Exists(f.Path)), "Fonts picker: the live registry list only holds real ttf/otf files");
+                            var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                            IReadOnlyList<InstalledFont>? offered = null;
+                            vm.InstalledFontPickerOverride = list => { offered = list; return null; };
+                            var modeBefore = vm.PatchFontModeText;
+                            vm.ChooseInstalledPatchFontCommand.Execute(null);
+                            Require(offered is not null && vm.PatchFontNotice == "Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên." && vm.PatchFontModeText == modeBefore, "Fonts picker: cancel keeps the current choice and says so");
+                            vm.Dispose();
+                        }
+                        finally { Directory.Delete(dir, true); }
+                    }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
                 }
