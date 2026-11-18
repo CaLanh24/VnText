@@ -64,7 +64,7 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
     if replacement_font is None and digest != FALLBACK_SHA256:
         return ""
     # A game asset with this name would shadow the verified engine font.
-    if (root / "game/DejaVuSans.ttf").exists():
+    if replacement_font is None and (root / "game/DejaVuSans.ttf").exists():
         return ""
     scripts: list[str] = []
     total = 0
@@ -104,7 +104,7 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         if path.is_symlink() or not path.resolve().is_relative_to(game.resolve()):
             raise ValueError("unsafe Ren'Py font archive path")
         archive = archives.get(path) or RenPyArchive(path)
-        if any(name.casefold() in {"dejavusans.ttf", "game/dejavusans.ttf"} for name in archive.members):
+        if replacement_font is None and any(name.casefold() in {"dejavusans.ttf", "game/dejavusans.ttf"} for name in archive.members):
             return ""
         for name in sorted(archive.members):
             if name.lower().endswith(".rpy") and "tl" not in name.split("/"):

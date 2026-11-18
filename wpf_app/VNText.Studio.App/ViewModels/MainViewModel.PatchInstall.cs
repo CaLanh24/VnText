@@ -16,13 +16,16 @@ public sealed partial class MainViewModel
     public RelayCommand InstallDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand OpenDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand ChoosePatchFontCommand { get; private set; } = null!;
+    public RelayCommand ResetPatchFontCommand { get; private set; } = null!;
 
     private void InitPatchInstallCommands()
     {
         InstallDeliveredPatchCommand = new RelayCommand(_ => OpenPatchInstaller(), _ => !Busy && PatchDeliveryReady && !_patchArtifactBehindCsv && File.Exists(_deliveredPatch));
-        OpenDeliveredPatchCommand = new RelayCommand(_ => { if (File.Exists(_deliveredPatch)) Process.Start(new ProcessStartInfo("explorer.exe", Path.GetDirectoryName(_deliveredPatch)!) { UseShellExecute = true }); }, _ => !Busy && File.Exists(_deliveredPatch));
+        OpenDeliveredPatchCommand = new RelayCommand(_ => { if (File.Exists(_deliveredPatch)) Process.Start(new ProcessStartInfo(Path.GetDirectoryName(_deliveredPatch)!) { UseShellExecute = true }); }, _ => !Busy && File.Exists(_deliveredPatch));
+        ResetPatchFontCommand = new RelayCommand(_ => { if (Busy) return; _replacementFont = ""; Raise(nameof(ReplacementFontLabel)); InvalidatePatchSourceState(); }, _ => !Busy);
         ChoosePatchFontCommand = new RelayCommand(_ =>
         {
+            if (Busy) return;
             var picker = new OpenFileDialog { Filter = "Font (*.ttf;*.otf)|*.ttf;*.otf", Title = UiText.Translate("Chọn font Việt thay thế (Ren’Py)") };
             if (picker.ShowDialog() != true) return;
             try
@@ -36,22 +39,30 @@ public sealed partial class MainViewModel
             }
             catch (Exception ex) { ShowToast(ex.Message, "error"); }
         }, _ => !Busy);
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(Busy) or nameof(PatchDeliveryReady) or nameof(CsvEditorDirty) or nameof(CsvEditorSaving))
+            {
+                InstallDeliveredPatchCommand.RaiseCanExecuteChanged(); OpenDeliveredPatchCommand.RaiseCanExecuteChanged();
+                ChoosePatchFontCommand.RaiseCanExecuteChanged(); ResetPatchFontCommand.RaiseCanExecuteChanged();
+            }
+        };
     }
 
     private bool PreviewPatchFont(string path, string family)
     {
-        var window = new Window { Owner = Application.Current.MainWindow, Title = UiText.Translate("Xem trước font Việt"), Width = 640, Height = 360, WindowStartupLocation = WindowStartupLocation.CenterOwner };
-        window.SetResourceReference(Window.BackgroundProperty, "WindowBrush");
-        window.SetResourceReference(Window.ForegroundProperty, "InkBrush");
-        var body = new System.Windows.Controls.DockPanel { Margin = new Thickness(24) };
-        var accept = new System.Windows.Controls.Button { Content = UiText.Translate("Dùng font này"), HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0,12,0,0) };
-        accept.SetResourceReference(System.Windows.Controls.Button.StyleProperty, "PrimaryButton");
-        accept.Click += (_, _) => window.DialogResult = true;
-        System.Windows.Controls.DockPanel.SetDock(accept, System.Windows.Controls.Dock.Bottom); body.Children.Add(accept);
-        var preview = new System.Windows.Controls.TextBlock { Text = "Đặng, Nguyễn — Ă Â Ê Ô Ơ Ư Đ · ă â ê ô ơ ư đ\nTiếng Việt có dấu: Xin chào!\n\n" + UiText.Translate("Đây là bản xem trước trên máy; mapping font trong game được kiểm riêng."), TextWrapping = TextWrapping.Wrap, FontSize = 21,
-            FontFamily = new System.Windows.Media.FontFamily(new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar), "./" + Path.GetFileName(path) + "#" + family) };
-        body.Children.Add(new System.Windows.Controls.ScrollViewer { Content = preview, VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto });
-        window.Content = body; return window.ShowDialog() == true;
+        var sample = string.Join("\n", _csvEditorRows.Where(row => !row.IsEmpty).Take(3).Select(row => row.Translation));
+        if (sample.Length > 2000) sample = sample[..2000];
+        var preview = new System.Windows.Controls.TextBlock
+        {
+            Text = "Đặng, Nguyễn — Ă Â Ê Ô Ơ Ư Đ · ă â ê ô ơ ư đ\nTiếng Việt có dấu: Xin chào!\n\n" + sample + "\n\n" + UiText.Translate("Đây là bản xem trước trên máy; mapping font trong game được kiểm riêng."),
+            TextWrapping = TextWrapping.Wrap, FontSize = 21,
+            FontFamily = new System.Windows.Media.FontFamily(new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar), "./" + Path.GetFileName(path) + "#" + family)
+        };
+        var accepted = false;
+        var window = new AppDialogWindow(Application.Current.MainWindow, "Xem trước font Việt", preview, width: 640);
+        window.AddButton("Dùng font này", () => accepted = true, primary: true, isDefault: true);
+        window.ShowDialog(); return accepted;
     }
 
     private static string HashFile(string path) { using var stream = File.OpenRead(path); return Convert.ToHexString(SHA256.HashData(stream)); }
@@ -66,14 +77,22 @@ public sealed partial class MainViewModel
         InstallDeliveredPatchCommand.RaiseCanExecuteChanged(); OpenDeliveredPatchCommand.RaiseCanExecuteChanged();
     }
 
-    private bool DeliveredRevisionValid() => !CsvEditorDirty && !CsvEditorSaving && !_patchArtifactBehindCsv
-        && string.Equals(InputPath, _deliveredGame, StringComparison.OrdinalIgnoreCase)
-        && string.Equals(ResolveActiveCsvPath(), _deliveredCsv, StringComparison.OrdinalIgnoreCase)
-        && File.Exists(_deliveredCsv) && HashFile(_deliveredCsv) == _deliveredCsvHash
-        && File.Exists(_deliveredPatch) && HashFile(_deliveredPatch) == _deliveredPatchHash;
+    private bool DeliveredRevisionValid()
+    {
+        try
+        {
+            return PatchDeliveryReady && !CsvEditorDirty && !CsvEditorSaving && !_patchArtifactBehindCsv
+                && string.Equals(InputPath, _deliveredGame, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(ResolveActiveCsvPath(), _deliveredCsv, StringComparison.OrdinalIgnoreCase)
+                && File.Exists(_deliveredCsv) && HashFile(_deliveredCsv) == _deliveredCsvHash
+                && File.Exists(_deliveredPatch) && HashFile(_deliveredPatch) == _deliveredPatchHash;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+    }
 
     private void OpenPatchInstaller()
     {
+        if (Busy) return;
         try
         {
             if (!DeliveredRevisionValid()) throw new InvalidDataException(UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."));

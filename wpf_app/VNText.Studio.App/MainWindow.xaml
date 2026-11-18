@@ -1,4 +1,4 @@
-﻿<Window x:Class="VNText.Studio.App.MainWindow" x:Name="RootWindow"
+<Window x:Class="VNText.Studio.App.MainWindow" x:Name="RootWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:VNText.Studio.App.ViewModels"
@@ -903,6 +903,7 @@
                                     </Grid.ColumnDefinitions>
                                     <WrapPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
                                     <Button Content="Chọn font Việt…" Style="{StaticResource OutlineButton}" Command="{Binding ChoosePatchFontCommand}" />
+                                    <Button Content="Dùng font có sẵn" Style="{StaticResource OutlineButton}" Command="{Binding ResetPatchFontCommand}" Margin="8,0,0,0" />
                                     <TextBlock Text="{Binding ReplacementFontLabel}" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{DynamicResource MutedBrush}" />
                                     </WrapPanel>
                                     <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />

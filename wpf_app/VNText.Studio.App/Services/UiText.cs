@@ -14,6 +14,11 @@ public static class UiText
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
         ["Cài trong VNText"] = "Install in VNText",
+        ["Số file sẽ cài: {0}. Bản gốc được sao lưu."] = "Files to install: {0}. Originals will be backed up.",
+        ["Font đủ ký tự bản dịch. Chỉ áp dụng cho các kiểu chữ tĩnh đã nhận diện; chưa chứng minh hiển thị trong game."] = "The font covers translated characters. Only recognized static styles are mapped; in-game rendering is not verified.",
+        ["Chưa xác minh được font của game. Cài patch chưa bảo đảm chữ Việt hiển thị đúng."] = "The game font is not verified. Installing this patch does not guarantee correct Vietnamese rendering.",
+        ["Dùng font có sẵn"] = "Use existing font",
+        ["Đang xử lý…"] = "Processing…",
         ["Mở thư mục patch"] = "Open patch folder",
         ["Chọn font Việt…"] = "Choose Vietnamese font…",
         ["Chọn dòng có thể dịch"] = "Select translatable rows",
@@ -1092,6 +1097,8 @@ public static class UiText
     // (regex, English template, groups that are themselves app messages/labels)
     private static readonly (System.Text.RegularExpressions.Regex Pattern, string English, int[] Nested)[] DynamicPatterns =
     [
+        (new(@"^Đã dịch và lưu (\d+); bỏ qua (\d+); cần sửa bản dịch (\d+); lỗi (\d+) dòng\. Xem lý do từng dòng trong Nhật ký\.(?: (.*))?$"), "Translated and saved: {1}; skipped: {2}; review: {3}; failed: {4}. See per-row reasons in the log. {5}", [5]),
+        (new(@"^Bản nháp đã lưu; Patch sẽ bỏ qua (\d+) dòng khác chưa đủ điều kiện \(chưa dịch hoặc chưa có đường ghi được chứng minh\)\.$"), "Draft saved; the patch will omit {1} other rows without a translation or verified write route.", []),
         (new(@"^(\d+)% • Bước: (.+?)(?: • Mục: (.+?))?(?: • ETA: (.+))?$"), "{1}% • Step: {2}{3}{4}", [2]),
         (new(@"^Đang chạy: (.+)\.$"), "Running: {1}.", [1]),
         (new(@"^Một tác vụ khác đang chạy \((.+)\) — chờ xong hoặc bấm Hủy trước khi dùng ảnh\.$"), "Another task is running ({1}) — wait for it to finish or press Cancel before using images.", [1]),
@@ -1212,7 +1219,8 @@ public static class UiText
             for (var group = 1; group < match.Groups.Count; group++)
             {
                 var value = match.Groups[group].Value;
-                if (Array.IndexOf(nested, group) >= 0) value = TranslateSemantic(value);
+                if (group == 5 && english.StartsWith("Translated and saved:", StringComparison.Ordinal)) value = TranslateDynamic(value);
+                else if (Array.IndexOf(nested, group) >= 0) value = TranslateSemantic(value);
                 else if (english.StartsWith("{1}% • Step: ", StringComparison.Ordinal) && group >= 3)
                     value = group == 3 ? (value.Length > 0 ? " • Item: " + value : "") : (value.Length > 0 ? " • ETA: " + TranslateEta(value) : "");
                 else if (group == 2 && english.Contains("not confirmed{2}")) value = value.Length > 0 ? $"; inventory incomplete because {value} archives failed or are unsupported" : "";

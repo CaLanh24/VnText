@@ -4,14 +4,16 @@ from __future__ import annotations
 from vntext.mt_classify import classify_row_authoritative
 
 
-def selected_outcomes(rows, keys, *, protected_keys=(), applied_keys=None):
+def selected_outcomes(rows, keys, *, protected_keys=(), applied_keys=None, excluded_keys=()):
     by_key = {str(row.get("key", "")): row for row in rows}
     protected = set(protected_keys)
     applied = None if applied_keys is None else set(applied_keys)
     outcomes = []
     for key in dict.fromkeys(keys):
         row = by_key.get(key)
-        if row is None:
+        if key in excluded_keys:
+            status, reason = "skipped", "machine_technical_excluded"
+        elif row is None:
             status, reason = "failed", "missing_key"
         else:
             action, reason, _ = classify_row_authoritative({**row, "translation": ""})

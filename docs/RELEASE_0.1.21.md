@@ -15,3 +15,9 @@ OPEN: focused regressions, clean-source epoch, isolated package, exact payload h
 All six findings are part of this release batch, not deferred UI cleanup: font evidence/replacement/restore (RenPy static styles only, no Unity/TMP adapter claim), mixed selected-row classification/outcomes, common scrollbar grammar, Extract task-owned status, compact installer status/footer, and confirmed in-app install using the same backend. KEEP B1/R1/R2/header/data guards. No real game testing.
 
 Prepared implementation is NOT native acceptance. Added pure backend and WPF/core regressions; 14 pure precommit tests PASS. Build, actual-model selection/cancel/CAS, native preview/install/banner/scrollbar and new payload publication remain OPEN. Glyph presence is separate from mapping/runtime proof; UNKNOWN never means compatible. Existing original018 client defect cannot be repaired retroactively.
+
+### Focused iteration at9c3b770
+
+App/workflow and standalone installer compile PASS. Core/status fixture PASS on installed .NET8 (the initial invocation pointed to the SDK10 runtime, failed before app start and was corrected without rebuild). Python90 tests ran with real public020 OPUS model:88PASS,2FAIL, both clean-output rollback when overlay/activation generation fails because font metadata was written too early. This is a product regression, not a waived test.
+
+Grouped correction stages font payload/report in the existing overlay transaction and rolls them back with the pair. Adds realfont/missingglyph/publication-failure regressions, audited legacy-exclusion selected outcome, technical-versus-human-review distinction and scoped shared modal shell integration.17 pure tests PASS precommit; remaining affected gates must run on the new source. No publication/native acceptance.

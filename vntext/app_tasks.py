@@ -1890,6 +1890,10 @@ def run_translate_keys_ct2_task(
 ) -> None:
     try:
         log(f"Đang dịch lại {len(keys)} dòng lỗi bằng CTranslate2 + OPUS-MT en→vi (INT8).")
+        selected_before = {}
+        if selection_only and Path(csv_path).is_file():
+            from vntext.package_io import read_csv_rows_file
+            selected_before = {row["key"]: row for row in read_csv_rows_file(csv_path)[1] if row.get("key") in set(keys)}
         csv_sha256 = _exclude_legacy_machine_rows(csv_path, log, expected_csv_sha256)
         trace_model_revision = _ct2_trace_model_revision(model_dir)
         translate_kwargs = {
@@ -2131,7 +2135,14 @@ def run_translate_keys_ct2_task(
             selected = [row for row in read_csv_rows_file(csv_path)[1] if row.get("key") in set(keys)]
             from vntext.selected_translation import selected_outcomes
             from vntext.mt_ct2_status import _load_human_review_keys
-            outcomes, counts = selected_outcomes(selected, keys, protected_keys=_load_human_review_keys(package_dir), applied_keys=result.get("selected_applied_keys"))
+            from vntext.user_exclusions import load_exclusions, source_sha256
+            exclusions = load_exclusions(package_dir)
+            present_keys = {row["key"] for row in selected}
+            removed_keys = {key for key, row in selected_before.items() if key not in present_keys
+                            and exclusions.get(key, {}).get("reason") == "machine_technical"
+                            and exclusions[key].get("source_sha256") == source_sha256(row["source_text"])}
+            selected.extend(selected_before[key] for key in removed_keys)
+            outcomes, counts = selected_outcomes(selected, keys, protected_keys=_load_human_review_keys(package_dir), applied_keys=result.get("selected_applied_keys"), excluded_keys=removed_keys)
             selected_done = counts["applied"]
             # Intentional classifier skips are terminal outcomes, not failed translations.
             selection_ok = counts["failed"] == 0

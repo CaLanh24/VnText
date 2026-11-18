@@ -215,7 +215,7 @@ internal sealed class AppDialogWindow : Window
     }
 
     /// <summary>Adds a footer button; clicking it is an explicit choice (no dismiss callback).</summary>
-    internal Button AddButton(string label, Action onClick, bool primary = false, bool isDefault = false)
+    internal Button AddButton(string label, Action onClick, bool primary = false, bool isDefault = false, bool closeOnClick = true)
     {
         var button = new Button
         {
@@ -228,7 +228,7 @@ internal sealed class AppDialogWindow : Window
         };
         UiText.SetAppText(button, Button.ContentProperty, label);
         UiText.SetAppText(button, AutomationProperties.NameProperty, label);
-        button.Click += (_, _) => { _dismissRaised = true; onClick(); Close(); };
+        button.Click += (_, _) => { if (closeOnClick) _dismissRaised = true; onClick(); if (closeOnClick) Close(); };
         _buttons.Children.Add(button);
         return button;
     }

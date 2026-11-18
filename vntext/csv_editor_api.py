@@ -24,6 +24,25 @@ from vntext.patch_gate import (
 )
 from vntext.mt_check import load_whitelist, structural_problems
 
+
+def translation_eligibility(csv_path: Path, expected_sha256: str) -> dict:
+    """Read-only authoritative routing, bound to exactly the opened CSV bytes."""
+    from vntext.mt_classify import classify_row_authoritative
+    raw = csv_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected_sha256.lower():
+        raise ValueError("CSV changed; reload before selecting rows")
+    rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
+    from vntext.mt_ct2_status import _load_human_review_keys
+    protected = _load_human_review_keys(csv_path.parent)
+    from vntext.user_exclusions import STATIC_CANDIDATE_METHODS
+    from vntext.renpy_static import classify_ui_text
+    decisions = {}
+    for row in rows:
+        action, reason, _ = classify_row_authoritative({**row, "translation": ""})
+        technical = action == "skip_technical" or (row.get("import_method") in STATIC_CANDIDATE_METHODS and not row.get("translation", "").strip() and classify_ui_text(row.get("source_text", ""))[0] == "TECHNICAL")
+        decisions[row["key"]] = {"technical": technical, "eligible": not technical and row["key"] not in protected and action in {"translate", "translate_synonym", "ui_label_fixed", "copy_source", "copy_literal", "skip_ui_label"}, "reason": reason}
+    return {"ok": True, "rows": decisions}
+
 BATCH_SEMANTIC_ONLY = frozenset(
     {
         "validation",
@@ -986,18 +1005,7 @@ def main() -> int:
                     else confirm_reviewed_memory(args.csv_path,keys,args.preview_token))
             result.pop('_snapshot',None)
         elif args.cmd == "eligibility":
-            from vntext.mt_classify import classify_row_authoritative
-            raw = args.csv_path.read_bytes()
-            if hashlib.sha256(raw).hexdigest() != args.expected_sha256.lower():
-                raise ValueError("CSV changed; reload before selecting rows")
-            rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
-            from vntext.mt_ct2_status import _load_human_review_keys
-            protected = _load_human_review_keys(args.csv_path.parent)
-            decisions = {}
-            for row in rows:
-                action, reason, _ = classify_row_authoritative({**row, "translation": ""})
-                decisions[row["key"]] = {"eligible": row["key"] not in protected and action in {"translate", "translate_synonym", "ui_label_fixed", "copy_source", "copy_literal", "skip_ui_label"}, "reason": reason}
-            result = {"ok": True, "rows": decisions}
+            result = translation_eligibility(args.csv_path, args.expected_sha256)
         elif args.cmd == "load":
             result = load_document(args.csv_path)
         elif args.cmd == "save":

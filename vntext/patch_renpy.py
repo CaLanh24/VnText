@@ -239,6 +239,7 @@ def _publish_overlay_pair(
     existing_snapshots: dict[Path, str],
     source_snapshots: dict[Path, str],
     verify_target_inventory=None,
+    extra_payloads: dict[Path, bytes] | None = None,
 ) -> None:
     output_was_present = output.exists()
     if output_was_present and not output.is_dir():
@@ -249,10 +250,31 @@ def _publish_overlay_pair(
     backup_activation: Path | None = None
     published: set[Path] = set()
     commit_started = False
+    extras = extra_payloads or {}
+    extra_originals: dict[Path, bytes | None] = {}
+    extra_staged: dict[Path, Path] = {}
+    extra_backups: dict[Path, Path] = {}
+    extra_published: set[Path] = set()
 
     try:
         output.mkdir(parents=True, exist_ok=True)
         stage_root = Path(tempfile.mkdtemp(prefix=".renpy-overlay-", dir=str(output)))
+        for index, (final, data) in enumerate(extras.items()):
+            if not final.resolve().is_relative_to(output.resolve()) or final == output:
+                raise RenPyPatchError("font metadata/payload is outside patch output")
+            for part in (final, *final.parents):
+                if part.is_symlink() or part.is_junction():
+                    raise RenPyPatchError("unsafe font output path")
+                if part == output:
+                    break
+            if final.exists() and (not final.is_file() or final.stat().st_size > 16 * 1024 * 1024):
+                raise RenPyPatchError("font output exceeds regular-file bounds")
+            extra_originals[final] = final.read_bytes() if final.exists() else None
+            staged = stage_root / f".extra-{index}"
+            staged.write_bytes(data)
+            if staged.read_bytes() != data:
+                raise RenPyPatchError("font staging read-back mismatch")
+            extra_staged[final] = staged
         stage_target = stage_root / "game" / "tl" / "vietnamese" / "vntext.rpy"
         stage_activation = stage_root / "game" / "zzz_vntext_vietnamese.rpy"
         stage_target.parent.mkdir(parents=True, exist_ok=True)
@@ -288,6 +310,10 @@ def _publish_overlay_pair(
 
         backup_target = stage_root / ".previous-vntext.rpy"
         backup_activation = stage_root / ".previous-activation.rpy"
+        for final, expected in extra_originals.items():
+            current = final.read_bytes() if final.exists() else None
+            if current != expected:
+                raise RenPyPatchError("font output changed during staging")
         target.parent.mkdir(parents=True, exist_ok=True)
         activation.parent.mkdir(parents=True, exist_ok=True)
         if had_pair:
@@ -299,6 +325,14 @@ def _publish_overlay_pair(
         published.add(target)
         os.replace(str(stage_activation), str(activation))
         published.add(activation)
+        for index, (final, staged) in enumerate(extra_staged.items()):
+            final.parent.mkdir(parents=True, exist_ok=True)
+            if extra_originals[final] is not None:
+                backup = stage_root / f".previous-extra-{index}"
+                os.replace(str(final), str(backup))
+                extra_backups[final] = backup
+            os.replace(str(staged), str(final))
+            extra_published.add(final)
 
         reasons: list[str] = []
         try:
@@ -311,6 +345,9 @@ def _publish_overlay_pair(
             reasons.append("overlay read-back mismatch")
         if rendered_activation != activation_payload:
             reasons.append("activation read-back mismatch")
+        for final, expected in extras.items():
+            if final.read_bytes() != expected:
+                reasons.append("font metadata/payload read-back mismatch")
         try:
             _verify_existing_snapshots(existing_snapshots)
             if verify_target_inventory is not None:
@@ -332,8 +369,16 @@ def _publish_overlay_pair(
         stage_root = None
     except Exception as exc:  # noqa: BLE001 - fail-closed transaction boundary.
         rollback_errors: list[str] = []
+        for final in reversed(list(extras)):
+            try:
+                if final in extra_published and final.exists():
+                    final.unlink()
+                if final in extra_backups and extra_backups[final].exists():
+                    os.replace(str(extra_backups[final]), str(final))
+            except OSError as rollback_exc:
+                rollback_errors.append(f"restore font output {final}: {rollback_exc}")
         if commit_started and backup_target is not None and backup_activation is not None:
-            rollback_errors = _rollback_overlay_pair(
+            rollback_errors += _rollback_overlay_pair(
                 target,
                 activation,
                 backup_target,
@@ -769,25 +814,20 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             if not font_support:
                 raise RenPyPatchError("Replacement font cannot be mapped safely")
             destination = target.parent / f"vntext_font_{font_evidence['sha256'][:16]}{font.suffix.lower()}"
-            destination.parent.mkdir(parents=True, exist_ok=True)
             font_bytes = font.read_bytes()
             if hashlib.sha256(font_bytes).hexdigest() != font_evidence["sha256"]:
                 raise RenPyPatchError("Replacement font changed before staging")
-            if not destination.exists():
-                with destination.open("xb") as stream:
-                    stream.write(font_bytes)
-            if hashlib.sha256(destination.read_bytes()).hexdigest() != font_evidence["sha256"]:
+            if destination.exists() and hashlib.sha256(destination.read_bytes()).hexdigest() != font_evidence["sha256"]:
                 raise RenPyPatchError("Replacement font changed during preparation")
             font_evidence["payload_font"] = destination.relative_to(output / "COPY_TO_GAME_ROOT").as_posix()
-        output.mkdir(parents=True, exist_ok=True)
-        (output / "font_preflight.json").write_text(json.dumps(font_evidence, ensure_ascii=False, indent=2), encoding="utf-8")
+        extra_payloads = {output / "font_preflight.json": json.dumps(font_evidence, ensure_ascii=False, indent=2).encode("utf-8")}
+        if replacement_font:
+            extra_payloads[destination] = font_bytes
         initial_font_support = font_support
         prior_inventory_check = verify_target_inventory
 
         def verify_target_inventory():
             prior_inventory_check()
-            if replacement_font and hashlib.sha256(destination.read_bytes()).hexdigest() != font_evidence["sha256"]:
-                raise RenPyPatchError("Prepared font payload changed")
             # Also detect added/shadowing assets and changed compatibility
             # source, before and after publication. Existing hashes alone do
             # not detect a newly introduced asset with the fallback's name.
@@ -833,6 +873,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             existing_snapshots,
             source_snapshots,
             verify_target_inventory,
+            extra_payloads=extra_payloads,
         )
     except RenPyPatchError as exc:
         try:

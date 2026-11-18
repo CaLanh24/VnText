@@ -84,10 +84,11 @@ def apply_translation_package(csv_path: str, manifest_path: str, game_root: str,
     if replacement_font:
         raise ValueError("Unity/TMP font replacement requires a verified mapping adapter")
     from vntext.patch_font_preflight import font_report
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    (Path(output_dir) / "font_preflight.json").write_text(_json.dumps(font_report("unity", []), indent=2), encoding="utf-8")
+    evidence = font_report("unity", read_translation_rows(csv_path).values())
     try:
-        return _apply_unity_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+        result = _apply_unity_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+        (Path(output_dir) / "font_preflight.json").write_text(_json.dumps(evidence, indent=2), encoding="utf-8")
+        return result
     finally:
         # UnityPy object cycles retain Windows file handles after the writer returns.
         import gc

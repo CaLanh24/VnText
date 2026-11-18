@@ -30,8 +30,9 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     public string SourceText { get; init; } = "";
     public bool IsReviewOnly { get; init; }
     public bool? CanTranslate { get; init; }
+    public bool IsTechnical { get; init; }
     public string TranslationSkipReason { get; init; } = "";
-    public bool NeedsTranslation => IsEmpty && CanTranslate != false;
+    public bool NeedsTranslation => IsEmpty && !IsTechnical;
     public Dictionary<string, string> RawFields { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 
     public string Translation
@@ -74,7 +75,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
 
     /// <summary>Short status label for the narrow column; the full diagnostic stays in <see cref="IssueDisplay"/> (tooltip, accessible help text).
     /// Only the known long labels are shortened; any other text is passed through unchanged (the column trims it with an ellipsis).</summary>
-    public string IssueShort => CanTranslate == false && IsEmpty ? UiText.Translate("Không cần dịch")
+    public string IssueShort => IsTechnical && IsEmpty ? UiText.Translate("Không cần dịch")
         : string.IsNullOrWhiteSpace(_issueLabel) || _issueLabel == "no_translation"
         ? UiText.Translate(IsEmpty ? "Chưa dịch" : "Đã dịch")
         : IsEmpty || _issueDisplay == "Mất/sai placeholder {…}" ? UiText.TranslateDynamic(ShortenIssue(_issueDisplay))
@@ -110,7 +111,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     }
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Translation);
-    public bool HasIssue => !string.IsNullOrWhiteSpace(IssueLabel) && IssueLabel != "no_translation";
+    public bool HasIssue => !IsTechnical && !string.IsNullOrWhiteSpace(IssueLabel) && IssueLabel != "no_translation";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

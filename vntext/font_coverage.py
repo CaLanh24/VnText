@@ -57,4 +57,3 @@ def cmap_glyphs(data,characters):
         result[cp]=gid
     return {'format':fmt,'glyph_ids':{f'U+{cp:04X}':gid for cp,gid in result.items()},
             'missing':[f'U+{cp:04X} {chr(cp)}'for cp,gid in result.items()if gid==0]}
-

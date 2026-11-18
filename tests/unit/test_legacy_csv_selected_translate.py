@@ -98,6 +98,16 @@ class LegacyCsvSelectedTranslateTests(unittest.TestCase):
         self.assertEqual(0, audit["eligible"])
 
     # ---- revision CAS (stale before MT / during MT), transactional exclusions, legacy selected completion ----
+
+    @unittest.skipUnless((MODEL_DIR / "model.bin").is_file(), "Product OPUS-MT model absent")
+    def test_selected_human_and_removed_machine_rows_have_separate_terminal_outcomes(self):
+        done = self.run_selected(["s1", "s2", "s4"], self.sha())
+        self.assertTrue(done["ok"] and done["complete"], done)
+        self.assertEqual(done["selected_counts"], {"applied": 1, "skipped": 2, "review": 0, "failed": 0})
+        outcomes = {row["key"]: row for row in done["selected_outcomes"]}
+        self.assertEqual(outcomes["s2"]["reason"], "machine_technical_excluded")
+        self.assertEqual(outcomes["s4"]["status"], "skipped")
+        self.assertNotIn("s2", {row["key"] for row in self.rows()})
     def sha(self):
         return hashlib.sha256(self.csv.read_bytes()).hexdigest()
 

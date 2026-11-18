@@ -1,5 +1,8 @@
 """Job accounting and font evidence without a game, model download or runtime."""
 import struct
+import hashlib
+from pathlib import Path
+from unittest.mock import patch
 import unittest
 from vntext.selected_translation import selected_outcomes
 from vntext.patch_font_preflight import required_characters, font_report
@@ -7,6 +10,31 @@ from vntext.font_coverage import cmap_glyphs
 
 
 class SelectedRowsTests(unittest.TestCase):
+    def test_csv_preflight_separates_technical_from_human_review_and_is_revision_bound(self):
+        from vntext.csv_editor_api import translation_eligibility
+        raw = b'key,source_text,translation,import_method\r\na,Hello there.,,renpy_dialogue\r\nb,gui/button/idle.png,,\r\nc,[page],,renpy_screen_candidate\r\nd,Please wait.,,renpy_dialogue\r\n'
+        digest = hashlib.sha256(raw).hexdigest()
+        with patch.object(Path, "read_bytes", return_value=raw), patch("vntext.mt_ct2_status._load_human_review_keys", return_value={"d"}):
+            result = translation_eligibility(Path("fixture.csv"), digest.upper())["rows"]
+            self.assertTrue(result["a"]["eligible"])
+            self.assertTrue(result["b"]["technical"])
+            self.assertTrue(result["c"]["technical"])
+            self.assertFalse(result["c"]["eligible"])
+            self.assertFalse(result["d"]["eligible"])
+            self.assertFalse(result["d"]["technical"])
+            with self.assertRaisesRegex(ValueError, "CSV changed"):
+                translation_eligibility(Path("fixture.csv"), "0" * 64)
+
+    def test_preexisting_translation_is_not_counted_as_applied_when_this_job_did_not_apply_it(self):
+        _, counts = selected_outcomes([{"key": "a", "source_text": "Hello there.", "translation": "Xin chào."}], ["a"], applied_keys=[])
+        self.assertEqual(counts["failed"], 1)
+        self.assertEqual(counts["applied"], 0)
+
+    def test_audited_machine_exclusion_is_skipped_not_a_missing_key_failure(self):
+        outcomes, counts = selected_outcomes([], ["old", "missing"], excluded_keys={"old"})
+        self.assertEqual(counts["skipped"], 1)
+        self.assertEqual(counts["failed"], 1)
+        self.assertEqual(outcomes[0]["reason"], "machine_technical_excluded")
     def test_mixed_selection_accounts_each_key_without_filling_technical_rows(self):
         rows = [{"key": "text", "source_text": "Hello, [name]!", "translation": "Chào, [name]!"},
                 {"key": "path", "source_text": "gui/button/idle.png", "translation": ""},

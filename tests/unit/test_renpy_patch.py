@@ -268,6 +268,53 @@ class RenPyPatchTests(unittest.TestCase):
                     apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out))
             self.assertFalse(out.exists())
 
+    def test_font_report_publish_failure_restores_report_and_overlay_pair(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base); out = base / "out"
+            apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out))
+            previous = self._renpy_pair_bytes(out)
+            report = out / "font_preflight.json"; original_report = report.read_bytes()
+            self._set_translation(csv, "d", "Phiên bản khác [name]")
+            real_replace = os.replace
+            def fail_report(source, destination):
+                if Path(destination) == report and Path(source).name.startswith(".extra-"):
+                    raise OSError("injected font report publication failure")
+                return real_replace(source, destination)
+            with patch("vntext.patch_renpy.os.replace", side_effect=fail_report):
+                with self.assertRaisesRegex(RenPyPatchError, "publication failure"):
+                    apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out))
+            self.assertEqual(self._renpy_pair_bytes(out), previous)
+            self.assertEqual(report.read_bytes(), original_report)
+            self._assert_no_renpy_staging(out)
+
+    def test_selected_real_font_checks_glyphs_and_packages_unique_language_asset(self):
+        from vntext.patch_output import write_renpy_patch_manifest
+        font = Path(__file__).resolve().parents[2] / "wpf_app/VNText.Studio.App/Assets/Fonts/Inter-Regular.ttf"
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base); out = base / "out"
+            shadow = game / "game/DejaVuSans.ttf"; shadow.write_bytes(b"unrelated shadow font")
+            original = {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()}
+            apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out), replacement_font=str(font))
+            report = json.loads((out / "font_preflight.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["glyph_status"], "PASS")
+            self.assertFalse(report["compatible"])
+            self.assertEqual(report["mapping_status"], "STATIC_STYLES_ONLY")
+            self.assertEqual((out / "COPY_TO_GAME_ROOT" / report["payload_font"]).read_bytes(), font.read_bytes())
+            delivery = write_renpy_patch_manifest(out, game, "fixture", json.loads(manifest.read_text(encoding="utf-8")))
+            self.assertEqual(delivery["font_preflight"]["sha256"], hashlib.sha256(font.read_bytes()).hexdigest())
+            self.assertEqual(original, {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()})
+
+    def test_missing_selected_font_glyphs_refuse_before_output_creation(self):
+        import struct
+        from tests.unit.test_renpy_font_cmap_audit import font
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base); out = base / "out"
+            sub = struct.pack('>HHLLL', 12, 0, 28, 0, 1) + struct.pack('>LLL', 65, 65, 3)
+            selected = base / "missing.ttf"; selected.write_bytes(font(sub, encoding=10))
+            with self.assertRaisesRegex(RenPyPatchError, "lacks translated glyphs"):
+                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out), replacement_font=str(selected))
+            self.assertFalse(out.exists())
+
     def test_preexisting_inconsistent_overlay_pair_blocks_before_mutation(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base)

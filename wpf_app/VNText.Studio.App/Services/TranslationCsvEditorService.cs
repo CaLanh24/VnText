@@ -15,9 +15,10 @@ public sealed record CsvEditorDocument(
     IReadOnlySet<string> ReviewKeys,
     string? Error = null,
     string? SourceSha256 = null,
-    IReadOnlyDictionary<string, (bool Eligible, string Reason)>? Eligibility = null)
+    IReadOnlyDictionary<string, (bool Eligible, string Reason, bool Technical)>? Eligibility = null)
 {
     public bool? CanTranslateKey(string key) => Eligibility is not null && Eligibility.TryGetValue(key, out var item) ? item.Eligible : null;
+    public bool IsTechnicalKey(string key) => Eligibility is not null && Eligibility.TryGetValue(key, out var item) && item.Technical;
     public string SkipReason(string key) => Eligibility is not null && Eligibility.TryGetValue(key, out var item) ? item.Reason : "";
 }
 
@@ -153,7 +154,7 @@ public static class TranslationCsvEditorService
             || rows.Select(row => row["key"]).Distinct(StringComparer.Ordinal).Count() != rows.Count)
             throw new InvalidDataException("CSV có key trống hoặc trùng");
 
-        IReadOnlyDictionary<string, (bool Eligible, string Reason)>? eligibility = null;
+        IReadOnlyDictionary<string, (bool Eligible, string Reason, bool Technical)>? eligibility = null;
         try { eligibility = Eligibility(path, sourceSha256); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or JsonException) { /* Unknown remains eligible for explicit preflight, never guessed in C#. */ }
         return new CsvEditorDocument(true, path, fields, rows, review, SourceSha256: sourceSha256, Eligibility: eligibility);
@@ -326,14 +327,14 @@ public static class TranslationCsvEditorService
     }
 
     /// <summary>"Xóa dòng đã chọn": conflict-protected removal of the selected rows from THIS CSV with a persisted decision (user_exclusions.json).</summary>
-    public static Dictionary<string, (bool Eligible, string Reason)> Eligibility(string csvPath, string expectedSha256)
+    public static Dictionary<string, (bool Eligible, string Reason, bool Technical)> Eligibility(string csvPath, string expectedSha256)
     {
         var json = RunPython("eligibility", csvPath, null, null, extraArgs: new[] { "--expected-sha256", expectedSha256 });
         using var doc = JsonDocument.Parse(json.Substring(Math.Max(0, json.IndexOf('{'))));
         var root = doc.RootElement;
         if (!root.GetProperty("ok").GetBoolean()) throw new InvalidOperationException(root.GetProperty("error").GetString());
         return root.GetProperty("rows").EnumerateObject().ToDictionary(p => p.Name,
-            p => (p.Value.GetProperty("eligible").GetBoolean(), p.Value.GetProperty("reason").GetString() ?? ""));
+            p => (p.Value.GetProperty("eligible").GetBoolean(), p.Value.GetProperty("reason").GetString() ?? "", p.Value.TryGetProperty("technical", out var technical) && technical.GetBoolean()));
     }
 
     public static (bool Ok, string? Error, int Removed, int Remaining, string? Sha256) ExcludeRows(string csvPath, IReadOnlyList<string> keys, string expectedSha256)

@@ -101,7 +101,7 @@ public sealed partial class MainViewModel
         var keys = CheckedCsvKeys();
         if (keys.Count == 0 || string.IsNullOrWhiteSpace(CsvEditorPath)) return;
         if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
-        Dictionary<string, (bool Eligible, string Reason)> eligibility;
+        Dictionary<string, (bool Eligible, string Reason, bool Technical)> eligibility;
         var preflightPath = CsvEditorPath; var preflightHash = _csvEditorSourceSha256;
         try { eligibility = await Task.Run(() => TranslationCsvEditorService.Eligibility(preflightPath, preflightHash!)); }
         catch (Exception ex) { ShowToast(ex.Message, "error"); return; }
@@ -128,6 +128,7 @@ public sealed partial class MainViewModel
 
     private async Task SelectTranslatableAsync()
     {
+        if (Busy || _csvSelectionPreparing) return;
         if (!await EnsureCsvSavedBeforeBatchAsync("Lưu CSV trước khi phân loại dòng có thể dịch?")) return;
         try
         {
