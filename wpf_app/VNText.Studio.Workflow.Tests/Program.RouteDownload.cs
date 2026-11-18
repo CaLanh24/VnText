@@ -104,7 +104,13 @@ internal static partial class Program
         using var secondManifest = JsonDocument.Parse(second.GetEntry(FullAppUpdateService.PackageManifestName)!.Open());
         var baseline = firstManifest.RootElement.GetProperty("files").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
         var target = secondManifest.RootElement.GetProperty("files").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
-        if (discontinuous) baseline["app/keep.txt"] = JsonSerializer.SerializeToElement(new { sha256 = new string('0', 64), size = 9 });
+        if (discontinuous)
+        {
+            var other = System.Text.Encoding.UTF8.GetBytes("another baseline");
+            var record = JsonSerializer.SerializeToElement(new { sha256 = HashBytes(other), size = other.Length });
+            baseline["app/keep.txt"] = record;
+            target["app/keep.txt"] = record;
+        }
         var additions = target.Where(p => !baseline.ContainsKey(p.Key)).ToDictionary(p => p.Key, p => p.Value);
         var replacements = target.Where(p => baseline.ContainsKey(p.Key) && p.Value.GetProperty("sha256").GetString() != baseline[p.Key].GetProperty("sha256").GetString()).ToDictionary(p => p.Key, p => p.Value);
         var manifest = secondManifest.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
