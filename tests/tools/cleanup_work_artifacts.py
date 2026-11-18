@@ -384,6 +384,16 @@ RELEASE_TASK_0119_REBASELINE_APPROVAL = (
     "no model change, no push/tag/release before Brain acceptance; every earlier single-use approval remains consumed."
 )
 
+RELEASE_TASK_0121_REBASELINE_ID = "call_2d1757edade2431a9fd3eceeb2be54c4"
+RELEASE_TASK_0121_REBASELINE_PREPARED_SHA = "106ba4a22d8319dcd09afcae01f59e37e5b20264"
+RELEASE_TASK_0121_REBASELINE_APPROVAL = (
+    "Owner 2026-11-18 answered 'Cho phép rebaseline batch 0.1.21' to call_2d1757edade2431a9fd3eceeb2be54c4: ONE no-delete epoch metadata rebaseline "
+    "from epoch-20261118-045-release021 for prepared source106ba4a22d8319dcd09afcae01f59e37e5b20264 and focused fixes in this release-0.1.21 batch. "
+    "Keep candidate-0.1.21 scope,6GiB project,11GiB shared and48MiB guard; preserve complete history, user data, CAS, source lineage, rollback/readback, "
+    "clean-source/no-writer protections and ordinary eight-hop bound. No product-validator weakening, deletion or inherited reuse of this single-use approval. "
+    "Push/release remain subject to candidate acceptance already authorized by Owner."
+)
+
 # Standing same-scope metadata continuity (Owner 2026-11-07, via the authorized PM thread: "bao no di").  It replaces the numeric approval quota of eight
 # ordinary hops for the ALREADY authorized task/scope/budget only; it is not 8 -> 100 and it grants no new task, scope, budget, right, publication, model
 # or game authority.  Every transition is still an exact-CAS, clean strict-descendant, no-writer, rollback/readback-proven step; the hop number is
@@ -409,6 +419,10 @@ def _rebaseline_prior_task_allowed(previous_task, target_task, authorization_id)
         authorization_id == RELEASE_TASK_0117_REBASELINE_ID and previous_task == RELEASE_TASK_0116_BUDGET_ID and target_task == RELEASE_TASK_0117_BUDGET_ID)
 
 def _rebaseline_versions_match(previous_sha, target_sha, target_version, authorization_id):
+    if authorization_id == RELEASE_TASK_0121_REBASELINE_ID:
+        return (target_version == "0.1.21" and _git_version_at(previous_sha) == "0.1.21"
+                and _git_version_at(target_sha) == "0.1.21"
+                and _git_is_ancestor(RELEASE_TASK_0121_REBASELINE_PREPARED_SHA, target_sha))
     if authorization_id == RELEASE_TASK_0117_REBASELINE_ID_2:
         return (target_version == "0.1.17" and _git_version_at(previous_sha) == "0.1.17"
                 and _git_version_at(target_sha) == "0.1.17"
@@ -726,6 +740,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_0121_REBASELINE_ID: (RELEASE_TASK_0121_BUDGET_ID, "0.1.21", RELEASE_TASK_0121_REBASELINE_APPROVAL),
     RELEASE_TASK_0119_REBASELINE_ID: (RELEASE_TASK_0119_BUDGET_ID, "0.1.19", RELEASE_TASK_0119_REBASELINE_APPROVAL),
     RELEASE_TASK_0117_REBASELINE_ID_2: (RELEASE_TASK_0117_BUDGET_ID, "0.1.17", RELEASE_TASK_0117_REBASELINE_APPROVAL_2),
     RELEASE_TASK_0117_REBASELINE_ID: (RELEASE_TASK_0117_BUDGET_ID, "0.1.17", RELEASE_TASK_0117_REBASELINE_APPROVAL),

@@ -1,5 +1,6 @@
 """Bounded SFNT coverage, without loading or executing a font."""
 import struct
+from bisect import bisect_left, bisect_right
 
 def cmap_glyphs(data,characters):
     """Bounded OpenType Unicode cmap4/12/13 glyph IDs, never renders fonts."""
@@ -30,29 +31,42 @@ def cmap_glyphs(data,characters):
     _,sub,fmt=min(candidates)
     length=u16(sub+2)if fmt==4 else u32(sub+4)
     if length<16 or sub+length>base+size:raise ValueError('cmap subtable length')
+    # Index once, rather than scanning every segment/group for every translated
+    # character (a large Unicode font must not multiply the CSV workload).
+    if fmt==4:
+        if u16(sub+6)%2:raise ValueError('cmap4 segment count')
+        segments=u16(sub+6)//2
+        if 16+8*segments>length:raise ValueError('cmap4 segment bounds')
+        ends=[u16(sub+14+2*i) for i in range(segments)]
+        starts=[u16(sub+16+2*segments+2*i) for i in range(segments)]
+        if any(start>end or (i and start<=ends[i-1]) for i,(start,end) in enumerate(zip(starts,ends))):
+            raise ValueError('cmap4 segment order')
+    else:
+        count=u32(sub+12)
+        if count>200000 or 16+12*count>length:raise ValueError('cmap12/13 group bounds')
+        groups=[struct.unpack_from('>LLL',data,sub+16+12*i) for i in range(count)]
+        if any(start>end or end>0x10ffff or (i and start<=groups[i-1][1]) for i,(start,end,_) in enumerate(groups)):
+            raise ValueError('cmap12/13 group order')
+        starts=[group[0] for group in groups]
     result={}
     for cp in characters:
         gid=0
+        if not isinstance(cp,int) or not 0<=cp<=0x10ffff:raise ValueError('invalid Unicode codepoint')
         if fmt==4:
-            if u16(sub+6)%2:raise ValueError('cmap4 segment count')
-            segments=u16(sub+6)//2
-            if 16+8*segments>length:raise ValueError('cmap4 segment bounds')
-            for i in range(segments):
-                end=u16(sub+14+2*i);start=u16(sub+16+2*segments+2*i)
-                if not start<=cp<=end:continue
+            i=bisect_left(ends,cp)
+            if i<segments and starts[i]<=cp:
+                start=starts[i]
                 delta=u16(sub+16+4*segments+2*i);address=sub+16+6*segments+2*i;relative=u16(address)
                 if relative:
                     target=address+relative+2*(cp-start)
                     if target+2>sub+length:raise ValueError('cmap4 glyph bounds')
                     gid=u16(target);gid=(gid+delta)&65535 if gid else 0
                 else:gid=(cp+delta)&65535
-                break
         else:
-            groups=u32(sub+12)
-            if groups>200000 or 16+12*groups>length:raise ValueError('cmap12/13 group bounds')
-            for i in range(groups):
-                start,end,first=struct.unpack_from('>LLL',data,sub+16+12*i)
-                if start<=cp<=end:gid=first+(cp-start)if fmt==12 else first;break
+            i=bisect_right(starts,cp)-1
+            if i>=0:
+                start,end,first=groups[i]
+                if cp<=end:gid=first+(cp-start)if fmt==12 else first
         if gid>=maximum:raise ValueError('cmap glyph outside maxp')
         result[cp]=gid
     return {'format':fmt,'glyph_ids':{f'U+{cp:04X}':gid for cp,gid in result.items()},

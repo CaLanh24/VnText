@@ -104,13 +104,17 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
         checks.append({"path": path.relative_to(game_base).as_posix(), "sha256": digest})
     font_report_path = output_dir / "font_preflight.json"
     if font_report_path.is_file():
-        font_source = json.loads(font_report_path.read_text(encoding="utf-8")).get("source_font")
-        if font_source:
+        font_evidence = json.loads(font_report_path.read_text(encoding="utf-8"))
+        font_sources = list(font_evidence.get("source_checks", []))
+        if font_evidence.get("source_font"):
+            font_sources.append(font_evidence["source_font"])
+        for font_source in font_sources:
             font_path = game_base / font_source["path"]
             _no_links(font_path)
             if not font_path.resolve().is_relative_to(game_base.resolve()) or _sha256_file(font_path) != font_source["sha256"]:
                 raise ValueError("Font source changed before installer packaging")
-            checks.append(font_source)
+            if font_source not in checks:
+                checks.append(font_source)
     files = []
     for path in sorted(p for p in payload_root.rglob("*") if p.is_file()):
         _no_links(path)

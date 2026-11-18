@@ -806,6 +806,11 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         font = Path(replacement_font) if replacement_font else root / "renpy/common/DejaVuSans.ttf"
         styles = re.findall(r"translate vietnamese style (\w+):", font_support)
         font_evidence = font_report("renpy", [translation for _, translation in dialogues] + list(requested_strings.values()), font=font if font_support else None, styles=styles)
+        from vntext.renpy_font_inventory import inspect_font_mapping
+        font_translations = [translation for _, translation in dialogues] + list(requested_strings.values())
+        font_evidence["mapping_inventory"] = inspect_font_mapping(root, font_translations, source_snapshots, archive_cache)
+        font_evidence["source_checks"] = [{"path": path.relative_to(root).as_posix(), "sha256": digest}
+                                          for path, digest in sorted(source_snapshots.items()) if path.is_relative_to(root)]
         if font_support and not replacement_font:
             font_evidence["source_font"] = {"path": font.relative_to(root).as_posix(), "sha256": font_evidence["sha256"]}
         if font_evidence.get("missing"):
@@ -828,6 +833,8 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
 
         def verify_target_inventory():
             prior_inventory_check()
+            if inspect_font_mapping(root, font_translations, {}, {}) != font_evidence["mapping_inventory"]:
+                raise RenPyPatchError("Ren'Py font mapping inventory changed")
             # Also detect added/shadowing assets and changed compatibility
             # source, before and after publication. Existing hashes alone do
             # not detect a newly introduced asset with the fallback's name.

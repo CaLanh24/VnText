@@ -94,3 +94,6 @@ unchanged. Finalize the exact candidate scope only after all children exit and
 evidence is compacted; final inventory must pass at 1 GiB.
 
 **Tests/evidence:** `tests/unit/test_cleanup_work_artifacts.py`, `test_artifact_write_policy.py`, `test_work_paths.py`, `test_release_regression_runner.py`; `tests/tools/run_with_cleanup.py`; terminal summary is streamed and `TEST_RUN` is absent/empty after feature runs.
+
+
+**Owner approval2026-11-18, release0.1.21:** reply to `call_2d1757edade2431a9fd3eceeb2be54c4` explicitly permits ONE no-delete metadata epoch rebaseline for prepared source `106ba4a22d8319dcd09afcae01f59e37e5b20264` and focused fixes in this batch, from `epoch-20261118-045-release021`. The canonical plan proved the ordinary eight-hop bound exhausted. Keep exact `RELEASE_RUN/candidate-0.1.21`, project6GiB, shared11GiB, reserve48MiB, complete history/CAS/source-lineage/rollback and clean-source/no-writer guards. No user-data/history deletion or product-validator relaxation. This is a single-use approval, not standing extra hops. Candidate/native/public-readback acceptance remains separate from authorized push/release.

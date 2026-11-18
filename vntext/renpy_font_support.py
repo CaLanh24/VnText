@@ -32,6 +32,10 @@ def text_font_styles(scripts: list[str]) -> list[str]:
                 match = _STYLE.fullmatch(line)
                 active = match.group(1) if match else None
             elif active and (_TEXT_FONT.fullmatch(line.strip()) or _TEXT_PROPERTIES.fullmatch(line.strip())):
+                # Icon/glyph roles never inherit the text replacement just because
+                # their property also ends in "_font" or uses gui.text_properties.
+                if any(part in active.casefold() or part in line.casefold() for part in ("icon", "glyph")):
+                    continue
                 names.add(active)
     return sorted(names)
 

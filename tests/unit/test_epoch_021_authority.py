@@ -10,6 +10,17 @@ import cleanup_work_artifacts as cleanup
 
 
 class Epoch021AuthorityTests(unittest.TestCase):
+    def test_single_rebaseline_is_owner_bound_and_keeps_version_lineage_guards(self):
+        authority = cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[cleanup.RELEASE_TASK_0121_REBASELINE_ID]
+        self.assertEqual(authority[:2], ("release-0.1.21", "0.1.21"))
+        self.assertIn("Cho phép rebaseline batch 0.1.21", authority[2])
+        self.assertNotIn("release-0.1.21", cleanup.STANDING_TRANSITION_POLICY_TASKS)
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.21"), patch.object(cleanup, "_git_is_ancestor", return_value=True):
+            self.assertTrue(cleanup._rebaseline_versions_match("old", "new", "0.1.21", cleanup.RELEASE_TASK_0121_REBASELINE_ID))
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.21"), patch.object(cleanup, "_git_is_ancestor", return_value=False):
+            self.assertFalse(cleanup._rebaseline_versions_match("old", "new", "0.1.21", cleanup.RELEASE_TASK_0121_REBASELINE_ID))
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.20"), patch.object(cleanup, "_git_is_ancestor", return_value=True):
+            self.assertFalse(cleanup._rebaseline_versions_match("old", "new", "0.1.21", cleanup.RELEASE_TASK_0121_REBASELINE_ID))
     def test_exact_scope_and_budget(self):
         task, version, approval = cleanup._release_budget_spec('release-0.1.21')
         self.assertEqual(('release-0.1.21', '0.1.21'), (task, version))

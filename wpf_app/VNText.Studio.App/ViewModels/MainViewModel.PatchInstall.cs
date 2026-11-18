@@ -60,8 +60,14 @@ public sealed partial class MainViewModel
             FontFamily = new System.Windows.Media.FontFamily(new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar), "./" + Path.GetFileName(path) + "#" + family)
         };
         var accepted = false;
-        var window = new AppDialogWindow(Application.Current.MainWindow, "Xem trước font Việt", preview, width: 640);
-        window.AddButton("Dùng font này", () => accepted = true, primary: true, isDefault: true);
+        var body = new System.Windows.Controls.StackPanel(); body.Children.Add(preview);
+        var permission = new System.Windows.Controls.CheckBox { Content = UiText.Translate("Tôi có quyền đóng gói và phân phối font này."), Margin = new Thickness(0,16,0,0) };
+        body.Children.Add(permission);
+        var window = new AppDialogWindow(Application.Current.MainWindow, "Xem trước font Việt", body, width: 640);
+        var use = window.AddButton("Dùng font này", () => accepted = true, primary: true, isDefault: true);
+        use.IsEnabled = false;
+        permission.Checked += (_, _) => use.IsEnabled = true;
+        permission.Unchecked += (_, _) => use.IsEnabled = false;
         window.ShowDialog(); return accepted;
     }
 

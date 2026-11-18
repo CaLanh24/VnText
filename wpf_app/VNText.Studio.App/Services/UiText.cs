@@ -18,6 +18,7 @@ public static class UiText
         ["Font đủ ký tự bản dịch. Chỉ áp dụng cho các kiểu chữ tĩnh đã nhận diện; chưa chứng minh hiển thị trong game."] = "The font covers translated characters. Only recognized static styles are mapped; in-game rendering is not verified.",
         ["Chưa xác minh được font của game. Cài patch chưa bảo đảm chữ Việt hiển thị đúng."] = "The game font is not verified. Installing this patch does not guarantee correct Vietnamese rendering.",
         ["Dùng font có sẵn"] = "Use existing font",
+        ["Tôi có quyền đóng gói và phân phối font này."] = "I have permission to package and distribute this font.",
         ["Đang xử lý…"] = "Processing…",
         ["Mở thư mục patch"] = "Open patch folder",
         ["Chọn font Việt…"] = "Choose Vietnamese font…",
