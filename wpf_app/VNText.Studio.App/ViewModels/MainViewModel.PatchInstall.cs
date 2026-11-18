@@ -158,6 +158,11 @@ public sealed partial class MainViewModel
         var window = new AppDialogWindow(Application.Current.MainWindow, "Xem trước font Việt", body, width: 640);
         var use = window.AddButton("Dùng font này", () => accepted = true, primary: true, isDefault: true);
         use.IsEnabled = false;
+        System.Windows.Input.KeyboardNavigation.SetTabIndex(window.CloseButton, 100);
+        System.Windows.Input.KeyboardNavigation.SetTabIndex(use, 50);
+        window.Loaded += (_, _) => permission.Dispatcher.BeginInvoke(
+            new Action(() => System.Windows.Input.Keyboard.Focus(permission)),
+            System.Windows.Threading.DispatcherPriority.Input);
         permission.Checked += (_, _) => use.IsEnabled = true;
         permission.Unchecked += (_, _) => use.IsEnabled = false;
         window.ShowDialog(); return accepted;
