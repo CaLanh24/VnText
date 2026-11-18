@@ -96,6 +96,18 @@ public sealed partial class MainViewModel
             : !evt.Ok || !_resourcesAllReady ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."
             : !string.IsNullOrEmpty(before) && before != owned ? before : "Sẵn sàng";
     }
+    /// <summary>Design QA: the same cause is shown ONCE in the card.  The per-resource line already names it ("name: Chưa sẵn sàng · cause"), so the raw error is only appended when it adds something.</summary>
+    internal void TestSetResourceStatus(string status) => ResourceStatus = status;
+    internal bool ResourceStatusAlreadyStates(string? error)
+    {
+        var text = (error ?? "").Trim();
+        if (text.Length == 0) return true;
+        var status = _resourceStatus ?? "";
+        if (status.Contains(text, StringComparison.Ordinal)) return true;
+        var colon = text.IndexOf(": ", StringComparison.Ordinal);
+        return colon is > 0 and < 24 && status.Contains(text[(colon + 2)..].Trim(), StringComparison.Ordinal);
+    }
+
     private void CompleteResources(VNText.Studio.App.Models.WorkerEvent evt)
     {
         if (!evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true)
@@ -136,7 +148,7 @@ public sealed partial class MainViewModel
             RaiseResourceReadiness();
             AppendLog(ResourceStatus, "WARN");
         }
-        if (!evt.Ok) { if (!string.IsNullOrWhiteSpace(evt.Error) && !_resourceStatus.Contains(evt.Error.Trim(), StringComparison.Ordinal)) ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
+        if (!evt.Ok) { if (!ResourceStatusAlreadyStates(evt.Error)) ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);
         CheckResourcesCommand.RaiseCanExecuteChanged(); DownloadResourcesCommand.RaiseCanExecuteChanged();

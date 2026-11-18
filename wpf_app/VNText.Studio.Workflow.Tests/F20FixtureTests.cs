@@ -227,6 +227,8 @@ internal static partial class Program
                             var buttons = FindVisualChildren<Button>(Named("ResourceErrorActions")).Select(b => b.Content as string).ToList();
                             Require(buttons.Contains(lang == "en" ? "View diagnostics" : "Xem chẩn đoán") && buttons.Contains(lang == "en" ? "Copy error" : "Chép lỗi"), "DQ3 " + lang + ": actions " + string.Join("|", buttons));
                         }
+                        vm.TestSetResourceStatus("Còn thiếu hoặc hỏng tài nguyên." + Environment.NewLine + "renpy: Chưa sẵn sàng · Chưa tải Ren'Py SDK 8.5.3");
+                        Require(vm.ResourceStatusAlreadyStates("renpy: Chưa tải Ren'Py SDK 8.5.3") && vm.ResourceStatusAlreadyStates("Chưa tải Ren'Py SDK 8.5.3") && !vm.ResourceStatusAlreadyStates("Lỗi mạng khác"), "DQ3: an error already stated by the per-resource line is not appended again, a different one is");
                         // Patch font group
                         vm.NavigateTabCommand.Execute("patch"); vm.Language = "vi"; window.UpdateLayout(); PumpFixture(200);
                         Require(vm.PatchFontModeText == "Font Việt đi kèm (mặc định)" && vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn game/asset", StringComparison.Ordinal) && !vm.PatchFontNoticeVisible, "DQ4: default font, no source, no notice");
