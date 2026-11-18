@@ -1,7 +1,7 @@
 # VNText Studio
 
 
-Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ. Phiên bản mã nguồn đang chuẩn bị: 0.1.20. Bản phát hành công khai mới nhất được ghi trên trang Releases.
+Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ. Bản phát hành hiện tại: **0.1.20**.
 
 Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**. Người mới tải bộ cài từ trang Releases.
 
@@ -33,7 +33,7 @@ Hỗ trợ các cấu trúc và asset Unity phù hợp, gồm những dạng vă
 ## Quy trình sử dụng
 
 1. Tải và chạy [Setup từ GitHub Releases](https://github.com/CaLanh24/VnText/releases).
-2. Cài ứng dụng trên Windows, chuẩn bị tài nguyên trong **Cài đặt → Dữ liệu**, rồi chọn thư mục game.
+2. Cài ứng dụng trên Windows; Setup chuẩn bị tài nguyên cần thiết trước khi mở app. Sau đó chọn thư mục game. **Cài đặt → Dữ liệu** dùng để kiểm tra hoặc sửa tài nguyên khi cần.
 3. App tự nhận diện engine; chọn **Lấy text** để tạo gói văn bản.
 4. **Dịch trong ứng dụng** hoặc xuất, chỉnh sửa rồi nhập CSV lại.
 5. Rà soát bản dịch, thêm thuật ngữ nếu cần, rồi chọn **Patch**.
