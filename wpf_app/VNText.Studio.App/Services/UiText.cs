@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,6 +13,30 @@ public static class UiText
     private static readonly ConditionalWeakTable<DependencyObject, Dictionary<DependencyProperty, string>> Originals = new();
     private static readonly Dictionary<string, string> English = new(StringComparer.Ordinal)
     {
+        ["Cài trong VNText"] = "Install in VNText",
+        ["Mở thư mục patch"] = "Open patch folder",
+        ["Chọn font Việt…"] = "Choose Vietnamese font…",
+        ["Chọn dòng có thể dịch"] = "Select translatable rows",
+        ["Không cần dịch"] = "Not for translation",
+        ["Font: tự kiểm tra font có sẵn"] = "Font: check existing font automatically",
+        ["Chưa chứng minh hiển thị font trong game."] = "In-game font rendering has not been verified.",
+        ["Chưa kiểm chứng font của patch này."] = "This patch font has not been verified.",
+        ["file sẽ được cài; bản gốc được sao lưu."] = "files to install; originals will be backed up.",
+        ["Gỡ và hoàn nguyên"] = "Uninstall and restore",
+        ["Cài patch"] = "Install patch",
+        ["Chọn game…"] = "Choose game…",
+        ["Patch đã cài. Có thể gỡ và hoàn nguyên."] = "Patch installed. You can uninstall and restore.",
+        ["Game hợp lệ. Chỉ ghi sau khi bạn xác nhận."] = "Game validated. Files are written only after confirmation.",
+        ["CSV hoặc patch đã thay đổi. Hãy tạo lại patch."] = "The CSV or patch changed. Build the patch again.",
+        ["Gỡ patch và hoàn nguyên các file gốc đã sao lưu?"] = "Uninstall the patch and restore the backed-up originals?",
+        ["Cài patch vào thư mục game này? Bản gốc sẽ được sao lưu."] = "Install the patch into this game folder? Originals will be backed up.",
+        ["Đã hoàn nguyên."] = "Originals restored.",
+        ["Đã cài patch và kiểm tra file."] = "Patch installed and files verified.",
+        ["Xem trước font Việt"] = "Preview Vietnamese font",
+        ["Dùng font này"] = "Use this font",
+        ["Đây là bản xem trước trên máy; mapping font trong game được kiểm riêng."] = "This is a desktop preview; in-game font mapping is checked separately.",
+        ["Chọn font Việt thay thế (Ren’Py)"] = "Choose replacement Vietnamese font (Ren’Py)",
+        ["{0} dòng kỹ thuật/không phù hợp sẽ được bỏ qua; lý do từng dòng có trong Nhật ký."] = "{0} technical/unsuitable rows will be skipped; per-row reasons are available in the log.",
         ["Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {0}"] = "This folder contains a game. Select the specific game folder, for example: {0}",
         ["Không thể kiểm tra thư mục game. Hãy chọn lại thư mục có thể đọc."] = "Cannot inspect the game folder. Select a readable folder.",
         ["Tài nguyên xử lý trên máy"] = "On-device resources",

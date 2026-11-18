@@ -5,6 +5,19 @@ using System.Windows.Forms;
 
 namespace VNText.PatchInstaller;
 
+internal static class InstallerTheme
+{
+    internal static readonly bool Dark = IsDark();
+    private static bool IsDark()
+    {
+        var mode = Environment.GetEnvironmentVariable("VNTEXT_INSTALLER_THEME");
+        if (mode is "dark" or "light") return mode == "dark";
+        try { using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"); return key?.GetValue("AppsUseLightTheme") is int value && value == 0; }
+        catch { return false; }
+    }
+    internal static Color C(string light, string dark) => ColorTranslator.FromHtml(Dark ? dark : light);
+}
+
 /// <summary>A filled, bordered rounded rectangle (card, status banner, text field frame) painted with anti-aliasing.</summary>
 internal class RoundedPanel : Panel
 {
@@ -73,7 +86,7 @@ internal sealed class RoundedButton : Button
         Color fill, border, text;
         if (!Enabled) { fill = Disabled; border = Disabled; text = Muted; }
         else if (Primary) { fill = _down || _hover ? BlueHover : Blue; border = fill; text = Color.White; }
-        else { fill = _down || _hover ? BlueSoft : Color.White; border = _hover ? Blue : Line; text = Ink; }
+        else { fill = _down || _hover ? InstallerTheme.C("#EEF2F7", "#334155") : InstallerTheme.C("#FFFFFF", "#1E293B"); border = _hover ? InstallerTheme.C("#D3D7DE", "#4B5869") : InstallerTheme.C("#E2E3E5", "#394352"); text = InstallerTheme.C("#475569", "#94A3B8"); }
         var bounds = new Rectangle(0, 0, Width - 1, Height - 1);
         using (var path = RoundedPanel.Path(bounds, 10))
         {
@@ -110,8 +123,8 @@ internal sealed class InstallerForm : Form
     private readonly record struct Tone(Color Fill, Color Border, Color Text);
 
     // Tokens taken from the app (Themes/DesignTokens.xaml): canvas, surface, ink, muted, line, blue, plus the About banner green.
-    private static readonly Color Canvas = Color.FromArgb(0xF2, 0xF6, 0xFC), Surface = Color.White, Ink = Color.FromArgb(0x11, 0x18, 0x27),
-        Muted = Color.FromArgb(0x4B, 0x5B, 0x71), Line = Color.FromArgb(0xE5, 0xE7, 0xEB), Blue = Color.FromArgb(0x28, 0x68, 0xE8);
+    private static readonly Color Canvas = InstallerTheme.C("#F2F6FC", "#172235"), Surface = InstallerTheme.C("#FFFFFF", "#202B3C"), Ink = InstallerTheme.C("#111827", "#EDF1F7"),
+        Muted = InstallerTheme.C("#4B5B71", "#B7C2D3"), Line = InstallerTheme.C("#E5E7EB", "#3B4B63"), Blue = Color.FromArgb(0x28, 0x68, 0xE8);
     private static readonly Tone Good = new(Color.FromArgb(0xD8, 0xED, 0xE1), Color.FromArgb(0xA1, 0xE2, 0xBA), Color.FromArgb(0x15, 0x80, 0x3D));
     private static readonly Tone Warn = new(Color.FromArgb(0xFD, 0xF3, 0xDC), Color.FromArgb(0xF0, 0xCF, 0x8A), Color.FromArgb(0x8A, 0x50, 0x00));
     private static readonly Tone Bad = new(Color.FromArgb(0xFB, 0xE6, 0xE6), Color.FromArgb(0xEE, 0xB0, 0xB0), Color.FromArgb(0xA3, 0x2B, 0x2B));
@@ -130,6 +143,7 @@ internal sealed class InstallerForm : Form
     private readonly RoundedButton _browse = new("Chọn game…") { Margin = new Padding(10, 0, 0, 0) };
     private readonly ProgressBar _busy = new() { Height = 4, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30, Visible = false, Dock = DockStyle.Top };
     private bool _working;
+    private bool _confirmingInstall;
 
     public InstallerForm(string patchDir)
     {
@@ -139,6 +153,7 @@ internal sealed class InstallerForm : Form
         AutoScaleMode = AutoScaleMode.Dpi; AutoScaleDimensions = new SizeF(96F, 96F);
         Font = new Font("Segoe UI", 10F);
         BackColor = Canvas; ForeColor = Ink;
+        _gamePath.BackColor = Surface; _gamePath.ForeColor = Ink;
         StartPosition = FormStartPosition.CenterScreen;
         ClientSize = new Size(680, 520); MinimumSize = new Size(560, 500);
 
@@ -166,27 +181,32 @@ internal sealed class InstallerForm : Form
         actions.Controls.Add(_install); actions.Controls.Add(_uninstall); actions.Controls.Add(_confirm); actions.Controls.Add(_cancelConfirm);
 
         _browse.Click += (_, _) => BrowseGame();
-        _install.Click += async (_, _) => await RunAsync(() =>
-        {
-            var state = _service.Install(_gamePath.Text);
-            return (Good, $"Đã cài bản Việt hóa ({state.Files.Count} file). Bản gốc được sao lưu để có thể gỡ cài đặt.");
-        });
+        _install.Click += (_, _) => { _confirmingInstall = true; ShowConfirm(true); };
         _uninstall.Click += (_, _) => ShowConfirm(true);
         _cancelConfirm.Click += (_, _) => ShowConfirm(false);
         _confirm.Click += async (_, _) =>
         {
+            var install = _confirmingInstall;
+            var target = _gamePath.Text;
             ShowConfirm(false);
-            await RunAsync(() => { _service.Uninstall(_gamePath.Text); return (Good, "Đã gỡ patch và khôi phục đúng các file gốc."); });
+            await RunAsync(() =>
+            {
+                if (install) { var state = _service.Install(target); return (Good, $"Đã cài bản Việt hóa ({state.Files.Count} file). Bản gốc được sao lưu để có thể gỡ cài đặt."); }
+                _service.Uninstall(target); return (Good, "Đã gỡ patch và khôi phục đúng các file gốc.");
+            });
         };
         AcceptButton = _install; CancelButton = _cancelConfirm;
 
         // One column, every row sized by its content (no fixed heights), so nothing is clipped at the default or minimum size or at 150% scaling.
-        var flow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = true, BackColor = Surface };      // a short window scrolls the body; the actions below never leave the viewport
+        var flow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, AutoScroll = true, BackColor = Surface };
         flow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         foreach (Control c in new Control[] { heading, _description, label, pathRow, _statusBox, _busy })
         {
-            c.Dock = DockStyle.Fill; flow.RowStyles.Add(new RowStyle(SizeType.AutoSize)); flow.Controls.Add(c);
+            c.Dock = DockStyle.Top; flow.RowStyles.Add(new RowStyle(SizeType.AutoSize)); flow.Controls.Add(c);
         }
+        // The remaining height belongs to neutral surface, never to a status banner.
+        flow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        flow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = Surface }, 0, 6);
         _card.Controls.Add(flow);                       // Fill first, then the Bottom footer (later controls dock first)
         _card.Controls.Add(actions);
         _card.Dock = DockStyle.Fill; _card.Fill = Surface;
@@ -220,8 +240,14 @@ internal sealed class InstallerForm : Form
     {
         _confirm.Visible = _cancelConfirm.Visible = on;
         _install.Visible = _uninstall.Visible = !on;
-        if (on) { SetStatus(Warn, "Khôi phục toàn bộ file gốc của patch này? Chỉ những file patch đã ghi được hoàn tác."); _cancelConfirm.Focus(); }
-        else RefreshState();
+        if (on)
+        {
+            _confirm.Text = _confirmingInstall ? "Xác nhận cài" : "Xác nhận gỡ";
+            _cancelConfirm.Text = _confirmingInstall ? "Quay lại" : "Giữ patch";
+            SetStatus(Warn, _confirmingInstall ? "Cài vào thư mục đã chọn và sao lưu bản gốc? Font/mapping trong game chưa được chứng minh đầy đủ." : "Khôi phục toàn bộ file gốc của patch này? Chỉ những file patch đã ghi được hoàn tác.");
+            _cancelConfirm.Focus();
+        }
+        else { _confirmingInstall = false; RefreshState(); }
     }
 
     private async Task RunAsync(Func<(Tone Tone, string Text)> work)
@@ -258,7 +284,7 @@ internal sealed class InstallerForm : Form
             {
                 _service.ValidateGame(_gamePath.Text);
                 _install.Enabled = true;
-                SetStatus(Good, "Game hợp lệ. Sẵn sàng cài đặt.");
+                SetStatus(Warn, "Game hợp lệ. Chưa chứng minh mapping font trong game; kiểm font và xác nhận trước khi cài.");
             }
         }
         catch (Exception ex) { SetStatus(Bad, ex.Message); }

@@ -2129,15 +2129,22 @@ def run_translate_keys_ct2_task(
             # unrelated pending rows must not turn a successful selected-row job into an error.
             from vntext.package_io import read_csv_rows_file
             selected = [row for row in read_csv_rows_file(csv_path)[1] if row.get("key") in set(keys)]
-            selected_done = sum(bool(row.get("translation", "").strip()) for row in selected)
-            selection_ok = bool(result.get("ok")) and len(selected) == len(set(keys)) and selected_done == len(selected)
+            from vntext.selected_translation import selected_outcomes
+            from vntext.mt_ct2_status import _load_human_review_keys
+            outcomes, counts = selected_outcomes(selected, keys, protected_keys=_load_human_review_keys(package_dir), applied_keys=result.get("selected_applied_keys"))
+            selected_done = counts["applied"]
+            # Intentional classifier skips are terminal outcomes, not failed translations.
+            selection_ok = counts["failed"] == 0
+            for outcome in outcomes:
+                log(f"{outcome['key']}: {outcome['status']} — {outcome['reason']}")
             package_counts = {name: payload[name] for name in ("pending", "review_only", "blocked", "translated")}
             payload.update(operation_scope="selected_rows", selected_total=len(set(keys)), selected_done=selected_done,
+                           selected_outcomes=outcomes[:100], selected_counts=counts,
                            package_counts=package_counts, ok=selection_ok, complete=selection_ok,
-                           pending=0 if selection_ok else max(1, len(set(keys)) - selected_done),
-                           review_only=0, blocked=0 if selection_ok else 1,
+                           pending=counts["failed"],
+                           review_only=0, blocked=counts["failed"],
                            error="" if selection_ok else "Chưa dịch xong các dòng đã chọn.",
-                           summary=f"Đã dịch {selected_done}/{len(set(keys))} dòng đã chọn và lưu CSV.")
+                           summary=f"Đã dịch và lưu {selected_done}; bỏ qua {counts['skipped']}; cần sửa bản dịch {counts['review']}; lỗi {counts['failed']} dòng. Xem lý do từng dòng trong Nhật ký.")
             omitted = max(package_counts["pending"], package_counts["review_only"], package_counts["blocked"])
             if selection_ok and omitted > 0:
                 # Draft saved is one fact; "the patch will skip other rows" is another. Never an error for the selected draft, never patch proof.
@@ -2564,6 +2571,7 @@ def run_patch_task(
     write_manifest_file: bool = True,
     enable_trace: bool = False,
     partial_override: bool = False,
+    replacement_font: str = "",
 ) -> None:
     """Build a patch.  ``partial_override`` is the explicit, user-confirmed safe-subset action (see patch_gate.partial_patch_override)."""
     from vntext.patch_gate import partial_patch_override
@@ -2571,7 +2579,7 @@ def run_patch_task(
     with partial_patch_override(partial_override):
         _run_patch_task_impl(csv_path, manifest_path, src, out, progress=progress, log=log, complete=complete,
                              patch_out_override=patch_out_override, include_installer=include_installer,
-                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override)
+                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override, replacement_font=replacement_font)
 
 
 def _run_patch_task_impl(
@@ -2588,6 +2596,7 @@ def _run_patch_task_impl(
     write_manifest_file: bool = True,
     enable_trace: bool = False,
     partial_override: bool = False,
+    replacement_font: str = "",
 ) -> None:
     trace = None
     patch_out: Path | None = None
@@ -2662,7 +2671,7 @@ def _run_patch_task_impl(
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
             log("Ren'Py: đang tạo native overlay.")
-        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress)
+        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font)
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,
         # per-target read-back report before any optional overlay is accepted.

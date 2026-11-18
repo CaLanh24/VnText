@@ -479,6 +479,7 @@ def run_patch_worker(
             # worker contract stays flat (COPY_TO_GAME_ROOT directly below
             # Patch_Viet_Hoa) instead of creating a versioned subdirectory
             # that callers and installers cannot find.
+            replacement_font=str(params.get("replacement_font") or ""),
             patch_out_override=str(build_dir),
             enable_trace=True,
             partial_override=partial_override,

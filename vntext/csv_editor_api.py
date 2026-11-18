@@ -963,6 +963,10 @@ def main() -> int:
     p_replace = sub.add_parser("replace")
     add_replace_arg(p_replace)
 
+    p_eligibility = sub.add_parser("eligibility")
+    p_eligibility.add_argument("csv_path", type=Path)
+    p_eligibility.add_argument("--expected-sha256", required=True)
+
     p_excl = sub.add_parser("exclude-rows")
     p_excl.add_argument("csv_path", type=Path)
     p_excl.add_argument("--keys", type=Path, required=True, help="JSON array of row keys to remove")
@@ -981,6 +985,19 @@ def main() -> int:
             result=(preview_reviewed_memory(args.csv_path,keys) if args.cmd=='preview-reviewed-memory'
                     else confirm_reviewed_memory(args.csv_path,keys,args.preview_token))
             result.pop('_snapshot',None)
+        elif args.cmd == "eligibility":
+            from vntext.mt_classify import classify_row_authoritative
+            raw = args.csv_path.read_bytes()
+            if hashlib.sha256(raw).hexdigest() != args.expected_sha256.lower():
+                raise ValueError("CSV changed; reload before selecting rows")
+            rows = list(csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))))
+            from vntext.mt_ct2_status import _load_human_review_keys
+            protected = _load_human_review_keys(args.csv_path.parent)
+            decisions = {}
+            for row in rows:
+                action, reason, _ = classify_row_authoritative({**row, "translation": ""})
+                decisions[row["key"]] = {"eligible": row["key"] not in protected and action in {"translate", "translate_synonym", "ui_label_fixed", "copy_source", "copy_literal", "skip_ui_label"}, "reason": reason}
+            result = {"ok": True, "rows": decisions}
         elif args.cmd == "load":
             result = load_document(args.csv_path)
         elif args.cmd == "save":

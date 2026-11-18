@@ -236,6 +236,10 @@ public sealed partial class MainViewModel
                 if (completedTask == "external_translation_import")
                     _pendingExternalTranslationImportTargetPath = "";
                 Busy = false;
+                CaptureExtractStatus(completedTask, evt.Error?.Contains("cancel", StringComparison.OrdinalIgnoreCase) == true
+                    ? "Đã hủy" : !evt.Ok && !extractWarning ? "Lỗi"
+                    : completedTask == "analyze" ? "Đã phân tích"
+                    : extractWarning ? "Lấy text một phần" : "Hoàn tất");
                 _runningTask = null; RefreshResourcesActive();
                 if (completedTask == "resources")
                 {
@@ -593,6 +597,7 @@ public sealed partial class MainViewModel
                     StepStatusLine = $"{StepStatusLine} — {DiagnosticStatusLine}";
                 if (completedTask == "patch" && fullyComplete)
                     ApplyPatchDelivery(evt);
+                CaptureExtractStatus(completedTask, StatusText);
                 FinishCancelAndExit();
                 break;
             case "error":
@@ -752,7 +757,10 @@ public sealed partial class MainViewModel
             PatchDeliveryReady = true;
         }
         if (!string.IsNullOrWhiteSpace(evt.PatchPayloadPath))
+        {
+            BindDeliveredPatch(evt.PatchPayloadPath);
             AppendLog($"Gói cài đặt: {evt.PatchPayloadPath}");
+        }
         if (!string.IsNullOrWhiteSpace(evt.PatchInstallInstructions))
             AppendLog(evt.PatchInstallInstructions);
     }

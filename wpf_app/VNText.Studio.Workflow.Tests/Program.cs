@@ -21,6 +21,7 @@ internal static partial class Program
 {
     private static int Main(string[] args)
     {
+        if (args.Contains("--uiqa24-only", StringComparer.Ordinal)) return RunUiqa24();
         if (args.Contains("--updater-setup-only", StringComparer.Ordinal))
         {
             var setupFailures = new List<string>();

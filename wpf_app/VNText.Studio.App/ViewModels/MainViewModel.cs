@@ -201,6 +201,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         InitImageTextCommands();
         InitCsvEditorCommands();
         InitGlossaryCommands();
+        InitPatchInstallCommands();
 
         OutputPath = WorkerPaths.IsReleaseLayout()
             ? Path.Combine(WorkerPaths.AppDataRoot(), "output")
@@ -577,12 +578,22 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     public int TranslateProgressPercent { get => _translateProgressPercent; private set => Set(ref _translateProgressPercent, value); }
     public int PatchProgressPercent { get => _patchProgressPercent; private set => Set(ref _patchProgressPercent, value); }
 
+    private string _extractOwnedStatus = "";
+    private string _extractStatusInputPath = "";
+    private void CaptureExtractStatus(string? task, string status)
+    {
+        if (task is not ("extract" or "analyze" or "image_inventory" or "image_extract")) return;
+        _extractOwnedStatus = status;
+        _extractStatusInputPath = InputPath;
+        Raise(nameof(ExtractStatusText));
+    }
+
     public string ExtractStatusText => !string.IsNullOrEmpty(_gameFolderBoundaryMessage) ? _gameFolderBoundaryMessage
         : Busy && _runningTask is not ("extract" or "analyze" or "image_inventory" or "image_extract")
         ? ""
-        : StatusText == "Sẵn sàng"
-            ? (string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text")
-            : StatusText;
+        : string.Equals(_extractStatusInputPath, InputPath, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(_extractOwnedStatus) ? _extractOwnedStatus
+            : string.IsNullOrWhiteSpace(InputPath) ? "" : "Sẵn sàng lấy text";
 
     public string LogSubtitle
     {
@@ -597,6 +608,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         {
             if (Set(ref _statusText, value))
             {
+                CaptureExtractStatus(_runningTask, value);
                 Raise(nameof(ExtractStatusText));
                 Raise(nameof(TranslateReadinessText));
                 Raise(nameof(TranslateWorkflowStatusText));

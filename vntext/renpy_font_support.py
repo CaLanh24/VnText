@@ -36,30 +36,32 @@ def text_font_styles(scripts: list[str]) -> list[str]:
     return sorted(names)
 
 
-def render_font_support(styles: list[str]) -> str:
+def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf") -> str:
     if any(not re.fullmatch(r"[A-Za-z_]\w*", name) for name in styles):
         raise ValueError("unsafe Ren'Py font style identifier")
+    if not re.fullmatch(r"[A-Za-z0-9_./-]+", font_name) or ".." in font_name:
+        raise ValueError("unsafe font asset name")
     lines = ["# VNText language-scoped text font support v1"]
     for name in sorted(set(styles)):
-        lines.extend([f"translate vietnamese style {name}:", '    font "DejaVuSans.ttf"', ""])
+        lines.extend([f"translate vietnamese style {name}:", f'    font "{font_name}"', ""])
     return "\n".join(lines) + "\n"
 
 
-def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive]) -> str:
+def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None) -> str:
     """Return a style prefix only for the verified engine-bundled fallback.
 
     Add every consumed file/container to the writer's existing hash/CAS checks.
     Unsupported/missing fallback leaves the existing native text route intact;
     it does not imply that the game's custom fonts support Vietnamese.
     """
-    font = root / "renpy/common/DejaVuSans.ttf"
-    if not font.is_file() or font.is_symlink() or not font.resolve().is_relative_to(root.resolve()):
+    font = replacement_font or root / "renpy/common/DejaVuSans.ttf"
+    if not font.is_file() or font.is_symlink() or (replacement_font is None and not font.resolve().is_relative_to(root.resolve())):
         return ""
-    if font.stat().st_size > 4 * 1024 * 1024:
+    if font.stat().st_size > (16 if replacement_font else 4) * 1024 * 1024:
         return ""
     raw = font.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
-    if digest != FALLBACK_SHA256:
+    if replacement_font is None and digest != FALLBACK_SHA256:
         return ""
     # A game asset with this name would shadow the verified engine font.
     if (root / "game/DejaVuSans.ttf").exists():
@@ -111,4 +113,5 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
                 consume(archive.read_member(name)["content"])
         record(path, archive.container_sha256)
     record(font, digest)
-    return render_language_support(scripts) + render_font_support(text_font_styles(scripts))
+    font_name = f"tl/vietnamese/vntext_font_{digest[:16]}{font.suffix.lower()}" if replacement_font else "DejaVuSans.ttf"
+    return render_language_support(scripts) + render_font_support(text_font_styles(scripts), font_name)

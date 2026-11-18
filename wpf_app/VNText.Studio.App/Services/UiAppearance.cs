@@ -43,6 +43,8 @@ public static class UiAppearance
         Set("SettingsPreferenceFieldBrush", C("#EEF2F7", "#273448"));
         Set("InputIdleBorderBrush", C("#E2E3E5", "#394352"));
         Set("SelectIdleBorderBrush", C("#D3D7DE", "#445266"));
+        Set("ScrollThumbBrush", C("#E2E3E5", "#394352"));
+        Set("ScrollThumbHoverBrush", C("#D3D7DE", "#4B5869"));
         Set("BlueSoftBrush", C("#E9F1FF", "#28436C"));
         Set("BlueBrush", C("#2868E8", "#8CB5FF"));
         _overrides["SettingsTitleBrush"] = new LinearGradientBrush(

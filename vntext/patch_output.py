@@ -59,6 +59,14 @@ def write_patch_manifest(output_dir: Path, game_base: Path, version: str) -> dic
         "game_executable": executable_path.name if executable_path else "",
         "files": files,
     }
+    font_report_path = output_dir / "font_preflight.json"
+    if font_report_path.is_file():
+        manifest["font_preflight"] = json.loads(font_report_path.read_text(encoding="utf-8"))
+        font_payload = manifest["font_preflight"].get("payload_font")
+        if font_payload:
+            matching = [file for file in files if file["path"] == font_payload]
+            if len(matching) != 1 or matching[0]["source_sha256"] != manifest["font_preflight"]["sha256"]:
+                raise ValueError("Prepared font payload differs from glyph preflight")
     (output_dir / "patch_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), "utf-8")
     return manifest
 
@@ -94,6 +102,15 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
         raise ValueError("Missing Ren'Py source identity or verified overlay")
     for path, digest in sources.items():
         checks.append({"path": path.relative_to(game_base).as_posix(), "sha256": digest})
+    font_report_path = output_dir / "font_preflight.json"
+    if font_report_path.is_file():
+        font_source = json.loads(font_report_path.read_text(encoding="utf-8")).get("source_font")
+        if font_source:
+            font_path = game_base / font_source["path"]
+            _no_links(font_path)
+            if not font_path.resolve().is_relative_to(game_base.resolve()) or _sha256_file(font_path) != font_source["sha256"]:
+                raise ValueError("Font source changed before installer packaging")
+            checks.append(font_source)
     files = []
     for path in sorted(p for p in payload_root.rglob("*") if p.is_file()):
         _no_links(path)
@@ -104,6 +121,14 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
                       "original_exists": original.is_file(), "original_sha256": _sha256_file(original) if original.is_file() else ""})
     manifest = {"format": 1, "engine": "renpy", "version": version, "generated_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "game_data_sha256": "", "game_checks": checks, "files": files}
+    font_report_path = output_dir / "font_preflight.json"
+    if font_report_path.is_file():
+        manifest["font_preflight"] = json.loads(font_report_path.read_text(encoding="utf-8"))
+        font_payload = manifest["font_preflight"].get("payload_font")
+        if font_payload:
+            matching = [file for file in files if file["path"] == font_payload]
+            if len(matching) != 1 or matching[0]["source_sha256"] != manifest["font_preflight"]["sha256"]:
+                raise ValueError("Prepared font payload differs from glyph preflight")
     (output_dir / "patch_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 

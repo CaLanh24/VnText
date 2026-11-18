@@ -14,6 +14,7 @@ public sealed partial class MainViewModel
 {
     private int _csvCheckedCount;
     private bool _suppressCheckedEvents;
+    private bool _csvSelectionPreparing;
 
     public int CsvCheckedCount => _csvCheckedCount;
     public bool CsvHasChecked => _csvCheckedCount > 0;
@@ -23,6 +24,7 @@ public sealed partial class MainViewModel
         : UiText.Msg("Đã chọn {0} dòng", _csvCheckedCount.ToString("N0"));
 
     public RelayCommand CsvSelectAllFilteredCommand { get; private set; } = null!;
+    public RelayCommand CsvSelectTranslatableCommand { get; private set; } = null!;
     public RelayCommand CsvClearCheckedCommand { get; private set; } = null!;
     public RelayCommand CsvTranslateCheckedCommand { get; private set; } = null!;
     public RelayCommand CsvDeleteCheckedCommand { get; private set; } = null!;
@@ -30,6 +32,7 @@ public sealed partial class MainViewModel
     private void InitCsvSelection()
     {
         CsvSelectAllFilteredCommand = new RelayCommand(_ => SetCheckedForFiltered(true), _ => CanRunCsvBatchAction(allowDirty: true));
+        CsvSelectTranslatableCommand = new RelayCommand(_ => _ = SelectTranslatableAsync(), _ => !Busy && CanRunCsvBatchAction(allowDirty: true));
         CsvClearCheckedCommand = new RelayCommand(_ => SetCheckedForFiltered(false, all: true), _ => CsvHasChecked);
         CsvTranslateCheckedCommand = new RelayCommand(_ => _ = TranslateCheckedCsvRowsAsync(), _ => CsvHasChecked && CanRunCsvBatchAction(allowDirty: true));
         CsvDeleteCheckedCommand = new RelayCommand(_ => _ = DeleteCheckedCsvRowsAsync(), _ => CsvHasChecked && CanRunCsvBatchAction(allowDirty: true));
@@ -86,12 +89,28 @@ public sealed partial class MainViewModel
 
     internal async Task TranslateCheckedCsvRowsAsync()
     {
+        if (_csvSelectionPreparing) return;
+        _csvSelectionPreparing = true;
+        try { await TranslateCheckedCsvRowsCoreAsync(); }
+        finally { _csvSelectionPreparing = false; }
+    }
+
+    private async Task TranslateCheckedCsvRowsCoreAsync()
+    {
         if (Busy) { ShowToast("Worker đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning"); return; }
         var keys = CheckedCsvKeys();
         if (keys.Count == 0 || string.IsNullOrWhiteSpace(CsvEditorPath)) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
+        Dictionary<string, (bool Eligible, string Reason)> eligibility;
+        var preflightPath = CsvEditorPath; var preflightHash = _csvEditorSourceSha256;
+        try { eligibility = await Task.Run(() => TranslationCsvEditorService.Eligibility(preflightPath, preflightHash!)); }
+        catch (Exception ex) { ShowToast(ex.Message, "error"); return; }
+        if (Busy || CsvEditorDirty || preflightPath != CsvEditorPath || preflightHash != _csvEditorSourceSha256 || !keys.SequenceEqual(CheckedCsvKeys())) return;
+        var skipped = keys.Count(key => eligibility.TryGetValue(key, out var row) && !row.Eligible);
         var overwritten = _csvEditorRows.Count(row => row.IsSelected && !string.IsNullOrWhiteSpace(row.Translation));
         var message = UiText.Lines(
             UiText.Msg("Dịch {0} dòng đã chọn bằng OPUS-MT offline?", keys.Count.ToString("N0")),
+            UiText.Msg("{0} dòng kỹ thuật/không phù hợp sẽ được bỏ qua; lý do từng dòng có trong Nhật ký.", skipped.ToString("N0")),
             overwritten > 0 ? UiText.Msg("{0} dòng trong số đó đã có bản dịch và sẽ được dịch lại; các dòng không chọn giữ nguyên.", overwritten.ToString("N0"))
                             : UiText.Translate("Các dòng không chọn (kể cả bản dịch bạn đã sửa tay) giữ nguyên."),
             "Kết quả được lưu vào chính file CSV này, có sao lưu và kiểm tra cấu trúc sau khi dịch.");
@@ -105,6 +124,22 @@ public sealed partial class MainViewModel
         _csvEditorRetranslatePending = true;
         _csvEditorRetranslatePath = CsvEditorPath;
         BeginTask("translate", BuildSelectedTranslateParams(keys), UiText.Msg("Đang dịch {0} dòng đã chọn…", keys.Count.ToString("N0")));
+    }
+
+    private async Task SelectTranslatableAsync()
+    {
+        if (!await EnsureCsvSavedBeforeBatchAsync("Lưu CSV trước khi phân loại dòng có thể dịch?")) return;
+        try
+        {
+            var path = CsvEditorPath; var hash = _csvEditorSourceSha256;
+            var eligibility = await Task.Run(() => TranslationCsvEditorService.Eligibility(path, hash!));
+            if (CsvEditorDirty || path != CsvEditorPath || hash != _csvEditorSourceSha256) return;
+            foreach (var row in _csvEditorRows) row.IsSelected = false;
+            foreach (var row in _csvEditorView.OfType<CsvEditorRow>())
+                row.IsSelected = eligibility.TryGetValue(row.Key, out var decision) && decision.Eligible;
+            RecountChecked();
+        }
+        catch (Exception ex) { ShowToast(ex.Message, "error"); }
     }
 
     /// <summary>Worker payload for "translate the checked rows": carries the CSV revision the user opened so the worker refuses (no mutation) if the file changed.</summary>

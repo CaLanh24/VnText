@@ -554,7 +554,7 @@ def _build_verification_records(
     return verification_entries, verification_records
 
 
-def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None) -> list[str]:
+def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None) -> list[str]:
     rows = read_translation_rows(csv_path)
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -756,16 +756,42 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     _validate_overlay_pair(target, activation)
     try:
         from vntext.renpy_font_support import prepare_font_support
-        font_support = prepare_font_support(root, source_snapshots, archive_cache)
+        font_support = prepare_font_support(root, source_snapshots, archive_cache, Path(replacement_font) if replacement_font else None)
+        from vntext.patch_font_preflight import font_report
+        font = Path(replacement_font) if replacement_font else root / "renpy/common/DejaVuSans.ttf"
+        styles = re.findall(r"translate vietnamese style (\w+):", font_support)
+        font_evidence = font_report("renpy", [translation for _, translation in dialogues] + list(requested_strings.values()), font=font if font_support else None, styles=styles)
+        if font_support and not replacement_font:
+            font_evidence["source_font"] = {"path": font.relative_to(root).as_posix(), "sha256": font_evidence["sha256"]}
+        if font_evidence.get("missing"):
+            raise RenPyPatchError("Selected font lacks translated glyphs: " + ", ".join(font_evidence["missing"][:24]))
+        if replacement_font:
+            if not font_support:
+                raise RenPyPatchError("Replacement font cannot be mapped safely")
+            destination = target.parent / f"vntext_font_{font_evidence['sha256'][:16]}{font.suffix.lower()}"
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            font_bytes = font.read_bytes()
+            if hashlib.sha256(font_bytes).hexdigest() != font_evidence["sha256"]:
+                raise RenPyPatchError("Replacement font changed before staging")
+            if not destination.exists():
+                with destination.open("xb") as stream:
+                    stream.write(font_bytes)
+            if hashlib.sha256(destination.read_bytes()).hexdigest() != font_evidence["sha256"]:
+                raise RenPyPatchError("Replacement font changed during preparation")
+            font_evidence["payload_font"] = destination.relative_to(output / "COPY_TO_GAME_ROOT").as_posix()
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "font_preflight.json").write_text(json.dumps(font_evidence, ensure_ascii=False, indent=2), encoding="utf-8")
         initial_font_support = font_support
         prior_inventory_check = verify_target_inventory
 
         def verify_target_inventory():
             prior_inventory_check()
+            if replacement_font and hashlib.sha256(destination.read_bytes()).hexdigest() != font_evidence["sha256"]:
+                raise RenPyPatchError("Prepared font payload changed")
             # Also detect added/shadowing assets and changed compatibility
             # source, before and after publication. Existing hashes alone do
             # not detect a newly introduced asset with the fallback's name.
-            if prepare_font_support(root, {}, {}) != initial_font_support:
+            if prepare_font_support(root, {}, {}, Path(replacement_font) if replacement_font else None) != initial_font_support:
                 raise RenPyPatchError("Ren'Py font/language support source inventory changed")
 
         payload = _render_overlay(new_dialogues, strings)

@@ -1450,6 +1450,7 @@ def _run_ct2_translate_keys_impl(
 
     mt_targets: list[dict] = []
     selected_copy_map: dict[str, str] = {}
+    selected_applied_keys: set[str] = set()
     selected_copy_applied = selected_copy_blocked = 0
     for row in rows:
         if row["key"] not in keys_set:
@@ -1477,6 +1478,8 @@ def _run_ct2_translate_keys_impl(
             raise TranslateCancelled()
         selected_copy_applied, selected_copy_blocked, _ = _apply_mapping_memory(
             {r["key"]: r for r in rows}, selected_copy_map, allow_overwrite=allow_overwrite, whitelist=whitelist)
+        saved_translations = {r["key"]: r.get("translation") for r in rows}
+        selected_applied_keys.update(key for key, value in selected_copy_map.items() if saved_translations.get(key) == value)
         flush_csv()
 
     if not mt_targets:
@@ -1484,6 +1487,7 @@ def _run_ct2_translate_keys_impl(
         return {
             "ok": existing_review_count == 0 and selected_copy_blocked == 0,
             "applied": selected_copy_applied,
+            "selected_applied_keys": sorted(selected_applied_keys),
             "blocked": selected_copy_blocked,
             "summary": (
                 f"Không có dòng MT để dịch lại. Cần duyệt thủ công {existing_review_count} dòng trước khi Patch"
@@ -1709,6 +1713,8 @@ def _run_ct2_translate_keys_impl(
             allow_overwrite=allow_overwrite,
             whitelist=whitelist,
         )
+        rejected_keys = {r[0]["key"] for r in review_triples}
+        selected_applied_keys.update(key for key, value in translations.items() if by_key[key].get("translation") == value and key not in rejected_keys)
         applied += chunk_applied
         blocked += chunk_blocked
         for row, attempted, reasons in review_triples:
@@ -1776,6 +1782,7 @@ def _run_ct2_translate_keys_impl(
             "misses": 0,
         }
     result["cache_fingerprints"] = cache_fingerprints
+    result["selected_applied_keys"] = sorted(selected_applied_keys)
     result["retry_attempts_by_key"] = retry_attempts_by_key
     return result
 

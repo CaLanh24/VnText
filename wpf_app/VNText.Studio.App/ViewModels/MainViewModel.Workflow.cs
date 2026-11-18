@@ -618,6 +618,7 @@ public sealed partial class MainViewModel
             csv_path = csv,
             manifest_path = manifest,
             partial_override = true,
+            replacement_font = _replacementFont,
         }, "Đang tạo patch…");
     }
 
@@ -666,6 +667,7 @@ public sealed partial class MainViewModel
             csv_path = csv,
             manifest_path = manifest,
             partial_override = true,
+            replacement_font = _replacementFont,
         }, "Đang tạo patch phần an toàn…");
     }
 

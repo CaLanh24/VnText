@@ -1,3 +1,4 @@
+using System.IO;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,9 +20,18 @@ internal static class EmbeddedPatch
     private static readonly string[] AllowedRootFiles = { "patch_manifest.json", "patch_coverage.json", "patch_verification.json" };
     private static Mutex? _instanceLock;                                // held until the process exits: one installer per payload at a time
 
+    public static void Release()
+    {
+        var mutex = _instanceLock;
+        _instanceLock = null;
+        if (mutex is null) return;
+        try { mutex.ReleaseMutex(); } finally { mutex.Dispose(); }
+    }
+
     /// <summary>Returns the folder InstallerService should use.  An EXE without a payload footer (a loose patch folder) uses its own directory.</summary>
     public static string Open(string executable, string? storageRoot = null)
     {
+        if (_instanceLock is not null) throw new IOException("A patch is already open in this process.");
         using var source = new FileStream(executable, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (source.Length < FooterSize) return AppContext.BaseDirectory;
         source.Position = source.Length - FooterSize;

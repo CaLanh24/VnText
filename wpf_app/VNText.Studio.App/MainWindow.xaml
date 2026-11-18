@@ -896,11 +896,16 @@
                                 </Grid>
 
                                 <Grid Grid.Row="3" Margin="0,22,0,0">
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Button x:Name="PatchBuildButton" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
+                                    <WrapPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
+                                    <Button Content="Chọn font Việt…" Style="{StaticResource OutlineButton}" Command="{Binding ChoosePatchFontCommand}" />
+                                    <TextBlock Text="{Binding ReplacementFontLabel}" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{DynamicResource MutedBrush}" />
+                                    </WrapPanel>
+                                    <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 
                                 <Border x:Name="PatchDeliveryInstructionsPanel" Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0"
@@ -908,6 +913,10 @@
                                     <StackPanel>
                                         <TextBlock Text="{Binding PatchDeliveryLabel, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
                                         <TextBlock Text="{Binding PatchInstallInstructions, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                                        <WrapPanel Margin="0,12,0,0">
+                                            <Button Content="Cài trong VNText" Style="{StaticResource PrimaryButton}" Command="{Binding InstallDeliveredPatchCommand}" Margin="0,0,10,0" />
+                                            <Button Content="Mở thư mục patch" Style="{StaticResource OutlineButton}" Command="{Binding OpenDeliveredPatchCommand}" />
+                                        </WrapPanel>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -1663,6 +1672,7 @@
                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}">
                                     <WrapPanel VerticalAlignment="Center">
                                         <Button Content="Chọn đang lọc" ToolTip="Chọn tất cả đang lọc" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
+                                        <Button Content="Chọn dòng có thể dịch" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectTranslatableCommand}" />
                                         <Button Content="Bỏ chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvClearCheckedCommand}" />
                                         <TextBlock Text="{Binding CsvCheckedText, Converter={StaticResource UiTextDynamic}}" VerticalAlignment="Center" Margin="0,0,14,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
                                         <Button Content="Dịch đã chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvTranslateCheckedCommand}"

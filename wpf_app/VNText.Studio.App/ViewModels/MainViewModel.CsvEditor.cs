@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -491,9 +491,9 @@ public sealed partial class MainViewModel
         get
         {
             if (_csvEditorRows.Count == 0) return "Chưa có câu";
-            var translated = 0; var review = 0;
-            foreach (var row in _csvEditorRows) { if (!row.IsEmpty) translated++; if (row.HasIssue || row.IsReviewOnly) review++; }
-            return UiText.Msg("Hiện {0} / {1} câu · Đã dịch {2} · Chưa dịch {3} · Cần xem lại {4}", CsvEditorVisibleCount.ToString("N0"), _csvEditorRows.Count.ToString("N0"), translated.ToString("N0"), (_csvEditorRows.Count - translated).ToString("N0"), review.ToString("N0"));
+            var translated = 0; var review = 0; var pending = 0;
+            foreach (var row in _csvEditorRows) { if (!row.IsEmpty) translated++; if (row.NeedsTranslation) pending++; if (row.CanTranslate != false && (row.HasIssue || row.IsReviewOnly)) review++; }
+            return UiText.Msg("Hiện {0} / {1} câu · Đã dịch {2} · Chưa dịch {3} · Cần xem lại {4}", CsvEditorVisibleCount.ToString("N0"), _csvEditorRows.Count.ToString("N0"), translated.ToString("N0"), pending.ToString("N0"), review.ToString("N0"));
         }
     }
 
@@ -797,6 +797,8 @@ public sealed partial class MainViewModel
                     SourceText = row.TryGetValue("source_text", out var s) ? s : "",
                     Translation = row.TryGetValue("translation", out var t) ? t : "",
                     IsReviewOnly = review.Contains(key),
+                    CanTranslate = doc.CanTranslateKey(key),
+                    TranslationSkipReason = doc.SkipReason(key),
                     RawFields = fields,
                 });
             }
@@ -884,6 +886,8 @@ public sealed partial class MainViewModel
                 SourceText = row.TryGetValue("source_text", out var s) ? s : "",
                 Translation = row.TryGetValue("translation", out var t) ? t : "",
                 IsReviewOnly = _csvEditorReviewKeys.Contains(key),
+                CanTranslate = doc.CanTranslateKey(key),
+                TranslationSkipReason = doc.SkipReason(key),
                 RawFields = new Dictionary<string, string>(row, StringComparer.OrdinalIgnoreCase),
             });
         }
@@ -991,7 +995,7 @@ public sealed partial class MainViewModel
             return false;
 
         var mode = _csvFilterMode;
-        if (mode == CsvFilterModes.Untranslated && !row.IsEmpty)
+        if (mode == CsvFilterModes.Untranslated && !row.NeedsTranslation)
             return false;
         if (mode == CsvFilterModes.ReviewOnly && !row.IsReviewOnly)
             return false;

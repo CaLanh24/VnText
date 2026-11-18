@@ -1,4 +1,4 @@
-﻿<!-- Styles adapted from VNText_Studio_GUI/App.xaml (read-only reference, 2026-08-29) -->
+<!-- Styles adapted from VNText_Studio_GUI/App.xaml (read-only reference, 2026-08-29) -->
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -338,8 +338,8 @@
                                         <ControlTemplate TargetType="{x:Type Thumb}">
                                             <Border x:Name="ThumbSurface"
                                                     Background="{TemplateBinding Background}"
-                                                    CornerRadius="100"
-                                                    Margin="2,1" />
+                                                    CornerRadius="3"
+                                                    Margin="0,1" />
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
                                                     <Setter TargetName="ThumbSurface" Property="Background" Value="{DynamicResource ScrollThumbHoverBrush}" />
@@ -1006,7 +1006,7 @@
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Foreground" Value="#6E7888" />
+        <Setter Property="Foreground" Value="{DynamicResource ScrollThumbBrush}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Padding" Value="0" />
         <Setter Property="Opacity" Value="1" />
@@ -1045,15 +1045,15 @@
                                         <ControlTemplate TargetType="{x:Type Thumb}">
                                             <Border x:Name="ThumbSurface"
                                                     Background="{TemplateBinding Background}"
-                                                    CornerRadius="4"
-                                                    Margin="2,0"
+                                                    CornerRadius="3"
+                                                    Margin="0,0"
                                                     SnapsToDevicePixels="True" />
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="ThumbSurface" Property="Background" Value="#5A6573" />
+                                                    <Setter TargetName="ThumbSurface" Property="Background" Value="{DynamicResource ScrollThumbHoverBrush}" />
                                                 </Trigger>
                                                 <Trigger Property="IsDragging" Value="True">
-                                                    <Setter TargetName="ThumbSurface" Property="Background" Value="#3D4654" />
+                                                    <Setter TargetName="ThumbSurface" Property="Background" Value="{DynamicResource ScrollThumbHoverBrush}" />
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>

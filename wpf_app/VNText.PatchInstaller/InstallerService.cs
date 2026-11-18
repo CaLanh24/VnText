@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -19,7 +20,8 @@ public sealed record PatchManifest(
     [property: JsonPropertyName("game_data_path")] string GameDataPath = "",
     [property: JsonPropertyName("game_executable")] string GameExecutable = "",
     [property: JsonPropertyName("engine")] string Engine = "unity",
-    [property: JsonPropertyName("game_checks")] List<GameCheck>? GameChecks = null);
+    [property: JsonPropertyName("game_checks")] List<GameCheck>? GameChecks = null,
+    [property: JsonPropertyName("font_preflight")] JsonElement? FontPreflight = null);
 
 public sealed record GameCheck([property: JsonPropertyName("path")] string Path,
     [property: JsonPropertyName("sha256")] string Sha256);
@@ -75,6 +77,9 @@ public sealed class InstallerService
     {
         var root = NormalizeGameRoot(gameRoot);
         var manifest = LoadManifest();
+        if (manifest.FontPreflight is { } font && font.TryGetProperty("glyph_status", out var glyph)
+            && glyph.GetString() == "MISSING")
+            throw new InvalidOperationException("Font thiếu ký tự bản dịch; hãy chọn font phù hợp và tạo lại patch.");
         if (!Directory.Exists(root)) throw new InvalidOperationException("Thư mục game không tồn tại.");
         if (manifest.Engine == "renpy")
         {
@@ -110,7 +115,7 @@ public sealed class InstallerService
         return root;
     }
 
-    public InstallState Install(string gameRoot)
+    public InstallState Install(string gameRoot, Action<string>? progress = null)
     {
         var root = ValidateGame(gameRoot);
         if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
@@ -142,6 +147,7 @@ public sealed class InstallerService
                 }
             foreach (var file in manifest.Files)
             {
+                progress?.Invoke(file.Path);
                 var target = ResolveSafe(root, file.Path);
                 var exists = File.Exists(target);
                 if (exists != file.OriginalExists)
@@ -177,12 +183,13 @@ public sealed class InstallerService
         }
     }
 
-    public void Uninstall(string gameRoot)
+    public void Uninstall(string gameRoot, Action<string>? progress = null)
     {
         var state = ValidateInstalledState(gameRoot);
         var root = NormalizeGameRoot(state.GameRoot);
         foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
         {
+            progress?.Invoke(cache.Path);
             var target = ResolveSafe(root, cache.Path);
             if (cache.OriginalExists)
             {

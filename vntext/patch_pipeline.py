@@ -70,7 +70,7 @@ def detect_patch_engine(manifest: dict) -> str:
     return "unity"
 
 
-def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None):
+def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None):
     import json as _json
     _manifest_probe = _json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -80,7 +80,12 @@ def apply_translation_package(csv_path: str, manifest_path: str, game_root: str,
     validate_patch_output(game_root, output_dir, transactional_existing=engine == "renpy")
     if engine == "renpy":
         from vntext.patch_renpy import apply_renpy_translation_package
-        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback, replacement_font=replacement_font)
+    if replacement_font:
+        raise ValueError("Unity/TMP font replacement requires a verified mapping adapter")
+    from vntext.patch_font_preflight import font_report
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    (Path(output_dir) / "font_preflight.json").write_text(_json.dumps(font_report("unity", []), indent=2), encoding="utf-8")
     try:
         return _apply_unity_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
     finally:
