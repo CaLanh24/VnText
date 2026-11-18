@@ -304,11 +304,30 @@ class RenPyPatchTests(unittest.TestCase):
             self.assertEqual(delivery["font_preflight"]["sha256"], hashlib.sha256(font.read_bytes()).hexdigest())
             self.assertEqual(original, {p.relative_to(game).as_posix(): p.read_bytes() for p in game.rglob("*") if p.is_file()})
 
+    def test_missing_music_glyph_uses_bundled_font_without_changing_csv(self):
+        import struct
+        from tests.unit.test_renpy_font_cmap_audit import font
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base); out = base / "out"
+            self._set_translation(csv, "d", "Tiếng Việt ♫ [name]")
+            original = csv.read_bytes()
+            sub = struct.pack('>HHLLL', 12, 0, 28, 0, 1) + struct.pack('>LLL', 65, 65, 3)
+            selected = base / "missing.ttf"; selected.write_bytes(font(sub, encoding=10))
+            apply_renpy_translation_package(str(csv), str(manifest), str(game), str(out), replacement_font=str(selected))
+            report = json.loads((out / "font_preflight.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["font_name"], "DejaVu Sans")
+            self.assertIn("U+266B ♫", report["fallback_missing"])
+            self.assertEqual(csv.read_bytes(), original)
+            payload = out / "COPY_TO_GAME_ROOT" / report["payload_font"]
+            self.assertTrue(payload.with_suffix(".license.txt").is_file())
+            self.assertIn("Tiếng Việt ♫", (payload.parent / "vntext.rpy").read_text(encoding="utf-8"))
+
     def test_missing_selected_font_glyphs_refuse_before_output_creation(self):
         import struct
         from tests.unit.test_renpy_font_cmap_audit import font
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base); out = base / "out"
+            self._set_translation(csv, "d", "Tiếng Việt 𠀀 [name]")
             sub = struct.pack('>HHLLL', 12, 0, 28, 0, 1) + struct.pack('>LLL', 65, 65, 3)
             selected = base / "missing.ttf"; selected.write_bytes(font(sub, encoding=10))
             with self.assertRaisesRegex(RenPyPatchError, "lacks translated glyphs"):

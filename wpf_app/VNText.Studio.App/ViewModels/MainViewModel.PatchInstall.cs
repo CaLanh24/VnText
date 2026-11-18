@@ -12,7 +12,7 @@ public sealed partial class MainViewModel
 {
     private string _deliveredPatch = "", _deliveredPatchHash = "", _deliveredCsv = "", _deliveredCsvHash = "", _deliveredGame = "";
     private string _replacementFont = "";
-    public string ReplacementFontLabel => string.IsNullOrEmpty(_replacementFont) ? UiText.Translate("Font: tự kiểm tra font có sẵn") : Path.GetFileName(_replacementFont);
+    public string ReplacementFontLabel => string.IsNullOrEmpty(_replacementFont) ? UiText.Translate("Font Việt tự động cho Ren’Py") : Path.GetFileName(_replacementFont);
     public RelayCommand InstallDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand OpenDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand ChoosePatchFontCommand { get; private set; } = null!;

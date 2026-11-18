@@ -38,6 +38,13 @@ distributed, so this is recorded as Owner-created icon artwork rather than an
 unresolved third-party asset. The comment alone does not establish third-party
 authorship.
 
+## DejaVu Sans patch font
+
+The Ren’Py patch worker includes the unmodified DejaVu Sans regular font from
+Ren’Py SDK 8.5.3 in `vntext/fonts`. The Bitstream Vera and Arev notices in
+`vntext/fonts/DejaVuSans.txt` ship with the worker and accompany the font in
+generated patches. See the [DejaVu license](https://dejavu-fonts.github.io/License.html).
+
 ## Inter font
 
 The WPF application embeds Inter font files under
