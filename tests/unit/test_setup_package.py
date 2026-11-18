@@ -1399,7 +1399,8 @@ internal static class ResourceHarness
             self.assertEqual(0, built_harness.returncode, built_harness.stdout + built_harness.stderr)
             tools = ROOT / ".dev-env" / "tools"
             have_cache = (tools / "renpy-8.5.3" / "renpy.py").is_file() and (ROOT / ".dev-env" / "cache" / "models" / "opus-mt-en-vi-int8" / "model.bin").is_file()
-            venv_python = ROOT / ".dev-env" / ".venv" / "Scripts" / "python.exe"
+            from tests.lib.dev_environment import worker_python as configured_worker_python
+            venv_python = configured_worker_python()
             worker_python = str(venv_python) if venv_python.is_file() else sys.executable
             run = subprocess.run([str(harness), str(setup_exe), worker_python, str(fake), str(ROOT), str(work), str(tools) if have_cache else ""], capture_output=True, text=True, timeout=420, stdin=subprocess.DEVNULL, cwd=str(work))
             self.assertEqual(0, run.returncode, run.stdout + run.stderr)

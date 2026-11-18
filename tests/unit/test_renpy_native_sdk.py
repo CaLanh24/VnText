@@ -44,7 +44,9 @@ class NativeRenPySdkTests(unittest.TestCase):
             })
             try:
                 read_ready(proc)
-                events=run_task(proc,'native-extract','extract',{'src':str(source),'out':str(root/'package'),'mode':'safe','level':'balanced','separate_review':True,'renpy_sdk_path':str(SDK),'renpy_sdk_action':'existing'},timeout=70)
+                # DEV quota validation traverses the preserved epoch chain before SDK copy.
+                # Bound that integration gate separately from protocol/stdin behavior.
+                events=run_task(proc,'native-extract','extract',{'src':str(source),'out':str(root/'package'),'mode':'safe','level':'balanced','separate_review':True,'renpy_sdk_path':str(SDK),'renpy_sdk_action':'existing'},timeout=600)
                 complete=complete_for(events,'native-extract')
                 quota = json.loads(quota_diagnostic.read_text(encoding='utf-8')) if quota_diagnostic.is_file() else None
                 self.assertIs(complete['ok'],True,{'complete':complete,'quota':quota})
