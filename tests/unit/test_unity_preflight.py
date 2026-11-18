@@ -132,7 +132,7 @@ class UnityPreflightTests(unittest.TestCase):
 
                         def walk_with_error(path, *args, **kwargs):
                             onerror = kwargs.get("onerror")
-                            if onerror is not None:
+                            if Path(path) == game and getattr(onerror, "__name__", "") == "on_error":
                                 onerror(PermissionError("synthetic enumeration error"))
                             yield from original_walk(path, *args, **kwargs)
 

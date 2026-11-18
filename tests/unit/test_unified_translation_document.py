@@ -25,8 +25,8 @@ class UnifiedDocumentTests(unittest.TestCase):
         self.assertTrue(result['ok'], result)
         self.assertEqual(read_csv_rows_file(path)[1][0]['translation'], 'Một nhãn ngắn')
         self.assertEqual(load_review_only_keys(root), {entry.key})
-        self.assertEqual(_load_human_review_keys(root), {entry.key})
-        self.assertEqual(_count_review_only_rows(root), 1)
+        self.assertEqual(_load_human_review_keys(root), set())
+        self.assertEqual(_count_review_only_rows(root), 0)
         # the saved translation never gains patch eligibility: validation still blocks it as review-only
         self.assertIn(entry.key, validate_document(path)['issues_by_key'])
 
@@ -45,9 +45,12 @@ class ImageOnlyPackageTests(unittest.TestCase):
         completed, images_call = self._run({'translated': 3, 'untranslated': 0, 'total': 3, 'output': 'images/translated', 'cancelled': False})
         images_call.assert_called_once()
         self.assertTrue(completed[-1]['ok'], completed)
-        self.assertIn('3/3', completed[-1]['summary'])
+        self.assertIn('3/3', completed[-1]['image_summary'])
+        self.assertEqual(completed[-1]['image_pending'], 0)
 
-    def test_image_only_package_reports_untranslated_images_as_not_complete(self):
+    def test_image_pending_is_reported_separately_from_text_completion(self):
         completed, _ = self._run({'translated': 1, 'untranslated': 2, 'total': 3, 'output': 'images/translated', 'cancelled': False})
-        self.assertFalse(completed[-1]['ok'], completed)
-        self.assertFalse(completed[-1].get('complete', True))
+        self.assertTrue(completed[-1]['ok'], completed)
+        self.assertTrue(completed[-1]['complete'])
+        self.assertEqual(completed[-1]['image_pending'], 2)
+        self.assertIn('1/3', completed[-1]['image_summary'])

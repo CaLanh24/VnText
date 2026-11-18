@@ -24,7 +24,9 @@ class RenPyArchiveRootTests(unittest.TestCase):
             archive=game/'game/archive.rpa';write_rpa(archive,{'story/script.rpy':b'label archived_start:\n    "Archive dialogue"\n    return\n'})
             before=archive.read_bytes();events=[]
             run_extract_task(str(game),str(root/'package'),'safe','balanced',True,renpy_sdk_path=str(SDK),renpy_sdk_action='existing',progress=lambda _:None,log=lambda _:None,complete=events.append)
-            self.assertEqual(events[-1]['extract_status'],'PARTIAL',events[-1])
+            self.assertEqual(events[-1]['extract_status'],'COMPLETE',events[-1])
+            self.assertTrue(events[-1]['complete'])
+            self.assertIn({'code': 'ARCHIVE_SOURCE_RUNTIME_UNPROVEN', 'count': 1}, events[-1]['audit_notes'])
             manifest=json.loads((root/'package/manifest.json').read_text(encoding='utf-8'))
             entry=next(e for e in manifest['entries']if e['source_text']=='Archive dialogue')
             record=entry['native_contract']['provenance']['source_container']

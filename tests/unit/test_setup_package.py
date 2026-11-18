@@ -1182,6 +1182,7 @@ internal static class ResourceHarness
 
     static int Main(string[] args)
     {
+        Console.OutputEncoding = new System.Text.UTF8Encoding(false);
         var setup = Assembly.LoadFrom(args[0]).GetType("Setup", true);
         var statics = BindingFlags.NonPublic | BindingFlags.Static;
         run = setup.GetMethod("RunResourceWorker", statics);
