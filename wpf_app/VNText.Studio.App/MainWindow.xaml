@@ -1497,7 +1497,7 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Width="34" Height="34" CornerRadius="10" Background="{DynamicResource BlueSoftBrush}">
+                                    <Border Width="{Binding CsvFileIconSize}" Height="{Binding CsvFileIconSize}" CornerRadius="10" Background="{DynamicResource BlueSoftBrush}">
                                         <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
@@ -1729,7 +1729,7 @@
                                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                           ScrollViewer.CanContentScroll="True"
                                           ScrollViewer.IsDeferredScrollingEnabled="False"
-                                          MinRowHeight="32"
+                                          MinRowHeight="{Binding CsvRowMinHeight}"
                                           CanUserResizeColumns="True"
                                           CanUserResizeRows="False"
                                           FontSize="{StaticResource UiBodySize}"

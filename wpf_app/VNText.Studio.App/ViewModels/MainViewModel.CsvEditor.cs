@@ -181,12 +181,14 @@ public sealed partial class MainViewModel
     // header uses), and returning to a page restores it (SelectedTab raises these).
     private bool PageHeaderCompact => CsvCompact && SelectedTab == WorkflowTabs.EditCsv;
     // Design QA: the title/badge keep the SAME baseline on every workspace page (38 DIP top, 58 DIP row); only the gap UNDER the header yields at a low height.
-    public Thickness PageHeaderMargin => PageHeaderCompact ? new Thickness(0, 22, 0, 2) : new Thickness(0, 38, 0, 32);
-    public double PageHeaderMinHeight => PageHeaderCompact ? 44 : 58;
+    public Thickness PageHeaderMargin => PageHeaderCompact ? new Thickness(0, 38, 0, 2) : new Thickness(0, 38, 0, 32);
+    public double PageHeaderMinHeight => 58;
     // The row floor is paid for by whitespace UNDER the card (the page inset's 30 DIP bottom), not by moving the header: at a compact CSV the card runs closer to the window bottom.
     public Thickness WorkspaceInset => PageHeaderCompact ? new Thickness(24, 0, 32, 6) : new Thickness(24, 0, 32, 30);
     internal void RaisePageHeaderForTab() { Raise(nameof(PageHeaderMargin)); Raise(nameof(PageHeaderMinHeight)); Raise(nameof(WorkspaceInset)); }
-    public Thickness CsvCardPadding => CsvCompact ? new Thickness(24, 6, 24, 6) : new Thickness(24, 20, 24, 20);
+    public Thickness CsvCardPadding => CsvCompact ? new Thickness(24, 2, 24, 2) : new Thickness(24, 20, 24, 20);
+    public double CsvFileIconSize => CsvCompact ? 26 : 34;
+    public double CsvRowMinHeight => CsvCompact ? 26 : 32;
     public Thickness CsvValidationAreaMargin => new(0, CsvCompact ? 0 : 2, 0, 0);
     /// <summary>Height of the "no CSV yet" panel only.  The table itself has NO forced minimum (that pushed it past the window); its three-row floor is guaranteed by the layout budget.</summary>
     public double CsvGridMinHeight => CsvCompact ? 156 : 158;
@@ -225,7 +227,7 @@ public sealed partial class MainViewModel
         Raise(nameof(PageHeaderMargin));
         Raise(nameof(PageHeaderMinHeight));
         Raise(nameof(WorkspaceInset));
-        Raise(nameof(CsvCardPadding));
+        Raise(nameof(CsvCardPadding)); Raise(nameof(CsvFileIconSize)); Raise(nameof(CsvRowMinHeight));
         Raise(nameof(CsvValidationAreaMargin));
         Raise(nameof(CsvGridMinHeight));
         Raise(nameof(CsvBulkPanelPadding));

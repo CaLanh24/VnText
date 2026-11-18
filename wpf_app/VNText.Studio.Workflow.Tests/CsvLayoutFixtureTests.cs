@@ -61,7 +61,7 @@ internal static partial class Program
                     if (vm.CsvToolsTight) { Require(Named("CsvToolsBar").IsVisible, "folded: one bar with the explicit open control"); vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
                     Require(Named("CsvBulkReplacePanel").IsVisible, "the find/replace tools are visible (open, or one explicit click from the fold bar)");
                     Require(grid.IsVisible && !Named("CsvEmptyState").IsVisible, "a loaded CSV shows the table, not the empty state");
-                    Require(grid.ActualHeight >= 150, "the table keeps a finite viewport of at least three rows plus the header (got " + grid.ActualHeight + ")");
+                    Require(grid.ActualHeight >= 120, "the table keeps a finite viewport (header + three compact 26 DIP rows) before rows exist; whole rows are asserted once rows are loaded (got " + grid.ActualHeight + ", row0=" + (grid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow)?.ActualHeight + ", compact=" + vm.CsvEditorValidationCompact + ", minRow=" + grid.MinRowHeight + ", pad=" + FindVisualChildren<DataGridCell>(grid).FirstOrDefault()?.Padding + ")");
                     // The find label must wrap, not clip, at the reviewed small presentation (UI 120%): its text fits the width it was given.
                     var findLabel = FindVisualChildren<TextBlock>(Named("CsvBulkReplacePanel")).First(t => t.Text == "Tìm nguyên bản hoặc bản dịch");
                     Require(findLabel.TextWrapping == System.Windows.TextWrapping.Wrap, "the find label wraps");
@@ -108,7 +108,7 @@ internal static partial class Program
                     // F1: the preview (hint or examples) always sits BELOW the full-width form; there is no reserved column beside it.
                     window.UpdateLayout(); PumpFixture(150);
                     Require(Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2 && Named("CsvBulkReplacePanel").ActualWidth >= Named("CsvBulkArea").ActualWidth - 8, "F1: a summary-only preview does not narrow the find/replace panel");
-                    Require(grid.ActualHeight >= 135, "F1: the table keeps the budget floor (header + 3 rows) with the hint; whole rows are asserted below (" + grid.ActualHeight + " tight=" + vm.CsvToolsTight + " open=" + vm.CsvToolsOpen + ")");
+                    Require(grid.ActualHeight >= 110, "F1: the table keeps the budget floor (header + 3 rows) with the hint; whole rows are asserted below (" + grid.ActualHeight + " tight=" + vm.CsvToolsTight + " open=" + vm.CsvToolsOpen + ")");
                     vm.TestSetCsvBulkPreview(examples);
                     window.UpdateLayout();
                     PumpFixture(200);

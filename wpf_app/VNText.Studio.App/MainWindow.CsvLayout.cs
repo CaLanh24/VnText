@@ -12,7 +12,7 @@ public partial class MainWindow
     private (double w, double h, bool tight, bool open, double tools, double selection, string lang) _csvBudgetSignature;
     private double _csvToolsExtra = 150;     // what the tools cost beyond their folded bar; refreshed from a real measurement before every fold
     private bool _csvBudgetHooked;
-    private (double w, double h) _csvBudgetFlipSize;
+    private (double w, double h, bool preview) _csvBudgetFlipSize;
     private int _csvBudgetFlips;
 
     private void HookCsvLayoutBudget()
@@ -70,7 +70,7 @@ public partial class MainWindow
         var required = Math.Max(CsvEditorLayoutBudget.Required(HeaderHeightOf(grid), RowHeightOf(grid)), HeaderHeightOf(grid) + LeadingRowHeightOf(grid) + CsvEditorLayoutBudget.Slack);
         var viewport = grid.ActualHeight;
         // Safety net against any layout feedback: at most two fold/unfold flips for one card size; a new size starts again.
-        var size = (Math.Round(card.ActualWidth), Math.Round(card.ActualHeight));
+        var size = (Math.Round(card.ActualWidth), Math.Round(card.ActualHeight), vm.CsvBulkHasPreviewDetail);      // a new preview is a new state: the fold decision starts fresh
         if (size != _csvBudgetFlipSize) { _csvBudgetFlipSize = size; _csvBudgetFlips = 0; }
         var canFlip = _csvBudgetFlips < 2;
         if (!vm.CsvToolsTight)
@@ -87,7 +87,7 @@ public partial class MainWindow
         if (!vm.CsvToolsOpen)
         {
             CsvToolsScroll.MaxHeight = double.PositiveInfinity;
-            if (canFlip && CsvEditorLayoutBudget.CanUnfold(viewport, required, _csvToolsExtra)) { _csvBudgetFlips++; vm.SetCsvToolsTight(false); }
+            if (canFlip && CsvEditorLayoutBudget.CanUnfold(viewport, required, _csvToolsExtra + (vm.CsvBulkHasPreviewDetail ? 66 : 0))) { _csvBudgetFlips++; vm.SetCsvToolsTight(false); }
             return;
         }
         // Opened by the user while tight: the tools scroll inside a cap that always leaves the table its floor.

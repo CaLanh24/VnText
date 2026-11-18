@@ -1258,6 +1258,10 @@
         <Setter Property="MinHeight" Value="32" />
 
         <Style.Triggers>
+            <!-- Design QA: a compact CSV uses 26 DIP rows (same trigger as the cell padding). -->
+            <DataTrigger Binding="{Binding DataContext.CsvEditorValidationCompact, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" Value="True">
+                <Setter Property="MinHeight" Value="26" />
+            </DataTrigger>
 
             <Trigger Property="IsMouseOver" Value="True">
 
@@ -1310,6 +1314,10 @@
         </Setter>
 
         <Style.Triggers>
+            <!-- Design QA: at a compact CSV the rows use tighter cell padding so the table keeps its three whole rows without moving the page header. -->
+            <DataTrigger Binding="{Binding DataContext.CsvEditorValidationCompact, RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" Value="True">
+                <Setter Property="Padding" Value="12,2" />
+            </DataTrigger>
 
             <Trigger Property="IsSelected" Value="True">
 

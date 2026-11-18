@@ -134,7 +134,7 @@ if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Con
                             var openedFull = 0;
                             for (var i = 0; i < rows.Count; i++)
                                 if (grid.ItemContainerGenerator.ContainerFromIndex(i) is DataGridRow { IsVisible: true } r2 && r2.TranslatePoint(new Point(0, r2.ActualHeight), window).Y <= openedVisibleBottom + 0.5) openedFull++;
-                            Require(openedFull >= 3, "opened tools keep three full rows " + label + " (" + openedFull + ")");
+                            Require(openedFull >= 3, "opened tools keep three full rows " + label + " (" + openedFull + ") gridTop=" + Math.Round(grid.TranslatePoint(new Point(0, 0), window).Y) + " gridH=" + Math.Round(grid.ActualHeight * scale) + " tools=" + Math.Round(Named("CsvToolsScroll").ActualHeight * scale) + " toolsMax=" + Math.Round(Named("CsvToolsScroll").MaxHeight) + " sel=" + Math.Round(Named("CsvSelectionBar").ActualHeight * scale) + " client=" + Math.Round(openedClient) + " row0=" + (grid.ItemContainerGenerator.ContainerFromIndex(0) as DataGridRow)?.ActualHeight + " header=" + Math.Round(FindVisualChildren<System.Windows.Controls.Primitives.DataGridColumnHeadersPresenter>(grid).First().ActualHeight * scale));
                             Require(Named("CsvBulkReplacePanel").IsVisible && vm.CsvBulkFind == "kiểm tra", "opened: the panel and its typed text are back " + label);
                         }
                         // Every find/replace/scope/Preview/Apply/Undo control lies fully inside the bulk panel AND the client area (width and height), and nothing overlaps the examples column.

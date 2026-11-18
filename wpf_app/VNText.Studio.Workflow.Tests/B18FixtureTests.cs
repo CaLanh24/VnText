@@ -82,9 +82,13 @@ internal static partial class Program
                             if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = System.Windows.WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
                             vmDraw.NavigateTabCommand.Execute("extract"); window.Show(); window.UpdateLayout(); PumpFixture(250);
                             var line = (System.Windows.Controls.TextBlock)window.FindName("ExtractStatusLine");
-                            Require(line.Text == (language == "vi" ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." : "Resources are not ready — see Settings › Data."), $"{language} Q1: the drawn Extract status line is localized ('{line.Text}')");
+                            // The Extract page's line is TASK-OWNED (uiqa24): a failed resources task must not leak into it, and it still follows the language; the resource wording itself is the localized StatusText / Settings status.
+                            var ownedVi = "Sẵn sàng lấy text"; var ownedEn = UiText.TranslateDynamic(ownedVi);
+                            Require(line.Text == (language == "vi" ? ownedVi : ownedEn) && !line.Text.Contains("ài nguyên", StringComparison.Ordinal) && !line.Text.Contains("esource", StringComparison.Ordinal), $"{language} Q1: the drawn Extract status line is its own localized task status, not the resource state ('{line.Text}')");
+                            Require(UiText.TranslateDynamic(vmDraw.StatusText) == (language == "vi" ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." : "Resources are not ready — see Settings › Data."), $"{language} Q1: the resource status text localizes through the dynamic converter ('{UiText.TranslateDynamic(vmDraw.StatusText)}')");
                             vmDraw.Language = language == "vi" ? "en" : "vi"; UiText.SetLanguage(vmDraw.Language); PumpFixture(100); window.UpdateLayout();
-                            Require(line.Text == (language == "vi" ? "Resources are not ready — see Settings › Data." : "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."), $"{language} Q1: a language switch refreshes the Extract status line ('{line.Text}')");
+                            Require(line.Text == (language == "vi" ? ownedEn : ownedVi), $"{language} Q1: a language switch refreshes the Extract task status ('{line.Text}')");
+                            Require(UiText.TranslateDynamic(vmDraw.StatusText) == (language == "vi" ? "Resources are not ready — see Settings › Data." : "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."), $"{language} Q1: after the switch the resource status follows the language too");
                             window.Close(); vmDraw.Language = language; UiText.SetLanguage(language); vmDraw.Dispose();
                         }
 
