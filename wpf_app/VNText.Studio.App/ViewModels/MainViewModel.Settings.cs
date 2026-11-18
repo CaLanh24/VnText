@@ -42,7 +42,7 @@ public sealed partial class MainViewModel
         Raise(nameof(AnalyzeNextActionText)); Raise(nameof(PatchSourceHint)); Raise(nameof(CsvCheckedText)); Raise(nameof(PatchStatusText)); Raise(nameof(PatchBlockedLabel)); Raise(nameof(ExtractStatusText)); Raise(nameof(OutputDisplay));
         foreach (var option in ThemeOptions.Concat(CloseActionOptions).Concat(UpdateReminderOptions)) option.RefreshLabel();
         Raise(nameof(Theme)); Raise(nameof(CloseAction)); Raise(nameof(UpdateReminder));
-        Raise(nameof(ResourceStatus)); Raise(nameof(ProgressSubtitle)); RefreshExtractLogLanguage();
+        Raise(nameof(ResourceStatus)); Raise(nameof(ProgressSubtitle)); RefreshExtractLogLanguage(); RaisePatchFont(); Raise(nameof(PersistentErrorHeading));
         Raise(nameof(InputDisplay)); Raise(nameof(AnalyzeStatusText)); Raise(nameof(ModelStatus)); Raise(nameof(WorkerStatus)); Raise(nameof(SettingsStatus));
         foreach (var option in CsvFilterModes.Options.Concat(CsvBulkScopeOptions)) option.RefreshLabel();
         Raise(nameof(HeroTitle)); Raise(nameof(HeroHint)); Raise(nameof(SelectedTab));

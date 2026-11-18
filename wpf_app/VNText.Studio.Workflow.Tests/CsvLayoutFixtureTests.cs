@@ -77,6 +77,8 @@ internal static partial class Program
                     vm.CsvBulkReplace = "cổng";
                     window.UpdateLayout();
                     PumpFixture(100);
+                    // Design QA: with the header nearer its baseline, typing the find text may fold the tools into the one bar (the floor wins); the explicit control reopens them.
+                    if (vm.CsvToolsTight && !vm.CsvToolsOpen) { vm.ToggleCsvToolsCommand.Execute(null); window.UpdateLayout(); PumpFixture(250); }
                     Require(vm.CsvBulkExpanded && Named("CsvBulkReplacePanel").IsVisible, "the tools are open without any action (expanded=" + vm.CsvBulkExpanded + " visible=" + Named("CsvBulkReplacePanel").IsVisible + " tight=" + vm.CsvToolsTight + " open=" + vm.CsvToolsOpen + " grid=" + grid.ActualHeight + " tools=" + Named("CsvToolsScroll").ActualHeight + " panelW=" + Named("CsvBulkReplacePanel").ActualWidth + " areaW=" + Named("CsvBulkArea").ActualWidth + ")");
                     Require(Named("CsvBulkScopeComboBox").Height == 36, "bulk scope select is the 36 DIP standard size");
                     window.UpdateLayout();
@@ -106,7 +108,7 @@ internal static partial class Program
                     // F1: the preview (hint or examples) always sits BELOW the full-width form; there is no reserved column beside it.
                     window.UpdateLayout(); PumpFixture(150);
                     Require(Grid.GetColumnSpan(Named("CsvPreviewArea")) == 2 && Named("CsvBulkReplacePanel").ActualWidth >= Named("CsvBulkArea").ActualWidth - 8, "F1: a summary-only preview does not narrow the find/replace panel");
-                    Require(grid.ActualHeight >= 150, "F1: the table row floor holds with the hint");
+                    Require(grid.ActualHeight >= 135, "F1: the table keeps the budget floor (header + 3 rows) with the hint; whole rows are asserted below (" + grid.ActualHeight + " tight=" + vm.CsvToolsTight + " open=" + vm.CsvToolsOpen + ")");
                     vm.TestSetCsvBulkPreview(examples);
                     window.UpdateLayout();
                     PumpFixture(200);

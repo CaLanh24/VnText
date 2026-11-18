@@ -51,15 +51,15 @@ internal static partial class Program
                         // ---------- N1: the compact header is CSV-only; it never leaks to other pages, after fold/resize either ----------
                         vm.TestLoadCsvRows(Path.Combine(work, "translation.csv"), Enumerable.Range(1, 7).Select(i => new CsvEditorRow { Index = i, Key = "k" + i, SourceText = i == 2 ? "Chọn thư mục game" : "Hello " + i, Translation = i == 2 ? "Chưa chọn game" : "Xin chào " + i }).ToList(), "OK");
                         window.UpdateLayout(); PumpFixture(300); window.UpdateLayout(); PumpFixture(150);
-                        Require(vm.CsvToolsTight || vm.PageHeaderMargin.Top == 8, $"{tag} N1: precondition (a small window compacts the CSV header)");
-                        AssertEqual(8.0, vm.PageHeaderMargin.Top);
+                        Require(vm.CsvToolsTight || vm.PageHeaderMargin.Top == 22, $"{tag} N1: precondition (a small window compacts the CSV header)");
+                        AssertEqual(22.0, vm.PageHeaderMargin.Top);
                         foreach (var tab in new[] { "extract", "translate", "images", "patch" })
                         {
                             vm.NavigateTabCommand.Execute(tab); window.UpdateLayout(); PumpFixture(80);
                             AssertEqual(38.0, vm.PageHeaderMargin.Top); AssertEqual(32.0, vm.PageHeaderMargin.Bottom); AssertEqual(58.0, vm.PageHeaderMinHeight);
                         }
                         vm.NavigateTabCommand.Execute("editcsv"); window.UpdateLayout(); PumpFixture(80);
-                        AssertEqual(8.0, vm.PageHeaderMargin.Top);                                                    // the CSV page keeps its compact header (row floor)
+                        AssertEqual(22.0, vm.PageHeaderMargin.Top);                                                   // the CSV page keeps its compact header (row floor)
                         window.Width = 1300; window.Height = 900; window.UpdateLayout(); PumpFixture(200);
                         window.Width = 1055; window.Height = 720; window.UpdateLayout(); PumpFixture(200);
                         vm.NavigateTabCommand.Execute("translate"); window.UpdateLayout(); PumpFixture(80);
@@ -73,7 +73,11 @@ internal static partial class Program
                         vm.NavigateTabCommand.Execute("extract"); window.UpdateLayout(); PumpFixture(150);
                         var widthBefore = scroller.ViewportWidth;
                         Require(scroller.ComputedVerticalScrollBarVisibility == Visibility.Visible || scroller.ExtentHeight <= scroller.ViewportHeight + 0.5, $"{tag} N2: overflowing content gets a scrollbar");
-                        Require(Math.Abs(scroller.ViewportWidth - scroller.ActualWidth) < 0.5, $"{tag} N2: the overlay thumb reserves no gutter (viewport {scroller.ViewportWidth} vs {scroller.ActualWidth})");
+                        // Design QA: the viewer reaches the workspace edge and its padding keeps the card gutter; the scrollbar itself is an overlay (it reserves nothing more).
+                        Require(Math.Abs(scroller.ViewportWidth - (scroller.ActualWidth - scroller.Padding.Left - scroller.Padding.Right)) < 0.5, $"{tag} N2: the overlay thumb reserves no gutter beyond the card padding (viewport {scroller.ViewportWidth} vs {scroller.ActualWidth})");
+                        var rail = (System.Windows.Controls.Primitives.ScrollBar)scroller.Template.FindName("PART_VerticalScrollBar", scroller);
+                        var railRight = rail.TranslatePoint(new Point(rail.ActualWidth, 0), window).X; var content = (FrameworkElement)window.Content; var clientRight = content.TranslatePoint(new Point(content.ActualWidth, 0), window).X;
+                        Require(clientRight - railRight >= 0 && clientRight - railRight <= 3, $"{tag} N2: the outer rail sits at the workspace edge (right {railRight:0.#} of {clientRight:0.#})");
                         scroller.ScrollToVerticalOffset(40); window.UpdateLayout(); PumpFixture(60);
                         Require(Math.Abs(scroller.ViewportWidth - widthBefore) < 0.5, $"{tag} N2: scrolling does not change the content width");
                         scroller.ScrollToTop();

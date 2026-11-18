@@ -248,7 +248,7 @@
         </Border>
 
         <!-- Main content -->
-        <Grid Grid.Column="1" Margin="{StaticResource UiPageInset}">
+        <Grid Grid.Column="1" Margin="{Binding WorkspaceInset}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -271,11 +271,12 @@
             </Grid>
 
         <Grid Grid.Row="1">
-        <ScrollViewer x:Name="PageScrollViewer"
+        <!-- Design QA: the outer rail belongs to the workspace edge, not to the card gutter: the viewer reaches the window edge (-32 = the page inset's right side) and its padding gives the content the same gutter back. -->
+        <ScrollViewer x:Name="PageScrollViewer" Margin="0,0,-32,0" Padding="0,0,32,0"
                       Style="{StaticResource OverlayAutoHideScrollViewer}"
                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                        <Border x:Name="ExtractErrorBanner" Margin="0,0,10,16" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}"
+                        <Border x:Name="ExtractErrorBanner" Margin="0,0,10,16" Visibility="{Binding PersistentBannerVisible, Converter={StaticResource BoolToVis}}"
                                 AutomationProperties.Name="Thông báo tác vụ chưa xác nhận" AutomationProperties.LiveSetting="Assertive">
                             <Border.Style>
                                 <Style TargetType="Border" BasedOn="{StaticResource CardShadowBorder}">
@@ -901,11 +902,19 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <WrapPanel Grid.ColumnSpan="2" Margin="0,0,0,12">
-                                    <Button Content="Chọn font Việt…" Style="{StaticResource OutlineButton}" Command="{Binding ChoosePatchFontCommand}" />
-                                    <Button Content="Dùng font Việt đi kèm" Style="{StaticResource OutlineButton}" Command="{Binding ResetPatchFontCommand}" Margin="8,0,0,0" />
-                                    <TextBlock Text="{Binding ReplacementFontLabel}" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{DynamicResource MutedBrush}" />
-                                    </WrapPanel>
+                                    <Border x:Name="PatchFontGroup" Grid.ColumnSpan="2" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
+                                        <StackPanel>
+                                            <TextBlock Text="Font tiếng Việt" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
+                                            <TextBlock x:Name="PatchFontModeText" Text="{Binding PatchFontModeText, Converter={StaticResource UiTextDynamic}}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                                            <TextBlock x:Name="PatchFontStateText" Text="{Binding PatchFontStateText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+                                            <TextBlock x:Name="PatchFontNoticeText" Text="{Binding PatchFontNotice, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                                       Visibility="{Binding PatchFontNoticeVisible, Converter={StaticResource BoolToVis}}" />
+                                            <WrapPanel Margin="0,10,0,0">
+                                                <Button Content="Chọn font Việt…" Style="{StaticResource OutlineButton}" Command="{Binding ChoosePatchFontCommand}" Margin="0,0,8,0" />
+                                                <Button Content="Dùng font Việt đi kèm" Style="{StaticResource OutlineButton}" Command="{Binding ResetPatchFontCommand}" />
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
                                     <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 
@@ -1274,7 +1283,14 @@
                                         <Border Style="{StaticResource SettingsCardStyle}" Margin="0,0,0,16">
                                             <StackPanel>
                                                 <TextBlock Text="Chuẩn bị tài nguyên sau khi cài ứng dụng" Style="{StaticResource SettingsRowLabelTextStyle}" />
-                                                <TextBlock Text="{Binding ResourceStatus}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,12" />
+                                                <TextBlock x:Name="ResourceStatusText" Text="{Binding ResourceStatus}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,12" />
+                                                <!-- Design QA: the failure is summarised HERE once (the status above); the banner that used to sit above the header is not shown on Settings. Full detail stays in the Journal. -->
+                                                <WrapPanel x:Name="ResourceErrorActions" Margin="0,0,0,4" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding PersistentErrorHeading, Converter={StaticResource UiTextDynamic}}" Foreground="{DynamicResource MutedBrush}" FontSize="{StaticResource UiCaptionSize}" VerticalAlignment="Center" Margin="0,0,12,8" />
+                                                    <Button Content="Xem chẩn đoán" Command="{Binding OpenErrorJournalCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                    <Button Content="Chép lỗi" Command="{Binding CopyErrorCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                    <Button Content="Đã xem" Command="{Binding DismissErrorCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                </WrapPanel>
                                                 <WrapPanel>
                                                     <Button Content="Sửa/tải tài nguyên còn thiếu" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
                                                             Visibility="{Binding ResourcesNeedRecovery, Converter={StaticResource BoolToVis}}" />

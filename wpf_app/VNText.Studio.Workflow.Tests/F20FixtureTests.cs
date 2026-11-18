@@ -202,6 +202,48 @@ internal static partial class Program
                         }
                         vm.Language = "vi"; vm.TestClearCsvDirty(); window.Close(); vm.Dispose();
                     }
+                    {
+                        // Design QA: the resource failure is summarised once inside the Settings > Data card; the page banner never pushes the Settings header/tabs; Patch font group states.
+                        var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                        vm.NavigateTabCommand.Execute("settings"); vm.UiScale = 1.2;
+                        var window = new MainWindow(vm, new FixtureUpdatePresentation());
+                        window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 720;
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                        window.Show(); window.UpdateLayout(); PumpFixture(250);
+                        FrameworkElement Named(string name) => (FrameworkElement)(window.FindName(name) ?? throw new InvalidOperationException(name));
+                        double HeaderTop() { var h = FindVisualChildren<SettingsHeaderPanel>(window).First(p => p.IsVisible); return h.TranslatePoint(new Point(0, 0), window).Y; }
+                        var tabs = FindVisualChildren<TabControl>(window).First(x => x.IsVisible);
+                        var tops = new List<double>();
+                        foreach (var i in new[] { 0, 1, 2 }) { tabs.SelectedIndex = i; window.UpdateLayout(); PumpFixture(120); tops.Add(HeaderTop()); }
+                        Require(tops.All(t => Math.Abs(t - tops[0]) < 0.5), "DQ3: header stays put across the three tabs " + string.Join("/", tops));
+                        vm.RecordPersistentError("resources", "SDK boom missing"); tabs.SelectedIndex = 1; window.UpdateLayout(); PumpFixture(200);
+                        Require(Math.Abs(HeaderTop() - tops[0]) < 0.5, "DQ3: a resource error does not move the header (" + HeaderTop() + " vs " + tops[0] + ")");
+                        Require(!Named("ExtractErrorBanner").IsVisible && Named("ResourceErrorActions").IsVisible, "DQ3: no banner above the header; the card carries the diagnostics actions");
+                        var statusText = ((TextBlock)Named("ResourceStatusText")).Text;
+                        Require(statusText.Split(new[] { "boom" }, StringSplitOptions.None).Length - 1 <= 1, "DQ3: the cause is not repeated in the card status: " + statusText);
+                        foreach (var lang in new[] { "en", "vi" })
+                        {
+                            vm.Language = lang; PumpFixture(100); window.UpdateLayout();
+                            var buttons = FindVisualChildren<Button>(Named("ResourceErrorActions")).Select(b => b.Content as string).ToList();
+                            Require(buttons.Contains(lang == "en" ? "View diagnostics" : "Xem chẩn đoán") && buttons.Contains(lang == "en" ? "Copy error" : "Chép lỗi"), "DQ3 " + lang + ": actions " + string.Join("|", buttons));
+                        }
+                        // Patch font group
+                        vm.NavigateTabCommand.Execute("patch"); vm.Language = "vi"; window.UpdateLayout(); PumpFixture(200);
+                        Require(vm.PatchFontModeText == "Font Việt đi kèm (mặc định)" && vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn game/asset", StringComparison.Ordinal) && !vm.PatchFontNoticeVisible, "DQ4: default font, no source, no notice");
+                        Require(Named("PatchFontGroup").IsVisible && Named("PatchFontModeText").IsVisible && Named("PatchFontStateText").IsVisible, "DQ4: the Vietnamese font group is drawn");
+                        vm.ResetPatchFontCommand.Execute(null); window.UpdateLayout(); PumpFixture(100);
+                        Require(vm.PatchFontNotice == "Đã chọn: Font Việt đi kèm." && Named("PatchFontNoticeText").IsVisible, "DQ4: choosing the bundled font is confirmed in place");
+                        var srcDir = Path.Combine(Path.GetTempPath(), "dq4-src-" + Guid.NewGuid().ToString("N")); Directory.CreateDirectory(srcDir);
+                        try
+                        {
+                            vm.InputPath = srcDir; PumpFixture(80);
+                            Require(vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn CSV hợp lệ", StringComparison.Ordinal), "DQ4: with a source but no valid CSV the state names the missing step: " + vm.PatchFontStateText);
+                        }
+                        finally { vm.InputPath = ""; Directory.Delete(srcDir, true); }
+                        vm.Language = "en"; PumpFixture(100); window.UpdateLayout();
+                        Require(((TextBlock)Named("PatchFontModeText")).Text == "Bundled Vietnamese font (default)" && ((TextBlock)Named("PatchFontNoticeText")).Text == "Selected: bundled Vietnamese font.", "DQ4 en: labels follow the language");
+                        vm.Language = "vi"; window.Close(); vm.Dispose();
+                    }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
                 }

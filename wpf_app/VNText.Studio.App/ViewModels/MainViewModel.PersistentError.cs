@@ -38,6 +38,8 @@ public sealed partial class MainViewModel
 
     public bool HasPersistentError => _persistentErrorText.Length > 0;
     public bool HasPagePersistentError => HasPersistentError && SelectedTab == ErrorTab(_persistentErrorTask);
+    /// <summary>The page banner sits above the page header; on Settings the resource error is shown ONCE inside the resource card instead, so the header/tabs never move.</summary>
+    public bool PersistentBannerVisible => HasPagePersistentError && SelectedTab != WorkflowTabs.Settings;
     internal static string ErrorTab(string task) => task switch
     {
         "analyze" or "extract" => WorkflowTabs.Extract,
@@ -62,8 +64,8 @@ public sealed partial class MainViewModel
     public bool PersistentErrorIsWarning => _persistentIsWarning;
     public string PersistentErrorHeading => !HasPersistentError ? ""
         : _persistentIsWarning
-            ? UiText.Msg("Cảnh báo {0} lúc {1}", PersistentErrorStage(_persistentErrorTask), _persistentErrorTime)
-            : UiText.Msg("Lỗi {0} lúc {1}", PersistentErrorStage(_persistentErrorTask), _persistentErrorTime);
+            ? UiText.Msg("Cảnh báo {0} lúc {1}", UiText.Key(PersistentErrorStage(_persistentErrorTask)), _persistentErrorTime)
+            : UiText.Msg("Lỗi {0} lúc {1}", UiText.Key(PersistentErrorStage(_persistentErrorTask)), _persistentErrorTime);
     public string PersistentErrorHint => _persistentErrorHint;
 
     public RelayCommand CopyErrorCommand { get; private set; } = null!;
@@ -151,7 +153,7 @@ public sealed partial class MainViewModel
     private void RaisePersistentError()
     {
         Raise(nameof(HasPersistentError));
-        Raise(nameof(HasPagePersistentError));
+        Raise(nameof(HasPagePersistentError)); Raise(nameof(PersistentBannerVisible));
         Raise(nameof(PersistentErrorText)); Raise(nameof(PersistentNoticeSummary));
         Raise(nameof(PersistentErrorHeading));
         Raise(nameof(PersistentErrorIsWarning));

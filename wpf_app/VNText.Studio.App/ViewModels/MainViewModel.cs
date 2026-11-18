@@ -272,6 +272,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private void RaisePatchSource()
     {
         Raise(nameof(HasPatchSource)); Raise(nameof(PatchSourceHint)); Raise(nameof(PatchSourceHintVisible));
+        Raise(nameof(PatchFontStateText));
         RaisePatchBadge();      // the readiness badge/status follow the source (set, changed or no longer there)
         RunPatchCommand?.RaiseCanExecuteChanged();
     }

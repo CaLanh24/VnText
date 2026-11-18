@@ -129,6 +129,7 @@ public sealed partial class MainViewModel
         Raise(nameof(PatchStatusText)); Raise(nameof(PatchBlockedLabel)); Raise(nameof(PatchPartialReady));
         Raise(nameof(PatchBadgeKind)); Raise(nameof(PatchBadgeText));
         Raise(nameof(PatchRecheckNeeded)); Raise(nameof(PatchCheckCardVisible)); Raise(nameof(PatchArtifactBehindCsv));
+        Raise(nameof(PatchFontStateText));
     }
 
     internal void TestSetTranslationCsvPath(string path) => TranslationCsvPath = path;

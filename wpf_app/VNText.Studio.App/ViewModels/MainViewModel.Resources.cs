@@ -136,7 +136,7 @@ public sealed partial class MainViewModel
             RaiseResourceReadiness();
             AppendLog(ResourceStatus, "WARN");
         }
-        if (!evt.Ok) { ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
+        if (!evt.Ok) { if (!string.IsNullOrWhiteSpace(evt.Error) && !_resourceStatus.Contains(evt.Error.Trim(), StringComparison.Ordinal)) ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);
         CheckResourcesCommand.RaiseCanExecuteChanged(); DownloadResourcesCommand.RaiseCanExecuteChanged();

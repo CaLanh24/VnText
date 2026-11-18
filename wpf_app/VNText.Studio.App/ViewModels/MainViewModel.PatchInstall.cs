@@ -13,6 +13,23 @@ public sealed partial class MainViewModel
     private string _deliveredPatch = "", _deliveredPatchHash = "", _deliveredCsv = "", _deliveredCsvHash = "", _deliveredGame = "";
     private string _replacementFont = "";
     public string ReplacementFontLabel => string.IsNullOrEmpty(_replacementFont) ? UiText.Translate("Font Việt tự động cho Ren’Py") : Path.GetFileName(_replacementFont);
+    // f-design: the font choice is shown where it is made - the mode/name, what still has to be true before it can be checked, and the confirmation of the last action.
+    private string _patchFontNotice = "";
+    public bool PatchFontIsCustom => !string.IsNullOrEmpty(_replacementFont);
+    public string PatchFontModeText => PatchFontIsCustom ? UiText.Msg("Font tùy chọn: {0}", Path.GetFileName(_replacementFont)) : "Font Việt đi kèm (mặc định)";
+    public string PatchFontStateText =>
+        !HasPatchSource ? "Chưa kiểm — chọn game/asset ở bước Lấy text; glyph và mapping font được kiểm khi đóng gói."
+        : !CsvValidationOk ? "Chưa kiểm — chọn CSV hợp lệ; glyph và mapping font được kiểm khi đóng gói."
+        : PatchDeliveryReady && !_patchArtifactBehindCsv ? "Patch gần nhất được đóng gói với lựa chọn này; mapping trong game được kiểm riêng khi cài."
+        : "Sẽ kiểm glyph và mapping font khi đóng gói patch.";
+    public string PatchFontNotice => _patchFontNotice;
+    public bool PatchFontNoticeVisible => _patchFontNotice.Length > 0;
+    private void SetPatchFontNotice(string text) { _patchFontNotice = text; RaisePatchFont(); }
+    private void RaisePatchFont()
+    {
+        Raise(nameof(ReplacementFontLabel)); Raise(nameof(PatchFontIsCustom)); Raise(nameof(PatchFontModeText)); Raise(nameof(PatchFontStateText));
+        Raise(nameof(PatchFontNotice)); Raise(nameof(PatchFontNoticeVisible));
+    }
     public RelayCommand InstallDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand OpenDeliveredPatchCommand { get; private set; } = null!;
     public RelayCommand ChoosePatchFontCommand { get; private set; } = null!;
@@ -22,19 +39,19 @@ public sealed partial class MainViewModel
     {
         InstallDeliveredPatchCommand = new RelayCommand(_ => OpenPatchInstaller(), _ => !Busy && PatchDeliveryReady && !_patchArtifactBehindCsv && File.Exists(_deliveredPatch));
         OpenDeliveredPatchCommand = new RelayCommand(_ => { if (File.Exists(_deliveredPatch)) Process.Start(new ProcessStartInfo(Path.GetDirectoryName(_deliveredPatch)!) { UseShellExecute = true }); }, _ => !Busy && File.Exists(_deliveredPatch));
-        ResetPatchFontCommand = new RelayCommand(_ => { if (Busy) return; _replacementFont = ""; Raise(nameof(ReplacementFontLabel)); InvalidatePatchSourceState(); }, _ => !Busy);
+        ResetPatchFontCommand = new RelayCommand(_ => { if (Busy) return; _replacementFont = ""; SetPatchFontNotice("Đã chọn: Font Việt đi kèm."); InvalidatePatchSourceState(); }, _ => !Busy);
         ChoosePatchFontCommand = new RelayCommand(_ =>
         {
             if (Busy) return;
             var picker = new OpenFileDialog { Filter = "Font (*.ttf;*.otf)|*.ttf;*.otf", Title = UiText.Translate("Chọn font Việt thay thế (Ren’Py)") };
-            if (picker.ShowDialog() != true) return;
+            if (picker.ShowDialog() != true) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); return; }
             try
             {
                 // Desktop preview is separate from the worker's bounded glyph/mapping preflight.
                 var face = new System.Windows.Media.GlyphTypeface(new Uri(picker.FileName));
                 if (face.CharacterToGlyphMap.Count == 0) throw new InvalidDataException("Font has no glyph mapping.");
-                if (!PreviewPatchFont(picker.FileName, face.FamilyNames.Values.First())) return;
-                _replacementFont = picker.FileName; Raise(nameof(ReplacementFontLabel));
+                if (!PreviewPatchFont(picker.FileName, face.FamilyNames.Values.First())) { SetPatchFontNotice("Chưa dùng font vừa xem; lựa chọn hiện tại được giữ nguyên."); return; }
+                _replacementFont = picker.FileName; SetPatchFontNotice(UiText.Msg("Đã chọn font: {0}.", Path.GetFileName(_replacementFont)));
                 InvalidatePatchSourceState();
             }
             catch (Exception ex) { ShowToast(ex.Message, "error"); }
