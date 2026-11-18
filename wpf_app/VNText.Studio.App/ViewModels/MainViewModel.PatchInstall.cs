@@ -95,7 +95,7 @@ public sealed partial class MainViewModel
         if (Application.Current.TryFindResource("FieldTextBoxStyle") is Style field) search.Style = field;
         System.Windows.Automation.AutomationProperties.SetAutomationId(search, "InstalledFontSearchBox");
         System.Windows.Automation.AutomationProperties.SetName(search, UiText.Translate("Tìm font"));
-        var list = new System.Windows.Controls.ListBox { MinHeight = 200, MaxHeight = 280, DisplayMemberPath = nameof(InstalledFont.Display) };
+        var list = new System.Windows.Controls.ListBox { MinHeight = 200, MaxHeight = 280 };
         System.Windows.Automation.AutomationProperties.SetAutomationId(list, "InstalledFontList");
         System.Windows.Automation.AutomationProperties.SetName(list, UiText.Translate("Font đã cài"));
         var empty = new System.Windows.Controls.TextBlock { Text = UiText.Translate("Không tìm thấy font .ttf/.otf đã cài."), Foreground = info.Foreground, Margin = new Thickness(0, 8, 0, 0), Visibility = Visibility.Collapsed };

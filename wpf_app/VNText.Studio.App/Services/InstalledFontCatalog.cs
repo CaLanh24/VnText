@@ -4,7 +4,11 @@ using Microsoft.Win32;
 namespace VNText.Studio.App.Services;
 
 /// <summary>An installed font that resolves to a real .ttf/.otf file (display name as Windows registers it).</summary>
-internal sealed record InstalledFont(string Display, string Path);
+internal sealed record InstalledFont(string Display, string Path)
+{
+    /// <summary>What the list and assistive technology read: the registered name and the file name, never the full path.</summary>
+    public override string ToString() => Display + " — " + System.IO.Path.GetFileName(Path);
+}
 
 /// <summary>
 /// Lists the installed fonts that are real TrueType/OpenType FILES, read from Windows' own font registrations (never by browsing the shell Fonts namespace,
