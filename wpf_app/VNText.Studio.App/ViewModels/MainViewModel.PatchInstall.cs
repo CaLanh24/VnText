@@ -45,15 +45,19 @@ public sealed partial class MainViewModel
         {
             if (Busy) return;
             var picker = new OpenFileDialog { Filter = "Font (*.ttf;*.otf)|*.ttf;*.otf", Title = UiText.Translate("Chọn font Việt thay thế (Ren’Py)") };
-            if (picker.ShowDialog() != true) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); return; }
+            var opener = System.Windows.Input.Keyboard.FocusedElement;
+            if (picker.ShowDialog() != true) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); RestoreFocus(opener); return; }
             ApplyPatchFontFile(picker.FileName);
+            RestoreFocus(opener);
         }, _ => !Busy);
         ChooseInstalledPatchFontCommand = new RelayCommand(_ =>
         {
             if (Busy) return;
+            var opener = System.Windows.Input.Keyboard.FocusedElement;
             var chosen = PickInstalledFont();
-            if (chosen is null) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); return; }
+            if (chosen is null) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); RestoreFocus(opener); return; }
             ApplyPatchFontFile(chosen);
+            RestoreFocus(opener);
         }, _ => !Busy);
         PropertyChanged += (_, e) =>
         {
@@ -63,6 +67,13 @@ public sealed partial class MainViewModel
                 ChoosePatchFontCommand.RaiseCanExecuteChanged(); ResetPatchFontCommand.RaiseCanExecuteChanged(); ChooseInstalledPatchFontCommand.RaiseCanExecuteChanged();
             }
         };
+    }
+
+    /// <summary>After the modal(s) are gone the focus goes back to the control that opened the flow (never into the page behind it).</summary>
+    private static void RestoreFocus(System.Windows.IInputElement? opener)
+    {
+        if (opener is not System.Windows.UIElement element) return;
+        element.Dispatcher.BeginInvoke(new Action(() => { if (element.IsEnabled && element.IsVisible) { element.Focus(); System.Windows.Input.Keyboard.Focus(element); } }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     /// <summary>The one path every custom font takes (file dialog or the installed-font list): real glyph map, preview, rights acknowledgement, then the choice.</summary>
@@ -82,7 +93,7 @@ public sealed partial class MainViewModel
 
     /// <summary>Fallback for the case the OS file dialog cannot browse the Windows Fonts folder: pick an installed font by name; it resolves to its real file and nothing is copied.</summary>
     internal Func<IReadOnlyList<InstalledFont>, string?>? InstalledFontPickerOverride { get; set; }
-    private string? PickInstalledFont()
+    internal string? PickInstalledFont()
     {
         var fonts = InstalledFontCatalog.Enumerate();
         if (InstalledFontPickerOverride is { } over) return over(fonts);
@@ -91,11 +102,17 @@ public sealed partial class MainViewModel
             Text = UiText.Translate("Chọn font đã cài trên máy. VNText chỉ đọc tệp font để xem trước và không sao chép nó. Font hệ thống thường có giấy phép riêng: chỉ dùng khi bạn có quyền đóng gói và phân phối."),
             TextWrapping = TextWrapping.Wrap, Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("MutedBrush")
         };
-        var search = new System.Windows.Controls.TextBox { Margin = new Thickness(0, 12, 0, 8), ToolTip = UiText.Translate("Tìm font") };
+        var searchLabel = new System.Windows.Controls.TextBlock { Text = UiText.Translate("Tìm font"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 4), Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("InkBrush") };
+        UiText.SetAppText(searchLabel, System.Windows.Controls.TextBlock.TextProperty, "Tìm font");
+        var search = new System.Windows.Controls.TextBox { Margin = new Thickness(0, 0, 0, 8), ToolTip = UiText.Translate("Tìm font") };
+        System.Windows.Automation.AutomationProperties.SetLabeledBy(search, searchLabel);
         if (Application.Current.TryFindResource("FieldTextBoxStyle") is Style field) search.Style = field;
         System.Windows.Automation.AutomationProperties.SetAutomationId(search, "InstalledFontSearchBox");
         System.Windows.Automation.AutomationProperties.SetName(search, UiText.Translate("Tìm font"));
         var list = new System.Windows.Controls.ListBox { MinHeight = 200, MaxHeight = 280 };
+        if (Application.Current.TryFindResource("ThemedListBoxStyle") is Style listStyle) list.Style = listStyle;
+        if (Application.Current.TryFindResource("ThemedListBoxItemStyle") is Style itemStyle) list.ItemContainerStyle = itemStyle;
+        System.Windows.Input.KeyboardNavigation.SetTabIndex(search, 0); System.Windows.Input.KeyboardNavigation.SetTabIndex(list, 1);
         System.Windows.Automation.AutomationProperties.SetAutomationId(list, "InstalledFontList");
         System.Windows.Automation.AutomationProperties.SetName(list, UiText.Translate("Font đã cài"));
         var empty = new System.Windows.Controls.TextBlock { Text = UiText.Translate("Không tìm thấy font .ttf/.otf đã cài."), Foreground = info.Foreground, Margin = new Thickness(0, 8, 0, 0), Visibility = Visibility.Collapsed };
@@ -107,13 +124,17 @@ public sealed partial class MainViewModel
         }
         search.TextChanged += (_, _) => Refresh(); Refresh();
         var body = new System.Windows.Controls.StackPanel();
-        body.Children.Add(info); body.Children.Add(search); body.Children.Add(list); body.Children.Add(empty);
+        body.Children.Add(info); body.Children.Add(searchLabel); body.Children.Add(search); body.Children.Add(list); body.Children.Add(empty);
         string? chosen = null;
         var window = new AppDialogWindow(Application.Current.MainWindow, "Chọn font đã cài", body, width: 560);
         var use = window.AddButton("Chọn font này", () => chosen = (list.SelectedItem as InstalledFont)?.Path, primary: true, isDefault: true);
         use.IsEnabled = false;
         System.Windows.Automation.AutomationProperties.SetAutomationId(use, "InstalledFontChooseButton");
         list.SelectionChanged += (_, _) => use.IsEnabled = list.SelectedItem is InstalledFont;
+        // Keyboard: the search box owns the first focus; Tab goes search > list > Choose (when enabled) > close, Shift+Tab the other way (the dialog cycles).
+        System.Windows.Input.KeyboardNavigation.SetTabIndex(window.CloseButton, 100);
+        System.Windows.Input.KeyboardNavigation.SetTabIndex(use, 50);
+        window.Loaded += (_, _) => search.Dispatcher.BeginInvoke(new Action(() => { search.Focus(); System.Windows.Input.Keyboard.Focus(search); }), System.Windows.Threading.DispatcherPriority.Input);
         list.MouseDoubleClick += (_, _) => { if (list.SelectedItem is InstalledFont) use.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent)); };
         window.ShowDialog();
         return chosen;
@@ -132,6 +153,7 @@ public sealed partial class MainViewModel
         var accepted = false;
         var body = new System.Windows.Controls.StackPanel(); body.Children.Add(preview);
         var permission = new System.Windows.Controls.CheckBox { Content = UiText.Translate("Tôi có quyền đóng gói và phân phối font này."), Margin = new Thickness(0,16,0,0) };
+        if (Application.Current.TryFindResource("ThemedCheckBoxStyle") is Style checkStyle) permission.Style = checkStyle;
         body.Children.Add(permission);
         var window = new AppDialogWindow(Application.Current.MainWindow, "Xem trước font Việt", body, width: 640);
         var use = window.AddButton("Dùng font này", () => accepted = true, primary: true, isDefault: true);

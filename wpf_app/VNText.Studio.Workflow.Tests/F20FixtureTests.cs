@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using VNText.Studio.App;
 using VNText.Studio.App.Controls;
 using VNText.Studio.App.Models;
@@ -267,6 +268,51 @@ internal static partial class Program
                             vm.Dispose();
                         }
                         finally { Directory.Delete(dir, true); }
+                    }
+                    {
+                        // Design QA (font picker): visible label, first focus on the search box, Tab search > list > Choose > close and back, themed list/item/checkbox styles, Esc keeps the old choice and the focus returns to the opener.
+                        var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
+                        var window = new MainWindow(vm, new FixtureUpdatePresentation());
+                        window.WindowState = WindowState.Normal; window.Width = 1043; window.Height = 900;
+                        if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_OFFSCREEN") == "1") { window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = -4000; window.Top = 0; window.ShowActivated = false; window.ShowInTaskbar = false; }
+                        window.Show(); window.UpdateLayout(); PumpFixture(200);
+                        var notes = new List<string>();
+                        var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+                        timer.Tick += (_, _) =>
+                        {
+                            timer.Stop();
+                            var dialog = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.GetType().Name == "AppDialogWindow");
+                            if (dialog is null) { notes.Add("no dialog"); return; }
+                            var search = FindVisualChildren<TextBox>(dialog).First(); var list = FindVisualChildren<ListBox>(dialog).First();
+                            var label = FindVisualChildren<TextBlock>(dialog).FirstOrDefault(t => t.Text == "Tìm font" && t.IsVisible);
+                            if (label is null) notes.Add("label missing");
+                            if (!ReferenceEquals(Keyboard.FocusedElement, search)) notes.Add("first focus is " + Keyboard.FocusedElement);
+                            if (!ReferenceEquals(list.Style, Application.Current.FindResource("ThemedListBoxStyle")) || !ReferenceEquals(list.ItemContainerStyle, Application.Current.FindResource("ThemedListBoxItemStyle"))) notes.Add("list not themed");
+                            var choose = FindVisualChildren<Button>(dialog).First(b => b.Content as string == "Chọn font này");
+                            bool Next(bool forward) { ((UIElement)Keyboard.FocusedElement).MoveFocus(new TraversalRequest(forward ? FocusNavigationDirection.Next : FocusNavigationDirection.Previous)); return true; }
+                            search.Focus();
+                            Next(true); if (!(Keyboard.FocusedElement is ListBoxItem || ReferenceEquals(Keyboard.FocusedElement, list))) notes.Add("tab 1 -> " + Keyboard.FocusedElement);
+                            list.SelectedIndex = 0; PumpFixture(80);
+                            Next(true); if (!ReferenceEquals(Keyboard.FocusedElement, choose)) notes.Add("tab 2 (choose enabled) -> " + Keyboard.FocusedElement);
+                            Next(true); if (!(Keyboard.FocusedElement is Button cb && ReferenceEquals(cb, FindVisualChildren<Button>(dialog).First(b => b.ToolTip as string == "Đóng (Esc)")))) notes.Add("tab 3 (close) -> " + Keyboard.FocusedElement);
+                            Next(false); if (!ReferenceEquals(Keyboard.FocusedElement, choose)) notes.Add("shift+tab -> " + Keyboard.FocusedElement);
+                            dialog.RaiseEvent(new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(dialog)!, 0, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+                        };
+                        var invoker = (Button)window.FindName("PatchInstalledFontButton")!;
+                        vm.NavigateTabCommand.Execute("patch"); window.UpdateLayout(); PumpFixture(150);
+                        invoker.Focus(); Keyboard.Focus(invoker);
+                        var modeBefore = vm.PatchFontModeText;
+                        timer.Start();
+                        vm.ChooseInstalledPatchFontCommand.Execute(null);
+                        PumpFixture(500);
+                        Require(notes.Count == 0, "Font picker keyboard/theme: " + string.Join("; ", notes));
+                        Require(vm.PatchFontModeText == modeBefore && vm.PatchFontNotice == "Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên.", "Font picker: Esc keeps the old choice");
+                        Require(ReferenceEquals(Keyboard.FocusedElement, invoker), "Font picker: focus returns to 'Font đã cài…' after the modal is gone (" + Keyboard.FocusedElement + ")");
+                        var style = (Style)Application.Current.FindResource("ThemedCheckBoxStyle");
+                        Require(style.Setters.OfType<Setter>().Any(s => s.Property == FrameworkElement.FocusVisualStyleProperty && s.Value is null), "Preview checkbox: the stock dotted focus ring is replaced");
+                        vm.Language = "en"; window.UpdateLayout(); PumpFixture(100);
+                        Require(UiText.Translate("Tìm font") == "Search fonts", "Font picker: EN label");
+                        vm.Language = "vi"; window.Close(); vm.Dispose();
                     }
                     Console.WriteLine("WPF F20 fixture: PASS (F4 counts VI/EN 1/1 2/1 1/2 2/2; F5 hint/body empty, busy, entries, cleared)");
                     exitCode = 0;
