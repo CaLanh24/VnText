@@ -1,7 +1,7 @@
 # Current checkpoint — Design QA 0.1.22 (4 findings), 2026-11-19
 
 Owner assigned the 4-finding Design QA batch (`DEV_RUN/qa-0.1.22-3e89a97/design-qa/dev-task.md`): CSV header, outer rail, Settings Data error, Patch font group. Fixed DEV is the sole writer; builds only through the isolated `--artifacts-path` route (never the default bootstrap build or a plain App build; the earlier unauthorized plain build that wrote the blocked App `obj` is a disclosed deviation, current sentinel baseline = 91-file post-accident inventory, unchanged by this batch).
-Result: source = the commit recorded in `TEST_RUN/agent-evidence/dq-dev/design-qa-dev-receipt.json` (QA candidate `DEV_RUN/qa-0.1.22-dq/Start-QA.cmd`, reference candidate `qa-0.1.22-3e89a97` kept). Finding 1 is PARTIAL (CSV title ~34-40 px above the other pages instead of 55-66 px; the row floor forbids full alignment); outer rail proven by fixture, native thumb not captured. DEV evidence is not independent QA.
+Result (follow-up): source `4f4deda948fbdc192893b47be40c95a471e2bca7`; QA candidate `DEV_RUN/qa-0.1.22-dq2/Start-QA.cmd` (isolated build, hashes in `TEST_RUN/agent-evidence/dq-dev/design-qa-followup-receipt.json`; prior candidates `qa-0.1.22-dq` and `qa-0.1.22-3e89a97` kept). CSV title/badge now on the same y as other pages (UI100 122/135, UI120 137/153) with tools open and 4 whole rows; B18 fixed against the task-owned Extract behaviour; outer rail thumb at the viewport edge, wheel/drag/nested CSV and Patch custom-font choose/preview/confirm/cancel proven natively. DEV evidence is not independent QA.
 
 ---
 
