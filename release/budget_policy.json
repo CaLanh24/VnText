@@ -13,5 +13,7 @@
   "release_0_1_18_measured_bytes": 4831838208,
   "release_0_1_19_measured_bytes": 5368709120,
   "release_0_1_20_measured_bytes": 5368709120,
-  "release_0_1_19_note": "Measured ceiling for the Owner-authorized updater hotfix 0.1.19 under the standing temporary release allocation (artifact-retention.md, 2026-10-24); recorded before allocation, bound to the exact candidate-0.1.19 scope, terminal cleanup returns to the default limit."
+  "release_0_1_19_note": "Measured ceiling for the Owner-authorized updater hotfix 0.1.19 under the standing temporary release allocation (artifact-retention.md, 2026-10-24); recorded before allocation, bound to the exact candidate-0.1.19 scope, terminal cleanup returns to the default limit.",
+  "release_0_1_21_measured_bytes": 6442450944,
+  "release_0_1_21_note": "Owner 2026-11-18 authorized the multi-hop updater source fix, route018 acceptance, push and new release. Standing2026-10-24 measured6GiB: prior publish peak4671559876B plus extra018 baseline589MB, chained packages220MB and native reserve; terminal1GiB, shared11GiB and48MiB guard unchanged."
 }

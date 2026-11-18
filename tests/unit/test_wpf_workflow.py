@@ -96,7 +96,7 @@ def _harness_env(work_root: Path) -> dict[str, str]:
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["VNTEXT_LOCALAPPDATA"] = str(localappdata)
     env["VNTEXT_WPF_TEST_WORK_ROOT"] = str(work_root)
-    for name in ("VNTEXT_WPF_BASELINE_EXE", "VNTEXT_WPF_CANDIDATE_EXE"):
+    for name in ("VNTEXT_WPF_BASELINE_EXE", "VNTEXT_WPF_CANDIDATE_EXE", "VNTEXT_WPF_FUTURE_EXE"):
         if os.environ.get(name):
             env[name] = os.environ[name]
         else:
@@ -1484,6 +1484,11 @@ class WpfWorkflowTests(unittest.TestCase):
                         layout_targets,
                     )
                 )
+            if harness_env.get("VNTEXT_WPF_FULL_APP_UPDATE_ONLY") == "1" and not harness_env.get("VNTEXT_WPF_FUTURE_EXE"):
+                future_root = owned_root / "update-version-fixtures" / "future"
+                future_root.mkdir(parents=True)
+                harness_env["VNTEXT_WPF_FUTURE_EXE"] = str(_build_versioned_exe_fixture(
+                    future_root, artifacts_root / "update-future", "1.0.2", nuget_config, layout_targets))
             proc = _run_harness(harness_env, artifacts_root)
             self.assertEqual(0, proc.returncode, (proc.stdout or "") + (proc.stderr or ""))
             self.assertIn("PASS", proc.stdout)

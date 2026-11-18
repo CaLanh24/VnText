@@ -231,9 +231,14 @@ internal static partial class Program
             Run("FullAppUpdate_GitHubAssetPathSizeAndHashAreBound", FullAppUpdate_GitHubAssetPathSizeAndHashAreBound, failures);
         Run("FullAppUpdate_BaselineRoutesChooseVerifiedHop", FullAppUpdate_BaselineRoutesChooseVerifiedHop, failures);
             Run("FullAppUpdate_RouteUpdaterCleansEveryOwnedPackageOnHashFailure", FullAppUpdate_RouteUpdaterCleansEveryOwnedPackageOnHashFailure, failures);
+            Run("FullAppUpdate_RouteDownloadVerifiesEveryHopAndReportsAggregateProgress", () => FullAppUpdate_RouteDownloadChecks("success"), failures);
+            Run("FullAppUpdate_RouteSecondHopTamperCleansAndRetries", () => FullAppUpdate_RouteDownloadChecks("tamper"), failures);
+            Run("FullAppUpdate_RouteSecondHopCancelCleansAndRetries", () => FullAppUpdate_RouteDownloadChecks("cancel"), failures);
+            Run("FullAppUpdate_RouteSecondHopNetworkFailureCleansAndRetries", () => FullAppUpdate_RouteDownloadChecks("network"), failures);
+            Run("FullAppUpdate_RouteDiscontinuousBaselineFailsClosed", () => FullAppUpdate_RouteDownloadChecks("discontinuous"), failures);
             if (failures.Count == 0)
             {
-                Console.WriteLine("Focused full-app updater tests: PASS (9)");
+                Console.WriteLine("Focused full-app updater tests: PASS (14)");
                 return 0;
             }
             Console.Error.WriteLine($"Focused full-app updater tests: FAIL ({failures.Count})");
@@ -5414,10 +5419,10 @@ internal static partial class Program
         });
     }
 
-    private static FullAppUpdateFixture CreateFullAppUpdateFixture(bool faultInject = false)
+    private static FullAppUpdateFixture CreateFullAppUpdateFixture(bool faultInject = false, string? baselineExeOverride = null, string? candidateExeOverride = null)
     {
-        var baselineExePath = Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE");
-        var candidateExePath = Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE");
+        var baselineExePath = baselineExeOverride ?? Environment.GetEnvironmentVariable("VNTEXT_WPF_BASELINE_EXE");
+        var candidateExePath = candidateExeOverride ?? Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE");
         if (string.IsNullOrWhiteSpace(baselineExePath) || !File.Exists(baselineExePath) ||
             string.IsNullOrWhiteSpace(candidateExePath) || !File.Exists(candidateExePath))
             throw new InvalidOperationException("versioned WPF A/B executables are required for full-app updater tests");

@@ -140,3 +140,5 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 - [Platform dependency locks](../requirements/locks/README.md), [public gate runner](../tests/tools/audit_gates.py), [MT finite corpus](../tests/golden/mt-quality/corpus.json).
 | Release 0.1.19 (hotfix cập nhật) | docs/RELEASE_0.1.19.md | Receipt `TEST_RUN/agent-evidence/release-0.1.19/` |
 | Release 0.1.20 (đã phát hành) | docs/RELEASE_0.1.20.md | Receipt `TEST_RUN/agent-evidence/release-0.1.20/` |
+
+| Release0.1.21 updater hotfix (đang kiểm) | docs/RELEASE_0.1.21.md | TEST_RUN/agent-evidence/release-0.1.21/ |

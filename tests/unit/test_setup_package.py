@@ -813,6 +813,11 @@ internal static class GitHubIdentityHarness
         var values = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(Path.Combine(args[1], ".vntext-update-source.json")));
         if (!String.Equals(Convert.ToString(values["github_owner"]), args[2], StringComparison.Ordinal) ||
             !String.Equals(Convert.ToString(values["github_repository"]), args[3], StringComparison.Ordinal)) return 1;
+        var updates = Path.GetFullPath(Convert.ToString(values["updates_root"])).TrimEnd(Path.DirectorySeparatorChar);
+        var install = Path.GetFullPath(args[1]).TrimEnd(Path.DirectorySeparatorChar);
+        if (String.Equals(updates, install, StringComparison.OrdinalIgnoreCase)
+            || updates.StartsWith(install + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || install.StartsWith(updates + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return 2;
         Console.WriteLine("explicit GitHub identity embedded in Setup and installed source PASS");
         return 0;
     }
@@ -836,6 +841,22 @@ internal static class GitHubIdentityHarness
             )
             self.assertEqual(0, configured_identity.returncode, configured_identity.stdout + configured_identity.stderr)
             self.assertIn("explicit GitHub identity embedded in Setup and installed source PASS", configured_identity.stdout)
+            import shutil
+            nested_root = work / "nested-install-root"
+            nested_setup = nested_root / ".update" / "downloads" / "Setup.exe"
+            nested_setup.parent.mkdir(parents=True)
+            shutil.copyfile(configured_setup, nested_setup)
+            canary = nested_root / "data" / "owner.csv"
+            canary.parent.mkdir()
+            canary.write_bytes(b"key,translation\nk,kept\n")
+            nested_identity = subprocess.run(
+                [str(identity_harness), str(nested_setup), str(nested_root), github_owner, github_repository],
+                capture_output=True, text=True, timeout=30)
+            self.assertEqual(0, nested_identity.returncode, nested_identity.stdout + nested_identity.stderr)
+            nested_source = json.loads((nested_root / ".vntext-update-source.json").read_text(encoding="utf-8-sig"))
+            self.assertEqual(str(nested_root.parent / (nested_root.name + ".updates")), nested_source["updates_root"])
+            self.assertEqual(b"key,translation\nk,kept\n", canary.read_bytes())
+
             for phase in ("checking", "deleting"):
                 self.assertEqual(expected_entries, next(item["total"] for item in progress if item["phase"] == phase))
                 self.assertLess(sum(1 for item in progress if item["phase"] == phase), expected_entries, f"{phase} progress was not coalesced.")

@@ -412,6 +412,8 @@ public static class WpfUpdateService
             return new(GitHubUpdateState.InvalidMetadata, Message: "The release route changed; check for updates again.");
 
         var paths = new List<string>();
+        var downloadedHops = new List<GitHubUpdateHop>();
+        long completedBytes = 0;
         string? descriptorPath = null;
         try
         {
@@ -432,13 +434,14 @@ public static class WpfUpdateService
                             $"A route package is unavailable (HTTP {(int)response.StatusCode}).");
                 }
                 var actualDigest = await DownloadAndHashAssetAsync(response.Content, packagePath, hop.AssetSize,
-                    cancellationToken, progress).ConfigureAwait(false);
+                    cancellationToken, progress is null ? null : new RouteDownloadProgress(progress, completedBytes, totalBytes)).ConfigureAwait(false);
                 if (!FixedEquals(actualDigest, hop.PackageSha256))
                     throw new InvalidDataException("GitHub route asset SHA-256 digest mismatch.");
                 var selection = FullAppUpdateService.ReadGitHubPackage(root, Path.Combine(root, SourceName),
                     packagePath, hop.PackageSha256, hop.Version, expectedBase, expectedBase is null ? "" : hop.FromVersion);
                 expectedBase = selection.Manifest.Files;
-                hops[hops.IndexOf(hop)] = hop with { PackagePath = packagePath };
+                downloadedHops.Add(hop with { PackagePath = packagePath });
+                completedBytes += hop.AssetSize;
             }
             descriptorPath = Path.Combine(source.WorkRoot, $"github-update-route-{Guid.NewGuid():N}.json");
             EnsureNoReparsePath(root, descriptorPath, "GitHub route descriptor");
@@ -446,14 +449,14 @@ public static class WpfUpdateService
             {
                 schema = 1,
                 target_version = latest.VersionText,
-                hops = hops.Select(hop => new { from_version = hop.FromVersion, version = hop.Version,
+                hops = downloadedHops.Select(hop => new { from_version = hop.FromVersion, version = hop.Version,
                     package_path = hop.PackagePath, package_sha256 = hop.PackageSha256 }).ToArray(),
             };
             File.WriteAllText(descriptorPath, JsonSerializer.Serialize(descriptor));
             var descriptorHash = HashFile(descriptorPath);
             return new(GitHubUpdateState.UpdateAvailable, latest.VersionText, descriptorPath, descriptorHash,
                 releasesUrl, $"Stable full-app update route available: v{latest.VersionText}.", true,
-                hops[0].AssetUrl, totalBytes, latest.Notes, latest.PublishedDate, true, hops, paths);
+                hops[0].AssetUrl, totalBytes, latest.Notes, latest.PublishedDate, true, downloadedHops, paths);
         }
         catch (TaskCanceledException)
         {
@@ -473,6 +476,12 @@ public static class WpfUpdateService
             if (descriptorPath is not null) TryDeleteGitHubPackage(descriptorPath, source, root);
             return new(GitHubUpdateState.InvalidPackage, Version: latest.VersionText, ReleasesUrl: releasesUrl, Message: "GitHub update route is invalid: " + ex.Message);
         }
+    }
+
+    private sealed class RouteDownloadProgress(IProgress<(long Received, long Total)> progress, long completed, long total)
+        : IProgress<(long Received, long Total)>
+    {
+        public void Report((long Received, long Total) value) => progress.Report((completed + value.Received, total));
     }
 
     private static bool EquivalentGitHubRouteOffer(GitHubUpdateCheckResult expected, GitHubUpdateCheckResult actual) =>

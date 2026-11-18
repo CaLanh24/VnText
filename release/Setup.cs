@@ -1163,6 +1163,16 @@ public static class Setup
         var releaseRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         if (String.IsNullOrEmpty(releaseRoot)) throw new InvalidDataException("Cannot resolve Setup source folder.");
         var updatesRoot = Path.GetFullPath(Path.Combine(releaseRoot, "Updates"));
+        var installRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var updatesPath = updatesRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (String.Equals(installRoot, updatesPath, StringComparison.OrdinalIgnoreCase)
+            || updatesPath.StartsWith(installRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || installRoot.StartsWith(updatesPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            var parent = Directory.GetParent(installRoot);
+            if (parent == null) throw new InvalidDataException("Cannot place the Updates folder outside the installation.");
+            updatesRoot = Path.Combine(parent.FullName, Path.GetFileName(installRoot) + ".updates");
+        }
         var sourcePath = SafeTarget(root, UpdateSourceName);
         var githubIdentity = ReadGitHubUpdateIdentity();
         var values = new Dictionary<string, object>
