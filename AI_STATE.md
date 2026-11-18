@@ -1,3 +1,10 @@
+# Current checkpoint — Design QA 0.1.22 (4 findings), 2026-11-19
+
+Owner assigned the 4-finding Design QA batch (`DEV_RUN/qa-0.1.22-3e89a97/design-qa/dev-task.md`): CSV header, outer rail, Settings Data error, Patch font group. Fixed DEV is the sole writer; builds only through the isolated `--artifacts-path` route (never the default bootstrap build or a plain App build; the earlier unauthorized plain build that wrote the blocked App `obj` is a disclosed deviation, current sentinel baseline = 91-file post-accident inventory, unchanged by this batch).
+Result: source = the commit recorded in `TEST_RUN/agent-evidence/dq-dev/design-qa-dev-receipt.json` (QA candidate `DEV_RUN/qa-0.1.22-dq/Start-QA.cmd`, reference candidate `qa-0.1.22-3e89a97` kept). Finding 1 is PARTIAL (CSV title ~34-40 px above the other pages instead of 55-66 px; the row floor forbids full alignment); outer rail proven by fixture, native thumb not captured. DEV evidence is not independent QA.
+
+---
+
 # Current checkpoint — Release0.1.21 + uiqa24,2026-11-18
 
 Owner authorizes multi-hop updater source repair, route018 tests, push/release; added all uiqa24 F1–F6 then release. No real-game runs, preserve installed020 and all Owner data. Report TEST_RUN/uiqa24/review.html is evidence, not extra authority.
