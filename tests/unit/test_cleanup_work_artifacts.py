@@ -3692,6 +3692,18 @@ class CleanupLifecycleTests(unittest.TestCase):
         self.assertFalse(cleanup._release_budget_record_is_valid({**previous, "limit_bytes": previous["limit_bytes"] + 1}, task, cleanup.RELEASE_TASK_0124_BUDGET_APPROVAL))
         self.assertFalse(cleanup._release_budget_record_is_valid(previous, cleanup.RELEASE_TASK_0123_BUDGET_ID, cleanup.RELEASE_TASK_0123_BUDGET_APPROVAL))
 
+    def test_release_0124_rebaseline_authority_is_single_task_bound(self):
+        entry = cleanup.EPOCH_REBASELINE_AUTHORIZATIONS[cleanup.RELEASE_TASK_0124_REBASELINE_ID]
+        self.assertEqual(entry, (cleanup.RELEASE_TASK_0124_BUDGET_ID, "0.1.24", cleanup.RELEASE_TASK_0124_REBASELINE_APPROVAL))
+        self.assertIn(cleanup.RELEASE_TASK_0124_REBASELINE_PREPARED_SHA, cleanup.RELEASE_TASK_0124_REBASELINE_APPROVAL)
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.23"):
+            self.assertFalse(cleanup._rebaseline_versions_match("a" * 40, "b" * 40, "0.1.24", cleanup.RELEASE_TASK_0124_REBASELINE_ID))
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.24"), patch.object(cleanup, "_git_is_ancestor", return_value=False):
+            self.assertFalse(cleanup._rebaseline_versions_match("a" * 40, "b" * 40, "0.1.24", cleanup.RELEASE_TASK_0124_REBASELINE_ID))
+        with patch.object(cleanup, "_git_version_at", return_value="0.1.24"), patch.object(cleanup, "_git_is_ancestor", return_value=True):
+            self.assertTrue(cleanup._rebaseline_versions_match("a" * 40, "b" * 40, "0.1.24", cleanup.RELEASE_TASK_0124_REBASELINE_ID))
+            self.assertFalse(cleanup._rebaseline_versions_match("a" * 40, "b" * 40, "0.1.23", cleanup.RELEASE_TASK_0124_REBASELINE_ID))
+
     def test_release_scope_recovery_quote_is_bound_to_its_own_task(self):
         with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_0124_BUDGET_ID}):
             crossed = cleanup.recover_release_task_scope("0" * 64, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
