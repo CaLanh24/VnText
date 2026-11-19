@@ -968,6 +968,10 @@ def _apply_unity_translation_package(csv_path: str, manifest_path: str, game_roo
         report.append(f"UNITY {rel}: {changed}/{sum(len(iter_patch_locators(e)) for e, _t in items)}")
 
         if env is not None:
+            # ObjectReaders in objects_by_pid (and the last obj/data/state) keep the decompressed bundle graph alive after ``del env``; drop them
+            # before the read-back child starts, or both overlap in RAM on a bounded host.
+            objects_by_pid.clear()
+            obj = data = state = None
             del env
             env = None
             import gc

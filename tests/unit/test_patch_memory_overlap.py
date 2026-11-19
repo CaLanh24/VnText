@@ -69,6 +69,22 @@ class PatchMemoryOverlapTests(unittest.TestCase):
         self.assertIn("stdout bytes 0", text)
         self.assertIn("MemoryError in child", text)
 
+    def test_library_noise_cannot_corrupt_the_child_report_channel(self):
+        import io
+        import json
+        import sys
+        payload = json.dumps({"patched_root": "p", "game_root": "g", "grouped_items": {}})
+
+        def noisy(*_args, **_kwargs):
+            print("Error parsing file 'x/data.unity3d' as 1: ")           # what UnityPy prints to stdout while reopening a bundle
+            return {"schema_version": 1, "counts": {"PASS": 0}, "results": []}
+
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(patch_readback, "_verify_patch_targets_impl", noisy), mock.patch.object(sys, "stdin", io.StringIO(payload)),                 mock.patch.object(sys, "stdout", out), mock.patch.object(sys, "stderr", err):
+            self.assertEqual(patch_readback._worker_main(), 0)
+        self.assertEqual(json.loads(out.getvalue())["counts"], {"PASS": 0})
+        self.assertIn("Error parsing file", err.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1029,7 +1029,7 @@ def _run_readback_subprocess(
                     status=FAIL,
                     reason=(
                         f"patch read-back subprocess emitted malformed report: {exc}; exit code {process.returncode}; "
-                        f"stdout bytes {len(stdout or '')}; stderr tail: {((stderr or '').strip()[-400:] or 'empty')}"
+                        f"stdout bytes {len(stdout or '')} head {(stdout or '')[:160]!r}; stderr tail: {((stderr or '').strip()[-400:] or 'empty')}"
                     ),
                 )
             if isinstance(report, dict):
@@ -1128,11 +1128,16 @@ def verify_patch_targets(
 
 def _worker_main() -> int:
     payload = json.load(sys.stdin)
-    report = _verify_patch_targets_impl(
-        Path(str(payload["patched_root"])),
-        Path(str(payload["game_root"])),
-        payload["grouped_items"],
-    )
+    # The parent parses stdout as ONE JSON document.  Libraries used while reopening a patched bundle (UnityPy) print diagnostics such as
+    # "Error parsing file ... as 1:" to stdout; keep them off the report channel (they go to stderr, which the parent reports on failure).
+    import contextlib
+
+    with contextlib.redirect_stdout(sys.stderr):
+        report = _verify_patch_targets_impl(
+            Path(str(payload["patched_root"])),
+            Path(str(payload["game_root"])),
+            payload["grouped_items"],
+        )
     # Match the ASCII-only request payload so the portable interpreter's
     # console encoding cannot corrupt Vietnamese diagnostics on the pipe.
     sys.stdout.write(json.dumps(report, ensure_ascii=True))
