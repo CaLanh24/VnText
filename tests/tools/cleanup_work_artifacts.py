@@ -221,11 +221,17 @@ RELEASE_TASK_0122_BUDGET_APPROVAL = (
 )
 
 RELEASE_TASK_0124_BUDGET_ID = "release-0.1.24"
-RELEASE_TASK_0124_BUDGET_LIMIT_BYTES = 5500 * 1024**2
-RELEASE_TASK_0124_BUDGET_APPROVAL = (
+RELEASE_TASK_0124_PREVIOUS_BUDGET_LIMIT_BYTES = 5500 * 1024**2
+RELEASE_TASK_0124_PREVIOUS_BUDGET_APPROVAL = (
     "Owner 2026-11-19 authorized temporary quota for font QA on three original game roots and release only after acceptance. "
     "5500 MiB for exact candidate-0.1.24 covers the prior measured publisher peak and sequential script-only RenPy workspaces. "
     "Keep 48 MiB reserve, shared 11 GiB, terminal 1 GiB, original data and evidence."
+)
+RELEASE_TASK_0124_BUDGET_LIMIT_BYTES = 8060 * 1024**2
+RELEASE_TASK_0124_BUDGET_APPROVAL = (
+    "Owner 2026-11-20 authorized +2.5 GiB temporary quota for exact candidate-0.1.24 (8060 MiB) so the real The Wrath text patch "
+    "(a ~4 GiB data.unity3d rewrite) can be built and verified with the font adapter; preserve all data and evidence. "
+    "Keep 48 MiB reserve, shared 11 GiB, terminal 1 GiB."
 )
 
 RELEASE_TASK_0123_BUDGET_ID = "release-0.1.23"
@@ -618,6 +624,10 @@ def _release_budget_record_is_valid(
     ):
         return True
     return (
+        task_id == RELEASE_TASK_0124_BUDGET_ID
+        and release_budget.get("limit_bytes") == RELEASE_TASK_0124_PREVIOUS_BUDGET_LIMIT_BYTES
+        and release_budget.get("owner_approval") == RELEASE_TASK_0124_PREVIOUS_BUDGET_APPROVAL
+    ) or (
         task_id == RELEASE_TASK_0118_BUDGET_ID
         and release_budget.get("limit_bytes") == RELEASE_TASK_0118_PREVIOUS_BUDGET_LIMIT_BYTES
         and release_budget.get("owner_approval") == RELEASE_TASK_0118_PREVIOUS_BUDGET_APPROVAL

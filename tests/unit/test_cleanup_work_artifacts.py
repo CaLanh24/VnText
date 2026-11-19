@@ -3681,6 +3681,17 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual([new_id], [e["id"] for e in active])
             self.assertEqual(task_id, cleanup._release_task_budget_profile(root)[2])
 
+    def test_release_0124_budget_expansion_keeps_the_previous_record_verifiable_but_not_active(self):
+        task = cleanup.RELEASE_TASK_0124_BUDGET_ID
+        previous = {"limit_bytes": cleanup.RELEASE_TASK_0124_PREVIOUS_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0124_PREVIOUS_BUDGET_APPROVAL}
+        current = {"limit_bytes": cleanup.RELEASE_TASK_0124_BUDGET_LIMIT_BYTES, "owner_approval": cleanup.RELEASE_TASK_0124_BUDGET_APPROVAL}
+        self.assertEqual(cleanup.RELEASE_TASK_0124_BUDGET_LIMIT_BYTES - cleanup.RELEASE_TASK_0124_PREVIOUS_BUDGET_LIMIT_BYTES, 2560 * 1024**2)
+        self.assertTrue(cleanup._release_budget_record_is_valid(previous, task, cleanup.RELEASE_TASK_0124_BUDGET_APPROVAL))
+        self.assertTrue(cleanup._release_budget_record_is_valid(current, task, cleanup.RELEASE_TASK_0124_BUDGET_APPROVAL))
+        self.assertEqual(cleanup._release_task_budget_limit(task), cleanup.RELEASE_TASK_0124_BUDGET_LIMIT_BYTES)
+        self.assertFalse(cleanup._release_budget_record_is_valid({**previous, "limit_bytes": previous["limit_bytes"] + 1}, task, cleanup.RELEASE_TASK_0124_BUDGET_APPROVAL))
+        self.assertFalse(cleanup._release_budget_record_is_valid(previous, cleanup.RELEASE_TASK_0123_BUDGET_ID, cleanup.RELEASE_TASK_0123_BUDGET_APPROVAL))
+
     def test_release_scope_recovery_quote_is_bound_to_its_own_task(self):
         with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_0124_BUDGET_ID}):
             crossed = cleanup.recover_release_task_scope("0" * 64, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
