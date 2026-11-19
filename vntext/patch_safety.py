@@ -11,8 +11,15 @@ from vntext.patch_constants import (
 )
 
 
+# An original above this size is never duplicated into the patch output: the manifest binds its exact sha256 (``game_data_sha256``) and the installer
+# makes its own exact backup at install time.  A 4 GiB data.unity3d otherwise doubles the output (payload + backup) for no recovery benefit.
+LARGE_ORIGINAL_BACKUP_LIMIT_BYTES = 1024 ** 3
+
+
 def backup_original_file(src: Path, backup_root: Path, rel: str):
     backup = backup_root / rel
+    if Path(src).stat().st_size > LARGE_ORIGINAL_BACKUP_LIMIT_BYTES:
+        return
     backup.parent.mkdir(parents=True, exist_ok=True)
     if not backup.exists():
         shutil.copy2(src, backup)
