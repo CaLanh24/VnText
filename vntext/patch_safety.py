@@ -189,6 +189,10 @@ def verify_patched_translations(patched_root: Path, grouped_items: dict[str, lis
         target = patched_root / rel
         if not target.exists() or not target.is_file():
             continue
+        if target.suffix.lower() in {".unity3d", ".bundle", ".assets"}:
+            # Every item of a serialized/bundle target is skipped below (the read-back child verifies them); never read a multi-GiB bundle
+            # into this process just to skip it - that overlapped with the read-back child and starved it of memory.
+            continue
         try:
             blob = target.read_bytes()
         except OSError:

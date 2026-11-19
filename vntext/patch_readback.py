@@ -1027,7 +1027,10 @@ def _run_readback_subprocess(
                 return _timeout_report(
                     grouped_items,
                     status=FAIL,
-                    reason=f"patch read-back subprocess emitted malformed report: {exc}",
+                    reason=(
+                        f"patch read-back subprocess emitted malformed report: {exc}; exit code {process.returncode}; "
+                        f"stdout bytes {len(stdout or '')}; stderr tail: {((stderr or '').strip()[-400:] or 'empty')}"
+                    ),
                 )
             if isinstance(report, dict):
                 return report
