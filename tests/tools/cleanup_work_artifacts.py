@@ -2900,6 +2900,17 @@ def register_release_task_scope() -> dict:
 RELEASE_SCOPE_RECOVERY_AUTHORIZATION = "Cho phép, kiểm nốt Setup đi, có lỗi thì sửa luôn rồi đưa t bản hoàn chỉnh để test."
 
 
+# Owner 2026-11-19: explicit one-shot recovery of the consumed release-0.1.24 scope, preserving all data/evidence; the same CAS/lineage route as 0.1.17.
+RELEASE_SCOPE_RECOVERY_AUTHORIZATION_0124 = (
+    "Owner 2026-11-19 authorized recovery of the consumed release-0.1.24 quota scope (one shot), preserving all data and evidence, "
+    "to build the full Lesson image+text payload and the Dissonance payloads for both fonts."
+)
+RELEASE_SCOPE_RECOVERY_AUTHORIZATIONS = {
+    RELEASE_TASK_0117_BUDGET_ID: RELEASE_SCOPE_RECOVERY_AUTHORIZATION,
+    RELEASE_TASK_0124_BUDGET_ID: RELEASE_SCOPE_RECOVERY_AUTHORIZATION_0124,
+}
+
+
 def recover_release_task_scope(expected_manifest_sha256: str | None, owner_authorization: str | None) -> dict:
     """Create ONE new-generation budget scope entry for the same release task after its scope root was consumed.
 
@@ -2910,9 +2921,10 @@ def recover_release_task_scope(expected_manifest_sha256: str | None, owner_autho
     """
     from work_paths import RegistryChanged, register_artifacts
     task_id, version, approval = _release_budget_spec()
-    if task_id != RELEASE_TASK_0117_BUDGET_ID:
+    if task_id not in RELEASE_SCOPE_RECOVERY_AUTHORIZATIONS:
         return {"ok": False, "reasons": ["release_scope_recovery_wrong_task"]}
-    if owner_authorization != RELEASE_SCOPE_RECOVERY_AUTHORIZATION:
+    recovery_quote = RELEASE_SCOPE_RECOVERY_AUTHORIZATIONS[task_id]
+    if owner_authorization != recovery_quote:
         return {"ok": False, "reasons": ["release_scope_recovery_authorization_missing"]}
     digest = str(expected_manifest_sha256 or "").strip().lower()
     if len(digest) != 64:
@@ -2997,7 +3009,7 @@ def recover_release_task_scope(expected_manifest_sha256: str | None, owner_autho
                     "source_sha": epoch.get("source_sha"), "epoch_id": epoch.get("epoch_id"),
                     "recovery_of": task_id, "consumed_entry_sha256": old_sha, "consumed_deleted_at": proof.get("deleted_at"),
                     "consumed_scope_id": proof.get("scope_id"), "manifest_sha256_before": digest,
-                    "owner_authorization_sha256": hashlib.sha256(RELEASE_SCOPE_RECOVERY_AUTHORIZATION.encode("utf-8")).hexdigest(),
+                    "owner_authorization_sha256": hashlib.sha256(recovery_quote.encode("utf-8")).hexdigest(),
                 },
             }],
             expected_manifest_sha256=digest,

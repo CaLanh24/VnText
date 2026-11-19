@@ -3681,6 +3681,17 @@ class CleanupLifecycleTests(unittest.TestCase):
             self.assertEqual([new_id], [e["id"] for e in active])
             self.assertEqual(task_id, cleanup._release_task_budget_profile(root)[2])
 
+    def test_release_scope_recovery_quote_is_bound_to_its_own_task(self):
+        with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_0124_BUDGET_ID}):
+            crossed = cleanup.recover_release_task_scope("0" * 64, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION)
+            self.assertIn("release_scope_recovery_authorization_missing", crossed["reasons"])
+            own = cleanup.recover_release_task_scope("0" * 64, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION_0124)
+            self.assertNotIn("release_scope_recovery_authorization_missing", own["reasons"])
+            self.assertNotIn("release_scope_recovery_wrong_task", own["reasons"])
+        with patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": cleanup.RELEASE_TASK_0117_BUDGET_ID}):
+            crossed = cleanup.recover_release_task_scope("0" * 64, cleanup.RELEASE_SCOPE_RECOVERY_AUTHORIZATION_0124)
+            self.assertIn("release_scope_recovery_authorization_missing", crossed["reasons"])
+
     def test_release_scope_recovery_refusals_write_nothing(self):
         with self.isolated_workspace() as (root, _work, _game, manifest):
             task_id, scope = self._consumed_017_scope(root, manifest)
