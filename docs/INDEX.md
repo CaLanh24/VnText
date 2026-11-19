@@ -142,3 +142,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 | Release 0.1.20 (đã phát hành) | docs/RELEASE_0.1.20.md | Receipt `TEST_RUN/agent-evidence/release-0.1.20/` |
 
 | Release0.1.21 updater hotfix (đang kiểm) | docs/RELEASE_0.1.21.md | TEST_RUN/agent-evidence/release-0.1.21/ |
+| Release 0.1.23 Ren'Py generated-font payload (đang chuẩn bị) | docs/RELEASE_0.1.23.md | TEST_RUN/agent-evidence/release-0.1.23/ |
