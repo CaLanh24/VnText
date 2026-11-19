@@ -84,6 +84,54 @@ class PatchInstallerTests(unittest.TestCase):
             self.assertFalse((patch / "install_state.json").exists())
             self.assertFalse((game / "game/zzz_vntext_vietnamese.rpy").exists())
 
+    def test_renpy_generated_font_and_licence_install_and_uninstall_exactly(self):
+        import tempfile
+        from tests.lib.work_paths import work_temp_dir
+        from vntext.patch_output import write_renpy_patch_manifest
+        installer = next((p for p in self._installer_candidates() if p.is_file()), None)
+        if installer is None:
+            self.fail("Build the current patch installer before this regression")
+        SCRIPT_BYTES = b"label start:\n    \"Hello\"\n"
+        TL_BYTES = b"translate vietnamese strings:\n    old \"Hello\"\n    new \"Xin chao\"\n"
+        ACT_BYTES = b"init 999 python:\n    config.language = \"vietnamese\"\n"
+        bundled = ROOT / "vntext/fonts/DejaVuSans.ttf"
+        licence = ROOT / "vntext/fonts/DejaVuSans.txt"
+        digest = hashlib.sha256(bundled.read_bytes()).hexdigest()
+        with tempfile.TemporaryDirectory(dir=work_temp_dir("renpy-font-installer")) as temp:
+            root = Path(temp)
+            game, patch = root / "game", root / "patch"
+            for name in ("game", "renpy", "lib"):
+                (game / name).mkdir(parents=True, exist_ok=True)
+            (game / "Game.exe").write_bytes(b"fixture executable")
+            (game / "game/script.rpy").write_bytes(SCRIPT_BYTES)
+            stem = f"game/tl/vietnamese/vntext_font_{digest[:16]}"
+            payloads = {
+                "game/tl/vietnamese/vntext.rpy": TL_BYTES,
+                "game/zzz_vntext_vietnamese.rpy": ACT_BYTES,
+                stem + ".ttf": bundled.read_bytes(),
+                stem + ".license.txt": licence.read_bytes(),
+            }
+            for relative, data in payloads.items():
+                target = patch / "COPY_TO_GAME_ROOT" / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            (patch / "font_preflight.json").write_text(json.dumps({"sha256": digest, "payload_font": stem + ".ttf"}), encoding="utf-8")
+            write_renpy_patch_manifest(patch, game, "test", {"entries": [{"file_path": "game/script.rpy"}]})
+            def invoke(action):
+                return subprocess.run([str(installer), action, str(game), str(patch)], capture_output=True, timeout=30)
+            self.assertEqual(0, invoke("--install").returncode)
+            for relative, data in payloads.items():
+                self.assertEqual(data, (game / relative).read_bytes(), relative)
+            self.assertEqual(SCRIPT_BYTES, (game / "game/script.rpy").read_bytes())
+            (game / (stem + ".ttf")).write_bytes(b"external replacement")
+            self.assertNotEqual(0, invoke("--uninstall").returncode)                # a changed font is never silently removed
+            self.assertEqual(b"external replacement", (game / (stem + ".ttf")).read_bytes())
+            (game / (stem + ".ttf")).write_bytes(payloads[stem + ".ttf"])
+            self.assertEqual(0, invoke("--uninstall").returncode)
+            for relative in payloads:
+                self.assertFalse((game / relative).exists(), relative)
+            self.assertEqual(SCRIPT_BYTES, (game / "game/script.rpy").read_bytes())
+
     def test_renpy_uninstall_tracks_compiler_caches_and_refuses_unknown_cache(self):
         import tempfile
         from tests.lib.work_paths import work_temp_dir

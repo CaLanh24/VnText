@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import hashlib
 from contextlib import nullcontext
 import uuid
@@ -986,6 +987,46 @@ def _copy_patch_installer(installer: Path, output: Path) -> None:
             shutil.copy2(companion, output / companion.name)
 
 
+_RENPY_FONT_PAYLOAD = re.compile(r"game/tl/vietnamese/vntext_font_([0-9a-f]{16})\.(ttf|otf)")
+
+
+def _renpy_generated_font_payload(patch_out: Path, payload: Path) -> set[str]:
+    """The optional font the generator itself staged, bound to its trusted generation result.
+
+    ``font_preflight.json`` is written by the overlay generator in the same transaction as the payload.  Only the EXACT font path it names is accepted
+    (``vntext_font_<first 16 hex of its sha256>.ttf|otf`` inside ``game/tl/vietnamese``), the staged bytes must match the recorded sha256, and the bundled
+    font's own licence text is accepted only next to the bundled font with the verified bytes.  Anything else in the payload (an older font, a foreign or
+    renamed font, a licence without its font, a font without a report) still fails the layout check.
+    """
+
+    report_path = patch_out / "font_preflight.json"
+    if not report_path.is_file():
+        return set()
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(f"Ren'Py font evidence unreadable: {exc}") from exc
+    font_path = report.get("payload_font") if isinstance(report, dict) else None
+    if not font_path:
+        return set()
+    digest = str(report.get("sha256") or "")
+    match = _RENPY_FONT_PAYLOAD.fullmatch(str(font_path))
+    if match is None or not re.fullmatch(r"[0-9a-f]{64}", digest) or match.group(1) != digest[:16]:
+        raise RuntimeError("Ren'Py font payload is not the exact generated font: " + str(font_path))
+    font_file = payload / font_path
+    if font_file.is_symlink() or not font_file.is_file() or hashlib.sha256(font_file.read_bytes()).hexdigest() != digest:
+        raise RuntimeError("Ren'Py font payload differs from its glyph preflight: " + str(font_path))
+    accepted = {str(font_path)}
+    from vntext.renpy_font_support import FALLBACK_SHA256
+    if digest == FALLBACK_SHA256:
+        licence = font_file.with_suffix(".license.txt")
+        bundled = Path(__file__).resolve().parent / "fonts" / "DejaVuSans.txt"
+        if licence.is_symlink() or not licence.is_file() or not bundled.is_file() or licence.read_bytes() != bundled.read_bytes():
+            raise RuntimeError("Ren'Py bundled font licence is missing or differs from the verified text")
+        accepted.add(licence.relative_to(payload).as_posix())
+    return accepted
+
+
 def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool = False) -> Path:
     """Validate the native overlay payload before exposing install guidance."""
 
@@ -1003,6 +1044,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
         "game/tl/vietnamese/vntext.rpy",
         "game/zzz_vntext_vietnamese.rpy",
     }
+    expected |= _renpy_generated_font_payload(patch_out, payload)
     files = {
         path.relative_to(payload).as_posix()
         for path in payload.rglob("*")
