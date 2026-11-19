@@ -1043,6 +1043,14 @@ if (-not $SkipBuild) {
     if ($LASTEXITCODE -ne 0) { throw "Patch installer publish failed" }
     if (-not (Test-Path $installerBuiltExe)) { throw "Patch installer missing: $installerBuiltExe" }
     Write-Host "Built installer: $installerBuiltExe" -ForegroundColor Green
+    Write-Host "`n[2c/5] Build Unity TMP runtime adapter (netstandard2.0 against compile-only stubs; no Unity binary is bundled or needed)..." -ForegroundColor Yellow
+    $adapterProj = Join-Path $DevRoot "wpf_app\VNText.UnityTmpAdapter\VNTextTmpFonts.csproj"
+    $adapterArtifacts = Join-Path $DevRunRoot "unity_adapter_build"
+    $netstandardRef = @(Get-ChildItem -Path (Join-Path $dotnetSdkRoot "sdk\*\ref\netstandard.dll") -ErrorAction SilentlyContinue | Sort-Object FullName -Descending)
+    if ($netstandardRef.Count -eq 0) { throw "SDK netstandard 2.0 reference assembly missing under $dotnetSdkRoot" }
+    if (Test-Path $adapterArtifacts) { Remove-Item -LiteralPath $adapterArtifacts -Recurse -Force }
+    & $dotnet build $adapterProj -c Release --artifacts-path $adapterArtifacts "-p:RestoreConfigFile=$nugetConfig" "-p:VNTextNetStandardRef=$($netstandardRef[0].FullName)" 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) { throw "Unity TMP adapter build failed" }
     $devSmokeOutcome = "FAIL"
     $oldDevSmokeEnv = @{}
     try {
@@ -1180,6 +1188,11 @@ if (-not (Test-Path $wpfStagingExe)) { throw "WPF staging exe missing" }
 $stagingWorker = Join-Path $stagingApp "worker"
 Copy-RuntimeTree (Join-Path $DevRoot "vntext") (Join-Path $stagingWorker "vntext") @("_legacy")
 Copy-RuntimeTree (Join-Path $DevRoot "vntext_worker") (Join-Path $stagingWorker "vntext_worker")
+$adapterBuilt = Join-Path $DevRunRoot "unity_adapter_build\bin\VNTextTmpFonts\release\VNTextTmpFonts.dll"
+if (-not (Test-Path -LiteralPath $adapterBuilt)) { throw "Unity TMP adapter build missing: $adapterBuilt" }
+$adapterDest = Join-Path $stagingWorker "vntext\unity_adapter\VNTextTmpFonts.dll"
+New-Item -ItemType Directory -Path (Split-Path -Parent $adapterDest) -Force | Out-Null
+Copy-Item -LiteralPath $adapterBuilt -Destination $adapterDest -Force
 $installerDest = Join-Path $stagingWorker "vntext\tools\VNTextPatchInstaller.exe"
 New-Item -ItemType Directory -Path (Split-Path -Parent $installerDest) -Force | Out-Null
 Copy-Item -LiteralPath $installerBuiltExe -Destination $installerDest -Force

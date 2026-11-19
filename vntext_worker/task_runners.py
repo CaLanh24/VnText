@@ -480,6 +480,7 @@ def run_patch_worker(
             # Patch_Viet_Hoa) instead of creating a versioned subdirectory
             # that callers and installers cannot find.
             replacement_font=str(params.get("replacement_font") or ""),
+            image_overlay_spec=str(params.get("image_overlay_spec") or ""),
             patch_out_override=str(build_dir),
             enable_trace=True,
             partial_override=partial_override,

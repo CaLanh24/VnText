@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Stub.props" />
+  <ItemGroup><Compile Include="Stub.cs" /></ItemGroup>
+</Project>

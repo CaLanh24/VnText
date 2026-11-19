@@ -599,7 +599,7 @@ def _build_verification_records(
     return verification_entries, verification_records
 
 
-def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None) -> list[str]:
+def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None) -> list[str]:
     rows = read_translation_rows(csv_path)
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -870,6 +870,20 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # not detect a newly introduced asset with the fallback's name.
             if prepare_font_support(root, {}, {}, font) != initial_font_support:
                 raise RenPyPatchError("Ren'Py font/language support source inventory changed")
+
+        if image_overlay_spec:
+            # Known imagemap/imagebutton bitmaps with baked-in text: additive locale images, bound to their exact baseline (loose or archive).
+            from vntext import renpy_image_overlay as image_overlay
+            image_payloads, image_report = image_overlay.prepare_image_overlays(root, image_overlay_spec)
+            image_overlay.verify_baselines(root, image_report)
+            for relative, data in image_payloads.items():
+                extra_payloads[output / "COPY_TO_GAME_ROOT" / relative] = data
+            extra_payloads[output / "image_overlay.json"] = json.dumps(image_report, ensure_ascii=False, indent=2).encode("utf-8")
+            text_inventory_check = verify_target_inventory
+
+            def verify_target_inventory():
+                text_inventory_check()
+                image_overlay.verify_baselines(root, image_report)
 
         payload = _render_overlay(new_dialogues, strings)
         if prior_overlay in existing_snapshots:

@@ -161,6 +161,8 @@ Luồng nghiệp vụ chuẩn:
 - `patch_naninovel.py`: Naninovel Script object/field replacement.
 - `patch_safety.py`: backup, locator, raw fixed ops, encoded variants và verification output đã patch.
 - `renpy_font_support.py`, `renpy_language_support.py`: bounded inert source inspection and language-scoped presentation additions to the existing Ren'Py overlay transaction; verified bundled font, static GUI text styles and pure language-name/list grammar only. No game profiles, source rewriting or model changes; native acceptance is separate.
+- `renpy_image_overlay.py`: known-asset, geometry-preserving locale image overlay for imagemap/imagebutton bitmaps (loose or RPA baseline binding, report + validator); never renders art.
+- `unity_tmp_adapter.py` + `wpf_app/VNText.UnityTmpAdapter/`: guarded Mono/TMP global-fallback runtime font adapter payload for validated Unity versions; no serialized-asset mutation.
 - `patch_output.py`: Unity `COPY_TO_GAME_ROOT`, generic executable/`*_Data` installer install/restore discovery, patch manifest và Unity save wrapper; Ren'Py native overlay delivery thuộc `app_tasks.py`.
 - `wpf_app/VNText.PatchInstaller/`: validation install/restore generic từ executable và layout `*_Data`; các field manifest cũ vẫn tương thích.
 - `unity_fs.py`: streaming/ghi lại UnityFS và bảo toàn metadata; `addressables.py`: parser/writer frozen catalog extra-data, cập nhật CRC/size; `addressables_discovery.py`: quan hệ catalog gần nhất theo cách generic, không sở hữu binary catalog format.

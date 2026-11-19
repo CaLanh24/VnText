@@ -105,6 +105,10 @@ public sealed class InstallerService
         if (!string.IsNullOrWhiteSpace(manifest.GameDataSha256) &&
             !string.Equals(HashFile(dataPath), manifest.GameDataSha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Sai game/data: resource data không khớp bản game đã dùng để tạo patch.");
+        // Unity patches that depend on exact player assemblies (TMP runtime adapter) bind them here, as Ren'Py binds its source files.
+        foreach (var check in manifest.GameChecks ?? new List<GameCheck>())
+            if (!File.Exists(ResolveSafe(root, check.Path)) || !string.Equals(HashFile(ResolveSafe(root, check.Path)), check.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"Sai bản game hoặc file nguồn đã thay đổi: {check.Path}");
         foreach (var file in manifest.Files)
         {
             var payload = ResolveSafe(PayloadDirectory, file.Path);

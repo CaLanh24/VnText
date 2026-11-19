@@ -73,7 +73,7 @@ def _fake_apply(snapshots: list | None = None, cancel_in_verify: bool = False, f
     (user content in a file that carries an artifact name).  ``snapshots`` receives the tree right before the cancel.
     """
 
-    def fake(_csv, _manifest, _game, output, progress):
+    def fake(_csv, _manifest, _game, output, progress, replacement_font=None):
         out = Path(output)
         if link_to is not None:
             assert _make_link(out / "COPY_TO_GAME_ROOT", link_to)

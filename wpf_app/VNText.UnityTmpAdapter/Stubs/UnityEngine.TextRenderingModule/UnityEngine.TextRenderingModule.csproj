@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Stub.props" />
+  <ItemGroup>
+    <Compile Include="Stub.cs" />
+    <ProjectReference Include="..\UnityEngine.CoreModule\UnityEngine.CoreModule.csproj" Private="false" />
+  </ItemGroup>
+</Project>

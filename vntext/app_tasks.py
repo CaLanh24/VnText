@@ -1027,6 +1027,19 @@ def _renpy_generated_font_payload(patch_out: Path, payload: Path) -> set[str]:
     return accepted
 
 
+def _renpy_image_overlay_payload(patch_out: Path, payload: Path) -> set[str]:
+    """Locale images the generator staged, bound by ``image_overlay.json`` (exact path, sha256 and geometry); nothing else may sit in tl/."""
+
+    report_path = patch_out / "image_overlay.json"
+    if not report_path.is_file():
+        return set()
+    from vntext import renpy_image_overlay
+    try:
+        return renpy_image_overlay.validate_report_payload(json.loads(report_path.read_text(encoding="utf-8")), payload)
+    except (OSError, ValueError) as exc:
+        raise RuntimeError(f"Ren'Py image overlay evidence invalid: {exc}") from exc
+
+
 def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool = False) -> Path:
     """Validate the native overlay payload before exposing install guidance."""
 
@@ -1045,6 +1058,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
         "game/zzz_vntext_vietnamese.rpy",
     }
     expected |= _renpy_generated_font_payload(patch_out, payload)
+    expected |= _renpy_image_overlay_payload(patch_out, payload)
     files = {
         path.relative_to(payload).as_posix()
         for path in payload.rglob("*")
@@ -2626,6 +2640,7 @@ def run_patch_task(
     enable_trace: bool = False,
     partial_override: bool = False,
     replacement_font: str = "",
+    image_overlay_spec: str = "",
 ) -> None:
     """Build a patch.  ``partial_override`` is the explicit, user-confirmed safe-subset action (see patch_gate.partial_patch_override)."""
     from vntext.patch_gate import partial_patch_override
@@ -2633,7 +2648,7 @@ def run_patch_task(
     with partial_patch_override(partial_override):
         _run_patch_task_impl(csv_path, manifest_path, src, out, progress=progress, log=log, complete=complete,
                              patch_out_override=patch_out_override, include_installer=include_installer,
-                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override, replacement_font=replacement_font)
+                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec)
 
 
 def _run_patch_task_impl(
@@ -2651,6 +2666,7 @@ def _run_patch_task_impl(
     enable_trace: bool = False,
     partial_override: bool = False,
     replacement_font: str = "",
+    image_overlay_spec: str = "",
 ) -> None:
     trace = None
     patch_out: Path | None = None
@@ -2725,7 +2741,7 @@ def _run_patch_task_impl(
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
             log("Ren'Py: đang tạo native overlay.")
-        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font)
+        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,
         # per-target read-back report before any optional overlay is accepted.

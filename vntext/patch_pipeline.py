@@ -70,7 +70,7 @@ def detect_patch_engine(manifest: dict) -> str:
     return "unity"
 
 
-def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None):
+def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None):
     import json as _json
     _manifest_probe = _json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -80,13 +80,31 @@ def apply_translation_package(csv_path: str, manifest_path: str, game_root: str,
     validate_patch_output(game_root, output_dir, transactional_existing=engine == "renpy")
     if engine == "renpy":
         from vntext.patch_renpy import apply_renpy_translation_package
-        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback, replacement_font=replacement_font)
-    if replacement_font:
-        raise ValueError("Unity/TMP font replacement requires a verified mapping adapter")
+        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec)
+    if image_overlay_spec:
+        raise ValueError("Image overlays are implemented only for Ren'Py locale images")
     from vntext.patch_font_preflight import font_report
-    evidence = font_report("unity", read_translation_rows(csv_path).values())
+    translations = [str(row.get("translation") or "") if isinstance(row, dict) else str(row) for row in read_translation_rows(csv_path).values()]
+    evidence = font_report("unity", translations)
+    adapter = None
+    if replacement_font:
+        # Mono/TMP runtime adapter only: every guard (engine, scripting backend, TMP assemblies, schema, glyphs, binary) is checked before any output exists.
+        from vntext import unity_tmp_adapter
+        adapter = unity_tmp_adapter.bundled_adapter_path()
+        support = unity_tmp_adapter.inspect_runtime_support(game_root)
+        if not support["supported"]:
+            raise ValueError("Unity TMP runtime adapter refused: " + "; ".join(support["reasons"]))
+        unity_tmp_adapter.inspect_adapter_binary(adapter.read_bytes())
+        font_check = unity_tmp_adapter.inspect_font(Path(replacement_font), unity_tmp_adapter.required_characters(translations))
+        if font_check["missing"]:
+            raise ValueError("Selected font lacks translated glyphs: " + ", ".join(str(code) for code in font_check["missing"][:24]))
     try:
         result = _apply_unity_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback)
+        if adapter is not None:
+            adapter_evidence = unity_tmp_adapter.stage_adapter_payload(game_root, output_dir, replacement_font, translations, adapter)
+            evidence.update({"glyph_status": "PASS", "mapping_status": adapter_evidence["mapping_status"], "runtime_status": "NOT_PROVEN",
+                             "sha256": adapter_evidence["font_sha256"], "compatible": False,
+                             "reason": "TMP global-fallback adapter staged; runtime acceptance requires a separate native verdict."})
         (Path(output_dir) / "font_preflight.json").write_text(_json.dumps(evidence, indent=2), encoding="utf-8")
         return result
     finally:

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Mono/TMP runtime adapter for Unity players (netstandard2.0, loaded through RuntimeInitializeOnLoads.json).
+       Built against compile-only stubs of the Unity assemblies; build with -p:VNTextNetStandardRef=<sdk>\sdk\<ver>\ref\netstandard.dll. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
+    <NoStdLib>true</NoStdLib>
+    <AssemblyName>VNTextTmpFonts</AssemblyName>
+    <RootNamespace>VNTextTmpFonts</RootNamespace>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Deterministic>true</Deterministic>
+    <DebugType>none</DebugType>
+    <Nullable>disable</Nullable>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Startup.cs" />
+    <Reference Include="netstandard" HintPath="$(VNTextNetStandardRef)" Private="false" />
+    <ProjectReference Include="Stubs\UnityEngine.CoreModule\UnityEngine.CoreModule.csproj" Private="false" />
+    <ProjectReference Include="Stubs\UnityEngine.TextRenderingModule\UnityEngine.TextRenderingModule.csproj" Private="false" />
+    <ProjectReference Include="Stubs\Unity.TextMeshPro\Unity.TextMeshPro.csproj" Private="false" />
+  </ItemGroup>
+</Project>

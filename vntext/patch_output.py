@@ -67,6 +67,17 @@ def write_patch_manifest(output_dir: Path, game_base: Path, version: str) -> dic
             matching = [file for file in files if file["path"] == font_payload]
             if len(matching) != 1 or matching[0]["source_sha256"] != manifest["font_preflight"]["sha256"]:
                 raise ValueError("Prepared font payload differs from glyph preflight")
+    if (output_dir / "unity_tmp_adapter.json").is_file():
+        # The runtime adapter payload is re-derived from the current game; the installer then also binds the exact TMP/Unity assemblies and registration files.
+        from vntext import unity_tmp_adapter
+        adapter_evidence = unity_tmp_adapter.verify_staged_payload(game_base, output_dir)
+        by_path = {file["path"]: file for file in files}
+        for relative, digest in adapter_evidence["payload"].items():
+            if by_path.get(relative, {}).get("source_sha256") != digest:
+                raise ValueError("Unity adapter payload differs from its evidence: " + relative)
+        # Only the player assemblies are identity checks; the two registration files are covered by the per-file original hashes (they change on install).
+        manifest["game_checks"] = [check for check in adapter_evidence["game_checks"] if "/Managed/" in check["path"]]
+        manifest["unity_tmp_adapter"] = {key: adapter_evidence[key] for key in ("adapter_sha256", "font_sha256", "engine_version", "runtime_status", "scope")}
     (output_dir / "patch_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), "utf-8")
     return manifest
 
@@ -115,6 +126,16 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
                 raise ValueError("Font source changed before installer packaging")
             if font_source not in checks:
                 checks.append(font_source)
+    image_report_path = output_dir / "image_overlay.json"
+    image_report = None
+    if image_report_path.is_file():
+        from vntext import renpy_image_overlay
+        image_report = json.loads(image_report_path.read_text(encoding="utf-8"))
+        renpy_image_overlay.validate_report_payload(image_report, payload_root)
+        renpy_image_overlay.verify_baselines(game_base, image_report)
+        for check in renpy_image_overlay.baseline_checks(image_report):
+            if check not in checks:
+                checks.append(check)
     files = []
     for path in sorted(p for p in payload_root.rglob("*") if p.is_file()):
         _no_links(path)
@@ -133,6 +154,13 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
             matching = [file for file in files if file["path"] == font_payload]
             if len(matching) != 1 or matching[0]["source_sha256"] != manifest["font_preflight"]["sha256"]:
                 raise ValueError("Prepared font payload differs from glyph preflight")
+    if image_report is not None:
+        manifest["image_overlay"] = image_report
+        by_path = {file["path"]: file for file in files}
+        for image in image_report["images"]:
+            staged = by_path.get(image["target"])
+            if staged is None or staged["source_sha256"] != image["sha256"]:
+                raise ValueError("Prepared image payload differs from its overlay report")
     (output_dir / "patch_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
 
