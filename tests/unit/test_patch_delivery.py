@@ -363,3 +363,41 @@ class RenpyGeneratedFontDeliveryTests(unittest.TestCase):
             self.assertTrue(completed[-1]["ok"], completed[-1])
             files = sorted(p.relative_to(patch_out / "COPY_TO_GAME_ROOT").as_posix() for p in (patch_out / "COPY_TO_GAME_ROOT").rglob("*") if p.is_file())
             self.assertEqual(["game/tl/vietnamese/vntext.rpy", "game/zzz_vntext_vietnamese.rpy"], files)
+
+    def test_rebuild_from_game_with_generated_bundled_font_overlay(self):
+        with tempfile.TemporaryDirectory(prefix="vntext-renpy-rebuild-") as temp:
+            base = Path(temp)
+            game, csv_path, manifest_path = self._renpy_package(base)
+            (game / "game/gui.rpy").write_text(
+                'style navigation_button_text:\n    font "menu.ttf"\n'
+                'style say_dialogue:\n    font "dialogue.otf"\n',
+                encoding="utf-8",
+            )
+            completed = []
+            for output in (base / "first", base / "second"):
+                run_patch_task(csv_path, manifest_path, str(game), str(base),
+                               progress=lambda _e: None, log=lambda _l: None, complete=completed.append,
+                               patch_out_override=output, include_installer=False)
+                self.assertTrue(completed[-1]["ok"], completed[-1])
+                payload = output / "COPY_TO_GAME_ROOT"
+                script = (payload / "game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
+                report = json.loads((output / "font_preflight.json").read_text(encoding="utf-8"))
+                self.assertIn("translate vietnamese style navigation_button_text:", script)
+                self.assertIn("translate vietnamese style say_dialogue:", script)
+                self.assertTrue((payload / report["payload_font"]).is_file())
+                if output.name == "first":
+                    shutil.copytree(payload, game, dirs_exist_ok=True)
+
+    def test_rebuild_refuses_a_dynamic_translation_style(self):
+        with tempfile.TemporaryDirectory(prefix="vntext-renpy-dynamic-style-") as temp:
+            base = Path(temp)
+            game, csv_path, manifest_path = self._renpy_package(base)
+            prior = game / "game/tl/vietnamese/vntext.rpy"
+            prior.parent.mkdir(parents=True)
+            prior.write_text('translate vietnamese style default:\n    font lookup_font()\n', encoding="utf-8")
+            completed = []
+            run_patch_task(csv_path, manifest_path, str(game), str(base),
+                           progress=lambda _e: None, log=lambda _l: None, complete=completed.append,
+                           patch_out_override=base / "patch", include_installer=False)
+            self.assertFalse(completed[-1]["ok"])
+            self.assertIn("unverifiable existing font style block", str(completed[-1]))

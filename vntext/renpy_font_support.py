@@ -19,6 +19,7 @@ MAX_SCRIPT_BYTES = 32 * 1024 * 1024
 MAX_SCRIPTS = 4096
 _STYLE = re.compile(r"^style ([A-Za-z_]\w*)(?: is [A-Za-z_]\w*)?:\s*(?:#.*)?$")
 _TEXT_FONT = re.compile(r"^font\s+gui\.[A-Za-z_]\w*_font\s*(?:#.*)?$")
+_LITERAL_FONT = re.compile(r"""^font\s+(['"])[^'"\\\r\n]+\.(?:ttf|otf)\1\s*(?:#.*)?$""", re.IGNORECASE)
 _TEXT_PROPERTIES = re.compile(r'''^properties\s+gui\.text_properties\(["'][A-Za-z_]\w*["'](?:,\s*accent\s*=\s*(?:True|False))?\)\s*(?:#.*)?$''')
 
 
@@ -31,7 +32,12 @@ def text_font_styles(scripts: list[str]) -> list[str]:
             if line and not line[:1].isspace() and not line.startswith("#"):
                 match = _STYLE.fullmatch(line)
                 active = match.group(1) if match else None
-            elif active and (_TEXT_FONT.fullmatch(line.strip()) or _TEXT_PROPERTIES.fullmatch(line.strip())):
+            elif active:
+                property_text = line.strip()
+                literal_text_role = active in {"say_dialogue", "say_label", "nvl_dialogue", "nvl_label"} or active.endswith("_text")
+                if not (_TEXT_FONT.fullmatch(property_text) or _TEXT_PROPERTIES.fullmatch(property_text)
+                        or (literal_text_role and _LITERAL_FONT.fullmatch(property_text))):
+                    continue
                 # Icon/glyph roles never inherit the text replacement just because
                 # their property also ends in "_font" or uses gui.text_properties.
                 if any(part in active.casefold() or part in line.casefold() for part in ("icon", "glyph")):

@@ -104,6 +104,18 @@ class RenPyArchiveTests(unittest.TestCase):
                 with self.assertRaisesRegex(RenPyArchiveError, "exceeds 64 MiB"):
                     archive.read_member("game/two.png")
 
+    def test_large_media_does_not_block_reading_small_script(self):
+        import vntext.renpy_archive as archive_module
+
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            path = Path(temp) / "media.rpa"
+            write_rpa(path, {"movie.webm": b"x" * 12, "script.rpy": b"pass\n"})
+            with patch.object(archive_module, "MAX_MEMBER_BYTES", 8):
+                archive = RenPyArchive(path)
+                self.assertEqual(archive.read_member("script.rpy")["content"], b"pass\n")
+                with self.assertRaisesRegex(RenPyArchiveError, "exceeds 64 MiB"):
+                    archive.read_member("movie.webm")
+
 
 if __name__ == "__main__":
     unittest.main()

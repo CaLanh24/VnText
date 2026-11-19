@@ -167,8 +167,9 @@ class RenPyArchive:
                     raise RenPyArchiveError("RPA member chunk fields are invalid")
                 if isinstance(prefix, str): prefix = prefix.encode("latin-1")
                 if match: offset ^= key; length ^= key
-                if offset < len(header) or length < 0 or offset + length > self.index_offset or length + len(prefix) > MAX_MEMBER_BYTES:
-                    raise RenPyArchiveError("RPA member range is outside data area or exceeds 64 MiB")
+                # Large media may be indexed without loading it. Reads still enforce MAX_MEMBER_BYTES.
+                if offset < len(header) or length < 0 or offset + length > self.index_offset:
+                    raise RenPyArchiveError("RPA member range is outside data area")
                 chunks.append((offset, length, prefix)); all_ranges.append((offset, offset + length))
             self.members[raw_name] = tuple(chunks)
         ordered = sorted(all_ranges)

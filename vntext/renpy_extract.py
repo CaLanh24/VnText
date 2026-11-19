@@ -38,6 +38,8 @@ _PROVENANCE = re.compile(
     r'^\s*#\s+(?P<source_file>[^:#\r\n]+\.(?:rpy|rpym)):(?P<source_line>[1-9]\d*)\s*$'
 )
 _IDENTIFIER = re.compile(r'^[A-Za-z_]\w*$')
+_FONT_STYLE_TARGET = re.compile(r"style\s+[A-Za-z_]\w*")
+_FONT_STYLE_BODY = re.compile(r'font\s+"[A-Za-z0-9_./-]+"')
 _QUOTE = r'"(?:\\.|[^"\\])*"'
 _KEYED_QUOTE = re.compile(r'^(?P<key>old|new)\s+(?P<quote>' + _QUOTE + r')\s*$')
 _LABEL = re.compile(r'^label\s+(?P<name>[A-Za-z_]\w*)\s*:\s*(?:#.*)?$')
@@ -585,6 +587,13 @@ def existing_translation_inventory(root: str | Path, language: str = "vietnamese
                 if prior is not None and (kind == "dialogues" or prior["translation"] != record["translation"]):
                     raise RenPyTemplateParseError(f"existing translation conflict: {identity!r}")
                 result[kind][identity] = record
+            if _FONT_STYLE_TARGET.fullmatch(target):
+                # Font directives change rendering, not dialogue/string mappings.
+                if (header.group("indent") or len(content) != 1
+                        or not lines[content[0][0] - 1][:1].isspace()
+                        or not _FONT_STYLE_BODY.fullmatch(content[0][1])):
+                    raise RenPyTemplateParseError(f"unverifiable existing font style block: {path}:{start+1}")
+                continue
             if target == "strings":
                 if len(content) % 2:
                     raise RenPyTemplateParseError(f"unverifiable existing string pair: {path}")
