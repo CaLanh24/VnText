@@ -189,6 +189,17 @@ class RenPyImageOverlayTests(unittest.TestCase):
             (game / "game/screens.rpy").write_text(SCREEN.replace("(10, 60, 60, 30)", "(100, 90, 60, 30)"), encoding="utf-8")
         self._refused(lambda b: self._spec(b, [("gui/overlay/menu.png", _localized(_base_image()))]), extra=screen, needle="hotspot lies outside")
 
+    def test_overlay_generation_does_not_need_numpy_in_the_packaged_worker(self):
+        import sys
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as temp, mock.patch.dict(sys.modules, {"numpy": None}):
+            base = Path(temp)
+            game, csv, manifest = self._game(base)
+            self._apply(base, game, csv, manifest, self._spec(base))
+            report = json.loads((base / "out/image_overlay.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["images"][0]["changed_bbox"][:2], [REGION[0], REGION[1]])
+            self.assertGreater(report["images"][0]["changed_pixels"], 0)
+
     def test_spec_schema_is_strict(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp)

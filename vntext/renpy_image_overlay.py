@@ -157,9 +157,14 @@ def _encode(image, relative: str) -> bytes:
     return stream.getvalue()
 
 
-def _pixels(image):
-    import numpy
-    return numpy.asarray(image)
+def _change_mask(first, second):
+    """'L' image: 255 where any channel differs (Pillow only; the packaged worker ships no numpy)."""
+    from PIL import ImageChops
+    bands = ImageChops.difference(first, second).split()
+    merged = bands[0]
+    for band in bands[1:]:
+        merged = ImageChops.lighter(merged, band)
+    return merged.point(lambda value: 255 if value else 0)
 
 
 def prepare_image_overlays(game_root, spec_path) -> tuple[dict[str, bytes], dict]:
@@ -176,7 +181,7 @@ def prepare_image_overlays(game_root, spec_path) -> tuple[dict[str, bytes], dict
     references = scan_image_references(game_root)
     payloads: dict[str, bytes] = {}
     entries = []
-    import numpy
+    from PIL import Image, ImageChops, ImageDraw
     for item in items:
         if not isinstance(item, dict) or set(item) - {"path", "rendered", "regions"}:
             raise ImageOverlayError("malformed image overlay item")
@@ -201,25 +206,26 @@ def prepare_image_overlays(game_root, spec_path) -> tuple[dict[str, bytes], dict
         hotspots = [spot for block in blocks for spot in block["hotspots"]]
         if any(x + w > base_image.width or y + h > base_image.height for x, y, w, h in hotspots):
             raise ImageOverlayError("a recorded hotspot lies outside the image; the bitmap geometry is not this screen's")
-        allowed = numpy.zeros((base_image.height, base_image.width), dtype=bool)
+        allowed = Image.new("L", base_image.size, 0)
+        draw = ImageDraw.Draw(allowed)
         for x, y, w, h in regions:
-            allowed[y:y + h, x:x + w] = True
-        changed = (_pixels(base_image) != _pixels(rendered)).any(axis=2)
-        if not changed.any():
+            draw.rectangle([x, y, x + w - 1, y + h - 1], fill=255)
+        changed = _change_mask(base_image, rendered)
+        bbox = changed.getbbox()
+        if bbox is None:
             raise ImageOverlayError(f"rendered image is identical to the original: {relative}")
-        if (changed & ~allowed).any():
+        if ImageChops.subtract(changed, allowed).getbbox() is not None:
             raise ImageOverlayError(f"rendered image changes pixels outside the declared regions: {relative}")
         data = _encode(rendered, relative)
         again = _decode(data, relative, "encoded payload")
-        if not (_pixels(again) == _pixels(rendered)).all():
+        if _change_mask(again, rendered).getbbox() is not None:
             raise ImageOverlayError("encoded payload does not read back identically")
-        ys, xs = numpy.nonzero(changed)
         payloads[target] = data
         entries.append({
             "path": relative, "target": target, "sha256": _sha256(data), "rendered_sha256": _sha256(rendered_file.read_bytes()),
             "width": base_image.width, "height": base_image.height, "mode": base_image.mode, "baseline": baseline,
-            "regions": regions, "changed_pixels": int(changed.sum()),
-            "changed_bbox": [int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1],
+            "regions": regions, "changed_pixels": int(changed.histogram()[255]),
+            "changed_bbox": [int(v) for v in bbox],
             "references": [{"file": b["file"], "kind": b["kind"], "line": b["line"], "hotspots": b["hotspots"]} for b in blocks],
         })
     report = {"schema": 1, "language": LANGUAGE, "images": entries,
