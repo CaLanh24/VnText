@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runs the REAL adapter source (Startup.cs, or a baseline copy passed as -p:StartupSource=...) against a fake Unity/TMP engine: scene loads,
+       replaced TMP settings lists and destroyed assets.  Not shipped; no Unity binary needed. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>9.0</LangVersion>
+    <StartupSource Condition="'$(StartupSource)' == ''">$(MSBuildThisFileDirectory)..\..\wpf_app\VNText.UnityTmpAdapter\Startup.cs</StartupSource>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);CS0067;CS0660;CS0661</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="FakeEngine.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="$(StartupSource)" Link="Startup.cs" />
+  </ItemGroup>
+</Project>

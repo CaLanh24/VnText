@@ -22,7 +22,7 @@ def block_body(keys):
 
 
 def engine_stand_in(language, base=None):
-    config = types.SimpleNamespace(font_replacement_map=dict(base or {}))
+    config = types.SimpleNamespace(font_replacement_map=dict(base or {}), interact_callbacks=[])
     engine = types.SimpleNamespace(game=types.SimpleNamespace(preferences=types.SimpleNamespace(language=language)))
     return config, engine, {"config": config, "renpy": engine}
 
@@ -92,6 +92,27 @@ class ReplacementSemanticsTests(unittest.TestCase):
         for language in (None, "spanish"):
             engine.game.preferences.language = language
             self.assertEqual(lookup(("Gothic.ttf", False, False), "D"), "D")
+
+    def test_a_map_assigned_by_the_game_later_is_re_wrapped_at_the_next_interaction_with_entries_kept(self):
+        config, engine, namespace = run_block(self.KEYS)
+        self.assertEqual([c.__name__ for c in config.interact_callbacks], ["_vntext_font_guard"])
+        config.font_replacement_map = {("Other.ttf", True, False): ("Other-Bold.ttf", False, False)}      # e.g. `$ config.font_replacement_map = {...}` in the game
+        self.assertEqual(config.font_replacement_map.get(("Gothic.ttf", False, False), "D"), "D")           # lost until the guard runs
+        for callback in config.interact_callbacks:
+            callback()
+        lookup = config.font_replacement_map.get
+        self.assertEqual(lookup(("Gothic.ttf", False, False), "D"), (TARGET, False, False))
+        self.assertEqual(lookup(("Other.ttf", True, False), "D"), ("Other-Bold.ttf", False, False))        # the game's new entries are kept
+        engine.game.preferences.language = "spanish"
+        config.font_replacement_map = {}
+        config.interact_callbacks[0]()
+        self.assertEqual(config.font_replacement_map, {})                                                    # other languages are never touched
+
+    def test_guard_is_registered_once_across_language_changes(self):
+        config, _engine, namespace = run_block(self.KEYS)
+        for _ in range(3):
+            exec(block_body(self.KEYS), namespace)
+        self.assertEqual([c.__name__ for c in config.interact_callbacks], ["_vntext_font_guard"])
 
     def test_malformed_requests_never_raise_and_rerun_is_idempotent(self):
         config, _engine, namespace = run_block(self.KEYS)
