@@ -98,7 +98,7 @@ internal static partial class Program
                                     var confirm = app.Windows.OfType<AppDialogWindow>().FirstOrDefault(candidate => !ReferenceEquals(candidate, window) && candidate.IsVisible);
                                     if (confirm is null) { if (step > 60) throw new InvalidOperationException("clean-original confirmation never appeared"); return; }
                                     timer.Stop();
-                                    var confirmText = string.Join("\n", Descendants<TextBlock>(confirm).Select(block => block.Text));
+                                    var confirmText = string.Join("\n", Descendants<TextBox>(confirm).Select(box => box.Text));
                                     Require(confirmText.Contains("bản gốc đầu tiên") && confirmText.Contains("không bị xóa"), "the confirmation names the first original and unmanaged files");
                                     Shot(confirm, outDir, "install-dialog-confirm-clean.png");
                                     var no = Descendants<Button>(confirm).Single(button => (button.Content as string) == "Không");
@@ -113,7 +113,7 @@ internal static partial class Program
                                     }));
                                 }
                             }
-                            catch (Exception ex) { failure = ex; timer.Stop(); try { window.Close(); } catch { } owner.Close(); }
+                            catch (Exception ex) { failure = ex; timer.Stop(); try { window.Close(); } catch { } owner.Close(); Dispatcher.CurrentDispatcher.BeginInvokeShutdown(DispatcherPriority.Background); }
                         };
                         timer.Start();
                         dialog.ShowDialog();
@@ -127,6 +127,7 @@ internal static partial class Program
             catch (Exception ex) { Console.Error.WriteLine("install-dialog fixture failed: " + ex); exitCode = 1; }
             finally { try { Directory.Delete(work, true); } catch { } }
         });
+        thread.IsBackground = true;
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
         thread.Join(TimeSpan.FromMinutes(2));
