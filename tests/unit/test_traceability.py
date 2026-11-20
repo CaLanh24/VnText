@@ -992,7 +992,7 @@ class TraceStoreTests(unittest.TestCase):
         patch_out = self.root / "patch-output"
         completed: list[dict] = []
 
-        def fake_apply(_csv, _manifest, _game, output, _progress):
+        def fake_apply(_csv, _manifest, _game, output, _progress, replacement_font=None):
             destination = Path(output) / "COPY_TO_GAME_ROOT"
             destination.mkdir(parents=True, exist_ok=True)
             (destination / "data.assets").write_text("wrong", encoding="utf-8")
@@ -1048,7 +1048,7 @@ class TraceStoreTests(unittest.TestCase):
         completed: list[dict] = []
         state = {"cancelled": False}
 
-        def cancel_during_apply(_csv, _manifest, _game, _output, progress):
+        def cancel_during_apply(_csv, _manifest, _game, _output, progress, replacement_font=None):
             # The host cancel is first observed by the worker progress callback.
             state["cancelled"] = True
             progress({"done": 1, "total": 2, "step": "Patch", "item": "1/2"})
