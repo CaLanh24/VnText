@@ -65,7 +65,9 @@ internal sealed class PatchInstallDialog
     {
         if (_busy || !_revisionValid()) { _status.Text = UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."); return; }
         var question = restore ? "Gỡ patch và hoàn nguyên các file gốc đã sao lưu?" : "Cài patch vào thư mục game này? Bản gốc sẽ được sao lưu.";
-        if (AppDialogService.Show(UiText.Translate(question) + "\n\n" + _target.Text + "\n\n" + _fontState, UiText.Translate("Cài trong VNText"), MessageBoxButton.YesNo, MessageBoxImage.Warning, _window) != MessageBoxResult.Yes) return;
+        var ownership = "";
+        try { if (!restore) ownership = string.Join("\n", _service.DescribeOwnership(_target.Text)); } catch (Exception) { /* the install itself re-validates and reports */ }
+        if (AppDialogService.Show(UiText.Translate(question) + "\n\n" + _target.Text + "\n\n" + _fontState + (ownership.Length == 0 ? "" : "\n\n" + ownership),UiText.Translate("Cài trong VNText"), MessageBoxButton.YesNo, MessageBoxImage.Warning, _window) != MessageBoxResult.Yes) return;
         _busy = true; _install.IsEnabled = _restore.IsEnabled = _browse.IsEnabled = false;
         _progress.Visibility = Visibility.Visible;
         _window.CloseButton.IsEnabled = false;
@@ -76,8 +78,9 @@ internal sealed class PatchInstallDialog
             using var manifestLease = new FileStream(_service.ManifestPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (!_revisionValid() || Convert.ToHexString(SHA256.HashData(manifestLease)) != _manifestHash)
                 throw new InvalidDataException(UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."));
-            await Task.Run(() => { if (restore) _service.Uninstall(game, Progress); else _service.Install(game, Progress); });
-            _status.Text = UiText.Translate(restore ? "Đã hoàn nguyên." : "Đã cài patch và kiểm tra file.");
+            List<string> notes = new();
+            await Task.Run(() => { if (restore) notes = _service.Uninstall(game, Progress).Notes; else notes = _service.Install(game, Progress).Notes ?? new List<string>(); });
+            _status.Text = UiText.Translate(restore ? "Đã hoàn nguyên." : "Đã cài patch và kiểm tra file.") + (notes.Count == 0 ? "" : "\n" + string.Join("\n", notes));
         }
         catch (Exception ex) { _status.Text = ex.Message; }
         finally { var terminal = _status.Text; _busy = false; _window.CloseButton.IsEnabled = true; _progress.Visibility = Visibility.Collapsed; _browse.IsEnabled = true; Refresh(); _status.Text = terminal; }

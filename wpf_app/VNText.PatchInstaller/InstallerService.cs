@@ -37,7 +37,9 @@ public sealed record InstallState(
     [property: JsonPropertyName("game_root")] string GameRoot,
     [property: JsonPropertyName("patch_version")] string PatchVersion,
     [property: JsonPropertyName("files")] List<InstalledFile> Files,
-    [property: JsonPropertyName("compiled_caches")] List<CompiledCache>? CompiledCaches = null);
+    [property: JsonPropertyName("compiled_caches")] List<CompiledCache>? CompiledCaches = null,
+    [property: JsonPropertyName("patch_id")] string? PatchId = null,
+    [property: JsonPropertyName("notes")] List<string>? Notes = null);
 
 public sealed record CompiledCache(
     [property: JsonPropertyName("path")] string Path,
@@ -45,7 +47,7 @@ public sealed record CompiledCache(
     [property: JsonPropertyName("original_sha256")] string OriginalSha256,
     [property: JsonPropertyName("source_digests")] List<string> SourceDigests);
 
-public sealed class InstallerService
+public sealed partial class InstallerService
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true, WriteIndented = true };
 
@@ -125,6 +127,26 @@ public sealed class InstallerService
         if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
         var manifest = LoadManifest();
         if (Directory.Exists(BackupDirectory)) throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
+        var receipt = LoadReceipt(root);
+        var patchId = PatchId();
+        var notes = new List<string>();
+        var createdOriginals = new List<string>();
+        var priorReceipt = File.Exists(ReceiptPath(root)) ? File.ReadAllBytes(ReceiptPath(root)) : null;
+        // A different VNText patch that is verifiably active may be upgraded only when this patch was built from exactly its installed bytes;
+        // otherwise (or when the owned file was edited) layering is refused and nothing is written.
+        foreach (var file in manifest.Files)
+        {
+            var target = ResolveSafe(root, file.Path);
+            var owner = NewerOwner(receipt, file.Path, patchId);
+            if (owner is null && receipt.Paths.TryGetValue(file.Path, out var same) && same.Layers.Count > 0)
+                throw new InvalidOperationException("Patch này đã được ghi nhận là đang cài ở game này.");
+            if (owner is null) continue;
+            if (!File.Exists(target) || !string.Equals(HashFile(target), owner.InstalledSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"{file.Path}: tệp do patch VNText {owner.Version} quản lý đã bị sửa ngoài VNText; không cài chồng. Gỡ hoặc khôi phục game trước.");
+            if (!string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"{file.Path}: đang cài patch VNText {owner.Version} nhưng patch này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ patch hiện tại rồi cài lại, hoặc tạo patch mới từ game đang cài.");
+            notes.Add($"{file.Path}: nâng cấp từ patch VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
+        }
         Directory.CreateDirectory(BackupDirectory);
         var prepared = new List<InstalledFile>();
         var caches = new List<CompiledCache>();
@@ -145,9 +167,11 @@ public sealed class InstallerService
                     var source = File.ReadAllBytes(ResolveSafe(PayloadDirectory, file.Path));
                     // Ren'Py 8.3 hashes raw source; 8.5 adds RPYC_MAGIC. Never
                     // deserialize a cache: only the compiler's header/trailer.
-                    caches.Add(new CompiledCache(relative, exists, exists ? HashFile(cache) : "",
-                        new List<string> { Convert.ToHexString(MD5.HashData(source)),
-                            Convert.ToHexString(MD5.HashData(source.Concat(System.Text.Encoding.ASCII.GetBytes("_2025-07-06")).ToArray())) }));
+                    var digests = new List<string> { Convert.ToHexString(MD5.HashData(source)),
+                        Convert.ToHexString(MD5.HashData(source.Concat(System.Text.Encoding.ASCII.GetBytes("_2025-07-06")).ToArray())) };
+                    caches.Add(new CompiledCache(relative, exists, exists ? HashFile(cache) : "", digests));
+                    var cacheEntry = Claim(root, receipt, relative, "cache", patchId, manifest.Version, "", createdOriginals, notes);
+                    foreach (var digest in digests) if (!cacheEntry.SourceDigests.Contains(digest, StringComparer.OrdinalIgnoreCase)) cacheEntry.SourceDigests.Add(digest);
                 }
             foreach (var file in manifest.Files)
             {
@@ -159,6 +183,7 @@ public sealed class InstallerService
                 if (exists && !string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"File game đã bị thay đổi, không ghi đè: {file.Path}");
 
+                Claim(root, receipt, file.Path, "file", patchId, manifest.Version, file.SourceSha256, createdOriginals, notes);
                 var backupRel = file.Path.Replace('/', Path.DirectorySeparatorChar);
                 var backup = ResolveSafe(BackupDirectory, backupRel);
                 if (exists)
@@ -175,22 +200,42 @@ public sealed class InstallerService
                 if (!string.Equals(HashFile(target), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Kiểm hash sau khi cài thất bại: {file.Path}");
             }
-            var state = new InstallState(root, manifest.Version, prepared, caches);
+            var state = new InstallState(root, manifest.Version, prepared, caches, patchId, notes);
             WriteJsonAtomic(StatePath, state);
+            SaveReceipt(root, receipt);
             return state;
         }
         catch
         {
             Rollback(root, prepared);
             if (Directory.Exists(BackupDirectory)) Directory.Delete(BackupDirectory, true);
+            if (File.Exists(StatePath)) File.Delete(StatePath);
+            foreach (var kept in createdOriginals) if (File.Exists(kept)) File.Delete(kept);
+            if (priorReceipt is null) { if (File.Exists(ReceiptPath(root))) File.Delete(ReceiptPath(root)); }
+            else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(ReceiptPath(root), priorReceipt); }
+            TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
             throw;
         }
     }
 
-    public void Uninstall(string gameRoot, Action<string>? progress = null)
+    public UninstallResult Uninstall(string gameRoot, Action<string>? progress = null, UninstallMode mode = UninstallMode.Previous)
     {
         var state = ValidateInstalledState(gameRoot);
         var root = NormalizeGameRoot(state.GameRoot);
+        var notes = new List<string>();
+        if (mode == UninstallMode.CleanOriginal)
+        {
+            var clean = RestoreCleanOriginal(root, state, progress);
+            File.Delete(StatePath);
+            DeleteConsumedBackups(state);
+            return clean;
+        }
+        var receipt = LoadReceipt(root);
+        foreach (var entry in state.Files.Where(f => f.OriginalExists))
+            if (receipt.Paths.TryGetValue(entry.Path, out var owned) && owned.Layers.Count == 1 && owned.Provenance == "legacy_vntext_unreceipted")
+                notes.Add($"{entry.Path}: đã khôi phục bản Việt hóa VNText cũ không có biên nhận (không phải game gốc sạch); gỡ tiếp patch cũ nếu cần.");
+            else if (owned is not null && owned.Layers.Count == 1 && owned.Provenance == "unmanaged_existing")
+                notes.Add($"{entry.Path}: đã khôi phục tệp có sẵn không do VNText quản lý.");
         foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
         {
             progress?.Invoke(cache.Path);
@@ -219,7 +264,16 @@ public sealed class InstallerService
                 File.Delete(target);
             }
         }
+        foreach (var path in state.Files.Select(f => f.Path).Concat((state.CompiledCaches ?? new List<CompiledCache>()).Select(c => c.Path)))
+            RemoveLayer(receipt, root, path, state.PatchId ?? "");
+        SaveReceipt(root, receipt);
         File.Delete(StatePath);
+        DeleteConsumedBackups(state);
+        return new UninstallResult(notes);
+    }
+
+    private void DeleteConsumedBackups(InstallState state)
+    {
         // Remove only our consumed backups. Foreign additions are preserved.
         var consumed = state.Files.Where(f => f.OriginalExists).Select(f => f.BackupPath)
             .Concat((state.CompiledCaches ?? new List<CompiledCache>()).Where(c => c.OriginalExists).Select(c => c.Path));
@@ -254,9 +308,18 @@ public sealed class InstallerService
         if (!string.Equals(NormalizeGameRoot(state.GameRoot), root, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Bạn đang chọn khác thư mục game đã cài patch.");
 
+        var receipt = LoadReceipt(root);
         foreach (var file in state.Files)
         {
             var target = ResolveSafe(root, file.Path);
+            if (!File.Exists(target) || !string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(state.PatchId) && NewerOwner(receipt, file.Path, state.PatchId) is { } newer)
+                    throw new InvalidOperationException($"{file.Path}: patch VNText {newer.Version} mới hơn đang quản lý tệp này; gỡ patch đó trước (hoặc chọn Khôi phục bản gốc từ patch đó).");
+                if (!string.IsNullOrEmpty(state.PatchId) && !(receipt.Paths.TryGetValue(file.Path, out var mine)
+                    && mine.Layers.Any(layer => string.Equals(layer.PatchId, state.PatchId, StringComparison.OrdinalIgnoreCase))))
+                    throw new InvalidOperationException($"{file.Path}: patch này đã bị thay thế hoặc gỡ qua Khôi phục bản gốc; không còn gì để gỡ.");
+            }
             if (!File.Exists(target) || !string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"File đã bị thay đổi sau khi cài, không tự động khôi phục: {file.Path}");
             // Resolve the backup path during validation too, so a malformed
@@ -289,7 +352,8 @@ public sealed class InstallerService
                 throw new InvalidOperationException($"Cache đã thay đổi ngoài patch, không tự xóa: {cache.Path}");
             stream.Seek(-16, SeekOrigin.End);
             if (stream.Read(digest) != 16 || cache.SourceDigests is null
-                || !cache.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase))
+                || !(cache.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase)
+                || (receipt.Paths.TryGetValue(cache.Path, out var known) && known.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase))))
                 throw new InvalidOperationException($"Cache không khớp nguồn patch, không tự xóa: {cache.Path}");
         }
         return state;

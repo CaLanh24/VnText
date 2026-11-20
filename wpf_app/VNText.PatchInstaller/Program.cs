@@ -16,20 +16,29 @@ internal static class Program
             MessageBox.Show(ex.Message, "Không mở được patch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
-        if (args.Length >= 2 && (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase) || args[0].Equals("--uninstall", StringComparison.OrdinalIgnoreCase)))
+        if (args.Length >= 2 && (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase) || args[0].Equals("--uninstall", StringComparison.OrdinalIgnoreCase)
+            || args[0].Equals("--restore-original", StringComparison.OrdinalIgnoreCase) || args[0].Equals("--status", StringComparison.OrdinalIgnoreCase)))
         {
             try
             {
                 var service = new InstallerService(args.Length >= 3 ? args[2] : patchDir);      // a bundled EXE uses its own verified payload
-                if (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase))
+                if (args[0].Equals("--status", StringComparison.OrdinalIgnoreCase))
+                {
+                    var lines = service.DescribeOwnership(args[1]);
+                    Console.WriteLine(lines.Count == 0 ? "Không có tệp nào do VNText hoặc người dùng đang giữ ở các đường dẫn của patch này." : string.Join(Environment.NewLine, lines));
+                }
+                else if (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase))
                 {
                     var state = service.Install(args[1]);
                     Console.WriteLine($"Installed {state.Files.Count} files to {state.GameRoot}");
+                    foreach (var note in state.Notes ?? new List<string>()) Console.WriteLine(note);
                 }
                 else
                 {
-                    service.Uninstall(args[1]);
-                    Console.WriteLine("Uninstalled and restored original files");
+                    var clean = args[0].Equals("--restore-original", StringComparison.OrdinalIgnoreCase);
+                    var result = service.Uninstall(args[1], null, clean ? UninstallMode.CleanOriginal : UninstallMode.Previous);
+                    Console.WriteLine(clean ? "Restored the first original recorded before any VNText patch" : "Uninstalled and restored the files this install replaced");
+                    foreach (var note in result.Notes) Console.WriteLine(note);
                 }
                 return 0;
             }

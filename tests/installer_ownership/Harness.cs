@@ -1,0 +1,232 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using VNText.PatchInstaller;
+
+internal static class Harness
+{
+    private static readonly List<string> Results = new();
+    private static bool allPass = true;
+    private const string Overlay = "game/tl/vietnamese/vntext.rpy";
+    private const string Activation = "game/zzz_vntext_vietnamese.rpy";
+
+    private static void Check(string name, bool ok, string detail = "")
+    {
+        Results.Add("{\"check\":" + JsonSerializer.Serialize(name) + ",\"pass\":" + (ok ? "true" : "false") + (ok ? "" : ",\"detail\":" + JsonSerializer.Serialize(detail)) + "}");
+        allPass &= ok;
+    }
+
+    private static string Sha(byte[] data) => Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
+    private static string Sha(string path) => Sha(File.ReadAllBytes(path));
+    private static byte[] Bytes(string text) => new UTF8Encoding(false).GetBytes(text);
+
+    private static string NewGame(string work, string name)
+    {
+        var root = Path.Combine(work, name);
+        foreach (var directory in new[] { "game", "renpy", "lib" }) Directory.CreateDirectory(Path.Combine(root, directory));
+        File.WriteAllBytes(Path.Combine(root, "Game.exe"), Bytes("exe"));
+        File.WriteAllBytes(Path.Combine(root, "game/script.rpy"), Bytes("label start:\n    return\n"));
+        return root;
+    }
+
+    private sealed record Spec(string Path, string Content, bool OriginalExists, string? OriginalContent);
+
+    /// <summary>A patch folder exactly as the generator writes it: payload + manifest bound to the game's current files.</summary>
+    private static InstallerService MakePatch(string work, string name, string version, string gameRoot, params Spec[] files)
+    {
+        var dir = Path.Combine(work, name);
+        Directory.CreateDirectory(dir);
+        var entries = new List<PatchFile>();
+        foreach (var file in files)
+        {
+            var payload = Path.Combine(dir, "COPY_TO_GAME_ROOT", file.Path.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(payload)!);
+            File.WriteAllBytes(payload, Bytes(file.Content));
+            entries.Add(new PatchFile(file.Path, Sha(Bytes(file.Content)), file.OriginalExists ? Sha(Bytes(file.OriginalContent ?? "")) : "", file.OriginalExists));
+        }
+        var manifest = new PatchManifest(1, version, "2026-11-21T00:00:00Z", "", entries, "", "Game.exe", "renpy",
+            new List<GameCheck> { new("game/script.rpy", Sha(Path.Combine(gameRoot, "game/script.rpy"))) });
+        File.WriteAllText(Path.Combine(dir, "patch_manifest.json"), JsonSerializer.Serialize(manifest));
+        return new InstallerService(dir);
+    }
+
+    /// <summary>What Ren'Py writes after running the game: a compiled cache bound to the source's MD5.</summary>
+    private static void CompileCache(string root, string relative, string source)
+    {
+        var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar) + "c");
+        var bytes = new List<byte>(Encoding.ASCII.GetBytes("RENPY RPC2"));
+        bytes.AddRange(new byte[40]);
+        bytes.AddRange(MD5.HashData(Bytes(source)));
+        File.WriteAllBytes(path, bytes.ToArray());
+    }
+
+    private static string? Read(string root, string relative)
+    {
+        var path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        return File.Exists(path) ? File.ReadAllText(path) : null;
+    }
+
+    private static bool Throws(Action action, string contains, out string message)
+    {
+        try { action(); message = "no exception"; return false; }
+        catch (Exception ex) { message = ex.Message; return ex.Message.Contains(contains, StringComparison.OrdinalIgnoreCase); }
+    }
+
+    private static string Receipt(string root) => Path.Combine(root, ".vntext", "ownership.json");
+
+    private static string Snapshot(string root)
+    {
+        var lines = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories).OrderBy(p => p, StringComparer.Ordinal)
+            .Select(p => Path.GetRelativePath(root, p) + "=" + Sha(p));
+        return string.Join("\n", lines);
+    }
+
+    public static int Main()
+    {
+        var work = Path.Combine(Path.GetTempPath(), "vntext-ownership-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(work);
+        const string v24 = "# VNText language-scoped text font support v1\ntranslate vietnamese style default:\n    font \"old.ttf\"\n";
+        const string v25 = "# VNText language-scoped text font support v1\ntranslate vietnamese style default:\n    font \"new.ttf\"\n";
+        const string act = "# activation\ntranslate None python:\n    pass\n";
+
+        // 1. install old (clean game), upgrade to new, game runs (compiled cache), then step back: previous, then the clean original.
+        {
+            var game = NewGame(work, "g1");
+            var old = MakePatch(work, "p24", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            var state24 = old.Install(game);
+            Check("old install writes both files and a receipt", Read(game, Overlay) == v24 && File.Exists(Receipt(game)) && state24.PatchId is { Length: 64 });
+            CompileCache(game, Overlay, v24);
+            var next = MakePatch(work, "p25", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+            Check("preflight describes a proven upgrade", string.Join("|", next.DescribeOwnership(game)).Contains("nâng cấp") );
+            var state25 = next.Install(game);
+            Check("upgrade installs the new overlay and says it is an upgrade", Read(game, Overlay) == v25 && string.Join("|", state25.Notes ?? new()).Contains("nâng cấp"));
+            Check("receipt keeps the first original as 'did not exist' with two layers", JsonDocument.Parse(File.ReadAllText(Receipt(game))).RootElement.GetProperty("paths").GetProperty(Overlay).GetProperty("layers").GetArrayLength() == 2
+                && !JsonDocument.Parse(File.ReadAllText(Receipt(game))).RootElement.GetProperty("paths").GetProperty(Overlay).GetProperty("first_original_exists").GetBoolean());
+            Check("the older patch refuses to uninstall under a newer layer", Throws(() => old.Uninstall(game), "mới hơn", out var m1), "");
+            CompileCache(game, Overlay, v25);
+            next.Uninstall(game);
+            Check("uninstalling the new patch restores the previous payload and the previous cache", Read(game, Overlay) == v24 && File.Exists(Path.Combine(game, "game/tl/vietnamese/vntext.rpyc")));
+            Check("receipt still holds the first original after the step back", File.Exists(Receipt(game)));
+            old.Uninstall(game);
+            Check("uninstalling the old patch leaves the game clean", !File.Exists(Path.Combine(game, Overlay.Replace('/', '\\'))) && !File.Exists(Path.Combine(game, Activation)) && !File.Exists(Path.Combine(game, "game/tl/vietnamese/vntext.rpyc")));
+            Check("no receipt or backup debris remains", !Directory.Exists(Path.Combine(game, ".vntext")) && !Directory.Exists(old.BackupDirectory) && !Directory.Exists(next.BackupDirectory) && !File.Exists(old.StatePath) && !File.Exists(next.StatePath));
+        }
+
+        // 2. clean-original restore from the newest layer removes every VNText layer and its compiled caches; older state says so.
+        {
+            var game = NewGame(work, "g2");
+            var original = Snapshot(game);
+            var old = MakePatch(work, "q24", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            old.Install(game);
+            CompileCache(game, Overlay, v24);
+            var next = MakePatch(work, "q25", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+            next.Install(game);
+            CompileCache(game, Overlay, v25);
+            var result = next.Uninstall(game, null, UninstallMode.CleanOriginal);
+            Check("clean-original restore returns the game byte-identical to before any VNText patch", Snapshot(game) == original, Snapshot(game));
+            Check("clean-original restore reports the removed older layer", string.Join("|", result.Notes).Contains("lớp patch cũ hơn"));
+            Check("the superseded older patch says nothing is left to uninstall", Throws(() => old.Uninstall(game), "đã bị thay thế", out var m2), "");
+        }
+
+        // 3. refuse layering when the new patch was not built from the active install; tamper of an owned file; both leave the game untouched.
+        {
+            var game = NewGame(work, "g3");
+            var old = MakePatch(work, "r24", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            old.Install(game);
+            var before = Snapshot(game);
+            var fromClean = MakePatch(work, "r25", "0.1.25", game, new Spec(Overlay, v25, false, null), new Spec(Activation, act, false, null));
+            Check("a patch built from a different state is refused as layering", Throws(() => fromClean.Install(game), "không nâng cấp chứng minh được", out var m3), m3);
+            Check("the refused layering wrote nothing", Snapshot(game) == before && !Directory.Exists(fromClean.BackupDirectory) && !File.Exists(fromClean.StatePath));
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), v24 + "# user edit\n");
+            var proven = MakePatch(work, "r25b", "0.1.25", game, new Spec(Overlay, v25, true, v24 + "# user edit\n"), new Spec(Activation, act, true, act));
+            var edited = Snapshot(game);
+            Check("an owned file edited outside VNText is never layered over", Throws(() => proven.Install(game), "đã bị sửa ngoài VNText", out var m4), m4);
+            Check("the tampered game is left byte-identical", Snapshot(game) == edited);
+        }
+
+        // 4. torn upgrade: the second file does not match its manifest, so the first (already written) file must roll back and the receipt stay as it was.
+        {
+            var game = NewGame(work, "g4");
+            var old = MakePatch(work, "s24", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            old.Install(game);
+            var before = Snapshot(game);
+            var mismatch = MakePatch(work, "s25a", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, "something else"));
+            Check("an upgrade whose files do not match the active install is refused before any write", Throws(() => mismatch.Install(game), "không nâng cấp chứng minh được", out var m5a), m5a);
+            Check("the refused upgrade left everything as it was", Snapshot(game) == before && !Directory.Exists(mismatch.BackupDirectory) && !File.Exists(mismatch.StatePath));
+            File.WriteAllText(Path.Combine(game, "game", "blocked"), "a file where a folder is needed");
+            before = Snapshot(game);
+            var torn = MakePatch(work, "s25", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec("game/blocked/extra.rpy", "label x:" + (char)10 + "    return", false, null));
+            Check("a torn upgrade fails after the first file was already written", Throws(() => torn.Install(game), "", out var m5), m5);
+            Check("a torn upgrade rolls back every file, the receipt, and leaves no backup or state", Snapshot(game) == before && Read(game, Overlay) == v24 && !Directory.Exists(torn.BackupDirectory) && !File.Exists(torn.StatePath));
+            File.Delete(Path.Combine(game, "game", "blocked"));
+            old.Uninstall(game);
+            Check("the previous patch can still be uninstalled cleanly after the torn upgrade", !File.Exists(Path.Combine(game, Activation)) && !Directory.Exists(Path.Combine(game, ".vntext")));
+        }
+
+        // 5. an install from before receipts existed: truthfully a previous VNText overlay, never presented as a clean original.
+        {
+            var game = NewGame(work, "g5");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(game, Overlay.Replace('/', '\\')))!);
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), v24);
+            File.WriteAllText(Path.Combine(game, Activation), act);
+            var next = MakePatch(work, "t25", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+            var preflight = string.Join("|", next.DescribeOwnership(game));
+            Check("preflight says the old overlay has no receipt and is not a clean original", preflight.Contains("không có biên nhận") && preflight.Contains("không chứng minh được game gốc sạch"));
+            var state = next.Install(game);
+            Check("install notes carry the same truth", string.Join("|", state.Notes ?? new()).Contains("không có biên nhận"));
+            var before = Snapshot(game);
+            Check("clean-original restore is refused when the first original is an unreceipted VNText overlay", Throws(() => next.Uninstall(game, null, UninstallMode.CleanOriginal), "không phải game gốc sạch", out var m6), m6);
+            Check("the refused clean restore changed nothing", Snapshot(game) == before);
+            var undone = next.Uninstall(game);
+            Check("uninstall puts back the previous overlay and says so", Read(game, Overlay) == v24 && string.Join("|", undone.Notes).Contains("không phải game gốc sạch"));
+        }
+
+        // 6. a Vietnamese overlay the user (or another tool) made: kept byte-for-byte, restored on either uninstall mode, never deleted.
+        foreach (var mode in new[] { UninstallMode.Previous, UninstallMode.CleanOriginal })
+        {
+            var game = NewGame(work, "g6" + mode);
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(game, Overlay.Replace('/', '\\')))!);
+            const string foreign = "translate vietnamese strings:\n    old \"Hi\"\n    new \"Chào\"\n";
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), foreign);
+            var patch = MakePatch(work, "u" + mode, "0.1.25", game, new Spec(Overlay, v25, true, foreign), new Spec(Activation, act, false, null));
+            Check($"preflight names the unmanaged file ({mode})", string.Join("|", patch.DescribeOwnership(game)).Contains("không do VNText quản lý"));
+            patch.Install(game);
+            patch.Uninstall(game, null, mode);
+            Check($"the unmanaged Vietnamese file is restored byte-for-byte ({mode})", Read(game, Overlay) == foreign && !File.Exists(Path.Combine(game, Activation)) && !Directory.Exists(Path.Combine(game, ".vntext")));
+        }
+
+        // 7. damaged receipt or damaged first-original copy: fail closed, touch nothing.
+        {
+            var game = NewGame(work, "g7");
+            var old = MakePatch(work, "v24", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            old.Install(game);
+            var next = MakePatch(work, "v25", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+            next.Install(game);
+            var before = Snapshot(game);
+            var keep = Path.Combine(game, ".vntext", "originals");
+            Check("no first-original copy is stored when the original did not exist", !Directory.Exists(keep) || !Directory.EnumerateFiles(keep, "*", SearchOption.AllDirectories).Any());
+            File.WriteAllText(Receipt(game), "{ not json");
+            var broken = Snapshot(game);
+            Check("an unreadable receipt blocks uninstall without touching the game", Throws(() => next.Uninstall(game), "không đọc được", out var m7), m7);
+            Check("an unreadable receipt blocks a new install", Throws(() => MakePatch(work, "v26", "0.1.26", game, new Spec(Overlay, v25 + "#", true, v25), new Spec(Activation, act, true, act)).Install(game), "không đọc được", out var m8), m8);
+            Check("the blocked operations left everything as it was", Snapshot(game) == broken);
+        }
+        {
+            var game = NewGame(work, "g8");
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(game, Overlay.Replace('/', '\\')))!);
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), "translate vietnamese strings:\n    old \"a\"\n    new \"b\"\n");
+            var foreign = File.ReadAllText(Path.Combine(game, Overlay.Replace('/', '\\')));
+            var patch = MakePatch(work, "w25", "0.1.25", game, new Spec(Overlay, v25, true, foreign), new Spec(Activation, act, false, null));
+            patch.Install(game);
+            var originalCopy = Path.Combine(game, ".vntext", "originals", Overlay.Replace('/', '\\'));
+            File.WriteAllText(originalCopy, "tampered original copy");
+            var before = Snapshot(game);
+            Check("a tampered first-original copy blocks the clean restore", Throws(() => patch.Uninstall(game, null, UninstallMode.CleanOriginal), "thiếu hoặc đã bị thay đổi", out var m9), m9);
+            Check("the blocked clean restore changed nothing", Snapshot(game) == before);
+        }
+
+        Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
+        try { Directory.Delete(work, true); } catch { }
+        return allPass ? 0 : 1;
+    }
+}
