@@ -102,6 +102,7 @@ public sealed partial class MainViewModel
         AnalyzeUnityStatus = "NOT_DETECTED";
         AnalyzeEngineSummary = "Chưa xác định engine";
         AnalyzeEngineDetails = "";
+        AnalyzeAssetLines = Array.Empty<string>();
         AnalyzeResourceCount = 0;
         AnalyzeTextCandidateCount = 0;
         AnalyzePatchableCount = 0;
@@ -202,6 +203,26 @@ public sealed partial class MainViewModel
     {
         get => UiText.Translate(_analyzeEngineDetails);
         private set => Set(ref _analyzeEngineDetails, value);
+    }
+
+    private IReadOnlyList<string> _analyzeAssetLines = Array.Empty<string>();
+    private const int AnalyzeAssetLineCap = 14;
+
+    /// <summary>Per-font / per-image scan status for a Ren'Py game, shown under the scan counts (bounded; the full list stays in the report).</summary>
+    public IReadOnlyList<string> AnalyzeAssetLines
+    {
+        get => _analyzeAssetLines;
+        private set { if (Set(ref _analyzeAssetLines, value)) Raise(nameof(AnalyzeHasAssets)); }
+    }
+
+    public bool AnalyzeHasAssets => _analyzeAssetLines.Count > 0;
+
+    private static IReadOnlyList<string> CapAssetLines(IReadOnlyList<string> lines)
+    {
+        if (lines.Count <= AnalyzeAssetLineCap) return lines;
+        var shown = lines.Take(AnalyzeAssetLineCap - 1).ToList();
+        shown.Add(UiText.Format("… và {0} dòng nữa; xem đầy đủ trong báo cáo phân tích.", lines.Count - shown.Count));
+        return shown;
     }
 
     public bool AnalyzeInventoryComplete
@@ -426,6 +447,7 @@ public sealed partial class MainViewModel
                     ? "Engine: Ren’Py"
                     : "Engine: chưa xác định";
         AnalyzeEngineDetails = BuildAnalyzeEngineDetails(snapshot.UnityStatus, renpyEvidence);
+        AnalyzeAssetLines = CapAssetLines(snapshot.AssetLines);
         AnalyzeResourceCount = snapshot.ResourceCount;
         AnalyzeTextCandidateCount = snapshot.TextCandidateCount;
         AnalyzePatchableCount = snapshot.PatchableCount;
@@ -476,6 +498,7 @@ public sealed partial class MainViewModel
     private void ResetAnalyzeMetrics()
     {
         AnalyzeInventoryComplete = false;
+        AnalyzeAssetLines = Array.Empty<string>();
         AnalyzeUnityStatus = "ĐANG CHẠY";
         AnalyzeResourceCount = 0;
         AnalyzeTextCandidateCount = 0;

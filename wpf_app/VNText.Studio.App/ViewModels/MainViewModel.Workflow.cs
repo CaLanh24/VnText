@@ -619,6 +619,7 @@ public sealed partial class MainViewModel
             manifest_path = manifest,
             partial_override = true,
             replacement_font = _replacementFont,
+            image_overlay_spec = _imageOverlaySpec,
         }, "Đang tạo patch…");
     }
 
@@ -668,6 +669,7 @@ public sealed partial class MainViewModel
             manifest_path = manifest,
             partial_override = true,
             replacement_font = _replacementFont,
+            image_overlay_spec = _imageOverlaySpec,
         }, "Đang tạo patch phần an toàn…");
     }
 

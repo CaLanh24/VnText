@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using VNText.PatchInstaller;
 
 namespace VNText.Studio.App.Services;
 
@@ -17,6 +18,9 @@ public sealed record UnityAnalysisReportSnapshot(
     string ReportPath)
 {
     public int ReviewRiskCount => ReviewRequiredCount + UnsupportedCount;
+
+    /// <summary>Plain-language font / image inventory lines for a Ren'Py folder (empty for other engines).</summary>
+    public IReadOnlyList<string> AssetLines { get; init; } = Array.Empty<string>();
 }
 
 public static class UnityAnalysisReportReader
@@ -47,7 +51,10 @@ public static class UnityAnalysisReportReader
                 GetInt(coverage, "unsupported"),
                 GetInt(summary, "unknown_resources"),
                 scanErrors,
-                reportPath);
+                reportPath)
+            {
+                AssetLines = root.TryGetProperty("renpy_assets", out var assets) ? AssetInventoryPresentation.FromScan(assets) : Array.Empty<string>(),
+            };
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

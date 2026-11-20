@@ -167,6 +167,10 @@ def run_analyze_worker(
         if is_cancelled():
             _finish_cancelled(task_id)
             return
+        from vntext.renpy_asset_scan import scan_renpy_assets
+        renpy_assets = scan_renpy_assets(src)     # Ren'Py game folders only: per-font / per-image status with reasons, shown by the Scan step
+        if renpy_assets is not None:
+            report["renpy_assets"] = renpy_assets
 
         output_path = None
         if report_out:

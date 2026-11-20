@@ -57,7 +57,8 @@ internal class RoundedPanel : Panel
 internal sealed class RoundedButton : Button
 {
     private static readonly Color Blue = Color.FromArgb(0x28, 0x68, 0xE8), BlueHover = Color.FromArgb(0x1F, 0x55, 0xC8), BlueSoft = Color.FromArgb(0xE9, 0xF1, 0xFF),
-        Line = Color.FromArgb(0xD7, 0xDD, 0xE8), Ink = Color.FromArgb(0x11, 0x18, 0x27), Muted = Color.FromArgb(0x8A, 0x96, 0xA8), Disabled = Color.FromArgb(0xF1, 0xF3, 0xF7);
+        Line = Color.FromArgb(0xD7, 0xDD, 0xE8), Ink = Color.FromArgb(0x11, 0x18, 0x27);
+    private static readonly Color Muted = InstallerTheme.C("#8A96A8", "#8392A8"), Disabled = InstallerTheme.C("#F1F3F7", "#273245");
     private bool _hover, _down;
     public bool Primary { get; set; }
 
@@ -132,8 +133,8 @@ internal sealed class InstallerForm : Form
 
     private readonly InstallerService _service;
     private readonly TextBox _gamePath = new() { BorderStyle = BorderStyle.None, Dock = DockStyle.Fill, BackColor = Color.White };
-    private readonly RoundedPanel _card = new() { Radius = 16, Padding = new Padding(28, 24, 28, 24) };
-    private readonly RoundedPanel _statusBox = new() { Radius = 10, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(16, 12, 16, 12), Margin = new Padding(0, 16, 0, 12), MinimumSize = new Size(0, 52) };
+    private readonly RoundedPanel _card = new() { Radius = 16, Padding = new Padding(24, 20, 24, 18) };
+    private readonly RoundedPanel _statusBox = new() { Radius = 10, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(16, 12, 16, 12), Margin = new Padding(0, 14, 0, 10), MinimumSize = new Size(0, 52) };
     private readonly Label _status = new() { AutoSize = true, Location = new Point(16, 12) };
     private readonly Label _description = new() { AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 4, 0, 4) };
     private readonly RoundedButton _install = new("Cài đặt", true) { Enabled = false };
@@ -147,6 +148,15 @@ internal sealed class InstallerForm : Form
     private bool _confirmingInstall;
     private bool _cleanRequested;
 
+    private static readonly Color Field = InstallerTheme.C("#FFFFFF", "#162033"), FieldLine = InstallerTheme.C("#D7DDE8", "#3B4B63");
+    private readonly Label _summary = new() { AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 10, 0, 0) };
+    private readonly TableLayoutPanel _flow = new() { Dock = DockStyle.Top, ColumnCount = 1, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, BackColor = Surface };
+    private readonly Panel _frame = new() { Dock = DockStyle.Fill, Padding = new Padding(16), BackColor = Canvas };
+    private bool _fitting;
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
     public InstallerForm(string patchDir)
     {
         _service = new InstallerService(patchDir);
@@ -155,32 +165,36 @@ internal sealed class InstallerForm : Form
         AutoScaleMode = AutoScaleMode.Dpi; AutoScaleDimensions = new SizeF(96F, 96F);
         Font = new Font("Segoe UI", 10F);
         BackColor = Canvas; ForeColor = Ink;
-        _gamePath.BackColor = Surface; _gamePath.ForeColor = Ink;
-        StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(680, 520); MinimumSize = new Size(560, 500);
+        _gamePath.BackColor = Field; _gamePath.ForeColor = Ink; _gamePath.AccessibleName = "Thư mục game";
+        // A compact dialog sized to its content: fixed width, height follows the content (no resizable or maximisable empty surface).
+        FormBorderStyle = FormBorderStyle.FixedDialog; MaximizeBox = false; StartPosition = FormStartPosition.CenterScreen; KeyPreview = true;
+        ClientSize = new Size(720, 320);              // the in-app modal's width
 
-        // Header: the app's brand mark (same artwork as the app), a real title, then a description that wraps to its own height.
+        // Same content order as the in-app install modal: what will be installed, the font truth, the game folder, the status, then the footer.
         Image? logo = null;
         using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("VNText.Logo.png")) if (stream is not null) logo = Image.FromStream(stream);
-        var mark = new RoundedPicture { Size = new Size(56, 56), Image = logo, Margin = new Padding(0, 0, 16, 0), BackColor = Surface };
-        var title = new Label { Text = "Cài đặt bản Việt hóa", AutoSize = true, Font = new Font("Segoe UI Semibold", 20F), Margin = new Padding(0, 0, 0, 0), Anchor = AnchorStyles.Left };
+        var mark = new RoundedPicture { Size = new Size(48, 48), Image = logo, Margin = new Padding(0, 0, 14, 0), BackColor = Surface };
+        var title = new Label { Text = "Cài trong VNText", AutoSize = true, Font = new Font("Segoe UI Semibold", 18F), Margin = new Padding(0), Anchor = AnchorStyles.Left };
         var heading = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, RowCount = 1, Dock = DockStyle.Top, BackColor = Surface };
         heading.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         heading.Controls.Add(mark, 0, 0); heading.Controls.Add(title, 1, 0);
         _description.Text = "Chọn thư mục gốc của game (Unity hoặc Ren'Py). Chỉ các file bị sửa được sao lưu, để có thể gỡ patch về đúng bản gốc.";
+        _summary.Text = SummaryText();
 
-        var label = new Label { Text = "Thư mục game", AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 16, 0, 6) };
-        var field = new RoundedPanel { Radius = 10, Border = Color.FromArgb(0xD7, 0xDD, 0xE8), Padding = new Padding(12, 11, 12, 8), Height = 42, Dock = DockStyle.Fill };
+        var label = new Label { Text = "Thư mục game", AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 14, 0, 6) };
+        var field = new RoundedPanel { Radius = 10, Fill = Field, Border = FieldLine, Padding = new Padding(12, 11, 12, 8), Height = 42, Dock = DockStyle.Fill };
         field.Controls.Add(_gamePath);
-        _gamePath.Enter += (_, _) => field.Border = Blue; _gamePath.Leave += (_, _) => field.Border = Color.FromArgb(0xD7, 0xDD, 0xE8);
+        _gamePath.Enter += (_, _) => field.Border = Blue; _gamePath.Leave += (_, _) => field.Border = FieldLine;
         _gamePath.TextChanged += (_, _) => RefreshState();
         var pathRow = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, RowCount = 1, Dock = DockStyle.Top, BackColor = Surface };
         pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); pathRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         pathRow.Controls.Add(field, 0, 0); pathRow.Controls.Add(_browse, 1, 0);
 
         _statusBox.Controls.Add(_status);
-        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Bottom, FlowDirection = FlowDirection.LeftToRight, WrapContents = true, BackColor = Surface, Padding = new Padding(0, 12, 0, 0) };
-        actions.Controls.Add(_install); actions.Controls.Add(_uninstall); actions.Controls.Add(_restoreClean); actions.Controls.Add(_confirm); actions.Controls.Add(_cancelConfirm);
+        // Footer: right-aligned like the in-app modal (outline actions, then the primary action last/right-most), directly under the content.
+        _install.Text = "Cài patch"; _uninstall.Text = "Gỡ và hoàn nguyên";
+        var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top, FlowDirection = FlowDirection.RightToLeft, WrapContents = true, BackColor = Surface, Padding = new Padding(0, 6, 0, 0) };
+        foreach (var button in new[] { _install, _confirm, _uninstall, _restoreClean, _cancelConfirm }) { button.Margin = new Padding(10, 0, 0, 0); actions.Controls.Add(button); }
 
         _browse.Click += (_, _) => BrowseGame();
         _install.Click += (_, _) => { _confirmingInstall = true; ShowConfirm(true); };
@@ -203,39 +217,72 @@ internal sealed class InstallerForm : Form
                 return (Good, (clean ? "Đã khôi phục bản gốc đầu tiên trước mọi patch VNText." : "Đã gỡ patch và khôi phục đúng các file mà lần cài này đã thay.") + Environment.NewLine + string.Join(Environment.NewLine, result.Notes));
             });
         };
-        AcceptButton = _install; CancelButton = _cancelConfirm;
-
-        // One column, every row sized by its content (no fixed heights), so nothing is clipped at the default or minimum size or at 150% scaling.
-        var flow = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 7, AutoScroll = true, BackColor = Surface };
-        flow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        foreach (Control c in new Control[] { heading, _description, label, pathRow, _statusBox, _busy })
+        // Native keyboard: Tab follows reading order, Space/Enter act on the focused button, Escape backs out of a confirmation or closes an idle dialog.
+        _gamePath.TabIndex = 0; _browse.TabIndex = 1; _restoreClean.TabIndex = 2; _uninstall.TabIndex = 3; _install.TabIndex = 4; _cancelConfirm.TabIndex = 5; _confirm.TabIndex = 6;
+        foreach (var button in new[] { _browse, _restoreClean, _uninstall, _install, _cancelConfirm, _confirm }) button.TabStop = true;
+        KeyDown += (_, e) =>
         {
-            c.Dock = DockStyle.Top; flow.RowStyles.Add(new RowStyle(SizeType.AutoSize)); flow.Controls.Add(c);
+            if (e.KeyCode != Keys.Escape || _working) return;
+            e.Handled = true; e.SuppressKeyPress = true;
+            if (_confirm.Visible) ShowConfirm(false); else Close();
+        };
+
+        // One column of content-sized rows: nothing stretches to fill spare height, so the card is exactly as tall as its content.
+        _flow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        foreach (Control c in new Control[] { heading, _description, _summary, label, pathRow, _statusBox, _busy, actions })
+        {
+            c.Dock = DockStyle.Top; _flow.RowStyles.Add(new RowStyle(SizeType.AutoSize)); _flow.Controls.Add(c);
         }
-        // The remaining height belongs to neutral surface, never to a status banner.
-        flow.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-        flow.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = Surface }, 0, 6);
-        _card.Controls.Add(flow);                       // Fill first, then the Bottom footer (later controls dock first)
-        _card.Controls.Add(actions);
-        _card.Dock = DockStyle.Fill; _card.Fill = Surface;
-        var frame = new Panel { Dock = DockStyle.Fill, Padding = new Padding(20), BackColor = Canvas };
-        frame.Controls.Add(_card);
-        Controls.Add(frame);
+        _card.Padding = new Padding(24, 20, 24, 18);
+        _card.Controls.Add(_flow);
+        _card.Dock = DockStyle.Fill; _card.Fill = Surface; _card.Border = Line;
+        _frame.Controls.Add(_card);
+        Controls.Add(_frame);
 
-        void Fit()
+        _card.SizeChanged += (_, _) => FitToContent();
+        Shown += (_, _) => { FitToContent(); RefreshState(); _gamePath.Focus(); };
+        HandleCreated += (_, _) => { var on = InstallerTheme.Dark ? 1 : 0; DwmSetWindowAttribute(Handle, 20, ref on, sizeof(int)); };
+    }
+
+    /// <summary>What the install will do, in the same words as the in-app modal: file count, backup, and what the patch says about fonts.</summary>
+    private string SummaryText()
+    {
+        try
         {
-            var inner = Math.Max(240, _card.ClientSize.Width - _card.Padding.Horizontal - SystemInformation.VerticalScrollBarWidth);
-            _description.MaximumSize = new Size(inner, 0);
+            var manifest = _service.LoadManifest();
+            var lines = new List<string> { $"Số file sẽ cài: {manifest.Files.Count}. Bản gốc được sao lưu." };
+            var font = AssetInventoryPresentation.FromPatch(manifest.FontPreflight);
+            lines.AddRange(font);
+            return string.Join(Environment.NewLine, lines);
+        }
+        catch (Exception) { return ""; }
+    }
+
+    /// <summary>Sizes the window to its content (bounded by the screen): fixed width, height = rows + card + frame padding.  Never grows to fill spare space.</summary>
+    private void FitToContent()
+    {
+        if (_fitting || !IsHandleCreated) return;
+        _fitting = true;
+        try
+        {
+            var inner = Math.Max(240, _card.ClientSize.Width - _card.Padding.Horizontal);
+            _description.MaximumSize = new Size(inner, 0); _summary.MaximumSize = new Size(inner, 0);
             _status.MaximumSize = new Size(Math.Max(120, inner - _statusBox.Padding.Horizontal), 0);
+            var need = _flow.GetPreferredSize(new Size(inner, 0)).Height + _card.Padding.Vertical + _frame.Padding.Vertical;
+            var chrome = Height - ClientSize.Height;
+            var limit = Math.Max(240, Screen.FromControl(this).WorkingArea.Height - chrome - 24);
+            _flow.AutoScroll = need > limit;
+            var height = Math.Min(need, limit);
+            if (Math.Abs(height - ClientSize.Height) > 1) ClientSize = new Size(ClientSize.Width, height);
         }
-        _card.SizeChanged += (_, _) => Fit();
-        Shown += (_, _) => { Fit(); RefreshState(); };
+        finally { _fitting = false; }
     }
 
     private void SetStatus(Tone tone, string text)
     {
         _statusBox.Fill = tone.Fill; _statusBox.Border = tone.Border; _status.ForeColor = tone.Text; _status.BackColor = tone.Fill; _status.Text = text;
         _statusBox.Invalidate();
+        if (IsHandleCreated) BeginInvoke(FitToContent);
     }
 
     private void BrowseGame()
@@ -248,6 +295,7 @@ internal sealed class InstallerForm : Form
     {
         _confirm.Visible = _cancelConfirm.Visible = on;
         _install.Visible = _uninstall.Visible = _restoreClean.Visible = !on;
+        AcceptButton = null;                              // during a confirmation Enter acts on the focused button, which starts on the safe choice
         if (on)
         {
             _confirm.Text = _confirmingInstall ? "Xác nhận cài" : _cleanRequested ? "Xác nhận về gốc" : "Xác nhận gỡ";
@@ -275,7 +323,7 @@ internal sealed class InstallerForm : Form
     private void RefreshState()
     {
         if (_working) return;
-        _install.Enabled = false; _uninstall.Enabled = false; _restoreClean.Enabled = false;
+        _install.Enabled = false; _uninstall.Enabled = false; _restoreClean.Enabled = false; AcceptButton = null;
         if (string.IsNullOrWhiteSpace(_gamePath.Text))
         {
             SetStatus(Warn, File.Exists(_service.StatePath) ? "Patch đã được cài. Chọn đúng thư mục game để kiểm tra và gỡ cài đặt." : "Chọn thư mục gốc của game để kiểm tra.");
@@ -292,7 +340,7 @@ internal sealed class InstallerForm : Form
             else
             {
                 _service.ValidateGame(_gamePath.Text);
-                _install.Enabled = true;
+                _install.Enabled = true; AcceptButton = _install;
                 var owned = _service.DescribeOwnership(_gamePath.Text);
                 SetStatus(Warn, "Game hợp lệ. Chưa chứng minh mapping font trong game; kiểm font và xác nhận trước khi cài." + (owned.Count == 0 ? "" : Environment.NewLine + string.Join(Environment.NewLine, owned)));
             }

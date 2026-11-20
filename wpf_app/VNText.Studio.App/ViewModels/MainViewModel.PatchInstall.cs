@@ -12,6 +12,14 @@ public sealed partial class MainViewModel
 {
     private string _deliveredPatch = "", _deliveredPatchHash = "", _deliveredCsv = "", _deliveredCsvHash = "", _deliveredGame = "";
     private string _replacementFont = "";
+    private string _imageOverlaySpec = "";
+    // Optional: a user-authored rendered-image spec (known imagemap/imagebutton assets, declared regions). The product validates it when the patch is built; nothing is recognised automatically.
+    public bool ImageSpecIsSet => !string.IsNullOrEmpty(_imageOverlaySpec);
+    public string ImageSpecLabel => ImageSpecIsSet ? UiText.Msg("Spec ảnh: {0}", Path.GetFileName(_imageOverlaySpec)) : "Chưa đính kèm spec ảnh (tùy chọn)";
+    public string ImageSpecHelpText => "Ảnh có chữ chỉ được thay khi bạn đính kèm spec ảnh đã dựng sẵn (ảnh gốc, vùng đổi, PNG/WebP lossless). Spec được kiểm khi đóng gói; ứng dụng không tự nhận diện chữ trong ảnh.";
+    private void RaiseImageSpec() { Raise(nameof(ImageSpecIsSet)); Raise(nameof(ImageSpecLabel)); }
+    public RelayCommand ChooseImageSpecCommand { get; private set; } = null!;
+    public RelayCommand ResetImageSpecCommand { get; private set; } = null!;
     public string ReplacementFontLabel => string.IsNullOrEmpty(_replacementFont) ? UiText.Translate("Font Việt tự động cho Ren’Py") : Path.GetFileName(_replacementFont);
     // f-design: the font choice is shown where it is made - the mode/name, what still has to be true before it can be checked, and the confirmation of the last action.
     private string _patchFontNotice = "";
@@ -40,6 +48,15 @@ public sealed partial class MainViewModel
     {
         InstallDeliveredPatchCommand = new RelayCommand(_ => OpenPatchInstaller(), _ => !Busy && PatchDeliveryReady && !_patchArtifactBehindCsv && File.Exists(_deliveredPatch));
         OpenDeliveredPatchCommand = new RelayCommand(_ => { if (File.Exists(_deliveredPatch)) Process.Start(new ProcessStartInfo(Path.GetDirectoryName(_deliveredPatch)!) { UseShellExecute = true }); }, _ => !Busy && File.Exists(_deliveredPatch));
+        ChooseImageSpecCommand = new RelayCommand(_ =>
+        {
+            if (Busy) return;
+            var picker = new OpenFileDialog { Filter = "Spec ảnh (*.json)|*.json", Title = UiText.Translate("Chọn spec ảnh đã dựng sẵn") };
+            var opener = System.Windows.Input.Keyboard.FocusedElement;
+            if (picker.ShowDialog() != true) { RestoreFocus(opener); return; }
+            _imageOverlaySpec = picker.FileName; RaiseImageSpec(); InvalidatePatchSourceState(); RestoreFocus(opener);
+        }, _ => !Busy);
+        ResetImageSpecCommand = new RelayCommand(_ => { if (Busy) return; _imageOverlaySpec = ""; RaiseImageSpec(); InvalidatePatchSourceState(); }, _ => !Busy && ImageSpecIsSet);
         ResetPatchFontCommand = new RelayCommand(_ => { if (Busy) return; _replacementFont = ""; SetPatchFontNotice("Đã chọn: Font Việt đi kèm."); InvalidatePatchSourceState(); }, _ => !Busy);
         ChoosePatchFontCommand = new RelayCommand(_ =>
         {
@@ -65,6 +82,7 @@ public sealed partial class MainViewModel
             {
                 InstallDeliveredPatchCommand.RaiseCanExecuteChanged(); OpenDeliveredPatchCommand.RaiseCanExecuteChanged();
                 ChoosePatchFontCommand.RaiseCanExecuteChanged(); ResetPatchFontCommand.RaiseCanExecuteChanged(); ChooseInstalledPatchFontCommand.RaiseCanExecuteChanged();
+                ChooseImageSpecCommand.RaiseCanExecuteChanged(); ResetImageSpecCommand.RaiseCanExecuteChanged();
             }
         };
     }

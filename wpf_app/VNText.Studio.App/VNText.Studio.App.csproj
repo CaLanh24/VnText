@@ -25,6 +25,7 @@
     <Compile Remove="obj\**\*.cs" />
     <Compile Include="..\VNText.PatchInstaller\InstallerService.cs" Link="Services\PatchInstallerCore.cs" />
     <Compile Include="..\VNText.PatchInstaller\InstallerOwnership.cs" Link="Services\PatchInstallerOwnership.cs" />
+    <Compile Include="..\VNText.PatchInstaller\AssetInventoryPresentation.cs" Link="Services\AssetInventoryPresentation.cs" />
     <Compile Include="..\VNText.PatchInstaller\EmbeddedPatch.cs" Link="Services\EmbeddedPatch.cs" />
   </ItemGroup>
 

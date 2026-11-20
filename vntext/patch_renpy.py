@@ -861,6 +861,10 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             source_snapshots[path] = digest
         from vntext.renpy_font_inventory import inspect_font_mapping
         font_evidence["mapping_inventory"] = inspect_font_mapping(root, font_translations, source_snapshots, archive_cache)
+        from vntext.renpy_asset_scan import font_outcomes, outcome_counts
+        font_evidence["font_outcomes"] = font_outcomes(font_evidence["mapping_inventory"]["font_assets"],
+                                                      (font_evidence.get("font_replacement") or {}).get("keys"), built=True)
+        font_evidence["font_outcome_counts"] = outcome_counts(font_evidence["font_outcomes"])
         try:   # discovery only: never blocks the patch and never selects an asset for replacement
             from vntext.renpy_image_overlay import inventory_image_candidates
             font_evidence["image_candidates"] = inventory_image_candidates(root)

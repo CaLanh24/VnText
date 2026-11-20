@@ -36,6 +36,8 @@ internal static partial class Program
             return RunResourceFlows();
         if (args.Contains("--app-dialog-fixture", StringComparer.Ordinal))
             return RunAppDialogFixture(args);
+        if (args.Contains("--install-dialog-fixture", StringComparer.Ordinal))
+            return RunInstallDialogFixture(args);
         if (args.Contains("--image-workspace-fixture", StringComparer.Ordinal))
             return RunImageWorkspaceFixture();
         if (args.Contains("--scroll-routing-fixture", StringComparer.Ordinal))
