@@ -120,7 +120,19 @@ def replacement_keys_for_game_fonts(fonts: dict[str, bytes]) -> list[str]:
     return sorted(keys)[:MAX_REPLACEMENT_KEYS]
 
 
-def render_font_replacement(keys: list[str], font_name: str) -> str:
+GUARD_LINES = (
+        "    def _vntext_font_guard():",
+        "        # the game may assign a fresh config.font_replacement_map after language activation: re-wrap it (entries kept) at the next interaction",
+        "        try:",
+        '            if renpy.game.preferences.language == "vietnamese" and not isinstance(config.font_replacement_map, _VNTextFontMap):',
+        "                config.font_replacement_map = _VNTextFontMap(config.font_replacement_map)",
+        "        except Exception:",
+        "            pass",
+        '    config.interact_callbacks[:] = [callback for callback in config.interact_callbacks if getattr(callback, "__name__", "") != "_vntext_font_guard"] + [_vntext_font_guard]',
+)
+
+
+def render_font_replacement(keys: list[str], font_name: str, guard: bool = True) -> str:
     """One generated, ``translate vietnamese python`` block that routes the listed font files to the Vietnamese font through
     ``config.font_replacement_map`` (Ren'Py 8.5.3 ``renpy/text/font.py: get_font`` looks every font request up as ``(file, bold, italic)``)."""
 
@@ -158,14 +170,7 @@ def render_font_replacement(keys: list[str], font_name: str) -> str:
         "            return hit",
         "    if not isinstance(config.font_replacement_map, _VNTextFontMap):",
         "        config.font_replacement_map = _VNTextFontMap(config.font_replacement_map)",
-        "    def _vntext_font_guard():",
-        "        # the game may assign a fresh config.font_replacement_map after language activation: re-wrap it (entries kept) at the next interaction",
-        "        try:",
-        '            if renpy.game.preferences.language == "vietnamese" and not isinstance(config.font_replacement_map, _VNTextFontMap):',
-        "                config.font_replacement_map = _VNTextFontMap(config.font_replacement_map)",
-        "        except Exception:",
-        "            pass",
-        '    config.interact_callbacks[:] = [callback for callback in config.interact_callbacks if getattr(callback, "__name__", "") != "_vntext_font_guard"] + [_vntext_font_guard]',
+        *(GUARD_LINES if guard else ()),
         REPLACEMENT_END,
         "",
     ])
@@ -186,10 +191,10 @@ def parse_generated_font_replacement(lines: list[str]) -> tuple[int, int, list[s
         keys = json.loads(keys_line[len(_REPLACEMENT_KEYS_PREFIX):])
         target = next(line for line in lines[first:last] if line.startswith('    _vntext_font_target = "'))
         font_name = target[len('    _vntext_font_target = "'):-1]
-        expected = render_font_replacement(keys, font_name).split("\n")[:-1]
+        variants = [render_font_replacement(keys, font_name, guard).split("\n")[:-1] for guard in (True, False)]   # current, then the released 0.1.25 form
     except (ValueError, StopIteration):
         return None
-    return (first, last, keys) if lines[first:last] == expected else None
+    return (first, last, keys) if lines[first:last] in variants else None
 
 
 def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", replacement_keys: list[str] | tuple = ()) -> str:
@@ -201,6 +206,55 @@ def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", re
     for name in sorted(set(styles)):
         lines.extend([f"translate vietnamese style {name}:", f'    font "{font_name}"', ""])
     return "\n".join(lines) + "\n" + render_font_replacement(list(replacement_keys), font_name)
+
+
+_HEAD_HEADER = "# VNText language-scoped text font support v1"
+_AUTHENTIC_FONT_NAME = re.compile(r"DejaVuSans\.ttf|tl/vietnamese/vntext_font_[0-9a-f]{16}\.(?:ttf|otf)")
+_STYLE_LINE = re.compile(r"translate vietnamese style ([A-Za-z_]\w*):")
+_FONT_LINE = re.compile(r'    font "([^"\n]+)"')
+_TARGET_PREFIX = '    _vntext_font_target = "'
+
+
+def split_generated_head(text: str) -> tuple[str, str] | None:
+    """Split an existing overlay into (generated font head, user translations) when the head is EXACTLY something a known VNText release rendered.
+
+    The head is parsed structurally (style names, one font asset name, optional replacement keys) and accepted only if re-rendering those facts with a
+    known variant (0.1.24 style-only, 0.1.25 replacement block without guard, current with guard) reproduces the same bytes.  Any other edit, foreign
+    font name or extra line makes this return None so the caller keeps rejecting it."""
+
+    if not text.startswith(_HEAD_HEADER + "\n"):
+        return None
+    lines = text.split("\n")
+    styles: list[str] = []
+    font_name = None
+    index = 1
+    while index + 1 < len(lines) and lines[index].startswith("translate vietnamese style "):
+        match = _STYLE_LINE.fullmatch(lines[index])
+        font = _FONT_LINE.fullmatch(lines[index + 1])
+        if not match or not font or (font_name is not None and font.group(1) != font_name):
+            return None
+        font_name = font.group(1)
+        styles.append(match.group(1))
+        index += 3 if lines[index + 2:index + 3] == [""] else 2
+    keys: list[str] = []
+    if index < len(lines) and lines[index] == REPLACEMENT_BEGIN:
+        found = parse_generated_font_replacement(lines[index:])
+        if found is None or found[0] != 0:
+            return None
+        keys = found[2]
+        target = next(line for line in lines[index:index + found[1]] if line.startswith(_TARGET_PREFIX))
+        replacement_font = target[len(_TARGET_PREFIX):-1]
+        if font_name is not None and replacement_font != font_name:
+            return None
+        font_name = replacement_font
+    if font_name is None or not _AUTHENTIC_FONT_NAME.fullmatch(font_name) or styles != sorted(set(styles)):
+        return None
+    for guard in (True, False):
+        head = "\n".join([_HEAD_HEADER] + [part for name in styles for part in (f"translate vietnamese style {name}:", f'    font "{font_name}"', "")]) + "\n"
+        head += render_font_replacement(keys, font_name, guard)
+        if text.startswith(head):
+            return head, text[len(head):]
+    return None
 
 
 def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None) -> str:

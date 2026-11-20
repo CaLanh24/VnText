@@ -901,19 +901,14 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # The delivered file replaces this exact path. Preserve all earlier
             # mappings, including those not selected by the current package.
             if "# VNText language-scoped text font support v1" in prior_payload:
-                from vntext.renpy_font_support import REPLACEMENT_BEGIN, parse_generated_font_replacement
-                legacy_support = font_support.split(REPLACEMENT_BEGIN, 1)[0]
-                if font_support and prior_payload.startswith(font_support):
-                    font_support = ""
-                elif font_support and prior_payload.startswith(legacy_support):
-                    # Same style overlay, but the font replacement block is new or its keys changed: replace only that generated block.
-                    remainder = prior_payload[len(legacy_support):].split("\n")
-                    older = parse_generated_font_replacement(remainder)
-                    if older and older[0] == 0:
-                        remainder = remainder[older[1]:]
-                    prior_payload = "\n".join(remainder)
-                else:
+                from vntext.renpy_font_support import split_generated_head
+                split = split_generated_head(prior_payload)
+                if split is None:
                     raise RenPyPatchError("Ren'Py generated font support changed; inspect the existing overlay before replacing it")
+                # An authentic head from any known release (0.1.24 style-only, 0.1.25 with replacement block, current) is replaced as a whole by the
+                # newly verified one; the user's translations after it are carried over untouched.  With no new support the old head is kept.
+                if font_support:
+                    prior_payload = split[1]
             payload = prior_payload + "\n" + payload
         payload = font_support + payload
     except RenPyPatchError:
