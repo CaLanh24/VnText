@@ -23,8 +23,44 @@ _LITERAL_FONT = re.compile(r"""^font\s+(['"])[^'"\\\r\n]+\.(?:ttf|otf)\1\s*(?:#.
 _TEXT_PROPERTIES = re.compile(r'''^properties\s+gui\.text_properties\(["'][A-Za-z_]\w*["'](?:,\s*accent\s*=\s*(?:True|False))?\)\s*(?:#.*)?$''')
 
 
-def text_font_styles(scripts: list[str]) -> list[str]:
-    """Recognize top-level style blocks, never execute Python expressions."""
+# Vietnamese letters beyond Basic Latin that a Latin-only decorative (e.g. gothic) font typically lacks.
+_VIETNAMESE_PROBE = "ĂăÂâĐđÊêÔôƠơƯưÁáÀàẢảÃãẠạẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặÉéÈèẺẻẼẽẸẹẾếỀềỂểỄễỆệÍíÌìỈỉĨĩỊịÓóÒòỎỏÕõỌọỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợÚúÙùỦủŨũỤụỨứỪừỬửỮữỰựÝýỲỳỶỷỸỹỴỵ"
+_BASIC_LATIN = [ord(c) for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"]
+MAX_GAME_FONT_BYTES = 16 * 1024 * 1024
+MAX_GAME_FONT_TOTAL = 64 * 1024 * 1024
+MAX_GAME_FONTS = 128
+
+
+def _font_key(name: str) -> str:
+    return str(name).replace("\\", "/").lstrip("./").casefold()
+
+
+def text_fonts_lacking_vietnamese(fonts: dict[str, bytes]) -> set[str]:
+    """Names of game fonts that cover Basic Latin (so they are text fonts, not icon fonts) but miss Vietnamese letters.
+
+    Only bounded, parsed ``cmap`` evidence selects a font; an unparsable font or one without the Latin letters is never selected.
+    """
+    from vntext.font_coverage import cmap_glyphs
+
+    probe = [ord(c) for c in _VIETNAMESE_PROBE]
+    lacking: set[str] = set()
+    for name, data in fonts.items():
+        try:
+            if cmap_glyphs(data, _BASIC_LATIN)["missing"]:
+                continue
+            if cmap_glyphs(data, probe)["missing"]:
+                lacking.add(_font_key(name))
+        except (ValueError, KeyError, IndexError, ArithmeticError):
+            continue
+    return lacking
+
+
+def text_font_styles(scripts: list[str], lacking_fonts: frozenset[str] | set[str] = frozenset()) -> list[str]:
+    """Recognize top-level style blocks, never execute Python expressions.
+
+    ``lacking_fonts`` (casefolded game-relative font names that cover Latin but not Vietnamese) additionally admits a literal ``font`` of ANY style
+    that names such a file; this is what remains in custom GUIs whose style names do not follow the default template.
+    """
     names = {"default"}
     for script in scripts:
         active = None
@@ -35,8 +71,11 @@ def text_font_styles(scripts: list[str]) -> list[str]:
             elif active:
                 property_text = line.strip()
                 literal_text_role = active in {"say_dialogue", "say_label", "nvl_dialogue", "nvl_label"} or active.endswith("_text")
+                literal = _LITERAL_FONT.fullmatch(property_text)
+                quoted = re.search(r"""(['"])([^'"\\]+)\1""", property_text) if literal else None
+                names_lacking_font = bool(quoted and _font_key(quoted.group(2)) in lacking_fonts)
                 if not (_TEXT_FONT.fullmatch(property_text) or _TEXT_PROPERTIES.fullmatch(property_text)
-                        or (literal_text_role and _LITERAL_FONT.fullmatch(property_text))):
+                        or (literal_text_role and literal) or names_lacking_font):
                     continue
                 # Icon/glyph roles never inherit the text replacement just because
                 # their property also ends in "_font" or uses gui.text_properties.
@@ -92,6 +131,16 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         scripts.append(data.decode("utf-8-sig"))
 
     game = root / "game"
+    game_fonts: dict[str, bytes] = {}
+    font_total = 0
+
+    def collect_font(name: str, data: bytes) -> None:
+        nonlocal font_total
+        font_total += len(data)
+        if len(game_fonts) >= MAX_GAME_FONTS or font_total > MAX_GAME_FONT_TOTAL:
+            raise ValueError("Ren'Py game font inspection exceeds bounds")
+        game_fonts[name] = data
+
     paths = []
     for parent, directories, files in os.walk(game, followlinks=False):
         for name in directories:
@@ -101,6 +150,10 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         paths.extend(Path(parent) / name for name in files)
     for path in sorted(paths):
         relative = path.relative_to(game)
+        if "tl" not in relative.parts and path.suffix.lower() in {".ttf", ".otf"} and not path.is_symlink() and path.is_file()                 and path.resolve().is_relative_to(game.resolve()) and path.stat().st_size <= MAX_GAME_FONT_BYTES:
+            font_bytes = path.read_bytes()
+            collect_font(relative.as_posix(), font_bytes)
+            record(path, hashlib.sha256(font_bytes).hexdigest())
         if "tl" in relative.parts or path.suffix.lower() != ".rpy":
             continue
         if path.is_symlink() or not path.is_file() or not path.resolve().is_relative_to(game.resolve()):
@@ -117,6 +170,8 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         if replacement_font is None and any(name.casefold() in {"dejavusans.ttf", "game/dejavusans.ttf"} for name in archive.members):
             return ""
         for name in sorted(archive.members):
+            if name.lower().endswith((".ttf", ".otf")) and "tl" not in name.split("/") and archive.member_size(name) <= MAX_GAME_FONT_BYTES:
+                collect_font(name, archive.read_member(name)["content"])
             if name.lower().endswith(".rpy") and "tl" not in name.split("/"):
                 if archive.member_size(name) > MAX_SCRIPT_BYTES:
                     raise ValueError("Ren'Py font archive source exceeds bounds")
@@ -124,4 +179,4 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         record(path, archive.container_sha256)
     record(font, digest)
     font_name = f"tl/vietnamese/vntext_font_{digest[:16]}{font.suffix.lower()}" if replacement_font else "DejaVuSans.ttf"
-    return render_language_support(scripts) + render_font_support(text_font_styles(scripts), font_name)
+    return render_language_support(scripts) + render_font_support(text_font_styles(scripts, text_fonts_lacking_vietnamese(game_fonts)), font_name)
