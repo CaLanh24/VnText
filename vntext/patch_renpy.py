@@ -810,9 +810,9 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         bundled_name = f'tl/vietnamese/vntext_font_{FALLBACK_SHA256[:16]}.ttf'
         font = selected_font or (bundled if not prior_payload or f'font "{bundled_name}"' in prior_payload else None)
 
-        def check_font(candidate):
+        def check_font(candidate, fallback=None):
             snapshots = {}
-            support = prepare_font_support(root, snapshots, archive_cache, candidate)
+            support = prepare_font_support(root, snapshots, archive_cache, candidate, fallback)
             styles = re.findall(r"translate vietnamese style (\w+):", support)
             source = candidate or root / "renpy/common/DejaVuSans.ttf"
             evidence = font_report("renpy", font_translations, font=source if support else None, styles=styles)
@@ -827,7 +827,27 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             return support, evidence, snapshots
 
         font_support, font_evidence, font_snapshots = check_font(font)
-        if selected_font and font_evidence.get("missing") and prior_overlay not in existing_snapshots:
+        glyph_fallback = None
+        if font is not None and font != bundled and font_evidence.get("missing"):
+            # The preferred font stays the primary face; only missing SYMBOL code points (e.g. U+266B) are taken from the bundled DejaVu through a
+            # FontGroup in the generated styles, and only when its cmap provably covers every one of them.  Latin letters are never mixed in.
+            from vntext.font_coverage import cmap_glyphs
+            from vntext.renpy_font_support import glyph_fallback_ranges, _FALLBACK_NAME
+            primary_missing = list(font_evidence["missing"])
+            codepoints = [int(item.split()[0].removeprefix("U+"), 16) for item in primary_missing]
+            bundled_bytes = bundled.read_bytes()
+            ranges = glyph_fallback_ranges(codepoints)
+            if ranges and hashlib.sha256(bundled_bytes).hexdigest() == FALLBACK_SHA256 and not cmap_glyphs(bundled_bytes, codepoints)["missing"]:
+                glyph_fallback = (_FALLBACK_NAME, ranges)
+                font_support, font_evidence, font_snapshots = check_font(font, glyph_fallback)
+                font_evidence["glyph_fallback"] = {
+                    "codepoints": primary_missing, "ranges": [[start, end] for start, end in ranges], "font": "DejaVu Sans", "sha256": FALLBACK_SHA256,
+                    "primary_sha256": font_evidence["sha256"], "verified": "cmap of the bundled font covers every listed code point; the preferred font keeps all other text",
+                    "scope": "generated translate-style blocks (FontGroup); game fonts routed by config.font_replacement_map and inline {font=} tags use the preferred font only"}
+                font_evidence["primary_missing"] = primary_missing
+                font_evidence["missing"] = []
+                font_evidence["glyph_status"] = "PASS_WITH_FALLBACK"
+        if glyph_fallback is None and selected_font and font_evidence.get("missing") and prior_overlay not in existing_snapshots:
             missing = font_evidence["missing"]
             fallback_support, fallback_evidence, fallback_snapshots = check_font(bundled)
             if fallback_support and not fallback_evidence.get("missing"):
@@ -868,6 +888,11 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         if font == bundled:
             font_evidence["font_name"] = "DejaVu Sans"
             extra_payloads[destination.with_suffix(".license.txt")] = bundled.with_suffix(".txt").read_bytes()
+        if glyph_fallback is not None:
+            fallback_destination = target.parent / f"vntext_font_{FALLBACK_SHA256[:16]}.ttf"
+            extra_payloads[fallback_destination] = bundled_bytes
+            extra_payloads[fallback_destination.with_suffix(".license.txt")] = bundled.with_suffix(".txt").read_bytes()
+            font_evidence["glyph_fallback"]["payload_font"] = fallback_destination.relative_to(output / "COPY_TO_GAME_ROOT").as_posix()
         extra_payloads[output / "font_preflight.json"] = json.dumps(font_evidence, ensure_ascii=False, indent=2).encode("utf-8")
         initial_font_support = font_support
         prior_inventory_check = verify_target_inventory
@@ -879,7 +904,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # Also detect added/shadowing assets and changed compatibility
             # source, before and after publication. Existing hashes alone do
             # not detect a newly introduced asset with the fallback's name.
-            if prepare_font_support(root, {}, {}, font) != initial_font_support:
+            if prepare_font_support(root, {}, {}, font, glyph_fallback) != initial_font_support:
                 raise RenPyPatchError("Ren'Py font/language support source inventory changed")
 
         if image_overlay_spec:

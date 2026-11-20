@@ -1024,6 +1024,21 @@ def _renpy_generated_font_payload(patch_out: Path, payload: Path) -> set[str]:
         if licence.is_symlink() or not licence.is_file() or not bundled.is_file() or licence.read_bytes() != bundled.read_bytes():
             raise RuntimeError("Ren'Py bundled font licence is missing or differs from the verified text")
         accepted.add(licence.relative_to(payload).as_posix())
+    fallback = report.get("glyph_fallback")
+    if isinstance(fallback, dict) and fallback.get("payload_font"):
+        # The symbol fallback is only ever the verified bundled DejaVu (exact name, hash and licence), staged next to the preferred font.
+        fallback_path = str(fallback["payload_font"])
+        match = _RENPY_FONT_PAYLOAD.fullmatch(fallback_path)
+        if match is None or fallback.get("sha256") != FALLBACK_SHA256 or match.group(1) != FALLBACK_SHA256[:16] or not fallback_path.endswith(".ttf"):
+            raise RuntimeError("Ren'Py glyph fallback payload is not the bundled verified font: " + fallback_path)
+        fallback_file = payload / fallback_path
+        if fallback_file.is_symlink() or not fallback_file.is_file() or hashlib.sha256(fallback_file.read_bytes()).hexdigest() != FALLBACK_SHA256:
+            raise RuntimeError("Ren'Py glyph fallback payload differs from the verified bundled font: " + fallback_path)
+        fallback_licence = fallback_file.with_suffix(".license.txt")
+        bundled = Path(__file__).resolve().parent / "fonts" / "DejaVuSans.txt"
+        if fallback_licence.is_symlink() or not fallback_licence.is_file() or not bundled.is_file() or fallback_licence.read_bytes() != bundled.read_bytes():
+            raise RuntimeError("Ren'Py glyph fallback licence is missing or differs from the verified text")
+        accepted |= {fallback_path, fallback_licence.relative_to(payload).as_posix()}
     return accepted
 
 

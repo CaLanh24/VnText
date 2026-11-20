@@ -39,7 +39,7 @@ _PROVENANCE = re.compile(
 )
 _IDENTIFIER = re.compile(r'^[A-Za-z_]\w*$')
 _FONT_STYLE_TARGET = re.compile(r"style\s+[A-Za-z_]\w*")
-_FONT_STYLE_BODY = re.compile(r'font\s+"[A-Za-z0-9_./-]+"')
+_FONT_STYLE_BODY = re.compile(r'font\s+(?:"[A-Za-z0-9_./-]+"|FontGroup\(\)(?:\.add\("[A-Za-z0-9_./-]+", 0x[0-9A-F]+, 0x[0-9A-F]+\))+\.add\("[A-Za-z0-9_./-]+", None, None\))')
 _QUOTE = r'"(?:\\.|[^"\\])*"'
 _KEYED_QUOTE = re.compile(r'^(?P<key>old|new)\s+(?P<quote>' + _QUOTE + r')\s*$')
 _LABEL = re.compile(r'^label\s+(?P<name>[A-Za-z_]\w*)\s*:\s*(?:#.*)?$')

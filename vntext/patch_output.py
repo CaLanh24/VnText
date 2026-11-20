@@ -154,6 +154,11 @@ def write_renpy_patch_manifest(output_dir: Path, game_base: Path, version: str, 
             matching = [file for file in files if file["path"] == font_payload]
             if len(matching) != 1 or matching[0]["source_sha256"] != manifest["font_preflight"]["sha256"]:
                 raise ValueError("Prepared font payload differs from glyph preflight")
+        fallback = manifest["font_preflight"].get("glyph_fallback")
+        if isinstance(fallback, dict):
+            matching = [file for file in files if file["path"] == fallback.get("payload_font")]
+            if len(matching) != 1 or matching[0]["source_sha256"] != fallback.get("sha256"):
+                raise ValueError("Prepared glyph fallback font differs from its preflight")
     if image_report is not None:
         manifest["image_overlay"] = image_report
         by_path = {file["path"]: file for file in files}

@@ -197,14 +197,50 @@ def parse_generated_font_replacement(lines: list[str]) -> tuple[int, int, list[s
     return (first, last, keys) if lines[first:last] in variants else None
 
 
-def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", replacement_keys: list[str] | tuple = ()) -> str:
+MAX_FALLBACK_RANGES = 32
+_FALLBACK_NAME = f"tl/vietnamese/vntext_font_{FALLBACK_SHA256[:16]}.ttf"
+
+
+def glyph_fallback_ranges(codepoints) -> list[tuple[int, int]] | None:
+    """Collapse missing SYMBOL code points into FontGroup ranges; None when any is a Latin letter (a Latin-only font is replaced wholesale instead,
+    never mixed glyph by glyph) or when the set is too fragmented to stay readable."""
+
+    import unicodedata
+    values = sorted({int(cp) for cp in codepoints})
+    if not values or any(not 0x20 < cp <= 0x10FFFF or unicodedata.category(chr(cp))[0] in "CZ" or "LATIN" in unicodedata.name(chr(cp), "") for cp in values):
+        return None
+    ranges: list[tuple[int, int]] = []
+    for cp in values:
+        if ranges and cp == ranges[-1][1] + 1:
+            ranges[-1] = (ranges[-1][0], cp)
+        else:
+            ranges.append((cp, cp))
+    return ranges if len(ranges) <= MAX_FALLBACK_RANGES else None
+
+
+def _font_expression(font_name: str, fallback) -> str:
+    if not fallback:
+        return f'"{font_name}"'
+    name, ranges = fallback
+    if name != _FALLBACK_NAME or not ranges or len(ranges) > MAX_FALLBACK_RANGES:
+        raise ValueError("unsafe glyph fallback")
+    adds = "".join(f'.add("{name}", 0x{start:X}, 0x{end:X})' for start, end in ranges)
+    return f'FontGroup(){adds}.add("{font_name}", None, None)'
+
+
+_GROUP_LINE = re.compile(r'    font FontGroup\(\)((?:\.add\("[^"\n]+", 0x[0-9A-F]+, 0x[0-9A-F]+\))+)\.add\("([^"\n]+)", None, None\)')
+_GROUP_ADD = re.compile(r'\.add\("([^"\n]+)", 0x([0-9A-F]+), 0x([0-9A-F]+)\)')
+
+
+def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", replacement_keys: list[str] | tuple = (), fallback=None) -> str:
     if any(not re.fullmatch(r"[A-Za-z_]\w*", name) for name in styles):
         raise ValueError("unsafe Ren'Py font style identifier")
     if not re.fullmatch(r"[A-Za-z0-9_./-]+", font_name) or ".." in font_name:
         raise ValueError("unsafe font asset name")
+    expression = _font_expression(font_name, fallback)
     lines = ["# VNText language-scoped text font support v1"]
     for name in sorted(set(styles)):
-        lines.extend([f"translate vietnamese style {name}:", f'    font "{font_name}"', ""])
+        lines.extend([f"translate vietnamese style {name}:", f"    font {expression}", ""])
     return "\n".join(lines) + "\n" + render_font_replacement(list(replacement_keys), font_name)
 
 
@@ -227,13 +263,27 @@ def split_generated_head(text: str) -> tuple[str, str] | None:
     lines = text.split("\n")
     styles: list[str] = []
     font_name = None
+    fallback = None
+    font_line = None
     index = 1
     while index + 1 < len(lines) and lines[index].startswith("translate vietnamese style "):
         match = _STYLE_LINE.fullmatch(lines[index])
-        font = _FONT_LINE.fullmatch(lines[index + 1])
-        if not match or not font or (font_name is not None and font.group(1) != font_name):
+        if not match or (font_line is not None and lines[index + 1] != font_line):
             return None
-        font_name = font.group(1)
+        if font_line is None:
+            font_line = lines[index + 1]
+            plain = _FONT_LINE.fullmatch(font_line)
+            group = _GROUP_LINE.fullmatch(font_line)
+            if plain:
+                font_name = plain.group(1)
+            elif group:
+                font_name = group.group(2)
+                adds = _GROUP_ADD.findall(group.group(1))
+                if {name for name, _a, _b in adds} != {_FALLBACK_NAME}:
+                    return None
+                fallback = (_FALLBACK_NAME, [(int(start, 16), int(end, 16)) for _name, start, end in adds])
+            else:
+                return None
         styles.append(match.group(1))
         index += 3 if lines[index + 2:index + 3] == [""] else 2
     keys: list[str] = []
@@ -249,15 +299,19 @@ def split_generated_head(text: str) -> tuple[str, str] | None:
         font_name = replacement_font
     if font_name is None or not _AUTHENTIC_FONT_NAME.fullmatch(font_name) or styles != sorted(set(styles)):
         return None
+    try:
+        _font_expression(font_name, fallback)
+    except ValueError:
+        return None
     for guard in (True, False):
-        head = "\n".join([_HEAD_HEADER] + [part for name in styles for part in (f"translate vietnamese style {name}:", f'    font "{font_name}"', "")]) + "\n"
+        head = "\n".join([_HEAD_HEADER] + [part for name in styles for part in (f"translate vietnamese style {name}:", f"    font {_font_expression(font_name, fallback)}", "")]) + "\n"
         head += render_font_replacement(keys, font_name, guard)
         if text.startswith(head):
             return head, text[len(head):]
     return None
 
 
-def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None) -> str:
+def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None, glyph_fallback=None) -> str:
     """Return a style prefix only for the verified engine-bundled fallback.
 
     Add every consumed file/container to the writer's existing hash/CAS checks.
@@ -340,4 +394,4 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         record(path, archive.container_sha256)
     record(font, digest)
     font_name = f"tl/vietnamese/vntext_font_{digest[:16]}{font.suffix.lower()}" if replacement_font else "DejaVuSans.ttf"
-    return render_language_support(scripts) + render_font_support(text_font_styles(scripts, text_fonts_lacking_vietnamese(game_fonts)), font_name, replacement_keys_for_game_fonts(game_fonts))
+    return render_language_support(scripts) + render_font_support(text_font_styles(scripts, text_fonts_lacking_vietnamese(game_fonts)), font_name, replacement_keys_for_game_fonts(game_fonts), glyph_fallback)
