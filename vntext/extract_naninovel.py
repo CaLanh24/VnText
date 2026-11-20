@@ -86,6 +86,22 @@ def plausible_text(text: str, strict: bool = False) -> bool:
     return True
 
 
+_NANINOVEL_LOCALIZATION_HEADER = re.compile(
+    r"\A\s*; [^\r\n<]+ <[A-Za-z]{2,3}(?:-[A-Za-z]+)?> to [^\r\n<]+ <[A-Za-z]{2,3}(?:-[A-Za-z]+)?> localization document for `[^`\r\n]+` naninovel script"
+)
+
+
+def is_naninovel_localization_document(text: str) -> bool:
+    """A Naninovel localization TextAsset announces itself in its first line.
+
+    The whole-document noise heuristic in ``plausible_text`` searches the entire text for engine words ("material", "transform", "resources" ...);
+    in a 400+ KB story document ordinary English trips it, silently dropping every line of the chapter.  Such a document is accepted by its explicit
+    header instead; individual lines are still filtered line by line.
+    """
+
+    return bool(_NANINOVEL_LOCALIZATION_HEADER.match(text or ""))
+
+
 def rel_path(path: Path, root: Path) -> str:
     try:
         return str(path.relative_to(root))
@@ -1073,4 +1089,4 @@ def iter_naninovel_script_entries(
                 patch_proof=dict(NANINOVEL_PATCH_PROOF),
             ).finalize()
 
-__all__ = ['plausible_text', 'rel_path', 'iter_files', 'should_raw_scan', 'should_naninovel_scan', 'decode_candidate', 'naninovel_candidate_text', 'text_noise_score', 'looks_like_cut_fragment', 'likely_main_raw_text', '_word_stats_for_raw', '_strip_raw_tail_noise', 'split_naninovel_raw_fragments', 'raw_review_tier', 'naninovel_raw_bucket', 'decode_candidate_parts', 'merge_ranges', 'repair_known_ui_raw_fragment', 'scan_naninovel_blob', 'iter_naninovel_display_texts', '_replace_text_in_naninovel_command', '_scan_script_object_strings', 'collect_naninovel_script_path_ids', 'collect_ui_script_path_ids', '_object_byte_size', '_object_raw_bytes', '_raw_looks_like_naninovel_script', '_mono_script_path_id', 'collect_naninovel_choice_displays_from_bytes', 'collect_naninovel_choice_displays_from_path', '_naninovel_command_role', 'naninovel_script_display_candidate', 'iter_naninovel_script_entries']
+__all__ = ['plausible_text', 'is_naninovel_localization_document', 'rel_path', 'iter_files', 'should_raw_scan', 'should_naninovel_scan', 'decode_candidate', 'naninovel_candidate_text', 'text_noise_score', 'looks_like_cut_fragment', 'likely_main_raw_text', '_word_stats_for_raw', '_strip_raw_tail_noise', 'split_naninovel_raw_fragments', 'raw_review_tier', 'naninovel_raw_bucket', 'decode_candidate_parts', 'merge_ranges', 'repair_known_ui_raw_fragment', 'scan_naninovel_blob', 'iter_naninovel_display_texts', '_replace_text_in_naninovel_command', '_scan_script_object_strings', 'collect_naninovel_script_path_ids', 'collect_ui_script_path_ids', '_object_byte_size', '_object_raw_bytes', '_raw_looks_like_naninovel_script', '_mono_script_path_id', 'collect_naninovel_choice_displays_from_bytes', 'collect_naninovel_choice_displays_from_path', '_naninovel_command_role', 'naninovel_script_display_candidate', 'iter_naninovel_script_entries']

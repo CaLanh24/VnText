@@ -590,7 +590,7 @@ def iter_ui_object_entries(obj, rel: str, path_id, object_info: str, class_name:
 
 
 def extract_unity_typetree(path: Path, root: Path, progress_callback=None):
-    from vntext.extract_naninovel import _mono_script_path_id, _naninovel_command_role, _object_byte_size, collect_naninovel_choice_displays_from_path, collect_naninovel_script_path_ids, collect_ui_script_path_ids, decode_candidate, iter_naninovel_display_texts, iter_naninovel_script_entries, plausible_text, rel_path
+    from vntext.extract_naninovel import _mono_script_path_id, _naninovel_command_role, _object_byte_size, collect_naninovel_choice_displays_from_path, collect_naninovel_script_path_ids, collect_ui_script_path_ids, decode_candidate, iter_naninovel_display_texts, is_naninovel_localization_document, iter_naninovel_script_entries, plausible_text, rel_path
     from vntext.extract_text import is_ui_text_field, iter_textasset_language_table_cells, iter_textasset_lines
     from vntext.patchability import UNITY_TYPETREE_PATCH_PROOF, UNITY_UI_PATCH_PROOF
     from vntext.unity_localization import is_unity_localization_table_class, iter_unity_localization_entries
@@ -687,7 +687,7 @@ def extract_unity_typetree(path: Path, root: Path, progress_callback=None):
                             backend="unitypy_textasset_language_table",
                             patch_proof=dict(UNITY_TEXTASSET_PATCH_PROOF),
                         ).finalize()
-                    if not table_hit and plausible_text(text):
+                    if not table_hit and (plausible_text(text) or is_naninovel_localization_document(text)):
                         for line_index, parsed in iter_textasset_lines(text):
                             yield Entry(
                                 source_text=parsed["text"],
