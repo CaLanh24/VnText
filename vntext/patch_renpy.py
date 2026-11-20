@@ -841,6 +841,11 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             source_snapshots[path] = digest
         from vntext.renpy_font_inventory import inspect_font_mapping
         font_evidence["mapping_inventory"] = inspect_font_mapping(root, font_translations, source_snapshots, archive_cache)
+        try:   # discovery only: never blocks the patch and never selects an asset for replacement
+            from vntext.renpy_image_overlay import inventory_image_candidates
+            font_evidence["image_candidates"] = inventory_image_candidates(root)
+        except Exception as exc:  # noqa: BLE001 - evidence must not fail a text patch
+            font_evidence["image_candidates"] = {"schema": 1, "candidates": [], "error": type(exc).__name__ + ": " + str(exc)[:160]}
         font_evidence["source_checks"] = [{"path": path.relative_to(root).as_posix(), "sha256": digest}
                                           for path, digest in sorted(source_snapshots.items()) if path.is_relative_to(root)]
         if font_support and font is None:

@@ -52,3 +52,31 @@ label start:
         self.assertEqual(snapshots[archive], hashlib.sha256(archive.read_bytes()).hexdigest())
         with self.assertRaisesRegex(ValueError, "source changed"):
             inspect_font_mapping(self.root, ["Xin chào"], {archive: "0" * 64}, {})
+
+    def test_every_distinct_font_gets_a_status_and_why_including_unsupported_and_unresolved(self):
+        fonts = self.root / "game/fonts"
+        for name in ("body.ttf", "same.ttf"): (fonts / name).write_bytes(self.font.read_bytes())
+        (self.root / "game/gui").mkdir(); (self.root / "game/gui/same.ttf").write_bytes(self.font.read_bytes())
+        (fonts / "FontAwesome.ttf").write_bytes(b"\x00\x01\x00\x00")
+        (fonts / "pack.ttc").write_bytes(b"ttcf"); (fonts / "web.woff2").write_bytes(b"wOF2")
+        (self.root / "game/gui.rpy").write_text('''define gui.text_font = "fonts/body.ttf"
+define gui.name_text_font = "fonts/gone.ttf"
+style say_dialogue:
+    font gui.text_font
+style name_style:
+    font gui.name_text_font
+label start:
+    "{font=fonts/body.ttf}a{/font}{font=nowhere.ttf}b{/font}"
+'''.replace(chr(13), ''), encoding="utf-8")
+        result = inspect_font_mapping(self.root, ["Đặng"], {}, {})
+        rows = {row["source"]: row for row in result["font_assets"]}
+        self.assertEqual(rows["fonts/body.ttf"]["status"], "COVERS_TRANSLATION")
+        self.assertEqual(rows["fonts/body.ttf"]["static_use_count"], 2)                       # the style and the explicit tag bind the same file
+        self.assertEqual(rows["fonts/FontAwesome.ttf"]["status"], "UNPARSABLE")
+        self.assertEqual(rows["fonts/pack.ttc"]["status"], "UNSUPPORTED_FORMAT")
+        self.assertEqual(rows["fonts/web.woff2"]["status"], "UNSUPPORTED_FORMAT")
+        self.assertEqual(rows["fonts/gone.ttf"]["status"], "UNRESOLVED_BINDING")
+        self.assertEqual(rows["nowhere.ttf"]["why"], "FONT_FILE_NOT_FOUND")
+        self.assertEqual(result["font_asset_summary"]["UNSUPPORTED_FORMAT"], 2)
+        self.assertIn("Not proof", result["coverage_scope"])
+        self.assertEqual(result, inspect_font_mapping(self.root, ["Đặng"], {}, {}))             # deterministic: the before/after publish comparison relies on it

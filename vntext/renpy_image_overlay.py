@@ -280,3 +280,40 @@ def validate_report_payload(report, payload_root: Path) -> set[str]:
             raise ImageOverlayError("image overlay payload geometry differs from its report: " + target)
         accepted.add(target)
     return accepted
+
+
+def inventory_image_candidates(game_root, limit: int = 256) -> dict:
+    """Discovery only: every literal imagemap/imagebutton asset with its states and whether the verified locale overlay could carry it.
+
+    No OCR and no writes.  A candidate still needs an Owner-authored spec (changed pixels inside declared regions) before anything is staged."""
+    root = Path(game_root)
+    references = scan_image_references(root)
+    game = _regular(root / "game")
+    rows = []
+    for asset in sorted(references):
+        blocks = references[asset]
+        states = sorted({state for block in blocks for state, name, _line in block["assets"] if name == asset})
+        row = {"asset": asset, "states": states, "uses": [{"file": block["file"], "line": block["line"], "kind": block["kind"]} for block in blocks[:8]],
+               "sibling_assets": sorted({name for block in blocks for _state, name, _line in block["assets"] if name != asset})[:16]}
+        try:
+            if Path(asset).suffix.lower() not in _LOSSLESS:
+                row.update(status="UNSUPPORTED_FORMAT", why="only lossless PNG/WebP can keep untouched pixels identical")
+            else:
+                _asset_path(asset)
+                if _regular(game / "tl" / LANGUAGE / asset).is_file():
+                    row["locale_copy_exists"] = True
+                data, identity = locate_baseline(root, asset)
+                image = _decode(data, asset, "baseline")
+                row.update(status="SUPPORTED_LOSSLESS", why="single baseline, lossless, RGB/RGBA", width=image.width, height=image.height,
+                           baseline=identity["path"] + ("::" + identity["member"] if "member" in identity else ""))
+        except ImageOverlayError as exc:
+            message = str(exc)
+            row.update(status="AMBIGUOUS_SHADOW" if "more than once" in message else "MISSING" if "not found" in message else "UNSUPPORTED", why=message[:200])
+        rows.append(row)
+        if len(rows) >= limit:
+            break
+    counts = {}
+    for row in rows:
+        counts[row["status"]] = counts.get(row["status"], 0) + 1
+    return {"schema": 1, "candidates": rows, "summary": dict(sorted(counts.items())),
+            "coverage_scope": "Literal assets inside imagemap/imagebutton blocks of loose game/**/*.rpy only. Scripts inside .rpa archives, .rpyc-only games, dynamic names and images drawn by other displayables are not discovered. Discovery never edits pixels or recognises text."}

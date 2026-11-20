@@ -250,5 +250,39 @@ class RenPyImageOverlayTests(unittest.TestCase):
                 overlay.verify_baselines(game, report)
 
 
+class ImageDiscoveryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._prior_tempdir = tempfile.tempdir
+        tempfile.tempdir = str(WORK)
+
+    @classmethod
+    def tearDownClass(cls):
+        tempfile.tempdir = cls._prior_tempdir
+
+    def test_states_and_unsupported_missing_and_ambiguous_assets_are_reported_with_reasons(self):
+        with tempfile.TemporaryDirectory() as temp:
+            game = Path(temp)
+            (game / "game/gui").mkdir(parents=True)
+            (game / "game/gui/menu_idle.png").write_bytes(_png(_base_image()))
+            (game / "game/gui/menu_hover.png").write_bytes(_png(_base_image((50, 60, 70))))
+            (game / "game/gui/photo.jpg").write_bytes(b"jpeg")
+            (game / "game/gui/shadow.png").write_bytes(_png(_base_image()))
+            write_rpa(game / "game/art.rpa", {"gui/shadow.png": _png(_base_image())})
+            script = chr(10).join(["screen menu():", "    imagebutton:", '        idle "gui/menu_idle.png"', '        hover "gui/menu_hover.png"',
+                                "    imagebutton:", '        idle "gui/photo.jpg"', '        idle "gui/gone.png"', '        idle "gui/shadow.png"', ""])
+            (game / "game/screens.rpy").write_text(script, encoding="utf-8")
+            report = overlay.inventory_image_candidates(game)
+            rows = {row["asset"]: row for row in report["candidates"]}
+            self.assertEqual(rows["gui/menu_idle.png"]["status"], "SUPPORTED_LOSSLESS")
+            self.assertEqual(rows["gui/menu_idle.png"]["sibling_assets"], ["gui/menu_hover.png"])
+            self.assertEqual(rows["gui/menu_hover.png"]["states"], ["hover"])
+            self.assertEqual(rows["gui/photo.jpg"]["status"], "UNSUPPORTED_FORMAT")
+            self.assertEqual(rows["gui/gone.png"]["status"], "MISSING")
+            self.assertEqual(rows["gui/shadow.png"]["status"], "AMBIGUOUS_SHADOW")
+            self.assertIn("never edits pixels", report["coverage_scope"])
+            self.assertEqual(report, overlay.inventory_image_candidates(game))
+
+
 if __name__ == "__main__":
     unittest.main()
