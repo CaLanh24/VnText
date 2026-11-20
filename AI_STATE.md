@@ -1,3 +1,9 @@
+# Current checkpoint — Release 0.1.24 packaging, 2026-11-20
+
+Fixed DEV sole writer; Brain reviews/publishes. Native ACCEPT on 603e86b (The Wrath both fonts) per Owner/Brain; ledger `docs/RELEASE_0.1.24.md`. Owned ~4 GiB Wrath payload disposed canonically (`TEST_RUN/renpy-three-game-qa/cleanup-wrath-payload-receipt.json`), compact evidence kept. Release gates/publisher: see the latest DEV terminal report; no push/tag/publication by DEV.
+
+---
+
 # Current checkpoint — Design QA 0.1.22 (4 findings), 2026-11-19
 
 Owner assigned the 4-finding Design QA batch (`DEV_RUN/qa-0.1.22-3e89a97/design-qa/dev-task.md`): CSV header, outer rail, Settings Data error, Patch font group. Fixed DEV is the sole writer; builds only through the isolated `--artifacts-path` route (never the default bootstrap build or a plain App build; the earlier unauthorized plain build that wrote the blocked App `obj` is a disclosed deviation, current sentinel baseline = 91-file post-accident inventory, unchanged by this batch).

@@ -143,3 +143,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 
 | Release0.1.21 updater hotfix (đang kiểm) | docs/RELEASE_0.1.21.md | TEST_RUN/agent-evidence/release-0.1.21/ |
 | Release 0.1.23 Ren'Py generated-font payload (đang chuẩn bị) | docs/RELEASE_0.1.23.md | TEST_RUN/agent-evidence/release-0.1.23/ |
+| Release 0.1.24 Ren'Py image overlay + Unity TMP adapter (đang kiểm gate) | docs/RELEASE_0.1.24.md | TEST_RUN/renpy-three-game-qa/ |
