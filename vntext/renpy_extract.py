@@ -570,6 +570,11 @@ def existing_translation_inventory(root: str | Path, language: str = "vietnamese
         digest = hashlib.sha256(raw).hexdigest()
         result["snapshots"][path] = digest
         lines = raw.decode("utf-8-sig").splitlines()
+        from vntext.renpy_font_support import parse_generated_font_replacement
+        generated = parse_generated_font_replacement(lines)       # our own language-scoped font replacement block, byte-for-byte; anything else stays unverifiable
+        if generated:
+            for blank in range(generated[0], generated[1]):
+                lines[blank] = ""
         headers = [(i, _NATIVE_BLOCK.fullmatch(line)) for i,line in enumerate(lines)
                    if _NATIVE_BLOCK.fullmatch(line)]
         if any(line.lstrip().startswith("translate "+language+" ") and not _NATIVE_BLOCK.fullmatch(line)

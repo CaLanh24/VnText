@@ -34,7 +34,7 @@ class LackingFontTests(unittest.TestCase):
 
     def test_only_latin_text_fonts_without_vietnamese_are_selected(self):
         fonts = {"fonts/Gothic.ttf": sfnt(LATIN), "gui/font/Full.ttf": sfnt(LATIN + VIETNAMESE), "gui/icons.ttf": sfnt([0xE000, 0xE001]),
-                 "fonts/broken.ttf": b"not a font", "Mixed\Case.OTF": sfnt(LATIN)}
+                 "fonts/broken.ttf": b"not a font", "Mixed/Case.OTF": sfnt(LATIN)}
         self.assertEqual(support.text_fonts_lacking_vietnamese(fonts), {"fonts/gothic.ttf", "mixed/case.otf"})
 
     def test_literal_font_of_any_style_name_is_selected_only_for_a_lacking_font(self):

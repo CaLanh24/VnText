@@ -816,6 +816,12 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             styles = re.findall(r"translate vietnamese style (\w+):", support)
             source = candidate or root / "renpy/common/DejaVuSans.ttf"
             evidence = font_report("renpy", font_translations, font=source if support else None, styles=styles)
+            from vntext.renpy_font_support import parse_generated_font_replacement
+            replacement = parse_generated_font_replacement(support.split("\n")) if support else None
+            if replacement:
+                evidence["font_replacement"] = {"api": "config.font_replacement_map (Ren'Py 8.5.3 renpy/text/font.py get_font: (file, bold, italic) lookup per font request)",
+                                                "scope": "translate vietnamese python", "keys": replacement[2],
+                                                "covers": "styles, screen text properties, Python-set styles, inline {font=} tags, any bold/italic variant"}
             if candidate == bundled and evidence.get("sha256") != FALLBACK_SHA256:
                 raise RenPyPatchError("Bundled DejaVu Sans is missing or failed integrity verification")
             return support, evidence, snapshots
@@ -890,9 +896,19 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # The delivered file replaces this exact path. Preserve all earlier
             # mappings, including those not selected by the current package.
             if "# VNText language-scoped text font support v1" in prior_payload:
-                if not font_support or not prior_payload.startswith(font_support):
+                from vntext.renpy_font_support import REPLACEMENT_BEGIN, parse_generated_font_replacement
+                legacy_support = font_support.split(REPLACEMENT_BEGIN, 1)[0]
+                if font_support and prior_payload.startswith(font_support):
+                    font_support = ""
+                elif font_support and prior_payload.startswith(legacy_support):
+                    # Same style overlay, but the font replacement block is new or its keys changed: replace only that generated block.
+                    remainder = prior_payload[len(legacy_support):].split("\n")
+                    older = parse_generated_font_replacement(remainder)
+                    if older and older[0] == 0:
+                        remainder = remainder[older[1]:]
+                    prior_payload = "\n".join(remainder)
+                else:
                     raise RenPyPatchError("Ren'Py generated font support changed; inspect the existing overlay before replacing it")
-                font_support = ""
             payload = prior_payload + "\n" + payload
         payload = font_support + payload
     except RenPyPatchError:
