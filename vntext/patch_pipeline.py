@@ -362,8 +362,15 @@ def _apply_unity_translation_package(csv_path: str, manifest_path: str, game_roo
                     f"Kiem tra file trunc/OOM truoc khi patch."
                 ) from exc
             allow_unityfs_growth = str(getattr(getattr(env, "file", None), "signature", "") or "") == "UnityFS"
+            serialized_versions: set[int] = set()
             for obj in env.objects:
                 objects_by_pid.setdefault(str(getattr(obj, "path_id", "")), []).append(obj)
+                serialized_versions.add(int(getattr(getattr(getattr(obj, "assets_file", None), "header", None), "version", 0) or 0))
+            if allow_unityfs_growth and serialized_versions and max(serialized_versions) >= 22:
+                # The metadata-preserving rebuild cannot rewrite a v22+ object directory (64-bit offsets): never rely on object growth there.
+                # Text is then fitted into the original slot in place (or the row is skipped and reported), exactly as for a bare SerializedFile.
+                allow_unityfs_growth = False
+                report.append(f"NOTE {rel}: SerializedFile version {max(serialized_versions)} - slot-fitted in-place text only (no object growth)")
 
         changed = 0
         unity_changed = 0
