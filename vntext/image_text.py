@@ -143,7 +143,8 @@ class _OcrServer:
         import queue, threading
         command = [str(Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"),
                    "-NoProfile", "-NonInteractive", "-Command", "& {" + OCR_SERVER_SCRIPT + "}"]
-        self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))   # the worker has no console: never flash a PowerShell window
         self.lines = queue.Queue()
         def pump():
             for raw in iter(self.proc.stdout.readline, b""):
