@@ -1202,6 +1202,40 @@ def _run_unity_preflight(
     return report
 
 
+class _Working:
+    """Keeps a long, silent step visibly alive: a fixed whole-task percentage for the phase plus the step name and elapsed seconds every few seconds."""
+
+    def __init__(self, progress, step: str, overall: int, item: str = ""):
+        import threading
+        self._progress, self._step, self._overall, self._item = progress, step, overall, item
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._beat, daemon=True)
+
+    def _emit(self, started: float) -> None:
+        import time
+        elapsed = int(time.monotonic() - started)
+        try:
+            self._progress({"done": self._overall, "total": 100, "step": self._step, "item": f"{self._item} · đã chạy {elapsed} giây".strip(" ·"), "overall": self._overall})
+        except Exception:  # noqa: BLE001 - a cancel raised inside the callback is handled by the step itself
+            self._stop.set()
+
+    def _beat(self) -> None:
+        import time
+        started = time.monotonic()
+        while not self._stop.wait(4):
+            self._emit(started)
+
+    def __enter__(self):
+        import time
+        self._emit(time.monotonic())
+        self._thread.start()
+        return self
+
+    def __exit__(self, *_):
+        self._stop.set()
+        self._thread.join(timeout=2)
+
+
 def run_extract_task(
     src: str, out: str, mode: str, level: str, separate_review: bool,
     renpy_sdk_path: str = "", renpy_sdk_action: str = "auto", *,
@@ -1260,11 +1294,16 @@ def _run_extract_task_impl(
             raise ValueError(f"Archive Ren'Py lỗi/không hỗ trợ; không fallback sang Unity. Chi tiết: {engine.reason}")
         if engine.engine == "MIXED":
             raise ValueError("Game Ren'Py chỉ có compiled script hoặc trộn engine chưa được hỗ trợ. Hãy chọn bản loose-source hoặc tách đúng engine; không chạy route Unity.")
+        def _preflight_progress(info):
+            total = int(info.get("total") or 0)
+            ov = min(30, int(int(info.get("done") or 0) * 30 / total)) if total > 0 else 0
+            progress({**info, "overall": ov})
+
         preflight = _run_unity_preflight(
             src,
             out,
             log,
-            progress_callback=progress,
+            progress_callback=_preflight_progress,
             is_cancelled=is_cancelled,
         )
         log(f"Đang extract text, mức lọc raw: {level}...")
@@ -1351,13 +1390,15 @@ def _run_extract_task_impl(
                     workspace = Path(temp) / "gamecopy"
                     inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled, translation_only=True)
                     log(f"Ren'Py SDK workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
-                    generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
-                    main, review, stats = extract_native_template_entries(
-                        src,
-                        workspace / "game" / "tl" / "vietnamese",
-                        language="vietnamese",
-                        archive_sources=inventory.get("archive_sources"),
-                    )
+                    with _Working(progress, "Ren'Py SDK đang tạo mẫu dịch", 35):
+                        generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
+                    with _Working(progress, "Đang đọc mẫu dịch Ren'Py", 70):
+                        main, review, stats = extract_native_template_entries(
+                            src,
+                            workspace / "game" / "tl" / "vietnamese",
+                            language="vietnamese",
+                            archive_sources=inventory.get("archive_sources"),
+                        )
                     if existing_translation_inventory(src)["snapshots"] != existing_target_snapshot:
                         raise RenPyToolchainError("Existing Ren'Py target mappings changed during extraction; retry with a new output")
                 log(f"Ren'Py SDK {sdk.version} đã tạo native template identity trên workspace tạm.")
@@ -1398,15 +1439,16 @@ def _run_extract_task_impl(
         review, _dropped_review = filter_excluded_entries(review, out)
         if _dropped_main or _dropped_review:
             log(f"Giữ {len(_dropped_main) + len(_dropped_review)} dòng bạn đã xóa trước đó (user_exclusions.json) ngoài CSV.")
-        package_stats = write_package(
-            out,
-            main,
-            review,
-            stats,
-            separate_review,
-            enforce_symmetry=True,
-            enable_trace=True,
-        )
+        with _Working(progress, "Đang ghi gói dịch", 85):
+            package_stats = write_package(
+                out,
+                main,
+                review,
+                stats,
+                separate_review,
+                enforce_symmetry=True,
+                enable_trace=True,
+            )
         main_count = package_stats["main_entries"]
         review_count = sum(package_stats[key] for key in ("review_only_entries", "raw_candidate_entries", "raw_unpatchable_entries"))
         excluded_engine_common = int(package_stats.get("renpy_engine_common_excluded_review_entries", 0))

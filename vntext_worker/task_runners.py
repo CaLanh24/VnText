@@ -45,6 +45,7 @@ def _make_callbacks(
             step=str(info.get("step") or ""),
             item=str(info.get("item") or ""),
             eta=str(eta).strip() or None if eta is not None else None,
+            overall=info.get("overall"),
         )
 
     def log(text: str, severity: str | None = None) -> None:

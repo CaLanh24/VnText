@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Scripted install/uninstall of a built patch folder with the REAL installer sources; used by tests/tools/journey_check.py. Not shipped. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Cli.cs" />
+    <Compile Include="..\..\wpf_app\VNText.PatchInstaller\InstallerService.cs" Link="InstallerService.cs" />
+    <Compile Include="..\..\wpf_app\VNText.PatchInstaller\InstallerOwnership.cs" Link="InstallerOwnership.cs" />
+  </ItemGroup>
+</Project>

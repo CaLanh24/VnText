@@ -13,6 +13,9 @@ internal static class RenpySdkRecovery
         return operationOk ? "ready" : "error";
     }
 
+    /// <summary>The UI also uses "missing" / "ready" / "error" / "cancelled" to describe the LAST result; the worker only understands these four requests.</summary>
+    public static string WorkerAction(string uiAction) => uiAction is "download" or "existing" or "none" or "auto" ? uiAction : "auto";
+
     public static string FormatStatus(string action, string error)
     {
         var detail = string.Join(" ", (error ?? "").Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));

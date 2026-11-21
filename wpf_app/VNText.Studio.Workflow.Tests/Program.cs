@@ -124,6 +124,7 @@ internal static partial class Program
             Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, progressFailures);
             Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, progressFailures);
             Run("ForceExit_LeavesWithoutWaitingForATerminalEvent", ForceExit_LeavesWithoutWaitingForATerminalEvent, progressFailures);
+            Run("RenpySdk_UiResultStatesAreNeverSentToTheWorker", RenpySdk_UiResultStatesAreNeverSentToTheWorker, progressFailures);
             Run("ForcedStop_ReleasesAHungWorkerTaskWithinABound", ForcedStop_ReleasesAHungWorkerTaskWithinABound, progressFailures);
             Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, progressFailures);
             Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, progressFailures);
@@ -667,6 +668,12 @@ internal static partial class Program
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="crashed-task", Error="Worker process exited" });
         AssertEqual(terminalStatus, vm.StatusText);
         AssertEqual(1, exitRequests);
+    }
+
+    private static void RenpySdk_UiResultStatesAreNeverSentToTheWorker()
+    {
+        foreach (var state in new[] { "missing", "ready", "error", "cancelled", "", "anything" }) AssertEqual("auto", RenpySdkRecovery.WorkerAction(state));
+        foreach (var request in new[] { "download", "existing", "none", "auto" }) AssertEqual(request, RenpySdkRecovery.WorkerAction(request));
     }
 
     private static void ForceExit_LeavesWithoutWaitingForATerminalEvent()

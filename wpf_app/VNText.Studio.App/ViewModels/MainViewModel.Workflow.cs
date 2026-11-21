@@ -397,7 +397,7 @@ public sealed partial class MainViewModel
             level = ExtractLevel,
             separate_review = true,   // always on, whatever an older preference stored
             renpy_sdk_path = RenpySdkPath,
-            renpy_sdk_action = RenpySdkAction,
+            renpy_sdk_action = RenpySdkRecovery.WorkerAction(RenpySdkAction),
         }, RenpySdkAction == "download" ? "Đang tải Ren'Py SDK rồi lấy text…" : "Đang extract text…");
     }
 

@@ -73,3 +73,7 @@ Canonical topic: [Release và cập nhật](workflows/release.md). Read this bou
 ## Compact bridge results at the caller
 
 For read_agent, inspect structuredContent.agent, structuredContent.latest_result and cursor before rendering any tool output. Use tests/lib/dev_projection.py (latest) for log/report projection. A missing structured result is UNKNOWN, not permission to dump text history. In functions.exec use `const r = await tools.<read_agent>(...); const d = r.structuredContent || {}; text({agent: {id:d.agent?.id,status:d.agent?.status || d.agent?.state}, latest_result:d.latest_result?.payload?.result,cursor:d.cursor});`. Pagination/history is a separate explicit diagnostic action. No shared bridge reconnect or code mutation is needed for this caller contract.
+
+## Bằng chứng theo hành trình, không theo game
+
+Quy tắc dữ liệu game ở AGENTS.md. Công cụ: `tests/tools/journey_check.py` (hành trình quét → lấy text → quét ảnh → patch → cài trên bản link → gỡ → so hash, có ngân sách thời gian và phát hiện đứng; nhãn ẩn danh), `vntext/bug_report.py` (gói báo lỗi ẩn danh) và `tests/tools/synth_from_report.py` (dựng layout giả từ gói báo lỗi để tái hiện). Release receipt chỉ ghi nhãn ẩn danh, số mục đã chạy và phần chưa chạy.
