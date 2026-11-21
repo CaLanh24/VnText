@@ -167,6 +167,30 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             self.assertTrue(json.loads((out / "extract_status.json").read_text())["complete"])
         self.run_case(run, setup)
 
+    def test_user_cancel_restores_the_previous_status_instead_of_failed(self):
+        previous = '{"status": "COMPLETE", "complete": true, "patch_scope": "FULL", "errors": 0}'
+
+        def cancelled(stage, done, log):
+            done({"ok": False, "error": "cancelled"})
+
+        def run(source, out, results):
+            with self.assertRaises(ValueError):
+                refresh_extract(source, out, cancelled, results.append, lambda _: None)
+            self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
+            self.assertEqual(previous, (out / "extract_status.json").read_text())      # the untouched package keeps its own verdict
+            self.assertFalse(any(p.name.startswith(".vntext-extract") for p in out.iterdir()))
+        self.run_case(run, setup=lambda out: (out / "extract_status.json").write_text(previous))
+
+    def test_user_cancel_on_a_first_extraction_leaves_no_running_marker(self):
+        def cancelled(stage, done, log):
+            done({"ok": False, "error": "cancelled"})
+
+        def run(source, out, results):
+            with self.assertRaises(ValueError):
+                refresh_extract(source, out, cancelled, results.append, lambda _: None)
+            self.assertFalse((out / "extract_status.json").exists())
+        self.run_case(run)
+
     def test_interrupted_extraction_keeps_the_previous_csv_and_never_reads_as_ready(self):
         def broken(stage, done, log):
             (stage / "translation.csv").write_text("half", encoding="utf-8")

@@ -6,8 +6,17 @@ import gc
 
 def unity_load(path):
     import UnityPy
+    failure: BaseException | None = None
     try:
         return UnityPy.load(str(path))
-    except BaseException:
-        gc.collect()   # the failed parse still references the open file until its frames are collected
+    except (KeyboardInterrupt, SystemExit, MemoryError):
         raise
+    except Exception as exc:  # noqa: BLE001
+        # The failed parse's frames (and the open file they reference) live as long as this exception's traceback does, so collecting inside the
+        # handler frees nothing.  Re-raise a fresh exception of the same type that carries no traceback, then collect once the handler has ended.
+        try:
+            failure = type(exc)(*exc.args)
+        except Exception:  # noqa: BLE001
+            failure = RuntimeError(f"{type(exc).__name__}: {exc}")
+    gc.collect()
+    raise failure

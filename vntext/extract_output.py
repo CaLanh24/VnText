@@ -113,6 +113,8 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
     lock = root / ".vntext-extract.lock"
     fd = _take_lock(lock)
     stage = None
+    prior_status = None
+    publishing = False
     try:
         def idle():
             for name in ("traceability.lock", "traceability.sqlite3-wal", "traceability.sqlite3-shm"):
@@ -127,6 +129,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
         baseline = {Path(name): _digest(root / name) for name in reserved}
         stage = Path(tempfile.mkdtemp(prefix=".vntext-extract-", dir=root))
         status = root / "extract_status.json"
+        prior_status = status.read_bytes() if status.is_file() else None
         marker = {"status": "RUNNING", "complete": False, "patch_scope": "NONE", "errors": 1}
         _write(status, json.dumps(marker).encode(), _digest(status))
         results = []
@@ -179,6 +182,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
             expected[relative] = digest
         # The readiness sidecar is committed last. An interrupted publish stays blocked.
         files.sort(key=lambda p: p.name == "extract_status.json")
+        publishing = True
         for path in files:
             _no_links(path)
             relative = path.relative_to(stage)
@@ -195,10 +199,18 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
             if isinstance(result.get(key), str):
                 result[key] = result[key].replace(str(stage), str(root))
         return result
-    except Exception:
+    except Exception as exc:
         if stage is not None:
             status = root / "extract_status.json"
-            _write(status, json.dumps({"status": "FAILED", "complete": False, "patch_scope": "NONE", "errors": 1}).encode(), _digest(status))
+            if str(exc) == "cancelled" and not publishing:
+                # A user cancel before anything was published leaves the previous package exactly as it was: put its status back
+                # (or remove the RUNNING marker when there was none) instead of calling the untouched package FAILED.
+                if prior_status is not None:
+                    _write(status, prior_status, _digest(status))
+                else:
+                    status.unlink(missing_ok=True)
+            else:
+                _write(status, json.dumps({"status": "FAILED", "complete": False, "patch_scope": "NONE", "errors": 1}).encode(), _digest(status))
         raise
     finally:
         os.close(fd)
