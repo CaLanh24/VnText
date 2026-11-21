@@ -516,7 +516,11 @@
                                     <ComboBox x:Name="ExtractRunSelector" Grid.Column="1" MinWidth="190" Margin="12,0,8,0" ItemsSource="{Binding ExtractRuns}" SelectedItem="{Binding SelectedExtractRun, Mode=TwoWay}"
                                               DisplayMemberPath="Title" Style="{StaticResource SettingsPreferenceCombo}" AutomationProperties.Name="Lần lấy text"
                                               Visibility="{Binding ExtractRunSelectorVisible, Converter={StaticResource BoolToVis}}" />
-                                    <Button x:Name="ExtractLogCopyButton" Grid.Column="2" Content="Chép nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding CopyExtractLogCommand}" />
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button x:Name="ExtractLogCopyButton" Content="Chép nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding CopyExtractLogCommand}" />
+                                        <Button x:Name="BugReportButton" Content="Tạo gói báo lỗi" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding CreateBugReportCommand}"
+                                                ToolTip="Tạo tệp zip ẩn danh (cấu trúc, kích thước, thời gian; không có nội dung hay tên tệp game) để gửi khi gặp lỗi. Không tự gửi đi đâu." />
+                                    </StackPanel>
                                 </Grid>
                                 <Border Grid.Row="1" Style="{StaticResource LogPanelBorderStyle}" Height="260" Margin="0,16,0,0">
                                     <ListBox x:Name="ExtractLogList" ItemsSource="{Binding ExtractLogShown}" ItemTemplate="{StaticResource JournalLineTemplate}"

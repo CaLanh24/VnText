@@ -836,6 +836,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 DownloadResourcesCommand?.RaiseCanExecuteChanged();
                 CancelCommand.RaiseCanExecuteChanged();
                 CancelAndExitCommand.RaiseCanExecuteChanged();
+                CreateBugReportCommand?.RaiseCanExecuteChanged();
                 RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
                 SaveCsvEditorCommand.RaiseCanExecuteChanged();
                 Raise(nameof(CsvEditorGridReadOnly));

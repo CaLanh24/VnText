@@ -244,6 +244,15 @@ public sealed partial class MainViewModel
                     : completedTask == "analyze" ? "Đã phân tích"
                     : extractWarning ? "Lấy text một phần" : "Hoàn tất");
                 _runningTask = null; RefreshResourcesActive();
+                if (completedTask == "bug_report")
+                {
+                    StatusText = evt.Ok ? "Đã tạo gói báo lỗi" : "Chưa tạo được gói báo lỗi";
+                    AppendLog(evt.Ok ? evt.Summary ?? "Đã tạo gói báo lỗi." : evt.Error ?? "Chưa tạo được gói báo lỗi.");
+                    if (evt.Ok && !string.IsNullOrWhiteSpace(_bugReportFolder)) _pathPicker.OpenPath(_bugReportFolder);
+                    else if (!evt.Ok) ShowToast(evt.Error ?? "Chưa tạo được gói báo lỗi.", "error");
+                    FinishCancelAndExit();
+                    break;
+                }
                 if (completedTask == "resources")
                 {
                     CompleteResources(evt);

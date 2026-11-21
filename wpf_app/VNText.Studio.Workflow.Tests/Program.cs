@@ -21,6 +21,13 @@ internal static partial class Program
 {
     private static int Main(string[] args)
     {
+        // The tests drive real view models; never let them write into the person's real app data (last error, journal, settings).
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("VNTEXT_LOCALAPPDATA")))
+        {
+            var isolated = Path.Combine(Path.GetTempPath(), "vntext-wpf-tests-appdata-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(isolated);
+            Environment.SetEnvironmentVariable("VNTEXT_LOCALAPPDATA", isolated);
+        }
         if (args.Contains("--uiqa24-only", StringComparer.Ordinal)) return RunUiqa24();
         if (args.Contains("--updater-setup-only", StringComparer.Ordinal))
         {

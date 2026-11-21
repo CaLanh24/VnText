@@ -246,6 +246,24 @@ def run_analyze_worker(
         emit_complete(task_id, ok=False, error=str(exc))
 
 
+def run_bug_report_worker(task_id: str, params: dict[str, Any], is_cancelled: Callable[[], bool]) -> None:
+    """Anonymous bug-report bundle (structure, sizes, timings, sanitised log tail); see vntext/bug_report.py.  Nothing is uploaded."""
+    src = str(params.get("src") or "").strip()
+    out = str(params.get("out") or "").strip()
+    if not src or not out or not Path(src).exists():
+        emit_complete(task_id, ok=False, error="Hãy chọn game trước khi tạo gói báo lỗi.")
+        return
+    try:
+        from vntext.bug_report import build_report
+        emit_progress(task_id, done=0, total=1, step="Đang tạo gói báo lỗi ẩn danh")
+        target = build_report(src, out, log_lines=[str(x) for x in (params.get("log_lines") or [])],
+                              analysis_report=params.get("analysis_report") or None, extract_status=params.get("extract_status") or None,
+                              app_version=str(params.get("app_version") or ""))
+        emit_complete(task_id, ok=True, summary=f"Đã tạo gói báo lỗi ẩn danh: {target}")
+    except Exception as exc:  # noqa: BLE001 - report the cause, never crash the worker
+        emit_complete(task_id, ok=False, error=f"Không tạo được gói báo lỗi: {exc}")
+
+
 def run_extract_worker(
     task_id: str,
     params: dict[str, Any],

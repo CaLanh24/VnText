@@ -76,6 +76,9 @@ def _dispatch(task_id: str, task: str, params: dict[str, Any], cancel_event: thr
             run_image_worker(task_id, task, params, is_cancelled)
         elif task == "analyze":
             run_analyze_worker(task_id, params, is_cancelled)
+        elif task == "bug_report":
+            from vntext_worker.task_runners import run_bug_report_worker
+            run_bug_report_worker(task_id, params, is_cancelled)
         elif task == "translate":
             run_translate_worker(task_id, params, is_cancelled)
         elif task == "patch":

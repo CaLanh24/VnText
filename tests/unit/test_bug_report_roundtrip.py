@@ -47,5 +47,22 @@ class BugReportRoundTripTests(unittest.TestCase):
         self.assertNotIn("D:" + bs + "x", out)
 
 
+    def test_worker_task_builds_the_bundle_and_refuses_a_missing_game(self):
+        from unittest.mock import patch
+        from vntext_worker.task_runners import run_bug_report_worker
+        base = work_temp_dir("bug-report-roundtrip")
+        with tempfile.TemporaryDirectory(dir=base) as temp:
+            game = Path(temp) / "g"
+            (game / "game").mkdir(parents=True)
+            (game / "game" / "script.rpy").write_text("label start:" + chr(10) + "    return" + chr(10), encoding="utf-8")
+            done = []
+            with patch("vntext_worker.task_runners.emit_complete", side_effect=lambda _id, **kw: done.append(kw)), patch("vntext_worker.task_runners.emit_progress"):
+                run_bug_report_worker("t", {"src": str(game), "out": str(Path(temp) / "out"), "log_lines": ["a"]}, lambda: False)
+                run_bug_report_worker("t", {"src": str(Path(temp) / "missing"), "out": str(Path(temp) / "out2")}, lambda: False)
+            self.assertTrue(done[0]["ok"])
+            self.assertTrue(list((Path(temp) / "out").glob("vntext-bug-report-*.zip")))
+            self.assertFalse(done[1]["ok"])
+
+
 if __name__ == "__main__":
     unittest.main()
