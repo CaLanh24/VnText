@@ -1,4 +1,27 @@
-# Current checkpoint — Release 0.1.24 packaging, 2026-11-20
+# Current checkpoint — Báo lỗi sau phát hành 0.1.26, 2026-11-21
+
+Owner yêu cầu chỉ ghi nhận để xử lý sau khi quota reset (lượt sau đã xử lý: xem checkpoint "Sửa lỗi sau 0.1.26" bên dưới). Baseline là tag `v0.1.26` (`4dea6b1`). Bằng chứng là hai ảnh Owner gửi trong chat ngày 21/11; lỗi dưới đây mới được báo, nguyên nhân chưa xác minh.
+
+1. **Quét engine.** Chọn thư mục game và tiến trình đứng ở 99% lâu. Ảnh FallingApart-pc có kết quả font Ren’Py nhưng tiêu đề lại báo chưa nhận diện engine. Kiểm thời gian từng bước và tính nhất quán giữa kết quả, trạng thái và nguồn đang chọn.
+2. **Lấy text.** Báo hơn 3 giờ mới 40%; ảnh hiện bước “Lọc ảnh không có chữ”, mục `1444.webp`, sau đó lên 41%. Đo riêng lấy text và quét/OCR ảnh; xác minh phần ảnh có đang chặn CSV và làm rõ tiến trình từng tác vụ.
+3. **Màn nhận diện.** Chỉ hiện tóm tắt đủ để biết game đã nhận diện và có thể làm gì tiếp. Đưa danh sách font/ảnh, số liệu kỹ thuật chi tiết và lý do xuống Nhật ký.
+4. **Hủy và thoát.** Hủy có thể treo mãi, nút X lại chờ hủy xong. Kiểm worker không phản hồi; nút X phải có đường thoát cưỡng bức hữu hạn, kể cả khi hủy treo. Kiểm khởi động lại và an toàn file đang ghi dở.
+5. **Tạo patch.** Sau khi dịch, một nút “Tạo patch” mở tùy chọn font/cỡ chữ rồi chạy kiểm tra tự động và đóng gói. Bỏ bước bắt người dùng bấm “Kiểm tra”, kể cả sau khi đổi font. Chỉ hiện lỗi cụ thể có thể xử lý khi thật sự không thể đóng gói. Cho mở thư mục xuất ngay cả khi chưa có patch. Bỏ cách gọi “spec ảnh” khỏi luồng phổ thông; dùng lựa chọn ảnh dễ hiểu, tùy chọn.
+6. **Gỡ patch.** Owner báo các cách gỡ của những bản trước vẫn không gỡ được. Tái hiện trên chuỗi cài/nâng cấp/gỡ từ bản cũ, kiểm file sau gỡ và dữ liệu người dùng bằng hash, báo đúng tình trạng nếu thiếu backup hoặc còn bản dịch cũ.
+
+---
+
+# Current checkpoint — Sửa lỗi sau 0.1.26, 2026-11-21 (Owner giao: sửa 6 nhóm, chưa push/release)
+
+Source `181a2ed48fa603c76a8415a7b28904b4b6c2b3ed` (local, trên `v0.1.26`; chưa push, chưa tag). Receipt `TEST_RUN/agent-evidence/post-0.1.26-fixes/receipt.md` (thời gian trước/sau). Chưa có candidate đóng gói/native UI; DEV evidence không phải QA độc lập.
+Nguyên nhân thật: (2) mỗi ảnh RPA mở lại và băm 2 lần file RPA 3,5 GB + PowerShell mới mỗi lần OCR → hàng giờ, và OCR chặn terminal của extract; (1) scan không báo tiến trình ở bước nhận diện engine/font/ảnh, UI duyệt lại thư mục bằng bộ phân loại riêng khác điều kiện với worker nên "có font mà chưa nhận diện engine"; (4) chờ hủy vô hạn, X chỉ hỏi rồi chờ; (5) "Tạo patch" bị khóa tới khi bấm "Kiểm tra", mỗi lần đổi font xóa kiểm tra; (6) thông báo gỡ không nêu file VNText cũ không biên nhận còn lại.
+Đã sửa: worker phân loại engine một lần (`engine_detection` + `timings_seconds` trong báo cáo; `overall` trong progress); cache RPA read-only (ghi/patch giữ `fresh=True`); OCR một host PowerShell, đọc ảnh từ bộ nhớ; extract kết thúc sau text và gắn `image_scan_pending`, app tự chạy `image_batch after_extract` như tác vụ riêng (tiến trình riêng, hủy được); màn nhận diện chỉ còn tóm tắt, chi tiết xuống Nhật ký; hủy 10 giây rồi dừng cưỡng bức worker, X lần hai thoát ngay, giới hạn thoát 15 giây, worker tự khởi động lại; "Tạo patch" luôn sẵn sàng sau khi chọn game (tự lưu/kiểm, lỗi cụ thể + cách xử lý), "Mở thư mục xuất" ở tab Patch, "spec ảnh" → "ảnh đã chỉnh (tùy chọn)"; installer nêu bản trước hay game gốc sạch, liệt kê file VNText cũ còn lại kèm hash, backup thiếu → từ chối trước khi ghi; quét dọn stage/temp mồ côi của extract bị kill.
+Giới hạn còn lại: (a) FallingApart-pc không có trên máy, chưa tái hiện; (b) **cỡ chữ**: backend không có tùy chọn cỡ chữ, chưa thêm (không bịa); hộp thoại gộp font + ảnh chưa làm, vẫn dùng nhóm Font ở tab Patch; (c) native UI/bản đóng gói chưa chạy (budget DEV 1,89/1,0 GiB non-exempt chặn cấp candidate; cleanup canonical TIMEOUT); (d) test Python dựa SDK Ren'Py/copy-quota (test_renpy_extract_task, test_renpy_archive_roots) và teardown cleanup của test_worker_tasks bị chặn bởi budget đó, không do thay đổi; C# workflow 38 lỗi giống hệt baseline HEAD; (e) tác vụ nền quét ảnh giữ worker đơn luồng: muốn dịch ngay phải bấm Hủy; (f) gỡ patch cũ chưa thử trên bản copy game thật, chỉ harness fixture (43/43).
+Bước tiếp: Owner nghiệm thu native trên bản đóng gói sau khi dọn budget theo kế hoạch; quyết định cỡ chữ.
+
+---
+
+# Checkpoint lịch sử — Release 0.1.24 packaging, 2026-11-20
 
 Fixed DEV sole writer; Brain reviews/publishes. Native ACCEPT on 603e86b (The Wrath both fonts) per Owner/Brain; ledger `docs/RELEASE_0.1.24.md`. Owned ~4 GiB Wrath payload disposed canonically (`TEST_RUN/renpy-three-game-qa/cleanup-wrath-payload-receipt.json`), compact evidence kept. Release gates/publisher: see the latest DEV terminal report; no push/tag/publication by DEV.
 
