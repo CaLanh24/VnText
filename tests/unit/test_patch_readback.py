@@ -513,5 +513,20 @@ class PatchReadbackTests(unittest.TestCase):
         self.assertEqual(len(report["results"]), 2)
 
 
+class ReadbackTimeoutScalingTests(unittest.TestCase):
+    def test_deadline_grows_with_the_work_stays_finite_and_honours_the_override(self):
+        import os
+        from unittest.mock import patch as env_patch
+        from vntext.patch_readback import readback_timeout_seconds
+        with env_patch.dict(os.environ, {"VNTEXT_PATCH_READBACK_TIMEOUT_SECONDS": ""}):
+            self.assertEqual(300.0, readback_timeout_seconds())
+            self.assertEqual(300.0, readback_timeout_seconds(100))
+            big = readback_timeout_seconds(27745)
+            self.assertGreater(big, 1500.0)          # the measured need was ~675 s: at least a 2x margin
+            self.assertLess(big, 4000.0)             # and still finite
+        with env_patch.dict(os.environ, {"VNTEXT_PATCH_READBACK_TIMEOUT_SECONDS": "7"}):
+            self.assertEqual(7.0, readback_timeout_seconds(27745))
+
+
 if __name__ == "__main__":
     unittest.main()

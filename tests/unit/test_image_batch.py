@@ -294,6 +294,14 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertIn('Quét ảnh xong: 3 ảnh có chữ',events[0]['summary'])
         self.assertIn('CSV text không bị ảnh hưởng',events[0]['summary'])
 
+    def test_after_extract_image_task_handles_a_game_without_images(self):
+        from vntext_worker import image_tasks
+        events=[]
+        with patch('vntext.image_batch.run_image_batch', Mock(return_value={'translated':0,'untranslated':0,'total':0,'output':'','cancelled':False})),              patch.object(image_tasks,'emit_complete',lambda task_id,**kw:events.append(kw)), patch('vntext_worker.protocol.emit_log',lambda *a,**k:None), patch('vntext_worker.protocol.emit_progress',lambda *a,**k:None):
+            image_tasks.run_image_worker('t','image_batch',{'src':str(self.source),'out':str(self.package),'after_extract':True},lambda:False)
+        self.assertTrue(events[0]['ok'])
+        self.assertIn('không thấy ảnh có chữ',events[0]['summary'])
+
     def test_empty_image_stub_is_cleared_only_when_it_is_the_placeholder(self):
         from vntext.image_batch import clear_empty_image_stub
         stub=self.package/'images';stub.mkdir(parents=True)

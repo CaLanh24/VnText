@@ -106,7 +106,19 @@ def link_copy(source: Path, dest: Path) -> int:
     return count
 
 
-def fill_translation(csv_path: Path) -> int:
+def _same_length(text: str) -> str:
+    """Different but equally long text: swap the case of letters outside tags/placeholders (Unity v22+ cannot grow objects, so a longer stand-in cannot be patched)."""
+    out, depth = [], 0
+    for ch in text:
+        if ch in "<{[":
+            depth += 1
+        elif ch in ">}]" and depth:
+            depth -= 1
+        out.append(ch if depth or not ch.isalpha() else (ch.lower() if ch.isupper() else ch.upper()))
+    return "".join(out)
+
+
+def fill_translation(csv_path: Path, same_length: bool = False) -> int:
     with csv_path.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
         fields = reader.fieldnames or []
@@ -117,7 +129,7 @@ def fill_translation(csv_path: Path) -> int:
     filled = 0
     for row in rows:
         if not (row.get("translation") or "").strip() and (row.get(source_col) or "").strip():
-            row["translation"] = "VI " + row[source_col]
+            row["translation"] = _same_length(row[source_col]) if same_length else "VI " + row[source_col]
             filled += 1
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)
@@ -173,7 +185,7 @@ def journey(game: Path, label: str, out: Path, python: str, installer: str | Non
         if not csv_path.is_file():
             result["not_run"] += ["patch", "install", "uninstall"]
         else:
-            filled = fill_translation(csv_path)
+            filled = fill_translation(csv_path, same_length=steps["scan"].get("engine") == "UNITY")
             steps["stand_in_translation"] = {"ok": filled > 0, "rows": filled}
             if filled == 0:
                 result["not_run"] += ["patch", "install", "uninstall"]
@@ -182,7 +194,7 @@ def journey(game: Path, label: str, out: Path, python: str, installer: str | Non
                 manifest = package / "manifest.json"
                 r = worker.run("p", "patch", {"src": str(game), "out": str(package), "csv_path": str(csv_path), "manifest_path": str(manifest), "partial_override": True},
                                *BUDGET["patch"])
-                patches = sorted(package.rglob("Patch_*/*.exe")) or sorted(package.rglob("patch_manifest.json"))
+                patches = sorted(package.rglob("Patch_*/**/*.exe")) or sorted(package.rglob("Patch_*/*.exe")) or sorted(package.rglob("patch_manifest.json"))
                 steps["patch"] = {"ok": r.get("outcome") == "DONE" and bool(patches), "seconds": r["seconds"], "outcome": r["outcome"], "patch_built": bool(patches),
                                   "progress_events": r.get("progress_events", 0)}
                 if not steps["patch"]["ok"]:

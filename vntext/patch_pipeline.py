@@ -1024,7 +1024,7 @@ Cach copy tay:
         patched_root,
         game_base,
         by_file,
-        timeout_seconds=readback_timeout_seconds(),
+        timeout_seconds=readback_timeout_seconds(sum(len(group) for group in by_file.values())),
         cancel_check=lambda: emit("Dang kiem tra patch...", bump=False),
     )
     verification_counts = verification.get("counts") or {}

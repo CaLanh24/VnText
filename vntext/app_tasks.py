@@ -2795,7 +2795,9 @@ def _run_patch_task_impl(
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
             log("Ren'Py: đang tạo native overlay.")
-        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
+        # The writer reports little or no progress of its own on large games; keep the step visibly alive (name + elapsed seconds) until it returns.
+        with _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo native overlay Ren'Py", 40):
+            apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,
         # per-target read-back report before any optional overlay is accepted.

@@ -32,15 +32,23 @@ TIMEOUT = "TIMEOUT"
 DEFAULT_READBACK_TIMEOUT_SECONDS = 300.0
 
 
-def readback_timeout_seconds() -> float:
-    """Return the finite Unity/read-back deadline used by the patch route."""
+READBACK_SECONDS_PER_TARGET = 0.06      # measured ~0.025 s/target on a 27 thousand target Unity patch; the factor keeps a 2x margin
+
+
+def readback_timeout_seconds(targets: int = 0) -> float:
+    """Finite read-back deadline that grows with the work: a fixed 300 s timed out a correct 27,745-target patch (it needs ~11 min).
+
+    ``VNTEXT_PATCH_READBACK_TIMEOUT_SECONDS`` still overrides everything; the deadline stays finite so a blocked reader can never promote partial output.
+    """
 
     raw = os.environ.get("VNTEXT_PATCH_READBACK_TIMEOUT_SECONDS", "")
     try:
-        value = float(raw) if raw.strip() else DEFAULT_READBACK_TIMEOUT_SECONDS
+        if raw.strip():
+            return max(1.0, float(raw))
     except (TypeError, ValueError):
-        value = DEFAULT_READBACK_TIMEOUT_SECONDS
-    return max(1.0, value)
+        pass
+    return max(DEFAULT_READBACK_TIMEOUT_SECONDS, 120.0 + READBACK_SECONDS_PER_TARGET * max(0, int(targets)))
+
 
 _UNSUPPORTED_METHODS = frozenset(
     {
