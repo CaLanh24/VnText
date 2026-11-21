@@ -144,9 +144,8 @@ def _patch_object_directory(meta: bytearray, child, updates: dict[int, tuple[int
     header = child.header
     endian = header.endian
     version = header.version
-    if version >= 22:
-        raise ValueError("SerializedFile version 22+ is not using metadata-preserving rewrite")
-    pos = 20  # v9-21 header: 4*u32 + endian + 3 reserved
+    # v9-21 header: 4*u32 + endian + 3 reserved; v22+ adds metadata_size u32, file_size u64, data_offset u64, unknown u64 (48 bytes).
+    pos = 48 if version >= 22 else 20
     z = meta.index(b"\x00", pos)
     pos = z + 1  # unity version
     pos += 4  # target platform
@@ -170,10 +169,14 @@ def _patch_object_directory(meta: bytearray, child, updates: dict[int, tuple[int
         pos += 8
         if path_id in updates:
             rel_start, size = updates[path_id]
-            struct.pack_into(endian + "I", meta, pos, int(rel_start))
-            struct.pack_into(endian + "I", meta, pos + 4, int(size))
+            if version >= 22:  # byte_start is 64-bit from v22
+                struct.pack_into(endian + "Q", meta, pos, int(rel_start))
+                struct.pack_into(endian + "I", meta, pos + 8, int(size))
+            else:
+                struct.pack_into(endian + "I", meta, pos, int(rel_start))
+                struct.pack_into(endian + "I", meta, pos + 4, int(size))
             seen.add(path_id)
-        pos += 12  # byte_start, byte_size, type_id
+        pos += 16 if version >= 22 else 12  # byte_start, byte_size, type_id
     missing = set(updates) - seen
     if missing:
         raise ValueError(f"Object directory missing path_id updates: {len(missing)}")
@@ -242,7 +245,10 @@ def _rewrite_serialized_file_rebuild_data(child, original: bytes) -> bytes:
     _patch_object_directory(meta, child, updates)
     file_size = data_offset + len(data)
     # SerializedFile header integers are always big-endian; metadata after that uses header.endian.
-    struct.pack_into(">I", meta, 4, file_size)
+    if header.version >= 22:
+        struct.pack_into(">Q", meta, 24, file_size)
+    else:
+        struct.pack_into(">I", meta, 4, file_size)
     return bytes(meta) + bytes(data)
 
 
