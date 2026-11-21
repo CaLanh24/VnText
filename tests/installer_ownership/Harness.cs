@@ -261,6 +261,38 @@ internal static class Harness
             Check("the blocked uninstall left the game byte-identical", Snapshot(game) == before && Read(game, Overlay) == v25);
         }
 
+        // 11. unusual game folder names (spaces, non-ASCII): install then uninstall must restore the folder byte for byte.
+        {
+            var game = NewGame(work, "g11 tập lệnh đặc biệt");
+            var before = Snapshot(game);
+            var patch = MakePatch(work, "z26", "0.1.26", game, new Spec(Overlay, v25, false, null), new Spec(Activation, act, false, null));
+            patch.Install(game);
+            patch.Uninstall(game);
+            Check("a folder with spaces and non-ASCII letters round-trips install and uninstall byte for byte", Snapshot(game) == before);
+        }
+
+        // 12. a read-only target: either the install succeeds and uninstall restores it exactly, or it fails closed leaving the game untouched.
+        {
+            var game = NewGame(work, "g12");
+            Directory.CreateDirectory(Path.Combine(game, "game", "tl", "vietnamese"));
+            var target = Path.Combine(game, Overlay.Replace('/', Path.DirectorySeparatorChar));
+            File.WriteAllText(target, v24);
+            File.SetAttributes(target, FileAttributes.ReadOnly);
+            var before = Snapshot(game);
+            var patch = MakePatch(work, "r26", "0.1.26", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, false, null));
+            bool installed;
+            try { patch.Install(game); installed = true; } catch (Exception) { installed = false; }
+            if (!installed)
+                Check("a read-only target makes the install fail closed with the game untouched", Snapshot(game) == before && !File.Exists(patch.StatePath) && !Directory.Exists(patch.BackupDirectory), "same=" + (Snapshot(game) == before) + " state=" + File.Exists(patch.StatePath) + " backup=" + Directory.Exists(patch.BackupDirectory) + " now=" + Snapshot(game).Replace("\n", " | "));
+            else
+            {
+                File.SetAttributes(target, FileAttributes.Normal);
+                try { patch.Uninstall(game); } catch (Exception) { }
+                Check("a read-only target that was replaced is restored exactly by uninstall", Read(game, Overlay) == v24 && !File.Exists(Path.Combine(game, Activation)));
+            }
+            try { File.SetAttributes(target, FileAttributes.Normal); } catch { }
+        }
+
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
         try { Directory.Delete(work, true); } catch { }
         return allPass ? 0 : 1;

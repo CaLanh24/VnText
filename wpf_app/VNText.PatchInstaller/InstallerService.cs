@@ -131,6 +131,7 @@ public sealed partial class InstallerService
         var patchId = PatchId();
         var notes = new List<string>();
         var createdOriginals = new List<string>();
+        var createdTemps = new List<string>();
         var priorReceipt = File.Exists(ReceiptPath(root)) ? File.ReadAllBytes(ReceiptPath(root)) : null;
         // A different VNText patch that is verifiably active may be upgraded only when this patch was built from exactly its installed bytes;
         // otherwise (or when the owned file was edited) layering is refused and nothing is written.
@@ -194,8 +195,13 @@ public sealed partial class InstallerService
                 var payload = ResolveSafe(PayloadDirectory, file.Path);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 var temp = target + $".vntext-install-{Environment.ProcessId}.tmp";
+                createdTemps.Add(temp);
                 File.Copy(payload, temp, true);
-                File.Move(temp, target, true);
+                try { File.Move(temp, target, true); }
+                catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+                {
+                    throw new InvalidOperationException($"Không ghi được {file.Path}: tệp đang chỉ-đọc hoặc bị chương trình khác khóa. Game được giữ nguyên; bỏ chỉ-đọc/đóng game rồi cài lại. ({ex.Message})");
+                }
                 prepared.Add(new InstalledFile(file.Path, backupRel, exists, file.OriginalSha256, file.SourceSha256));
                 if (!string.Equals(HashFile(target), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Kiểm hash sau khi cài thất bại: {file.Path}");
@@ -207,13 +213,18 @@ public sealed partial class InstallerService
         }
         catch
         {
-            Rollback(root, prepared);
-            if (Directory.Exists(BackupDirectory)) Directory.Delete(BackupDirectory, true);
-            if (File.Exists(StatePath)) File.Delete(StatePath);
-            foreach (var kept in createdOriginals) if (File.Exists(kept)) File.Delete(kept);
-            if (priorReceipt is null) { if (File.Exists(ReceiptPath(root))) File.Delete(ReceiptPath(root)); }
-            else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(ReceiptPath(root), priorReceipt); }
-            TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
+            // Every cleanup step is independent and tolerant: a read-only backup or a locked temp file must not stop the rest of the rollback.
+            Attempt(() => Rollback(root, prepared));
+            Attempt(() => ForceDeleteDirectory(BackupDirectory));
+            Attempt(() => ForceDeleteFile(StatePath));
+            foreach (var kept in createdOriginals) Attempt(() => ForceDeleteFile(kept));
+            foreach (var temp in createdTemps) Attempt(() => ForceDeleteFile(temp));
+            Attempt(() =>
+            {
+                if (priorReceipt is null) ForceDeleteFile(ReceiptPath(root));
+                else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(ReceiptPath(root), priorReceipt); }
+            });
+            Attempt(() => TryDeleteEmpty(OriginalsRoot(root))); Attempt(() => TryDeleteEmpty(ReceiptDirectory(root)));
             throw;
         }
     }
@@ -295,7 +306,7 @@ public sealed partial class InstallerService
         foreach (var relative in consumed)
         {
             var backup = ResolveSafe(BackupDirectory, relative);
-            File.Delete(backup);
+            ForceDeleteFile(backup);
             for (var directory = Path.GetDirectoryName(backup); directory is not null
                 && directory.StartsWith(BackupDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
                 directory = Path.GetDirectoryName(directory))
@@ -436,6 +447,23 @@ public sealed partial class InstallerService
     }
 
     private sealed record UnityLayout(string? Executable, string? DataDirectory);
+
+    private static void Attempt(Action step) { try { step(); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } }
+
+    private static void ForceDeleteFile(string path)
+    {
+        if (!File.Exists(path)) return;
+        File.SetAttributes(path, File.GetAttributes(path) & ~FileAttributes.ReadOnly);
+        File.Delete(path);
+    }
+
+    private static void ForceDeleteDirectory(string directory)
+    {
+        if (!Directory.Exists(directory)) return;
+        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+            File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+        Directory.Delete(directory, true);
+    }
 
     private static string NormalizeGameRoot(string root) => Path.GetFullPath(root.Trim().Trim('"'));
 
