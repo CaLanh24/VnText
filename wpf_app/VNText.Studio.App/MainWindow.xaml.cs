@@ -114,11 +114,17 @@ public partial class MainWindow : Window
                 {
                     e.Cancel=true; HideToTray(); return;
                 }
-                if (vm.Busy)
+                if (vm.Busy && !_forceCloseWorker)
                 {
                     e.Cancel = true;
+                    if (vm.CancelRequestedPending)
+                    {
+                        // Cancel already requested and not yet honored: the second close is a forced exit, never another wait.
+                        vm.ForceExitNow();
+                        return;
+                    }
                     var cancelAndExit = AppDialogService.Show(
-                        "Tác vụ đang chạy. Bạn có muốn yêu cầu hủy an toàn rồi thoát sau khi worker báo kết thúc không? Ứng dụng sẽ tiếp tục chờ nếu worker chưa dừng.",
+                        $"Tác vụ đang chạy. Chọn Có để hủy an toàn rồi thoát; nếu worker không phản hồi trong {MainViewModel.ExitHardLimitSeconds} giây, ứng dụng sẽ dừng cưỡng bức worker và thoát. Dữ liệu đã lưu được giữ nguyên.",
                         "Tác vụ chưa hoàn tất", MessageBoxButton.YesNo, MessageBoxImage.Question, this);
                     if (cancelAndExit == MessageBoxResult.Yes)
                         vm.CancelAndExitCommand.Execute(null);
@@ -188,8 +194,10 @@ public partial class MainWindow : Window
     private void OnExitAfterTaskRequested(object? sender, EventArgs e)
     {
         _explicitExit = true;
+        _forceCloseWorker = true;
         Close();
     }
+    private bool _forceCloseWorker;
     internal void ShowUpdateDialog(bool notes, string? successVersion = null)
     {
         if (_updateDialog is not null) { _updateDialog.Activate(); return; }

@@ -225,6 +225,42 @@ internal static class Harness
             Check("the blocked clean restore changed nothing", Snapshot(game) == before);
         }
 
+        // 9. field chain: an older release (no receipt, its own generated font) -> upgrade by a patch with a DIFFERENT font name -> uninstall.
+        //    The old font is not in the new patch, so nothing may touch it; the result must name it, and every restored file is hash-proven.
+        {
+            var game = NewGame(work, "g9");
+            const string oldFont = "game/tl/vietnamese/vntext_font_aaaaaaaaaaaaaaaa.ttf";
+            const string newFont = "game/tl/vietnamese/vntext_font_bbbbbbbbbbbbbbbb.ttf";
+            Directory.CreateDirectory(Path.Combine(game, "game", "tl", "vietnamese"));
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), v24);
+            File.WriteAllText(Path.Combine(game, Activation), act);
+            File.WriteAllBytes(Path.Combine(game, oldFont.Replace('/', '\\')), Bytes("OLD BROKEN FONT"));
+            var oldFontHash = Sha(Path.Combine(game, oldFont.Replace('/', '\\')));
+            var next = MakePatch(work, "x26", "0.1.26", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act), new Spec(newFont, "NEW FONT", false, null));
+            Check("preflight names the older unreceipted font that this patch does not replace", string.Join("|", next.DescribeOwnership(game)).Contains("vntext_font_aaaaaaaaaaaaaaaa.ttf"));
+            next.Install(game);
+            Check("the old font is untouched by the upgrade", Sha(Path.Combine(game, oldFont.Replace('/', '\\'))) == oldFontHash);
+            var removed = next.Uninstall(game);
+            var allNotes = string.Join("|", removed.Notes);
+            Check("uninstall restores overlay and activation to the previous bytes", Read(game, Overlay) == v24 && Read(game, Activation) == act && !File.Exists(Path.Combine(game, newFont.Replace('/', '\\'))));
+            Check("uninstall says the previous (not clean) version is what is back", allNotes.Contains("không phải game gốc sạch"));
+            Check("uninstall reports the leftover old font by name and hash, and leaves it byte-identical", allNotes.Contains("CÒN LẠI") && allNotes.Contains("vntext_font_aaaaaaaaaaaaaaaa.ttf") && allNotes.Contains(oldFontHash[..12])
+                && Sha(Path.Combine(game, oldFont.Replace('/', '\\'))) == oldFontHash);
+        }
+
+        // 10. missing backup: refuse before writing anything and say what is left in place.
+        {
+            var game = NewGame(work, "g10");
+            Directory.CreateDirectory(Path.Combine(game, "game", "tl", "vietnamese"));
+            File.WriteAllText(Path.Combine(game, Overlay.Replace('/', '\\')), v24);
+            var patch = MakePatch(work, "y26", "0.1.26", game, new Spec(Overlay, v25, true, v24));
+            patch.Install(game);
+            File.Delete(Path.Combine(patch.BackupDirectory, Overlay.Replace('/', '\\')));
+            var before = Snapshot(game);
+            Check("a missing backup blocks the uninstall and says the game was not changed", Throws(() => patch.Uninstall(game), "Game chưa bị thay đổi", out var m10), m10);
+            Check("the blocked uninstall left the game byte-identical", Snapshot(game) == before && Read(game, Overlay) == v25);
+        }
+
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
         try { Directory.Delete(work, true); } catch { }
         return allPass ? 0 : 1;

@@ -38,6 +38,7 @@ def emit_progress(
     step: str = "",
     item: str = "",
     eta: str | None = None,
+    overall: int | None = None,
 ) -> None:
     msg: dict[str, Any] = {
         "type": "progress",
@@ -49,6 +50,8 @@ def emit_progress(
     }
     if eta:
         msg["eta"] = eta
+    if overall is not None:
+        msg["overall"] = max(0, min(100, int(overall)))   # whole-task percentage; done/total then describe only the current step
     emit(msg)
 
 
@@ -83,6 +86,7 @@ def emit_complete(
     patch_install_instructions: str | None = None,
     image_summary: str | None = None,
     image_pending: int | None = None,
+    image_scan_pending: bool | None = None,
     operation_scope: str | None = None,
     selected_total: int | None = None,
     selected_done: int | None = None,
@@ -138,7 +142,7 @@ def emit_complete(
     for key, value in patch_fields.items():
         if value is not None and value != "":
             msg[key] = value
-    for key, value in {"image_summary": image_summary, "image_pending": image_pending,
+    for key, value in {"image_summary": image_summary, "image_pending": image_pending, "image_scan_pending": image_scan_pending,
                        "operation_scope": operation_scope, "selected_total": selected_total,
                        "selected_done": selected_done, "package_counts": package_counts}.items():
         if value is not None:

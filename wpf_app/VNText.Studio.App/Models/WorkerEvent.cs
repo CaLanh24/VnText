@@ -13,6 +13,8 @@ public sealed class WorkerEvent
     public string Step { get; set; } = "";
     public string Item { get; set; } = "";
     public string? Eta { get; set; }
+    /// <summary>Whole-task percentage when the worker reports one; Done/Total then describe only the current step.</summary>
+    public int? Overall { get; set; }
     public bool Ok { get; set; }
     public bool? Complete { get; set; }
     public bool RenpySdkMissing { get; set; }
@@ -26,6 +28,7 @@ public sealed class WorkerEvent
     public int Translated { get; set; }
     public string ImageSummary { get; set; } = "";
     public int ImagePending { get; set; }
+    public bool ImageScanPending { get; set; }
     public int Applied { get; set; }
     public int HumanReviewRequiredCount { get; set; }
     public string Summary { get; set; } = "";
@@ -70,6 +73,8 @@ public sealed class WorkerEvent
             if (root.TryGetProperty("ok", out var okEl)) evt.Ok = okEl.GetBoolean();
             if (root.TryGetProperty("image_summary", out var imageSummary)) evt.ImageSummary = imageSummary.GetString() ?? "";
             if (root.TryGetProperty("image_pending", out var imagePending)) evt.ImagePending = imagePending.GetInt32();
+            if (root.TryGetProperty("overall", out var overallEl) && overallEl.TryGetInt32(out var overallPct)) evt.Overall = Math.Clamp(overallPct, 0, 100);
+            if (root.TryGetProperty("image_scan_pending", out var imageScanPending) && imageScanPending.ValueKind == JsonValueKind.True) evt.ImageScanPending = true;
             if (root.TryGetProperty("complete", out var compEl)) evt.Complete = compEl.GetBoolean();
             if (root.TryGetProperty("renpy_sdk_missing", out var renpySdkEl)) evt.RenpySdkMissing = renpySdkEl.GetBoolean();
             if (root.TryGetProperty("pending", out var pendEl)) evt.Pending = pendEl.GetInt32();

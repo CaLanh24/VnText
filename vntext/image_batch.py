@@ -265,6 +265,36 @@ def _render_draft(document, output, font_path, is_cancelled):
         image.save(stream,format='PNG')
 
 
+def _batch_archive(archives, container):
+    """One RenPyArchive per container for the whole batch: opening it hashes the entire (often multi-GB) file, so it must not happen per image."""
+    from vntext.renpy_archive import RenPyArchive
+    key=str(container)
+    if key not in archives: archives[key]=RenPyArchive(container)
+    return archives[key]
+
+
+def _display_name(reference):
+    """Readable name for progress: an RPA member shows as its in-archive file name, not a percent-encoded container URL."""
+    from vntext.renpy_archive import parse_member_reference
+    try: parsed=parse_member_reference(reference)
+    except Exception: parsed=None
+    return Path(parsed[1]).name if parsed else Path(reference).name
+
+
+def clear_empty_image_stub(package):
+    """Remove only the empty placeholder a re-extract leaves in images/ so the follow-up scan starts a normal first run."""
+    images=Path(package)/'images'
+    report=images/'report.json'
+    try:
+        data=json.loads(report.read_text(encoding='utf-8'))
+    except (OSError,ValueError):
+        return False
+    if data.get('status')!='EMPTY' or data.get('items') or sorted(p.name for p in images.iterdir())!=['report.json']:
+        return False
+    report.unlink(); images.rmdir()
+    return True
+
+
 def run_image_batch(source, package, *, sources=None, is_cancelled=None, progress=None, translate=True):
     """OCR images, optionally translating and rendering drafts for Translate."""
     cancelled=is_cancelled or (lambda:False)
@@ -292,7 +322,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
             except PermissionError:
                 if attempt == 7: raise
                 time.sleep(0.05 * (attempt + 1))
-    save(); used_bytes=0; translator=None; model_error=''
+    save(); used_bytes=0; translator=None; model_error=''; archives={}
     started=time.monotonic()
     try:
         for index,reference in enumerate(inventory['image_paths']):
@@ -306,7 +336,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                 archive_ref=parse_member_reference(reference)
                 if archive_ref:
                     container,member=archive_ref
-                    content=RenPyArchive(container).read_member(member)
+                    content=_batch_archive(archives,container).read_member(member)
                     data=content['content']; filename=Path(member).name
                     item.update(container=str(container),container_sha256=content['container_sha256'],member=member,member_sha256=content['member_sha256'])
                 else:
@@ -333,7 +363,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     used_bytes-=len(data)
                     original=None
                     if progress:
-                        progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Lọc ảnh không có chữ','item':filename})
+                        progress({'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'Quét ảnh có chữ','item':filename})
                     continue
                 if len(regions)>500: raise ValueError('Ảnh có quá 500 vùng chữ.')
                 confirmed=root/'original'/key
@@ -387,11 +417,17 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     item.pop('original',None)
                 save()
             if progress:
-                event={'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'OCR ảnh','item':Path(reference).name}
+                event={'done':index+1,'total':len(inventory['image_paths']),'step':'Dịch ảnh' if translate else 'Quét ảnh có chữ','item':_display_name(reference)}
                 # Advisory ETA (seconds, the convention of the other stages): elapsed/done * remaining; omitted while unknown or finished.
                 elapsed=time.monotonic()-started;remaining=event['total']-event['done']
                 if remaining>0 and elapsed>0: event['eta']=round(elapsed/event['done']*remaining,1)
                 progress(event)
+        # One full-file proof per archive after the whole read-only batch (instead of a multi-GB hash per image).
+        for container_path,opened in archives.items():
+            try: opened.verify_unchanged()
+            except Exception as exc:
+                report['inventory_complete']=False; report['inventory_errors'].append({'path':container_path,'error':str(exc)[:300]})
+                inventory['complete']=False
         if report['status']=='RUNNING':
             failed=any(item['status']=='UNTRANSLATED' for item in report['items'])
             complete=inventory['complete'] and not failed

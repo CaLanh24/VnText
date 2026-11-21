@@ -27,6 +27,9 @@ public sealed partial class MainViewModel
             "unity_classify" when task == "extract" => "Đang phân loại tài nguyên để lấy text",
             "unity_classify" => "Đang phân loại tài nguyên",
             "unity_hash" => "Đang kiểm tra tài nguyên",
+            "engine_detection" => "Đang nhận diện engine",
+            "asset_scan" => "Đang kiểm tra font và ảnh của game",
+            "report_write" => "Đang ghi báo cáo",
             _ => value,
         };
     }
@@ -146,9 +149,9 @@ public sealed partial class MainViewModel
             case "progress":
                 if (!string.IsNullOrWhiteSpace(evt.Id) && _terminalTaskIds.Contains(evt.Id))
                     break;
-                if (evt.Total > 0)
+                if (evt.Total > 0 || evt.Overall is not null)
                 {
-                    var pct = (int)Math.Round(evt.Done * 100.0 / evt.Total);
+                    var pct = evt.Overall ?? (int)Math.Round(evt.Done * 100.0 / evt.Total);
                     var boundedPercent = Math.Clamp(pct, 0, 99);
                     var userStep = FormatUserProgressStep(evt.Step, _runningTask);
                     var parts = new List<string> { $"{boundedPercent}%" };
@@ -598,6 +601,9 @@ public sealed partial class MainViewModel
                 if (completedTask == "patch" && fullyComplete)
                     ApplyPatchDelivery(evt);
                 CaptureExtractStatus(completedTask, StatusText);
+                if (completedTask == "extract" && evt.ImageScanPending && !cancelled && !_exitAfterTask
+                    && File.Exists(Path.Combine(OutputPath, "translation.csv")))
+                    StartBackgroundImageScan();
                 FinishCancelAndExit();
                 break;
             case "error":

@@ -14,6 +14,19 @@ def run_image_worker(task_id, task, params, is_cancelled):
         if params.get('cached_only'):
             result = translate_cached_images(params['out'], source=params['src'], is_cancelled=is_cancelled,
                 progress=lambda info: emit_progress(task_id, **info))
+        elif params.get('after_extract'):
+            # Background image scan that follows a finished text extraction: OCR only, never touches translation.csv.
+            import time
+            from vntext.image_batch import clear_empty_image_stub
+            from vntext_worker.protocol import emit_log
+            clear_empty_image_stub(params['out'])
+            started = time.monotonic()
+            result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
+                is_cancelled=is_cancelled, translate=False, progress=lambda info: emit_progress(task_id, **info))
+            emit_log(task_id, f"Quét ảnh: {round(time.monotonic() - started, 1)} giây; {result['total']} ảnh có chữ, {result['ocr_failed']} lỗi OCR.")
+            summary = (f"Quét ảnh xong: {result['total']} ảnh có chữ" if result['total'] else "Quét ảnh xong: không thấy ảnh có chữ")                 + (f"; {result['ocr_failed']} ảnh lỗi OCR" if result['ocr_failed'] else "") + ". CSV text không bị ảnh hưởng."
+            emit_complete(task_id, ok=not result['cancelled'], summary=summary, error='cancelled' if result['cancelled'] else '')
+            return
         else:
             result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
                 is_cancelled=is_cancelled, progress=lambda info: emit_progress(task_id, **info))

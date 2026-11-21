@@ -57,7 +57,7 @@ def prepare_image_delivery(document, rendered, game_root, output):
         if not container.is_relative_to(game) or container.suffix.lower() != '.rpa':
             raise ValueError('Archive must belong to the selected game')
         member = _relative(document['source_member_name'], image=True)
-        item = RenPyArchive(container).read_member(member)
+        item = RenPyArchive(container, fresh=True).read_member(member)
         if (item['container_sha256'] != document['source_container_sha256']
                 or item['member_sha256'] != document['source_member_sha256']
                 or source_hash != item['member_sha256']):
@@ -114,7 +114,7 @@ def install_image_delivery(package, game_copy, transaction):
         raise ValueError('Game copy baseline mismatch')
     if 'member' in baseline:
         if (target_root / 'game' / relative).exists(): raise ValueError('Loose image shadows archive baseline')
-        item = RenPyArchive(target_root / baseline_path).read_member(_relative(baseline['member'], image=True))
+        item = RenPyArchive(target_root / baseline_path, fresh=True).read_member(_relative(baseline['member'], image=True))
         if item['member_sha256'] != baseline['member_sha256']: raise ValueError('Archive member mismatch')
     target = _regular(target_root / target_relative)
     if target.exists(): raise ValueError('Existing locale image preserved; uninstall the previous locale patch first')

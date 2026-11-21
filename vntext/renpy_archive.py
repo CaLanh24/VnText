@@ -119,8 +119,20 @@ def _safe_index(data: bytes) -> dict:
     return stack[0]
 
 
+# Read-only flows (scan, engine detection, text/image extraction) open the same multi-GB archive many times in one process.  Hashing the whole file twice per
+# open (plus once per member read) cost ~16 s per image on a 3.5 GB archive.  The parsed archive is therefore memoised per (path, size, mtime_ns).  Anything that
+# WRITES to a game or proves a hash for an install passes ``fresh=True`` and keeps the original full-file proof on every open and read.
+_PARSE_CACHE: dict[tuple[str, int, int], dict] = {}
+_PARSE_CACHE_LIMIT = 16
+
+
+def clear_archive_cache() -> None:
+    _PARSE_CACHE.clear()
+
+
 class RenPyArchive:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, *, fresh: bool = False):
+        self.strict = bool(fresh)
         candidate = Path(path).absolute()
         for part in (candidate, *candidate.parents):
             if part.exists() and (part.is_symlink() or getattr(part.stat(), "st_file_attributes", 0) & 0x400):
@@ -130,6 +142,12 @@ class RenPyArchive:
         if not self.path.is_file() or os.path.islink(self.path) or getattr(info, "st_file_attributes", 0) & 0x400:
             raise RenPyArchiveError("RPA archive must be a regular file")
         self.size = info.st_size
+        self._stamp = (info.st_size, info.st_mtime_ns)
+        cache_key = (str(self.path), info.st_size, info.st_mtime_ns)
+        cached = None if self.strict else _PARSE_CACHE.get(cache_key)
+        if cached is not None:
+            self.container_sha256 = cached["sha"]; self.version = cached["version"]; self.index_offset = cached["index_offset"]; self.members = cached["members"]
+            return
         self.container_sha256 = self._hash_file()
         with self.path.open("rb") as f:
             header = f.readline(128)
@@ -175,8 +193,15 @@ class RenPyArchive:
         ordered = sorted(all_ranges)
         if any(left[1] > right[0] for left, right in zip(ordered, ordered[1:])):
             raise RenPyArchiveError("RPA member ranges overlap")
-        if self._hash_file() != self.container_sha256:
-            raise RenPyArchiveError("RPA archive changed while its index was being read")
+        if self.strict:
+            if self._hash_file() != self.container_sha256:
+                raise RenPyArchiveError("RPA archive changed while its index was being read")
+        else:
+            after = self.path.lstat()
+            if (after.st_size, after.st_mtime_ns) != self._stamp:
+                raise RenPyArchiveError("RPA archive changed while its index was being read")
+            if len(_PARSE_CACHE) >= _PARSE_CACHE_LIMIT: _PARSE_CACHE.clear()
+            _PARSE_CACHE[cache_key] = {"sha": self.container_sha256, "version": self.version, "index_offset": self.index_offset, "members": self.members}
 
     @staticmethod
     def _safe_name(name: str) -> bool:
@@ -207,11 +232,21 @@ class RenPyArchive:
                 if len(data) != length: raise RenPyArchiveError("RPA member changed or truncated during read")
                 parts.append(prefix + data)
         content = b"".join(parts)
-        if self._hash_file() != self.container_sha256:
-            raise RenPyArchiveError("RPA archive changed while its member was being read")
+        if self.strict:
+            if self._hash_file() != self.container_sha256:
+                raise RenPyArchiveError("RPA archive changed while its member was being read")
+        else:
+            after = self.path.lstat()
+            if (after.st_size, after.st_mtime_ns) != self._stamp:
+                raise RenPyArchiveError("RPA archive changed while its member was being read")
         if len(content) > MAX_MEMBER_BYTES: raise RenPyArchiveError("RPA member exceeds 64 MiB")
         return {"name": name, "container_path": str(self.path), "container_sha256": self.container_sha256,
                 "member_sha256": hashlib.sha256(content).hexdigest(), "content": content}
+
+    def verify_unchanged(self) -> None:
+        """Full-file proof that the archive still has the hash recorded at open; call once after a long read-only batch."""
+        if self._hash_file() != self.container_sha256:
+            raise RenPyArchiveError("RPA archive changed while it was being read")
 
     def member_size(self, name: str) -> int:
         try: chunks = self.members[name]

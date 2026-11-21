@@ -123,6 +123,8 @@ internal static partial class Program
             Run("CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard", CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard, progressFailures);
             Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, progressFailures);
             Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, progressFailures);
+            Run("ForceExit_LeavesWithoutWaitingForATerminalEvent", ForceExit_LeavesWithoutWaitingForATerminalEvent, progressFailures);
+            Run("ForcedStop_ReleasesAHungWorkerTaskWithinABound", ForcedStop_ReleasesAHungWorkerTaskWithinABound, progressFailures);
             Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, progressFailures);
             Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, progressFailures);
             Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, progressFailures);
@@ -270,6 +272,8 @@ internal static partial class Program
         Run("CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard", CancelAcknowledgementAndTimeout_AreVisibleInTranslateCard, failures);
         Run("TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress", TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress, failures);
         Run("WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored", WorkerExitCompletion_CancelAndExitWaitsAndStaleErrorIsIgnored, failures);
+        Run("ForceExit_LeavesWithoutWaitingForATerminalEvent", ForceExit_LeavesWithoutWaitingForATerminalEvent, failures);
+        Run("ForcedStop_ReleasesAHungWorkerTaskWithinABound", ForcedStop_ReleasesAHungWorkerTaskWithinABound, failures);
         Run("WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit", WorkerHost_ErrorKeepsTaskOwnerUntilActualProcessExit, failures);
         Run("CancelAndExit_CancelledTerminalRequestsExitOnce", CancelAndExit_CancelledTerminalRequestsExitOnce, failures);
         Run("OrdinaryFailureTerminal_IsNotPresentedAsCancellation", OrdinaryFailureTerminal_IsNotPresentedAsCancellation, failures);
@@ -524,9 +528,9 @@ internal static partial class Program
         vm.TestReportCancelTimeout("old-extract");
         AssertEqual("Sẵn sàng", vm.StatusText);
         vm.TestReportCancelTimeout("current-translate");
-        AssertTrue(vm.StatusText.Contains("chờ tác vụ dừng an toàn", StringComparison.Ordinal));
-        AssertTrue(vm.ProgressSubtitle.Contains("30 giây", StringComparison.Ordinal));
-        AssertTrue(vm.TranslateWorkflowStatusText.Contains("30 giây", StringComparison.Ordinal));
+        AssertTrue(vm.StatusText.Contains("dừng cưỡng bức", StringComparison.Ordinal));
+        AssertTrue(vm.ProgressSubtitle.Contains("10 giây", StringComparison.Ordinal));
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("10 giây", StringComparison.Ordinal));
         var terminalText = vm.TranslateProgressSubtitle;
         vm.TestMarkTaskTerminal("current-translate");
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="current-translate", Done=4, Total=4, Step="late" });
@@ -598,8 +602,8 @@ internal static partial class Program
         AssertTrue(vm.TranslateWorkflowStatusText.Contains("đã nhận yêu cầu hủy", StringComparison.OrdinalIgnoreCase));
         AssertTrue(vm.LogLines.Any(line => line.Contains("Worker đã nhận yêu cầu hủy", StringComparison.Ordinal)));
         vm.TestReportCancelTimeout("cancel-visible");
-        AssertTrue(vm.TranslateWorkflowStatusText.Contains("30 giây", StringComparison.Ordinal));
-        AssertTrue(vm.TranslateWorkflowStatusText.Contains("không đóng ứng dụng cưỡng bức", StringComparison.Ordinal));
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("10 giây", StringComparison.Ordinal));
+        AssertTrue(vm.TranslateWorkflowStatusText.Contains("dừng", StringComparison.Ordinal));
     }
 
     private static void TranslateCancellationPayload_WinsErrorRaceAndClearsStaleProgress()
@@ -663,6 +667,41 @@ internal static partial class Program
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="error", Id="crashed-task", Error="Worker process exited" });
         AssertEqual(terminalStatus, vm.StatusText);
         AssertEqual(1, exitRequests);
+    }
+
+    private static void ForceExit_LeavesWithoutWaitingForATerminalEvent()
+    {
+        using var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker:false);
+        vm.TestSetActiveTask("hung-task", "extract");
+        var exitRequests = 0;
+        vm.ExitAfterTaskRequested += (_, _) => exitRequests++;
+        AssertTrue(vm.Busy);
+        vm.ForceExitNow();
+        AssertEqual(1, exitRequests);
+    }
+
+    /// <summary>A real worker process running a long task that never reaches a terminal event: the forced stop must free the task (as "cancelled") within seconds and leave no process.</summary>
+    private static void ForcedStop_ReleasesAHungWorkerTaskWithinABound()
+    {
+        using var host = new PythonWorkerHost();
+        var terminal = new ManualResetEventSlim();
+        string? error = null;
+        host.EventReceived += (_, evt) => { if (evt.Type == "complete" && evt.Id == "hung") { error = evt.Error; terminal.Set(); } };
+        host.StartAsync().GetAwaiter().GetResult();
+        host.RunTask("hung", "sample", new { steps = 100000, delay_ms = 1000 });
+        Thread.Sleep(1500);
+        AssertTrue(host.IsBusy);
+        var pid = host.ProcessId;
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        AssertTrue(host.ForceStopWorker());
+        AssertTrue(terminal.Wait(TimeSpan.FromSeconds(10)));
+        clock.Stop();
+        AssertTrue(clock.Elapsed < TimeSpan.FromSeconds(8));
+        AssertTrue(error is not null && error.Contains("cancelled", StringComparison.OrdinalIgnoreCase));
+        AssertFalse(host.IsBusy);
+        AssertFalse(host.IsAlive);
+        AssertTrue(pid is not null);
+        AssertTrue(System.Diagnostics.Process.GetProcesses().All(process => process.Id != pid));
     }
 
     private static void CancelAndExit_CancelledTerminalRequestsExitOnce()
@@ -2611,11 +2650,15 @@ internal static partial class Program
             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));   // source changed, nothing checked yet
             AssertEqual("stale", vm.PatchBadgeKind); AssertEqual("CẦN KIỂM TRA LẠI", vm.PatchBadgeText);
             AssertFalse(vm.PatchPreflightOk);
+            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // a source/font change leaves "Tạo patch" available; it re-checks by itself
+            vm.ResetPatchFontCommand.Execute(null);                              // changing the font invalidates the check but never blocks building
+            AssertTrue(vm.RunPatchCommand.CanExecute(null));
             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
             vm.ChooseTranslationCsvCommand.Execute(null);                       // B: judged and blocked
             AssertEqual("review", vm.PatchBadgeKind); AssertEqual("CẦN XEM LẠI", vm.PatchBadgeText);
             AssertFalse(vm.PatchPreflightOk);
-            AssertFalse(vm.RunPatchCommand.CanExecute(null));                    // packaging stays disabled
+            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // "Tạo patch" stays available: pressing it re-checks and names the concrete problem (no manual "Kiểm tra" step)
+            AssertFalse(vm.PatchPreflightOk);                                    // ...while the badge keeps saying the current check is blocked
             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
             vm.ChooseTranslationCsvCommand.Execute(null);                       // back to A: green only after its own current check
             AssertEqual("ready", vm.PatchBadgeKind);

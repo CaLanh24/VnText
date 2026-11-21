@@ -15,8 +15,8 @@ public sealed partial class MainViewModel
     private string _imageOverlaySpec = "";
     // Optional: a user-authored rendered-image spec (known imagemap/imagebutton assets, declared regions). The product validates it when the patch is built; nothing is recognised automatically.
     public bool ImageSpecIsSet => !string.IsNullOrEmpty(_imageOverlaySpec);
-    public string ImageSpecLabel => ImageSpecIsSet ? UiText.Msg("Spec ảnh: {0}", Path.GetFileName(_imageOverlaySpec)) : "Chưa đính kèm spec ảnh (tùy chọn)";
-    public string ImageSpecHelpText => "Ảnh có chữ chỉ được thay khi bạn đính kèm spec ảnh đã dựng sẵn (ảnh gốc, vùng đổi, PNG/WebP lossless). Spec được kiểm khi đóng gói; ứng dụng không tự nhận diện chữ trong ảnh.";
+    public string ImageSpecLabel => ImageSpecIsSet ? UiText.Msg("Ảnh đã chọn: {0}", Path.GetFileName(_imageOverlaySpec)) : "Không dùng ảnh (tùy chọn)";
+    public string ImageSpecHelpText => "Bỏ qua nếu game không có ảnh chứa chữ. Nếu có, chọn tệp mô tả ảnh đã chỉnh sửa sẵn; ứng dụng kiểm tệp này khi tạo patch và không tự sửa chữ trong ảnh.";
     private void RaiseImageSpec() { Raise(nameof(ImageSpecIsSet)); Raise(nameof(ImageSpecLabel)); }
     public RelayCommand ChooseImageSpecCommand { get; private set; } = null!;
     public RelayCommand ResetImageSpecCommand { get; private set; } = null!;
@@ -51,7 +51,7 @@ public sealed partial class MainViewModel
         ChooseImageSpecCommand = new RelayCommand(_ =>
         {
             if (Busy) return;
-            var picker = new OpenFileDialog { Filter = "Spec ảnh (*.json)|*.json", Title = UiText.Translate("Chọn spec ảnh đã dựng sẵn") };
+            var picker = new OpenFileDialog { Filter = "Tệp mô tả ảnh (*.json)|*.json", Title = UiText.Translate("Chọn tệp mô tả ảnh đã chỉnh sửa") };
             var opener = System.Windows.Input.Keyboard.FocusedElement;
             if (picker.ShowDialog() != true) { RestoreFocus(opener); return; }
             _imageOverlaySpec = picker.FileName; RaiseImageSpec(); InvalidatePatchSourceState(); RestoreFocus(opener);

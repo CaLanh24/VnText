@@ -47,6 +47,25 @@ def _write(path: Path, data: bytes, expected: str | None) -> None:
         temp.unlink(missing_ok=True)
 
 
+def _sweep_interrupted_leftovers(root: Path) -> list[str]:
+    """Remove what a killed extraction left behind (forced stop, power loss).  Runs only while this call holds the output lock, so nothing live can own
+    them: private staging directories and half-written temp files carry VNText's own unique prefixes; every other file in the output is left alone."""
+    removed = []
+    for child in root.iterdir():
+        try:
+            if child.is_symlink() or getattr(child.lstat(), "st_file_attributes", 0) & 0x400:
+                continue
+            if child.is_dir() and child.name.startswith(".vntext-extract-"):
+                shutil.rmtree(child)
+                removed.append(child.name)
+            elif child.is_file() and child.name.startswith(".vntext-new-"):
+                child.unlink()
+                removed.append(child.name)
+        except OSError:
+            continue
+    return removed
+
+
 def _take_lock(lock: Path) -> int:
     from vntext.traceability import _pid_alive
     for _ in range(2):
@@ -100,6 +119,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
                 if (root / ".mt" / name).exists():
                     raise ValueError("Gói dịch đang được sử dụng; hãy đóng tác vụ đang dùng gói rồi thử lại.")
         idle()
+        _sweep_interrupted_leftovers(root)
         reserved = ("translation.csv", "manifest.json", "review_only.csv", "raw_candidates.csv", "raw_unpatchable.csv",
                     "raw_candidates_rejected.csv", "technical_skipped.csv", "unity_analysis.json", "extract_report.txt",
                     "renpy_runtime_dynamic.json", "renpy_engine_common_exclusions.json", "images/report.json",

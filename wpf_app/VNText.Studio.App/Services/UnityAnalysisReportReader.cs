@@ -19,6 +19,12 @@ public sealed record UnityAnalysisReportSnapshot(
 {
     public int ReviewRiskCount => ReviewRequiredCount + UnsupportedCount;
 
+    /// <summary>Engine as classified by the worker during this scan ("RENPY_LOOSE_SOURCE", "UNITY", ...); empty for reports written by older versions.</summary>
+    public string EngineDetection { get; init; } = "";
+    public string EngineDetectionReason { get; init; } = "";
+    public bool HasRenpyAssets { get; init; }
+    public string TimingsText { get; init; } = "";
+
     /// <summary>Plain-language font / image inventory lines for a Ren'Py folder (empty for other engines).</summary>
     public IReadOnlyList<string> AssetLines { get; init; } = Array.Empty<string>();
 }
@@ -54,6 +60,11 @@ public static class UnityAnalysisReportReader
                 reportPath)
             {
                 AssetLines = root.TryGetProperty("renpy_assets", out var assets) ? AssetInventoryPresentation.FromScan(assets) : Array.Empty<string>(),
+                HasRenpyAssets = root.TryGetProperty("renpy_assets", out var renpyAssets) && renpyAssets.ValueKind == JsonValueKind.Object,
+                EngineDetection = GetString(GetObject(root, "engine_detection"), "engine", ""),
+                EngineDetectionReason = GetString(GetObject(root, "engine_detection"), "reason", ""),
+                TimingsText = root.TryGetProperty("timings_seconds", out var timings) && timings.ValueKind == JsonValueKind.Object
+                    ? string.Join(", ", timings.EnumerateObject().Select(item => $"{item.Name}={item.Value}")) : "",
             };
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)

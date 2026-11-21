@@ -100,6 +100,48 @@ public sealed partial class InstallerService
         return VnTextMarkers.Any(marker => head.StartsWith(marker, StringComparison.Ordinal));
     }
 
+    private static readonly string[] LegacyNamePrefixes = { "vntext_font_", "zzz_vntext_" };
+
+    /// <summary>A file VNText releases write: by name (generated fonts, overlay, activation) or by the generator's header.  Says nothing about WHICH release or whether it is verified.</summary>
+    private static bool LooksLikeVnTextFile(string path)
+    {
+        var name = Path.GetFileName(path);
+        if (LegacyNamePrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))) return true;
+        return name.EndsWith(".rpy", StringComparison.OrdinalIgnoreCase) && LooksLikeVnTextOverlay(path);
+    }
+
+    /// <summary>
+    /// VNText-looking files in the game's script/translation folders that no active receipt layer or patch file accounts for: typically an older release's generated font
+    /// or overlay installed without any receipt.  They are reported, never changed - nothing proves who installed them or that they are safe to remove.
+    /// </summary>
+    private List<string> FindUnverifiedLeftovers(string root, IEnumerable<string> accountedPaths)
+    {
+        var accounted = new HashSet<string>(accountedPaths.Select(p => p.Replace('\\', '/')), StringComparer.OrdinalIgnoreCase);
+        var receipt = LoadReceipt(root);
+        foreach (var pair in receipt.Paths) if (pair.Value.Layers.Count > 0) accounted.Add(pair.Key.Replace('\\', '/'));
+        var found = new List<string>();
+        var gameDirectory = Path.Combine(root, "game");
+        if (!Directory.Exists(gameDirectory)) return found;
+        var options = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
+        foreach (var file in Directory.EnumerateFiles(gameDirectory, "*", options))
+        {
+            var relative = Path.GetRelativePath(root, file).Replace('\\', '/');
+            if (accounted.Contains(relative)) continue;
+            var inTranslation = relative.StartsWith("game/tl/", StringComparison.OrdinalIgnoreCase) || Path.GetDirectoryName(relative)?.Replace('\\', '/') == "game";
+            if (!inTranslation) continue;
+            bool vntext;
+            try { vntext = LooksLikeVnTextFile(file); } catch (IOException) { continue; }
+            if (!vntext) continue;
+            found.Add($"{relative} (sha256 {HashFile(file)[..12]}..., {new FileInfo(file).Length:N0} byte)");
+            if (found.Count >= 40) break;
+        }
+        return found;
+    }
+
+    private static string LeftoverNote(IReadOnlyList<string> leftovers) => leftovers.Count == 0 ? ""
+        : "CÒN LẠI trong game (giữ nguyên, không xác minh được ai cài hoặc có backup không; có thể là patch VNText cũ vẫn đang chạy và gây lỗi font): "
+          + string.Join("; ", leftovers) + ". Muốn gỡ sạch, hãy gỡ bằng đúng patch đã cài chúng hoặc xác minh lại game.";
+
     /// <summary>Human-readable truth about who owns the files this patch would write (shown before installing and by the CLI).</summary>
     public List<string> DescribeOwnership(string gameRoot)
     {
@@ -124,6 +166,8 @@ public sealed partial class InstallerService
                     : $"{file.Path}: đã có tệp không do VNText quản lý; tệp được giữ nguyên làm bản gốc và sẽ được khôi phục khi gỡ.");
             }
         }
+        var leftovers = FindUnverifiedLeftovers(root, manifest.Files.Select(f => f.Path).Concat(manifest.Files.Select(f => f.Path + "c")));
+        if (leftovers.Count > 0) notes.Add(LeftoverNote(leftovers).Replace("CÒN LẠI trong game", "Đang có sẵn trong game"));
         return notes.Distinct().ToList();
     }
 
@@ -147,7 +191,7 @@ public sealed partial class InstallerService
         {
             var exists = File.Exists(target);
             entry = new ReceiptEntry { Kind = kind, FirstOriginalExists = exists, FirstOriginalSha256 = exists ? HashFile(target) : "" };
-            entry.Provenance = !exists ? "clean" : kind == "file" && relative.EndsWith(".rpy", StringComparison.OrdinalIgnoreCase) && LooksLikeVnTextOverlay(target) ? "legacy_vntext_unreceipted" : "unmanaged_existing";
+            entry.Provenance = !exists ? "clean" : kind == "file" && LooksLikeVnTextFile(target) ? "legacy_vntext_unreceipted" : "unmanaged_existing";
             if (exists)
             {
                 var keep = ResolveSafe(OriginalsRoot(root), relative);
@@ -216,6 +260,7 @@ public sealed partial class InstallerService
             if (File.Exists(originalKeep)) File.Delete(originalKeep);
         }
         SaveReceipt(root, receipt);
+        notes.Add("Đã về đúng bản gốc đầu tiên ghi trong biên nhận (hash đã khớp).");
         return new UninstallResult(notes);
     }
 }

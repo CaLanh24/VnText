@@ -171,6 +171,14 @@ public sealed partial class MainViewModel
             : UiText.Msg("Một tác vụ khác đang chạy ({0}) — chờ xong hoặc bấm Hủy trước khi dùng ảnh.", UiText.Key(ImageTaskLabel(_runningTask)));
     /// <summary>Latest progress / cancel-acknowledgement line of the running task; empty when idle.</summary>
     public string ImageWorkspaceProgressText => Busy ? ProgressSubtitle : "";
+    /// <summary>Own task with its own progress: the text CSV is already published, so image OCR can run (and be cancelled) without it.</summary>
+    private void StartBackgroundImageScan()
+    {
+        if (Busy || !Directory.Exists(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
+        AppendLog("CSV text đã sẵn sàng. Bắt đầu quét ảnh có chữ như một tác vụ riêng (hủy được, không ảnh hưởng CSV).");
+        BeginTask("image_batch", new { src = InputPath, @out = WorkflowStatus.ResolvePackageDir(OutputPath), after_extract = true }, "Đang quét ảnh có chữ (nền)…");
+    }
+
     internal void RaiseImageWorkspaceTaskState()
     {
         Raise(nameof(ImageWorkspaceTaskText));

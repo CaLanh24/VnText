@@ -143,6 +143,43 @@ class ExtractOutputRefreshTests(unittest.TestCase):
                 output.write_renpy_patch_manifest(patch_root, game, "test", {"entries": [entry] * 100})
             self.assertEqual(1, sum(call.args[0] == source for call in hashed.call_args_list))
 
+    def test_killed_extraction_leftovers_are_swept_and_user_data_is_untouched(self):
+        # A forced stop mid-extraction leaves a dead lock, a private staging folder and a half-written temp file.  The next run must recover
+        # without touching the previous CSV, user files, or anything it does not own.
+        def setup(out):
+            (out / ".vntext-extract.lock").write_text(json.dumps({"pid": 2 ** 30}), encoding="utf-8")
+            torn = out / ".vntext-extract-deadbeef"
+            torn.mkdir()
+            (torn / "translation.csv").write_bytes(b"half a CSV")
+            (out / ".vntext-new-0123abcd").write_bytes(b"half a write")
+            (out / "extract_status.json").write_text('{"status": "RUNNING", "complete": false}', encoding="utf-8")
+            (out / ".vntext-mine-not-ours.txt").write_bytes(b"user file with a similar prefix")
+
+        def run(source, out, results):
+            refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertTrue(results[-1]["ok"])
+            self.assertIn(b"Hello", (out / "translation.csv").read_bytes())
+            self.assertEqual(b"user data", (out / "notes.txt").read_bytes())
+            self.assertEqual(b"user file with a similar prefix", (out / ".vntext-mine-not-ours.txt").read_bytes())
+            self.assertFalse((out / ".vntext-extract-deadbeef").exists())
+            self.assertFalse((out / ".vntext-new-0123abcd").exists())
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+            self.assertTrue(json.loads((out / "extract_status.json").read_text())["complete"])
+        self.run_case(run, setup)
+
+    def test_interrupted_extraction_keeps_the_previous_csv_and_never_reads_as_ready(self):
+        def broken(stage, done, log):
+            (stage / "translation.csv").write_text("half", encoding="utf-8")
+            raise KeyboardInterrupt  # what a stop request looks like to the publisher: the stage is never published
+
+        def run(source, out, results):
+            with self.assertRaises(BaseException):
+                refresh_extract(source, out, broken, results.append, lambda _: None)
+            self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
+            self.assertFalse(json.loads((out / "extract_status.json").read_text()).get("complete", False))
+            self.assertFalse(any(p.name.startswith(".vntext-extract-") for p in out.iterdir()))
+        self.run_case(run)
+
     def test_stale_extract_lock_recovered_without_removing_user_files(self):
         def run(source, out, results):
             (out / ".vntext-extract.lock").write_text('{"pid": 999999999}', encoding="utf-8")

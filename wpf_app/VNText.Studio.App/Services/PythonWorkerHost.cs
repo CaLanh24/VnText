@@ -97,6 +97,28 @@ public sealed class PythonWorkerHost : IDisposable
         WriteCommand(new { v = 1, type = "cancel", id = taskId ?? _activeTaskId ?? "" });
     }
 
+    private volatile bool _forcedStop;
+
+    public bool IsAlive => _process is { HasExited: false };
+
+    /// <summary>
+    /// Bounded forced stop of a worker that did not honor a cancel request.  The exit handler then publishes the terminal
+    /// "cancelled" event, so task ownership is always released; the worker is restarted by the caller on demand.
+    /// </summary>
+    public bool ForceStopWorker()
+    {
+        var process = _process;
+        if (process is not { HasExited: false }) return false;
+        _forcedStop = true;
+        try
+        {
+            process.Kill(entireProcessTree: true);
+            process.WaitForExit(3000);
+            return true;
+        }
+        catch { return false; }
+    }
+
     public void KillWorkerForSmoke()
     {
         var process = _process;
@@ -173,6 +195,8 @@ public sealed class PythonWorkerHost : IDisposable
     private void HandleProcessExited()
     {
         _ready = false;
+        var forced = _forcedStop;
+        _forcedStop = false;
         var taskId = _activeTaskId ?? "";
         var wasBusy = !string.IsNullOrEmpty(taskId);
         _activeTaskId = null;
@@ -182,9 +206,12 @@ public sealed class PythonWorkerHost : IDisposable
                 Type = "complete",
                 Id = taskId,
                 Ok = false,
-                Error = "Worker process exited unexpectedly",
+                Error = forced
+                    ? "cancelled: worker đã được dừng cưỡng bức vì không phản hồi yêu cầu hủy"
+                    : "Worker process exited unexpectedly",
             });
-        Publish(new WorkerEvent { Type = "error", Id = taskId, Error = "Worker process exited" });
+        if (!forced)
+            Publish(new WorkerEvent { Type = "error", Id = taskId, Error = "Worker process exited" });
     }
 
     internal void TestSetActiveTaskId(string taskId) => _activeTaskId = taskId;
@@ -207,8 +234,12 @@ public sealed class PythonWorkerHost : IDisposable
         {
             try
             {
-                if (!process.HasExited && !process.WaitForExit(30000))
-                    Console.Error.WriteLine($"Python worker did not exit after graceful EOF (pid {process.Id}).");
+                // Bounded: an idle worker leaves at EOF at once; a busy or hung one is stopped instead of blocking exit.
+                if (!process.HasExited && !process.WaitForExit(_activeTaskId is null ? 5000 : 1000))
+                {
+                    Console.Error.WriteLine($"Python worker did not exit after graceful EOF (pid {process.Id}); stopping it.");
+                    try { process.Kill(entireProcessTree: true); process.WaitForExit(3000); } catch { /* already gone */ }
+                }
             }
             catch { /* ignore */ }
             process.Dispose();

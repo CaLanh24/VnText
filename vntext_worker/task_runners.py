@@ -52,7 +52,7 @@ def _make_callbacks(
 
     def complete(payload: dict) -> None:
         extra: dict[str, Any] = {}
-        for key in ("image_summary", "image_pending", "operation_scope", "selected_total", "selected_done", "package_counts"):
+        for key in ("image_summary", "image_pending", "image_scan_pending", "operation_scope", "selected_total", "selected_done", "package_counts"):
             if key in payload:
                 extra[key] = payload[key]
         if "complete" in payload:
@@ -141,14 +141,30 @@ def run_analyze_worker(
 
     from vntext.unity_analyzer import AnalyzerOptions, UnityAnalysisCancelled, analyze_unity_game
 
+    import time as _time
+    timings: dict[str, float] = {}
+    clock = [_time.monotonic()]
+
+    def lap(name: str) -> None:
+        now = _time.monotonic()
+        timings[name] = round(now - clock[0], 2)
+        clock[0] = now
+
+    # One honest percentage for the whole scan: inventory 0-80, engine 80-88, fonts/images 88-97, report 97-100.  The analyzer's own events keep
+    # their step names and per-step done/total; "overall" carries the scan-wide percentage (the per-file hash phase alone made the bar run backwards).
+    overall = [0]
+
+    def stage(step: str, pct: int, item: str = "") -> None:
+        overall[0] = max(overall[0], pct)
+        emit_progress(task_id, done=pct, total=100, step=step, item=item, overall=overall[0])
+
     def analyzer_progress(info: dict[str, Any]) -> None:
-        emit_progress(
-            task_id,
-            done=int(info.get("done") or 0),
-            total=int(info.get("total") or 0),
-            step=str(info.get("step") or ""),
-            item=str(info.get("item") or ""),
-        )
+        step = str(info.get("step") or "")
+        total = int(info.get("total") or 0)
+        done = int(info.get("done") or 0)
+        if step == "unity_classify" and total > 0:
+            overall[0] = max(overall[0], min(80, int(done * 80 / total)))
+        emit_progress(task_id, done=done, total=total, step=step, item=str(info.get("item") or ""), overall=overall[0])
 
     try:
         options = AnalyzerOptions(
@@ -164,13 +180,27 @@ def run_analyze_worker(
             progress_callback=analyzer_progress,
             is_cancelled=is_cancelled,
         )
+        lap("inventory")
         if is_cancelled():
             _finish_cancelled(task_id)
             return
+        # The engine is classified ONCE, here, and the app reads it from the report; it never re-walks the game folder on its own.
+        stage("engine_detection", 82)
+        from vntext.renpy_adapter import detect_engine
+        detection = detect_engine(src)
+        report["engine_detection"] = {"engine": detection.engine, "status": detection.status, "reason": detection.reason}
+        lap("engine_detection")
+        if is_cancelled():
+            _finish_cancelled(task_id)
+            return
+        stage("asset_scan", 90)
         from vntext.renpy_asset_scan import scan_renpy_assets
         renpy_assets = scan_renpy_assets(src)     # Ren'Py game folders only: per-font / per-image status with reasons, shown by the Scan step
         if renpy_assets is not None:
             report["renpy_assets"] = renpy_assets
+        lap("font_image_scan")
+        stage("report_write", 97)
+        report["timings_seconds"] = dict(timings)
 
         output_path = None
         if report_out:
@@ -190,6 +220,8 @@ def run_analyze_worker(
             else:
                 raise ValueError("report_out phải nằm ngoài thư mục game đang phân tích")
 
+        lap("write_report")
+        emit_log(task_id, "Thời gian quét (giây): " + ", ".join(f"{key}={value}" for key, value in timings.items()))
         unity = report.get("unity") or {}
         summary = (
             f"Unity analyzer: {unity.get('status', 'NOT_DETECTED')}; "

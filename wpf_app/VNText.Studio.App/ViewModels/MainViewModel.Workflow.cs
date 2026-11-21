@@ -598,11 +598,15 @@ public sealed partial class MainViewModel
         if (!ValidateTranslationCsv(silent: false))
         {
             StatusText = "CSV chưa hợp lệ";
+            AppDialogService.Show(UiText.Msg("Chưa thể tạo patch: file bản dịch chưa hợp lệ. {0} Cách xử lý: mở «Sửa CSV», sửa các dòng báo lỗi rồi bấm Tạo patch lại.", CsvValidationMessage),
+                "Tạo patch", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!RunPatchPreflight(silent: false))
         {
             StatusText = "Không có dòng hợp lệ để patch";
+            AppDialogService.Show(UiText.Msg("Chưa thể tạo patch: không có dòng nào đủ điều kiện. {0} Cách xử lý: dịch hoặc duyệt thêm dòng trong CSV rồi bấm Tạo patch lại.", PatchPreflightMessage),
+                "Tạo patch", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (PatchBlockedCount > 0 && AppDialogService.Show(
@@ -774,6 +778,7 @@ public sealed partial class MainViewModel
             Busy = false;
             _runningTask = null; RefreshResourcesActive();
             AppendLog($"Lỗi gửi task: {ex.Message}");
+            if (!_worker.IsAlive) { _ = InitializeWorkerAsync(); AppendLog("Worker đang được khởi động lại; hãy thử lại sau vài giây."); }
             StatusText = "Lỗi";
             StepStatusLine = UiText.Msg("Lỗi — {0}", ex.Message);
             RefreshWorkflow();
@@ -822,12 +827,51 @@ public sealed partial class MainViewModel
         }
     }
 
+    internal const int CancelGraceSeconds = 10;
+    internal const int ExitHardLimitSeconds = 15;
+
     private void CancelAndExit()
     {
         if (!Busy) return;
         _exitAfterTask = true;
         CancelTask();
+        // Exit must finish even if the cancel request is never honored: force-stop the worker, then leave regardless.
+        _ = ForceExitAfterLimitAsync();
     }
+
+    private async Task ForceExitAfterLimitAsync()
+    {
+        try { await Task.Delay(TimeSpan.FromSeconds(ExitHardLimitSeconds)).ConfigureAwait(false); } catch { return; }
+        var dispatcher = Application.Current?.Dispatcher;
+        void Leave()
+        {
+            if (!_exitAfterTask) return;
+            AppendLog("Thoát: worker không dừng đúng hạn; dừng cưỡng bức.");
+            _worker.ForceStopWorker();
+            _exitAfterTask = false;
+            ExitAfterTaskRequested?.Invoke(this, EventArgs.Empty);
+        }
+        if (dispatcher is null) Leave();
+        else if (!dispatcher.HasShutdownStarted) _ = dispatcher.BeginInvoke(new Action(Leave));
+    }
+
+    /// <summary>Immediate exit path for a second click on X while a cancel is already pending or the worker is hung.</summary>
+    internal void ForceExitNow()
+    {
+        AppendLog("Thoát ngay theo yêu cầu: dừng cưỡng bức worker.");
+        _exitAfterTask = false;
+        _worker.ForceStopWorker();
+        ExitAfterTaskRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async Task RestartWorkerAfterForcedStopAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(true);
+        if (_exitAfterTask || _worker.IsAlive) return;
+        await InitializeWorkerAsync().ConfigureAwait(true);
+    }
+
+    internal bool CancelRequestedPending => _cancelWatchdog is not null;
 
     private void FinishCancelAndExit()
     {
@@ -846,7 +890,7 @@ public sealed partial class MainViewModel
 
     private async Task WatchCancelTimeoutAsync(string taskId, CancellationToken token)
     {
-        try { await Task.Delay(TimeSpan.FromSeconds(30), token).ConfigureAwait(false); }
+        try { await Task.Delay(TimeSpan.FromSeconds(CancelGraceSeconds), token).ConfigureAwait(false); }
         catch (OperationCanceledException) { return; }
         var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher is null)
@@ -866,10 +910,12 @@ public sealed partial class MainViewModel
         if (!token.IsCancellationRequested && Busy
             && string.Equals(taskId, _activeTaskId, StringComparison.Ordinal))
         {
-            SetTaskLifecycleStatus("Hủy vẫn đang chờ tác vụ dừng an toàn");
-            ProgressSubtitle = "Chưa có kết quả cuối sau 30 giây; hãy tiếp tục chờ và không đóng ứng dụng cưỡng bức.";
+            SetTaskLifecycleStatus("Tác vụ không phản hồi yêu cầu hủy; đang dừng cưỡng bức");
+            ProgressSubtitle = $"Chưa có kết quả sau {CancelGraceSeconds} giây; dừng worker. Dữ liệu đã lưu trước đó được giữ nguyên.";
             SetOwnedProgress(_runningTask, text: ProgressSubtitle);
             AddTaskProgress(taskId, ProgressSubtitle);
+            if (_worker.ForceStopWorker())      // the exit handler publishes the terminal "cancelled" event, releasing the task
+                _ = RestartWorkerAfterForcedStopAsync();
         }
     }
 

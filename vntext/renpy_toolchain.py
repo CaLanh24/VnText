@@ -248,7 +248,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
             if any(part.casefold() in {"cache", "saves", "__pycache__", "tl"} for part in Path(archive_relative).parts):
                 continue
             try:
-                archive = RenPyArchive(archive_path)
+                archive = RenPyArchive(archive_path, fresh=True)
                 for member in archive.members:
                     member_path = Path(member)
                     if member_path.suffix.casefold() not in {".rpy", ".rpym"}:
@@ -302,7 +302,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
     resolved_archive_sources = {}
     for record in archive_sources:
         if is_cancelled and is_cancelled(): raise RenPyToolchainError("cancelled")
-        archive = RenPyArchive(source / record["archive_path"])
+        archive = RenPyArchive(source / record["archive_path"], fresh=True)
         if archive.container_sha256 != record["archive_sha256"]:
             raise RenPyToolchainError(f"RPA container changed during workspace copy: {record['archive_path']}")
         member = archive.read_member(record["member_name"])

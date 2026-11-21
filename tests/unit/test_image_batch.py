@@ -125,7 +125,7 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertEqual(events[1]['eta'],2.0)   # 4 s for 2 images, 1 left
         self.assertNotIn('eta',events[2])        # finished: nothing left to estimate
         for event in events:
-            self.assertEqual(event['step'],'OCR ảnh')
+            self.assertEqual(event['step'],'Quét ảnh có chữ')
             self.assertTrue(event.get('eta',0)>=0)
         self.assertEqual(result['translated'],0)
         self.assertFalse(any((Path(result['output'])/'translated').iterdir()))
@@ -274,15 +274,35 @@ class AutomaticImageTests(unittest.TestCase):
             run_extract_task(str(game),str(self.package),'safe','balanced',True,progress=lambda _:None,log=lambda _:None,complete=completed.append)
         return completed
 
-    def test_extract_prepares_ocr_without_running_image_translation(self):
-        image_batch=Mock(return_value={'total':1,'ocr_ready':1,'translated':0,'untranslated':0,'output':'image-ocr'})
+    def test_extract_finishes_text_without_scanning_images(self):
+        # Image OCR is its own host task now: the text package is terminal (and usable) the moment the text is done.
+        image_batch=Mock(side_effect=AssertionError('extract must not scan images'))
         batch=patch('vntext.image_batch.run_image_batch', image_batch)
         completed=self._extract(batch)
         self.assertTrue(completed[0]['ok'],completed)
         self.assertTrue((self.package/'translation.csv').exists())
-        image_batch.assert_called_once()
-        self.assertFalse(image_batch.call_args.kwargs['translate'])
-        self.assertIn('Mở tab Dịch ảnh',completed[0]['summary'])
+        image_batch.assert_not_called()
+        self.assertTrue(completed[0]['image_scan_pending'])
+
+    def test_after_extract_image_task_is_ocr_only_and_reports_its_own_summary(self):
+        from vntext_worker import image_tasks
+        events=[]
+        with patch('vntext.image_batch.run_image_batch', Mock(return_value={'total':3,'ocr_ready':3,'translated':0,'untranslated':0,'ocr_failed':0,'output':'x','cancelled':False})) as scan,              patch.object(image_tasks,'emit_complete',lambda task_id,**kw:events.append(kw)), patch('vntext_worker.protocol.emit_log',lambda *a,**k:None), patch('vntext_worker.protocol.emit_progress',lambda *a,**k:None):
+            image_tasks.run_image_worker('t','image_batch',{'src':str(self.source),'out':str(self.package),'after_extract':True},lambda:False)
+        self.assertFalse(scan.call_args.kwargs['translate'])
+        self.assertTrue(events[0]['ok'])
+        self.assertIn('Quét ảnh xong: 3 ảnh có chữ',events[0]['summary'])
+        self.assertIn('CSV text không bị ảnh hưởng',events[0]['summary'])
+
+    def test_empty_image_stub_is_cleared_only_when_it_is_the_placeholder(self):
+        from vntext.image_batch import clear_empty_image_stub
+        stub=self.package/'images';stub.mkdir(parents=True)
+        (stub/'report.json').write_text(json.dumps({'status':'EMPTY','items':[]}),encoding='utf-8')
+        self.assertTrue(clear_empty_image_stub(self.package))
+        self.assertFalse(stub.exists())
+        stub.mkdir();(stub/'report.json').write_text(json.dumps({'status':'OCR_COMPLETE','items':[{}]}),encoding='utf-8')
+        self.assertFalse(clear_empty_image_stub(self.package))
+        self.assertTrue((stub/'report.json').exists())
 
     def _extract_raw(self, game, batch=None):
         from vntext.app_tasks import run_extract_task
@@ -300,19 +320,18 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertIn('Chưa nhận diện input được hỗ trợ',completed[0]['error'])
         self.assertFalse((self.package/'translation.csv').exists())
 
-    def test_empty_text_container_keeps_the_ocr_note_in_the_error(self):
-        # Supported container whose only player-visible text is inside images: no text rows (EMPTY),
-        # but the OCR result must be visible in the user-facing error, not hidden in the summary.
+    def test_empty_text_container_reports_empty_text_and_leaves_images_to_their_own_task(self):
+        # Supported container whose only player-visible text is inside images: the text result is EMPTY and says so; the image scan is a separate task.
         game=self.root/'container';(game/'data').mkdir(parents=True);(game/'images').mkdir()
         (game/'data/build_info.json').write_text(json.dumps({'schema':1,'text_detection_policy':'crop-consensus-1','build':1}),encoding='utf-8')
         (game/'images/menu.png').write_bytes(self.data)
-        batch=Mock(return_value={'total':3,'ocr_ready':2,'translated':0,'untranslated':1,'output':'image-ocr'})
+        batch=Mock(side_effect=AssertionError('extract must not scan images'))
         completed=self._extract_raw(game,batch)
         self.assertFalse(completed[0]['ok'])
         self.assertEqual(completed[0]['extract_status'],'EMPTY')
         self.assertIn('Không có text sử dụng được',completed[0]['error'])
-        self.assertIn('Đã tìm thấy 3 ảnh có chữ',completed[0]['error'])
-        self.assertFalse(batch.call_args.kwargs['translate'])
+        self.assertTrue(completed[0]['image_scan_pending'])
+        batch.assert_not_called()
 
     def test_real_worker_image_retry_protocol_twice(self):
         if os.environ.get('VNTEXT_TEST_NATIVE_IMAGES')!='1': self.skipTest('explicit native OCR/model gate')

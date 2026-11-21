@@ -681,7 +681,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             try:
                 if container:
                     if source_path not in archive_cache:
-                        archive_cache[source_path] = RenPyArchive(source_path)
+                        archive_cache[source_path] = RenPyArchive(source_path, fresh=True)
                     archive = archive_cache[source_path]
                     if archive.container_sha256 != container.get("container_sha256"):
                         raise RenPyPatchError("Ren'Py RPA container precondition drift")
@@ -750,7 +750,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         # Every row was omitted (untranslated / unsafe): there is nothing to write.  Never emit an empty overlay that could read back as a patch.
         raise RenPyPatchError("Không có dòng nào đủ điều kiện để patch (chưa có dòng nào được dịch và qua kiểm tra); không tạo patch rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
     for archive_path, expected_hash in archive_identities.items():
-        if RenPyArchive(archive_path).container_sha256 != expected_hash:
+        if RenPyArchive(archive_path, fresh=True).container_sha256 != expected_hash:
             raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")
     existing_strings, existing_snapshots = _inventory_target_language_mappings(root, "vietnamese")
     from vntext.renpy_extract import existing_translation_inventory

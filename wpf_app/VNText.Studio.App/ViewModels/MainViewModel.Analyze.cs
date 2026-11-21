@@ -435,18 +435,34 @@ public sealed partial class MainViewModel
 
         AnalyzeInventoryComplete = snapshot.InventoryComplete && evt.Ok;
         AnalyzeUnityStatus = snapshot.UnityStatus;
+        // The worker classified the engine once during this very scan; the app never walks the game folder again, so the engine,
+        // the font/image inventory and the status always come from the same source and the same moment.
         string renpyEvidence;
-        try { renpyEvidence = RenpyGameDetector.GetRenpyEvidenceKind(InputPath, CancellationToken.None); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
-        { renpyEvidence = "unknown"; }
-        AnalyzeEngineSummary = snapshot.UnityStatus == "DETECTED" && renpyEvidence is not "none"
+        if (!string.IsNullOrEmpty(snapshot.EngineDetection))
+            renpyEvidence = snapshot.EngineDetection switch
+            {
+                "RENPY_LOOSE_SOURCE" => "loose_source",
+                "RENPY_COMPILED_ONLY" => "compiled_source",
+                "RENPY_ARCHIVE_SOURCE" => "archive_source",
+                "MIXED" => "loose_source",
+                "RENPY_ARCHIVE_UNSUPPORTED" => "archive_unsupported",
+                _ => snapshot.HasRenpyAssets ? "assets_only" : "none",
+            };
+        else
+        {
+            try { renpyEvidence = RenpyGameDetector.GetRenpyEvidenceKind(InputPath, CancellationToken.None); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            { renpyEvidence = "unknown"; }
+        }
+        var unityDetected = snapshot.UnityStatus == "DETECTED" || snapshot.EngineDetection == "UNITY";
+        AnalyzeEngineSummary = unityDetected && renpyEvidence is not ("none" or "assets_only")
             ? "Engine: Unity + Ren’Py evidence"
-            : snapshot.UnityStatus == "DETECTED"
+            : unityDetected
                 ? "Engine: Unity"
-                : renpyEvidence is "loose_source" or "compiled_source" or "archive_source"
+                : renpyEvidence is "loose_source" or "compiled_source" or "archive_source" or "archive_unsupported" or "assets_only"
                     ? "Engine: Ren’Py"
                     : "Engine: chưa xác định";
-        AnalyzeEngineDetails = BuildAnalyzeEngineDetails(snapshot.UnityStatus, renpyEvidence);
+        AnalyzeEngineDetails = BuildAnalyzeEngineDetails(unityDetected ? "DETECTED" : snapshot.UnityStatus, renpyEvidence);
         AnalyzeAssetLines = CapAssetLines(snapshot.AssetLines);
         AnalyzeResourceCount = snapshot.ResourceCount;
         AnalyzeTextCandidateCount = snapshot.TextCandidateCount;
@@ -458,16 +474,31 @@ public sealed partial class MainViewModel
         AnalyzeReportPath = snapshot.ReportPath;
         AnalyzeHasReport = true;
         var engineKnown = !_analyzeEngineSummary.EndsWith("chưa xác định", StringComparison.Ordinal);
+        var renpyScriptsUnproven = renpyEvidence is "assets_only" or "archive_unsupported";
         _analyzeOutcome = !evt.Ok ? AnalyzeOutcome.Failed
             : !engineKnown ? AnalyzeOutcome.Unsupported
-            : AnalyzeInventoryComplete ? AnalyzeOutcome.Identified : AnalyzeOutcome.IdentifiedIncomplete;
+            : AnalyzeInventoryComplete && !renpyScriptsUnproven ? AnalyzeOutcome.Identified : AnalyzeOutcome.IdentifiedIncomplete;
         AnalyzeStatusText = AnalyzeInventoryComplete
             ? "Đã phân tích • danh mục tài nguyên đầy đủ"
             : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
         RaiseAnalyzeSummary();
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
-            ? ""
+            ? renpyEvidence == "archive_unsupported" ? "Archive RPA lỗi hoặc chưa hỗ trợ; xem Nhật ký."
+              : renpyEvidence == "assets_only" ? "Chưa thấy script Ren’Py đọc được để lấy text; xem Nhật ký."
+              : ""
             : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
+        WriteAnalyzeDetailsToLog(snapshot);
+    }
+
+    /// <summary>Everything a technician needs (counts, per-font / per-image rows, reasons, step timings) goes to the log, not the scan screen.</summary>
+    private void WriteAnalyzeDetailsToLog(UnityAnalysisReportSnapshot snapshot)
+    {
+        void Line(string text) { AppendLog(text); AddExtractRunLine(_activeTaskId, text); }
+        Line($"[quét] Engine: {_analyzeEngineSummary.Replace("Engine: ", "")} ({(string.IsNullOrEmpty(snapshot.EngineDetection) ? "báo cáo cũ" : snapshot.EngineDetection)}) — {snapshot.EngineDetectionReason}");
+        Line($"[quét] Tài nguyên {snapshot.ResourceCount:N0}; có thể là văn bản {snapshot.TextCandidateCount:N0}; có đường ghi lại {snapshot.PatchableCount:N0}; chỉ lấy văn bản {snapshot.ExtractOnlyCount:N0}; cần xem lại/chưa hỗ trợ {snapshot.ReviewRiskCount:N0}; chưa xác định {snapshot.UnknownCount:N0}; lỗi quét {snapshot.ScanErrorCount:N0}.");
+        foreach (var line in snapshot.AssetLines) Line("[quét] " + line);
+        if (!string.IsNullOrEmpty(snapshot.TimingsText)) Line("[quét] Thời gian từng bước (giây): " + snapshot.TimingsText);
+        if (!string.IsNullOrEmpty(snapshot.ReportPath)) Line("[quét] Báo cáo đầy đủ: " + snapshot.ReportPath);
     }
 
     private static string BuildAnalyzeEngineDetails(string unityStatus, string renpyEvidence)
@@ -479,6 +510,8 @@ public sealed partial class MainViewModel
             "compiled_source" => "Ren’Py: tìm thấy bytecode .rpyc/.rpymc có header RPC2 trong game/.",
             "archive_source" => "Ren’Py: tìm thấy archive RPA hợp lệ cùng cấu trúc runtime.",
             "unknown" => "Ren’Py: chưa kiểm tra được nguồn tệp.",
+            "archive_unsupported" => "Ren’Py: có archive RPA lỗi hoặc chưa hỗ trợ; chưa thể lấy text từ archive đó.",
+            "assets_only" => "Ren’Py: thấy thư mục game cùng font/ảnh nhưng chưa thấy script đọc được để lấy text.",
             _ => "Ren’Py: chưa xác nhận được bằng chứng hỗ trợ.",
         };
         return string.Join(" ", new[]

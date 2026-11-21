@@ -92,7 +92,7 @@ def _prepare_and_dispatch(task_id: str, task: str, params: dict[str, Any], cance
     # Model loading can be slow. The CT2 Python module is preloaded on the main
     # thread at startup; keep model/file initialization inside this single-flight
     # task thread so the command loop can still accept cancel/ping.
-    if task in {"translate", "image_batch"}:
+    if task in {"translate", "image_batch"} and not (task == "image_batch" and params.get("after_extract")):
         try:
             emit_log(task_id, "Đang kiểm tra trạng thái mô hình CTranslate2…")
             emit_progress(task_id, done=0, total=0, step="Đang kiểm tra mô hình dịch offline…")

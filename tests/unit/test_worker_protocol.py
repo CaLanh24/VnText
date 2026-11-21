@@ -42,6 +42,16 @@ class WorkerProtocolTests(unittest.TestCase):
                 progress({"done": 1, "total": 1, "eta": value})
                 self.assertEqual(emit_progress.call_args.kwargs["eta"], expected)
 
+    def test_progress_carries_a_clamped_whole_task_percentage_and_scan_pending_flag(self):
+        from vntext_worker.protocol import emit_complete, emit_progress
+        with patch("vntext_worker.protocol.emit") as emitted:
+            emit_progress("t", done=5, total=9, step="s", overall=140)
+            emit_progress("t", done=5, total=9, step="s")
+            emit_complete("t", ok=True, image_scan_pending=True)
+        self.assertEqual(emitted.call_args_list[0].args[0]["overall"], 100)
+        self.assertNotIn("overall", emitted.call_args_list[1].args[0])
+        self.assertTrue(emitted.call_args_list[2].args[0]["image_scan_pending"])
+
     def test_emit_includes_version(self):
         import io
 

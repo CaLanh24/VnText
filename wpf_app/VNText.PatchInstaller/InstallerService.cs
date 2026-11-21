@@ -228,6 +228,8 @@ public sealed partial class InstallerService
             var clean = RestoreCleanOriginal(root, state, progress);
             File.Delete(StatePath);
             DeleteConsumedBackups(state);
+            var cleanLeftovers = FindUnverifiedLeftovers(root, state.Files.Select(f => f.Path).Concat((state.CompiledCaches ?? new List<CompiledCache>()).Select(c => c.Path)));
+            if (cleanLeftovers.Count > 0) clean.Notes.Add(LeftoverNote(cleanLeftovers));
             return clean;
         }
         var receipt = LoadReceipt(root);
@@ -269,6 +271,19 @@ public sealed partial class InstallerService
         SaveReceipt(root, receipt);
         File.Delete(StatePath);
         DeleteConsumedBackups(state);
+        // Say plainly WHAT the game is now: the previous VNText layer (still translated) or no VNText layer at all, verified by hash above.
+        var after = LoadReceipt(root);
+        var stillOwned = state.Files.Count(f => after.Paths.TryGetValue(f.Path, out var left) && left.Layers.Count > 0);
+        var legacyRestored = notes.Any(n => n.Contains("không có biên nhận"));
+        notes.Add(stillOwned > 0
+            ? $"Đã khôi phục bản VNText TRƯỚC ĐÓ cho {stillOwned} tệp (hash đã khớp); game vẫn là bản Việt hóa của patch trước, không phải game gốc sạch. Chọn «Khôi phục bản gốc» để về game gốc nếu có biên nhận."
+            : legacyRestored
+                ? "Đã khôi phục tệp về bản Việt hóa VNText cũ không có biên nhận (hash đã khớp); đây KHÔNG phải game gốc sạch."
+                : state.Files.Any(f => f.OriginalExists)
+                    ? "Đã khôi phục các tệp về trạng thái trước khi cài patch này (hash đã khớp)."
+                    : "Đã gỡ các tệp của patch này; trước đó chúng không tồn tại (hash đã kiểm).");
+        var leftovers = FindUnverifiedLeftovers(root, state.Files.Select(f => f.Path).Concat((state.CompiledCaches ?? new List<CompiledCache>()).Select(c => c.Path)));
+        if (leftovers.Count > 0) notes.Add(LeftoverNote(leftovers));
         return new UninstallResult(notes);
     }
 
@@ -328,7 +343,7 @@ public sealed partial class InstallerService
             {
                 var backup = ResolveSafe(BackupDirectory, file.BackupPath);
                 if (!File.Exists(backup) || !string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}");
+                    throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}. Game chưa bị thay đổi: các tệp patch vẫn ở nguyên vị trí và không có gì bị xóa.");
             }
         }
         foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())

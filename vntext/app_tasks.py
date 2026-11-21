@@ -1577,21 +1577,9 @@ def _run_extract_task_impl(
             )
         if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"}:
             payload["renpy_sdk_missing"] = renpy_sdk_missing
-        # Extract retains image discovery/OCR, but image machine translation
-        # and rendering stay behind the explicit Translate action.
-        try:
-            from vntext.image_batch import run_image_batch
-            images = run_image_batch(src, out, is_cancelled=is_cancelled, progress=progress, translate=False)
-            if images['total']:
-                note = f"Đã tìm thấy {images['total']} ảnh có chữ. Mở tab Dịch ảnh để dịch. {images['output']}"
-                log(note)
-                payload['summary'] += " " + note
-                # A text-less container whose images were OCR'd must not read as "nothing happened".
-                if payload.get('extract_status') == 'EMPTY' and images.get('ocr_ready'):
-                    payload['error'] = f"{payload.get('error') or ''} {note}".strip()
-        except Exception as image_error:
-            log("CSV đã được giữ; OCR ảnh chưa hoàn tất: " + str(image_error))
-            payload['summary'] += " OCR ảnh chưa hoàn tất; xem nhật ký."
+        # Image discovery/OCR is NOT part of this task: it can take hours on image-heavy games and must never hold the CSV back.
+        # The host starts it as its own task ("image_batch", after_extract) once this terminal event has published the text package.
+        payload["image_scan_pending"] = Path(src).is_dir()
         if is_cancelled is not None and is_cancelled():
             raise UnityAnalysisCancelled()
         complete(payload)

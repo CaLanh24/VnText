@@ -383,49 +383,8 @@
                                                 <TextBlock Text="{Binding AnalyzeScanErrorText}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource WarningBrush}" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>
-                                        <StackPanel Grid.Row="2" Margin="0,12,0,0" Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}">
-
-                                        <StackPanel Margin="0,10,0,0">
-
-                                            <WrapPanel>
-<StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzeResourceCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="Tài nguyên" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzeTextCandidateCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="Có thể là văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzePatchableCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="Có đường ghi lại; chưa kiểm patch" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzeExtractOnlyCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                                <TextBlock Text="Chỉ lấy văn bản" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzeReviewRiskCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}" />
-                                                <TextBlock Text="Cần xem lại / chưa hỗ trợ" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            <StackPanel Width="170" Margin="0,0,16,12">
-                                                <TextBlock Text="{Binding AnalyzeUnknownCount}" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource MutedBrush}" />
-                                                <TextBlock Text="Chưa xác định" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,0" />
-                                            </StackPanel>
-                                            </WrapPanel>
-                                            <StackPanel Margin="0,4,0,0" Visibility="{Binding AnalyzeHasAssets, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="Font và ảnh phát hiện trong game Ren'Py" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                                <ItemsControl x:Name="AnalyzeAssetList" ItemsSource="{Binding AnalyzeAssetLines}" Focusable="False" AutomationProperties.Name="Font và ảnh phát hiện">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </StackPanel>
-
-                                        </StackPanel>
-                                        </StackPanel>
+                                        <TextBlock Grid.Row="2" Margin="0,8,0,0" Text="Danh sách font, ảnh và số liệu kỹ thuật được ghi trong Nhật ký." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                                                   Visibility="{Binding AnalyzeHasReport, Converter={StaticResource BoolToVis}}" />
 
                                     </Grid>
                                 </Border>
@@ -873,10 +832,15 @@
                                             </Button>
                                         </Grid>
                                         <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" Margin="0,10,0,0" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
-                                        <Button Margin="0,10,0,0" Style="{StaticResource OutlineButton}" HorizontalAlignment="Left"
-                                                Command="{Binding OpenCsvEditorFromPatchCommand}">
-                                            <TextBlock Text="Mở trong Sửa CSV…" />
-                                        </Button>
+                                        <WrapPanel Margin="0,10,0,0">
+                                            <Button Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding OpenCsvEditorFromPatchCommand}">
+                                                <TextBlock Text="Mở trong Sửa CSV…" />
+                                            </Button>
+                                            <Button x:Name="PatchOpenOutputButton" Style="{StaticResource OutlineButton}" Command="{Binding OpenOutputCommand}" AutomationProperties.Name="Mở thư mục xuất"
+                                                    ToolTip="Mở thư mục xuất ngay cả khi chưa tạo patch.">
+                                                <TextBlock Text="Mở thư mục xuất" />
+                                            </Button>
+                                        </WrapPanel>
                                     </StackPanel>
                                 </Border>
 
@@ -933,12 +897,12 @@
                                             <TextBlock x:Name="PatchImageSpecText" Text="{Binding ImageSpecLabel, Converter={StaticResource UiTextDynamic}}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                             <TextBlock Text="{Binding ImageSpecHelpText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                             <WrapPanel Margin="0,10,0,0">
-                                                <Button x:Name="PatchImageSpecButton" Content="Chọn spec ảnh…" Style="{StaticResource OutlineButton}" Command="{Binding ChooseImageSpecCommand}" Margin="0,0,8,0" />
-                                                <Button Content="Bỏ spec ảnh" Style="{StaticResource OutlineButton}" Command="{Binding ResetImageSpecCommand}" />
+                                                <Button x:Name="PatchImageSpecButton" Content="Chọn ảnh đã chỉnh…" Style="{StaticResource OutlineButton}" Command="{Binding ChooseImageSpecCommand}" Margin="0,0,8,0" />
+                                                <Button Content="Không dùng ảnh" Style="{StaticResource OutlineButton}" Command="{Binding ResetImageSpecCommand}" />
                                             </WrapPanel>
                                         </StackPanel>
                                     </Border>
-                                    <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Đóng gói patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
+                                    <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Tạo patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 
                                 <Border x:Name="PatchDeliveryInstructionsPanel" Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0"

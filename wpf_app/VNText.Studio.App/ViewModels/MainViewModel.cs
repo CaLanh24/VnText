@@ -176,7 +176,9 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
-        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty && HasPatchSource && (ReadyForPatch || CanPatchSafeSubset));
+        // "Tạo patch" is always available once a game is chosen: RunPatch saves the CSV, validates it and runs the patch check itself,
+        // and reports the concrete problem when it cannot build.  The person never has to press "Kiểm tra" first (nor again after changing the font).
+        RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && HasPatchSource);
         RunPatchSafeSubsetCommand = new RelayCommand(_ => RunPatchSafeSubset(), _ => CanPatchSafeSubset);
         CancelCommand = new RelayCommand(_ => CancelTask(), _ => Busy);
         CancelAndExitCommand = new RelayCommand(_ => CancelAndExit(), _ => Busy);

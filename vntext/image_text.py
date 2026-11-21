@@ -105,31 +105,112 @@ def _horizontal_proof(image, raw):
             "method": "row-projection sharpness over OCR word boxes"}
 
 
-def _windows_ocr(source, is_cancelled=None):
-    if os.name != "nt":
-        raise ValueError("OCR ảnh hiện cần Windows OCR và language pack tiếng Anh.")
-    # Pass the path as a literal argument, never interpolate it into executable code.
-    env = os.environ.copy(); env["VNTEXT_OCR_IMAGE"] = str(source)
-    command = [str(Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"),
-               "-NoProfile", "-Command", "& {" + OCR_SCRIPT + "} -ImagePath $env:VNTEXT_OCR_IMAGE"]
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-    deadline = time.monotonic() + 60
-    try:
+# One long-lived PowerShell host serves every OCR request.  Starting powershell.exe and loading the WinRT OCR engine costs about ten seconds, which used to
+# be paid for EVERY image and every proof crop (hours on image-heavy games).  Requests are single lines of data (a path), never code.
+OCR_SERVER_SCRIPT = (
+    "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)\n[Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)\n"
+    "$ErrorActionPreference = 'Stop'\nAdd-Type -AssemblyName System.Runtime.WindowsRuntime\n"
+    "[Windows.Storage.StorageFile,Windows.Storage,ContentType=WindowsRuntime] > $null\n"
+    "[Windows.Graphics.Imaging.BitmapDecoder,Windows.Graphics.Imaging,ContentType=WindowsRuntime] > $null\n"
+    "[Windows.Graphics.Imaging.SoftwareBitmap,Windows.Graphics.Imaging,ContentType=WindowsRuntime] > $null\n"
+    "[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime] > $null\n"
+    "[Windows.Globalization.Language,Windows.Globalization,ContentType=WindowsRuntime] > $null\n"
+    "$asTask = [System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {$_.Name -eq 'AsTask' -and $_.IsGenericMethod -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'} | Select-Object -First 1\n"
+    "function Await($Operation, $Type) {\n $task = $asTask.MakeGenericMethod($Type).Invoke($null,@($Operation))\n try { if (-not $task.Wait(15000)) { throw 'OCR operation timeout' } } catch { throw $_.Exception.ToString() }\n return $task.Result\n}\n"
+    "$engine = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new('en-US'))\n"
+    "function Recognize($ImagePath) {\n if ($null -eq $engine) { throw 'English OCR unavailable' }\n"
+    # Decode from memory: the host never keeps a handle on the image file, so the caller can delete or rewrite it the moment the answer arrives.
+    " $stream = [System.IO.WindowsRuntimeStreamExtensions]::AsRandomAccessStream([System.IO.MemoryStream]::new([System.IO.File]::ReadAllBytes($ImagePath)))\n"
+    " try {\n  $decoder = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])\n"
+    "  $bitmap = Await ($decoder.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])\n"
+    "  $converted = [Windows.Graphics.Imaging.SoftwareBitmap]::Convert($bitmap,[Windows.Graphics.Imaging.BitmapPixelFormat]::Bgra8,[Windows.Graphics.Imaging.BitmapAlphaMode]::Premultiplied)\n"
+    "  try {\n   $result = Await ($engine.RecognizeAsync($converted)) ([Windows.Media.Ocr.OcrResult])\n"
+    "   $lines = @($result.Lines | ForEach-Object { @{ text=$_.Text; words=@($_.Words | ForEach-Object { @{ text=$_.Text; x=$_.BoundingRect.X; y=$_.BoundingRect.Y; width=$_.BoundingRect.Width; height=$_.BoundingRect.Height } }) } })\n"
+    "   return (@{text=$result.Text; lines=$lines; confidence=$null; review_required=$true; angle=$result.TextAngle} | ConvertTo-Json -Depth 8 -Compress)\n"
+    "  } finally { if($converted) {$converted.Dispose()}; if($bitmap) {$bitmap.Dispose()} }\n } finally { $stream.Dispose() }\n}\n"
+    "[Console]::Out.WriteLine('READY'); [Console]::Out.Flush()\n"
+    "while ($true) {\n $line = [Console]::In.ReadLine()\n if ($null -eq $line) { break }\n"
+    " try { $json = Recognize $line; [Console]::Out.WriteLine('OK ' + $json) } catch { [Console]::Out.WriteLine('ERR ' + (($_.Exception.Message) -replace '[\\r\\n]+',' ')) }\n"
+    " [GC]::Collect(); [GC]::WaitForPendingFinalizers()\n"   # release the WinRT file handle before answering: the caller may delete or rewrite the image at once
+    " [Console]::Out.Flush()\n}\n"
+)
+OCR_STARTUP_SECONDS = 60
+OCR_REQUEST_SECONDS = 60
+
+
+class _OcrServer:
+    def __init__(self):
+        import queue, threading
+        command = [str(Path(os.environ["SystemRoot"]) / "System32/WindowsPowerShell/v1.0/powershell.exe"),
+                   "-NoProfile", "-NonInteractive", "-Command", "& {" + OCR_SERVER_SCRIPT + "}"]
+        self.proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        self.lines = queue.Queue()
+        def pump():
+            for raw in iter(self.proc.stdout.readline, b""):
+                self.lines.put(raw.decode("utf-8-sig", "replace").rstrip("\r\n"))
+            self.lines.put(None)
+        threading.Thread(target=pump, daemon=True).start()
+        self.started = time.monotonic()
+        first = self._read(OCR_STARTUP_SECONDS, None)
+        if first != "READY":
+            self.close()
+            raise ValueError("Windows OCR không khởi động được: " + str(first)[:300])
+
+    def _read(self, seconds, is_cancelled):
+        import queue
+        deadline = time.monotonic() + seconds
         while True:
             if is_cancelled and is_cancelled():
-                raise ValueError("cancelled")
+                self.close(); raise ValueError("cancelled")
             if time.monotonic() >= deadline:
-                raise ValueError("OCR quá 60 giây; chưa có kết quả hoàn tất.")
+                self.close(); raise ValueError("OCR quá %d giây; chưa có kết quả hoàn tất." % seconds)
             try:
-                stdout, stderr = proc.communicate(timeout=0.1); break
-            except subprocess.TimeoutExpired:
+                line = self.lines.get(timeout=0.1)
+            except queue.Empty:
                 continue
-    finally:
-        if proc.poll() is None:
-            proc.kill(); proc.communicate()
-    if proc.returncode:
-        raise ValueError("Windows OCR thất bại: " + stderr.decode("utf-8", "replace")[-1500:])
-    return json.loads(stdout.decode("utf-8-sig"))
+            if line is None:
+                self.close(); raise ValueError("Windows OCR đã dừng bất ngờ.")
+            if line:
+                return line
+
+    def request(self, path, is_cancelled):
+        if self.proc.poll() is not None:
+            raise ValueError("Windows OCR đã dừng bất ngờ.")
+        self.proc.stdin.write((str(path) + "\n").encode("utf-8")); self.proc.stdin.flush()
+        answer = self._read(OCR_REQUEST_SECONDS, is_cancelled)
+        if answer.startswith("OK "):
+            return json.loads(answer[3:])
+        raise ValueError("Windows OCR thất bại: " + answer[4:][-1500:])
+
+    def close(self):
+        try:
+            if self.proc.poll() is None:
+                self.proc.kill(); self.proc.wait(timeout=5)
+        except Exception:
+            pass
+
+
+_OCR_SERVER = None
+
+
+def shutdown_ocr_server():
+    global _OCR_SERVER
+    server, _OCR_SERVER = _OCR_SERVER, None
+    if server is not None:
+        server.close()
+
+
+def _windows_ocr(source, is_cancelled=None):
+    global _OCR_SERVER
+    if os.name != "nt":
+        raise ValueError("OCR ảnh hiện cần Windows OCR và language pack tiếng Anh.")
+    if "\n" in str(source) or "\r" in str(source):
+        raise ValueError("Đường dẫn ảnh không hợp lệ.")
+    if _OCR_SERVER is None or _OCR_SERVER.proc.poll() is not None:
+        import atexit
+        _OCR_SERVER = _OcrServer()
+        atexit.register(shutdown_ocr_server)
+    return _OCR_SERVER.request(source, is_cancelled)
 
 
 OCR_TEXT_POLICY = "crop-consensus-1"
