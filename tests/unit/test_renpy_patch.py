@@ -736,6 +736,15 @@ class RenPyPatchTests(unittest.TestCase):
             with self.assertRaisesRegex(RenPyPatchError, "source precondition drift"):
                 apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out-source"))
 
+    def test_unlocatable_source_text_omits_the_row_instead_of_aborting_when_the_script_hash_matches(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base)
+            # The script is byte-identical to the extraction snapshot (hash matches): not drift, only text that cannot be located literally.
+            # Every row is then omitted and counted by reason, never written unverified.
+            with patch("vntext.patch_renpy._source_present", return_value=False), self.assertRaisesRegex(RenPyPatchError, "source_text_not_locatable"):
+                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out-unlocatable"))
+
     def test_missing_or_malformed_native_locator_blocks(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base)

@@ -851,9 +851,11 @@ def _trace_patch_finish(
     verification_path = patch_out / "patch_verification.json"
     verification_by_key: dict[str, dict] = {}
     verification_counts: dict[str, int] = {}
+    omitted_late: set[str] = set()
     if verification_path.is_file():
         try:
             verification_payload = json.loads(verification_path.read_text(encoding="utf-8"))
+            omitted_late = {str(key) for key in (verification_payload.get("omitted_unlocatable_keys") or [])}
             verification_counts = {
                 str(key): int(value)
                 for key, value in (verification_payload.get("counts") or {}).items()
@@ -880,6 +882,13 @@ def _trace_patch_finish(
             if item.get("finished"):
                 continue
             verification = verification_by_key.get(f"{item['key']}:{item.get('duplicate_ordinal', 0)}")
+            if verification is None and item["key"] in omitted_late:
+                # The patch writer omitted this row after the trace announced it (its source text could not be located literally): skipped, not failed.
+                trace.finish_event(item["action_id"], "ABORTED", payload={"reason": "source_text_not_locatable"})
+                trace.update_target(item["target_id"], status="SKIPPED", write_status="SKIPPED", final_verification="NOT_RUN")
+                trace.update_entry(item["trace_id"], patch_status="SKIPPED", final_verification="NOT_RUN")
+                item["finished"] = True
+                continue
             if verification is None:
                 # A missing machine-readable verification report is itself a
                 # failed evidence boundary.  The legacy text report cannot

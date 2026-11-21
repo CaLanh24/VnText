@@ -633,6 +633,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     archive_identities: dict[Path, str] = {}
     omitted_by_reason: dict[str, int] = {}
     omitted_keys: set[str] = set()
+    unlocatable_keys: set[str] = set()      # omitted late (after the trace announced them as eligible); named in patch_verification.json
     for entry in entries:
         key = str(entry.get("key") or "")
         row = rows.get(key)
@@ -726,7 +727,12 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                        for item in static_screen_candidates(script,str(entry['file_path']),source_sha256)):
                 raise RenPyPatchError('Static screen display precondition drift')
         elif not _source_present(script, source_text):
-            raise RenPyPatchError(f"Ren'Py source precondition drift: {entry.get('file_path')}")
+            # The script's hash already matched the extraction snapshot (checked above), so this is not drift: the extracted text is only not
+            # locatable literally (escape forms, symbols).  The row is OMITTED and counted, never written unverified; the rest of the patch stands.
+            omitted_by_reason["source_text_not_locatable"] = omitted_by_reason.get("source_text_not_locatable", 0) + 1
+            omitted_keys.add(key)
+            unlocatable_keys.add(key)
+            continue
         method = str(entry.get("import_method"))
         if method == "renpy_dialogue":
             native_id = str(locator.get("native_id") or "")
@@ -983,6 +989,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             )
             verification["review_only_skipped"] = excluded_review_only
             verification["omitted_by_reason"] = dict(omitted_by_reason)
+            verification["omitted_unlocatable_keys"] = sorted(unlocatable_keys)
             (output / "patch_verification.json").write_text(
                 json.dumps(verification, ensure_ascii=False, indent=2),
                 encoding="utf-8",
@@ -1008,6 +1015,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     )
     verification["review_only_skipped"] = excluded_review_only
     verification["omitted_by_reason"] = dict(omitted_by_reason)
+    verification["omitted_unlocatable_keys"] = sorted(unlocatable_keys)
     (output / "patch_verification.json").write_text(
         json.dumps(verification, ensure_ascii=False, indent=2),
         encoding="utf-8",
