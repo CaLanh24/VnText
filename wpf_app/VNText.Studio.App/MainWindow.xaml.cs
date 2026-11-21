@@ -127,7 +127,11 @@ public partial class MainWindow : Window
                         $"Tác vụ đang chạy. Chọn Có để hủy an toàn rồi thoát; nếu worker không phản hồi trong {MainViewModel.ExitHardLimitSeconds} giây, ứng dụng sẽ dừng cưỡng bức worker và thoát. Dữ liệu đã lưu được giữ nguyên.",
                         "Tác vụ chưa hoàn tất", MessageBoxButton.YesNo, MessageBoxImage.Question, this);
                     if (cancelAndExit == MessageBoxResult.Yes)
-                        vm.CancelAndExitCommand.Execute(null);
+                    {
+                        // The task may have finished while the question was open: then there is nothing to cancel and the exit must still happen.
+                        if (vm.Busy) vm.CancelAndExitCommand.Execute(null);
+                        else _ = Dispatcher.BeginInvoke(new Action(() => { _explicitExit = true; Close(); }));
+                    }
                     return;
                 }
                 if (vm.CsvEditorSaving)
