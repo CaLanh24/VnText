@@ -144,7 +144,7 @@ def run_installer(installer: str, args: list[str]) -> tuple[int, str]:
     return proc.returncode, (proc.stdout + proc.stderr)[-1500:]
 
 
-def journey(game: Path, label: str, out: Path, python: str, installer: str | None, sdk: str | None) -> dict:
+def journey(game: Path, label: str, out: Path, python: str, installer: str | None, sdk: str | None, grow: bool = False) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     result: dict = {"label": label, "steps": {}, "verdict": "PASS", "not_run": []}
     steps = result["steps"]
@@ -185,7 +185,7 @@ def journey(game: Path, label: str, out: Path, python: str, installer: str | Non
         if not csv_path.is_file():
             result["not_run"] += ["patch", "install", "uninstall"]
         else:
-            filled = fill_translation(csv_path, same_length=steps["scan"].get("engine") == "UNITY")
+            filled = fill_translation(csv_path, same_length=steps["scan"].get("engine") == "UNITY" and not grow)
             steps["stand_in_translation"] = {"ok": filled > 0, "rows": filled}
             if filled == 0:
                 result["not_run"] += ["patch", "install", "uninstall"]
@@ -242,13 +242,14 @@ def main() -> int:
     ap.add_argument("--python", default=sys.executable)
     ap.add_argument("--installer")
     ap.add_argument("--sdk")
+    ap.add_argument("--grow", action="store_true", help="use a LONGER stand-in for Unity too (needs SerializedFile v22+ object growth)")
     args = ap.parse_args()
     game = Path(args.game).resolve()
     out = Path(args.out).resolve()
     if out == game or game in out.parents or out in game.parents:
         print("--out must be separate from the game folder", file=sys.stderr)
         return 2
-    result = journey(game, args.label, out, args.python, args.installer, args.sdk)
+    result = journey(game, args.label, out, args.python, args.installer, args.sdk, args.grow)
     print(json.dumps(result, ensure_ascii=False, indent=1))
     return 0 if result["verdict"] == "PASS" else 1
 
