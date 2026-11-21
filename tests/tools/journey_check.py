@@ -118,7 +118,7 @@ def _same_length(text: str) -> str:
     return "".join(out)
 
 
-def fill_translation(csv_path: Path, same_length: bool = False) -> int:
+def fill_translation(csv_path: Path, same_length: bool = False, prefix: str = "VI ", overwrite: bool = False) -> int:
     with csv_path.open("r", encoding="utf-8-sig", newline="") as stream:
         reader = csv.DictReader(stream)
         fields = reader.fieldnames or []
@@ -128,8 +128,8 @@ def fill_translation(csv_path: Path, same_length: bool = False) -> int:
         return 0
     filled = 0
     for row in rows:
-        if not (row.get("translation") or "").strip() and (row.get(source_col) or "").strip():
-            row["translation"] = _same_length(row[source_col]) if same_length else "VI " + row[source_col]
+        if (overwrite or not (row.get("translation") or "").strip()) and (row.get(source_col) or "").strip():
+            row["translation"] = _same_length(row[source_col]) if same_length else prefix + row[source_col]
             filled += 1
     with csv_path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields)

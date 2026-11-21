@@ -310,9 +310,10 @@ public sealed partial class InstallerService
             for (var directory = Path.GetDirectoryName(backup); directory is not null
                 && directory.StartsWith(BackupDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
                 directory = Path.GetDirectoryName(directory))
-                if (!Directory.EnumerateFileSystemEntries(directory).Any()) Directory.Delete(directory);
+                if (Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any()) Directory.Delete(directory);
         }
-        if (!Directory.EnumerateFileSystemEntries(BackupDirectory).Any()) Directory.Delete(BackupDirectory);
+        // A backup folder that is already gone (never needed for patch-only files, or removed by hand) is not an error after a successful restore.
+        if (Directory.Exists(BackupDirectory) && !Directory.EnumerateFileSystemEntries(BackupDirectory).Any()) Directory.Delete(BackupDirectory);
     }
 
     /// <summary>

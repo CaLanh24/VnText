@@ -293,6 +293,17 @@ internal static class Harness
             try { File.SetAttributes(target, FileAttributes.Normal); } catch { }
         }
 
+        // 13. patch-only files (nothing to restore): the whole backup folder may be gone and the uninstall must still finish cleanly.
+        {
+            var game = NewGame(work, "g13");
+            var before = Snapshot(game);
+            var patch = MakePatch(work, "w26", "0.1.26", game, new Spec(Overlay, v25, false, null), new Spec(Activation, act, false, null));
+            patch.Install(game);
+            try { Directory.Delete(patch.BackupDirectory, true); } catch { }
+            var finished = !Throws(() => patch.Uninstall(game), "", out var m13);
+            Check("uninstall of patch-only files succeeds even when the backup folder is already gone", finished && Snapshot(game) == before, m13);
+        }
+
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
         try { Directory.Delete(work, true); } catch { }
         return allPass ? 0 : 1;
