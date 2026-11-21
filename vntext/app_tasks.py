@@ -1240,9 +1240,17 @@ class _Working:
         self._thread.start()
         return self
 
-    def __exit__(self, *_):
+    def retitle(self, step: str, overall: int) -> None:
+        """Same keep-alive, next phase (the elapsed counter keeps running)."""
+        self._step, self._overall = step, overall
+
+    def stop(self) -> None:
         self._stop.set()
-        self._thread.join(timeout=2)
+        if self._thread.is_alive():
+            self._thread.join(timeout=2)
+
+    def __exit__(self, *_):
+        self.stop()
 
 
 def run_extract_task(
@@ -2733,6 +2741,13 @@ def _run_patch_task_impl(
     trace_run_finished = False
     manifest_for_trace: dict = {}
     late_cancel = False
+    keepalive: list = []                       # the patch step's heartbeat; it must outlive apply (read-back, trace and packaging can take minutes)
+    _terminal = complete
+
+    def complete(payload):                     # noqa: F811 - every terminal event first stops the heartbeat
+        for beat in keepalive:
+            beat.stop()
+        _terminal(payload)
 
     def patch_progress(info) -> None:
         # The final progress event is sent after the verification report and import report exist.
@@ -2796,8 +2811,11 @@ def _run_patch_task_impl(
         else:
             log("Ren'Py: đang tạo native overlay.")
         # The writer reports little or no progress of its own on large games; keep the step visibly alive (name + elapsed seconds) until it returns.
-        with _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo native overlay Ren'Py", 40):
-            apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
+        beat = _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo native overlay Ren'Py", 40)
+        keepalive.append(beat)
+        beat.__enter__()
+        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
+        beat.retitle("Đang kiểm tra bản vá và đóng gói", 90)
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,
         # per-target read-back report before any optional overlay is accepted.
