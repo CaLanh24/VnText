@@ -120,7 +120,7 @@ internal static partial class Program
                 AssertFalse(B("DeliveryButton").IsEnabled);
                 AssertFalse(B("InstallButton").IsEnabled);
                 AssertTrue(vm.RunTranslateCommand.CanExecute(null));       // an image-only package still translates (straight to the OCR-detected images)
-                AssertFalse(vm.RunPatchCommand.CanExecute(null));          // but there is nothing for the text patch
+                AssertTrue(vm.RunPatchCommand.CanExecute(null));           // "Tạo patch" stays available; with no text rows it re-checks and explains why nothing can be built
 
                 // Choosing a real game image enables OCR; a loaded review enables region editing, save and render.
                 vm.ImagePath = png;

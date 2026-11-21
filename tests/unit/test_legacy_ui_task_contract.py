@@ -61,7 +61,7 @@ class PatchCompletionContractTests(unittest.TestCase):
             game.mkdir()
             patch_out = package / "patch-output"
 
-            def fake_apply(_csv, _manifest, _src, out, _progress):
+            def fake_apply(_csv, _manifest, _src, out, _progress, **_options):
                 output = Path(out)
                 output.mkdir(parents=True, exist_ok=True)
                 (output / "patch_verification.json").write_text(

@@ -42,7 +42,7 @@ class BugReportRoundTripTests(unittest.TestCase):
 
     def test_sanitise_text_replaces_known_names_and_any_drive_path(self):
         bs = chr(92)
-        out = sanitise_text("open D:" + bs + "x" + bs + "y.txt and Hidden_Name.rpy", Path("C:/g"), {"Hidden_Name.rpy"})
+        out = sanitise_text("open D:" + bs + "x" + bs + "y.txt and Hidden_Name.rpy", Path("g"), {"Hidden_Name.rpy"})
         self.assertNotIn("Hidden_Name", out)
         self.assertNotIn("D:" + bs + "x", out)
 

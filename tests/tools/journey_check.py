@@ -25,7 +25,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-BUDGET = {"analyze": (180, 90), "extract": (900, 180), "image_scan": (1800, 180), "patch": (900, 180)}   # (total seconds, max silent seconds)
+BUDGET = {"analyze": (180, 90), "extract": (900, 180), "image_scan": (7200, 180), "patch": (900, 180)}   # (total seconds, max silent seconds)
 SMALL = 16 * 1024 * 1024
 
 

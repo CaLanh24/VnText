@@ -139,7 +139,7 @@ def sanitise_text(text: str, game: Path, extra_names: set[str]) -> str:
     """Remove the game's path, the user's profile and every real file/folder name from free text."""
     result = text
     for needle in {str(game), str(game).replace("\\", "/"), str(game.parent), os.path.expanduser("~"), os.path.expanduser("~").replace("\\", "/")}:
-        if needle:
+        if needle and len(needle) >= 4 and os.path.isabs(needle):      # a relative or tiny "path" would mangle ordinary text
             result = result.replace(needle, "<PATH>")
     for name in sorted(extra_names, key=len, reverse=True):
         if len(name) >= 3 and name.casefold() not in GENERIC_NAMES:
