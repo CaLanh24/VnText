@@ -7,6 +7,7 @@ resolving the exact locator again.
 """
 
 from __future__ import annotations
+from vntext.unity_load import unity_load
 
 import codecs
 import csv
@@ -513,8 +514,8 @@ def _verify_unity(
         if environments is None:
             import UnityPy
 
-            source_env = UnityPy.load(str(source))
-            target_env = UnityPy.load(str(target))
+            source_env = unity_load(str(source))
+            target_env = unity_load(str(target))
         else:
             source_env, target_env = environments
     except Exception as exc:
@@ -773,8 +774,8 @@ def _verify_patch_targets_impl(
             try:
                 import UnityPy
 
-                shared_source_env = UnityPy.load(str(source))
-                shared_target_env = UnityPy.load(str(target))
+                shared_source_env = unity_load(str(source))
+                shared_target_env = unity_load(str(target))
                 shared_maps = (
                     _unity_object_map(shared_source_env),
                     _unity_object_map(shared_target_env),

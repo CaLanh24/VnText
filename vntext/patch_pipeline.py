@@ -1,6 +1,7 @@
 """Pipeline patch responsibilities."""
 
 from __future__ import annotations
+from vntext.unity_load import unity_load
 
 from vntext.patch_constants import (
     Path,
@@ -354,7 +355,7 @@ def _apply_unity_translation_package(csv_path: str, manifest_path: str, game_roo
 
             gc.collect()
             try:
-                env = UnityPy.load(str(src))
+                env = unity_load(str(src))
             except MemoryError as exc:
                 size = src.stat().st_size if src.is_file() else 0
                 raise RuntimeError(

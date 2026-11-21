@@ -11,6 +11,7 @@ inventory.
 """
 
 from __future__ import annotations
+from vntext.unity_load import unity_load
 
 import argparse
 import csv
@@ -614,7 +615,7 @@ def _unitypy_probe(path: Path, options: AnalyzerOptions) -> dict[str, Any]:
         result.update(status="NOT_AVAILABLE", error=f"UnityPy unavailable: {exc}")
         return result
     try:
-        environment = UnityPy.load(str(path))
+        environment = unity_load(str(path))
         counter: Counter[str] = Counter()
         script_classes: Counter[str] = Counter()
         object_count = 0

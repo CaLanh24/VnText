@@ -4,6 +4,7 @@ Function bodies are mechanically preserved from the former monolithic vntext.ext
 """
 
 from __future__ import annotations
+from vntext.unity_load import unity_load
 
 from vntext.extract_constants import (
     CODE_NAME_RE,
@@ -603,7 +604,7 @@ def extract_unity_typetree(path: Path, root: Path, progress_callback=None):
     try:
         if progress_callback:
             progress_callback("Dang mo UnityPy...")
-        env = UnityPy.load(str(path))
+        env = unity_load(str(path))
     except Exception:
         return
     objects = getattr(env, "objects", None) or []

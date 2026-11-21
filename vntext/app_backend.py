@@ -6,6 +6,7 @@ for existing external integrations.
 """
 
 from __future__ import annotations
+from vntext.unity_load import unity_load
 
 import csv
 from collections import Counter
@@ -88,7 +89,7 @@ def build_asset_index(input_path: str, output_dir: str, progress_callback=None):
     for index, path in enumerate(unity_paths, start=1):
         rel = rel_path(path, base)
         try:
-            env = UnityPy.load(str(path))
+            env = unity_load(str(path))
         except Exception as exc:
             errors.append(f"{path}: {exc}")
             if progress_callback:
@@ -454,7 +455,7 @@ def export_unity_internal_dump(input_path: str, output_dir: str, extract_level: 
         # TextAsset raw dump ra file rieng neu doc duoc bang UnityPy.
         try:
             import UnityPy
-            env = UnityPy.load(str(path))
+            env = unity_load(str(path))
             for obj in env.objects:
                 type_name = getattr(obj.type, "name", str(obj.type))
                 if type_name != "TextAsset":
