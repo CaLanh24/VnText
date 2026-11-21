@@ -41,7 +41,12 @@ def diff(a: dict, b: dict) -> list[str]:
     return sorted(set(a) ^ set(b)) + [k for k in a if k in b and a[k] != b[k]]
 
 
-def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk: str | None) -> dict:
+def _bundled_exe(package: Path) -> Path | None:
+    found = sorted(package.rglob("Patch_*/*.exe"))
+    return found[-1] if found else None
+
+
+def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk: str | None, bundled: bool = False) -> dict:
     root = work / name / "game root"
     root.mkdir(parents=True)
     build(root)
@@ -68,6 +73,10 @@ def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk
         entry.update(result="REFUSED" if reason and r.get("outcome") == "DONE" and not r.get("ok") else "FAIL", why=reason[:200] or "no patch and no stated reason")
         return entry
     patch_dir = _keep(manifests[-1].parent, work / name / "patch-kept")
+    exe_for = {str(patch_dir): _bundled_exe(package)}
+    if bundled and exe_for[str(patch_dir)] is None:
+        entry.update(result="FAIL", why="no packaged patch EXE")
+        return entry
     failures = []
 
     def fresh_copy(tag: str) -> Path:
@@ -76,8 +85,15 @@ def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk
         link_copy(root, copy)
         return copy
 
+    def call(args: list[str]) -> tuple[int, str]:
+        """args = [verb, patchDir, gameRoot].  Bundled mode runs the packaged patch EXE exactly as a player would (its payload is embedded, patchDir is only a key)."""
+        if not bundled:
+            return run_installer(installer, args)
+        verb = {"install": "--install", "uninstall": "--uninstall", "restore-original": "--restore-original"}[args[0]]
+        return run_installer(str(exe_for[args[1]]), [verb, args[2]])
+
     def installer_ok(args: list[str]) -> tuple[bool, str]:
-        code, text = run_installer(installer, args)
+        code, text = call(args)
         return code == 0, text
 
     # basic
@@ -107,6 +123,8 @@ def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk
                                           **({"renpy_sdk_action": "existing", "renpy_sdk_path": sdk} if sdk else {})}, *BUDGET["patch"])
         found = [m for m in sorted(package2.rglob("patch_manifest.json")) if (m.parent / "COPY_TO_GAME_ROOT").is_dir()]
         second_dir = _keep(found[-1].parent, work / name / "patch2-kept") if r2.get("outcome") == "DONE" and found else None
+        if second_dir is not None:
+            exe_for[str(second_dir)] = _bundled_exe(package2)
     upgraded, up_msg = False, ""
     if ok1 and second_dir is not None:
         upgraded, up_msg = installer_ok(["install", str(second_dir), str(copy)])
@@ -126,7 +144,7 @@ def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk
         moved = work / name / "backup-aside"
         shutil.move(str(backup), str(moved))
     post = snapshot(copy)
-    code, text = run_installer(installer, ["uninstall", str(patch_dir), str(copy)]) if ok1 else (1, "")
+    code, text = call(["uninstall", str(patch_dir), str(copy)]) if ok1 else (1, "")
     after = snapshot(copy)
     # A tool without a backup must either refuse or restore only what the ownership receipt proves; it must never delete game files outside VNText's.
     lost_game_files = [k for k in pre if k not in after]
@@ -148,9 +166,10 @@ def run_layout(name: str, build, worker: Worker, installer: str, work: Path, sdk
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--installer", required=True)
+    ap.add_argument("--installer", default="")
     ap.add_argument("--python", default=sys.executable)
     ap.add_argument("--work")
+    ap.add_argument("--bundled", action="store_true", help="drive the packaged patch EXE (the product installer a player runs) instead of InstallerCli")
     ap.add_argument("--only", help="comma-separated layout names")
     ap.add_argument("--sdk", help="Ren'Py SDK folder for archive/compiled layouts")
     args = ap.parse_args()
@@ -162,7 +181,7 @@ def main() -> int:
         for name, (build, _allowed) in LAYOUTS.items():
             if args.only and name not in args.only.split(","):
                 continue
-            results.append(run_layout(name, build, worker, args.installer, work, args.sdk))
+            results.append(run_layout(name, build, worker, args.installer, work, args.sdk, args.bundled))
             shutil.rmtree(work / name, ignore_errors=True)
     finally:
         worker.kill()
