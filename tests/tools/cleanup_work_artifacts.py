@@ -405,6 +405,16 @@ RELEASE_TASK_0116_REBASELINE_APPROVAL_2 = (
 )
 
 
+RELEASE_TASK_0127_REBASELINE_ID = "owner-direct-20261122-rebaseline-release027-7803d9a"
+RELEASE_TASK_0127_REBASELINE_PREPARED_SHA = "7803d9ad72f0be430dfe69ea3577c814e23fb379"
+RELEASE_TASK_0127_REBASELINE_APPROVAL = (
+    "Owner 2026-11-22 answered 'Cho phép' to the concrete request for ONE no-delete metadata rebaseline of the registry epoch from the exhausted "
+    "release-0.1.26 chain (active epoch-20261121-064-release026) to the registered release-0.1.27 task, for prepared source "
+    "7803d9ad72f0be430dfe69ea3577c814e23fb379 or its descendants, to build, verify and publish 0.1.27. Retain the 8 GiB project cap, 11 GiB shared cap, "
+    "no user-data or history deletion and no guard relaxation. This single-use authority is consumed by the first applied rebaseline."
+)
+
+
 RELEASE_TASK_0117_REBASELINE_ID = "owner-20261105-091e367-017"
 RELEASE_TASK_0117_REBASELINE_APPROVAL = (
     "Owner 2026-11-05 answered 'cho phép' to Brain's concrete request for ONE metadata rebaseline and scope transition to 0.1.17 for prepared "
@@ -475,10 +485,14 @@ def _task_scope_path(root, task_id, version):
 
 
 def _rebaseline_prior_task_allowed(previous_task, target_task, authorization_id):
-    return previous_task == target_task or (authorization_id == DEV_RESOURCES_REBASELINE_ID and previous_task == RELEASE_TASK_015_BUDGET_ID and target_task == DEV_RESOURCES_TASK_ID) or (
+    return previous_task == target_task or (authorization_id == RELEASE_TASK_0127_REBASELINE_ID and previous_task == RELEASE_TASK_0126_BUDGET_ID and target_task == RELEASE_TASK_0127_BUDGET_ID) or (authorization_id == DEV_RESOURCES_REBASELINE_ID and previous_task == RELEASE_TASK_015_BUDGET_ID and target_task == DEV_RESOURCES_TASK_ID) or (
         authorization_id == RELEASE_TASK_0117_REBASELINE_ID and previous_task == RELEASE_TASK_0116_BUDGET_ID and target_task == RELEASE_TASK_0117_BUDGET_ID)
 
 def _rebaseline_versions_match(previous_sha, target_sha, target_version, authorization_id):
+    if authorization_id == RELEASE_TASK_0127_REBASELINE_ID:
+        return (target_version == "0.1.27" and _git_version_at(previous_sha) == "0.1.26"
+                and _git_version_at(target_sha) == "0.1.27"
+                and _git_is_ancestor(RELEASE_TASK_0127_REBASELINE_PREPARED_SHA, target_sha))
     if authorization_id == RELEASE_TASK_0124_REBASELINE_ID:
         return (target_version == "0.1.24" and _git_version_at(previous_sha) == "0.1.24"
                 and _git_version_at(target_sha) == "0.1.24"
@@ -832,6 +846,7 @@ RELEASE_TASK_014_EPOCH_REBASELINE_APPROVAL_3 = (
 )
 # authorization_id -> (release task, release version, exact authority statement)
 EPOCH_REBASELINE_AUTHORIZATIONS = {
+    RELEASE_TASK_0127_REBASELINE_ID: (RELEASE_TASK_0127_BUDGET_ID, "0.1.27", RELEASE_TASK_0127_REBASELINE_APPROVAL),
     RELEASE_TASK_0124_REBASELINE_ID: (RELEASE_TASK_0124_BUDGET_ID, "0.1.24", RELEASE_TASK_0124_REBASELINE_APPROVAL),
     RELEASE_TASK_0121_REBASELINE_ID: (RELEASE_TASK_0121_BUDGET_ID, "0.1.21", RELEASE_TASK_0121_REBASELINE_APPROVAL),
     RELEASE_TASK_0119_REBASELINE_ID: (RELEASE_TASK_0119_BUDGET_ID, "0.1.19", RELEASE_TASK_0119_REBASELINE_APPROVAL),
