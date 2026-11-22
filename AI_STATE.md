@@ -4,7 +4,7 @@
 **Sửa:** khóa thư mục xuất bị bỏ lại không chặn mãi khi pid bị Windows cấp lại: khóa ghi thời điểm tạo tiến trình + tên image (`vntext/process_identity.py`); cùng cách cho khóa traceability và translation cache; extract thật đang chạy vẫn bị từ chối (thông báo tiếng Việt, không có đường dẫn).
 **Gate @87cf4bd:** unit nhóm khóa 85/85; 230 test ở ngân sách nâng, 1 lỗi có từ 0.1.27; fake-game lock 3 ca PASS (`lockcheck.json`); cập nhật 0.1.27→0.1.28 trên bản sao baseline: health PASS, 7340 tệp 0 sai lệch, canary nguyên (updater mở lại app nên `-Wait` treo; đã đóng đúng 2 tiến trình trong thư mục thử); test bug-report 4/4. Evidence: `TEST_RUN/agent-evidence/release-0.1.28/`.
 **Việc mở (NOT_PROVEN):** (1) kiểm native UI "Lấy text" với khóa cũ; (2) lỗi handle tệp `test_extract_layout_matrix` layout `unity_data_dir` khi chạy kèm module khác (có từ 0.1.27, chưa rõ nguyên nhân); (3) bug khóa trên máy Owner chưa được xác nhận lại sau cập nhật 0.1.28; (4) như 0.1.27: hộp thoại chọn font/ảnh, patch→patch thật, cỡ chữ trong game thật, cài Setup native.
-**Dọn:** xem receipt `TEST_RUN/agent-evidence/release-0.1.28/post-release-cleanup.json` (ghi sau khi dọn); `release/budget_policy.json` giữ như HEAD.
+**Dọn (2026-11-23):** đã xóa `candidate-0.1.28` + worktree source (registry chuyển DISPOSABLE → MISSING); non-exempt 4,26 → 2,17 GiB, CHƯA ≤ 1 GiB. Còn lại: `RELEASE_RUN/candidate-0.1.16` và `candidate-0.1.24`, ledger epoch registry và evidence — cần kế hoạch/quyết định riêng. Receipt `TEST_RUN/agent-evidence/release-0.1.28/post-release-cleanup.json`; `release/budget_policy.json` giữ như HEAD.
 
 ---
 
