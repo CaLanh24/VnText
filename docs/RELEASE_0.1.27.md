@@ -1,5 +1,7 @@
 # Release 0.1.27 — font size option, Unity v22+ growth, cancel and uninstall fixes
 
+Published 2026-11-22 as tag `v0.1.27` (`afdab24`); asset digests and gates are in the evidence folder and AI_STATE.
+
 Owner 2026-11-22 authorized the release (including the download of the public 0.1.26 and 0.1.7 baselines) after trying the trial build. Task `release-0.1.27`, exact `RELEASE_RUN/candidate-0.1.27`, 8 GiB temporary allocation, 48 MiB reserve, shared 11 GiB, terminal 1 GiB; user data and evidence are not deleted. Public baseline is 0.1.26.
 
 ## Scope

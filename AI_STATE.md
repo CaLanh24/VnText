@@ -1,3 +1,10 @@
+# Current checkpoint — Đã phát hành 0.1.27, 2026-11-22
+
+**Release 0.1.27 (Owner 2026-11-22 "Cho release"):** tag `v0.1.27` = `afdab244f5ad1fb3743c3dd54449bf722cc863d9` (đã push main + tag). Release công khai https://github.com/CaLanh24/VnText/releases/tag/v0.1.27, digest GitHub đã đối chiếu: `VNTextStudio-0.1.27-Setup.exe` 287258112 B sha256 `f0379ac28ed5cc34538355ed6c1a159c688f276946b5ac141c6220ffab69c70b`; `full-app-update-0.1.27-05d30187fea99ecf.zip`; `full-app-update-from-0.1.26-to-0.1.27-c7926e57a73edb42.zip` (+ hai file `-current.json`). Publisher exit 0, payload 7340 tệp xác minh. Cập nhật 0.1.26→0.1.27 trên bản sao baseline: health PASS, 7339 tệp 0 sai lệch, canary dữ liệu nguyên vẹn. Gate đã chạy ở HEAD trước bump: journey Unity v22+ thật PASS, ma trận scan/extract/patch-gỡ 15/15, test Ren'Py/cỡ chữ, harness installer 46. Bản thử cỡ chữ Owner đã dùng trước release. Rebaseline registry một lần (epoch-20261122-065-release027, Owner "Cho phép" 2026-11-22). Evidence: `TEST_RUN/agent-evidence/release-0.1.27/`.
+**NOT_PROVEN / chưa chạy:** cài Setup 0.1.27 native bằng giao diện (không chạy), hộp thoại chọn font/ảnh và dịch ảnh qua giao diện, nâng cấp patch→patch thật trên game đã cài, cỡ chữ nhìn trong game chạy thật. Dọn ngân sách về ≤ 1 GiB theo kế hoạch cleanup còn chờ (non-exempt ~7 GiB); `release/budget_policy.json` giữ như HEAD.
+
+---
+
 # Current checkpoint — Báo lỗi sau phát hành 0.1.26, 2026-11-21
 
 Owner yêu cầu chỉ ghi nhận để xử lý sau khi quota reset (lượt sau đã xử lý: xem checkpoint "Sửa lỗi sau 0.1.26" bên dưới). Baseline là tag `v0.1.26` (`4dea6b1`). Bằng chứng là hai ảnh Owner gửi trong chat ngày 21/11; lỗi dưới đây mới được báo, nguyên nhân chưa xác minh.
