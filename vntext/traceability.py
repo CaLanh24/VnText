@@ -367,12 +367,12 @@ class TraceStore:
         extract_lock = self.package_dir / ".vntext-extract.lock"
         if extract_lock.exists():
             raise TraceStoreError("package extraction is in progress")
-        owner = {
+        from vntext.process_identity import owner_is_live, owner_record
+        owner = owner_record({
             "owner_id": self._owner_id,
-            "pid": os.getpid(),
             "run_id": self.run_id,
             "created_at": _utc_now(),
-        }
+        })
         encoded = json.dumps(owner, ensure_ascii=False, sort_keys=True).encode("utf-8")
         for attempt in range(2):
             try:
@@ -385,7 +385,7 @@ class TraceStore:
                     pid = int(current.get("pid", 0))
                 except (OSError, ValueError, TypeError, json.JSONDecodeError) as read_exc:
                     raise TraceStoreError(f"cannot validate trace lock: {self.lock_path}") from read_exc
-                if _pid_alive(pid):
+                if owner_is_live(current, _pid_alive):
                     raise TraceStoreError(f"trace store is locked by live pid {pid}: {self.lock_path}") from exc
                 try:
                     self.lock_path.unlink()
@@ -677,12 +677,12 @@ class TraceStore:
     def _write_lock_owner(self) -> None:
         if not self._lock_acquired:
             return
-        owner = {
+        from vntext.process_identity import owner_record
+        owner = owner_record({
             "owner_id": self._owner_id,
-            "pid": os.getpid(),
             "run_id": self.run_id,
             "created_at": _utc_now(),
-        }
+        })
         fd, temp_name = tempfile.mkstemp(prefix=f"{self.lock_path.name}.", dir=self.meta_dir)
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:

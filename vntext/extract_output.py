@@ -66,26 +66,39 @@ def _sweep_interrupted_leftovers(root: Path) -> list[str]:
     return removed
 
 
+_UNREADABLE_LOCK_GRACE_SECONDS = 60
+
+
 def _take_lock(lock: Path) -> int:
+    from vntext.process_identity import owner_is_live, owner_record
     from vntext.traceability import _pid_alive
     for _ in range(2):
         _no_links(lock)
         try:
             fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError:
-            before = lock.read_bytes()
             try:
-                pid = int(json.loads(before)["pid"])
-            except (ValueError, KeyError, TypeError) as exc:
-                raise ValueError("Cannot verify the existing output lock; preserved it") from exc
-            if pid <= 0 or _pid_alive(pid):
-                raise ValueError("Output is in use by another extraction")
+                before = lock.read_bytes()
+                age = time.time() - lock.stat().st_mtime
+            except FileNotFoundError:
+                continue
+            try:
+                record = json.loads(before)
+                int(record["pid"])
+            except (ValueError, KeyError, TypeError):
+                # A lock that never got its owner written (killed between create and write) would otherwise block the folder forever.
+                if age < _UNREADABLE_LOCK_GRACE_SECONDS:
+                    raise ValueError("Thư mục xuất đang được tác vụ khác chuẩn bị khóa; hãy đợi vài giây rồi thử lại.")
+                record = None
+            if record is not None and owner_is_live(record, _pid_alive):
+                raise ValueError("Thư mục xuất đang được một lần lấy text khác sử dụng. Hãy đợi tác vụ đó xong hoặc hủy nó; "
+                                 "nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
             if lock.read_bytes() != before:
-                raise ValueError("Output lock changed externally")
+                raise ValueError("Khóa thư mục xuất vừa bị thay đổi bởi tiến trình khác; hãy thử lại.")
             lock.unlink()
             continue
         try:
-            os.write(fd, json.dumps({"pid": os.getpid()}).encode())
+            os.write(fd, json.dumps(owner_record()).encode())
             os.fsync(fd)
         except Exception:
             os.close(fd)

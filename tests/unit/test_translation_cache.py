@@ -171,6 +171,13 @@ class TranslationCacheTests(unittest.TestCase):
         finally:
             first.close()
 
+    def test_cache_lock_with_recycled_pid_is_reclaimed(self):
+        probe = TranslationCache(self.root)
+        lock = probe.lock_path
+        probe.close()
+        lock.write_text(json.dumps({"pid": os.getpid(), "start": "1"}), encoding="utf-8")
+        TranslationCache(self.root).close()
+
     @unittest.skipUnless(os.name == "nt", "Windows process-handle contract")
     def test_windows_pid_probe_does_not_signal_live_or_exited_process(self):
         from vntext.translation_cache import _pid_alive

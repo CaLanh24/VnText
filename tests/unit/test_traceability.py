@@ -210,6 +210,12 @@ class TraceStoreTests(unittest.TestCase):
         recovered = TraceStore(self.root, self.package_id)
         recovered.close()
 
+    def test_lock_with_recycled_pid_is_reclaimed(self):
+        lock = self.root / ".mt" / "traceability.lock"
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        lock.write_text(json.dumps({"owner_id": "stale", "pid": os.getpid(), "start": "1"}), encoding="utf-8")
+        TraceStore(self.root, self.package_id).close()
+
     def test_migration_is_additive_and_future_schema_fails_closed(self):
         store = TraceStore(self.root, self.package_id)
         store.close()

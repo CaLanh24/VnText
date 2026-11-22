@@ -212,6 +212,59 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             self.assertTrue(results[-1]["ok"])
         self.run_case(run)
 
+    def _locked_run(self, lock_text, *, age=0, expect_ok=True):
+        def run(source, out, results):
+            lock = out / ".vntext-extract.lock"
+            lock.write_text(lock_text, encoding="utf-8")
+            if age:
+                import os
+                import time
+                os.utime(lock, (time.time() - age, time.time() - age))
+            if expect_ok:
+                refresh_extract(source, out, self.generated, results.append, lambda _: None)
+                self.assertTrue(results[-1]["ok"])
+                self.assertFalse(lock.exists())
+            else:
+                with self.assertRaises(ValueError) as caught:
+                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
+                self.assertIn("Thư mục xuất", str(caught.exception))
+                self.assertTrue(lock.exists())
+            self.assertEqual(b"user data", (out / "notes.txt").read_bytes())
+        self.run_case(run)
+
+    def test_lock_of_recycled_pid_with_other_start_time_is_reclaimed(self):
+        import os
+        self._locked_run(json.dumps({"pid": os.getpid(), "start": "1"}))
+
+    def test_legacy_lock_whose_pid_now_runs_another_program_is_reclaimed(self):
+        import subprocess
+        import sys
+        import os
+        # A live process that is not VNText (cmd/ping style): recycled pid in an old-format lock.
+        other = subprocess.Popen(["cmd", "/c", "ping -n 20 127.0.0.1 >nul"] if os.name == "nt" else ["sleep", "20"],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            self._locked_run(json.dumps({"pid": other.pid}))
+        finally:
+            other.kill()
+            other.wait()
+
+    def test_lock_of_dead_pid_with_start_time_is_reclaimed(self):
+        self._locked_run(json.dumps({"pid": 2 ** 30, "start": "123"}))
+
+    def test_lock_of_real_live_extraction_is_refused(self):
+        from vntext.process_identity import owner_record
+        self._locked_run(json.dumps(owner_record()), expect_ok=False)
+
+    def test_legacy_lock_of_live_vntext_python_is_refused(self):
+        import os
+        self._locked_run(json.dumps({"pid": os.getpid()}), expect_ok=False)
+
+    def test_corrupt_lock_is_kept_when_fresh_and_reclaimed_when_old(self):
+        self._locked_run("not json", expect_ok=False)
+        self._locked_run("", age=3600)
+        self._locked_run('{"pid": "x"}', age=3600)
+
     def test_lock_write_failure_does_not_leak_a_lock_or_change_csv(self):
         def run(source, out, results):
             with patch("vntext.extract_output.os.write", side_effect=OSError("disk full")), self.assertRaises(OSError):

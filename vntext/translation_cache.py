@@ -138,7 +138,8 @@ class TranslationCache:
         return self._connection
 
     def _acquire_lock(self) -> None:
-        payload = _json({"owner_id": self._owner_id, "pid": os.getpid(), "created_at": _utc_now()})
+        from vntext.process_identity import owner_is_live, owner_record
+        payload = _json(owner_record({"owner_id": self._owner_id, "created_at": _utc_now()}))
         try:
             fd = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
         except FileExistsError as exc:
@@ -147,7 +148,7 @@ class TranslationCache:
                 pid = int(current.get("pid", 0))
             except (OSError, ValueError, TypeError, json.JSONDecodeError) as read_exc:
                 raise TranslationCacheError(f"cannot validate cache lock: {self.lock_path}") from read_exc
-            if pid and _pid_alive(pid):
+            if pid and owner_is_live(current, _pid_alive):
                 raise TranslationCacheError(f"translation cache is locked by live pid {pid}") from exc
             try:
                 self.lock_path.unlink()
