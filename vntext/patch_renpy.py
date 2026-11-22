@@ -599,7 +599,7 @@ def _build_verification_records(
     return verification_entries, verification_records
 
 
-def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None) -> list[str]:
+def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None, font_scale=None) -> list[str]:
     rows = read_translation_rows(csv_path)
     manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -812,13 +812,23 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         prior_overlay = root / "game/tl/vietnamese/vntext.rpy"
         font_translations = [translation for _, translation in dialogues] + list(requested_strings.values())
         selected_font = Path(replacement_font) if replacement_font else None
+        from vntext.renpy_font_support import normalize_font_scale
+        try:
+            scale = normalize_font_scale(font_scale)
+        except ValueError as exc:
+            raise RenPyPatchError(str(exc)) from None
+        from vntext.renpy_font_support import normalize_font_scale
+        try:
+            scale = normalize_font_scale(font_scale)
+        except ValueError as exc:
+            raise RenPyPatchError(str(exc)) from None
         prior_payload = prior_overlay.read_text(encoding="utf-8") if prior_overlay in existing_snapshots else ""
         bundled_name = f'tl/vietnamese/vntext_font_{FALLBACK_SHA256[:16]}.ttf'
         font = selected_font or (bundled if not prior_payload or f'font "{bundled_name}"' in prior_payload else None)
 
         def check_font(candidate, fallback=None):
             snapshots = {}
-            support = prepare_font_support(root, snapshots, archive_cache, candidate, fallback)
+            support = prepare_font_support(root, snapshots, archive_cache, candidate, fallback, scale)
             styles = re.findall(r"translate vietnamese style (\w+):", support)
             source = candidate or root / "renpy/common/DejaVuSans.ttf"
             evidence = font_report("renpy", font_translations, font=source if support else None, styles=styles)
@@ -878,6 +888,15 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             font_evidence["image_candidates"] = {"schema": 1, "candidates": [], "error": type(exc).__name__ + ": " + str(exc)[:160]}
         font_evidence["source_checks"] = [{"path": path.relative_to(root).as_posix(), "sha256": digest}
                                           for path, digest in sorted(source_snapshots.items()) if path.is_relative_to(root)]
+        if scale is not None:
+            if not font_support or font is None:
+                raise RenPyPatchError("Font scale cannot be applied: no verified Vietnamese font is staged for this game")
+            font_evidence["font_scale"] = {"value": scale, "scope": "translate vietnamese python",
+                                           "api": "config.ftfont_scale[<generated font file>] (Ren'Py 8.5.3 renpy/config.py; scales only the generated Vietnamese font)"}
+        if scale is not None:
+            if not font_support or font is None:
+                raise RenPyPatchError("Font scale cannot be applied: no verified Vietnamese font is staged for this game")
+            font_evidence["font_scale"] = {"value": scale, "api": "config.ftfont_scale[<generated font file>] (Ren'Py 8.5.3 renpy/config.py; scales only the generated Vietnamese font)", "scope": "translate vietnamese python"}
         if font_support and font is None:
             font_evidence["source_font"] = {"path": "renpy/common/DejaVuSans.ttf", "sha256": font_evidence["sha256"]}
         if font_evidence.get("missing"):
@@ -914,7 +933,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             # Also detect added/shadowing assets and changed compatibility
             # source, before and after publication. Existing hashes alone do
             # not detect a newly introduced asset with the fallback's name.
-            if prepare_font_support(root, {}, {}, font, glyph_fallback) != initial_font_support:
+            if prepare_font_support(root, {}, {}, font, glyph_fallback, scale) != initial_font_support:
                 raise RenPyPatchError("Ren'Py font/language support source inventory changed")
 
         if image_overlay_spec:

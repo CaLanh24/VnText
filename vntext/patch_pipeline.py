@@ -71,7 +71,7 @@ def detect_patch_engine(manifest: dict) -> str:
     return "unity"
 
 
-def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None):
+def apply_translation_package(csv_path: str, manifest_path: str, game_root: str, output_dir: str, progress_callback=None, replacement_font=None, image_overlay_spec=None, font_scale=None):
     import json as _json
     _manifest_probe = _json.loads(Path(manifest_path).read_text(encoding="utf-8-sig"))
     from vntext.patch_gate import validate_patch_package_identity
@@ -81,9 +81,13 @@ def apply_translation_package(csv_path: str, manifest_path: str, game_root: str,
     validate_patch_output(game_root, output_dir, transactional_existing=engine == "renpy")
     if engine == "renpy":
         from vntext.patch_renpy import apply_renpy_translation_package
-        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec)
+        return apply_renpy_translation_package(csv_path, manifest_path, game_root, output_dir, progress_callback, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec, font_scale=font_scale)
     if image_overlay_spec:
         raise ValueError("Image overlays are implemented only for Ren'Py locale images")
+    if str(font_scale or "").strip():
+        from vntext.renpy_font_support import normalize_font_scale
+        if normalize_font_scale(font_scale) is not None:
+            raise ValueError("Font size option is implemented only for Ren'Py; this engine has no verified way to scale the Vietnamese font, so no patch was built")
     from vntext.patch_font_preflight import font_report
     translations = [str(row.get("translation") or "") if isinstance(row, dict) else str(row) for row in read_translation_rows(csv_path).values()]
     evidence = font_report("unity", translations)

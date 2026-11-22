@@ -232,7 +232,40 @@ _GROUP_LINE = re.compile(r'    font FontGroup\(\)((?:\.add\("[^"\n]+", 0x[0-9A-F
 _GROUP_ADD = re.compile(r'\.add\("([^"\n]+)", 0x([0-9A-F]+), 0x([0-9A-F]+)\)')
 
 
-def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", replacement_keys: list[str] | tuple = (), fallback=None) -> str:
+SCALE_BEGIN = "# VNText font scale begin"
+SCALE_END = "# VNText font scale end"
+MIN_FONT_SCALE, MAX_FONT_SCALE = 0.70, 1.50
+_SCALED_FONT_NAME = re.compile(r"tl/vietnamese/vntext_font_[0-9a-f]{16}\.(?:ttf|otf)")
+_SCALE_LINE = re.compile(r'    config\.ftfont_scale\["([^"\n]+)"\] = ([0-9]\.[0-9]{1,2})')
+
+
+def normalize_font_scale(value) -> float | None:
+    """None for "no change" (empty or 1.0); a value rounded to 2 decimals inside [0.70, 1.50]; anything else is refused, never clamped silently."""
+
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    try:
+        scale = round(float(value), 2)
+    except (TypeError, ValueError):
+        raise ValueError("Font scale must be a number") from None
+    if not MIN_FONT_SCALE <= scale <= MAX_FONT_SCALE:
+        raise ValueError(f"Font scale must be between {MIN_FONT_SCALE:.2f} and {MAX_FONT_SCALE:.2f}")
+    return None if scale == 1.0 else scale
+
+
+def render_font_scale(font_name: str, scale: float | None) -> str:
+    """One generated block that scales ONLY the generated Vietnamese font file (Ren'Py ``config.ftfont_scale`` is keyed by font file, the same hook the
+    engine's own accessibility code uses).  Never emitted for an engine/game font name, whose scaling would also change other languages."""
+
+    scale = normalize_font_scale(scale)
+    if scale is None:
+        return ""
+    if not _SCALED_FONT_NAME.fullmatch(font_name):
+        raise ValueError("Font scale applies only to the generated Vietnamese font")
+    return "\n".join([SCALE_BEGIN, "translate vietnamese python:", f'    config.ftfont_scale["{font_name}"] = {scale:.2f}'.rstrip("0").rstrip("."), SCALE_END, ""])
+
+
+def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", replacement_keys: list[str] | tuple = (), fallback=None, scale: float | None = None) -> str:
     if any(not re.fullmatch(r"[A-Za-z_]\w*", name) for name in styles):
         raise ValueError("unsafe Ren'Py font style identifier")
     if not re.fullmatch(r"[A-Za-z0-9_./-]+", font_name) or ".." in font_name:
@@ -241,7 +274,7 @@ def render_font_support(styles: list[str], font_name: str = "DejaVuSans.ttf", re
     lines = ["# VNText language-scoped text font support v1"]
     for name in sorted(set(styles)):
         lines.extend([f"translate vietnamese style {name}:", f"    font {expression}", ""])
-    return "\n".join(lines) + "\n" + render_font_replacement(list(replacement_keys), font_name)
+    return "\n".join(lines) + "\n" + render_font_replacement(list(replacement_keys), font_name) + render_font_scale(font_name, scale)
 
 
 _HEAD_HEADER = "# VNText language-scoped text font support v1"
@@ -307,11 +340,31 @@ def split_generated_head(text: str) -> tuple[str, str] | None:
         head = "\n".join([_HEAD_HEADER] + [part for name in styles for part in (f"translate vietnamese style {name}:", f"    font {_font_expression(font_name, fallback)}", "")]) + "\n"
         head += render_font_replacement(keys, font_name, guard)
         if text.startswith(head):
-            return head, text[len(head):]
+            rest = text[len(head):]
+            if rest.startswith(SCALE_BEGIN + "\n"):
+                end = rest.find(SCALE_END + "\n")
+                block = rest[:end + len(SCALE_END) + 1] if end >= 0 else ""
+                match = _SCALE_LINE.fullmatch(block.split("\n")[2]) if block.count("\n") == 4 else None
+                if not match or match.group(1) != font_name:
+                    return None
+                try:
+                    if render_font_scale(font_name, float(match.group(2))) != block:
+                        return None
+                except ValueError:
+                    return None
+                head, rest = head + block, rest[len(block):]
+            return head, rest
     return None
 
 
-def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None, glyph_fallback=None) -> str:
+def generated_font_scale(head: str) -> float | None:
+    """The scale recorded in a generated head (None when it has no scale block)."""
+
+    match = re.search(r'^    config\.ftfont_scale\["[^"\n]+"\] = ([0-9]\.[0-9]{1,2})$', head, re.MULTILINE)
+    return float(match.group(1)) if match else None
+
+
+def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[Path, RenPyArchive], replacement_font: Path | None = None, glyph_fallback=None, font_scale: float | None = None) -> str:
     """Return a style prefix only for the verified engine-bundled fallback.
 
     Add every consumed file/container to the writer's existing hash/CAS checks.
@@ -394,4 +447,4 @@ def prepare_font_support(root: Path, snapshots: dict[Path, str], archives: dict[
         record(path, archive.container_sha256)
     record(font, digest)
     font_name = f"tl/vietnamese/vntext_font_{digest[:16]}{font.suffix.lower()}" if replacement_font else "DejaVuSans.ttf"
-    return render_language_support(scripts) + render_font_support(text_font_styles(scripts, text_fonts_lacking_vietnamese(game_fonts)), font_name, replacement_keys_for_game_fonts(game_fonts), glyph_fallback)
+    return render_language_support(scripts) + render_font_support(text_font_styles(scripts, text_fonts_lacking_vietnamese(game_fonts)), font_name, replacement_keys_for_game_fonts(game_fonts), glyph_fallback, font_scale)

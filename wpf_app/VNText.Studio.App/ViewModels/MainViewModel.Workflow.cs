@@ -624,6 +624,7 @@ public sealed partial class MainViewModel
             partial_override = true,
             replacement_font = _replacementFont,
             image_overlay_spec = _imageOverlaySpec,
+            font_scale = PatchFontScaleParameter,
         }, "Đang tạo patch…");
     }
 
@@ -674,6 +675,7 @@ public sealed partial class MainViewModel
             partial_override = true,
             replacement_font = _replacementFont,
             image_overlay_spec = _imageOverlaySpec,
+            font_scale = PatchFontScaleParameter,
         }, "Đang tạo patch phần an toàn…");
     }
 

@@ -13,6 +13,25 @@ public sealed partial class MainViewModel
     private string _deliveredPatch = "", _deliveredPatchHash = "", _deliveredCsv = "", _deliveredCsvHash = "", _deliveredGame = "";
     private string _replacementFont = "";
     private string _imageOverlaySpec = "";
+    // Font size option (Ren'Py only; the Python backend refuses it for any other engine).  1.0 = unchanged and is not sent at all.
+    private double _patchFontScale = 1.0;
+    public double PatchFontScale
+    {
+        get => _patchFontScale;
+        set
+        {
+            var rounded = Math.Round(Math.Clamp(value, 0.70, 1.50) * 20, MidpointRounding.AwayFromZero) / 20;
+            if (Math.Abs(rounded - _patchFontScale) < 0.0001) return;
+            _patchFontScale = rounded;
+            Raise(nameof(PatchFontScale)); Raise(nameof(PatchFontScaleText)); Raise(nameof(PatchFontScaleIsSet));
+            InvalidatePatchSourceState();
+        }
+    }
+    public bool PatchFontScaleIsSet => Math.Abs(_patchFontScale - 1.0) > 0.0001;
+    public string PatchFontScaleText => PatchFontScaleIsSet ? UiText.Msg("Cỡ chữ: {0}%", (int)Math.Round(_patchFontScale * 100)) : "Cỡ chữ: giữ nguyên (100%)";
+    public string PatchFontScaleHelpText => "Chỉ áp dụng cho game Ren’Py và chỉ đổi cỡ của font Việt do VNText tạo; engine khác sẽ báo rõ là chưa hỗ trợ thay vì tạo patch sai.";
+    public RelayCommand ResetPatchFontScaleCommand { get; private set; } = null!;
+    private string PatchFontScaleParameter => PatchFontScaleIsSet ? _patchFontScale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : "";
     // Optional: a user-authored rendered-image spec (known imagemap/imagebutton assets, declared regions). The product validates it when the patch is built; nothing is recognised automatically.
     public bool ImageSpecIsSet => !string.IsNullOrEmpty(_imageOverlaySpec);
     public string ImageSpecLabel => ImageSpecIsSet ? UiText.Msg("Ảnh đã chọn: {0}", Path.GetFileName(_imageOverlaySpec)) : "Không dùng ảnh (tùy chọn)";
@@ -57,6 +76,7 @@ public sealed partial class MainViewModel
             _imageOverlaySpec = picker.FileName; RaiseImageSpec(); InvalidatePatchSourceState(); RestoreFocus(opener);
         }, _ => !Busy);
         ResetImageSpecCommand = new RelayCommand(_ => { if (Busy) return; _imageOverlaySpec = ""; RaiseImageSpec(); InvalidatePatchSourceState(); }, _ => !Busy && ImageSpecIsSet);
+        ResetPatchFontScaleCommand = new RelayCommand(_ => { if (Busy) return; PatchFontScale = 1.0; }, _ => !Busy && PatchFontScaleIsSet);
         ResetPatchFontCommand = new RelayCommand(_ => { if (Busy) return; _replacementFont = ""; SetPatchFontNotice("Đã chọn: Font Việt đi kèm."); InvalidatePatchSourceState(); }, _ => !Busy);
         ChoosePatchFontCommand = new RelayCommand(_ =>
         {
@@ -82,7 +102,7 @@ public sealed partial class MainViewModel
             {
                 InstallDeliveredPatchCommand.RaiseCanExecuteChanged(); OpenDeliveredPatchCommand.RaiseCanExecuteChanged();
                 ChoosePatchFontCommand.RaiseCanExecuteChanged(); ResetPatchFontCommand.RaiseCanExecuteChanged(); ChooseInstalledPatchFontCommand.RaiseCanExecuteChanged();
-                ChooseImageSpecCommand.RaiseCanExecuteChanged(); ResetImageSpecCommand.RaiseCanExecuteChanged();
+                ChooseImageSpecCommand.RaiseCanExecuteChanged(); ResetImageSpecCommand.RaiseCanExecuteChanged(); ResetPatchFontScaleCommand.RaiseCanExecuteChanged();
             }
         };
     }

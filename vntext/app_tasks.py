@@ -2703,6 +2703,7 @@ def run_patch_task(
     partial_override: bool = False,
     replacement_font: str = "",
     image_overlay_spec: str = "",
+    font_scale: str | float | None = "",
 ) -> None:
     """Build a patch.  ``partial_override`` is the explicit, user-confirmed safe-subset action (see patch_gate.partial_patch_override)."""
     from vntext.patch_gate import partial_patch_override
@@ -2710,7 +2711,7 @@ def run_patch_task(
     with partial_patch_override(partial_override):
         _run_patch_task_impl(csv_path, manifest_path, src, out, progress=progress, log=log, complete=complete,
                              patch_out_override=patch_out_override, include_installer=include_installer,
-                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec)
+                             write_manifest_file=write_manifest_file, enable_trace=enable_trace, partial_override=partial_override, replacement_font=replacement_font, image_overlay_spec=image_overlay_spec, font_scale=font_scale)
 
 
 def _run_patch_task_impl(
@@ -2729,6 +2730,7 @@ def _run_patch_task_impl(
     partial_override: bool = False,
     replacement_font: str = "",
     image_overlay_spec: str = "",
+    font_scale: str | float | None = "",
 ) -> None:
     trace = None
     patch_out: Path | None = None
@@ -2814,7 +2816,7 @@ def _run_patch_task_impl(
         beat = _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo native overlay Ren'Py", 40)
         keepalive.append(beat)
         beat.__enter__()
-        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}))
+        apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}), **({"font_scale": font_scale} if str(font_scale or "").strip() else {}))
         beat.retitle("Đang kiểm tra bản vá và đóng gói", 90)
         # Do not let COPY_TO_GAME_ROOT existence or a legacy text report
         # promote a patch.  The writer must have completed the bounded,

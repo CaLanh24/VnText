@@ -893,6 +893,14 @@
                                                         ToolTip="Chọn font đã cài trên máy khi hộp thoại tệp không mở được thư mục Fonts; chỉ đọc tệp font, không sao chép." />
                                                 <Button Content="Dùng font Việt đi kèm" Style="{StaticResource OutlineButton}" Command="{Binding ResetPatchFontCommand}" Margin="0,0,0,8" />
                                             </WrapPanel>
+                                            <TextBlock x:Name="PatchFontScaleText" Text="{Binding PatchFontScaleText, Converter={StaticResource UiTextDynamic}}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,6,0,0" />
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                                <Slider x:Name="PatchFontScaleSlider" Minimum="0.7" Maximum="1.5" TickFrequency="0.05" IsSnapToTickEnabled="True" SmallChange="0.05" LargeChange="0.1"
+                                                        Value="{Binding PatchFontScale, Mode=TwoWay}" AutomationProperties.Name="Cỡ chữ của font Việt" MinWidth="220" VerticalAlignment="Center" />
+                                                <Button Grid.Column="1" Content="Giữ nguyên cỡ" Style="{StaticResource OutlineButton}" Command="{Binding ResetPatchFontScaleCommand}" Margin="12,0,0,0" />
+                                            </Grid>
+                                            <TextBlock Text="{Binding PatchFontScaleHelpText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
                                     <Border x:Name="PatchImageGroup" Grid.Row="1" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,12,0">
