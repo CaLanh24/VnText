@@ -166,6 +166,8 @@ def collect_structure(package_dir: str | Path) -> dict | None:
             "target_class": first if first in {"python", "style"} else ("identifier" if native_id.isidentifier() else "other"),
             "reason": re.sub(r"^.*?:\d+:\s*", "", _mask_message(item.get("reason"))),
             "shape": mask_block(str(item.get("raw_block") or "")),
+            "context_before": mask_block(str(item.get("context_before") or "")),
+            "context_after": mask_block(str(item.get("context_after") or "")),
         })
     counters = {key: stats.get(key) for key in ("native_units", "native_supported_units", "native_unresolved_blocks", "native_technical_blocks_skipped")
                 if isinstance(stats.get(key), int)}

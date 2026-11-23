@@ -273,7 +273,8 @@ internal static partial class Program
                             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Badge("CẦN XEM LẠI", "ToastWarningBackgroundBrush", "ToastWarningForegroundBrush", "B blocked");
-                            Require(Named("PatchBadge").IsVisible && !vm.RunPatchCommand.CanExecute(null), $"{badgeTheme}: B shows the amber badge and packaging is disabled");
+                            // Owner 2026-11-21: "Tạo patch" stays available once a source is chosen (it re-checks on click and reports the concrete blocker), so a blocked package no longer disables it.
+                            Require(Named("PatchBadge").IsVisible && vm.RunPatchCommand.CanExecute(null), $"{badgeTheme}: B shows the amber badge and packaging stays available to re-check");
                             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Badge("SẴN SÀNG", "GreenSoftBrush", "GreenDarkBrush", "A ready again after its own check");

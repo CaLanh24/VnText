@@ -70,6 +70,12 @@ public sealed partial class MainViewModel
         ChooseImageSpecCommand = new RelayCommand(_ =>
         {
             if (Busy) return;
+#if DEV_PROBES
+            if (PickerOverrideProbe.TryResolve("imageSpec", out var probeSpec))
+            {
+                _imageOverlaySpec = probeSpec; RaiseImageSpec(); InvalidatePatchSourceState(); return;
+            }
+#endif
             var picker = new OpenFileDialog { Filter = "Tệp mô tả ảnh (*.json)|*.json", Title = UiText.Translate("Chọn tệp mô tả ảnh đã chỉnh sửa") };
             var opener = System.Windows.Input.Keyboard.FocusedElement;
             if (picker.ShowDialog() != true) { RestoreFocus(opener); return; }
@@ -81,6 +87,12 @@ public sealed partial class MainViewModel
         ChoosePatchFontCommand = new RelayCommand(_ =>
         {
             if (Busy) return;
+#if DEV_PROBES
+            if (PickerOverrideProbe.TryResolve("font", out var probeFont))
+            {
+                ApplyPatchFontFile(probeFont); return;
+            }
+#endif
             var picker = new OpenFileDialog { Filter = "Font (*.ttf;*.otf)|*.ttf;*.otf", Title = UiText.Translate("Chọn font Việt thay thế (Ren’Py)") };
             var opener = System.Windows.Input.Keyboard.FocusedElement;
             if (picker.ShowDialog() != true) { SetPatchFontNotice("Đã hủy chọn font; lựa chọn hiện tại được giữ nguyên."); RestoreFocus(opener); return; }

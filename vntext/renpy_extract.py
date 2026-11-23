@@ -423,6 +423,8 @@ def parse_renpy_translation_templates(
                         "source_file":header_provenance[0]if header_provenance else '',
                         "source_line":header_provenance[1]if header_provenance else None,
                         "raw_block":"\n".join(lines[line_number-1:end_line-1]),
+                        "context_before":"\n".join(lines[max(0,line_number-4):line_number-1]),
+                        "context_after":"\n".join(lines[end_line-1:end_line+2]),
                         "reason":str(exc),"disposition":"UNSUPPORTED_REVIEW"})
                     parsed=[]
                 units.extend(parsed)
