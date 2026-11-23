@@ -158,7 +158,14 @@ def _take_lock(lock: Path, log=None) -> int:
 
 def refresh_extract(src, out, produce, complete, log, is_cancelled=None):
     # Notify the host only after releasing the package lock and owned staging.
-    complete(_refresh_extract(src, out, produce, log, is_cancelled))
+    try:
+        result = _refresh_extract(src, out, produce, log, is_cancelled)
+    finally:
+        # Game files opened by the analysis (UnityPy reads through fsspec) can stay open inside reference cycles until the next collection, which
+        # blocks removing a patch or renaming the game folder on Windows; free them before the host is told the extraction ended.
+        import gc
+        gc.collect()
+    complete(result)
 
 
 def _refresh_extract(src, out, produce, log, is_cancelled=None):
