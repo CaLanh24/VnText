@@ -148,3 +148,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 | Release 0.1.28 hotfix khóa extract (đã phát hành) | docs/RELEASE_0.1.28.md | TEST_RUN/agent-evidence/release-0.1.28/ |
 | Release 0.1.29 khóa HĐH + audit block Ren'Py + report ẩn danh (đã phát hành) | docs/RELEASE_0.1.29.md | TEST_RUN/agent-evidence/release-0.1.29/ |
 | Release 0.1.30 hoàn thiện khóa/report/preview (đã phát hành) | docs/RELEASE_0.1.30.md | TEST_RUN/agent-evidence/release-0.1.30/ |
+| Release 0.1.31 nút báo lỗi khi bận + thông báo patch + giải phóng handle (đang chuẩn bị) | docs/RELEASE_0.1.31.md | TEST_RUN/agent-evidence/release-0.1.31/ |
