@@ -11,3 +11,6 @@ Owner (DEV session 2026-11-24) asked for the follow-up and confirmed its release
 
 ## Evidence
 Receipts in `TEST_RUN/agent-evidence/release-0.1.31/`.
+
+## Published
+Tag `v0.1.31` = `fcba562e523e0fa66814b94933afcb705ae6cdc5`. Setup sha256 `257b45e869ac7be4495840786f9bf1d7a8c4318e475c796811bda1db07fc9d7b` (GitHub = local, 5/5 assets). Update 0.1.30→0.1.31: 7344 files verified. Smoke through the UI on the updated app (agent-desktop, real Ren'Py SDK): bug report built while a 60,000-line extraction runs (it finishes COMPLETE), extract → translate → patch → install, new message when re-patching over an installed patch. NOT_PROVEN: system/DEV_PROBES pickers, Dịch ảnh through the UI.
