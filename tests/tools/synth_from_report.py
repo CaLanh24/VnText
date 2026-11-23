@@ -39,6 +39,90 @@ def _write_rpa(path: Path, summary: dict) -> None:
     (write_rpa2 if summary.get("version") == "2.0" else write_rpa)(path, members)
 
 
+_CLASS_SIZE = {"lt1k": 512, "lt64k": 32 * 1024, "lt1m": 256 * 1024, "lt64m": 512 * 1024, "ge64m": 512 * 1024}
+
+
+def _sizes(classes: dict) -> list[int]:
+    out: list[int] = []
+    for name, count in (classes or {}).items():
+        out += [_CLASS_SIZE.get(name, 512)] * min(int(count), 12)
+    return out or [16]
+
+
+def _synth_unityfs(path: Path, shape: dict) -> None:
+    import struct
+    error = shape.get("error")
+    if error and error.get("kind") == "bad_magic":
+        path.write_bytes(b"NotUnity" + b"\0" * 64)
+        return
+    fmt = int(shape.get("format_version") or 6)
+    blocks = _sizes(shape.get("block_uncompressed_classes"))
+    entries = b"".join(struct.pack(">IIH", size, size, 0) for size in blocks)
+    nodes = min(int(shape.get("nodes") or 1), 40)
+    node_sizes = _sizes(shape.get("node_size_classes"))
+    table = b"".join(struct.pack(">QQI", 0, node_sizes[i % len(node_sizes)], 4) + f"CAB-{i}".encode() + b"\0" for i in range(nodes))
+    info = b"\0" * 16 + struct.pack(">I", len(blocks)) + entries + struct.pack(">I", nodes) + table
+    flags = int(shape.get("flags") or 0) & ~0x3F & ~0x80          # block info stored plain: the table shape is what is replayed
+    player = str(shape.get("player_version") or "5.x.x").encode()
+    revision = b"r" * int(shape.get("engine_revision_len") or 1)
+    prefix = b"UnityFS\0" + struct.pack(">I", fmt) + player + b"\0" + revision + b"\0"
+    if error:        # keep the recorded header sizes so the parser meets the same inconsistency
+        comp = int(shape.get("blocks_info_compressed") or len(info))
+        info = info.ljust(comp, b"\0")[:comp]
+        tail = struct.pack(">III", comp, int(shape.get("blocks_info_uncompressed") or comp), flags)
+    else:
+        tail = struct.pack(">III", len(info), len(info), flags)
+    pad_to = len(prefix) + 8 + len(tail)
+    padding = b"\0" * ((16 - pad_to % 16) % 16) if fmt >= 7 else b""
+    total = pad_to + len(padding) + len(info) + sum(blocks)
+    data = prefix + struct.pack(">Q", total) + tail + padding + info + b"\0" * sum(blocks)
+    if error:
+        # A parse failure is replayed by cutting the stand-in to the original file size, so the parser stops at the same place.
+        data = data[: max(16, min(len(data), int(shape.get("file_size") or len(data))))]
+    path.write_bytes(data)
+
+
+def _synth_zip(path: Path, shape: dict) -> None:
+    import zipfile
+    if shape.get("error"):
+        path.write_bytes(b"PK\3\4 broken archive")
+        return
+    methods = [int(m) for m, count in (shape.get("compression_methods") or {"8": 1}).items() for _ in range(max(1, int(count)))]
+    sizes = _sizes(shape.get("size_classes"))
+    extensions = list(shape.get("extensions") or {"(none)": 1})
+    with zipfile.ZipFile(path, "w") as archive:
+        for index in range(min(int(shape.get("entries") or 1), 60)):
+            ext = extensions[index % len(extensions)]
+            archive.writestr(zipfile.ZipInfo(f"m{index}" + ("" if ext == "(none)" else ext)), b"x" * sizes[index % len(sizes)],
+                             compress_type=methods[index % len(methods)])
+
+
+def _synth_serialized(path: Path, shape: dict) -> None:
+    import struct
+    version = int(shape.get("version") or 21)
+    head = bytearray(64)
+    struct.pack_into(">I", head, 8, version)
+    flag = 0 if shape.get("endianness") == "little" else 1
+    if version >= 22:
+        head[16] = flag
+        struct.pack_into(">I", head, 20, int(shape.get("metadata_size") or 0))
+        struct.pack_into(">QQ", head, 24, int(shape.get("declared_size") or 64), int(shape.get("data_offset") or 64))
+    else:
+        struct.pack_into(">II", head, 0, int(shape.get("metadata_size") or 0), int(shape.get("declared_size") or 64))
+        struct.pack_into(">I", head, 12, int(shape.get("data_offset") or 64))
+        if version >= 9:
+            head[16] = flag
+    path.write_bytes(bytes(head))
+
+
+def _synth_container(path: Path, shape: dict) -> bool:
+    writer = {"unityfs": _synth_unityfs, "zip": _synth_zip, "serialized": _synth_serialized}.get(shape.get("kind"))
+    if writer is None:
+        return False
+    writer(path, shape)
+    return True
+
+
 def synthesize(report: dict, dest: str | Path) -> Path:
     root = Path(dest)
     root.mkdir(parents=True, exist_ok=True)
@@ -47,6 +131,8 @@ def synthesize(report: dict, dest: str | Path) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
         suffix = path.suffix.casefold()
         rpa = entry.get("rpa")
+        if isinstance(entry.get("container"), dict) and _synth_container(path, entry["container"]):
+            continue
         if suffix == ".rpa" and isinstance(rpa, dict) and "members" in rpa:
             _write_rpa(path, rpa)
         elif suffix == ".rpa":

@@ -120,6 +120,16 @@ def fingerprint(game: str | Path) -> dict:
             entry = {"path": _anon_path(relative), "size": info.st_size, "header": _header(full, suffix)}
             if suffix == ".rpa":
                 entry["rpa"] = _rpa_summary(full, info.st_size)
+            elif suffix != ".rpa" and info.st_size >= 16:
+                from vntext.structure_shapes import shape_for
+                try:
+                    with full.open("rb") as stream:
+                        first = stream.read(16)
+                    container = shape_for(full, first)
+                except OSError:
+                    container = None
+                if container is not None:
+                    entry["container"] = container
             files.append(entry)
     from vntext.renpy_adapter import detect_engine
     detection = detect_engine(base)
