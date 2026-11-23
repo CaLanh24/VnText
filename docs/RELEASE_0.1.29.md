@@ -10,3 +10,6 @@ Owner 2026-11-23 asked in the DEV session for the merged 0.1.29 and its release.
 
 ## Evidence
 Receipts in `TEST_RUN/agent-evidence/release-0.1.29/`.
+
+## Published
+Tag `v0.1.29` = `22317d96b066a25db1b1fdc57fba57ae754a307e`. Digests (GitHub = local): Setup `06702d7c8b2c42ec00eee1d5061492cddcb9c57578854889ae9accb2b186cc95`; full update `51fd38e13dbf4eb7902f945eac4446c439ae5183792d10fd5a77faa395c2137a`; from-0.1.28 `5e2ea4e1255deaafb652f847bf24f6ff77cfdf2591a2bd0653984770ce230a74`. Update 0.1.28→0.1.29 with a legacy lock and an old CSV: PASS (7341 files). Smoke via agent-desktop on the updated app: scan, extract over a legacy lock, bug report, refusal while another process holds the lock and success after it is killed: PASS. NOT_PROVEN: full Ren'Py translate/patch/install/remove through the UI (needs the SDK), kill during a running extract, bug-report preview in the app, Unity/archive shapes.
