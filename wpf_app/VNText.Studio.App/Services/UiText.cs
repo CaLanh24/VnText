@@ -563,6 +563,8 @@ public static class UiText
         ["Chọn ảnh đã chỉnh…"] = "Choose edited images…",
         ["Không dùng ảnh"] = "Do not use images",
         ["Không dùng ảnh (tùy chọn)"] = "Not using images (optional)",
+        ["Cỡ chữ của font Việt"] = "Vietnamese font size",
+        ["Ảnh có chữ (tùy chọn)"] = "Images with text (optional)",
         ["Bỏ qua nếu game không có ảnh chứa chữ. Nếu có, chọn tệp mô tả ảnh đã chỉnh sửa sẵn; ứng dụng kiểm tệp này khi tạo patch và không tự sửa chữ trong ảnh."] = "Skip this if the game has no images containing text. Otherwise pick the file describing your edited images; the app checks it when building the patch and never edits text inside images itself.",
         ["Chọn tệp mô tả ảnh đã chỉnh sửa"] = "Choose the edited-images description file",
         ["Mở thư mục xuất ngay cả khi chưa tạo patch."] = "Opens the output folder even before a patch exists.",

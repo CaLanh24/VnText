@@ -754,7 +754,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private void RefreshRenpySdkOptionsVisibility(string inputPath)
     {
         var previous = Interlocked.Exchange(ref _renpyDetectionCancellation, null);
-        previous?.Cancel();
+        try { previous?.Cancel(); }
+        catch (ObjectDisposedException) { }       // the previous detection finished and disposed itself between the exchange and this call
         RenpySdkOptionsVisible = false;
         RenpySdkAction = "auto";
         RenpySdkError = "";

@@ -129,7 +129,8 @@ internal static partial class Program
                         vmLifecycle.TestHandleWorkerEvent(new WorkerEvent { Type = "cancel_ack", Id = cancellingId, State = "accepted" });
                         Require(vmLifecycle.StatusText.Contains("đang chờ", StringComparison.Ordinal), "accepted ack is an owned pending status");
                         vmLifecycle.TestReportCancelTimeout(cancellingId);
-                        Require(vmLifecycle.StatusText == "Hủy vẫn đang chờ tác vụ dừng an toàn", "watchdog remains pending until real completion");
+                        // Owner 2026-11-21: a cancel that gets no answer within the grace period force-stops the worker (the exit handler then publishes the terminal "cancelled").
+                        Require(vmLifecycle.StatusText == "Tác vụ không phản hồi yêu cầu hủy; đang dừng cưỡng bức", "watchdog force-stops an unresponsive cancel and stays pending until real completion");
                         Finish(vmLifecycle, false, "cancelled");
                         Require(!vmLifecycle.Busy && vmLifecycle.StatusText == vmCancel.StatusText, "cancel/ack/watchdog/complete must settle the resource status");
                         Require(language == "vi" || !Shown(vmLifecycle).Contains("Đã hủy", StringComparison.Ordinal), "cancel terminal text follows English");
