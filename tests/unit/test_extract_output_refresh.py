@@ -354,6 +354,31 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
         self.run_case(run)
 
+    def test_trace_files_left_by_a_killed_process_do_not_block_a_new_extraction(self):
+        # Found by the installed-app smoke: a translation killed or cancelled mid-run leaves .mt/traceability.lock and the SQLite -wal/-shm files; an
+        # extraction must still run (they only count while a process really holds the trace lock).
+        def run(source, out, results):
+            meta = out / ".mt"
+            meta.mkdir(exist_ok=True)
+            (meta / "traceability.lock").write_text('{"pid": 4, "start": "1"}', encoding="utf-8")
+            (meta / "traceability.sqlite3-wal").write_bytes(b"x" * 100)
+            (meta / "traceability.sqlite3-shm").write_bytes(b"x" * 100)
+            refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertTrue(results[-1]["ok"])
+        self.run_case(run)
+
+    def test_a_process_holding_the_trace_lock_still_blocks_the_extraction(self):
+        from vntext.traceability import TraceStore
+
+        def run(source, out, results):
+            store = TraceStore(out, "fixture")
+            try:
+                with self.assertRaisesRegex(ValueError, "Gói dịch đang được sử dụng"):
+                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            finally:
+                store.close()
+        self.run_case(run)
+
     def test_second_extraction_in_this_process_is_refused_while_the_first_runs_and_the_counter_clears(self):
         import threading
         from vntext import extract_output

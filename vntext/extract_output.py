@@ -178,9 +178,11 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
     publishing = False
     try:
         def idle():
-            for name in ("traceability.lock", "traceability.sqlite3-wal", "traceability.sqlite3-shm"):
-                if (root / ".mt" / name).exists():
-                    raise ValueError("Gói dịch đang được sử dụng; hãy đóng tác vụ đang dùng gói rồi thử lại.")
+            # Only a process that really holds the trace lock is "using" the package.  The lock file and the SQLite -wal/-shm files a killed
+            # process leaves behind prove nothing (SQLite recovers them on the next open), so they must not block a new extraction.
+            from vntext import os_lock
+            if os_lock.is_held(root / ".mt" / "traceability.lock"):
+                raise ValueError("Gói dịch đang được sử dụng; hãy đóng tác vụ đang dùng gói rồi thử lại.")
         idle()
         _sweep_interrupted_leftovers(root)
         reserved = ("translation.csv", "manifest.json", "review_only.csv", "raw_candidates.csv", "raw_unpatchable.csv",
