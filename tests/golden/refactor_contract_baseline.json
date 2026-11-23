@@ -172,7 +172,7 @@
     }
   },
   "frozen_files": {
-    "vntext/unity_fs.py": "2ef242485cbc91978e6ebd9bc54a13f3045c8752d06e0f86cf2138106b7dc15c",
+    "vntext/unity_fs.py": "1cb0f2a5933043506a651bc5fc01cde8a46791bcee9634288fca00292c854d6e",
     "vntext/addressables.py": "f2a22890da471a27f0980d71b705661855e5d3a1121b7998b701b75c9ea8030a"
   },
   "worker_protocol": {

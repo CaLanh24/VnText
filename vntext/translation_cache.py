@@ -117,6 +117,7 @@ class TranslationCache:
         self.lock_path = self.meta_dir / CACHE_LOCK_NAME
         self._owner_id = uuid.uuid4().hex
         self._lock = False
+        self._lock_fd = -1
         self._connection: sqlite3.Connection | None = None
         self._stats = {"lookups": 0, "hits": 0, "misses": 0, "writes": 0, "invalid_writes": 0}
         self.meta_dir.mkdir(parents=True, exist_ok=True)
@@ -138,29 +139,22 @@ class TranslationCache:
         return self._connection
 
     def _acquire_lock(self) -> None:
-        from vntext.process_identity import owner_is_live, owner_record
+        from vntext import os_lock
+        from vntext.process_identity import owner_record
         payload = _json(owner_record({"owner_id": self._owner_id, "created_at": _utc_now()}))
         try:
-            fd = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError as exc:
-            try:
-                current = json.loads(self.lock_path.read_text(encoding="utf-8"))
-                pid = int(current.get("pid", 0))
-            except (OSError, ValueError, TypeError, json.JSONDecodeError) as read_exc:
-                raise TranslationCacheError(f"cannot validate cache lock: {self.lock_path}") from read_exc
-            if pid and owner_is_live(current, _pid_alive):
-                raise TranslationCacheError(f"translation cache is locked by live pid {pid}") from exc
-            try:
-                self.lock_path.unlink()
-            except OSError as unlink_exc:
-                raise TranslationCacheError(f"cannot reclaim cache lock: {self.lock_path}") from unlink_exc
-            return self._acquire_lock()
+            fd = os_lock.open_lock_file(self.lock_path)
         except OSError as exc:
             raise TranslationCacheError(f"cannot create cache lock: {self.lock_path}") from exc
-        try:
-            os.write(fd, payload.encode("utf-8"))
-        finally:
+        if not os_lock.try_lock(fd):
             os.close(fd)
+            raise TranslationCacheError(f"translation cache is locked by another process ({os_lock.describe_holder(self.lock_path)})")
+        try:
+            os_lock.write_description(fd, payload.encode("utf-8"))
+        except BaseException:
+            os_lock.release(fd, self.lock_path)
+            raise
+        self._lock_fd = fd
         self._lock = True
 
     def _migrate(self) -> None:
@@ -244,12 +238,12 @@ class TranslationCache:
         if connection is not None:
             connection.close()
         if self._lock:
+            from vntext import os_lock
             try:
-                self.lock_path.unlink()
-            except FileNotFoundError:
-                pass
+                os_lock.release(self._lock_fd, self.lock_path)
             finally:
                 self._lock = False
+                self._lock_fd = -1
 
 
 def _pid_alive(pid: int) -> bool:

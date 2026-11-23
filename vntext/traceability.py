@@ -336,6 +336,7 @@ class TraceStore:
         self._connection: sqlite3.Connection | None = None
         self._batch_depth = 0
         self._lock_acquired = False
+        self._lock_fd = -1
 
         self.meta_dir.mkdir(parents=True, exist_ok=True)
         self._acquire_lock()
@@ -365,52 +366,31 @@ class TraceStore:
 
     def _acquire_lock(self) -> None:
         extract_lock = self.package_dir / ".vntext-extract.lock"
+        from vntext import os_lock
         from vntext.extract_output import extract_lock_held
         if extract_lock_held(extract_lock):
             raise TraceStoreError("package extraction is in progress")
-        from vntext.process_identity import owner_is_live, owner_record
-        owner = owner_record({
-            "owner_id": self._owner_id,
-            "run_id": self.run_id,
-            "created_at": _utc_now(),
-        })
-        encoded = json.dumps(owner, ensure_ascii=False, sort_keys=True).encode("utf-8")
-        for attempt in range(2):
-            try:
-                fd = os.open(self.lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            except FileExistsError as exc:
-                if attempt:
-                    raise TraceStoreError(f"trace store is locked: {self.lock_path}") from exc
-                try:
-                    current = json.loads(self.lock_path.read_text(encoding="utf-8"))
-                    pid = int(current.get("pid", 0))
-                except (OSError, ValueError, TypeError, json.JSONDecodeError) as read_exc:
-                    raise TraceStoreError(f"cannot validate trace lock: {self.lock_path}") from read_exc
-                if owner_is_live(current, _pid_alive):
-                    raise TraceStoreError(f"trace store is locked by live pid {pid}: {self.lock_path}") from exc
-                try:
-                    self.lock_path.unlink()
-                except FileNotFoundError:
-                    pass
-                except OSError as unlink_exc:
-                    raise TraceStoreError(f"cannot reclaim stale trace lock: {self.lock_path}") from unlink_exc
-                continue
-            except OSError as exc:
-                raise TraceStoreError(f"cannot create trace lock: {self.lock_path}") from exc
-            extracting = False
-            try:
-                if extract_lock_held(extract_lock):
-                    extracting = True
-                else:
-                    os.write(fd, encoded)
-            finally:
-                os.close(fd)
-            if extracting:
-                self.lock_path.unlink(missing_ok=True)
+        encoded = json.dumps(self._owner_description(), ensure_ascii=False, sort_keys=True).encode("utf-8")
+        try:
+            fd = os_lock.open_lock_file(self.lock_path)
+        except OSError as exc:
+            raise TraceStoreError(f"cannot create trace lock: {self.lock_path}") from exc
+        if not os_lock.try_lock(fd):
+            os.close(fd)
+            raise TraceStoreError(f"trace store is locked by another process ({os_lock.describe_holder(self.lock_path)})")
+        try:
+            os_lock.write_description(fd, encoded)
+            if extract_lock_held(extract_lock):
                 raise TraceStoreError("package extraction is in progress")
-            self._lock_acquired = True
-            return
-        raise TraceStoreError(f"cannot acquire trace lock: {self.lock_path}")
+        except BaseException:
+            os_lock.release(fd, self.lock_path)
+            raise
+        self._lock_fd = fd
+        self._lock_acquired = True
+
+    def _owner_description(self) -> dict:
+        from vntext.process_identity import owner_record
+        return owner_record({"owner_id": self._owner_id, "run_id": self.run_id, "created_at": _utc_now()})
 
     def _configure_connection(self) -> None:
         connection = self.connection
@@ -682,20 +662,8 @@ class TraceStore:
     def _write_lock_owner(self) -> None:
         if not self._lock_acquired:
             return
-        from vntext.process_identity import owner_record
-        owner = owner_record({
-            "owner_id": self._owner_id,
-            "run_id": self.run_id,
-            "created_at": _utc_now(),
-        })
-        fd, temp_name = tempfile.mkstemp(prefix=f"{self.lock_path.name}.", dir=self.meta_dir)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(owner, handle, ensure_ascii=False, sort_keys=True)
-            os.replace(temp_name, self.lock_path)
-        finally:
-            if os.path.exists(temp_name):
-                os.unlink(temp_name)
+        from vntext import os_lock
+        os_lock.write_description(self._lock_fd, json.dumps(self._owner_description(), ensure_ascii=False, sort_keys=True).encode("utf-8"))
 
     def register_entry(
         self,
@@ -1235,14 +1203,12 @@ class TraceStore:
             finally:
                 self._batch_depth = 0
         if self._lock_acquired:
+            from vntext import os_lock
             try:
-                current = json.loads(self.lock_path.read_text(encoding="utf-8"))
-                if current.get("owner_id") == self._owner_id:
-                    self.lock_path.unlink(missing_ok=True)
-            except (FileNotFoundError, OSError, json.JSONDecodeError):
-                pass
+                os_lock.release(self._lock_fd, self.lock_path)
             finally:
                 self._lock_acquired = False
+                self._lock_fd = -1
 
     def __enter__(self) -> "TraceStore":
         return self
