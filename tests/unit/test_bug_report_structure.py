@@ -84,6 +84,19 @@ class BugReportStructureTests(unittest.TestCase):
                 self.assertEqual(before["native_id"].split(" ")[0] in {"python", "style"}, after["native_id"].split(" ")[0] in {"python", "style"})
                 self.assertEqual(before["reason"].split(":", 2)[-1].strip()[:40], after["reason"].split(":", 2)[-1].strip()[:40])
 
+    def test_the_preview_lists_every_part_with_its_size_and_says_nothing_was_sent(self):
+        from vntext.bug_report import describe_report
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            root, out, _ = self._extract(Path(temp))
+            target = build_report(root, out, extract_status=out / "extract_status.json")
+            text = describe_report(target)
+            for part in ("report.json", "log-tail.txt", "README.txt"):
+                self.assertIn(part, text)
+            self.assertIn("CHƯA được gửi đi", text)
+            self.assertIn("3 khối Ren'Py", text)
+            for secret in SECRETS + (temp,):
+                self.assertNotIn(secret.casefold(), text.casefold())
+
     def test_mask_keeps_syntax_and_replaces_every_name_and_string(self):
         text = 'define hidden_tag_fn = Quillfeather("Mystery Dialogue Line", 42)' + NL + '    # ZorbaTheGreat "Secret"' + NL
         shape = mask_block(text)

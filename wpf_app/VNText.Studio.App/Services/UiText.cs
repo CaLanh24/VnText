@@ -569,6 +569,7 @@ public static class UiText
         ["Tác vụ không phản hồi yêu cầu hủy; đang dừng cưỡng bức"] = "The task did not answer the cancel request; stopping it forcibly",
         ["Đang tạo gói báo lỗi…"] = "Creating bug report…",
         ["Đã tạo gói báo lỗi"] = "Bug report created",
+        ["VNText Studio — Gói báo lỗi"] = "VNText Studio — Bug report",
         ["Chưa tạo được gói báo lỗi"] = "Could not create the bug report",
         ["Đang quét ảnh có chữ (nền)…"] = "Scanning images with text (background)…",
         ["Quét ảnh có chữ"] = "Scanning images with text",

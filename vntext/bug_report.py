@@ -201,6 +201,33 @@ def sanitise_text(text: str, game: Path, extra_names: set[str]) -> str:
     return re.sub(r"[A-Za-z]:[\\/][^\s\"']*", "<PATH>", result)
 
 
+def describe_report(target: str | Path) -> str:
+    """Plain-language preview of a finished bundle (what each part holds and how large it is), shown before the user decides to send it."""
+    target = Path(target)
+    parts = {"report.json": "cấu trúc ẩn danh của thư mục game (kích thước, đuôi tệp, tên đã băm), kết luận nhận diện engine, thời gian từng bước",
+             "log-tail.txt": "đoạn cuối Nhật ký đã che đường dẫn và tên tệp", "README.txt": "ghi chú về nội dung gói"}
+    lines = [f"Gói: {target.name} ({target.stat().st_size:,} byte). Gói CHƯA được gửi đi; hãy xem rồi tự đính kèm nếu muốn.".replace(",", ".")]
+    with zipfile.ZipFile(target) as archive:
+        for info in archive.infolist():
+            lines.append(f"- {info.filename}: {info.file_size:,} byte — {parts.get(info.filename, 'tệp phụ')}".replace(",", "."))
+        try:
+            report = json.loads(archive.read("report.json"))
+        except (KeyError, ValueError):
+            report = {}
+    structure = report.get("structure") or {}
+    blocks = len(structure.get("renpy_native_blocks") or [])
+    containers = sum(1 for item in report.get("files", []) if "container" in item)
+    extra = []
+    if blocks:
+        extra.append(f"{blocks} khối Ren'Py chưa xử lý được (chỉ hình dạng, không có tên hay chuỗi)")
+    if containers:
+        extra.append(f"{containers} tệp gói Unity/ZIP (header, bảng khối, kích thước; không có tên bên trong)")
+    if extra:
+        lines.append("Trong report.json: " + "; ".join(extra) + ".")
+    lines.append("Không có nội dung tệp, tên game/tệp, thoại hay đường dẫn máy bạn.")
+    return "\n".join(lines)
+
+
 def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] | None = None, analysis_report: str | Path | None = None,
                  extract_status: str | Path | None = None, app_version: str = "") -> Path:
     game = Path(game)

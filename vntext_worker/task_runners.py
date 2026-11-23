@@ -259,7 +259,8 @@ def run_bug_report_worker(task_id: str, params: dict[str, Any], is_cancelled: Ca
         target = build_report(src, out, log_lines=[str(x) for x in (params.get("log_lines") or [])],
                               analysis_report=params.get("analysis_report") or None, extract_status=params.get("extract_status") or None,
                               app_version=str(params.get("app_version") or ""))
-        emit_complete(task_id, ok=True, summary=f"Đã tạo gói báo lỗi ẩn danh: {target}")
+        from vntext.bug_report import describe_report
+        emit_complete(task_id, ok=True, summary=f"Đã tạo gói báo lỗi ẩn danh: {target}\n{describe_report(target)}")
     except Exception as exc:  # noqa: BLE001 - report the cause, never crash the worker
         emit_complete(task_id, ok=False, error=f"Không tạo được gói báo lỗi: {exc}")
 
