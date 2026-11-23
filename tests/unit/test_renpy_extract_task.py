@@ -270,6 +270,41 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertFalse(scoped_patch_eligible(status))
         self.assertEqual("", result["error"])
 
+    def _native_template_with_blocks(self, *tail):
+        nl = chr(10)
+        head = ("# game/script.rpy:2" + nl + "translate vietnamese native_only:" + nl + nl + '    # "Native only"' + nl + '    ""' + nl + nl)
+        return head + nl.join(tail) + nl
+
+    def test_translate_python_and_style_blocks_are_audited_technical_blocks_not_a_failed_extract(self):
+        # Owner machine 2026-11-23 (corpus anonymised): a text-tag definition file whose generated template has translate python / style blocks
+        # at lines 3 and 9 made the extract FAILED with "native accounting mismatch" although nothing was lost.
+        nl = chr(10)
+        template = self._native_template_with_blocks(
+            "# game/tags.rpy:3", "translate vietnamese python:", "", '    config.tag = "x"', "",
+            "# game/tags.rpy:9", "translate vietnamese style tag_style:", "", "    size 20", "")
+        result, status = self._run_sdk_extract(
+            {"script.rpy": 'label start:' + nl + '    "Native only"' + nl, "tags.rpy": "init python:" + nl + "    pass" + nl}, template)
+        self.assertEqual("COMPLETE", result["extract_status"], result)
+        self.assertTrue(result["ok"] and result["complete"])
+        self.assertEqual(0, status["errors"])
+        self.assertEqual({"NATIVE_TECHNICAL_BLOCK_SKIPPED"}, {item["code"] for item in status["audit_notes"]})
+        self.assertEqual(2, [item for item in status["audit_notes"] if item["code"] == "NATIVE_TECHNICAL_BLOCK_SKIPPED"][0]["count"])
+        self.assertNotIn("accounting mismatch", result.get("error", ""))
+
+    def test_unknown_native_block_shapes_never_fail_the_extract_and_are_never_silent(self):
+        nl = chr(10)
+        template = self._native_template_with_blocks(
+            "# game/a.rpy:3", "translate vietnamese init_block python:", "", '    x = 1', "",
+            "# game/a.rpy:5", "translate vietnamese multi_say:", "", '    # "A"', '    # "B"', '    ""', '    ""', "",
+            "# game/a.rpy:9", "translate vietnamese style:", "", "    size 3", "")
+        result, status = self._run_sdk_extract({"script.rpy": 'label start:' + nl + '    "Native only"' + nl}, template)
+        self.assertIn(result["extract_status"], {"COMPLETE", "PARTIAL"}, result)
+        self.assertNotEqual("FAILED", result["extract_status"])
+        self.assertEqual(0, status["errors"])
+        codes = {item["code"]: item["count"] for item in status["audit_notes"] + status["limitations"]}
+        self.assertEqual(3, sum(codes.get(code, 0) for code in ("NATIVE_TECHNICAL_BLOCK_SKIPPED", "NATIVE_BLOCK_UNSUPPORTED")), codes)
+        self.assertGreaterEqual(codes.get("NATIVE_BLOCK_UNSUPPORTED", 0), 1)        # the ambiguous dialogue block is a visible review warning
+
     def test_genuine_discovery_failure_stays_an_error_even_beside_a_partial_package(self):
         nl = chr(10)
         template = ("# game/script.rpy:2" + nl + "translate vietnamese native_only:" + nl + nl + '    # "Native only"' + nl + '    ""' + nl)

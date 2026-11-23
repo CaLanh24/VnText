@@ -67,9 +67,13 @@ def _sweep_interrupted_leftovers(root: Path) -> list[str]:
     return removed
 
 
-_UNREADABLE_LOCK_GRACE_SECONDS = 60
-# Output locks this process holds right now (one per running extraction).  A lock that names this very process while it is not in here has no
-# extraction behind it: an earlier run left it, so it is orphaned however alive the pid looks.
+# The lock is the operating system's own byte-range lock on the open lock file: the system drops it the moment the owning process ends (killed,
+# crashed, power loss), so a stale lock can never block the folder and no pid or process identity has to be guessed.  The JSON inside the file is
+# only a description for messages (and the form older versions wrote); it never decides who owns the lock.  The locked byte lies far beyond the
+# content so that other processes can still read the description.
+_LOCK_OFFSET = 1 << 30
+# Output locks this process holds right now.  The system lock is per process on some platforms, so a second extraction in the same process has to be
+# refused here.
 _HELD_LOCKS: set[str] = set()
 _HELD_LOCKS_GUARD = threading.Lock()
 
@@ -78,56 +82,78 @@ def _held_key(lock: Path) -> str:
     return os.path.normcase(os.path.abspath(lock))
 
 
+def _os_lock(fd: int) -> bool:
+    """Take the system lock on ``fd`` without waiting; False when another handle or process holds it."""
+    os.lseek(fd, _LOCK_OFFSET, os.SEEK_SET)
+    try:
+        if os.name == "nt":
+            import msvcrt
+            msvcrt.locking(fd, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB, 1, _LOCK_OFFSET)
+        return True
+    except OSError:
+        return False
+    finally:
+        os.lseek(fd, 0, os.SEEK_SET)
+
+
+def _owner_text(lock: Path) -> str:
+    from vntext.process_identity import describe_owner
+    try:
+        age = time.time() - lock.stat().st_mtime
+        return describe_owner(json.loads(lock.read_bytes()), time.time() - age)
+    except (OSError, ValueError, KeyError, TypeError):
+        return "chủ khóa không đọc được"
+
+
+def extract_lock_held(lock: Path) -> bool:
+    """True when some process (possibly this one) holds the output lock now; a leftover file nobody holds is not a lock."""
+    if not os.path.lexists(lock):
+        return False
+    if _held_key(lock) in _HELD_LOCKS:
+        return True
+    try:
+        fd = os.open(lock, os.O_RDWR | getattr(os, "O_BINARY", 0))
+    except OSError:
+        return True              # cannot even open it: assume it is in use rather than overwrite a live extraction
+    try:
+        return not _os_lock(fd)
+    finally:
+        os.close(fd)
+
+
 def _take_lock(lock: Path, log=None) -> int:
-    from vntext.process_identity import describe_owner, owner_is_live, owner_record
-    from vntext.traceability import _pid_alive
-    for _ in range(2):
-        _no_links(lock)
+    from vntext.process_identity import owner_record
+    _no_links(lock)
+    key = _held_key(lock)
+    with _HELD_LOCKS_GUARD:
+        held_here = key in _HELD_LOCKS
+    busy = ("Thư mục xuất đang được một lần lấy text khác sử dụng ({who}). Hãy đợi tác vụ đó xong hoặc hủy nó; "
+            "nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
+    if held_here:
+        raise ValueError(busy.format(who="chính tiến trình này"))
+    fd = os.open(lock, os.O_CREAT | os.O_RDWR | getattr(os, "O_BINARY", 0))
+    try:
+        if not _os_lock(fd):
+            raise ValueError(busy.format(who=_owner_text(lock)))
         try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            try:
-                before = lock.read_bytes()
-                mtime = lock.stat().st_mtime
-                age = time.time() - mtime
-            except FileNotFoundError:
-                continue
-            try:
-                record = json.loads(before)
-                int(record["pid"])
-            except (ValueError, KeyError, TypeError):
-                # A lock that never got its owner written (killed between create and write) would otherwise block the folder forever.
-                if age < _UNREADABLE_LOCK_GRACE_SECONDS:
-                    raise ValueError("Thư mục xuất đang được tác vụ khác chuẩn bị khóa; hãy đợi vài giây rồi thử lại.")
-                record = None
-            if record is not None:
-                who = describe_owner(record, mtime)
-                if int(record["pid"]) == os.getpid():
-                    with _HELD_LOCKS_GUARD:
-                        held = _held_key(lock) in _HELD_LOCKS
-                    live = held
-                else:
-                    live = owner_is_live(record, _pid_alive)
-                if live:
-                    raise ValueError("Thư mục xuất đang được một lần lấy text khác sử dụng "
-                                     f"({who}). Hãy đợi tác vụ đó xong hoặc hủy nó; nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
-                if log is not None:
-                    log(f"Dọn khóa thư mục xuất mồ côi ({who}).")
-            if lock.read_bytes() != before:
-                raise ValueError("Khóa thư mục xuất vừa bị thay đổi bởi tiến trình khác; hãy thử lại.")
-            lock.unlink()
-            continue
-        try:
-            os.write(fd, json.dumps(owner_record()).encode())
-            os.fsync(fd)
-        except Exception:
-            os.close(fd)
-            lock.unlink(missing_ok=True)
-            raise
-        with _HELD_LOCKS_GUARD:
-            _HELD_LOCKS.add(_held_key(lock))
-        return fd
-    raise ValueError("Cannot acquire extraction output lock")
+            previous = os.read(fd, 4096)
+        except OSError:
+            previous = b""
+        if previous.strip() and log is not None:
+            log("Dọn nội dung khóa thư mục xuất của một tiến trình đã kết thúc.")
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.ftruncate(fd, 0)
+        os.write(fd, json.dumps(owner_record()).encode())
+        os.fsync(fd)
+    except BaseException:
+        os.close(fd)
+        raise
+    with _HELD_LOCKS_GUARD:
+        _HELD_LOCKS.add(key)
+    return fd
 
 
 def refresh_extract(src, out, produce, complete, log, is_cancelled=None):
@@ -251,7 +277,10 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
         with _HELD_LOCKS_GUARD:
             _HELD_LOCKS.discard(_held_key(lock))
         os.close(fd)
-        lock.unlink(missing_ok=True)
+        try:
+            lock.unlink(missing_ok=True)
+        except OSError:
+            pass          # another process already holds it again; the system lock, not the file, decides ownership
         if stage is not None:
             # Only the unique directory created by this call is disposable.
             if stage.parent != root or not stage.name.startswith(".vntext-extract-"):

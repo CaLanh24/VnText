@@ -1488,7 +1488,7 @@ def _run_extract_task_impl(
         # Owner product acceptance (2026-11-13): machine facts are AUDIT, not translation work.  A runtime-generated expression has no static text to
         # extract and a recovered archive source is only provenance; neither makes a finished extraction "incomplete".  They stay on record
         # (audit_notes / renpy_runtime_dynamic.json) and every genuinely missing or unproven human-text row still blocks as before.
-        _audit_only_codes = {"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN"}
+        _audit_only_codes = {"RUNTIME_DYNAMIC_UNRESOLVED", "ARCHIVE_SOURCE_RUNTIME_UNPROVEN", "NATIVE_TECHNICAL_BLOCK_SKIPPED"}
         audit_notes = [item for item in limitations if item.get("code") in _audit_only_codes]
         limitations = [item for item in limitations if item.get("code") not in _audit_only_codes]
         # Review rows that are ONLY unpromoted static screen candidates are excluded coverage of the verified subset, not a blocker for it.

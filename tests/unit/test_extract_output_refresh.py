@@ -263,26 +263,6 @@ class ExtractOutputRefreshTests(unittest.TestCase):
         time.sleep(0.5)
         return proc
 
-    def test_lock_of_a_live_extraction_in_another_process_is_refused_with_the_owner_described(self):
-        from vntext.process_identity import process_start_token
-        proc = self._live_python()
-        try:
-            def run(source, out, results):
-                lock = out / ".vntext-extract.lock"
-                lock.write_text(json.dumps({"pid": proc.pid, "start": process_start_token(proc.pid)}), encoding="utf-8")
-                with self.assertRaises(ValueError) as caught:
-                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
-                message = str(caught.exception)
-                self.assertIn(f"PID {proc.pid}", message)
-                self.assertIn("python", message.lower())
-                self.assertIn("giây tuổi", message)
-                self.assertNotIn(str(out), message)
-                self.assertTrue(lock.exists())
-            self.run_case(run)
-        finally:
-            proc.kill()
-            proc.wait()
-
     def test_legacy_lock_is_never_kept_whatever_the_live_pid_is(self):
         # Owner machine 2026-11-23: {"pid": N} (no creation time) kept blocking although nothing ran.  Only 0.1.27 or older wrote that form.
         proc = self._live_python()
@@ -310,27 +290,69 @@ class ExtractOutputRefreshTests(unittest.TestCase):
                 proc.wait()
         self._locked_run(json.dumps({"pid": 4}))                             # the System process: alive, name and times unreadable
 
-    def test_lock_with_a_matching_creation_time_of_a_live_process_is_still_refused(self):
-        from vntext.process_identity import process_start_token
+    @staticmethod
+    def _hold_lock_in_another_process(out):
+        import subprocess
+        import sys
+        code = ";".join(["import sys, time", "sys.path.insert(0, sys.argv[1])", "from pathlib import Path",
+                         "from vntext.extract_output import _take_lock",
+                         "_take_lock(Path(sys.argv[2]) / '.vntext-extract.lock')", "print('held', flush=True)", "time.sleep(120)"])
+        root = Path(__file__).resolve().parents[2]
+        holder = subprocess.Popen([sys.executable, "-c", code, str(root), str(out)], stdout=subprocess.PIPE, text=True)
+        assert holder.stdout.readline().strip() == "held"
+        return holder
+
+    def test_lock_held_by_another_live_process_is_refused_and_taken_the_moment_it_dies(self):
+        # The system lock, not a pid, decides: the holder's record stays in the file after it is killed and still must not block anything.
+        def run(source, out, results):
+            holder = self._hold_lock_in_another_process(out)
+            try:
+                with self.assertRaises(ValueError) as caught:
+                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
+                message = str(caught.exception)
+                recorded = json.loads((out / ".vntext-extract.lock").read_text())["pid"]
+                self.assertIn(f"PID {recorded}", message)
+                self.assertIn("giây tuổi", message)
+                self.assertNotIn(str(out), message)
+                self.assertTrue((out / ".vntext-extract.lock").exists())
+                from vntext.extract_output import extract_lock_held
+                self.assertTrue(extract_lock_held(out / ".vntext-extract.lock"))
+            finally:
+                holder.kill()
+                holder.wait()
+            self.assertIn(str(recorded), (out / ".vntext-extract.lock").read_text())
+            refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertTrue(results[-1]["ok"])
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+        self.run_case(run)
+
+    def test_lock_file_content_never_decides_ownership(self):
+        from vntext.process_identity import owner_record
         proc = self._live_python()
         try:
-            self._locked_run(json.dumps({"pid": proc.pid, "start": process_start_token(proc.pid)}), expect_ok=False)
+            for text in ("not json", "", '{"pid": "x"}', '{"pid": 4}', json.dumps({"pid": proc.pid}), json.dumps({"pid": os.getpid()}),
+                         json.dumps(owner_record()), json.dumps({"pid": proc.pid, "start": "1"})):
+                with self.subTest(content=text[:30]):
+                    self._locked_run(text)
         finally:
             proc.kill()
             proc.wait()
 
-    def test_lock_naming_this_process_without_a_running_extraction_is_orphaned(self):
-        # Hypothesis C: an earlier run in this very worker left the lock (or an old lock's pid was reused by this worker).
-        from vntext.process_identity import owner_record
-        logs = []
-
+    def test_a_leftover_lock_file_nobody_holds_does_not_block_the_trace_writer(self):
+        from vntext.traceability import TraceStore
         def run(source, out, results):
-            (out / ".vntext-extract.lock").write_text(json.dumps(owner_record()), encoding="utf-8")
-            refresh_extract(source, out, self.generated, results.append, logs.append)
-            self.assertTrue(results[-1]["ok"])
-            self.assertFalse((out / ".vntext-extract.lock").exists())
+            (out / ".vntext-extract.lock").write_text('{"pid": 4}', encoding="utf-8")
+            TraceStore(out, "fixture").close()
         self.run_case(run)
-        self.assertTrue(any("mồ côi" in line and "chính tiến trình này" in line for line in logs), logs)
+
+    def test_lock_write_failure_does_not_leak_a_lock_or_change_csv(self):
+        from vntext.extract_output import extract_lock_held
+        def run(source, out, results):
+            with patch("vntext.extract_output.os.write", side_effect=OSError("disk full")), self.assertRaises(OSError):
+                refresh_extract(source, out, self.generated, results.append, lambda _: None)
+            self.assertFalse(extract_lock_held(out / ".vntext-extract.lock"))
+            self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
+        self.run_case(run)
 
     def test_second_extraction_in_this_process_is_refused_while_the_first_runs_and_the_counter_clears(self):
         import threading
@@ -387,15 +409,3 @@ class ExtractOutputRefreshTests(unittest.TestCase):
         parent.wait()
         self.assertTrue(fired.wait(5))
 
-    def test_corrupt_lock_is_kept_when_fresh_and_reclaimed_when_old(self):
-        self._locked_run("not json", expect_ok=False)
-        self._locked_run("", age=3600)
-        self._locked_run('{"pid": "x"}', age=3600)
-
-    def test_lock_write_failure_does_not_leak_a_lock_or_change_csv(self):
-        def run(source, out, results):
-            with patch("vntext.extract_output.os.write", side_effect=OSError("disk full")), self.assertRaises(OSError):
-                refresh_extract(source, out, self.generated, results.append, lambda _: None)
-            self.assertFalse((out / ".vntext-extract.lock").exists())
-            self.assertEqual(b"old CSV", (out / "translation.csv").read_bytes())
-        self.run_case(run)

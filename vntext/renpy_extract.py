@@ -1142,6 +1142,9 @@ def extract_native_template_entries(
         ledger = str(provenance.get("ledger") or "missing_source")
         string_owners[owner] = string_owners.get(owner, 0) + 1
         string_ledgers[ledger] = string_ledgers.get(ledger, 0) + 1
+    # translate python / translate style blocks hold code and style, never player-readable text; any other unsupported shape could hide text.
+    technical_blocks=[item for item in unresolved if str(item.get("native_id") or "").split(" ")[0] in {"python","style"}]
+    ambiguous_blocks=[item for item in unresolved if item not in technical_blocks]
     string_reconciliation = {
         "total": string_count,
         "unique_exact_sources": len({unit.source_text for unit in units if unit.unit_kind == RENPY_STRING_UNIT}|{entry.source_text for entry in ui_native}),
@@ -1161,7 +1164,8 @@ def extract_native_template_entries(
         "native_contract_version": RENPY_NATIVE_CONTRACT_VERSION,
         "native_template": True,
         "native_template_sha256": template_sha256,
-        "native_units": len(units)+len(unresolved)+len(ui_native),
+        # Unsupported blocks carry no translatable unit: they are accounted on their own (below), never as package rows that cannot exist.
+        "native_units": len(units)+len(ui_native),
         "native_sdk_units":len(units),
         "native_static_display_units":len(ui_native),
         "native_supported_units": len(units)+len(ui_native),
@@ -1176,7 +1180,7 @@ def extract_native_template_entries(
         # A value that exists only at runtime (variable/call/branch) is EXPECTED to be statically unresolvable: it is kept as a diagnostic
         # (never evaluated, never invented as text) and is not a discovery failure.  Malformed/oversized/unsupported syntax stays an error.
         "errors":ui_errors+[f"{item['file_path']}:{item['line']}: {item['reason']}"for item in ui_unresolved if item.get('classification')!='RUNTIME_GENERATED']
-            +[f"Unsupported native block {item['template_file']}:{item['template_line']}: {item['reason']}"for item in unresolved],
+            ,
         "renpy_native_unresolved":unresolved,
         "renpy_non_native_review_entries":len(ui_review),
         "renpy_static_ui_candidates":[{**entry.to_manifest(),
@@ -1189,8 +1193,20 @@ def extract_native_template_entries(
         "renpy_static_ui_technical_excluded":ui_technical,
         # Expected, documented limits of static extraction (NOT discovery failures): they keep the run PARTIAL with a review warning.
         "limitations":[],
+        "native_technical_blocks_skipped":len(technical_blocks),
         "renpy_static_ui_inventory_scope":"Literal slots (single-line or with a property block that does not disable substitution) use native global mapping at Text display time when substitution is proven enabled; player-readable text is translated, technical syntax is excluded and audited, dynamic/disabled substitution stays unresolved.",
     }
+    def _blocks_sample(items):
+        shown=", ".join(f"{item['template_file']}:{item['template_line']}" for item in items[:3])
+        return shown+("…" if len(items)>3 else "")
+    if technical_blocks:
+        stats["limitations"].append({"code":"NATIVE_TECHNICAL_BLOCK_SKIPPED","count":len(technical_blocks),
+            "message":f"{len(technical_blocks)} khối translate python/style ({_blocks_sample(technical_blocks)}) chỉ chứa mã hoặc kiểu, không có text hiển thị cho người chơi; "
+                      "đã ghi vào manifest (renpy_native_unresolved), không tạo dòng dịch và không sửa."})
+    if ambiguous_blocks:
+        stats["limitations"].append({"code":"NATIVE_BLOCK_UNSUPPORTED","count":len(ambiguous_blocks),
+            "message":f"{len(ambiguous_blocks)} khối translate có dạng chưa hỗ trợ hoặc chưa rõ ({_blocks_sample(ambiguous_blocks)}); không tạo dòng dịch cho các khối này "
+                      "để tránh dịch sai, cần xem lại; chi tiết trong manifest (renpy_native_unresolved)."})
     runtime_dynamic=stats["renpy_static_ui_runtime_unresolved"]
     if runtime_dynamic:
         sample=", ".join(f"{item['file_path']}:{item['line']}" for item in runtime_dynamic[:3])

@@ -365,7 +365,8 @@ class TraceStore:
 
     def _acquire_lock(self) -> None:
         extract_lock = self.package_dir / ".vntext-extract.lock"
-        if extract_lock.exists():
+        from vntext.extract_output import extract_lock_held
+        if extract_lock_held(extract_lock):
             raise TraceStoreError("package extraction is in progress")
         from vntext.process_identity import owner_is_live, owner_record
         owner = owner_record({
@@ -396,13 +397,17 @@ class TraceStore:
                 continue
             except OSError as exc:
                 raise TraceStoreError(f"cannot create trace lock: {self.lock_path}") from exc
+            extracting = False
             try:
-                if extract_lock.exists():
-                    self.lock_path.unlink()
-                    raise TraceStoreError("package extraction is in progress")
-                os.write(fd, encoded)
+                if extract_lock_held(extract_lock):
+                    extracting = True
+                else:
+                    os.write(fd, encoded)
             finally:
                 os.close(fd)
+            if extracting:
+                self.lock_path.unlink(missing_ok=True)
+                raise TraceStoreError("package extraction is in progress")
             self._lock_acquired = True
             return
         raise TraceStoreError(f"cannot acquire trace lock: {self.lock_path}")
