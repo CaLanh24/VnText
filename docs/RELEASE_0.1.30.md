@@ -11,3 +11,6 @@ Owner (DEV session 2026-11-23/24) asked for the 0.1.30 completion and confirmed 
 
 ## Evidence
 Receipts in `TEST_RUN/agent-evidence/release-0.1.30/`.
+
+## Published
+Tag `v0.1.30` = `5aa7cc53778ae95383713b4718f79b352a8d8896`. Setup sha256 `057714fe3f52406e3b09b300058fea9b959c4ca6c71e82fe05712437f5bb1b9d` (GitHub = local, 5/5 assets). The first build (16e1d2d) was rebuilt as 5aa7cc5 after the smoke found trace files left by a force-stopped worker blocking the next extraction. NOT_PROVEN: system picker and DEV_PROBES picker runs, Dịch ảnh through the UI, patch creation over an installed older patch (refused with an unclear "mapping conflict"), bug-report button while a background task runs.
