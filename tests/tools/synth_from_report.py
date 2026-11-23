@@ -70,7 +70,10 @@ def synthesize_native_blocks(report: dict) -> str:
     from vntext.shape_mask import rebuild_text
     blocks = []
     for sample in (report.get("structure") or {}).get("renpy_native_blocks", []):
-        blocks.append(rebuild_text(sample.get("context_before") or []) + rebuild_text(sample.get("shape") or []) + rebuild_text(sample.get("context_after") or []))
+        # The surrounding lines are kept as comments: they show the neighbourhood without becoming blocks of their own.
+        def around(key):
+            return "".join(f"## {line}" + chr(10) for line in rebuild_text(sample.get(key) or []).splitlines() if line.strip())
+        blocks.append(around("context_before") + rebuild_text(sample.get("shape") or []) + around("context_after"))
     return "\n".join(blocks)
 
 
