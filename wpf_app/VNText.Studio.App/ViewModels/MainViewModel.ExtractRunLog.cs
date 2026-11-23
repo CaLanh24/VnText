@@ -64,10 +64,10 @@ public sealed partial class MainViewModel
     /// <summary>One click builds an anonymous report (folder structure, sizes, timings, sanitised log; no file contents or names) next to the output and opens its folder.</summary>
     private void CreateBugReport()
     {
-        if (Busy || string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
+        if (string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
         var package = WorkflowStatus.ResolvePackageDir(OutputPath);
         _bugReportFolder = Path.Combine(package, "bug-reports");
-        BeginTask("bug_report", new
+        var parameters = new
         {
             src = InputPath,
             @out = _bugReportFolder,
@@ -75,8 +75,36 @@ public sealed partial class MainViewModel
             analysis_report = ResolveAnalyzeReportPath(),
             extract_status = Path.Combine(package, "extract_status.json"),
             app_version = Version,
-        }, "Đang tạo gói báo lỗi…");
+        };
+        if (!Busy)
+        {
+            BeginTask("bug_report", parameters, "Đang tạo gói báo lỗi…");
+            return;
+        }
+        // The worker is busy (image scan after an extract, a task being cancelled, ...): build the report in its own process instead of waiting.
+        if (_bugReportRunning) return;
+        _bugReportRunning = true;
+        CreateBugReportCommand?.RaiseCanExecuteChanged();
+        ShowToast("Đang tạo gói báo lỗi trong lúc tác vụ khác vẫn chạy…", "info");
+        var folder = _bugReportFolder;
+        _ = Task.Run(async () =>
+        {
+            var result = await BugReportProcess.RunAsync(parameters).ConfigureAwait(false);
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                _bugReportRunning = false;
+                AppendLog(result.Text);
+                if (result.Ok && !string.IsNullOrWhiteSpace(folder))
+                {
+                    _pathPicker.OpenPath(folder);
+                    RequestCompletion("VNText Studio — Gói báo lỗi", result.Text, "info");
+                }
+                else if (!result.Ok) ShowToast(result.Text, "error");
+                CreateBugReportCommand?.RaiseCanExecuteChanged();
+            });
+        });
     }
+    private bool _bugReportRunning;
     private string _bugReportFolder = "";
 
     public ExtractRunInfo? SelectedExtractRun
@@ -95,7 +123,7 @@ public sealed partial class MainViewModel
     private void InitializeExtractRuns()
     {
         CopyExtractLogCommand = new RelayCommand(_ => CopyExtractLog(), _ => ExtractLogShown.Count > 0);
-        CreateBugReportCommand = new RelayCommand(_ => CreateBugReport(), _ => !Busy && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
+        CreateBugReportCommand = new RelayCommand(_ => CreateBugReport(), _ => !_bugReportRunning && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         try
         {
             if (!Directory.Exists(ExtractRunsRoot)) return;

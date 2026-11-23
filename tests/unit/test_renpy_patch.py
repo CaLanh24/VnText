@@ -524,6 +524,25 @@ class RenPyPatchTests(unittest.TestCase):
                 apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
             self.assertFalse((base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").exists())
 
+    def _existing_dialogue_mapping(self, game: Path, translation: str) -> None:
+        path = game / "game" / "tl" / "vietnamese" / "existing.rpy"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('translate vietnamese start_a:\n\n    # "Hello [name]"\n    "' + translation + '"\n', encoding="utf-8")
+
+    def test_different_existing_dialogue_mapping_is_refused_and_a_vntext_install_explains_how_to_continue(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp); game, csv, manifest = self._package(base)
+            self._existing_dialogue_mapping(game, "Khác [name]")
+            with self.assertRaisesRegex(RenPyPatchError, "mapping conflict") as plain:
+                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
+            self.assertNotIn("Gỡ và hoàn nguyên", str(plain.exception))
+            (game / ".vntext").mkdir()
+            (game / ".vntext" / "ownership.json").write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(RenPyPatchError, "Gỡ và hoàn nguyên") as installed:
+                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
+            self.assertIn("start_a", str(installed.exception))
+            self.assertFalse((base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").exists())
+
     def test_unverifiable_existing_string_mapping_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base)

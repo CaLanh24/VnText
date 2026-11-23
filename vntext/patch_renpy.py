@@ -783,6 +783,11 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             expected_prefix = str(precondition.get("say_prefix",entry.get("object_info")or ""))
             prior_prefix = " ".join(part for part in (prior["speaker"],prior["expression"])if part)
             if prior["translation"] != translation or prior_prefix != expected_prefix or prior["suffix"] != precondition.get("say_suffix", ""):
+                if (root / ".vntext" / "ownership.json").is_file():
+                    raise RenPyPatchError(
+                        "Game đang có patch VNText cài trước đó với bản dịch khác cho cùng câu thoại "
+                        f"({entry['locator']['native_id']}). Hãy mở 'Cài trong VNText' → 'Gỡ và hoàn nguyên' (hoặc 'Về bản gốc sạch') rồi tạo patch lại. "
+                        "Ren'Py dialogue mapping conflict")
                 raise RenPyPatchError(f"Ren'Py dialogue mapping conflict: {entry['locator']['native_id']}")
         else:
             new_dialogues.append((entry, translation))
