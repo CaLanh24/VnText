@@ -1641,6 +1641,15 @@ def _registered_keep_blocker(path: Path, entries: list[dict]) -> dict | None:
     target = _absolute_path(path)
     if not isinstance(entries, list):
         return {"id": "malformed_registry", "lifecycle": "UNKNOWN", "reason": "registry_entries_not_a_list"}
+    # A MISSING claim whose path was rebuilt is superseded when a live DISPOSABLE record registers that exact path
+    # (rebuildable output re-registered for disposal); it is no longer a stale claim that blocks the deletion.
+    disposable_paths: set[Path] = set()
+    for entry in entries:
+        if isinstance(entry, dict) and str(entry.get("lifecycle") or entry.get("state") or "").upper().strip() == "DISPOSABLE":
+            try:
+                disposable_paths.add(_entry_path(entry))
+            except (KeyError, TypeError, ValueError, OSError):
+                pass
     for entry in entries:
         if not isinstance(entry, dict):
             return {"id": "malformed_registry_entry", "lifecycle": "UNKNOWN", "reason": "registry_entry_not_an_object"}
@@ -1659,7 +1668,7 @@ def _registered_keep_blocker(path: Path, entries: list[dict]) -> dict | None:
         related = keeper == target or target in keeper.parents
         exists = os.path.lexists(keeper)
         if lifecycle == "MISSING":
-            if related and exists:
+            if related and exists and keeper not in disposable_paths:
                 return {**entry, "lifecycle": "STALE", "reason": "missing_claim_path_still_exists"}
             continue
         if related and exists:
@@ -5254,9 +5263,11 @@ def _finalize_scope_impl(
     deletion_allowed = bool(
         not budget.failure
         and reconciled.get("inventory_complete", False)
-        and not reconciled.get("metadata_issues")
+        and not _epoch_blocking_metadata_issues(reconciled)
         and not reconciled.get("inventory_errors")
     )
+    # Cold MISSING history stays unresolved in the report (cleanup_failed below still counts it) but it is not an
+    # ownership claim over a scoped DISPOSABLE target, so it no longer blocks that target's deletion (Owner 2026-11-23).
     if deletion_allowed:
         for entry in cleanup_candidates:
             path = _entry_path(entry)
