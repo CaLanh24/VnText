@@ -15,7 +15,9 @@ import time
 import zipfile
 from pathlib import Path
 
-SCHEMA = 1
+# Schema 2 adds "structure": the masked shape of the exact places an extraction could not handle (vntext/shape_mask.py). Readers accept 1 and 2.
+SCHEMA = 2
+MAX_STRUCTURE_SAMPLES = 50
 MAX_FILES = 60000
 MAX_LOG_LINES = 400
 MAX_RPA_BYTES = 12 * 1024 ** 3
@@ -131,6 +133,46 @@ def fingerprint(game: str | Path) -> dict:
     }
 
 
+_FILE_TOKEN = re.compile(r"[^\s:;,\"']+\.(?:rpy|rpyc|rpym|rpymc|rpa|py|json|csv|txt|webp|png|jpg|ttf|otf)\b", re.IGNORECASE)
+
+
+def _mask_message(text: str) -> str:
+    """A diagnostic line with file names, paths and quoted text removed (numbers and the engine's own wording stay)."""
+    text = re.sub(r"[A-Za-z]:[\\/][^\s;,]*", "<PATH>", str(text or ""))
+    text = _FILE_TOKEN.sub("<FILE>", text)
+    text = re.sub(r"\"[^\"]*\"|'[^']*'", "<TEXT>", text)
+    return text[:240]
+
+
+def collect_structure(package_dir: str | Path) -> dict | None:
+    """Masked shape of every place the last extraction could not handle, read from the package manifest (never from the game)."""
+    from vntext.shape_mask import SHAPE_SCHEMA, mask_block
+    manifest_path = Path(package_dir) / "manifest.json"
+    if not manifest_path.is_file():
+        return None
+    try:
+        stats = (json.loads(manifest_path.read_text(encoding="utf-8")).get("stats") or {})
+    except (OSError, ValueError):
+        return {"error": "manifest unreadable"}
+    unresolved = [item for item in (stats.get("renpy_native_unresolved") or []) if isinstance(item, dict)]
+    samples = []
+    for item in unresolved[:MAX_STRUCTURE_SAMPLES]:
+        native_id = str(item.get("native_id") or "")
+        first = native_id.split(" ")[0]
+        samples.append({
+            "kind": "renpy_native_block",
+            "template_file": _anon_path(str(item.get("template_file") or "")),
+            "template_line": item.get("template_line"),
+            "target_class": first if first in {"python", "style"} else ("identifier" if native_id.isidentifier() else "other"),
+            "reason": re.sub(r"^.*?:\d+:\s*", "", _mask_message(item.get("reason"))),
+            "shape": mask_block(str(item.get("raw_block") or "")),
+        })
+    counters = {key: stats.get(key) for key in ("native_units", "native_supported_units", "native_unresolved_blocks", "native_technical_blocks_skipped")
+                if isinstance(stats.get(key), int)}
+    return {"shape_schema": SHAPE_SCHEMA, "renpy_native_blocks": samples, "unresolved_total": len(unresolved), "counters": counters,
+            "errors": [_mask_message(item) for item in (stats.get("errors") or [])[:30]]}
+
+
 def _scrub_reason(reason: str) -> str:
     return re.sub(r"[A-Za-z]:[\\/][^\s;,]*", "<PATH>", reason or "")[:200]
 
@@ -170,6 +212,9 @@ def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] 
             data["extract_status"] = json.loads(Path(extract_status).read_text(encoding="utf-8"))
         except (OSError, ValueError):
             data["extract_status"] = {"error": "unreadable"}
+    structure = collect_structure(out_dir)
+    if structure is not None:
+        data["structure"] = structure
     data["environment"] = {"app_version": app_version, "os": platform.platform(), "python": platform.python_version()}
     tail = [sanitise_text(line, base, names) for line in (log_lines or [])[-MAX_LOG_LINES:]]
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -178,5 +223,7 @@ def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] 
         archive.writestr("report.json", json.dumps(data, ensure_ascii=False, indent=1))
         archive.writestr("log-tail.txt", "\n".join(tail))
         archive.writestr("README.txt", "VNText Studio bug report. Contains anonymised folder structure (sizes, extensions, hashes of names), the engine verdict, timings and a sanitised "
-                                       "log tail. It contains no file contents and no game or file names. Review report.json before sending if you wish.\n")
+                                       "log tail. It contains no file contents and no game or file names. Where an extraction met a structure it could not handle, "
+                                       "'structure' holds the SHAPE of that place only (keywords, nesting, token kinds and lengths; names and strings are replaced). "
+                                       "Review report.json before sending if you wish; nothing is uploaded automatically.\n")
     return target

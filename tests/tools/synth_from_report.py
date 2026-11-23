@@ -65,6 +65,15 @@ def synthesize(report: dict, dest: str | Path) -> Path:
     return root
 
 
+def synthesize_native_blocks(report: dict) -> str:
+    """Template text (one block per recorded unsupported Ren'Py native block) rebuilt from the masked shapes of a schema-2 report."""
+    from vntext.shape_mask import rebuild_text
+    blocks = []
+    for sample in (report.get("structure") or {}).get("renpy_native_blocks", []):
+        blocks.append(rebuild_text(sample.get("shape") or []))
+    return "\n".join(blocks)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print(__doc__)

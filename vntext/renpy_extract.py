@@ -1206,7 +1206,7 @@ def extract_native_template_entries(
     if ambiguous_blocks:
         stats["limitations"].append({"code":"NATIVE_BLOCK_UNSUPPORTED","count":len(ambiguous_blocks),
             "message":f"{len(ambiguous_blocks)} khối translate có dạng chưa hỗ trợ hoặc chưa rõ ({_blocks_sample(ambiguous_blocks)}); không tạo dòng dịch cho các khối này "
-                      "để tránh dịch sai, cần xem lại; chi tiết trong manifest (renpy_native_unresolved)."})
+                      "để tránh dịch sai, cần xem lại; chi tiết trong manifest (renpy_native_unresolved). Bấm 'Tạo gói báo lỗi' để có gói ẩn danh (chỉ hình dạng, không tên/nội dung) gửi cho nhà phát triển; ứng dụng không tự gửi."})
     runtime_dynamic=stats["renpy_static_ui_runtime_unresolved"]
     if runtime_dynamic:
         sample=", ".join(f"{item['file_path']}:{item['line']}" for item in runtime_dynamic[:3])
