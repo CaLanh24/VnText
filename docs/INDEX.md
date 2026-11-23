@@ -146,3 +146,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 | Release 0.1.24 Ren'Py image overlay + Unity TMP adapter (đang kiểm gate) | docs/RELEASE_0.1.24.md | TEST_RUN/renpy-three-game-qa/ |
 | Release 0.1.27 cỡ chữ Ren'Py + Unity v22+ (đã phát hành) | docs/RELEASE_0.1.27.md | TEST_RUN/agent-evidence/release-0.1.27/ |
 | Release 0.1.28 hotfix khóa extract (đã phát hành) | docs/RELEASE_0.1.28.md | TEST_RUN/agent-evidence/release-0.1.28/ |
+| Release 0.1.29 khóa HĐH + audit block Ren'Py + report ẩn danh (đang chuẩn bị) | docs/RELEASE_0.1.29.md | TEST_RUN/agent-evidence/release-0.1.29/ |
