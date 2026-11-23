@@ -7,8 +7,6 @@ from __future__ import annotations
 import os
 from typing import Any, Callable, Mapping
 
-_VNTEXT_IMAGE_HINTS = ("python", "vntext")
-
 
 def _win_open(pid: int):
     import ctypes
@@ -84,8 +82,9 @@ def owner_record(extra: Mapping[str, Any] | None = None) -> dict[str, Any]:
 
 
 def owner_is_live(record: Mapping[str, Any], pid_alive: Callable[[int], bool]) -> bool:
-    """True only when the lock's owner may still be running.  Unknown identity fails closed (True) so a real extraction is never overwritten;
-    a live pid whose creation time or program differs is a recycled pid and the lock is stale."""
+    """True only when the lock's owner may still be running.  A lock that records a creation time is kept only while that exact process lives
+    (an unreadable process keeps it, so a real extraction is never overwritten).  A lock without a creation time was written by version 0.1.27 or
+    older, which cannot run next to this one: a live pid there is a recycled pid, never evidence of an extraction, so the lock is stale."""
     try:
         pid = int(record["pid"])
     except (KeyError, TypeError, ValueError):
@@ -93,9 +92,57 @@ def owner_is_live(record: Mapping[str, Any], pid_alive: Callable[[int], bool]) -
     if pid <= 0 or not pid_alive(pid):
         return False
     recorded = record.get("start")
-    if recorded:
-        current = process_start_token(pid)
-        return current is None or current == str(recorded)
-    # Lock written by an older version: no creation time, so judge by the program.
-    image = process_image_name(pid)
-    return image is None or any(hint in image for hint in _VNTEXT_IMAGE_HINTS)
+    if not recorded:
+        return False
+    current = process_start_token(pid)
+    return current is None or current == str(recorded)
+
+
+def describe_owner(record: Mapping[str, Any], lock_mtime: float | None = None) -> str:
+    """Short, path-free description of a lock owner for messages and logs."""
+    import time
+    try:
+        pid = int(record["pid"])
+    except (KeyError, TypeError, ValueError):
+        return "chủ khóa không rõ"
+    parts = [f"PID {pid}", process_image_name(pid) or "tiến trình không đọc được tên"]
+    if pid == os.getpid():
+        parts.append("chính tiến trình này")
+    elif pid == _parent_pid():
+        parts.append("ứng dụng VNText Studio đã mở worker này")
+    if lock_mtime is not None:
+        parts.append(f"khóa {max(0, int(time.time() - lock_mtime))} giây tuổi")
+    parts.append("khóa có thời điểm tạo tiến trình" if record.get("start") else "khóa kiểu cũ, không có thời điểm tạo tiến trình")
+    return ", ".join(parts)
+
+
+def _parent_pid() -> int:
+    try:
+        return os.getppid()
+    except OSError:
+        return 0
+
+
+def watch_parent(on_dead: Callable[[], None], interval: float = 2.0, parent_pid: int | None = None) -> "threading.Thread | None":
+    """Call ``on_dead`` once the process that started this one is gone (or its pid was reused).  Returns the daemon thread, or None when the
+    parent cannot be identified, in which case nothing is watched."""
+    import threading
+    import time
+    pid = _parent_pid() if parent_pid is None else parent_pid
+    start = process_start_token(pid) if pid > 0 else None
+    if pid <= 0 or start is None:
+        return None
+
+    def run() -> None:
+        while True:
+            time.sleep(interval)
+            from vntext.traceability import _pid_alive
+            current = process_start_token(pid)
+            if current != start or not _pid_alive(pid):
+                on_dead()
+                return
+
+    thread = threading.Thread(target=run, name="vntext-parent-watch", daemon=True)
+    thread.start()
+    return thread
+

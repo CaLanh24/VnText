@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import threading
 import time
 import uuid
 
@@ -67,10 +68,18 @@ def _sweep_interrupted_leftovers(root: Path) -> list[str]:
 
 
 _UNREADABLE_LOCK_GRACE_SECONDS = 60
+# Output locks this process holds right now (one per running extraction).  A lock that names this very process while it is not in here has no
+# extraction behind it: an earlier run left it, so it is orphaned however alive the pid looks.
+_HELD_LOCKS: set[str] = set()
+_HELD_LOCKS_GUARD = threading.Lock()
 
 
-def _take_lock(lock: Path) -> int:
-    from vntext.process_identity import owner_is_live, owner_record
+def _held_key(lock: Path) -> str:
+    return os.path.normcase(os.path.abspath(lock))
+
+
+def _take_lock(lock: Path, log=None) -> int:
+    from vntext.process_identity import describe_owner, owner_is_live, owner_record
     from vntext.traceability import _pid_alive
     for _ in range(2):
         _no_links(lock)
@@ -79,7 +88,8 @@ def _take_lock(lock: Path) -> int:
         except FileExistsError:
             try:
                 before = lock.read_bytes()
-                age = time.time() - lock.stat().st_mtime
+                mtime = lock.stat().st_mtime
+                age = time.time() - mtime
             except FileNotFoundError:
                 continue
             try:
@@ -90,9 +100,19 @@ def _take_lock(lock: Path) -> int:
                 if age < _UNREADABLE_LOCK_GRACE_SECONDS:
                     raise ValueError("Thư mục xuất đang được tác vụ khác chuẩn bị khóa; hãy đợi vài giây rồi thử lại.")
                 record = None
-            if record is not None and owner_is_live(record, _pid_alive):
-                raise ValueError("Thư mục xuất đang được một lần lấy text khác sử dụng. Hãy đợi tác vụ đó xong hoặc hủy nó; "
-                                 "nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
+            if record is not None:
+                who = describe_owner(record, mtime)
+                if int(record["pid"]) == os.getpid():
+                    with _HELD_LOCKS_GUARD:
+                        held = _held_key(lock) in _HELD_LOCKS
+                    live = held
+                else:
+                    live = owner_is_live(record, _pid_alive)
+                if live:
+                    raise ValueError("Thư mục xuất đang được một lần lấy text khác sử dụng "
+                                     f"({who}). Hãy đợi tác vụ đó xong hoặc hủy nó; nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
+                if log is not None:
+                    log(f"Dọn khóa thư mục xuất mồ côi ({who}).")
             if lock.read_bytes() != before:
                 raise ValueError("Khóa thư mục xuất vừa bị thay đổi bởi tiến trình khác; hãy thử lại.")
             lock.unlink()
@@ -104,6 +124,8 @@ def _take_lock(lock: Path) -> int:
             os.close(fd)
             lock.unlink(missing_ok=True)
             raise
+        with _HELD_LOCKS_GUARD:
+            _HELD_LOCKS.add(_held_key(lock))
         return fd
     raise ValueError("Cannot acquire extraction output lock")
 
@@ -124,7 +146,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
         raise ValueError("Thư mục xuất phải nằm riêng, không chứa hoặc nằm trong thư mục game.")
     root.mkdir(parents=True, exist_ok=True)
     lock = root / ".vntext-extract.lock"
-    fd = _take_lock(lock)
+    fd = _take_lock(lock, log)
     stage = None
     prior_status = None
     publishing = False
@@ -226,6 +248,8 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
                 _write(status, json.dumps({"status": "FAILED", "complete": False, "patch_scope": "NONE", "errors": 1}).encode(), _digest(status))
         raise
     finally:
+        with _HELD_LOCKS_GUARD:
+            _HELD_LOCKS.discard(_held_key(lock))
         os.close(fd)
         lock.unlink(missing_ok=True)
         if stage is not None:

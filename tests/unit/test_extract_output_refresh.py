@@ -1,6 +1,9 @@
 import json
+import os
 from pathlib import Path
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -252,13 +255,137 @@ class ExtractOutputRefreshTests(unittest.TestCase):
     def test_lock_of_dead_pid_with_start_time_is_reclaimed(self):
         self._locked_run(json.dumps({"pid": 2 ** 30, "start": "123"}))
 
-    def test_lock_of_real_live_extraction_is_refused(self):
-        from vntext.process_identity import owner_record
-        self._locked_run(json.dumps(owner_record()), expect_ok=False)
+    @staticmethod
+    def _live_python():
+        import subprocess
+        import sys
+        proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+        return proc
 
-    def test_legacy_lock_of_live_vntext_python_is_refused(self):
-        import os
-        self._locked_run(json.dumps({"pid": os.getpid()}), expect_ok=False)
+    def test_lock_of_a_live_extraction_in_another_process_is_refused_with_the_owner_described(self):
+        from vntext.process_identity import process_start_token
+        proc = self._live_python()
+        try:
+            def run(source, out, results):
+                lock = out / ".vntext-extract.lock"
+                lock.write_text(json.dumps({"pid": proc.pid, "start": process_start_token(proc.pid)}), encoding="utf-8")
+                with self.assertRaises(ValueError) as caught:
+                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
+                message = str(caught.exception)
+                self.assertIn(f"PID {proc.pid}", message)
+                self.assertIn("python", message.lower())
+                self.assertIn("giây tuổi", message)
+                self.assertNotIn(str(out), message)
+                self.assertTrue(lock.exists())
+            self.run_case(run)
+        finally:
+            proc.kill()
+            proc.wait()
+
+    def test_legacy_lock_is_never_kept_whatever_the_live_pid_is(self):
+        # Owner machine 2026-11-23: {"pid": N} (no creation time) kept blocking although nothing ran.  Only 0.1.27 or older wrote that form.
+        proc = self._live_python()
+        try:
+            self._locked_run(json.dumps({"pid": proc.pid}))                  # a live python
+            self._locked_run(json.dumps({"pid": proc.pid}), age=3600)        # a live python that started after the lock
+        finally:
+            proc.kill()
+            proc.wait()
+        self._locked_run(json.dumps({"pid": os.getpid()}))                   # this very process
+
+    @unittest.skipUnless(os.name == "nt", "needs a Windows system process and exe")
+    def test_legacy_lock_of_a_live_process_named_vntext_or_unreadable_is_reclaimed(self):
+        import shutil
+        import subprocess
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            exe = Path(temp) / "VNText Studio.exe"
+            shutil.copy(Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "ping.exe", exe)
+            proc = subprocess.Popen([str(exe), "-n", "30", "127.0.0.1"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                time.sleep(0.5)
+                self._locked_run(json.dumps({"pid": proc.pid}))
+            finally:
+                proc.kill()
+                proc.wait()
+        self._locked_run(json.dumps({"pid": 4}))                             # the System process: alive, name and times unreadable
+
+    def test_lock_with_a_matching_creation_time_of_a_live_process_is_still_refused(self):
+        from vntext.process_identity import process_start_token
+        proc = self._live_python()
+        try:
+            self._locked_run(json.dumps({"pid": proc.pid, "start": process_start_token(proc.pid)}), expect_ok=False)
+        finally:
+            proc.kill()
+            proc.wait()
+
+    def test_lock_naming_this_process_without_a_running_extraction_is_orphaned(self):
+        # Hypothesis C: an earlier run in this very worker left the lock (or an old lock's pid was reused by this worker).
+        from vntext.process_identity import owner_record
+        logs = []
+
+        def run(source, out, results):
+            (out / ".vntext-extract.lock").write_text(json.dumps(owner_record()), encoding="utf-8")
+            refresh_extract(source, out, self.generated, results.append, logs.append)
+            self.assertTrue(results[-1]["ok"])
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+        self.run_case(run)
+        self.assertTrue(any("mồ côi" in line and "chính tiến trình này" in line for line in logs), logs)
+
+    def test_second_extraction_in_this_process_is_refused_while_the_first_runs_and_the_counter_clears(self):
+        import threading
+        from vntext import extract_output
+        started, release = threading.Event(), threading.Event()
+
+        def slow(stage, done, log):
+            started.set()
+            release.wait(10)
+            self.generated(stage, done, log)
+
+        def run(source, out, results):
+            first = threading.Thread(target=lambda: refresh_extract(source, out, slow, results.append, lambda _: None))
+            first.start()
+            self.assertTrue(started.wait(10))
+            try:
+                with self.assertRaises(ValueError) as caught:
+                    refresh_extract(source, out, self.generated, results.append, lambda _: None)
+                self.assertIn("chính tiến trình này", str(caught.exception))
+            finally:
+                release.set()
+                first.join(20)
+            self.assertTrue(results[-1]["ok"])
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+            self.assertEqual(set(), extract_output._HELD_LOCKS)
+            refresh_extract(source, out, self.generated, results.append, lambda _: None)      # and the folder is usable again
+            self.assertTrue(results[-1]["ok"])
+        self.run_case(run)
+
+    def test_failed_extraction_releases_the_in_process_counter(self):
+        from vntext import extract_output
+
+        def boom(stage, done, log):
+            raise RuntimeError("boom")
+
+        def run(source, out, results):
+            with self.assertRaises(RuntimeError):
+                refresh_extract(source, out, boom, results.append, lambda _: None)
+            self.assertEqual(set(), extract_output._HELD_LOCKS)
+            self.assertFalse((out / ".vntext-extract.lock").exists())
+        self.run_case(run)
+
+    def test_worker_watchdog_fires_when_its_parent_is_gone(self):
+        import subprocess
+        import sys
+        from vntext.process_identity import watch_parent
+        parent = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.5)
+        fired = threading.Event()
+        thread = watch_parent(fired.set, interval=0.1, parent_pid=parent.pid)
+        self.assertIsNotNone(thread)
+        self.assertFalse(fired.wait(0.5))
+        parent.kill()
+        parent.wait()
+        self.assertTrue(fired.wait(5))
 
     def test_corrupt_lock_is_kept_when_fresh_and_reclaimed_when_old(self):
         self._locked_run("not json", expect_ok=False)

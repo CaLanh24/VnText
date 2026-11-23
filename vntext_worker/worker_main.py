@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import os
 import sys
 import threading
 import time
@@ -201,6 +202,10 @@ def main() -> int:
     _configure_stdio_utf8()
     _preload_ct2_runtime()
     emit_ready()
+    # The host owns this process: when it dies (even if something else still holds our stdin open) a running extraction would keep its output
+    # lock forever, so leave with it.
+    from vntext.process_identity import watch_parent
+    watch_parent(lambda: os._exit(0))
     active_cancel: threading.Event | None = None
     active_thread: threading.Thread | None = None
     active_id = ""
