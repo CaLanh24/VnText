@@ -86,7 +86,9 @@ class RenPySaySemanticsTests(unittest.TestCase):
             self.assertIn('Supported dialogue',{e['source_text']for e in manifest['entries']})
             self.assertNotIn('Unsupported transition',{e['source_text']for e in manifest['entries']})
             status=json.loads((root/'package/extract_status.json').read_text(encoding='utf-8'))
-            self.assertGreater(status['errors'],0)
+            # Since 0.1.29 an unsupported native block is audited (PARTIAL warning with an action), not counted as an extract error.
+            self.assertEqual((status['status'],status['severity'],status['complete']),('PARTIAL','warning',False))
+            self.assertIn('renpy_native_unresolved',status['action'])
             unresolved=manifest['stats']['renpy_native_unresolved']
             self.assertEqual(len(unresolved),1)
             self.assertEqual(unresolved[0]['source_sha256'],hashlib.sha256(before).hexdigest())
