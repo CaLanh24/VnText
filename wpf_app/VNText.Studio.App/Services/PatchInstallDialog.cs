@@ -68,6 +68,14 @@ internal sealed class PatchInstallDialog
     {
         try
         {
+            if (InstallerService.HasPendingInstall(_target.Text))
+            {
+                // Describing ownership now would read the half-written files as if they were the game's: say what happened and that the next action recovers first.
+                _service.ValidateGame(_target.Text);
+                _install.IsEnabled = _revisionValid(); _restore.IsEnabled = false; _clean.IsEnabled = _revisionValid();
+                _status.Text = UiText.Translate("Lần cài patch VNText trước vào game này bị ngắt giữa chừng. Khi bạn bấm Cài patch hoặc Về bản gốc sạch, VNText sẽ đưa game về đúng trạng thái trước lần cài đó (kiểm hash từng tệp) rồi mới làm tiếp.");
+                return;
+            }
             if (File.Exists(_service.StatePath)) { _service.ValidateInstalledState(_target.Text); _install.IsEnabled = false; _restore.IsEnabled = _clean.IsEnabled = true; _status.Text = UiText.Translate("Patch đã cài. Có thể gỡ (về trạng thái trước lần cài này) hoặc về bản gốc sạch."); }
             else
             {

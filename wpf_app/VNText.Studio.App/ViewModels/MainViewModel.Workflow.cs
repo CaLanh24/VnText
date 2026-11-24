@@ -388,6 +388,7 @@ public sealed partial class MainViewModel
             return;
         }
         if (DeferExtractUntilDetected()) return;
+        if (!EnsureNoInterruptedInstall(InputPath)) return;
         InvalidatePatchSourceState(csvRevisionChanged: true);
         BeginTask("extract", new
         {
@@ -595,6 +596,7 @@ public sealed partial class MainViewModel
             StatusText = "Chưa chọn game";
             return;
         }
+        if (!EnsureNoInterruptedInstall(InputPath)) return;
         if (!ValidateTranslationCsv(silent: false))
         {
             StatusText = "CSV chưa hợp lệ";

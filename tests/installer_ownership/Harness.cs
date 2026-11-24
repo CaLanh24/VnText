@@ -503,8 +503,11 @@ internal static class Harness
                 else File.WriteAllBytes(journalPath, damage(File.ReadAllBytes(journalPath)));
                 var gameBefore = Snapshot(game); var patchBefore = Snapshot(PatchDir(judged)); var journalBefore = File.ReadAllBytes(journalPath);
                 var refusedRecover = Throws(() => judged.RecoverInterruptedInstall(), "KHÔNG ghi hay xóa tệp game", out var j1);
-                var refusedInstall = Throws(() => judged.Install(game), "KHÔNG ghi hay xóa tệp game", out var j2);
-                var refusedUninstall = Throws(() => judged.Uninstall(game, null, UninstallMode.CleanOriginal), "KHÔNG ghi hay xóa tệp game", out var j3);
+                // a foreign journal copied into another patch folder: that folder's own recovery refuses it (install/uninstall of that patch would
+                // legitimately recover the REAL interrupted install of A through the game marker first, so only the direct recovery is judged here)
+                var j2 = ""; var j3 = "";
+                var refusedInstall = name == "foreign" || Throws(() => judged.Install(game), "KHÔNG ghi hay xóa tệp game", out j2);
+                var refusedUninstall = name == "foreign" || Throws(() => judged.Uninstall(game, null, UninstallMode.CleanOriginal), "KHÔNG ghi hay xóa tệp game", out j3);
                 Check($"a {name} install_journal.json is refused with Vietnamese guidance by recover, install and uninstall", refusedRecover && refusedInstall && refusedUninstall, j1 + " | " + j2 + " | " + j3);
                 Check($"a {name} journal leaves the game, the patch folder and the journal byte-identical", Snapshot(game) == gameBefore && Snapshot(PatchDir(judged)) == patchBefore && File.ReadAllBytes(journalPath).SequenceEqual(journalBefore));
             }
@@ -523,7 +526,8 @@ internal static class Harness
                     var installed = File.Exists(patch.StatePath) && File.Exists(Receipt(game));
                     if (Crash(() => patch.RecoverInterruptedInstall(), at) == 0) break;
                     recoveryCrashes++;
-                    var again = !Throws(() => patch.RecoverInterruptedInstall(), "", out var mr);
+                    // the product entry points (install / uninstall / the app's prompt) run the game-marker recovery too
+                    var again = !Throws(() => { patch.RecoverInterruptedInstall(); InstallerService.RecoverPendingInstall(game); }, "", out var mr);
                     var fine = again && (Snapshot(game) == original || File.Exists(patch.StatePath));
                     if (!File.Exists(patch.StatePath)) fine &= !File.Exists(patch.JournalPath) && !Directory.Exists(patch.BackupDirectory);
                     Check($"install cut at {cut}, recovery killed at {at}: recovery run again converges to the original (or the completed install)", fine, mr + "\n" + Snapshot(game));
@@ -637,6 +641,81 @@ internal static class Harness
             var refused = Throws(() => b.Install(game), "Tạo patch' lại", out var m18);
             Check("a patch built over another installed VNText patch, offered to the clean game, says to build the patch again", refused && m18.Contains(Activation), m18);
             Check("that refusal wrote nothing", Snapshot(game) == original);
+        }
+
+        // 19. found by the 0.1.33 UI smoke: after the app was killed mid-install, a NEW patch (other package, other folder) must recover the interrupted one
+        //     first, through the game-side marker - never read its half-written files as the game's own.
+        {
+            const string Extra = "game/tl/vietnamese/extra.rpy";
+            const string extraOld = "# translator's own file\n";
+            int Crash(Action action, int at)
+            {
+                var count = 0;
+                InstallerService.FaultPoint = point => { if (++count == at) throw new SimulatedCrashException(point); };
+                try { action(); return 0; }
+                catch (SimulatedCrashException) { return 1; }
+                finally { InstallerService.FaultPoint = null; }
+            }
+            string Game19(string name, out string original)
+            {
+                var game = NewGame(work, "g19" + name);
+                Directory.CreateDirectory(Path.Combine(game, "game/tl/vietnamese"));
+                File.WriteAllBytes(Path.Combine(game, Extra.Replace('/', '\\')), Bytes(extraOld));
+                original = Snapshot(game);
+                return game;
+            }
+            InstallerService PatchA(string name, string game) => MakePatch(work, "p19a" + name, "0.1.33", game,
+                new Spec(Extra, "# patched\n", true, extraOld), new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+
+            var cuts = 0;
+            for (var at = 1; at < 20; at++)
+            {
+                var game = Game19("n" + at, out var original);
+                var a = PatchA("n" + at, game);
+                if (Crash(() => a.Install(game), at) == 0) { a.Uninstall(game); break; }
+                cuts++;
+                var pending = InstallerService.HasPendingInstall(game);
+                var b = MakePatch(work, "p19b" + at, "0.1.33", game, new Spec(Overlay, v25, false, null));
+                var installed = !Throws(() => b.Install(game), "", out var mb);
+                var aCompleted = File.Exists(a.StatePath);     // cut after A's state was saved: recovery keeps the finished install A
+                Check($"install of A cut at step {at}: the game records the interrupted install", pending || !File.Exists(a.JournalPath));
+                Check($"install of A cut at step {at}: another patch B first recovers A (back to the original, or A kept when it had finished), never reading A's half-written files",
+                    !File.Exists(a.JournalPath) && !InstallerService.HasPendingInstall(game)
+                    && (aCompleted ? !installed && Read(game, Overlay) == v24 && Read(game, Activation) == act
+                                   : installed && Read(game, Overlay) == v25 && Read(game, Extra) == extraOld && Read(game, Activation) is null), $"aCompleted={aCompleted} " + mb + "\n" + Snapshot(game));
+                if (aCompleted) a.Uninstall(game); else b.Uninstall(game);
+                Check($"install of A cut at step {at}: B then uninstalls to the byte-identical original (A's half-written files never became 'the original')", Snapshot(game) == original, Snapshot(game));
+            }
+            Check("every install step of A was cut and recovered by another patch", cuts >= 7, cuts.ToString());
+
+            {   // the patch folder holding the journal is gone: nothing is written; it comes back: recovered
+                var game = Game19("missing", out var original);
+                var a = PatchA("missing", game);
+                Crash(() => a.Install(game), 3);
+                var before = Snapshot(game);
+                var dir = Path.GetDirectoryName(a.JournalPath)!; var moved = dir + "-moved";
+                Directory.Move(dir, moved);
+                var b = MakePatch(work, "p19bmissing", "0.1.33", game, new Spec(Overlay, v25, false, null));
+                var refused = Throws(() => b.Install(game), "không còn", out var mm);
+                Check("a missing patch folder (journal + backups) refuses every other install without writing", refused && Snapshot(game) == before && !File.Exists(b.StatePath), mm);
+                Directory.Move(moved, dir);
+                var note = InstallerService.RecoverPendingInstall(game);
+                Check("once the patch folder is back the interrupted install is recovered to the original", note is not null && Snapshot(game) == original, Snapshot(game));
+            }
+
+            {   // a damaged marker refuses; a stale marker (folder present, journal gone = finished) is simply removed
+                var game = Game19("marker", out var original);
+                Directory.CreateDirectory(Path.Combine(game, ".vntext"));
+                File.WriteAllText(Path.Combine(game, ".vntext", "pending_install.json"), "{ broken");
+                var b = MakePatch(work, "p19bmarker", "0.1.33", game, new Spec(Overlay, v25, false, null));
+                var before = Snapshot(game);
+                Check("a damaged interrupted-install marker refuses without writing", Throws(() => b.Install(game), "KHÔNG ghi hay xóa", out var md) && Snapshot(game) == before, md);
+                File.WriteAllText(Path.Combine(game, ".vntext", "pending_install.json"), JsonSerializer.Serialize(new Dictionary<string, string> { ["patch_directory"] = Path.GetDirectoryName(b.JournalPath)!, ["patch_id"] = "x" }));
+                var ok = !Throws(() => b.Install(game), "", out var ms);
+                Check("a stale marker of a finished operation is removed and the install proceeds", ok && Read(game, Overlay) == v25 && !InstallerService.HasPendingInstall(game), ms);
+                b.Uninstall(game);
+                Check("the marker scenario ends byte-identical to the original", Snapshot(game) == original, Snapshot(game));
+            }
         }
 
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");

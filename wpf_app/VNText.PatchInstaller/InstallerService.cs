@@ -147,7 +147,7 @@ public sealed partial class InstallerService
     public InstallState Install(string gameRoot, Action<string>? progress = null)
     {
         using var gameLock = LockGame(gameRoot);
-        var recovered = RecoverInterruptedInstall();
+        var recovered = JoinNotes(RecoverPendingInstall(gameRoot), RecoverInterruptedInstall());
         var root = ValidateGame(gameRoot);
         if (File.Exists(StatePath) && FinishCutUninstall() is { } finished) recovered = recovered is null ? finished : recovered + " " + finished;
         if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
@@ -176,6 +176,10 @@ public sealed partial class InstallerService
                 throw new InvalidOperationException($"{file.Path}: đang cài patch VNText {owner.Version} nhưng patch này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ patch hiện tại rồi cài lại, hoặc tạo patch mới từ game đang cài.");
             notes.Add($"{file.Path}: nâng cấp từ patch VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
         }
+        // The game itself records that an install is in flight (and which patch folder holds its journal) BEFORE the journal and any game write:
+        // whichever VNText patch touches this game next - even one built later from a different package - recovers it first.
+        Directory.CreateDirectory(ReceiptDirectory(root));
+        WriteJsonAtomic(PendingPath(root), new PendingInstall(PatchDirectory, patchId));
         WriteJournal(new InstallJournal(root, patchId, priorReceipt is null ? null : Convert.ToBase64String(priorReceipt),
             manifest.Files.Select(f => new JournalFile(f.Path, f.Path.Replace('/', Path.DirectorySeparatorChar), f.OriginalExists, f.OriginalSha256, f.SourceSha256)).ToList()));
         Fault("journal-written");
@@ -245,6 +249,8 @@ public sealed partial class InstallerService
             SaveReceipt(root, receipt);
             Fault("receipt-saved");
             File.Delete(JournalPath);
+            Fault("journal-deleted");
+            ClearPending(root);
             return state;
         }
         catch (Exception ex) when (ex is not SimulatedCrashException)
@@ -262,6 +268,7 @@ public sealed partial class InstallerService
             });
             Attempt(() => TryDeleteEmpty(OriginalsRoot(root))); Attempt(() => TryDeleteEmpty(ReceiptDirectory(root)));
             Attempt(() => ForceDeleteFile(JournalPath));
+            Attempt(() => ClearPending(root));
             throw;
         }
     }
@@ -339,6 +346,7 @@ public sealed partial class InstallerService
         if (File.Exists(StatePath) && File.Exists(ReceiptPath(root)) && CompletedInstall(root, journal))
         {
             File.Delete(JournalPath);
+            ClearPending(root);
             return "Lần cài trước đã hoàn tất trước khi bị ngắt; giữ nguyên kết quả.";
         }
         var actions = new List<(JournalFile File, string Target, bool Restore, bool Delete)>();
@@ -402,7 +410,65 @@ public sealed partial class InstallerService
         ForceDeleteDirectory(BackupDirectory);
         Fault("recover-backup-deleted");
         File.Delete(JournalPath);
+        Fault("recover-journal-deleted");
+        ClearPending(root);
         return "Lần cài trước bị ngắt giữa chừng (tắt máy/đóng ứng dụng); VNText đã đưa game về đúng trạng thái trước lần cài đó (hash đã kiểm).";
+    }
+
+    private sealed record PendingInstall(
+        [property: JsonPropertyName("patch_directory")] string PatchDirectory,
+        [property: JsonPropertyName("patch_id")] string PatchId);
+
+    private static string PendingPath(string root) => Path.Combine(ReceiptDirectory(root), "pending_install.json");
+
+    private static string? JoinNotes(string? first, string? second) => first is null ? second : second is null ? first : first + " " + second;
+
+    /// <summary>Removes the in-flight marker (only after the journal is gone) and an emptied receipt folder.</summary>
+    private static void ClearPending(string root)
+    {
+        ForceDeleteFile(PendingPath(root));
+        TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
+    }
+
+    /// <summary>True when an install into this game was cut off and has not been recovered yet (by any VNText patch).</summary>
+    public static bool HasPendingInstall(string gameRoot)
+    {
+        var root = NormalizeGameRoot(gameRoot);
+        return Directory.Exists(root) && File.Exists(PendingPath(root));
+    }
+
+    /// <summary>
+    /// Recovers an install into this game that was cut off, whichever patch it was: the game's marker names the patch folder holding the journal and backups,
+    /// and that patch's own recovery runs (same checks: journal checksum, known states only, nothing written otherwise).  A marker whose patch folder still
+    /// exists but has no journal is a finished operation (the journal goes first) and is simply removed.  A marker whose patch folder is gone cannot be
+    /// recovered safely: nothing is written and the person is told what to do.  Returns a note, or null when nothing was pending.
+    /// </summary>
+    public static string? RecoverPendingInstall(string gameRoot)
+    {
+        var root = NormalizeGameRoot(gameRoot);
+        var marker = PendingPath(root);
+        if (!File.Exists(marker)) return null;
+        using var gameLock = LockGame(root);
+        PendingInstall? pending;
+        try { pending = JsonSerializer.Deserialize<PendingInstall>(File.ReadAllText(marker), JsonOptions); }
+        catch (Exception ex) when (ex is JsonException or IOException) { pending = null; _ = ex; }
+        if (pending is null || string.IsNullOrWhiteSpace(pending.PatchDirectory) || !Path.IsPathRooted(pending.PatchDirectory))
+            throw new InvalidOperationException("Game có dấu hiệu một lần cài VNText bị ngắt (.vntext/pending_install.json) nhưng tệp đó hỏng; VNText KHÔNG ghi hay xóa tệp game nào. "
+                + "Bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển.");
+        var owner = new InstallerService(pending.PatchDirectory);
+        if (!Directory.Exists(owner.PatchDirectory) || !File.Exists(owner.ManifestPath))
+            throw new InvalidOperationException($"Lần cài patch VNText trước vào game này bị ngắt giữa chừng, nhưng thư mục patch giữ nhật ký và bản sao lưu ({owner.PatchDirectory}) không còn; "
+                + "VNText KHÔNG ghi hay xóa tệp game nào vì không chứng minh được bản trước khi cài. Hãy trả lại thư mục đó (hoặc chạy lại đúng trình cài patch đó), hoặc bấm 'Tạo gói báo lỗi'.");
+        if (!File.Exists(owner.JournalPath))
+        {
+            ClearPending(root);
+            return null;
+        }
+        if (!string.Equals(owner.PatchId(), pending.PatchId, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(JournalUnreadable + "dấu cài dở trong game không khớp patch giữ nhật ký");
+        var note = owner.RecoverInterruptedInstall();
+        if (File.Exists(marker) && !File.Exists(owner.JournalPath)) ClearPending(root);
+        return note;
     }
 
     /// <summary>
@@ -485,7 +551,7 @@ public sealed partial class InstallerService
     public UninstallResult Uninstall(string gameRoot, Action<string>? progress = null, UninstallMode mode = UninstallMode.Previous)
     {
         using var gameLock = LockGame(gameRoot);
-        var recovered = RecoverInterruptedInstall();
+        var recovered = JoinNotes(RecoverPendingInstall(gameRoot), RecoverInterruptedInstall());
         if (recovered is not null && !File.Exists(StatePath)) return new UninstallResult(new List<string> { recovered });
         if (FinishCutUninstall() is { } finished) return new UninstallResult(new List<string> { finished });
         // This patch is not the installed one (for example the game was stepped back to the previous VNText patch): the receipt alone proves the clean original.

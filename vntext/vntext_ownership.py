@@ -22,9 +22,22 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+PENDING = Path(".vntext") / "pending_install.json"
+PENDING_MESSAGE = ("Lần cài patch VNText trước vào game này bị ngắt giữa chừng (.vntext/pending_install.json): các tệp đang ở trạng thái cài dở nên không thể "
+                   "đọc như tệp của game. Mở 'Cài trong VNText' (hoặc chạy lại trình cài patch) để VNText phục hồi game trước, rồi lấy text/tạo patch lại.")
+
+
+class PendingInstallError(RuntimeError):
+    """An interrupted VNText install is recorded in the game; its half-written files must not be read as the game's own."""
+
+
 def owned_installed_files(root: str | Path) -> set[Path]:
-    """Resolved paths of game files that the receipt proves are an unmodified VNText patch layer."""
+    """Resolved paths of game files that the receipt proves are an unmodified VNText patch layer.
+
+    Raises PendingInstallError when an install into the game was cut off and not yet recovered."""
     root = Path(root)
+    if (root / PENDING).is_file():
+        raise PendingInstallError(PENDING_MESSAGE)
     receipt = root / RECEIPT
     if not receipt.is_file():
         return set()

@@ -103,5 +103,30 @@ class PatchUpgradeTests(unittest.TestCase):
             self.assertEqual(original, _tree(game))
 
 
+class InterruptedInstallGuardTests(unittest.TestCase):
+    """Found by the 0.1.33 UI smoke: after the app was killed mid-install, extracting/building read the half-written files as the game's own."""
+
+    def test_the_worker_refuses_to_read_a_game_with_an_unrecovered_install(self):
+        from vntext.vntext_ownership import PendingInstallError, owned_installed_files
+        with tempfile.TemporaryDirectory(dir=WORK) as temp:
+            game = Path(temp)
+            (game / ".vntext").mkdir()
+            (game / ".vntext" / "pending_install.json").write_text('{"patch_directory": "C:\\\\x", "patch_id": "y"}', encoding="utf-8")
+            with self.assertRaisesRegex(PendingInstallError, "bị ngắt giữa chừng"):
+                owned_installed_files(game)
+            (game / ".vntext" / "pending_install.json").unlink()
+            self.assertEqual(set(), owned_installed_files(game))
+
+    def test_extract_and_patch_in_the_app_offer_recovery_first(self):
+        workflow = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.Workflow.cs").read_text(encoding="utf-8")
+        extract = workflow[workflow.index("private async void RunExtract()"):workflow.index('BeginTask("extract"')]
+        patch = workflow[workflow.index("private async void RunPatch()"):]
+        self.assertIn("if (!EnsureNoInterruptedInstall(InputPath)) return;", extract)
+        self.assertLess(patch.index("if (!EnsureNoInterruptedInstall(InputPath)) return;"), patch.index("ValidateTranslationCsv(silent: false)"))
+        helper = (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.InterruptedInstall.cs").read_text(encoding="utf-8")
+        self.assertIn("InstallerService.RecoverPendingInstall(game)", helper)
+        self.assertIn("MessageBoxButton.YesNo", helper)          # recovery writes the game only after the person agrees
+
+
 if __name__ == "__main__":
     unittest.main()
