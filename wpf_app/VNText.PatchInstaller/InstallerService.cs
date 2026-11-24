@@ -131,6 +131,7 @@ public sealed partial class InstallerService
 
     public InstallState Install(string gameRoot, Action<string>? progress = null)
     {
+        using var gameLock = LockGame(gameRoot);
         var recovered = RecoverInterruptedInstall();
         var root = ValidateGame(gameRoot);
         if (File.Exists(StatePath) && FinishCutUninstall() is { } finished) recovered = recovered is null ? finished : recovered + " " + finished;
@@ -160,7 +161,7 @@ public sealed partial class InstallerService
                 throw new InvalidOperationException($"{file.Path}: đang cài patch VNText {owner.Version} nhưng patch này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ patch hiện tại rồi cài lại, hoặc tạo patch mới từ game đang cài.");
             notes.Add($"{file.Path}: nâng cấp từ patch VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
         }
-        WriteJsonAtomic(JournalPath, new InstallJournal(root, patchId, priorReceipt is null ? null : Convert.ToBase64String(priorReceipt),
+        WriteJournal(new InstallJournal(root, patchId, priorReceipt is null ? null : Convert.ToBase64String(priorReceipt),
             manifest.Files.Select(f => new JournalFile(f.Path, f.Path.Replace('/', Path.DirectorySeparatorChar), f.OriginalExists, f.OriginalSha256, f.SourceSha256)).ToList()));
         Fault("journal-written");
         Directory.CreateDirectory(BackupDirectory);
@@ -263,48 +264,115 @@ public sealed partial class InstallerService
         [property: JsonPropertyName("prior_receipt_base64")] string? PriorReceiptBase64,
         [property: JsonPropertyName("files")] List<JournalFile> Files);
 
+    private sealed record JournalEnvelope(
+        [property: JsonPropertyName("journal")] InstallJournal Journal,
+        [property: JsonPropertyName("sha256")] string Sha256);
+
+    private static string JournalDigest(InstallJournal journal) => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(journal, JsonOptions))).ToLowerInvariant();
+
+    private void WriteJournal(InstallJournal journal) => WriteJsonAtomic(JournalPath, new JournalEnvelope(journal, JournalDigest(journal)));
+
+    private const string JournalUnreadable = "Nhật ký giao dịch cài đặt (install_journal.json trong thư mục patch) bị hỏng, cụt hoặc không thuộc patch này; VNText KHÔNG ghi hay xóa tệp game nào. "
+        + "Giữ nguyên thư mục patch và game, bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển. Chi tiết: ";
+
+    /// <summary>Reads the journal and proves it whole (checksum) and this patch's; anything else refuses before any game write.</summary>
+    private InstallJournal ReadJournal()
+    {
+        InstallJournal? journal;
+        try
+        {
+            var bytes = File.ReadAllBytes(JournalPath);
+            using var document = JsonDocument.Parse(bytes);
+            if (document.RootElement.ValueKind == JsonValueKind.Object && document.RootElement.TryGetProperty("journal", out _))
+            {
+                var envelope = JsonSerializer.Deserialize<JournalEnvelope>(bytes, JsonOptions) ?? throw new InvalidDataException("rỗng");
+                journal = envelope.Journal ?? throw new InvalidDataException("thiếu nội dung");
+                if (!string.Equals(JournalDigest(journal), envelope.Sha256, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("checksum không khớp");
+            }
+            else journal = JsonSerializer.Deserialize<InstallJournal>(bytes, JsonOptions);     // 0.1.32 journal (no checksum): accepted only if every field validates below
+            if (journal is null || string.IsNullOrWhiteSpace(journal.GameRoot) || journal.Files is not { Count: > 0 }) throw new InvalidDataException("thiếu trường bắt buộc");
+            if (!string.Equals(journal.PatchId, PatchId(), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("nhật ký của patch khác");
+            var root = NormalizeGameRoot(journal.GameRoot);
+            foreach (var file in journal.Files)
+            {
+                if (file is null || string.IsNullOrWhiteSpace(file.Path) || file.InstalledSha256 is not { Length: 64 } || (file.OriginalExists && file.OriginalSha256 is not { Length: 64 }))
+                    throw new InvalidDataException("mục tệp không hợp lệ");
+                ResolveSafe(root, file.Path); ResolveSafe(BackupDirectory, file.BackupPath);
+            }
+            if (journal.PriorReceiptBase64 is not null) Convert.FromBase64String(journal.PriorReceiptBase64);
+        }
+        catch (Exception ex) when (ex is JsonException or InvalidDataException or IOException or FormatException or InvalidOperationException or ArgumentException or NotSupportedException)
+        {
+            throw new InvalidOperationException(JournalUnreadable + ex.Message);
+        }
+        return journal;
+    }
+
     /// <summary>
     /// Brings the game back to exactly the state before an install that was cut off (its journal is still here).  An install whose state and receipt
-    /// were both saved is complete and kept.  Otherwise every file this install may have touched is put back from its backup (or removed when it did
-    /// not exist before and holds this patch's bytes), the receipt is restored byte for byte, first-original copies it created are dropped, and the
-    /// backup, state and journal are removed.  Returns a note for the person, or null when there was nothing to recover.
+    /// were both saved is complete and kept.  Otherwise every journal file is first classified against its two known states (before / after the install);
+    /// if any is neither (edited by hand, or a backup that does not prove the original) nothing is written and the files are named.  Then each file is put
+    /// back (from its proven backup, or removed when it did not exist before), the receipt is restored byte for byte, first-original copies it created are
+    /// dropped, and the backup, state and journal are removed last.  Every step can be cut off and run again.  Returns a note, or null when there was nothing to recover.
     /// </summary>
     public string? RecoverInterruptedInstall()
     {
         if (!File.Exists(JournalPath)) return null;
-        var journal = JsonSerializer.Deserialize<InstallJournal>(File.ReadAllText(JournalPath), JsonOptions)
-            ?? throw new InvalidOperationException("Nhật ký giao dịch cài đặt không đọc được; giữ nguyên game và thư mục patch để kiểm tra.");
+        var journal = ReadJournal();
         var root = NormalizeGameRoot(journal.GameRoot);
+        using var gameLock = LockGame(root);
         if (File.Exists(StatePath) && File.Exists(ReceiptPath(root)) && CompletedInstall(root, journal))
         {
             File.Delete(JournalPath);
             return "Lần cài trước đã hoàn tất trước khi bị ngắt; giữ nguyên kết quả.";
         }
+        var actions = new List<(JournalFile File, string Target, bool Restore, bool Delete)>();
+        var unknown = new List<string>();
         foreach (var file in journal.Files)
         {
             var target = ResolveSafe(root, file.Path);
+            var current = File.Exists(target) ? HashFile(target) : null;
+            var backup = ResolveSafe(BackupDirectory, file.BackupPath);
+            if (file.OriginalExists)
+            {
+                if (string.Equals(current, file.OriginalSha256, StringComparison.OrdinalIgnoreCase)) actions.Add((file, target, false, false));   // never reached, or already put back
+                else if (string.Equals(current, file.InstalledSha256, StringComparison.OrdinalIgnoreCase)
+                         && File.Exists(backup) && string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    actions.Add((file, target, true, false));
+                else unknown.Add(file.Path);
+            }
+            else if (current is null) actions.Add((file, target, false, false));
+            else if (string.Equals(current, file.InstalledSha256, StringComparison.OrdinalIgnoreCase)) actions.Add((file, target, false, true));
+            else unknown.Add(file.Path);
+        }
+        if (unknown.Count > 0)
+            throw new InvalidOperationException("Lần cài trước bị ngắt giữa chừng, nhưng các tệp sau không ở trạng thái trước hay sau lần cài đó (có thể đã bị sửa tay, hoặc bản sao lưu không chứng minh được bản gốc): "
+                + string.Join(", ", unknown) + ". VNText giữ nguyên toàn bộ game, bản sao lưu và nhật ký, không ghi đè gì. Hãy trả các tệp này về như cũ rồi thử lại, hoặc bấm 'Tạo gói báo lỗi'.");
+        foreach (var (file, target, restore, delete) in actions)
+        {
             var folder = Path.GetDirectoryName(target)!;
             if (Directory.Exists(folder))
                 foreach (var temp in Directory.EnumerateFiles(folder, Path.GetFileName(target) + ".vntext-install-*.tmp"))
                     ForceDeleteFile(temp);
-            var backup = ResolveSafe(BackupDirectory, file.BackupPath);
-            if (file.OriginalExists)
+            if (restore)
             {
-                // No backup yet means the install never reached this file: it is still the original.
-                if (!File.Exists(backup)) continue;
-                if (!string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Bản sao lưu của {file.Path} không khớp bản trước khi cài; giữ nguyên game và thư mục patch để kiểm tra.");
                 Directory.CreateDirectory(folder);
-                File.Copy(backup, target, true);
+                var staged = target + $".vntext-recover-{Environment.ProcessId}.tmp";
+                File.Copy(ResolveSafe(BackupDirectory, file.BackupPath), staged, true);
+                File.Move(staged, target, true);
                 if (!string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Không khôi phục được {file.Path} từ bản sao lưu; giữ nguyên để kiểm tra.");
             }
-            else if (File.Exists(target) && string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
-                File.Delete(target);
+            else if (delete) File.Delete(target);
+            if (Directory.Exists(folder))
+                foreach (var temp in Directory.EnumerateFiles(folder, Path.GetFileName(target) + ".vntext-recover-*.tmp"))
+                    ForceDeleteFile(temp);
+            Fault("recover-file:" + file.Path);
         }
         var receiptPath = ReceiptPath(root);
         if (journal.PriorReceiptBase64 is null) ForceDeleteFile(receiptPath);
-        else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(receiptPath, Convert.FromBase64String(journal.PriorReceiptBase64)); }
+        else { Directory.CreateDirectory(ReceiptDirectory(root)); WriteBytesAtomic(receiptPath, Convert.FromBase64String(journal.PriorReceiptBase64)); }
+        Fault("recover-receipt");
         // First-original copies are kept only for the paths the restored receipt still records.
         var kept = LoadReceipt(root);
         if (Directory.Exists(OriginalsRoot(root)))
@@ -315,9 +383,36 @@ public sealed partial class InstallerService
             }
         TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
         ForceDeleteFile(StatePath);
+        Fault("recover-state-deleted");
         ForceDeleteDirectory(BackupDirectory);
+        Fault("recover-backup-deleted");
         File.Delete(JournalPath);
         return "Lần cài trước bị ngắt giữa chừng (tắt máy/đóng ứng dụng); VNText đã đưa game về đúng trạng thái trước lần cài đó (hash đã kiểm).";
+    }
+
+    /// <summary>
+    /// One VNText writer per game at a time, across processes (the app's dialog and any standalone patch installer): a named OS mutex keyed by the game
+    /// folder, released by Windows if the holder dies.  A second writer is refused before it reads or writes anything.
+    /// </summary>
+    private static IDisposable LockGame(string root)
+    {
+        var key = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(NormalizeGameRoot(root).TrimEnd(Path.DirectorySeparatorChar).ToUpperInvariant())))[..32];
+        var mutex = new Mutex(false, "Local\\VNTextGame-" + key);
+        bool owned;
+        try { owned = mutex.WaitOne(0); }
+        catch (AbandonedMutexException) { owned = true; }     // the previous writer died; its journal (if any) is recovered next
+        if (!owned)
+        {
+            mutex.Dispose();
+            throw new InvalidOperationException("Một trình cài/gỡ VNText khác đang ghi vào game này. Chờ nó xong (hoặc đóng nó) rồi thử lại. Game chưa bị thay đổi bởi lần bấm này.");
+        }
+        return new GameLock(mutex);
+    }
+
+    private sealed class GameLock(Mutex mutex) : IDisposable
+    {
+        private Mutex? _mutex = mutex;
+        public void Dispose() { var m = Interlocked.Exchange(ref _mutex, null); if (m is null) return; try { m.ReleaseMutex(); } finally { m.Dispose(); } }
     }
 
     /// <summary>
@@ -374,6 +469,7 @@ public sealed partial class InstallerService
 
     public UninstallResult Uninstall(string gameRoot, Action<string>? progress = null, UninstallMode mode = UninstallMode.Previous)
     {
+        using var gameLock = LockGame(gameRoot);
         var recovered = RecoverInterruptedInstall();
         if (recovered is not null && !File.Exists(StatePath)) return new UninstallResult(new List<string> { recovered });
         if (FinishCutUninstall() is { } finished) return new UninstallResult(new List<string> { finished });
@@ -653,10 +749,17 @@ public sealed partial class InstallerService
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-    private static void WriteJsonAtomic<T>(string path, T value)
+    private static void WriteJsonAtomic<T>(string path, T value) => WriteBytesAtomic(path, JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions));
+
+    /// <summary>Temp file, flushed to disk, then renamed over the target: a crash leaves either the old or the new file, never a torn one.</summary>
+    private static void WriteBytesAtomic(string path, byte[] bytes)
     {
         var temp = path + $".{Environment.ProcessId}.tmp";
-        File.WriteAllText(temp, JsonSerializer.Serialize(value, JsonOptions));
+        using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            stream.Write(bytes);
+            stream.Flush(true);
+        }
         File.Move(temp, path, true);
     }
 

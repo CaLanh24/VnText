@@ -447,6 +447,139 @@ internal static class Harness
             Check("every receipt clean-restore step was exercised", crashes >= 3, crashes.ToString());
         }
 
+        // 16. journal safety (Brain review of 0.1.32): a damaged journal never leads to a game write; recovery killed part way converges when run again;
+        //     two writers on one game are serialized by an OS lock; recovery touches only journal files in a known state and keeps files edited by hand.
+        {
+            const string Extra = "game/tl/vietnamese/extra.rpy";
+            const string extraOld = "# translator's own file\n";
+            static string PatchDir(InstallerService s) => Path.GetDirectoryName(s.JournalPath)!;
+            int Crash(Action action, int at)
+            {
+                var count = 0;
+                InstallerService.FaultPoint = point => { if (++count == at) throw new SimulatedCrashException(point); };
+                try { action(); return 0; }
+                catch (SimulatedCrashException) { return 1; }
+                finally { InstallerService.FaultPoint = null; }
+            }
+            InstallerService Fresh(string name, out string game, out string original)
+            {
+                game = NewGame(work, "g16" + name);
+                Directory.CreateDirectory(Path.Combine(game, "game/tl/vietnamese"));
+                File.WriteAllBytes(Path.Combine(game, Extra.Replace('/', '\\')), Bytes(extraOld));
+                original = Snapshot(game);
+                return MakePatch(work, "p16" + name, "0.1.33", game, new Spec(Extra, "# patched\n", true, extraOld), new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            }
+
+            // (1) damaged, truncated, empty, tampered, foreign journal
+            var damages = new (string Name, Func<byte[], byte[]> Damage)[]
+            {
+                ("truncated", b => b.Take(b.Length / 2).ToArray()),
+                ("empty", _ => Array.Empty<byte>()),
+                ("not-json", _ => Bytes("\u0000\u0001garbage")),
+                ("checksum", b => Bytes(Encoding.UTF8.GetString(b).Replace("\"original_exists\": true", "\"original_exists\": false"))),
+                ("foreign", b => b),
+            };
+            foreach (var (name, damage) in damages)
+            {
+                var patch = Fresh("j" + name, out var game, out var original);
+                Crash(() => patch.Install(game), 3);                                         // journal, backup extra, replaced extra -> cut
+                var journalPath = patch.JournalPath;
+                var judged = patch;
+                if (name == "foreign")
+                {
+                    judged = MakePatch(work, "p16jforeign-other", "0.1.33", game, new Spec(Overlay, v25, false, null));
+                    File.Copy(journalPath, judged.JournalPath, true);
+                    journalPath = judged.JournalPath;
+                }
+                else File.WriteAllBytes(journalPath, damage(File.ReadAllBytes(journalPath)));
+                var gameBefore = Snapshot(game); var patchBefore = Snapshot(PatchDir(judged)); var journalBefore = File.ReadAllBytes(journalPath);
+                var refusedRecover = Throws(() => judged.RecoverInterruptedInstall(), "KHÔNG ghi hay xóa tệp game", out var j1);
+                var refusedInstall = Throws(() => judged.Install(game), "KHÔNG ghi hay xóa tệp game", out var j2);
+                var refusedUninstall = Throws(() => judged.Uninstall(game, null, UninstallMode.CleanOriginal), "KHÔNG ghi hay xóa tệp game", out var j3);
+                Check($"a {name} install_journal.json is refused with Vietnamese guidance by recover, install and uninstall", refusedRecover && refusedInstall && refusedUninstall, j1 + " | " + j2 + " | " + j3);
+                Check($"a {name} journal leaves the game, the patch folder and the journal byte-identical", Snapshot(game) == gameBefore && Snapshot(PatchDir(judged)) == patchBefore && File.ReadAllBytes(journalPath).SequenceEqual(journalBefore));
+            }
+
+            // (2) recovery itself killed at every step, after an install cut at every step: running recovery again always converges
+            var recoveryCrashes = 0; var installCuts = 0;
+            for (var cut = 1; cut < 12; cut++)
+            {
+                var probe = Fresh($"r{cut}x", out var probeGame, out _);
+                if (Crash(() => probe.Install(probeGame), cut) == 0) break;
+                installCuts++;
+                for (var at = 1; at < 30; at++)
+                {
+                    var patch = Fresh($"r{cut}_{at}", out var game, out var original);
+                    Crash(() => patch.Install(game), cut);
+                    var installed = File.Exists(patch.StatePath) && File.Exists(Receipt(game));
+                    if (Crash(() => patch.RecoverInterruptedInstall(), at) == 0) break;
+                    recoveryCrashes++;
+                    var again = !Throws(() => patch.RecoverInterruptedInstall(), "", out var mr);
+                    var fine = again && (Snapshot(game) == original || File.Exists(patch.StatePath));
+                    if (!File.Exists(patch.StatePath)) fine &= !File.Exists(patch.JournalPath) && !Directory.Exists(patch.BackupDirectory);
+                    Check($"install cut at {cut}, recovery killed at {at}: recovery run again converges to the original (or the completed install)", fine, mr + "\n" + Snapshot(game));
+                    if (File.Exists(patch.StatePath)) patch.Uninstall(game); else { patch.Install(game); patch.Uninstall(game); }
+                    Check($"install cut at {cut}, recovery killed at {at}: install + uninstall afterwards still end byte-identical to the original", Snapshot(game) == original, Snapshot(game));
+                }
+            }
+            Check("recovery was killed at every one of its steps for every install cut", installCuts >= 6 && recoveryCrashes >= installCuts * 3, $"cuts={installCuts} recoveryCrashes={recoveryCrashes}");
+
+            {   // a backup torn by a kill while it was being copied (the game file itself was not yet replaced) never blocks recovery
+                var patch = Fresh("torn-backup", out var game, out var original);
+                Crash(() => patch.Install(game), 2);                                         // backed-up:extra -> cut before replacing it
+                var backup = Path.Combine(patch.BackupDirectory, Extra.Replace('/', '\\'));
+                File.WriteAllBytes(backup, File.ReadAllBytes(backup).Take(3).ToArray());
+                var ok = !Throws(() => patch.RecoverInterruptedInstall(), "", out var mt);
+                Check("a torn backup of a file that was never replaced does not block recovery, and the game is the original", ok && Snapshot(game) == original, mt);
+            }
+
+            // (3) two writers on the same game at once: the second is refused by the OS lock before it touches anything
+            {
+                var first = Fresh("parallel", out var game, out var original);
+                var second = MakePatch(work, "p16parallel-b", "0.1.33", game, new Spec(Overlay, v25, false, null));
+                using var inside = new ManualResetEventSlim(); using var proceed = new ManualResetEventSlim();
+                InstallerService.FaultPoint = point => { if (point == "journal-written") { inside.Set(); proceed.Wait(TimeSpan.FromSeconds(30)); } };
+                Exception? firstError = null;
+                var writer = new Thread(() => { try { first.Install(game); } catch (Exception ex) { firstError = ex; } });
+                writer.Start();
+                var entered = inside.Wait(TimeSpan.FromSeconds(30));
+                var during = Snapshot(game);
+                var refusedInstall = Throws(() => second.Install(game), "đang ghi vào game này", out var p1);
+                var refusedUninstall = Throws(() => second.Uninstall(game, null, UninstallMode.CleanOriginal), "đang ghi vào game này", out var p2);
+                var untouched = Snapshot(game) == during && !File.Exists(second.JournalPath) && !File.Exists(second.StatePath) && !Directory.Exists(second.BackupDirectory);
+                proceed.Set(); writer.Join(); InstallerService.FaultPoint = null;
+                Check("a second installer on the same game is refused (OS named lock) while the first is writing", entered && refusedInstall && refusedUninstall, p1 + " | " + p2);
+                Check("the refused second installer wrote nothing", untouched);
+                Check("the first installer finishes normally once alone", firstError is null && File.Exists(first.StatePath) && Read(game, Overlay) == v24, firstError?.Message ?? "");
+                var afterOk = !Throws(() => second.Install(game), "đang ghi vào game này", out var p3);
+                Check("the lock is released afterwards (the next writer is no longer refused by it)", afterOk || !p3.Contains("đang ghi vào game này"), p3);
+                first.Uninstall(game);
+                Check("the parallel scenario ends byte-identical to the original", Snapshot(game) == original, Snapshot(game));
+            }
+
+            // (4) recovery touches only journal files in a known state; a file edited by hand during the interruption is kept, named, and nothing is written
+            foreach (var edited in new[] { Extra, Overlay })
+            {
+                var patch = Fresh("edit" + edited.Length, out var game, out var original);
+                Crash(() => patch.Install(game), edited == Extra ? 3 : 5);                    // the edited file was already replaced when the install was cut
+                var path = Path.Combine(game, edited.Replace('/', '\\'));
+                var replaced = File.ReadAllText(path);
+                File.AppendAllText(path, "# edited by hand after the crash\n");
+                File.WriteAllBytes(Path.Combine(game, "game/tl/vietnamese/unrelated.rpy"), Bytes("# not in the journal\n"));
+                var before = Snapshot(game); var backups = Directory.Exists(patch.BackupDirectory) ? Snapshot(patch.BackupDirectory) : "";
+                var refused = Throws(() => patch.RecoverInterruptedInstall(), "không ở trạng thái trước hay sau", out var me);
+                Check($"recovery refuses when {edited} was edited by hand during the interruption, and names it", refused && me.Contains(edited), me);
+                Check($"the refused recovery wrote nothing ({edited}): game, backups and journal kept", Snapshot(game) == before && File.Exists(patch.JournalPath)
+                    && (Directory.Exists(patch.BackupDirectory) ? Snapshot(patch.BackupDirectory) : "") == backups);
+                File.WriteAllText(path, replaced);
+                var ok = !Throws(() => patch.RecoverInterruptedInstall(), "", out var mo);
+                var unrelated = Path.Combine(game, "game/tl/vietnamese/unrelated.rpy");
+                var outsideKept = File.Exists(unrelated) && File.ReadAllText(unrelated) == "# not in the journal\n";
+                File.Delete(unrelated);
+                Check($"once {edited} is back to a known state recovery completes, never touching a file outside the journal", ok && outsideKept && Snapshot(game) == original, mo + "\n" + Snapshot(game));
+            }
+        }
+
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
         try { Directory.Delete(work, true); } catch { }
         return allPass ? 0 : 1;
