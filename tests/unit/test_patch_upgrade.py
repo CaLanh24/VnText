@@ -99,7 +99,7 @@ class PatchUpgradeTests(unittest.TestCase):
             self.assertNotIn("Xin chào.", overlay)
             run_cli("uninstall", patch_b, game)          # back to exactly patch A
             self.assertEqual(with_a, _tree(game, skip_receipt=True))
-            run_cli("restore-original", patch_a, game)   # and to the original game
+            run_cli("restore-original", patch_b, game)   # and to the original game, from B's package and the receipt alone (A's package is gone in the app)
             self.assertEqual(original, _tree(game))
 
 

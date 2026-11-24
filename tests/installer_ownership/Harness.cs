@@ -397,6 +397,56 @@ internal static class Harness
             Check("every uninstall step was exercised", crashes >= 3, crashes.ToString());
         }
 
+        // 15. after A -> B -> uninstall B the game holds patch A while the package at hand is B (A's package was replaced): "Về bản gốc sạch" from B works
+        //     from the receipt alone, proves every byte, survives a crash at every step, and refuses an edited file without writing.
+        {
+            static string Game(string snapshot) => string.Join("\n", snapshot.Split('\n').Where(line => !line.StartsWith(".vntext", StringComparison.Ordinal)));
+            int Crash(Action action, int at)
+            {
+                var count = 0;
+                InstallerService.FaultPoint = point => { if (++count == at) throw new SimulatedCrashException(point); };
+                try { action(); return 0; }
+                catch (SimulatedCrashException) { return 1; }
+                finally { InstallerService.FaultPoint = null; }
+            }
+            var crashes = 0;
+            for (var at = 1; at < 40; at++)
+            {
+                var game = NewGame(work, $"g15{at}");
+                var original = Snapshot(game);
+                var a = MakePatch(work, $"q24_{at}", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+                a.Install(game);
+                var b = MakePatch(work, $"q25_{at}", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+                b.Install(game);
+                b.Uninstall(game);
+                var withA = Game(Snapshot(game));
+                if (at == 1)
+                {
+                    Check("after stepping back from B the game is exactly patch A and B offers the receipt clean restore", withA.Length > 0 && Read(game, Overlay) == v24 && !File.Exists(b.StatePath) && b.HasReceiptLayers(game));
+                    var edited = Path.Combine(game, Overlay.Replace('/', '\\'));
+                    File.AppendAllText(edited, "# edited by hand\n");
+                    var tampered = Snapshot(game);
+                    Check("a receipt clean restore refuses a VNText file edited by hand", Throws(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), "đã bị sửa ngoài VNText", out var me), me);
+                    Check("the refused receipt clean restore wrote nothing", Snapshot(game) == tampered);
+                    File.WriteAllBytes(edited, Bytes(v24));
+                }
+                if (Crash(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), at) == 0)
+                {
+                    Check("receipt clean restore from the replaced package's successor ends byte-identical to the original game", Snapshot(game) == original, Snapshot(game));
+                    Check("nothing is left to undo afterwards and it says so", Throws(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), "không còn gì để gỡ", out var mn) && !b.HasReceiptLayers(game), mn);
+                    var stale = Throws(() => a.Uninstall(game), "", out var ma);
+                    Check("patch A's own stale record never touches the cleaned game", Snapshot(game) == original, ma);
+                    break;
+                }
+                crashes++;
+                Check($"receipt clean restore cut at step {at}: never a mix that is neither patch A nor the original", Game(Snapshot(game)) == withA || Game(Snapshot(game)) == Game(original)
+                    || Snapshot(game).Split('\n').All(line => line.StartsWith(".vntext") || original.Contains(line) || withA.Contains(line)), Snapshot(game));
+                var again = !Throws(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), "", out var mr);
+                Check($"receipt clean restore cut at step {at}: running it again ends byte-identical to the original game", Snapshot(game) == original || (!again && mr.Contains("không còn gì để gỡ") && Game(Snapshot(game)) == Game(original)), mr + "\n" + Snapshot(game));
+            }
+            Check("every receipt clean-restore step was exercised", crashes >= 3, crashes.ToString());
+        }
+
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");
         try { Directory.Delete(work, true); } catch { }
         return allPass ? 0 : 1;

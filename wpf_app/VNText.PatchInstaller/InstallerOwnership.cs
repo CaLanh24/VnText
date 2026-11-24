@@ -270,4 +270,76 @@ public sealed partial class InstallerService
         notes.Add("Đã về đúng bản gốc đầu tiên ghi trong biên nhận (hash đã khớp).");
         return new UninstallResult(notes);
     }
+
+    /// <summary>True when the game's receipt holds VNText layers that a receipt-only clean restore could undo (no install state of this patch needed).</summary>
+    public bool HasReceiptLayers(string gameRoot)
+    {
+        var root = NormalizeGameRoot(gameRoot);
+        return Directory.Exists(root) && LoadReceipt(root).Paths.Values.Any(entry => entry.Layers.Count > 0);
+    }
+
+    /// <summary>
+    /// Clean original from the game's receipt alone: used when the patch at hand is not the one installed (e.g. after uninstalling an upgrade the game holds the
+    /// previous VNText patch, whose package was replaced).  Every VNText file must still be exactly the bytes of its newest layer (or already at its first original,
+    /// when a previous run was cut off); otherwise nothing is written.  First-original copies are deleted only after the receipt is saved.
+    /// </summary>
+    private UninstallResult RestoreCleanOriginalFromReceipt(string gameRoot, Action<string>? progress)
+    {
+        var root = ValidateGameIdentity(gameRoot);
+        var receipt = LoadReceipt(root);
+        var paths = receipt.Paths.Where(pair => pair.Value.Layers.Count > 0).Select(pair => pair.Key).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();
+        if (paths.Count == 0)
+            throw new InvalidOperationException("Game không có lớp patch VNText nào trong biên nhận; không còn gì để gỡ.");
+        foreach (var path in paths)
+        {
+            var entry = receipt.Paths[path];
+            var target = ResolveSafe(root, path);
+            if (entry.Provenance == "legacy_vntext_unreceipted")
+                throw new InvalidOperationException($"{path}: bản gốc đầu tiên là bản Việt hóa VNText cũ không có biên nhận, không phải game gốc sạch; game chưa bị thay đổi.");
+            var atFirstOriginal = entry.FirstOriginalExists
+                ? File.Exists(target) && string.Equals(HashFile(target), entry.FirstOriginalSha256, StringComparison.OrdinalIgnoreCase)
+                : !File.Exists(target);
+            // Compiled caches carry no installed hash (the engine may rebuild them); every other file must be exactly what the newest VNText layer wrote.
+            var untouched = entry.Kind == "cache" || File.Exists(target)
+                && string.Equals(HashFile(target), entry.Layers[^1].InstalledSha256, StringComparison.OrdinalIgnoreCase);
+            if (!atFirstOriginal && !untouched)
+                throw new InvalidOperationException($"{path}: tệp do patch VNText {entry.Layers[^1].Version} quản lý đã bị sửa ngoài VNText; không tự về bản gốc. Game chưa bị thay đổi.");
+            if (entry.FirstOriginalExists)
+            {
+                var keep = ResolveSafe(OriginalsRoot(root), path);
+                if (!File.Exists(keep) || !string.Equals(HashFile(keep), entry.FirstOriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Bản gốc đầu tiên của {path} thiếu hoặc đã bị thay đổi; không ghi vào game.");
+            }
+        }
+        var notes = new List<string>();
+        var layers = paths.Max(path => receipt.Paths[path].Layers.Count);
+        foreach (var path in paths)
+        {
+            progress?.Invoke(path);
+            var entry = receipt.Paths[path];
+            var target = ResolveSafe(root, path);
+            if (entry.FirstOriginalExists)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(ResolveSafe(OriginalsRoot(root), path), target, true);
+                if (!string.Equals(HashFile(target), entry.FirstOriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Khôi phục bản gốc thất bại: {path}");
+            }
+            else if (File.Exists(target)) File.Delete(target);
+            receipt.Paths.Remove(path);
+            Fault("receipt-clean-restored:" + path);
+        }
+        SaveReceipt(root, receipt);
+        Fault("receipt-clean-saved");
+        foreach (var path in paths)
+        {
+            var originalKeep = ResolveSafe(OriginalsRoot(root), path);
+            if (File.Exists(originalKeep)) File.Delete(originalKeep);
+        }
+        TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
+        notes.Add($"Đã về đúng bản gốc đầu tiên ghi trong biên nhận cho {paths.Count} tệp (hash đã khớp), gỡ {layers} lớp patch VNText; tệp trạng thái của các patch cũ sẽ báo đã bị thay thế.");
+        var leftovers = FindUnverifiedLeftovers(root, paths);
+        if (leftovers.Count > 0) notes.Add(LeftoverNote(leftovers));
+        return new UninstallResult(notes);
+    }
 }

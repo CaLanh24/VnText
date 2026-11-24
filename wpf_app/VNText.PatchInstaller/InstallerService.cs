@@ -377,6 +377,8 @@ public sealed partial class InstallerService
         var recovered = RecoverInterruptedInstall();
         if (recovered is not null && !File.Exists(StatePath)) return new UninstallResult(new List<string> { recovered });
         if (FinishCutUninstall() is { } finished) return new UninstallResult(new List<string> { finished });
+        // This patch is not the installed one (for example the game was stepped back to the previous VNText patch): the receipt alone proves the clean original.
+        if (mode == UninstallMode.CleanOriginal && !File.Exists(StatePath)) return RestoreCleanOriginalFromReceipt(gameRoot, progress);
         var state = ValidateInstalledState(gameRoot);
         var root = NormalizeGameRoot(state.GameRoot);
         var notes = new List<string>();
@@ -436,7 +438,7 @@ public sealed partial class InstallerService
         var stillOwned = state.Files.Count(f => after.Paths.TryGetValue(f.Path, out var left) && left.Layers.Count > 0);
         var legacyRestored = notes.Any(n => n.Contains("không có biên nhận"));
         notes.Add(stillOwned > 0
-            ? $"Đã khôi phục bản VNText TRƯỚC ĐÓ cho {stillOwned} tệp (hash đã khớp); game vẫn là bản Việt hóa của patch trước, không phải game gốc sạch. Chọn «Khôi phục bản gốc» để về game gốc nếu có biên nhận."
+            ? $"Đã khôi phục bản VNText TRƯỚC ĐÓ cho {stillOwned} tệp (hash đã khớp); game vẫn là bản Việt hóa của patch trước, không phải game gốc sạch. Bấm «Về bản gốc sạch» để về game gốc (chứng minh bằng biên nhận)."
             : legacyRestored
                 ? "Đã khôi phục tệp về bản Việt hóa VNText cũ không có biên nhận (hash đã khớp); đây KHÔNG phải game gốc sạch."
                 : state.Files.Any(f => f.OriginalExists)

@@ -71,7 +71,9 @@ internal sealed class PatchInstallDialog
             if (File.Exists(_service.StatePath)) { _service.ValidateInstalledState(_target.Text); _install.IsEnabled = false; _restore.IsEnabled = _clean.IsEnabled = true; _status.Text = UiText.Translate("Patch đã cài. Có thể gỡ (về trạng thái trước lần cài này) hoặc về bản gốc sạch."); }
             else
             {
-                _service.ValidateGame(_target.Text); _install.IsEnabled = _revisionValid(); _restore.IsEnabled = _clean.IsEnabled = false;
+                _service.ValidateGame(_target.Text); _install.IsEnabled = _revisionValid(); _restore.IsEnabled = false;
+                // Another VNText patch (e.g. the previous one after stepping back from an upgrade) is still on the game: the receipt alone can bring back the clean original.
+                _clean.IsEnabled = _revisionValid() && _service.HasReceiptLayers(_target.Text);
                 var owned = _service.DescribeOwnership(_target.Text);
                 _status.Text = UiText.Translate("Game hợp lệ. Chỉ ghi sau khi bạn xác nhận.") + (owned.Count == 0 ? "" : "\n" + string.Join("\n", owned));
             }

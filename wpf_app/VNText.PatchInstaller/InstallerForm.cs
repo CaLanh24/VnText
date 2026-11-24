@@ -341,6 +341,7 @@ internal sealed class InstallerForm : Form
             {
                 _service.ValidateGame(_gamePath.Text);
                 _install.Enabled = true; AcceptButton = _install;
+                _restoreClean.Enabled = _service.HasReceiptLayers(_gamePath.Text);
                 var owned = _service.DescribeOwnership(_gamePath.Text);
                 SetStatus(Warn, "Game hợp lệ. Chưa chứng minh mapping font trong game; kiểm font và xác nhận trước khi cài." + (owned.Count == 0 ? "" : Environment.NewLine + string.Join(Environment.NewLine, owned)));
             }
