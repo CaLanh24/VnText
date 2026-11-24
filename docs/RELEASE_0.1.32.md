@@ -17,3 +17,6 @@ Owner (DEV session 2026-11-24, relayed design by Brain) asked for a safe one-ste
 
 ## Evidence
 Receipts in `TEST_RUN/agent-evidence/release-0.1.32/`: installer harness 103 checks with a simulated crash at every step of install, upgrade A→B, uninstall and clean restore; E2E Ren'Py (real SDK) A → B built from the installed game → one-step upgrade → uninstall = A → clean original = original hashes; patches made and installed by the real 0.1.26 and 0.1.29 releases upgraded in one step, uninstalled back to the old patch, and restored byte-identical (`old-release-upgrade.json`).
+
+## Published
+Tag `v0.1.32` = `fe9222ab075719a2781d6672b0b383123d097411`. Setup sha256 `433503f3b295cfccbdf8402f8fcefd05a0fdeebfaae8da90f56dc2d50655e3c5` (GitHub = local, 5/5 assets). Update 0.1.31→0.1.32: 7345 files verified. Smoke through the UI on the updated app (agent-desktop, real Ren'Py SDK): extract → translate → patch → install A → edit CSV → patch built while A is installed → one-step upgrade → uninstall back to A → clean original equal to the original hashes → patch rebuilt from the clean game → install → uninstall equal to the original. NOT_PROVEN: system/DEV_PROBES pickers, Dịch ảnh through the UI, the one-step upgrade on a large real game.
