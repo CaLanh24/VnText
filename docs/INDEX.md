@@ -150,3 +150,4 @@ Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con
 | Release 0.1.30 hoàn thiện khóa/report/preview (đã phát hành) | docs/RELEASE_0.1.30.md | TEST_RUN/agent-evidence/release-0.1.30/ |
 | Release 0.1.31 nút báo lỗi khi bận + thông báo patch + giải phóng handle (đã phát hành) | docs/RELEASE_0.1.31.md | TEST_RUN/agent-evidence/release-0.1.31/ |
 | Release 0.1.32 nâng cấp patch một bước + nhật ký cài + phục hồi khi bị ngắt (đã phát hành) | docs/RELEASE_0.1.32.md | TEST_RUN/agent-evidence/release-0.1.32/ |
+| Release 0.1.33 an toàn nhật ký cài + khóa HĐH theo game + thông báo patch nâng cấp | docs/RELEASE_0.1.33.md | TEST_RUN/agent-evidence/release-0.1.33/ |
