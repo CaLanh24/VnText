@@ -81,8 +81,17 @@ internal static class Harness
         return string.Join("\n", lines);
     }
 
-    public static int Main()
+    /// <summary>Child-process mode for the two-process lock test: installs and freezes right after the first game file is replaced (the parent kills it).</summary>
+    private static int HoldInstall(string patchDir, string game, string marker)
     {
+        InstallerService.FaultPoint = point => { if (point.StartsWith("replaced:", StringComparison.Ordinal)) { File.WriteAllText(marker, point); Thread.Sleep(Timeout.Infinite); } };
+        new InstallerService(patchDir).Install(game);
+        return 3;   // never reached while the parent kills us
+    }
+
+    public static int Main(string[] args)
+    {
+        if (args.Length == 4 && args[0] == "--hold-install") return HoldInstall(args[1], args[2], args[3]);
         var work = Path.Combine(Path.GetTempPath(), "vntext-ownership-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
         const string v24 = "# VNText language-scoped text font support v1\ntranslate vietnamese style default:\n    font \"old.ttf\"\n";
@@ -578,6 +587,56 @@ internal static class Harness
                 File.Delete(unrelated);
                 Check($"once {edited} is back to a known state recovery completes, never touching a file outside the journal", ok && outsideKept && Snapshot(game) == original, mo + "\n" + Snapshot(game));
             }
+        }
+
+        // 17. two REAL processes: process A installs and is frozen half way (a game file already replaced); process B is refused by the OS lock and writes
+        //     nothing; A is killed; B then takes the lock (abandoned by the dead holder) and recovers A's journal to the exact original game.
+        {
+            const string Extra = "game/tl/vietnamese/extra.rpy";
+            const string extraOld = "# translator's own file\n";
+            var game = NewGame(work, "g17");
+            Directory.CreateDirectory(Path.Combine(game, "game/tl/vietnamese"));
+            File.WriteAllBytes(Path.Combine(game, Extra.Replace('/', '\\')), Bytes(extraOld));
+            var original = Snapshot(game);
+            var a = MakePatch(work, "p17a", "0.1.33", game, new Spec(Extra, "# patched\n", true, extraOld), new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            var other = MakePatch(work, "p17b", "0.1.33", game, new Spec(Overlay, v25, false, null));
+            var marker = Path.Combine(work, "g17.marker");
+            var start = new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+            foreach (var arg in new[] { "--hold-install", Path.GetDirectoryName(a.JournalPath)!, game, marker }) start.ArgumentList.Add(arg);
+            using var holder = System.Diagnostics.Process.Start(start)!;
+            var frozen = false;
+            for (var i = 0; i < 600 && !(frozen = File.Exists(marker)) && !holder.HasExited; i++) Thread.Sleep(100);
+            var during = Snapshot(game);
+            var halfWritten = frozen && during != original && File.Exists(a.JournalPath);
+            var refusedOther = Throws(() => other.Install(game), "đang ghi vào game này", out var t1);
+            var refusedRecover = Throws(() => a.RecoverInterruptedInstall(), "đang ghi vào game này", out var t2);
+            var refusedUninstall = Throws(() => a.Uninstall(game), "đang ghi vào game này", out var t3);
+            var untouched = Snapshot(game) == during && !File.Exists(other.JournalPath) && !File.Exists(other.StatePath);
+            Check("two processes: process A is frozen half way through its install (a game file already replaced, journal present)", halfWritten, $"frozen={frozen} exited={holder.HasExited}");
+            Check("two processes: process B is refused by the OS lock (other patch install, recovery, uninstall) while A holds it", refusedOther && refusedRecover && refusedUninstall, t1 + " | " + t2 + " | " + t3);
+            Check("two processes: the refused process B wrote nothing", untouched);
+            holder.Kill(true); holder.WaitForExit();
+            var recovered = !Throws(() => a.RecoverInterruptedInstall(), "", out var t4);
+            Check("two processes: after A is killed, B takes the abandoned lock and recovers A's journal to the exact original game", recovered && Snapshot(game) == original && !File.Exists(a.JournalPath) && !Directory.Exists(a.BackupDirectory), t4 + "\n" + Snapshot(game));
+            a.Install(game); a.Uninstall(game);
+            Check("two processes: the same patch then installs and uninstalls cleanly", Snapshot(game) == original, Snapshot(game));
+        }
+
+        // 18. a patch built while another VNText patch was installed, offered to the game after it went back to the original: refused, saying to build the patch again
+        {
+            var game = NewGame(work, "g18");
+            var original = Snapshot(game);
+            var a = MakePatch(work, "p18a", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+            a.Install(game);
+            var b = MakePatch(work, "p18b", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+            var manifestPath = Path.Combine(Path.GetDirectoryName(b.JournalPath)!, "patch_manifest.json");
+            var manifest = JsonSerializer.Deserialize<PatchManifest>(File.ReadAllText(manifestPath))!;
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest with { GameChecks = manifest.GameChecks.Append(new GameCheck(Activation, Sha(Bytes(act)))).ToList() }));
+            b = new InstallerService(Path.GetDirectoryName(b.JournalPath)!);
+            a.Uninstall(game);
+            var refused = Throws(() => b.Install(game), "Tạo patch' lại", out var m18);
+            Check("a patch built over another installed VNText patch, offered to the clean game, says to build the patch again", refused && m18.Contains(Activation), m18);
+            Check("that refusal wrote nothing", Snapshot(game) == original);
         }
 
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");

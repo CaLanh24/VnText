@@ -72,8 +72,17 @@ internal static partial class Program
                         PumpFixture(250);
                         // The REAL Preview command: it awaits a background task, so it must start inside a running dispatcher frame; the fixture then waits for its result.
                         var previewMode = "REAL command";
-                        window.Dispatcher.BeginInvoke(new Action(() => vm.BulkReplaceCsvCommand.Execute(null)));
-                        for (var wait = 0; wait < 60 && !vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal); wait++) PumpFixture(100);
+                        // The view model is shared between cases: clear the previous case's preview so a stale "Trước:" cannot pass for this case's result, and let the
+                        // open/validation and the new window's selection settle first (a change during Preview is correctly reported as "đã đổi trong lúc xem trước").
+                        for (var wait = 0; wait < 100 && vm.CsvEditorBusy; wait++) PumpFixture(100);
+                        PumpFixture(300);
+                        for (var attempt = 0; attempt < 2 && !vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal); attempt++)
+                        {
+                            vm.TestSetCsvBulkPreview("");
+                            window.Dispatcher.BeginInvoke(new Action(() => vm.BulkReplaceCsvCommand.Execute(null)));
+                            for (var wait = 0; wait < 60 && !vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal) && !vm.CsvBulkPreview.Contains("xem trước lại", StringComparison.Ordinal); wait++) PumpFixture(100);
+                            if (attempt == 1 && vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal)) previewMode = "REAL command (second Preview, as a user would after 'xem trước lại')";
+                        }
                         if (!vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal))
                         {
                             // honest fallback label: the text below is SEEDED, not produced by the command
@@ -116,7 +125,7 @@ if (Environment.GetEnvironmentVariable("VNTEXT_WPF_FIXTURE_TRACE") == "1") { Con
                                 var e = Named(n); var y = e.TranslatePoint(new Point(0, 0), window).Y;
                                 Console.WriteLine($"   {n}: y={Math.Round(y, 1)} h={Math.Round(e.ActualHeight, 1)} bottom={Math.Round(y + e.ActualHeight, 1)}");
                             }
-                        Require(vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal), "the real Preview produced examples");
+                        Require(vm.CsvBulkPreview.Contains("Trước:", StringComparison.Ordinal), "the real Preview produced examples (mode " + previewMode + "; now: " + vm.CsvBulkPreview + "; status: " + vm.CsvEditorStatus + ")");
                         // acceptance: at least three ordinary one-line rows are fully visible INSIDE the client area after Preview, with the tools open
                         report += $" cardBottom={Math.Round(cardBottom)} footer={Math.Round(footerTop)}-{Math.Round(footerBottom)} selectionH={Named("CsvSelectionBar").ActualHeight:0.0} bulkH={Named("CsvBulkReplacePanel").ActualHeight:0.0} previewH={Named("CsvBulkPreviewScroll").ActualHeight:0.0} selectionW={Named("CsvSelectionBar").ActualWidth:0.0}";
                         Require(full >= 3, "native repro " + report);

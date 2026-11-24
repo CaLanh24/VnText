@@ -98,7 +98,7 @@ public sealed partial class InstallerService
                 throw new InvalidOperationException("Thiếu bằng chứng nhận dạng game Ren'Py.");
             foreach (var check in manifest.GameChecks)
                 if (!File.Exists(ResolveSafe(root, check.Path)) || !string.Equals(HashFile(ResolveSafe(root, check.Path)), check.Sha256, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Sai bản game hoặc file nguồn đã thay đổi: {check.Path}");
+                    throw new InvalidOperationException(GameCheckMismatch(check.Path));
             foreach (var file in manifest.Files)
                 if (!File.Exists(ResolveSafe(PayloadDirectory, file.Path)) || !string.Equals(HashFile(ResolveSafe(PayloadDirectory, file.Path)), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Payload bị thay đổi hoặc hỏng: {file.Path}");
@@ -118,7 +118,7 @@ public sealed partial class InstallerService
         // Unity patches that depend on exact player assemblies (TMP runtime adapter) bind them here, as Ren'Py binds its source files.
         foreach (var check in manifest.GameChecks ?? new List<GameCheck>())
             if (!File.Exists(ResolveSafe(root, check.Path)) || !string.Equals(HashFile(ResolveSafe(root, check.Path)), check.Sha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"Sai bản game hoặc file nguồn đã thay đổi: {check.Path}");
+                throw new InvalidOperationException(GameCheckMismatch(check.Path));
         foreach (var file in manifest.Files)
         {
             var payload = ResolveSafe(PayloadDirectory, file.Path);
@@ -128,6 +128,21 @@ public sealed partial class InstallerService
         }
         return root;
     }
+
+    /// <summary>A VNText-written path by name: the generated activation/font files, or anything under the Vietnamese translation folder named vntext*.</summary>
+    private static bool LooksLikeVnTextPath(string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        var name = Path.GetFileName(normalized);
+        return LegacyNamePrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            || (normalized.StartsWith("game/tl/", StringComparison.OrdinalIgnoreCase) && name.StartsWith("vntext", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Why this patch does not fit the game now.  A patch built while another VNText patch was installed fits only that state: say so and how to continue.</summary>
+    private static string GameCheckMismatch(string path) => LooksLikeVnTextPath(path)
+        ? $"Sai bản game hoặc file nguồn đã thay đổi: {path}. Patch này được tạo khi game đang cài một patch VNText khác, nhưng game hiện không còn ở trạng thái đó "
+          + "(đã gỡ, đã về bản gốc sạch hoặc đã cài patch khác). Hãy bấm 'Tạo patch' lại từ game hiện tại rồi cài. Game chưa bị thay đổi."
+        : $"Sai bản game hoặc file nguồn đã thay đổi: {path}";
 
     public InstallState Install(string gameRoot, Action<string>? progress = null)
     {
@@ -196,9 +211,9 @@ public sealed partial class InstallerService
                 var target = ResolveSafe(root, file.Path);
                 var exists = File.Exists(target);
                 if (exists != file.OriginalExists)
-                    throw new InvalidOperationException($"Trạng thái file gốc không khớp manifest: {file.Path}");
+                    throw new InvalidOperationException(LooksLikeVnTextPath(file.Path) ? GameCheckMismatch(file.Path) : $"Trạng thái file gốc không khớp manifest: {file.Path}");
                 if (exists && !string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"File game đã bị thay đổi, không ghi đè: {file.Path}");
+                    throw new InvalidOperationException(LooksLikeVnTextPath(file.Path) ? GameCheckMismatch(file.Path) : $"File game đã bị thay đổi, không ghi đè: {file.Path}");
 
                 Claim(root, receipt, file.Path, "file", patchId, manifest.Version, file.SourceSha256, createdOriginals, notes);
                 var backupRel = file.Path.Replace('/', Path.DirectorySeparatorChar);
