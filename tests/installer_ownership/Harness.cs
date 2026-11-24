@@ -125,7 +125,10 @@ internal static class Harness
             var result = next.Uninstall(game, null, UninstallMode.CleanOriginal);
             Check("clean-original restore returns the game byte-identical to before any VNText patch", Snapshot(game) == original, Snapshot(game));
             Check("clean-original restore reports the removed older layer", string.Join("|", result.Notes).Contains("lớp patch cũ hơn"));
-            Check("the superseded older patch says nothing is left to uninstall", Throws(() => old.Uninstall(game), "đã bị thay thế", out var m2), "");
+            var cleaned = Snapshot(game);
+            var leftover = Throws(() => old.Uninstall(game), "đã bị thay thế", out var m2)
+                || (m2 == "no exception" && !File.Exists(old.StatePath));
+            Check("the superseded older patch has nothing left to undo: it says so, or tidies its own stale record without touching the game", leftover && Snapshot(game) == cleaned, m2);
         }
 
         // 3. refuse layering when the new patch was not built from the active install; tamper of an owned file; both leave the game untouched.
@@ -302,6 +305,96 @@ internal static class Harness
             try { Directory.Delete(patch.BackupDirectory, true); } catch { }
             var finished = !Throws(() => patch.Uninstall(game), "", out var m13);
             Check("uninstall of patch-only files succeeds even when the backup folder is already gone", finished && Snapshot(game) == before, m13);
+        }
+
+
+        // 14. power loss / kill at EVERY step of an install, an upgrade (A -> B in one step), an uninstall and a clean-original restore: the next run must
+        //     find the game in a valid state (before or after the step, never half), and the full chain must still end byte-identical to the original game.
+        {
+            static string Game(string snapshot) => string.Join("\n", snapshot.Split('\n').Where(line => !line.StartsWith(".vntext", StringComparison.Ordinal)));
+            int Crash(Action action, int at)
+            {
+                var count = 0;
+                InstallerService.FaultPoint = point => { if (++count == at) throw new SimulatedCrashException(point); };
+                try { action(); return 0; }
+                catch (SimulatedCrashException) { return 1; }
+                finally { InstallerService.FaultPoint = null; }
+            }
+            var crashes = 0;
+            for (var at = 1; at < 40; at++)
+            {
+                var game = NewGame(work, $"g14i{at}");
+                var original = Snapshot(game);
+                var a = MakePatch(work, $"x24_{at}", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+                if (Crash(() => a.Install(game), at) == 0) break;
+                crashes++;
+                var recovered = a.RecoverInterruptedInstall();
+                var installed = File.Exists(a.StatePath);
+                Check($"install cut at step {at}: the next run finds the game either untouched or fully installed", installed ? Read(game, Overlay) == v24 && Read(game, Activation) == act : Snapshot(game) == original,
+                    $"recovered={recovered} installed={installed}");
+                if (!installed) a.Install(game);
+                a.Uninstall(game);
+                Check($"install cut at step {at}: install + uninstall still end byte-identical to the original", Snapshot(game) == original, Snapshot(game));
+            }
+            Check("every install step was exercised", crashes >= 7, crashes.ToString());
+
+            crashes = 0;
+            for (var at = 1; at < 40; at++)
+            {
+                var game = NewGame(work, $"g14u{at}");
+                var original = Snapshot(game);
+                var a = MakePatch(work, $"y24_{at}", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+                a.Install(game);
+                var withA = Game(Snapshot(game));
+                var b = MakePatch(work, $"y25_{at}", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+                if (Crash(() => b.Install(game), at) == 0) break;
+                crashes++;
+                b.RecoverInterruptedInstall();
+                var upgraded = File.Exists(b.StatePath);
+                Check($"upgrade cut at step {at}: the game is still exactly patch A, or exactly patch B", upgraded ? Read(game, Overlay) == v25 : Game(Snapshot(game)) == withA, Snapshot(game));
+                if (!upgraded) b.Install(game);
+                b.Uninstall(game);
+                Check($"upgrade cut at step {at}: uninstalling B after recovery gives back patch A byte for byte", Game(Snapshot(game)) == withA, Snapshot(game));
+                a.Uninstall(game);
+                Check($"upgrade cut at step {at}: the chain ends byte-identical to the original game", Snapshot(game) == original, Snapshot(game));
+            }
+            Check("every upgrade step was exercised", crashes >= 7, crashes.ToString());
+
+            crashes = 0;
+            for (var at = 1; at < 40; at++)
+            {
+                var game = NewGame(work, $"g14r{at}");
+                var original = Snapshot(game);
+                var a = MakePatch(work, $"z24_{at}", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+                a.Install(game);
+                var b = MakePatch(work, $"z25_{at}", "0.1.25", game, new Spec(Overlay, v25, true, v24), new Spec(Activation, act, true, act));
+                b.Install(game);
+                var withB = Game(Snapshot(game));
+                if (Crash(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), at) == 0) break;
+                crashes++;
+                var again = !Throws(() => b.Uninstall(game, null, UninstallMode.CleanOriginal), "", out var mr);
+                Check($"clean restore cut at step {at}: running it again reaches the original game, or says plainly the patch is already gone",
+                    Snapshot(game) == original || (!again && mr.Contains("không còn gì để gỡ") && Game(Snapshot(game)) == Game(original)), mr + "\n" + Snapshot(game));
+                Check($"clean restore cut at step {at}: never a mix of patch and original files", Game(Snapshot(game)) == Game(original) || Game(Snapshot(game)) == withB, Snapshot(game));
+            }
+            Check("every clean-restore step was exercised", crashes >= 3, crashes.ToString());
+
+            crashes = 0;
+            for (var at = 1; at < 40; at++)
+            {
+                var game = NewGame(work, $"g14p{at}");
+                var original = Snapshot(game);
+                var a = MakePatch(work, $"v24_{at}", "0.1.24", game, new Spec(Overlay, v24, false, null), new Spec(Activation, act, false, null));
+                a.Install(game);
+                if (Crash(() => a.Uninstall(game), at) == 0) break;
+                crashes++;
+                var again = !Throws(() => a.Uninstall(game), "", out var mu);
+                Check($"uninstall cut at step {at}: running it again ends byte-identical to the original game", Snapshot(game) == original || (!again && Game(Snapshot(game)) == Game(original)), mu + "\n" + Snapshot(game));
+                var reinstall = !Throws(() => a.Install(game), "", out var mi);
+                Check($"uninstall cut at step {at}: the same patch can be installed again afterwards", reinstall && Read(game, Overlay) == v24, mi);
+                a.Uninstall(game);
+            }
+            Check("every uninstall step was exercised", crashes >= 3, crashes.ToString());
         }
 
         Console.WriteLine("{\"pass\":" + (allPass ? "true" : "false") + ",\"checks\":[" + string.Join(",", Results) + "]}");

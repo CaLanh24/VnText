@@ -61,8 +61,11 @@ def _inventory_target_language_mappings(
 
     compiled_only: list[tuple[Path, Path]] = []
     source_paths: list[Path] = []
+    # An installed, untouched VNText patch is the slot the new patch replaces (installer upgrade), not an existing translation to respect.
+    from vntext.vntext_ownership import owned_installed_files
+    owned = owned_installed_files(root)
     for path in sorted(
-        (candidate for candidate in target_root.rglob("*") if candidate.is_file()),
+        (candidate for candidate in target_root.rglob("*") if candidate.is_file() and candidate.resolve() not in owned),
         key=lambda candidate: candidate.relative_to(root).as_posix(),
     ):
         suffix = path.suffix.casefold()

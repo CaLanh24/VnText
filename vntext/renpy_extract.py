@@ -555,9 +555,14 @@ def existing_translation_inventory(root: str | Path, language: str = "vietnamese
     if not folder.exists():
         return result
     total = 0
+    # The game's own untouched VNText patch (proved by its ownership receipt) is replaced by the next patch, so it is not existing target state.
+    from vntext.vntext_ownership import owned_installed_files
+    owned = owned_installed_files(root)
     for path in sorted(folder.rglob("*")):
         if path.is_symlink() or getattr(path.lstat(), "st_file_attributes", 0) & 0x400:
             raise RenPyTemplateParseError("linked existing translation state")
+        if path.resolve() in owned:
+            continue
         if path.suffix.lower() in {".rpyc", ".rpymc"} and not path.with_suffix(
                 ".rpy" if path.suffix.lower() == ".rpyc" else ".rpym").is_file():
             raise RenPyTemplateParseError("unverifiable compiled-only existing translation state")

@@ -256,10 +256,17 @@ public sealed partial class InstallerService
             else if (File.Exists(target)) File.Delete(target);
             if (entry.Layers.Count > 1) notes.Add($"{path}: đã gỡ cả {entry.Layers.Count - 1} lớp patch cũ hơn; tệp trạng thái của chúng sẽ báo đã bị thay thế.");
             receipt.Paths.Remove(path);
+            Fault("clean-restored:" + path);
+        }
+        // The first-original copies go only after the receipt no longer needs them: a restore cut off before this point can simply run again.
+        SaveReceipt(root, receipt);
+        Fault("clean-receipt-saved");
+        foreach (var path in paths)
+        {
             var originalKeep = ResolveSafe(OriginalsRoot(root), path);
             if (File.Exists(originalKeep)) File.Delete(originalKeep);
         }
-        SaveReceipt(root, receipt);
+        TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
         notes.Add("Đã về đúng bản gốc đầu tiên ghi trong biên nhận (hash đã khớp).");
         return new UninstallResult(notes);
     }

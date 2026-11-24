@@ -58,6 +58,7 @@ public sealed partial class InstallerService
         PayloadDirectory = Path.Combine(PatchDirectory, "COPY_TO_GAME_ROOT");
         BackupDirectory = Path.Combine(PatchDirectory, "install_backup");
         StatePath = Path.Combine(PatchDirectory, "install_state.json");
+        JournalPath = Path.Combine(PatchDirectory, "install_journal.json");
     }
 
     public string PatchDirectory { get; }
@@ -65,6 +66,13 @@ public sealed partial class InstallerService
     public string PayloadDirectory { get; }
     public string BackupDirectory { get; }
     public string StatePath { get; }
+    /// <summary>Written before the first byte of the game changes and removed only after the install state and the receipt are saved: its presence means
+    /// an install was cut off (crash, power loss, kill) and the game must be brought back to the state before it.</summary>
+    public string JournalPath { get; }
+
+    /// <summary>Test seam only (the test CLI and harness set it; nothing in the product does): called at each step of a transaction so a test can stop there.</summary>
+    internal static Action<string>? FaultPoint;
+    private static void Fault(string point) => FaultPoint?.Invoke(point);
 
     public PatchManifest LoadManifest()
     {
@@ -123,13 +131,17 @@ public sealed partial class InstallerService
 
     public InstallState Install(string gameRoot, Action<string>? progress = null)
     {
+        var recovered = RecoverInterruptedInstall();
         var root = ValidateGame(gameRoot);
+        if (File.Exists(StatePath) && FinishCutUninstall() is { } finished) recovered = recovered is null ? finished : recovered + " " + finished;
         if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
         var manifest = LoadManifest();
-        if (Directory.Exists(BackupDirectory)) throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
+        if (Directory.Exists(BackupDirectory) && !RemoveStaleBackups(root))
+            throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
         var receipt = LoadReceipt(root);
         var patchId = PatchId();
         var notes = new List<string>();
+        if (recovered is not null) notes.Add(recovered);
         var createdOriginals = new List<string>();
         var createdTemps = new List<string>();
         var priorReceipt = File.Exists(ReceiptPath(root)) ? File.ReadAllBytes(ReceiptPath(root)) : null;
@@ -148,6 +160,9 @@ public sealed partial class InstallerService
                 throw new InvalidOperationException($"{file.Path}: đang cài patch VNText {owner.Version} nhưng patch này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ patch hiện tại rồi cài lại, hoặc tạo patch mới từ game đang cài.");
             notes.Add($"{file.Path}: nâng cấp từ patch VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
         }
+        WriteJsonAtomic(JournalPath, new InstallJournal(root, patchId, priorReceipt is null ? null : Convert.ToBase64String(priorReceipt),
+            manifest.Files.Select(f => new JournalFile(f.Path, f.Path.Replace('/', Path.DirectorySeparatorChar), f.OriginalExists, f.OriginalSha256, f.SourceSha256)).ToList()));
+        Fault("journal-written");
         Directory.CreateDirectory(BackupDirectory);
         var prepared = new List<InstalledFile>();
         var caches = new List<CompiledCache>();
@@ -192,6 +207,7 @@ public sealed partial class InstallerService
                     Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
                     File.Copy(target, backup, true);
                 }
+                Fault("backed-up:" + file.Path);
                 var payload = ResolveSafe(PayloadDirectory, file.Path);
                 Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                 var temp = target + $".vntext-install-{Environment.ProcessId}.tmp";
@@ -203,15 +219,19 @@ public sealed partial class InstallerService
                     throw new InvalidOperationException($"Không ghi được {file.Path}: tệp đang chỉ-đọc hoặc bị chương trình khác khóa. Game được giữ nguyên; bỏ chỉ-đọc/đóng game rồi cài lại. ({ex.Message})");
                 }
                 prepared.Add(new InstalledFile(file.Path, backupRel, exists, file.OriginalSha256, file.SourceSha256));
+                Fault("replaced:" + file.Path);
                 if (!string.Equals(HashFile(target), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException($"Kiểm hash sau khi cài thất bại: {file.Path}");
             }
             var state = new InstallState(root, manifest.Version, prepared, caches, patchId, notes);
             WriteJsonAtomic(StatePath, state);
+            Fault("state-written");
             SaveReceipt(root, receipt);
+            Fault("receipt-saved");
+            File.Delete(JournalPath);
             return state;
         }
-        catch
+        catch (Exception ex) when (ex is not SimulatedCrashException)
         {
             // Every cleanup step is independent and tolerant: a read-only backup or a locked temp file must not stop the rest of the rollback.
             Attempt(() => Rollback(root, prepared));
@@ -225,12 +245,138 @@ public sealed partial class InstallerService
                 else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(ReceiptPath(root), priorReceipt); }
             });
             Attempt(() => TryDeleteEmpty(OriginalsRoot(root))); Attempt(() => TryDeleteEmpty(ReceiptDirectory(root)));
+            Attempt(() => ForceDeleteFile(JournalPath));
             throw;
         }
     }
 
+    private sealed record JournalFile(
+        [property: JsonPropertyName("path")] string Path,
+        [property: JsonPropertyName("backup_path")] string BackupPath,
+        [property: JsonPropertyName("original_exists")] bool OriginalExists,
+        [property: JsonPropertyName("original_sha256")] string OriginalSha256,
+        [property: JsonPropertyName("installed_sha256")] string InstalledSha256);
+
+    private sealed record InstallJournal(
+        [property: JsonPropertyName("game_root")] string GameRoot,
+        [property: JsonPropertyName("patch_id")] string PatchId,
+        [property: JsonPropertyName("prior_receipt_base64")] string? PriorReceiptBase64,
+        [property: JsonPropertyName("files")] List<JournalFile> Files);
+
+    /// <summary>
+    /// Brings the game back to exactly the state before an install that was cut off (its journal is still here).  An install whose state and receipt
+    /// were both saved is complete and kept.  Otherwise every file this install may have touched is put back from its backup (or removed when it did
+    /// not exist before and holds this patch's bytes), the receipt is restored byte for byte, first-original copies it created are dropped, and the
+    /// backup, state and journal are removed.  Returns a note for the person, or null when there was nothing to recover.
+    /// </summary>
+    public string? RecoverInterruptedInstall()
+    {
+        if (!File.Exists(JournalPath)) return null;
+        var journal = JsonSerializer.Deserialize<InstallJournal>(File.ReadAllText(JournalPath), JsonOptions)
+            ?? throw new InvalidOperationException("Nhật ký giao dịch cài đặt không đọc được; giữ nguyên game và thư mục patch để kiểm tra.");
+        var root = NormalizeGameRoot(journal.GameRoot);
+        if (File.Exists(StatePath) && File.Exists(ReceiptPath(root)) && CompletedInstall(root, journal))
+        {
+            File.Delete(JournalPath);
+            return "Lần cài trước đã hoàn tất trước khi bị ngắt; giữ nguyên kết quả.";
+        }
+        foreach (var file in journal.Files)
+        {
+            var target = ResolveSafe(root, file.Path);
+            var folder = Path.GetDirectoryName(target)!;
+            if (Directory.Exists(folder))
+                foreach (var temp in Directory.EnumerateFiles(folder, Path.GetFileName(target) + ".vntext-install-*.tmp"))
+                    ForceDeleteFile(temp);
+            var backup = ResolveSafe(BackupDirectory, file.BackupPath);
+            if (file.OriginalExists)
+            {
+                // No backup yet means the install never reached this file: it is still the original.
+                if (!File.Exists(backup)) continue;
+                if (!string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Bản sao lưu của {file.Path} không khớp bản trước khi cài; giữ nguyên game và thư mục patch để kiểm tra.");
+                Directory.CreateDirectory(folder);
+                File.Copy(backup, target, true);
+                if (!string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException($"Không khôi phục được {file.Path} từ bản sao lưu; giữ nguyên để kiểm tra.");
+            }
+            else if (File.Exists(target) && string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
+                File.Delete(target);
+        }
+        var receiptPath = ReceiptPath(root);
+        if (journal.PriorReceiptBase64 is null) ForceDeleteFile(receiptPath);
+        else { Directory.CreateDirectory(ReceiptDirectory(root)); File.WriteAllBytes(receiptPath, Convert.FromBase64String(journal.PriorReceiptBase64)); }
+        // First-original copies are kept only for the paths the restored receipt still records.
+        var kept = LoadReceipt(root);
+        if (Directory.Exists(OriginalsRoot(root)))
+            foreach (var copy in Directory.EnumerateFiles(OriginalsRoot(root), "*", SearchOption.AllDirectories).ToList())
+            {
+                var relative = Path.GetRelativePath(OriginalsRoot(root), copy).Replace(Path.DirectorySeparatorChar, '/');
+                if (!(kept.Paths.TryGetValue(relative, out var entry) && entry.FirstOriginalExists)) ForceDeleteFile(copy);
+            }
+        TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
+        ForceDeleteFile(StatePath);
+        ForceDeleteDirectory(BackupDirectory);
+        File.Delete(JournalPath);
+        return "Lần cài trước bị ngắt giữa chừng (tắt máy/đóng ứng dụng); VNText đã đưa game về đúng trạng thái trước lần cài đó (hash đã kiểm).";
+    }
+
+    /// <summary>
+    /// An uninstall cut off after it had put every file back and dropped this patch's receipt layer leaves only its state and backups behind.  When
+    /// every file is provably back in its pre-install state and no receipt layer of this patch remains, those leftovers are removed (nothing in the game
+    /// changes).  Returns a note, or null when this is not that case.
+    /// </summary>
+    private string? FinishCutUninstall()
+    {
+        if (!File.Exists(StatePath) || File.Exists(JournalPath)) return null;
+        InstallState? state;
+        try { state = JsonSerializer.Deserialize<InstallState>(File.ReadAllText(StatePath), JsonOptions); }
+        catch (JsonException) { return null; }
+        if (state?.Files is not { Count: > 0 } || string.IsNullOrEmpty(state.PatchId)) return null;
+        var root = NormalizeGameRoot(state.GameRoot);
+        if (!Directory.Exists(root)) return null;
+        var receipt = LoadReceipt(root);
+        foreach (var file in state.Files)
+        {
+            var target = ResolveSafe(root, file.Path);
+            var restored = file.OriginalExists
+                ? File.Exists(target) && string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase)
+                : !File.Exists(target);
+            var stillLayered = receipt.Paths.TryGetValue(file.Path, out var entry)
+                && entry.Layers.Any(layer => string.Equals(layer.PatchId, state.PatchId, StringComparison.OrdinalIgnoreCase));
+            if (!restored || stillLayered) return null;
+        }
+        File.Delete(StatePath);
+        DeleteConsumedBackups(state);
+        return "Lần gỡ trước đã đưa game về đúng trạng thái trước khi cài nhưng bị ngắt trước khi dọn tệp ghi nhận; đã dọn xong (game không bị thay đổi).";
+    }
+
+    private bool CompletedInstall(string root, InstallJournal journal)
+    {
+        var receipt = LoadReceipt(root);
+        return journal.Files.All(file => receipt.Paths.TryGetValue(file.Path, out var entry) && entry.Layers.Count > 0
+            && string.Equals(entry.Layers[^1].PatchId, journal.PatchId, StringComparison.OrdinalIgnoreCase)
+            && File.Exists(ResolveSafe(root, file.Path))
+            && string.Equals(HashFile(ResolveSafe(root, file.Path)), file.InstalledSha256, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>A backup folder left by an uninstall that restored everything but was cut off before removing it: every backup equals the game file again.</summary>
+    private bool RemoveStaleBackups(string root)
+    {
+        if (File.Exists(StatePath) || File.Exists(JournalPath)) return false;
+        foreach (var backup in Directory.EnumerateFiles(BackupDirectory, "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(root, Path.GetRelativePath(BackupDirectory, backup));
+            if (!File.Exists(target) || !string.Equals(HashFile(target), HashFile(backup), StringComparison.OrdinalIgnoreCase)) return false;
+        }
+        ForceDeleteDirectory(BackupDirectory);
+        return true;
+    }
+
     public UninstallResult Uninstall(string gameRoot, Action<string>? progress = null, UninstallMode mode = UninstallMode.Previous)
     {
+        var recovered = RecoverInterruptedInstall();
+        if (recovered is not null && !File.Exists(StatePath)) return new UninstallResult(new List<string> { recovered });
+        if (FinishCutUninstall() is { } finished) return new UninstallResult(new List<string> { finished });
         var state = ValidateInstalledState(gameRoot);
         var root = NormalizeGameRoot(state.GameRoot);
         var notes = new List<string>();
@@ -276,11 +422,14 @@ public sealed partial class InstallerService
             {
                 File.Delete(target);
             }
+            Fault("restored:" + file.Path);
         }
         foreach (var path in state.Files.Select(f => f.Path).Concat((state.CompiledCaches ?? new List<CompiledCache>()).Select(c => c.Path)))
             RemoveLayer(receipt, root, path, state.PatchId ?? "");
         SaveReceipt(root, receipt);
+        Fault("uninstall-receipt-saved");
         File.Delete(StatePath);
+        Fault("uninstall-state-deleted");
         DeleteConsumedBackups(state);
         // Say plainly WHAT the game is now: the previous VNText layer (still translated) or no VNText layer at all, verified by hash above.
         var after = LoadReceipt(root);
@@ -339,6 +488,21 @@ public sealed partial class InstallerService
         foreach (var file in state.Files)
         {
             var target = ResolveSafe(root, file.Path);
+            // An uninstall cut off part way has already put some files back: they are in their pre-install state, which the next run simply confirms.
+            var alreadyRestored = file.OriginalExists
+                ? File.Exists(target) && string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase)
+                : !File.Exists(target);
+            // The receipt drops this patch's layer only after every file is back, so a restored file under a receipt that still shows this patch on top
+            // proves an uninstall in progress (and not a file changed by someone else).
+            if (!string.IsNullOrEmpty(state.PatchId) && receipt.Paths.TryGetValue(file.Path, out var pending)
+                && pending.Layers.Count > 0 && string.Equals(pending.Layers[^1].PatchId, state.PatchId, StringComparison.OrdinalIgnoreCase))
+            {
+                // A clean-original restore cut off part way has put some files back to the receipt's first original instead.
+                var atFirstOriginal = pending.FirstOriginalExists
+                    ? File.Exists(target) && string.Equals(HashFile(target), pending.FirstOriginalSha256, StringComparison.OrdinalIgnoreCase)
+                    : !File.Exists(target);
+                if (alreadyRestored || atFirstOriginal) continue;
+            }
             if (!File.Exists(target) || !string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
             {
                 if (!string.IsNullOrEmpty(state.PatchId) && NewerOwner(receipt, file.Path, state.PatchId) is { } newer)
@@ -508,3 +672,6 @@ public sealed partial class InstallerService
         }
     }
 }
+
+/// <summary>Thrown only by a test fault point to stand in for the process dying there: it skips the in-process rollback on purpose.</summary>
+public sealed class SimulatedCrashException(string point) : Exception("simulated crash at " + point);
