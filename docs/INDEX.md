@@ -15,8 +15,6 @@
 | Vì sao từng đổi một hành vi? | Topic router ở bảng dưới | Chọn heading/ID trong archive, không đọc toàn file |
 | Khôi phục sau compact/resume? | AGENTS + AI_STATE | Delta/receipt; lịch sử chỉ cho câu hỏi chưa trả lời |
 
-## Tài liệu theo chủ đề
-
 ## Điểm vào và invariant
 
 | Tài liệu | Vai trò / disposition |

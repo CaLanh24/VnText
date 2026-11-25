@@ -79,7 +79,8 @@ Terminal wrapper runs must leave `TEST_RUN` absent/empty unless
 
 - Full Python regression: `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -v`.
 - Một test/file: `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- .\.dev-env\.venv\Scripts\python.exe -B -m unittest discover -s tests/unit -p "test_freeze_hashes.py" -v`.
-- Artifact cleanup dry-run: `.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run` (read-only; report only in stdout).
+- Public gate (giống CI GitHub, không cần quota/workspace game): `.\.dev-env\.venv\Scripts\python.exe tests/tools/audit_gates.py --group public --report <file ngoài TEST_RUN>.json` (nhóm csv/mt/patch/maintenance). Dùng cho thay đổi code thông thường; full regression bên dưới cần non-exempt ≤ quota.
+- Artifact cleanup dry-run: `.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py --dry-run --inventory-timeout-seconds 3600` (read-only; report only in stdout). Mặc định 30 s không đủ cho registry hiện tại (>35 nghìn bản ghi) và kết thúc `cleanup_timeout`; cùng cờ cho lệnh apply.
 - Artifact cleanup apply: `.\.dev-env\.venv\Scripts\python.exe tests/tools/cleanup_work_artifacts.py` (writes cleanup report/registry reconciliation under `TEST_RUN`).
 - A standalone canonical test command should use `.\.dev-env\.venv\Scripts\python.exe tests/tools/run_with_cleanup.py -- <command> <args...>`; Release isolated regression finalizes registered artifacts in `finally`.
 - WPF build/harness: test `tests/unit/test_wpf_workflow.py`, test này build `wpf_app/VNText.Studio.Workflow.Tests` Release rồi chạy `dotnet exec` harness.
