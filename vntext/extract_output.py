@@ -195,7 +195,10 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
         reserved = ("translation.csv", "manifest.json", "review_only.csv", "raw_candidates.csv", "raw_unpatchable.csv",
                     "raw_candidates_rejected.csv", "technical_skipped.csv", "unity_analysis.json", "extract_report.txt",
                     "renpy_runtime_dynamic.json", "renpy_engine_common_exclusions.json", "images/report.json",
-                    ".mt/traceability.sqlite3", ".mt/translate_status.json", ".mt/diagnostic_summary.json")
+                    ".mt/traceability.sqlite3", ".mt/translate_status.json", ".mt/diagnostic_summary.json",
+                    # Carried into the stage and republished: compared by content (a change DURING the run is still refused), never by a
+                    # modification time that a removal made just before the run can share with its start.
+                    "user_exclusions.json", "native_accounting.json")
         baseline = {Path(name): _digest(root / name) for name in reserved}
         stage = Path(tempfile.mkdtemp(prefix=".vntext-extract-", dir=root))
         status = root / "extract_status.json"

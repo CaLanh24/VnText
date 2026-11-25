@@ -182,7 +182,34 @@ def collect_structure(package_dir: str | Path) -> dict | None:
     counters = {key: stats.get(key) for key in ("native_units", "native_supported_units", "native_unresolved_blocks", "native_technical_blocks_skipped")
                 if isinstance(stats.get(key), int)}
     return {"shape_schema": SHAPE_SCHEMA, "renpy_native_blocks": samples, "unresolved_total": len(unresolved), "counters": counters,
-            "errors": [_mask_message(item) for item in (stats.get("errors") or [])[:30]]}
+            "errors": [_mask_message(item) for item in (stats.get("errors") or [])[:30]],
+            "native_accounting": _native_accounting(Path(package_dir))}
+
+
+def _native_accounting(package_dir: Path) -> dict | None:
+    """Which native units landed in which bucket, and the masked place of any unit counted in none (kind, report-local file label, line)."""
+    path = package_dir / "native_accounting.json"
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"error": "native_accounting unreadable"}
+    labels: dict[str, str] = {}
+
+    def label(value) -> str:
+        value = str(value or "")
+        suffix = value[value.rfind("."):] if "." in value[1:] else ""
+        return labels.setdefault(value, f"u{len(labels) + 1}{suffix if re.fullmatch(r'\.[a-z0-9]{1,6}', suffix) else ''}")
+
+    samples = [{"kind": str(item.get("kind") or "unknown")[:40], "file": label(item.get("file")),
+                "line": item.get("line") if isinstance(item.get("line"), int) else None}
+               for item in (data.get("unaccounted") or [])[:MAX_STRUCTURE_SAMPLES] if isinstance(item, dict)]
+    ints = lambda mapping: {str(k)[:40]: int(v) for k, v in (mapping or {}).items() if isinstance(v, int)}
+    return {"native_units": data.get("native_units"), "indexed_units": data.get("indexed_units"), "duplicate_identities": data.get("duplicate_identities"),
+            "buckets": ints(data.get("buckets")), "package_counts": ints(data.get("package_counts")),
+            "unaccounted_count": data.get("unaccounted_count"), "unaccounted_by_kind": ints(data.get("unaccounted_by_kind")),
+            "unaccounted_files": len(data.get("unaccounted_by_file") or {}), "unaccounted": samples}
 
 
 def _scrub_reason(reason: str) -> str:
@@ -220,6 +247,9 @@ def describe_report(target: str | Path) -> str:
     extra = []
     if blocks:
         extra.append(f"{blocks} khối Ren'Py chưa xử lý được (chỉ hình dạng, không có tên hay chuỗi)")
+    gap = (structure.get("native_accounting") or {}).get("unaccounted_count")
+    if isinstance(gap, int) and gap:
+        extra.append(f"{gap} đơn vị Ren'Py chưa được tính vào nhóm nào (chỉ loại, số dòng và nhãn tệp đánh số)")
     if containers:
         extra.append(f"{containers} tệp gói Unity/ZIP (header, bảng khối, kích thước; không có tên bên trong)")
     if extra:

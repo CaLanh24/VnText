@@ -1446,8 +1446,17 @@ def _run_extract_task_impl(
         # while their source text is unchanged; the decision is recorded in user_exclusions.json.
         from vntext.user_exclusions import filter_excluded_entries
 
+        native_unit_index = stats.pop("_native_unit_index", None)
+        pre_filter = list(main) + list(review)
         main, _dropped_main = filter_excluded_entries(main, out)
         review, _dropped_review = filter_excluded_entries(review, out)
+        dropped_keys = set(_dropped_main) | set(_dropped_review)
+        dropped_contexts = {entry.context for entry in pre_filter if entry.key in dropped_keys}
+        # The user's earlier removals (and the machine-syntax rows removed before translation) are recorded decisions: they are accounted
+        # as their own bucket, never as missing native units.
+        user_excluded = len(_dropped_main) + len(_dropped_review)
+        engine_common_contexts = {str(item.get("context") or "") for item in (stats.get("renpy_engine_common_exclusion_entries") or [])
+                                  if isinstance(item, dict)}
         if _dropped_main or _dropped_review:
             log(f"Giữ {len(_dropped_main) + len(_dropped_review)} dòng bạn đã xóa trước đó (user_exclusions.json) ngoài CSV.")
         with _Working(progress, "Đang ghi gói dịch", 85):
@@ -1466,14 +1475,34 @@ def _run_extract_task_impl(
         technical_skipped = int(package_stats["technical_skipped_entries"] + package_stats["auto_raw_rejected"])
         extract_errors = [str(item) for item in (stats.get("errors") or []) if str(item)]
         native_units = int(stats.get("native_units") or 0)
-        native_accounted = main_count + review_count + technical_skipped + excluded_engine_common
+        native_accounted = main_count + review_count + technical_skipped + excluded_engine_common + user_excluded
         native_accounted -= int(stats.get("renpy_non_native_review_entries")or 0)
         native_accounting_complete = not native_units or native_units == native_accounted
-        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"} and not renpy_sdk_missing and not native_accounting_complete:
-            extract_errors.append(
-                f"Ren'Py native accounting mismatch: native={native_units}, package={native_accounted} "
-                "(main+review+technical-skipped+engine-common-excluded)."
+        accounting = None
+        if native_unit_index is not None:
+            from vntext.native_accounting import reconcile_native_units
+
+            accounting = reconcile_native_units(
+                native_unit_index,
+                package_contexts={entry.context for entry in list(main) + list(review)},
+                engine_common_contexts=engine_common_contexts,
+                user_excluded_contexts=dropped_contexts,
+                counts={"main": main_count, "review": review_count, "technical_skipped": technical_skipped,
+                        "engine_common_excluded": excluded_engine_common, "user_excluded": user_excluded,
+                        "non_native_review": int(stats.get("renpy_non_native_review_entries") or 0)},
+                native_units=native_units,
             )
+            (Path(out) / "native_accounting.json").write_text(json.dumps(accounting, ensure_ascii=False, indent=2), encoding="utf-8")
+            native_accounting_complete = native_accounting_complete and not accounting["unaccounted_count"]
+        if engine.engine in {"RENPY_LOOSE_SOURCE", "RENPY_ARCHIVE_SOURCE"} and not renpy_sdk_missing and not native_accounting_complete:
+            # Never an extraction failure: every row that WAS found is in the package.  The gap is named (masked) and the run stays PARTIAL,
+            # so nothing unproven is presented as complete.
+            gap = int((accounting or {}).get("unaccounted_count") or abs(native_units - native_accounted))
+            stats.setdefault("limitations", []).append({
+                "code": "NATIVE_ACCOUNTING_GAP", "count": int(gap),
+                "message": f"Đếm đơn vị native của Ren'Py lệch {gap} (native={native_units}, đã tính={native_accounted}): một số đơn vị không thuộc nhóm nào "
+                           "(dịch/xem lại/kỹ thuật/engine/đã loại). Mọi dòng đã tìm thấy vẫn có trong CSV; chi tiết đã che tên/nội dung ở native_accounting.json. "
+                           "Bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển."})
         # Expected limits of static extraction (dynamic runtime expressions, archive source with unproven runtime) are review warnings,
         # never discovery errors; only genuine failures stay in extract_errors.
         limitations = [dict(item) for item in (stats.get("limitations") or []) if isinstance(item, dict) and str(item.get("message") or "").strip()]
@@ -1587,6 +1616,7 @@ def _run_extract_task_impl(
             "native_units": native_units,
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
+            "user_excluded": user_excluded,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
             "excluded_technical_ui": len(technical_ui),
             "audit_notes": audit_summary,
@@ -1602,6 +1632,7 @@ def _run_extract_task_impl(
             "native_units": native_units,
             "native_accounted": native_accounted,
             "native_accounting_complete": native_accounting_complete,
+            "user_excluded": user_excluded,
             "runtime_dynamic_unresolved": len(runtime_dynamic),
             "excluded_technical_ui": len(technical_ui),
             "audit_notes": audit_summary,

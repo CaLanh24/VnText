@@ -1133,6 +1133,10 @@ def extract_native_template_entries(
         if candidate.locator['native_global_eligible']and (game_root/candidate.file_path).is_file():
             ui_native.append(native_global_display_entry(candidate,backend='renpy_loose_source'))
         else:ui_review.append(candidate)
+    # Identity of every native unit (one entry each), so the package accounting can name any unit that ends up in no bucket.
+    native_unit_index=[{"context":entry.context,"kind":unit.unit_kind,"file":str(entry.file_path),"line":unit.source_line}
+                       for unit,entry in zip(units,entries[:len(units)])]
+    native_unit_index+=[{"context":entry.context,"kind":"static_display","file":str(entry.file_path),"line":entry.locator.get("line")}for entry in ui_native]
     entries.extend(ui_native+ui_review)
     ui_emitted={entry.context:entry for entry in ui_native+ui_review}
     string_entries=[entry for entry in entries if entry.import_method=='renpy_string']
@@ -1169,6 +1173,7 @@ def extract_native_template_entries(
         "native_template_sha256": template_sha256,
         # Unsupported blocks carry no translatable unit: they are accounted on their own (below), never as package rows that cannot exist.
         "native_units": len(units)+len(ui_native),
+        "_native_unit_index": native_unit_index,          # popped by the extract task before the package is written
         "native_sdk_units":len(units),
         "native_static_display_units":len(ui_native),
         "native_supported_units": len(units)+len(ui_native),
