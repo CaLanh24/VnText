@@ -24,7 +24,7 @@ transactional native overlays, activation and read-back report. Generated payloa
 |---|---|
 | `.rpy` / `.rpym` | SDK-generated dialogue/menu/marked strings; NOT every legal Say or screen statement |
 | No SDK | Regex fallback; dialogue lacks authoritative IDs, review/partial; not a completeness path |
-| `.rpyc` / `.rpymc` | RPC2 slot2, unlocked version5003000, inert opcode traversal; static TranslateSay subset only |
+| `.rpyc` / `.rpymc` | RPC2 slot2, unlocked version 5003000, inert opcode traversal; static TranslateSay subset only |
 | `.rpa` | Bounded RPA2.0/3.0 index/member reader with hash identity; workspace member-root gap below |
 | Existing translations | SDK units are reused; parser assumes tightly generated formatting even for pre-existing overlays |
 | Dynamic text | Literal templates may be recoverable; computed final values are outside static extraction |
@@ -40,7 +40,7 @@ two unmarked static UI literals are absent. This distinction must remain visible
   native dialogue/string lookup and lint. Current web docs are8.5.4; they are conceptual
   references, not substituted for the executed8.5.3 oracle.
 * unrpyc `3ae8334ed71a05535927dcc559663d3aca51215b`: actual CLI recovered the generated
-  compiled basic script, exit0. MIT, bundled codegen BSD; only isolated tool use.
+  compiled basic script, exit 0. MIT, bundled codegen BSD; only isolated tool use.
 * rpatool `74f26d5dfdd645483e02552aa766ca447ad6b191`: independently created RPA2/3;
   VNText recovered exact bytes/nested members. WTFPL. Repository says development migrated
   to Codeberg; this historical GitHub commit is pinned, not described as latest maintained.
@@ -87,7 +87,7 @@ ground truth's generic context labels are not a complete hand-authored branch-co
 **Bounded six-case translation-unit recall: 15/19 = 78.95%.** Dialogue occurrences count
 separately; identical string-translation sources count once, matching Ren’Py's global old/new
 identity. This is not sentence sampling or whole-game recall. By case: basic12/14,
-multiline1/1, single-quote1/1, literal-speaker0/1, Say-suffix0/1, old/new baseline1/1.
+multiline1/1, single-quote1/1, literal-speaker0/1, Say-suffix0/1, old/new baseline 1/1.
 The two existing old/new values and the dynamic fragment are excluded, not relabeled misses.
 
 Basic B inventory and A agree on native units except filtered whitespace; B also does not
@@ -110,9 +110,9 @@ false positive warrants a shared-classifier change from this corpus.
 
 ## 7. PATCHABLE / ROUND-TRIP RESULT
 
-* Basic13 emitted rows: native readback confirms6 distinct dialogue identities and7 global
+* Basic13 emitted rows: native readback confirms6 distinct dialogue identities and 7 global
   string mappings, including preserved placeholders/tags/expression syntax. Original source
-  script hash unchanged; SDK lint exit0. Synthetic target is `VI ` plus exact source, not MT.
+  script hash unchanged; SDK lint exit 0. Synthetic target is `VI ` plus exact source, not MT.
 * Duplicate dialogue native IDs remain distinct (`start_6d82fa01`, suffix`_1`, different-speaker
   `start_f5c93d47`). Repeated UI source intentionally maps once; source line26 retained,
   line27 not separately represented. Global patch affects both; this is not a confirmed
@@ -215,7 +215,7 @@ resumed required stages. This was not mislabeled a product RPA bug.
 
 Raw results/reference inventories/native readback/commands are in the adjacent evaluation
 folder. Canonical wrapper receipts are retained in `DEV_RUN/renpy-audit-*.json`; first child
-exit1 cleanup PASS, continued/reference/archive/native probes child0 cleanup PASS. All runtime
+exit 1 cleanup PASS, continued/reference/archive/native probes child0 cleanup PASS. All runtime
 tools/copies were registered and disposed; terminal inventory is separately recorded.
 
 ## 15. FINAL VERDICT

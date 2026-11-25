@@ -8,17 +8,17 @@ Cho phép **một thử nghiệm overlay font riêng cho tiếng Việt trên b�
 
 - Run4 trên RPA gốc: normal Patch/full reextract/repatch PASS, Start và advance tới hai câu Việt PASS. Capture-only + fresh unique binding + activation phục hồi thành công. Câu dài xuống hai dòng không thấy clipping. Menu Load và cả hai câu có glyph sai; ảnh lỗi gốc được giữ nguyên.
 - `gui.rpy` trong RPA, dòng61/64/67: `gui.text_font`, `gui.name_text_font`, `gui.interface_text_font` đều là `LumiosTypewriter-New_0.ttf`; style button/choice dùng các biến này. Audit source ngoài `tl` không thấy khai báo `config.replace_text`, `say_menu_text_filter`, `dialogue_filter` hay hook text_filter. Đây là static survey, không chứng minh mọi dynamic runtime hook đều vắng mặt.
-- Font trong RPA: `fonts/LumiosTypewriter-New_0.ttf`,98388bytes/SHA256 `968b969e38cf7abcea8ebb723fd7d7d44bf316960be441932fa6ea32ce962269`. Unicode cmap4 trả glyph0 cho14/48codepoint cần trong năm target đã chốt: U+01B0ư,U+1EA3ả,U+1EA5ấ,U+1EA7ầ,U+1EABẫ,U+1EAFắ,U+1EB7ặ,U+1EBFế,U+1EC1ề,U+1EC9ỉ,U+1ED5ổ,U+1ED9ộ,U+1EDBớ,U+1EE9ứ. Đây là thiếu cmap xác định, không chỉ suy từ ảnh. Các font khác trong RPA cũng thiếu ký tự của mẫu.
+- Font trong RPA: `fonts/LumiosTypewriter-New_0.ttf`,98388 bytes/SHA256 `968b969e38cf7abcea8ebb723fd7d7d44bf316960be441932fa6ea32ce962269`. Unicode cmap4 trả glyph0 cho14/48codepoint cần trong năm target đã chốt: U+01B0ư,U+1EA3ả,U+1EA5ấ,U+1EA7ầ,U+1EABẫ,U+1EAFắ,U+1EB7ặ,U+1EBFế,U+1EC1ề,U+1EC9ỉ,U+1ED5ổ,U+1ED9ộ,U+1EDBớ,U+1EE9ứ. Đây là thiếu cmap xác định, không chỉ suy từ ảnh. Các font khác trong RPA cũng thiếu ký tự của mẫu.
 - Five reviewed targets là Unicode UTF8 đúng trong receipt/provenance; normal Patch readback PASS. Actual overlay bytes/hash không được retain riêng trước cleanup run4, nên không gán hash giả cho file đã disposal. Native xuất đúng câu với glyph thay thế, trùng thiếu cmap; vẫn cần thử overlay để xác nhận remediation end-to-end, không mặc định PASS chỉ vì cmap đủ.
-- `renpy-owner-font-audit.json` lưu exact declaration/line, codepoint→glyphID, hashes và required48codepoint. Audit đọc RAR/RPA streaming trong RAM, không extract thêm payload ra đĩa, không unpickle/execute game code. Bốn test focused PASS cho cmap4 delta/range-array,12/13groups, missingVN và bounds refusal; actual audit exit0/sourceRAR unchanged.
+- `renpy-owner-font-audit.json` lưu exact declaration/line, codepoint→glyphID, hashes và required48codepoint. Audit đọc RAR/RPA streaming trong RAM, không extract thêm payload ra đĩa, không unpickle/execute game code. Bốn test focused PASS cho cmap4 delta/range-array,12/13groups, missingVN và bounds refusal; actual audit exit 0/sourceRAR unchanged.
 
 ## Font có sẵn và license
 
-`C:/Users/VNTextDev/source/VnText-v0.1.5/.dev-env/tools/renpy-8.5.3/renpy/common/DejaVuSans.ttf`:756072bytes, SHA256 `3fdf69cabf06049ea70a00b5919340e2ce1e6d02b0cc3c4b44fb6801bd1e0d22`. Unicode cmap12 bao phủ48/48codepoint của mẫu; chưa phải bảo đảm mọi text tương lai/glyph shaping.
+`C:/Users/VNTextDev/source/VnText-v0.1.5/.dev-env/tools/renpy-8.5.3/renpy/common/DejaVuSans.ttf`:756072 bytes, SHA256 `3fdf69cabf06049ea70a00b5919340e2ce1e6d02b0cc3c4b44fb6801bd1e0d22`. Unicode cmap12 bao phủ48/48codepoint của mẫu; chưa phải bảo đảm mọi text tương lai/glyph shaping.
 
-Notice có sẵn `DejaVuSans.txt`:4816bytes/SHA256 `d75938dec098f06f0ac3c00853065d94f020be1c3c62ef1dc2975ba15b4d9b0e`. License BitstreamVera/Arev notices, DejaVu changes public domain; giữ nguyên đầy đủ notice với font không sửa. Không gọi đây là SIL/OFL. Local test không có upload/phát hành; nếu đưa vào product sau này cần cập nhật THIRD_PARTY_NOTICES theo owner đó.
+Notice có sẵn `DejaVuSans.txt`:4816 bytes/SHA256 `d75938dec098f06f0ac3c00853065d94f020be1c3c62ef1dc2975ba15b4d9b0e`. License BitstreamVera/Arev notices, DejaVu changes public domain; giữ nguyên đầy đủ notice với font không sửa. Không gọi đây là SIL/OFL. Local test không có upload/phát hành; nếu đưa vào product sau này cần cập nhật THIRD_PARTY_NOTICES theo owner đó.
 
-Font+notice760888bytes, overlay/metadata dự kiến<16KiB: tổng tăng<1MiB, giữ peak measured run4 khoảng1.06GB dưới1GiB; vẫn đo lại trước mọi payload, không tự nâng cap hoặc xóa lịch sử. Không copy bundledruntime8.3.7; SDK8.5.3 qualification giữ nguyên.
+Font+notice760888 bytes, overlay/metadata dự kiến<16KiB: tổng tăng<1MiB, giữ peak measured run4 khoảng1.06GB dưới1GiB; vẫn đo lại trước mọi payload, không tự nâng cap hoặc xóa lịch sử. Không copy bundledruntime8.3.7; SDK8.5.3 qualification giữ nguyên.
 
 ## Phương án nhỏ nhất — thử VM trước
 

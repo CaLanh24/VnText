@@ -337,13 +337,6 @@ def _get_typetree_value(tree: Any, field_path: str) -> Any:
     return current
 
 
-def _unity_object(env: Any, path_id: str) -> Any:
-    for obj in getattr(env, "objects", []) or []:
-        if str(getattr(obj, "path_id", "")) == str(path_id):
-            return obj
-    return None
-
-
 def _unity_objects_from_map(
     env: Any,
     path_id: str,

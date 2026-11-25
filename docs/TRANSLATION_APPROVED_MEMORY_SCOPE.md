@@ -51,14 +51,14 @@ Rebuild only after actual runtime edits, not for the approval-docs step alone.
 Status: Brain accepted this bounded prerequisite in the current goal, following
 direct review of decision/lookup repro. Schema frozen before runtime edits:
 
-- Existing `.mt/translation_memory.json` keeps version1.0.0; strict stores add
+- Existing `.mt/translation_memory.json` keeps version 1.0.0; strict stores add
   `scope_policy=strict-approval-v1`, `package_binding` (SHA256 of normalized
   resolved package path, no absolute path in tracked decision), `approval_sha256`,
   `review_kind=owner-delegated-agent`, and entries with existing normalized source/
   context_family plus `source_text_exact`, `context_exact`, `file_path_exact`,
   `import_method`, reviewed `translation`, approved=true/human_gold=false/
   training_eligible=false. Strict entries are only from the explicit decision.
-- Sticky `.mt/translation_memory_scope.json` has version1, same policy/binding/
+- Sticky `.mt/translation_memory_scope.json` has version 1, same policy/binding/
   approval hash and `entries_sha256` over canonical entry JSON. Presence of either
   marker or a strict store prevents legacy rebuild. Missing/corrupt counterpart,
   unknown policy/schema, mismatch or duplicates produces no strict reuse and no
@@ -97,12 +97,12 @@ Latest receipt `translation-strict-memory-green-provenance.json`. Strict cache
 hash includes exact file/context/method; legacy fingerprint keys unchanged.
 Runtime rechecks guard/store before lookup and cached writes; stale snapshot
 disables cache reads. Per-entry approvalID/proposal and scope-record checks now
-implemented. Actual17matchingreuse/hostile scope probe, remaining affected worker
+implemented. Actual 17matchingreuse/hostile scope probe, remaining affected worker
 gates and final currentDEVbuild/smoke are pending. No complete/import claim.
 
 Latest delivery: `evaluation/translation_owner_approval_v1/scoped-delivery.json`
 supersedes that pending checkpoint. Actual registered synthetic probe17/17
-reviewed targets reused through product selective route with0modelcalls;5wrong
+reviewed targets reused through product selective route with 0modelcalls;5wrong
 context/file/rawcase/rawspacing/method misses exercise realOPUS; copiedpackage
 binding rejects memory/cache; fullrun rebuild preserves exactpolicy/storebytes.
 One negative unassisted row remains blocked (not a memory success claim).

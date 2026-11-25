@@ -16,7 +16,6 @@ class EntrypointDocsVersionTests(unittest.TestCase):
         self.assertIn(f'VERSION = "{current_version}"', backend)
         self.assertIn(f'__version__ = "{current_version}"', package)
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        readme_vi = (ROOT / "README_VI.txt").read_text(encoding="utf-8")
         development = (ROOT / "docs" / "DEVELOPMENT.md").read_text(encoding="utf-8")
         self.assertIn(current_version, readme)
         self.assertNotIn("1.39-fast-extract", readme)
@@ -27,9 +26,6 @@ class EntrypointDocsVersionTests(unittest.TestCase):
         self.assertIn("**Patch**", readme)
         self.assertLess(readme.index("**Lấy text**"), readme.index("Dịch trong ứng dụng"))
         self.assertLess(readme.index("Dịch trong ứng dụng"), readme.index("**Patch**"))
-        self.assertIn("README.md", readme_vi)
-        self.assertIn("docs/DEVELOPMENT.md", readme_vi)
-        self.assertLess(len(readme_vi), 300)
         self.assertIn("Python 3.11", development)
         self.assertIn("CTranslate2", development)
         self.assertIn("dotnet build", development)
@@ -43,9 +39,9 @@ class EntrypointDocsVersionTests(unittest.TestCase):
         self.assertTrue(requirement_paths)
         for relative in requirement_paths:
             self.assertTrue((ROOT / relative).is_file(), f"Missing documented prerequisite: {relative}")
-        self.assertNotIn("DEV_RUN", readme + readme_vi)
-        self.assertNotIn("-IncludeVinAI", readme + readme_vi + development)
-        self.assertNotIn("-VinaiModelDir", readme + readme_vi + development)
+        self.assertNotIn("DEV_RUN", readme)
+        self.assertNotIn("-IncludeVinAI", readme + development)
+        self.assertNotIn("-VinaiModelDir", readme + development)
         requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8")
         self.assertIn("ctranslate2==4.8.1", requirements)
 
@@ -62,13 +58,15 @@ class EntrypointDocsVersionTests(unittest.TestCase):
         self.assertIn(f"ProductVersion', u'{current_version}'", version_info)
         self.assertIn("LegalCopyright', u'Copyright 2026 Calanh'", version_info)
 
-    def test_default_entrypoints_and_legacy_opt_in_do_not_require_qml(self):
+    def test_python_entry_is_release_cli_only_and_legacy_uis_are_gone(self):
         app = (ROOT / "app.py").read_text(encoding="utf-8")
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        readme_vi = (ROOT / "README_VI.txt").read_text(encoding="utf-8")
         development = (ROOT / "docs" / "DEVELOPMENT.md").read_text(encoding="utf-8")
-        self.assertIn('or "tk"', app)
-        self.assertIn("qml_ui.bridge", app)  # retained only as explicit legacy opt-in
+        self.assertIn("--release-verify", app)
+        for legacy in ("qml_ui", "VNTEXT_UI", "tkinter", "PySide6", "release-verify-qml"):
+            self.assertNotIn(legacy, app)
+        for removed in ("README_VI.txt", "vntext/app_ui.py", "vntext/qt_app.py", "requirements-legacy-qt.txt"):
+            self.assertFalse((ROOT / removed).exists(), removed)
         self.assertIn("release", readme.lower())
         self.assertIn("dotnet build", development)
 

@@ -86,7 +86,6 @@ public static class ReleaseVerifyRunner
         var (import, func) = mode switch
         {
             "--release-verify" => ("vntext.release_verify", "run_release_verify"),
-            "--release-verify-qml" => ("vntext.release_verify", "run_release_verify_qml"),
             "--release-version" => ("vntext.release_verify", "run_release_version"),
             "--release-verify-update" => ("vntext.release_verify", "run_release_verify_update"),
             _ => throw new ArgumentException($"Unknown verify mode: {mode}", nameof(mode)),

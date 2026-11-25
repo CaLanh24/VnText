@@ -36,6 +36,8 @@ from vntext.extract_unity import extract_unity_typetree
 from vntext.package_io import read_csv_rows_file, write_csv_rows_file, write_package
 from vntext.patch import apply_translation_package
 
+if str(Path(__file__).resolve().parent) not in sys.path:  # sibling fixture module, also for -m runs
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_unity_capability_microfixtures import (
     _FakeUnityPy,
     _save_fake_environment,

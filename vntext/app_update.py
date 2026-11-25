@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from vntext.app_config import default_update_manifest_url
-from vntext.runtime_paths import APP_DISPLAY, app_data_root, executable_path, is_frozen, updates_dir
+from vntext.runtime_paths import app_data_root, executable_path, is_frozen, updates_dir
 
 PENDING_EXE = "VNText Studio.new.exe"
 APPLY_SCRIPT = "apply_update.bat"
@@ -88,19 +88,6 @@ def _load_manifest(source: str) -> dict[str, Any]:
     return _read_json_source(source)
 
 
-def fetch_update_manifest() -> dict[str, Any] | None:
-    last_error: Exception | None = None
-    for source in resolve_manifest_sources():
-        try:
-            return _load_manifest(source)
-        except (OSError, urllib.error.URLError, json.JSONDecodeError, ValueError) as exc:
-            last_error = exc
-            continue
-    if last_error is not None:
-        return None
-    return None
-
-
 def _download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     path = Path(url)
@@ -147,32 +134,6 @@ def update_target_exe() -> Path | None:
             return target.resolve()
         return None
     return executable_path()
-
-
-def apply_pending_update_on_startup() -> str:
-    """If a validated pending EXE exists, launch swap script and exit."""
-    if not is_frozen():
-        return "dev-skip"
-    exe = executable_path()
-    pending = pending_update_path()
-    meta_path = pending.with_suffix(".json")
-    if exe is None or not pending.is_file():
-        return "none"
-    if meta_path.is_file():
-        meta = json.loads(meta_path.read_text(encoding="utf-8"))
-        expected = (meta.get("sha256") or "").lower()
-        if expected and _sha256_file(pending).lower() != expected:
-            pending.unlink(missing_ok=True)
-            meta_path.unlink(missing_ok=True)
-            return "bad-hash"
-    script = write_apply_script(exe, pending)
-    subprocess.Popen(
-        ["cmd.exe", "/c", str(script)],
-        creationflags=getattr(subprocess, "DETACHED_PROCESS", 0)
-        | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),
-        close_fds=True,
-    )
-    return "restarting"
 
 
 def check_for_update(local_version: str) -> dict[str, Any] | None:
@@ -232,56 +193,3 @@ def schedule_restart_for_update() -> None:
         close_fds=True,
     )
     sys.exit(0)
-
-
-def maybe_prompt_update(app, local_version: str) -> None:
-    """Background check; ask user to restart if a newer build is available."""
-    if not is_frozen():
-        return
-    info = check_for_update(local_version)
-    if not info:
-        return
-
-    if hasattr(app, "after"):
-        _schedule_tk_update_prompt(app, info)
-    else:
-        _schedule_qt_update_prompt(app, info)
-
-
-def _schedule_tk_update_prompt(app, info: dict[str, Any]) -> None:
-    def _ask():
-        from tkinter import messagebox
-
-        notes = info.get("notes") or ""
-        msg = f"Có bản mới v{info['version']}.\n\n{notes}\n\nTải và cập nhật khi khởi động lại?"
-        if not messagebox.askyesno(APP_DISPLAY, msg):
-            return
-        try:
-            download_pending_update(info)
-        except Exception as exc:
-            messagebox.showerror(APP_DISPLAY, f"Không tải được bản cập nhật:\n{exc}")
-            return
-        if messagebox.askyesno(APP_DISPLAY, "Đã tải xong. Khởi động lại ngay?"):
-            schedule_restart_for_update()
-
-    app.after(1500, _ask)
-
-
-def _schedule_qt_update_prompt(app, info: dict[str, Any]) -> None:
-    from PySide6.QtCore import QTimer
-    from PySide6.QtWidgets import QMessageBox
-
-    def _ask():
-        notes = info.get("notes") or ""
-        msg = f"Có bản mới v{info['version']}.\n\n{notes}\n\nTải và cập nhật khi khởi động lại?"
-        if QMessageBox.question(app, APP_DISPLAY, msg) != QMessageBox.Yes:
-            return
-        try:
-            download_pending_update(info)
-        except Exception as exc:
-            QMessageBox.critical(app, APP_DISPLAY, f"Không tải được bản cập nhật:\n{exc}")
-            return
-        if QMessageBox.question(app, APP_DISPLAY, "Đã tải xong. Khởi động lại ngay?") == QMessageBox.Yes:
-            schedule_restart_for_update()
-
-    QTimer.singleShot(1500, _ask)

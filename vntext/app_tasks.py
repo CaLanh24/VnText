@@ -104,12 +104,6 @@ def _trace_manifest_entries(trace, manifest: dict) -> dict[str, dict]:
     return registered
 
 
-def _trace_finish_run(trace, *, status: str, root_cause: str | None = None) -> None:
-    if trace is None or trace.run_id is None:
-        return
-    trace.finish_run(status, root_cause)
-
-
 def _is_task_cancellation(exc: BaseException) -> bool:
     """True for pipeline cancellation or a host callback's cancellation marker."""
 

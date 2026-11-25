@@ -48,7 +48,7 @@ public partial class App : Application
             return;
         }
 
-        foreach (var flag in new[] { "--release-verify", "--release-verify-qml", "--release-version", "--release-verify-update" })
+        foreach (var flag in new[] { "--release-verify", "--release-version", "--release-verify-update" })
         {
             if (!e.Args.Contains(flag))
                 continue;

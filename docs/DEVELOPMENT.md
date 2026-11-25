@@ -57,7 +57,7 @@ Không sao chép virtualenv. Cache cùng máy có thể tái dùng khi nguồn/v
 - Harness/Release: thêm SDK .NET 10 tại `.dev-env/dotnet-sdk-10`; harness hiện pin
   runtime/ref pack 8.0.30 và apphost pack 10.0.12. Publisher còn cần matching
   .NET 8 core/WPF runtime + ref packs + hostfxr dưới Program Files, .NET Framework
-  `csc.exe`, Python 3.12.x portable, Pillow (`release/requirements-build.txt`), pinned model,
+  `csc.exe`, Python 3.12.x portable, Pillow (có trong `requirements.txt`), pinned model,
   baseline có provenance và registry/epoch hợp lệ. SDK 10 không thay SDK/runtime8.
 
 Ren'Py native extract cần SDK8.5.3 được pin/hash ở runtime, nằm trong
@@ -108,7 +108,7 @@ py -3.12 -m venv .dev-env/.venv
 .\.dev-env\.venv\Scripts\python.exe -X utf8 -m pip inspect > .dev-env/cache/pip-inspect.json
 ```
 
-Release cần thêm `pip install -r release/requirements-build.txt`. Không cần PyTorch/Argos/VinAI;
+Release chỉ cần `requirements.txt` (lock runtime); không còn profile build/PyInstaller. Không cần PyTorch/Argos/VinAI;
 CTranslate2 pin `4.8.1`. Ghi source URL, resolved version, install command/exit code;
 package metadata không thay thế quyền phân phối trong `THIRD_PARTY_NOTICES.md`.
 
@@ -194,7 +194,7 @@ Entrypoint DEV từ môi trường mới: double-click "DEV_RUN/bootstrap-build/
 
 ## Audited dependency and harness profiles
 
-Use the [Windows/Python locks](../requirements/locks/README.md) for repeatable worker/builder dependency selection. The default requirements omit optional Qt; legacy Qt uses requirements-legacy-qt.txt, Tk uses Python's optional Tcl/Tk runtime, and explicitly selected QML reports unsupported when its bridge is absent. WPF is the shipped UI.
+Use the [Windows/Python locks](../requirements/locks/README.md) for repeatable worker dependency selection. WPF is the only UI; the legacy Python Tk/Qt/QML UIs and their build/legacy-qt lock profiles were removed on 2026-11-25.
 
 Normal DEV does not infer a release budget from VERSION. A launcher checks the clean source and default project cap unless an explicit valid release task is supplied. Numeric policy is [budget_policy.json](../release/budget_policy.json); scoped historical approvals remain separately verified. Gzip history is logical-byte compatible, not a new epoch approval.
 
@@ -204,4 +204,4 @@ Run `python -B tests/tools/audit_gates.py --report <owned-output>/gates.json` fo
 
 The shared Impeccable package is pinned by release/impeccable-pin.json. `python release/verify_skill.py` verifies it read-only; the small project adapter is .agents/skills/vntext-ui/SKILL.md. No automatic shared-tool installation or launcher download.
 
-Publisher dependency acquisition now selects release/dependency_profiles.py for the actual Python3.12/3.14 runtime and enforces `--require-hashes`. `UsePreinstalledDependencies` verifies exact installed versions against the selected profile; mismatch blocks without upgrading. A runtime without pip must also pass this exact-version check. Default WPF builds never install Qt; only explicit BuildLegacy adds the separate legacy-qt lock. Publisher execution and re-provisioning are outside this audit acceptance. Python3.11 source development remains an unvalidated compatibility environment, not an audited publish lock profile.
+Publisher dependency acquisition now selects release/dependency_profiles.py for the actual Python 3.12/3.14 runtime and enforces `--require-hashes`. `UsePreinstalledDependencies` verifies exact installed versions against the selected profile; mismatch blocks without upgrading. A runtime without pip must also pass this exact-version check. Builds install only the runtime lock. Publisher execution and re-provisioning are outside this audit acceptance. Python 3.11 source development remains an unvalidated compatibility environment, not an audited publish lock profile.

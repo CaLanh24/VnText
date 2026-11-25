@@ -1,23 +1,18 @@
-"""Legacy Python GUI entry kept for compatibility integrations.
+"""Headless release-verification CLI for the Python backend.
 
-The shipped/default launcher is the WPF application. QML is available only
-when explicitly selected and is not a shipping default.
+The shipped desktop UI is the WPF application (``wpf_app``); the legacy
+Tk/Qt/QML Python UIs were removed on 2026-11-25. This entry only keeps the
+``--release-*`` verification modes used by release tooling.
 """
 from __future__ import annotations
 
-import os
 import sys
 
-from vntext.runtime_paths import configure_runtime, is_frozen
+from vntext.runtime_paths import configure_runtime
 
 configure_runtime()
 
-_RELEASE_MODES = {
-    "--release-verify",
-    "--release-verify-update",
-    "--release-verify-qml",
-    "--release-version",
-}
+_RELEASE_MODES = ("--release-verify", "--release-verify-update", "--release-version")
 
 
 def _release_cli_mode() -> str | None:
@@ -27,93 +22,20 @@ def _release_cli_mode() -> str | None:
     return None
 
 
-def _ui_backend() -> str:
-    """qt | tk | explicit legacy qml."""
-    return (os.environ.get("VNTEXT_UI") or "tk").strip().lower()
-
-
-def _launch_qml() -> int:
-    import importlib.util
-    if importlib.util.find_spec("qml_ui") is None or importlib.util.find_spec("qml_ui.bridge") is None:
-        raise RuntimeError("Legacy QML is unsupported in this checkout (qml_ui/bridge.py is absent). Use the WPF launcher, VNTEXT_UI=tk, or optional Qt requirements.")
-    from qml_ui.bridge import launch_app
-
-    return launch_app(VERSION)
-
-
-def _launch_qml_preview() -> int:
-    return _launch_qml()
-
-
-if is_frozen() and _release_cli_mode() is None:
-    from vntext.app_update import apply_pending_update_on_startup
-
-    if apply_pending_update_on_startup() == "restarting":
-        sys.exit(0)
-
-from vntext.app_backend import VERSION
-
-
-def _launch_tk() -> None:
-    from vntext_studio import VNTextApp
-
-    app = VNTextApp()
-    if is_frozen():
-        from vntext.app_update import maybe_prompt_update
-
-        maybe_prompt_update(app, VERSION)
-    app.mainloop()
-
-
-def _launch_qt() -> int:
-    from vntext.app_update import maybe_prompt_update
-    from vntext.qt_app import launch_qt_window
-
-    app, win = launch_qt_window(VERSION)
-    if is_frozen():
-        maybe_prompt_update(win, VERSION)
-    win.show()
-    return app.exec()
-
-
 def main() -> None:
     mode = _release_cli_mode()
-    if mode:
-        from vntext import release_verify
+    if mode is None:
+        raise SystemExit(
+            "VNText Studio: the desktop UI is the WPF app (wpf_app/VNText.Studio.App). "
+            "This script only accepts " + ", ".join(_RELEASE_MODES) + "."
+        )
+    from vntext import release_verify
 
-        if mode == "--release-verify":
-            raise SystemExit(release_verify.run_release_verify())
-        if mode == "--release-verify-update":
-            raise SystemExit(release_verify.run_release_verify_update())
-        if mode == "--release-verify-qml":
-            raise SystemExit(release_verify.run_release_verify_qml())
-        if mode == "--release-version":
-            raise SystemExit(release_verify.run_release_version())
-
-    backend = _ui_backend()
-    if backend in ("qml", "qml-preview", "quick"):
-        try:
-            raise SystemExit(_launch_qml())
-        except (ImportError, RuntimeError) as exc:
-            raise SystemExit(str(exc)) from exc
-    if backend in ("tk", "tkinter"):
-        _launch_tk()
-        return
-    if backend in ("qt", "pyside6"):
-        try:
-            raise SystemExit(_launch_qt())
-        except ImportError as exc:
-            raise SystemExit("Optional Qt dependencies are missing. Install requirements-legacy-qt.txt or use the WPF launcher.") from exc
-    if backend in ("auto", ""):
-        try:
-            raise SystemExit(_launch_qml())
-        except ImportError:
-            try:
-                raise SystemExit(_launch_qt())
-            except ImportError:
-                _launch_tk()
-                return
-    _launch_tk()
+    if mode == "--release-verify":
+        raise SystemExit(release_verify.run_release_verify())
+    if mode == "--release-verify-update":
+        raise SystemExit(release_verify.run_release_verify_update())
+    raise SystemExit(release_verify.run_release_version())
 
 
 if __name__ == "__main__":

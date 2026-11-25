@@ -15,6 +15,13 @@ class ColdMissingDisposeTests(unittest.TestCase):
         self.assertEqual([], cleanup._epoch_blocking_metadata_issues({"metadata_issues": [cold]}))
         self.assertEqual([bad], cleanup._epoch_blocking_metadata_issues({"metadata_issues": [cold, bad]}))
 
+    def test_global_cleanup_uses_the_same_cold_missing_rule_as_scoped_cleanup(self):
+        text = (ROOT / 'tests/tools/cleanup_work_artifacts.py').read_text(encoding='utf-8')
+        self.assertIn('deletion_blocking_issues = _epoch_blocking_metadata_issues(reconciled) + list(reconciled.get("inventory_errors") or [])', text)
+        self.assertIn('and not deletion_blocking_issues', text)
+        # every issue, cold MISSING included, is still reported as blocked/REVIEW_REQUIRED
+        self.assertIn('"reason": "registry_metadata_invalid"', text)
+
     def test_missing_claim_on_a_rebuilt_path_blocks_unless_a_disposable_record_registers_that_path(self):
         target = ROOT / "tests" / "unit"           # exists
         missing = {"id": "old", "path": str(target), "lifecycle": "MISSING"}

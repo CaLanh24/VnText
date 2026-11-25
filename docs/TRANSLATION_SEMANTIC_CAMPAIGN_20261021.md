@@ -36,7 +36,7 @@ No assertion that a larger beam necessarily improves meaning.
 
 Owner: vntext/mt_ct2_model.py; if admitted, adapter/cache identity must encode the
 decoding profile so old drafts are not relabeled or silently overwritten.
-Contracts: CONTRACTS sections4/4a, CSV/workflow invariants and10c lifecycle.
+Contracts: CONTRACTS sections4/4a, CSV/workflow invariants and 10c lifecycle.
 Gates: tokenizer/model focused tests and cache tests, affected pipeline/worker
 tests, actual generated product workflow/read-back, current DEV/smoke and native
 affected surface only if UI behavior changes. No product mutation before the
@@ -85,7 +85,7 @@ Budget: development16 then fresh24 only if development admits; <=180seconds per
 stage, process peak<=1.5GiB and fail on a memory guard rather than expanding it.
 
 Beam feasibility terminal: development16 outputs completed in3.094seconds,
-peak working set201678848bytes, wrapper/cleanup PASS. Agent source-aligned
+peak working set201678848 bytes, wrapper/cleanup PASS. Agent source-aligned
 review admits zero complete semantic repairs; checksum wording partially improves
 but patch/manifest meaning remains missing, idiom errors persist and masculine
 address remains unsupported. Candidate REJECTED, fresh controls not run. Raw
@@ -95,7 +95,7 @@ evaluation/translation_semantic_campaign_v1/development-review.json records revi
 Next distinct read-only premise: existing required token-budget splitting in
 Ct2Translator joins independently decoded pieces with an empty separator in two
 places, although tokenizer decoding normally drops outer whitespace. Investigate
-whether this loses source boundary spaces on actual inputs above480tokens, and
+whether this loses source boundary spaces on actual inputs above 480tokens, and
 whether the default256target-token cap is reached there. This is not reviving
 sentence segmentation below the model budget: splitting policy stays unchanged.
 The earlier234token fixture did not hit the cap and cannot settle >480token
@@ -105,8 +105,8 @@ then only a demonstrated seam/cap defect may justify a bounded correction;
 no beam/penalty sweep or arbitrary longer-output-as-quality claim. Same180second/
 1.5GiB guards, <=12backend segments per arm and source/code/model identities.
 
-Boundary baseline: frozen source538tokens splits under the existing480 budget
-into480+60tokens. Actual model returns23+71tokens, neither at256cap, and joining
+Boundary baseline: frozen source 538tokens splits under the existing480 budget
+into480+60tokens. Actual model returns23+71tokens, neither at 256cap, and joining
 loses the source space (`bắc.Nadia`). This proves a separator defect, not a
 decoding-cap defect; do not increase the cap. First chunk omits most propositions,
 which separator repair cannot solve. Short actor-name drift Mila->Mita is also
@@ -150,12 +150,12 @@ Continue examining reproducible caller/code loss independently; do not convert
 this bounded separator delivery into whole-app quality PASS.
 
 Brain accepted the bounded boundary fix after direct source/raw/hash review:
-7source/test hashes and15receipt hashes match, actual readback/source preservation
+7source/test hashes and 15receipt hashes match, actual readback/source preservation
 and terminal cleanup verified. No repeated gate is required for this verdict.
 
 Important diagnostic qualification: the direct translator probe bypassed the
 product's protected-name splitting. Existing product fixture has40protected actor
-names and40text fragments, maximum18tokens, so it preserves far more clauses
+names and 40text fragments, maximum18tokens, so it preserves far more clauses
 than the direct480token call. Product output still has major errors (letters as
 alphabet characters, lender/borrower reversal, offered-meal predicate lost,
 serial number mistranslated). The direct collapse cannot stand for every product
@@ -200,7 +200,7 @@ acceptance. No such model/download/training is authorized by this task. This is
 a remaining prerequisite for whole-app quality, not a request to repeat approval
 of completed code fixes or a claim that changing technology guarantees success.
 
-Brain accepted one next discriminator: at most4 already-seen relation failures,
+Brain accepted one next discriminator: at most 4 already-seen relation failures,
 current product split versus existing full-sentence retry, same source/OPUS/
 defaults, no other substitutions. Exact comparison not found in targeted old
 artifacts (the earlier full long paragraph is not equivalent to single sentences).
@@ -208,7 +208,7 @@ relation-frozen.json seals4source cases/actor-polarity-name criteria before new
 outputs; budget8backend outputs/120seconds/1.5GiB. Any new major/name corruption
 rejects, seen gains alone never authorize production admission or whole quality.
 
-Relation comparison terminal:4cases/8outputs,2.781seconds,peak200220672bytes,
+Relation comparison terminal:4cases/8outputs,2.781seconds,peak 200220672 bytes,
 wrapper/cleanup PASS. Full sentence restores offered-action/messenger-recipient
 in R21, an actual seen gain. But R15 corrupts Mila->Mita and introduces forgot
 instead of left, a new major case. R22 still reverses the borrowed-ladder role;
@@ -262,7 +262,7 @@ raw outputs. Any new major, name corruption or no complete meaning repair reject
 independent fresh controls only after a justified development result. No claim
 that prefix constraints solve omitted discourse, idioms or all product categories.
 
-Prefix diagnostic completed4newoutputs in2.844seconds,peak200802304bytes,
+Prefix diagnostic completed4newoutputs in2.844seconds,peak 200802304 bytes,
 wrapper/cleanup PASS. Names now exact in all4cases, but R15 still invents forgot
 for left; R22 borrower and R37serial sense remain wrong. R21 retains the same
 single predicate gain already observed, no new general adequacy gain. Rejected
@@ -284,7 +284,7 @@ No attention-based rewrite, new dependency or training was implemented.
 
 Research/data-criteria continuation is consolidated in
 docs/TRANSLATION_SEMANTIC_ACCEPTANCE.md: domain rubric, severity/uncertainty,
-independent36source+4stress design before outputs, fixed admission and a closed
+independent 36source+4stress design before outputs, fixed admission and a closed
 capability shortlist tied to installed artifacts and retained rejections. This
 is actionable planning/feasibility, not another claimed translation gain. No
 inference, build or test was run to produce that document.
@@ -292,8 +292,8 @@ inference, build or test was run to produce that document.
 Owner permission update: necessary scoped acquisition/execution now authorized
 without routine reapproval, durable decision recorded in CONTRACTS section4.
 Actual Qwen preflight (qwen-acquisition-preflight.json) passes projected shared
-disk reserve but fails memory: physical available206204928bytes, available
-commit648069120bytes, below256MiB/1GiB guards. No weight download/model load
+disk reserve but fails memory: physical available206204928 bytes, available
+commit 648069120 bytes, below 256MiB/1GiB guards. No weight download/model load
 started. Read-only process inventory finds no python/llama/VNText test process
 to clean; largest working sets belong to memory compression and desktop/client
 processes, not this task's disposable children. No unrelated process stopped,

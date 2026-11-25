@@ -32,7 +32,7 @@ class ExtractLayoutMatrixTests(unittest.TestCase):
                     self.assertTrue((out / "translation.csv").is_file(), "an ok result has its CSV")
                 else:
                     self.assertTrue(str(event.get("error") or "").strip(), "a failed or partial result says why")
-                    self.assertNotEqual("RUNNING", json.loads((out / "extract_status.json").read_text())["status"]) if (out / "extract_status.json").is_file() else None
+                    self.assertNotEqual("RUNNING", json.loads((out / "extract_status.json").read_text(encoding="utf-8"))["status"]) if (out / "extract_status.json").is_file() else None
                 status = event.get("extract_status")
                 if status is not None:
                     self.assertIn(status, KNOWN)

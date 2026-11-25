@@ -12,12 +12,12 @@
 
 ## Điều phối và ngữ cảnh
 
-- Một Coordinator đang hoạt động, một source writer tại một thời điểm. Trước gửi chỉ thị chat khác phải có ủy quyền Owner, đọc turn mới nhất và đối chiếu Git/evidence. Không suy ủy quyền từ thảo luận/than phiền. Child/route theo WORKFLOW; ngoại lệ workflow 0.1.13 ở CONTRACTS được ưu tiên trong đúng phạm vi đó.
+- Một Coordinator đang hoạt động, một source writer tại một thời điểm. Trước gửi chỉ thị chat khác phải có ủy quyền Owner, đọc turn mới nhất và đối chiếu Git/evidence. Không suy ủy quyền từ thảo luận/than phiền. Child/route theo WORKFLOW.
 - Claude DEV cố định là writer chính; Codex chỉ tạm thay khi có bằng chứng Claude hết quota, trả lại khi hồi phục sau đối chiếu Git/process. Không tạo writer song song. Giữ DEV ID/cursor ở AI_STATE.
 - **Owner workflow (2026-10-28):** DEV tự quản lý chẩn đoán, preflight budget/epoch, test/process/log và build/package đến handoff terminal; Brain đặt acceptance, review diff một lượt theo rủi ro và nghiệm thu native bắt buộc. Khi DEV đang chạy bình thường, Brain chỉ chờ lifecycle/event bằng cursor; cấm shell polling process/log/receipt/Git hoặc đọc cùng trạng thái thay DEV. Can thiệp phải nêu trước trigger cụ thể: DEV báo blocker/treo, công cụ báo lỗi/stalled, evidence mâu thuẫn, rủi ro dữ liệu hoặc Owner yêu cầu điều tra. Re-run sau handoff chỉ khi nêu gate/rủi ro bắt buộc và evidence còn thiếu. Chi tiết ở [WORKFLOW](docs/WORKFLOW.md).
 - Giữ session đang làm tốt; checkpoint rồi compact khi runtime hỗ trợ và cần. Không tự đổi Brain vì phần trăm context, số phase hoặc số lần compact. Chỉ thay tuần tự khi phục hồi thất bại có bằng chứng hoặc Owner yêu cầu; không fork toàn lịch sử, không tự đổi model.
 - AI_STATE là trạng thái hiện hành ngắn, không phải nhật ký. Ledger có checklist hiện hành và con trỏ receipt; lịch sử ở archive/index theo chủ đề. Chỉ đọc log/DEV delta từ cursor, output giới hạn theo nội dung, không dump transcript/JSON/UI tree. Luồng lưu/tra lịch sử ở WORKFLOW.
-- Mỗi phase chốt acceptance hữu hạn. Reuse gate đã đạt khi source/prerequisite liên quan không đổi; rebuild nêu lỗi cần sửa và gate mất hiệu lực. Không full suite/build vì docs-only. Một giả thuyết hai vòng không có evidence mới thì kiểm premise; Không có mốc giờ cố định cho PM/cleanup hay đồng hồ phiên bắt buộc dừng; chỉ ghi checkpoint và đổi cách làm khi không có tiến triển evidence hoặc đang lặp cùng premise.
+- Mỗi phase chốt acceptance hữu hạn. Reuse gate đã đạt khi source/prerequisite liên quan không đổi; rebuild nêu lỗi cần sửa và gate mất hiệu lực. Không full suite/build vì docs-only. Một giả thuyết hai vòng không có evidence mới thì kiểm premise. Không có mốc giờ cố định cho PM/cleanup hay đồng hồ phiên bắt buộc dừng; chỉ ghi checkpoint và đổi cách làm khi không có tiến triển evidence hoặc đang lặp cùng premise.
 
 ## Mutation, evidence và dữ liệu
 
@@ -32,6 +32,8 @@
 - **Dữ liệu game (Owner 2026-11-21):** không dùng dữ liệu của một game cụ thể làm căn cứ phát triển hay nghiệm thu, và không ghi tên game vào tài liệu phát hành, AI_STATE, receipt hay changelog (chỉ dùng nhãn ẩn danh như `corpus-03` hoặc đặc điểm cấu trúc). Game có sẵn trên máy chỉ để chạy thử xem app hoạt động; lỗi do người dùng báo trên game không có trên máy được tái hiện bằng gói báo lỗi ẩn danh (cấu trúc, kích thước, header, thời gian; không nội dung/tên tệp) cộng bản dựng layout giả, không bằng cách tải game. Claim "đã test đầy đủ" chỉ được ghi kèm danh sách bước, số layout/mục corpus đã chạy và phần chưa chạy.
 
 - **Quyền làm liên tục và ngân sách (Owner 2026-11-21):** khi Owner giao một chương trình sửa/hoàn thiện, DEV tự làm liên tục đến khi xong, không dừng xin duyệt từng bước, rồi báo cáo trước khi release (không push/tag/release khi chưa được yêu cầu). Dung lượng ngân sách DEV (cap 1 GiB) được phép vượt trong lúc build, sửa và dựng candidate; không coi là blocker và không cần xin phép. Chỉ sau khi release xong mới dọn về ≤ 1 GiB theo kế hoạch cleanup (không xóa dữ liệu người dùng, registry hay evidence còn consumer).
+
+- **Quyền thường trực tải/release (Owner 2026-11-25):** DEV được tự tải baseline/SDK từ release công khai của repo hoặc trang chính thức (kiểm hash), và tự release bản vá VNText Studio khi gate bắt buộc đạt. Vẫn phải hỏi Owner trước khi xóa dữ liệu người dùng/game gốc, sửa tay registry epoch/evidence (bước chuyển epoch bằng công cụ chính thức trong quy trình release không tính), đổi kiến trúc/model, hoặc khi gate bắt buộc FAIL.
 
 ## Cập nhật tài liệu
 

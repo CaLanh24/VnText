@@ -1,5 +1,5 @@
 ---
-name: vntext-matt-planning
+name: vntext-planning
 description: For VNText requests to write a feature spec, split an approved plan into tickets, or triage an issue; choose the appropriate local Markdown workflow without requiring the user to name a skill. Do not use for ordinary coding or status questions.
 ---
 

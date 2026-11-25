@@ -186,9 +186,3 @@ def mask_user_glossary_terms(
 
 def restore_user_glossary_terms(text: str, restore: dict[str, str]) -> str:
     return restore_tokens(text, restore)
-
-
-def lookup_short_phrase(src: str, *, glossary: dict[str, str] | None = None) -> str | None:
-    """Compatibility helper; only caller-supplied/package glossary data applies."""
-
-    return lookup_user_phrase(src, glossary)

@@ -673,34 +673,6 @@ def translate_color_wrapped_ct2(src: str, translator: Any) -> str:
     return postprocess(src, rebuilt)
 
 
-def _restore_placeholders_from_parts(source: str, translated: str, parts) -> str:
-    """Graft {TECH} tokens CT2 dropped, anchored by last word before each token in source."""
-    out = translated
-    for kind, tok in parts:
-        if kind != "tech" or tok in out:
-            continue
-        pos = source.find(tok)
-        if pos < 0:
-            out = out + tok
-            continue
-        before = source[:pos]
-        anchor_words = re.findall(r"[\wÀ-ỹ']{2,}", before)
-        if not anchor_words:
-            out = (tok + out) if pos == 0 else (out + tok)
-            continue
-        needle = anchor_words[-1]
-        idx = out.lower().find(needle.lower())
-        if idx < 0 and len(anchor_words) >= 2:
-            needle = anchor_words[-2]
-            idx = out.lower().find(needle.lower())
-        if idx >= 0:
-            insert_at = idx + len(needle)
-            out = out[:insert_at] + tok + out[insert_at:]
-        else:
-            out = out + tok
-    return out
-
-
 def translate_inline_placeholders_ct2(src: str, translator: Any) -> str:
     """Translate prose around placeholders while keeping every tech token exact.
 

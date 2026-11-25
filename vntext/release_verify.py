@@ -224,40 +224,6 @@ def run_release_verify() -> int:
     return 0
 
 
-def run_release_verify_qml() -> int:
-    """Headless QML shell load check for RELEASE EXE."""
-    from PySide6.QtQuick import QQuickView
-    from PySide6.QtWidgets import QApplication
-
-    from qml_ui.bridge import create_view
-
-    report_path = _report_path("release_verify_qml.json")
-    app = QApplication.instance() or QApplication([])
-    view = None
-    backend = None
-    payload = {"version": VERSION, "ok": False}
-    try:
-        _app, view, backend = create_view()
-        if view.status() != QQuickView.Ready:
-            raise RuntimeError(f"QML not ready: {view.errors()}")
-        root = view.rootObject()
-        if root is None:
-            raise RuntimeError("QML root object missing")
-        payload["ok"] = True
-        payload["marker"] = str(root.property("marker") or "")
-    except Exception as exc:
-        payload["error"] = str(exc)
-        write_report(report_path, payload)
-        return 1
-    finally:
-        if backend is not None:
-            backend.window.close()
-        if view is not None:
-            view.close()
-    write_report(report_path, payload)
-    return 0
-
-
 def run_release_version() -> int:
     report_path = _report_path("release_version.json")
     write_report(report_path, {"version": VERSION, "ok": True})

@@ -33,6 +33,6 @@ VNText.Studio.App.exe --smoke-worker
 
 Protocol: NDJSON `v=1` — `ready`, `log`, `progress`, `complete`, `error`; lệnh `run` / `cancel`.
 
-Python source (`vntext/`, `app.py`, compatibility facades) remains in the
-repository but is not the shipped WPF UI. `qml_ui.bridge` is absent, so QML is
-not a supported fallback.
+Python source (`vntext/`, compatibility facades) is the worker backend; `app.py`
+only keeps the `--release-*` verification modes. The legacy Tk/Qt/QML Python UIs
+were removed on 2026-11-25; WPF is the only UI.

@@ -105,14 +105,12 @@ class ReleaseVerifyTests(unittest.TestCase):
     def test_argos_is_not_a_release_dependency_or_packaging_route(self):
         default_requirements = (ROOT / "requirements.txt").read_text(encoding="utf-8").lower()
         publish = (ROOT / "release" / "publish.ps1").read_text(encoding="utf-8")
-        spec = (ROOT / "release" / "vntext_studio.spec").read_text(encoding="utf-8").lower()
 
         self.assertNotIn("argostranslate", default_requirements)
         self.assertFalse((ROOT / "requirements-legacy-argos.txt").exists())
         self.assertNotIn("requirements-legacy-argos.txt", publish)
         self.assertNotIn("import argostranslate", publish.lower())
-        self.assertNotIn("argostranslate", spec)
-        self.assertNotIn("minisbd", spec)
+        self.assertFalse((ROOT / "release" / "vntext_studio.spec").exists())
 
     def test_release_launchers_disable_python_bytecode_and_publish_records_sha(self):
         worker_host = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "PythonWorkerHost.cs").read_text(encoding="utf-8")

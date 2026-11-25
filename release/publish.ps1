@@ -21,7 +21,6 @@ param(
     [switch]$SkipTests,
     [switch]$SkipWpfUpdatePackage,
     [switch]$SkipBuild,
-    [switch]$BuildLegacy,
     [switch]$UsePreinstalledDependencies,
     [switch]$SkipIconGeneration,
     [switch]$RequireIsolatedArtifacts,
@@ -98,8 +97,8 @@ if ($RequireIsolatedArtifacts -and ([string]::IsNullOrWhiteSpace($DotnetSdkRoot)
 if ($RequireIsolatedArtifacts -and ([string]::IsNullOrWhiteSpace($NuGetPackagesRoot) -or -not (Test-Path -LiteralPath $NuGetPackagesRoot -PathType Container))) {
     throw "Isolated publish requires an existing explicit shared NuGetPackagesRoot."
 }
-if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild -or $BuildLegacy)) {
-    throw "Isolated publish requires the focused preflight/build path: -SkipTests, WPF build enabled, and Python preview build disabled."
+if ($RequireIsolatedArtifacts -and (-not $SkipTests -or $SkipBuild)) {
+    throw "Isolated publish requires the focused preflight/build path: -SkipTests and WPF build enabled."
 }
 if ($SkipBuild) {
     throw "Standard Setup publishing requires a fresh WPF app build; -SkipBuild is not supported."
@@ -548,8 +547,6 @@ function Copy-PrivateDotnetRuntime([string]$RuntimeRoot, [string]$HostFxrVersion
 function Install-RequirementsIfAvailable([string]$PythonPath, [string[]]$RequirementFiles, [bool]$UseExistingOnly = $false) {
     $profileScript = Join-Path $DevRoot "release/dependency_profiles.py"
     $profileArgs = @($profileScript, "--root", $DevRoot)
-    if ($RequirementFiles | Where-Object { $_ -like "*requirements-build.txt" }) { $profileArgs += "--build" }
-    if ($BuildLegacy) { $profileArgs += "--legacy-qt" }
     if ($UseExistingOnly) { $profileArgs += "--check-installed" }
     $resolved = & $PythonPath -B @profileArgs
     if ($LASTEXITCODE -ne 0) { throw "Audited dependency profile selection/verification failed; no range fallback or automatic environment upgrade" }
@@ -917,24 +914,10 @@ if (-not $SkipBuild) {
         throw "Selected .NET SDK did not match the existing SDK root version: $selectedSdk"
     }
     Write-Host "`n[2/5] Install build deps..." -ForegroundColor Yellow
-    $buildRequirementFiles = @(
-        (Join-Path $DevRoot "requirements.txt"),
-        (Join-Path $DevRoot "release\requirements-build.txt")
-    )
+    $buildRequirementFiles = @((Join-Path $DevRoot "requirements.txt"))
     Install-RequirementsIfAvailable $Python $buildRequirementFiles ([bool]$UsePreinstalledDependencies)
     & $Python -c "import UnityPy, ctranslate2; from transformers import MarianTokenizer; print('CT2 worker dependencies PASS')"
     if ($LASTEXITCODE -ne 0) { throw "CT2 worker dependencies missing (UnityPy/ctranslate2/Transformers)" }
-
-    if ($BuildLegacy) {
-        Write-Host "`n[2b] Legacy PyInstaller (DEV only)..." -ForegroundColor DarkYellow
-        & $Python -B (Join-Path $DevRoot "release\make_icon.py") --output-root (Join-Path $DevRunRoot "_work\make_icon")
-        $distDir = Join-Path $DevRunRoot "legacy_dist"
-        $workDir = Join-Path $DevRunRoot "legacy_build"
-        if (Test-Path $distDir) { Remove-Item -LiteralPath $distDir -Recurse -Force }
-        & $Python -m PyInstaller (Join-Path $DevRoot "release\vntext_studio.spec") `
-            --distpath $distDir --workpath $workDir --noconfirm
-        if (-not (Test-Path (Join-Path $distDir "VNText Studio.exe"))) { throw "Legacy build failed" }
-    }
 
     Write-Host "`n[3/5] Build WPF app..." -ForegroundColor Yellow
     # Keep SDK, NuGet and profile writes inside DEV_RUN; use existing offline

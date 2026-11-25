@@ -206,7 +206,7 @@ under `OpenAI.Codex_2p2nqsd0c76g0!App`. No window activation, input or capture
 followed. Evidence is retained under
 `C:/Users/VNTextDev/Downloads/VM-Acceptance/translation-editor-memory-native-fresh1-`
 with suffixes `prep.json`, `launch.json`, `blocker.json`, `cleanup.json` and
-`terminal.json`. Owned processes stopped, registered cleanup exit0 and terminal
+`terminal.json`. Owned processes stopped, registered cleanup exit 0 and terminal
 purge PASS; TEST_RUN absent. Brain directly reviewed the fresh blocker and
 cleanup and accepted PROVEN_BLOCKED native identity. Technical acceptance is
 retained; native interaction and the whole goal remain incomplete. No further

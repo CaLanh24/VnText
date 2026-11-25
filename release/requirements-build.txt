@@ -1,4 +1,0 @@
-# Convenience builder roots; publish selects audited platform locks via dependency_profiles.py.
-pyinstaller==6.22.3
-pillow==12.3.0
-# Qt is optional and selected only with BuildLegacy, from a separate lock.

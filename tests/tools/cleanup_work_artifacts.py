@@ -5729,10 +5729,13 @@ def cleanup_work(
     candidate_errors: list[dict] = []
     registry_issues = list(reconciled.get("metadata_issues") or [])
     registry_issues.extend(reconciled.get("inventory_errors") or [])
+    # Same rule as the scoped cleanup (Owner 2026-11-23): cold MISSING history stays REVIEW_REQUIRED in this report,
+    # but it is not an ownership claim, so only the other registry/inventory issues block deleting DISPOSABLE entries.
+    deletion_blocking_issues = _epoch_blocking_metadata_issues(reconciled) + list(reconciled.get("inventory_errors") or [])
     deletion_allowed = bool(
         reconciled.get("inventory_complete", False)
         and not budget.failure
-        and not registry_issues
+        and not deletion_blocking_issues
     )
     candidates = (
         _candidate_entries(reconciled, registered_only=registered_only)

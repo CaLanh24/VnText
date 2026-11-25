@@ -81,23 +81,6 @@ def owner_record(extra: Mapping[str, Any] | None = None) -> dict[str, Any]:
     return record
 
 
-def owner_is_live(record: Mapping[str, Any], pid_alive: Callable[[int], bool]) -> bool:
-    """True only when the lock's owner may still be running.  A lock that records a creation time is kept only while that exact process lives
-    (an unreadable process keeps it, so a real extraction is never overwritten).  A lock without a creation time was written by version 0.1.27 or
-    older, which cannot run next to this one: a live pid there is a recycled pid, never evidence of an extraction, so the lock is stale."""
-    try:
-        pid = int(record["pid"])
-    except (KeyError, TypeError, ValueError):
-        return True
-    if pid <= 0 or not pid_alive(pid):
-        return False
-    recorded = record.get("start")
-    if not recorded:
-        return False
-    current = process_start_token(pid)
-    return current is None or current == str(recorded)
-
-
 def describe_owner(record: Mapping[str, Any], lock_mtime: float | None = None) -> str:
     """Short, path-free description of a lock owner for messages and logs."""
     import time

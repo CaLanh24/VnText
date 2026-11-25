@@ -11,9 +11,9 @@ or evidence of better translation. Existing OPUS/DEV and failed raw are retained
 
 | Candidate / pinned primary provenance | Published artifact and license | Existing runtime / resource fit | Disposition |
 | --- | --- | --- | --- |
-| Qwen/Qwen2.5-0.5B-Instruct-GGUF at `9217f5db79a29953eb74d5343926648285ec7e67` | First-party `qwen2.5-0.5b-instruct-q4_k_m.gguf`,491400032bytes; published LFS SHA256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`. Apache-2.0 LICENSE11343bytes; no separate NOTICE listed. Card explicitly lists Vietnamese and instruction following. | GGUF qwen2 family; existing llama-b11724/99db719bd source lists QWEN2. No new runtime expected, actual load/template compatibility UNKNOWN until authorized test. Small context512 and output128 proposed; working-set planning range0.8–1.4GiB, not measured. | Recommended first **feasibility experiment**, because one first-party artifact fits disk and existing CPU runtime. General multilingual 0.5B capability may be inadequate; no claimed EN→VI score or guaranteed gain. |
-| facebook/nllb-200-distilled-600M at `f8d333a098d19b4fd9a8b18f94170487ad3f821d` | Primary unquantized pytorch_model.bin2460457927bytes, SHA256 `c266c2cfd19758b6d09c1fc31ecdf1e485509035f6b51dfe84f1ada83eefcc42`; card declares CC-BY-NC4.0. No standalone LICENSE/NOTICE listed in captured files. | Not directly loadable as this artifact by current CT2/GGUF route; conversion needs uninstalled torch/source weights and tokenizer conversion. Artifact alone exceeds remaining disk by>1.8GB. FP32weights≈2.46GB plus activations/tokenizer/OS make4GiB unsafe without measurement. | Reject for current resource/authority and noncommercial distribution boundary; not a drop-in OPUS replacement. |
-| google/translategemma-4b-it at `10042cb0e6e7fdce748996a71dc3dc432a4e0c89` | Primary safetensors shards total8600277880bytes; Gemma terms, manually gated. Pinned raw README access denied; no sign-in/terms acceptance attempted. Public card is readable. | Existing CT2 cannot load these shards; transformers multimodal path needs torch and substantial memory. Even a lower-bound4bit4Bweight estimate≈2GB exceeds remaining shared disk before runtime/KV; primary artifact8.6GB clearly fails. Community GGUF is a separate provenance/license check, not assumed equivalent. | Reject for this4GiB/6GiBguest, no gated acquisition or framework change proposed. |
+| Qwen/Qwen2.5-0.5B-Instruct-GGUF at `9217f5db79a29953eb74d5343926648285ec7e67` | First-party `qwen2.5-0.5b-instruct-q4_k_m.gguf`,491400032 bytes; published LFS SHA256 `74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db`. Apache-2.0 LICENSE11343 bytes; no separate NOTICE listed. Card explicitly lists Vietnamese and instruction following. | GGUF qwen2 family; existing llama-b11724/99db719bd source lists QWEN2. No new runtime expected, actual load/template compatibility UNKNOWN until authorized test. Small context512 and output128 proposed; working-set planning range0.8–1.4GiB, not measured. | Recommended first **feasibility experiment**, because one first-party artifact fits disk and existing CPU runtime. General multilingual 0.5B capability may be inadequate; no claimed EN→VI score or guaranteed gain. |
+| facebook/nllb-200-distilled-600M at `f8d333a098d19b4fd9a8b18f94170487ad3f821d` | Primary unquantized pytorch_model.bin2460457927 bytes, SHA256 `c266c2cfd19758b6d09c1fc31ecdf1e485509035f6b51dfe84f1ada83eefcc42`; card declares CC-BY-NC4.0. No standalone LICENSE/NOTICE listed in captured files. | Not directly loadable as this artifact by current CT2/GGUF route; conversion needs uninstalled torch/source weights and tokenizer conversion. Artifact alone exceeds remaining disk by>1.8GB. FP32weights≈2.46GB plus activations/tokenizer/OS make4GiB unsafe without measurement. | Reject for current resource/authority and noncommercial distribution boundary; not a drop-in OPUS replacement. |
+| google/translategemma-4b-it at `10042cb0e6e7fdce748996a71dc3dc432a4e0c89` | Primary safetensors shards total 8600277880 bytes; Gemma terms, manually gated. Pinned raw README access denied; no sign-in/terms acceptance attempted. Public card is readable. | Existing CT2 cannot load these shards; transformers multimodal path needs torch and substantial memory. Even a lower-bound4bit4Bweight estimate≈2GB exceeds remaining shared disk before runtime/KV; primary artifact8.6GB clearly fails. Community GGUF is a separate provenance/license check, not assumed equivalent. | Reject for this4GiB/6GiBguest, no gated acquisition or framework change proposed. |
 
 Primary cards: [Qwen](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF),
 [NLLB](https://huggingface.co/facebook/nllb-200-distilled-600M),
@@ -26,36 +26,36 @@ after gated retrieval failed; corrected supplement sets it null and records the
 failure. Do not use that stale field. Runtime/license text capture is
 semantic-candidate-runtime-license.json. No remote instructions were executed.
 
-A preliminary Qwen3 first-party Q8 artifact check found639446688bytes, leaving
+A preliminary Qwen3 first-party Q8 artifact check found639446688 bytes, leaving
 almost no reserve in this checkout; it was not selected for the three-option
 shortlist. Installed historical Hy-MT2 remains rejected from prior fresh semantic
 evidence; do not rerun or recommend the same weights as a new alternative.
 
 ## Disk, runtime and peak plan
 
-Latest complete boundary DEV receipt measured shared5797429235/6442450944bytes,
-remaining645021709bytes; nonexempt725565129/1073741824bytes. These are a dated
+Latest complete boundary DEV receipt measured shared 5797429235/6442450944 bytes,
+remaining645021709 bytes; nonexempt 725565129/1073741824 bytes. These are a dated
 receipt, not a current acquisition preflight. Adding the Qwen Q4 file once gives
-shared6288829267bytes and153621677bytes spare before small metadata. A duplicate
+shared 6288829267 bytes and 153621677 bytes spare before small metadata. A duplicate
 download/cache copy would exceed the cap. Conditional acquisition must stream
 one owned `.part` in the destination, verify expected size/hash, then rename on
 the same volume; no HF snapshot/cache duplication, decompression or quantization.
-Reserve>=128MiB leaves about19MB for metadata; re-inventory must prove it still
+Reserve>=128MiB leaves about 19MB for metadata; re-inventory must prove it still
 fits before any acquisition. No historical cache deletion is authorized.
 
-llama-completion.exe version0.7.0-dev build11724 commit99db719bd,
+llama-completion.exe version 0.7.0-dev build11724 commit 99db719bd,
 SHA256 `CAC0FB622FD8E2529DF009F459B7FA797C5D12FD0509D5801D987E2D05846A3F`.
 Only --version was executed; no model invocation. Architecture support checked
 against [matching runtime source](https://github.com/ggml-org/llama.cpp/blob/99db719bd/src/llama-arch.cpp).
 GGUF architecture support does not prove correct chat-template/tokenizer behavior
 or model quality. CPU2, GPU layers0, context512, output128, batch64, deterministic
 single decoding profile and<=120seconds/call proposed. Guard process peak<=1.5GiB,
-minimum free physical256MiB and available commit1GiB; terminate/refuse on failure,
+minimum free physical256MiB and available commit 1GiB; terminate/refuse on failure,
 never expand RAM/quota. No peak or throughput is yet measured for this candidate.
 
 ## One reviewable next experiment, not executed
 
-Exact missing external permission: acquire only the pinned491400032byte Qwen Q4
+Exact missing external permission: acquire only the pinned 491400032byte Qwen Q4
 artifact and LICENSE into one owned `.dev-env/cache/models` directory and run a
 test-only comparison with the existing llama binary. This changes no product
 route/framework/protocol and permits no other model, dependency, training, paid
@@ -99,30 +99,30 @@ Ownership/part lifecycle is registered before file creation in an external
 acquisition receipt and a marker in the new model directory. Cleanup may remove
 only the exact owned newly created .part. Python/TLS/hash/buffer budget64MiB
 processpeak, startup availablephysical>=160MiB (64budget+96reserve) and available
-commit>=192MiB (64budget+128reserve); guard during transfer at96/128MiB plus
-peak64MiB. These conservatively bound fixed buffer/library overhead, not model
+commit>=192MiB (64budget+128reserve); guard during transfer at 96/128MiB plus
+peak 64MiB. These conservatively bound fixed buffer/library overhead, not model
 memory; measured processpeak must confirm. No download if this gate fails.
 Shared quota still reserves128MiB after exact file+metadata, no duplicate/oldcache
 deletion. Download failure is retained; no automatic retry/size override.
 
-Actual staged result: streaming acquisition completed491400032bytes, exactpinned
+Actual staged result: streaming acquisition completed491400032 bytes, exactpinned
 SHA256 matched, LICENSE retained, .part renamed to final with ownership marker.
-Elapsed50.828seconds, downloaderpeak41771008bytes; external
+Elapsed50.828seconds, downloaderpeak41771008 bytes; external
 qwen-stream-acquisition.json records bounded memory and lifecycle. No duplicate
 cache or old-data deletion. qwen-experiment-frozen.json seals prompt/CLI arguments,
 four-seen/conditional12fresh criteria and source/model/runtime hashes before output.
 
 Post-acquisition inference preflight passed physical480825344/commit1386541056
 bytes. The single transport attempt started with physical419794944/commit1385500672
-and was terminated by the unchanged memory guard after1.266seconds when physical
-fell to168341504bytes (commit1196011520, observed childpeak256765952). This is
+and was terminated by the unchanged memory guard after 1.266seconds when physical
+fell to 168341504 bytes (commit 1196011520, observed childpeak256765952). This is
 resource failure before completed output, not semantic rejection or templatePASS.
 Original stdout/stderr retained, including the control-looking </s> token-type
 warning; do not silently suppress it or blame it for the measured RAM stop.
 Wrapper cleanup PASS, no owned llama/python/VNText process remains. No retry until
 actual memory-state change/monitoring cycle. No 4seen or fresh inference occurred.
 
-Independent metadata preparation reads only the GGUF header (5931189bytes), no
+Independent metadata preparation reads only the GGUF header (5931189 bytes), no
 tensor data loaded: qwen2 architecture,24layers,14query/2KV heads, context32768,
 filetype15, embedded template SHA256
 `d5495a1e5db0611132a97e46a65dbb64a642a499421228b9c8b93229097fa9a4`.

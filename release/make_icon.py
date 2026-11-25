@@ -1,4 +1,4 @@
-"""Install VNText Studio feather brand icon to WPF, Release and QML targets."""
+"""Install VNText Studio feather brand icon to WPF and Release targets."""
 from __future__ import annotations
 
 import argparse
@@ -17,7 +17,6 @@ OUT_RELEASE = ROOT / "assets" / "vntext_studio.ico"
 OUT_WPF = ROOT.parent / "wpf_app" / "VNText.Studio.App" / "Assets" / "vntext_studio.ico"
 OUT_WPF_LOGO_128 = ROOT.parent / "wpf_app" / "VNText.Studio.App" / "Assets" / "vntext_studio_logo_128.png"
 OUT_WPF_LOGO_256 = ROOT.parent / "wpf_app" / "VNText.Studio.App" / "Assets" / "vntext_studio_logo_256.png"
-OUT_QML_PNG = ROOT.parent / "qml_ui" / "icons" / "logo.png"
 ICO_SIZES = (256, 128, 64, 48, 32, 16)
 # Padding keeps the feather off the square edges at small taskbar sizes.
 ICON_PADDING = 0.04
@@ -82,11 +81,9 @@ def _write_png(outputs: dict[str, Path] | None = None) -> None:
     outputs = outputs or {
         "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_128.png": OUT_WPF_LOGO_128,
         "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png": OUT_WPF_LOGO_256,
-        "qml_ui/icons/logo.png": OUT_QML_PNG,
     }
     for key, size in (("wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_128.png", 128),
-                      ("wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png", 256),
-                      ("qml_ui/icons/logo.png", 128)):
+                      ("wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png", 256)):
         outputs[key].parent.mkdir(parents=True, exist_ok=True)
         _fit_square(master, size, padding=UI_LOGO_PADDING).save(outputs[key], format="PNG")
 
@@ -107,7 +104,6 @@ if __name__ == "__main__":
         "wpf_app/VNText.Studio.App/Assets/vntext_studio.ico": OUT_WPF,
         "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_128.png": OUT_WPF_LOGO_128,
         "wpf_app/VNText.Studio.App/Assets/vntext_studio_logo_256.png": OUT_WPF_LOGO_256,
-        "qml_ui/icons/logo.png": OUT_QML_PNG,
     }
     outputs = {
         key: output_root / Path(key)

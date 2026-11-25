@@ -249,6 +249,8 @@ internal static partial class Program
             Run("FullAppUpdate_RouteSecondHopCancelCleansAndRetries", () => FullAppUpdate_RouteDownloadChecks("cancel"), failures);
             Run("FullAppUpdate_RouteSecondHopNetworkFailureCleansAndRetries", () => FullAppUpdate_RouteDownloadChecks("network"), failures);
             Run("FullAppUpdate_RouteDiscontinuousBaselineFailsClosed", () => FullAppUpdate_RouteDownloadChecks("discontinuous"), failures);
+            if (failures.Count == 0 && _blocked.Count > 0)
+                return ReportBlocked("Focused full-app updater tests");
             if (failures.Count == 0)
             {
                 Console.WriteLine("Focused full-app updater tests: PASS (14)");
@@ -417,25 +419,47 @@ internal static partial class Program
         Run("WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175", WpfUpdate_GitHubRetryRefusesChangedInputsAndBoundsPersistent1175, failures);
         Run("WpfUpdate_GitHubRedirectsOnlyToTrustedCdn", WpfUpdate_GitHubRedirectsOnlyToTrustedCdn, failures);
 
+        if (failures.Count == 0 && _blocked.Count > 0)
+            return ReportBlocked("WPF workflow tests");
         if (failures.Count == 0)
         {
             Console.WriteLine($"WPF workflow tests: PASS ({_executed})");
             return 0;
         }
 
-        Console.Error.WriteLine($"WPF workflow tests: FAIL ({failures.Count})");
+        Console.Error.WriteLine($"WPF workflow tests: FAIL ({failures.Count})" + (_blocked.Count > 0 ? $", BLOCKED ({_blocked.Count})" : ""));
         foreach (var f in failures)
             Console.Error.WriteLine(" - " + f);
+        foreach (var b in _blocked)
+            Console.Error.WriteLine(" - BLOCKED " + b);
         return 1;
     }
 
     private static int _executed;
+
+    // A missing prerequisite (A/B executables, work root) is never PASS and never a product FAIL.
+    private sealed class PrerequisiteMissingException(string message) : Exception(message);
+
+    private static readonly List<string> _blocked = new();
+
+    private static int ReportBlocked(string suite)
+    {
+        Console.Error.WriteLine($"{suite}: BLOCKED ({_blocked.Count} of {_executed} need missing prerequisites; {_executed - _blocked.Count} passed). " +
+            "Set VNTEXT_WPF_BASELINE_EXE, VNTEXT_WPF_CANDIDATE_EXE and VNTEXT_WPF_TEST_WORK_ROOT, or run tests/unit/test_wpf_workflow.py which builds them.");
+        foreach (var b in _blocked)
+            Console.Error.WriteLine(" - " + b);
+        return 2;
+    }
     private static void Run(string name, Action test, List<string> failures)
     {
         _executed++;
         try
         {
             test();
+        }
+        catch (PrerequisiteMissingException ex)
+        {
+            _blocked.Add($"{name}: {ex.Message}");
         }
         catch (Exception ex)
         {
@@ -5485,7 +5509,7 @@ internal static partial class Program
         var candidateExePath = candidateExeOverride ?? Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE");
         if (string.IsNullOrWhiteSpace(baselineExePath) || !File.Exists(baselineExePath) ||
             string.IsNullOrWhiteSpace(candidateExePath) || !File.Exists(candidateExePath))
-            throw new InvalidOperationException("versioned WPF A/B executables are required for full-app updater tests");
+            throw new PrerequisiteMissingException("versioned WPF A/B executables are required for full-app updater tests");
 
         var baselineVersion = ReadExecutableProductVersion(baselineExePath);
         var candidateVersion = ReadExecutableProductVersion(candidateExePath);
@@ -5609,7 +5633,7 @@ internal static partial class Program
         var candidateExePath = candidateExePathOverride ?? Environment.GetEnvironmentVariable("VNTEXT_WPF_CANDIDATE_EXE");
         if (string.IsNullOrWhiteSpace(baselineExePath) || !File.Exists(baselineExePath) ||
             string.IsNullOrWhiteSpace(candidateExePath) || !File.Exists(candidateExePath))
-            throw new InvalidOperationException("versioned WPF A/B executables are required for updater tests");
+            throw new PrerequisiteMissingException("versioned WPF A/B executables are required for updater tests");
 
         var baselineVersion = ReadExecutableProductVersion(baselineExePath);
         candidateVersion ??= ReadExecutableProductVersion(candidateExePath);
@@ -5724,7 +5748,7 @@ internal static partial class Program
     {
         var work = Environment.GetEnvironmentVariable("VNTEXT_WPF_TEST_WORK_ROOT");
         if (string.IsNullOrWhiteSpace(work))
-            throw new InvalidOperationException("workflow test work root missing");
+            throw new PrerequisiteMissingException("workflow test work root missing");
         var root = Path.Combine(work, "test-temp");
         Directory.CreateDirectory(root);
         return root;

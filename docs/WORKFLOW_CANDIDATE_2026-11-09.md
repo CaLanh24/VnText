@@ -9,9 +9,9 @@ Implemented: image translation consumes Extract's positive OCR report; results s
 ## Evidence and acceptance
 
 - Root receipt: `C:/vnrg/evidence/batch5/root-final-handoff-20261109.json`; package verification: `root-final-package-smoke.json` in the same directory.
-- Final focused gate: 46 tests, zero failures/errors/skips, child exit0 at dfd15e2; wrapper protected epoch history remains REVIEW_REQUIRED. Earlier hA193 and hB109 tests at88d6a75 are reused only for unchanged Python/worker behavior; their skips remain recorded.
-- Debug/Release app builds and worker smoke passed: cancel, extract, translate, single-EXE Patch, crash. All7198 Setup payload members and99 worker Python files verified.
-- Native: exact final patch fixture install → inline uninstall confirmation → uninstall restored the inert fixture. Footer accessible at580×540 physical pixels/OS150%; default description wraps. Final app automatic-analysis completion dialog observed. Simplified empty image results observed on88d6a75; final delta only hides its stale manual hint.
+- Final focused gate: 46 tests, zero failures/errors/skips, child exit 0 at dfd15e2; wrapper protected epoch history remains REVIEW_REQUIRED. Earlier hA193 and hB109 tests at 88d6a75 are reused only for unchanged Python/worker behavior; their skips remain recorded.
+- Debug/Release app builds and worker smoke passed: cancel, extract, translate, single-EXE Patch, crash. All7198 Setup payload members and 99 worker Python files verified.
+- Native: exact final patch fixture install → inline uninstall confirmation → uninstall restored the inert fixture. Footer accessible at 580×540 physical pixels/OS150%; default description wraps. Final app automatic-analysis completion dialog observed. Simplified empty image results observed on88d6a75; final delta only hides its stale manual hint.
 - NOT_PROVEN: native Setup install/uninstall (earlier launch rejected by policy, not retried), actual audible playback, final positive-image E2E through native UI, all DPI/themes/large games. Automated evidence is not native PASS or release acceptance.
 
 ## Current candidate and native result

@@ -33,10 +33,6 @@ def app_data_root() -> Path:
     return Path(base) / APP_NAME
 
 
-def ct2_model_dir() -> Path:
-    return app_data_root() / "models" / "opus-mt-en-vi-int8"
-
-
 def cache_dir() -> Path:
     return app_data_root() / "cache"
 

@@ -7,17 +7,13 @@
 | Câu hỏi | Đọc trước | Chỉ mở thêm nếu cần |
 |---|---|---|
 | Đang làm gì, quyền gì, bước kế tiếp? | AI_STATE | Receipt/live DEV delta từ cursor |
-| Batch đơn giản hóa CSV/ảnh/Patch 2026-11-13? | [Usability batch](USABILITY_2026-11-13.md) | AI_STATE và evidence; chưa nghiệm thu candidate |
+| Batch đơn giản hóa CSV/ảnh/Patch 2026-11-13? | [Usability batch](USABILITY_2026-11-13.md) (HISTORY, đã vào các release sau) | Evidence của release tương ứng |
 | Source owner/caller ở đâu? | ARCHITECTURE theo heading | Source/tests ở owner đó |
 | Invariant/cleanup/epoch/quyền đang có? | CONTRACTS đúng § | Authority/receipt mà § trỏ tới |
 | Cần chạy gate nào? | TEST_MATRIX theo vùng thay đổi | Script/harness tương ứng; không mọi history |
-| Release0.1.16/0.1.15/0.1.14 thiếu gì? | RELEASE_0.1.16 / RELEASE_0.1.15 / RELEASE_0.1.14 ledger | Exact receipt, rồi snapshot nếu cần nguồn gốc |
+| Một release cụ thể đã làm gì, còn thiếu gì? | Bảng "Release ledger" bên dưới | Exact receipt, rồi snapshot nếu cần nguồn gốc |
 | Vì sao từng đổi một hành vi? | Topic router ở bảng dưới | Chọn heading/ID trong archive, không đọc toàn file |
 | Khôi phục sau compact/resume? | AGENTS + AI_STATE | Delta/receipt; lịch sử chỉ cho câu hỏi chưa trả lời |
-
-## Audit đang chờ duyệt
-
-- [Rà soát dự án 2026-11-11](audit-2026-11-11.html): phần đã sửa, bằng chứng và 12 đề xuất; [dữ liệu JSON](audit-2026-11-11.json). Phạm vi/giới hạn tại AI_STATE; không là Release acceptance.
 
 ## Tài liệu theo chủ đề
 
@@ -27,10 +23,9 @@
 |---|---|
 | [AGENTS.md](../AGENTS.md) | CANONICAL — tra mục liên quan |
 | [AI_STATE.md](../AI_STATE.md) | HIỆN HÀNH — checkpoint, xác minh Git/live |
-| [Workflow candidate 2026-11-09](WORKFLOW_CANDIDATE_2026-11-09.md) | LOCAL DEV — one CSV, cached image drafts, single patch EXE; bounded evidence and native limits |
 | [ARCHITECTURE.md](../ARCHITECTURE.md) | CANONICAL — tra mục liên quan |
 | [CONTRACTS.md](../CONTRACTS.md) | CANONICAL — tra mục liên quan |
-| [docs/WORKFLOW.md](WORKFLOW.md) | CANONICAL — vận hành/compact/checkpoint/history chi tiết |
+| [docs/WORKFLOW.md](WORKFLOW.md) | CANONICAL — vận hành/compact/checkpoint/history chi tiết; mục theo chủ đề: [bootstrap](workflows/bootstrap.md), [cleanup](workflows/cleanup.md), [context](workflows/context.md), [coordination](workflows/coordination.md), [dev-lifecycle](workflows/dev-lifecycle.md), [git-data](workflows/git-data.md), [native-lifecycle](workflows/native-lifecycle.md), [product](workflows/product.md), [release](workflows/release.md), [workspace](workflows/workspace.md) |
 | [docs/INDEX.md](INDEX.md) | ROUTER — chỉ mục này, không task tracker |
 | [docs/validation/SPECIALIZED_GATES.md](validation/SPECIALIZED_GATES.md) | GATE CATALOG — tra theo owner, không chạy mọi phase |
 | [README.md](../README.md) | CỬA VÀO SẢN PHẨM — không bootstrap kỹ thuật |
@@ -43,21 +38,46 @@
 | [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) | HƯỚNG DẪN — chỉ đọc khi chạm owner tương ứng |
 | [docs/DEVELOPMENT.md](DEVELOPMENT.md) | HƯỚNG DẪN — chỉ đọc khi chạm owner tương ứng |
 | [docs/DEV_VM_PLAN.md](DEV_VM_PLAN.md) | DEFERRED — không provision VM từ tài liệu này |
-| [docs/RELEASE_0.1.10.md](RELEASE_0.1.10.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.11.md](RELEASE_0.1.11.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.12.md](RELEASE_0.1.12.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.13.md](RELEASE_0.1.13.md) | ĐÃ PHÁT HÀNH v0.1.13 (đã đóng; lịch sử) |
-| [docs/RELEASE_0.1.17.md](RELEASE_0.1.17.md) | 0.1.17 đã phát hành (tag `v0.1.17` → `ed3f5b5`): tests, build, native, cleanup, publication tách riêng; cập nhật công khai trong app đã kiểm native (PASS) |
-| [docs/RELEASE_0.1.16.md](RELEASE_0.1.16.md) | Đã phát hành; evidence kỹ thuật có giới hạn, chưa chứng minh chất lượng toàn game |
-| [docs/RELEASE_0.1.15.md](RELEASE_0.1.15.md) | ĐÃ PHÁT HÀNH v0.1.15 (bất biến; lịch sử) |
-| [docs/RELEASE_0.1.14.md](RELEASE_0.1.14.md) | ĐÃ PHÁT HÀNH v0.1.14 không đổi; test-only style-fixed10 sửa F1–F7 fixed8, QA pending; xem AI_STATE và ledger |
-| [docs/RELEASE_0.1.6.md](RELEASE_0.1.6.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.7.md](RELEASE_0.1.7.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.8.md](RELEASE_0.1.8.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/RELEASE_0.1.9.md](RELEASE_0.1.9.md) | HISTORY — release/authority cũ, không tự mở lại |
-| [docs/UPDATE_0.1.7_REPAIR.md](UPDATE_0.1.7_REPAIR.md) | HISTORY — release/authority cũ, không tự mở lại |
 | [release/README.md](../release/README.md) | HƯỚNG DẪN — chỉ đọc khi chạm owner tương ứng |
 | [release/licenses/intel-2025.3-provenance.md](../release/licenses/intel-2025.3-provenance.md) | HƯỚNG DẪN — chỉ đọc khi chạm owner tương ứng |
+
+## Release ledger
+
+Mọi bản từ v0.1.6 tới v0.1.33 đều ĐÃ PHÁT HÀNH trên GitHub Releases (kiểm `gh release list` 2026-11-25); ledger là lịch sử, không tự mở lại quyền/task. Bản mới nhất là bản trong AI_STATE. v0.1.22 và v0.1.26 không có ledger riêng (xem checkpoint lưu trữ [AI_STATE 2026-11-25](history/AI_STATE_2026-11-25.md) và lịch sử Git của tag).
+
+| Bản | Ledger | Ghi chú / receipt |
+|---|---|---|
+| 0.1.33 | [RELEASE_0.1.33](RELEASE_0.1.33.md) | an toàn nhật ký cài + khóa HĐH theo game + phục hồi cài dở; `TEST_RUN/agent-evidence/release-0.1.33/` |
+| 0.1.32 | [RELEASE_0.1.32](RELEASE_0.1.32.md) | nâng cấp patch một bước + nhật ký cài + phục hồi khi bị ngắt; `TEST_RUN/agent-evidence/release-0.1.32/` |
+| 0.1.31 | [RELEASE_0.1.31](RELEASE_0.1.31.md) | nút báo lỗi khi bận + thông báo patch + giải phóng handle; `TEST_RUN/agent-evidence/release-0.1.31/` |
+| 0.1.30 | [RELEASE_0.1.30](RELEASE_0.1.30.md) | hoàn thiện khóa/report/preview; `TEST_RUN/agent-evidence/release-0.1.30/` |
+| 0.1.29 | [RELEASE_0.1.29](RELEASE_0.1.29.md) | khóa HĐH + audit block Ren'Py + report ẩn danh; `TEST_RUN/agent-evidence/release-0.1.29/` |
+| 0.1.28 | [RELEASE_0.1.28](RELEASE_0.1.28.md) | hotfix khóa extract; `TEST_RUN/agent-evidence/release-0.1.28/` |
+| 0.1.27 | [RELEASE_0.1.27](RELEASE_0.1.27.md) | cỡ chữ Ren'Py + Unity v22+; `TEST_RUN/agent-evidence/release-0.1.27/` |
+| 0.1.26 | — | Không có ledger riêng |
+| 0.1.25 | [RELEASE_0.1.25](RELEASE_0.1.25.md) | Ren'Py font replacement tổng quát; `TEST_RUN/agent-evidence/release-0.1.25/` |
+| 0.1.24 | [RELEASE_0.1.24](RELEASE_0.1.24.md) | Ren'Py image overlay + Unity TMP adapter; `TEST_RUN/agent-evidence/release-0.1.24/` |
+| 0.1.23 | [RELEASE_0.1.23](RELEASE_0.1.23.md) | Ren'Py generated-font payload; `TEST_RUN/agent-evidence/release-0.1.23/` |
+| 0.1.22 | — | Không có ledger riêng |
+| 0.1.21 | [RELEASE_0.1.21](RELEASE_0.1.21.md) | updater hotfix; `TEST_RUN/agent-evidence/release-0.1.21/` |
+| 0.1.20 | [RELEASE_0.1.20](RELEASE_0.1.20.md) | `TEST_RUN/agent-evidence/release-0.1.20/` |
+| 0.1.19 | [RELEASE_0.1.19](RELEASE_0.1.19.md) | hotfix cập nhật; `TEST_RUN/agent-evidence/release-0.1.19/` |
+| 0.1.18 | [RELEASE_0.1.18](RELEASE_0.1.18.md) |  |
+| 0.1.17 | [RELEASE_0.1.17](RELEASE_0.1.17.md) |  |
+| 0.1.16 | [RELEASE_0.1.16](RELEASE_0.1.16.md) |  |
+| 0.1.15 | [RELEASE_0.1.15](RELEASE_0.1.15.md) |  |
+| 0.1.14 | [RELEASE_0.1.14](RELEASE_0.1.14.md) |  |
+| 0.1.13 | [RELEASE_0.1.13](RELEASE_0.1.13.md) |  |
+| 0.1.12 | [RELEASE_0.1.12](RELEASE_0.1.12.md) |  |
+| 0.1.11 | [RELEASE_0.1.11](RELEASE_0.1.11.md) |  |
+| 0.1.10 | [RELEASE_0.1.10](RELEASE_0.1.10.md) |  |
+| 0.1.9 | [RELEASE_0.1.9](RELEASE_0.1.9.md) |  |
+| 0.1.8 | [RELEASE_0.1.8](RELEASE_0.1.8.md) |  |
+| 0.1.7 | [RELEASE_0.1.7](RELEASE_0.1.7.md) |  |
+| 0.1.6 | [RELEASE_0.1.6](RELEASE_0.1.6.md) |  |
+| 0.1.19 (kế hoạch) | [RELEASE_0.1.19_REBASELINE_PLAN](RELEASE_0.1.19_REBASELINE_PLAN.md) | Rebaseline một lần, đã tiêu thụ 2026-11-13 |
+| 0.1.7 (sửa cập nhật) | [UPDATE_0.1.7_REPAIR](UPDATE_0.1.7_REPAIR.md) | HISTORY |
+| 0.1.17 (candidate cục bộ) | [WORKFLOW_CANDIDATE_2026-11-09](WORKFLOW_CANDIDATE_2026-11-09.md) | HISTORY — đã vào các bản sau |
 
 ## UI và UX
 
@@ -102,7 +122,7 @@
 
 | Tài liệu | Vai trò / disposition |
 |---|---|
-| [.agent/SKILL.md](../.agent/SKILL.md) | ON DEMAND — spec/ticket/triage khi Owner yêu cầu; không runtime authority |
+| [.claude/skills/vntext-planning/SKILL.md](../.claude/skills/vntext-planning/SKILL.md) | ON DEMAND — spec/ticket/triage khi Owner yêu cầu; không runtime authority |
 | [docs/agents/domain.md](agents/domain.md) | ON DEMAND — spec/ticket/triage khi Owner yêu cầu; không runtime authority |
 | [docs/agents/issue-tracker.md](agents/issue-tracker.md) | ON DEMAND — spec/ticket/triage khi Owner yêu cầu; không runtime authority |
 | [docs/agents/triage-labels.md](agents/triage-labels.md) | ON DEMAND — spec/ticket/triage khi Owner yêu cầu; không runtime authority |
@@ -124,30 +144,17 @@ Chỉ đọc theo câu hỏi/task ID. Nội dung evidence của snapshot giữ n
 | `docs/TRANSLATION_QUALITY_PLAN.md` @ `b7e842419bef` | [docs/history/TRANSLATION_QUALITY_PLAN.md](history/TRANSLATION_QUALITY_PLAN.md) | `aa557f60e683e8f8ca199a9f7db44ed5262e2cd329b9deacdc53e724d60bb27f` |
 | `docs/RENPY_FINAL_ACCEPTANCE_20261022.md` @ `b7e842419bef` | [docs/history/RENPY_FINAL_ACCEPTANCE_20261022.md](history/RENPY_FINAL_ACCEPTANCE_20261022.md) | `d5abe7f04d0d39d6f73df10dce3fa6207f515bb14653e1bde1616f7bbe5cd2e8` |
 | `docs/POST_0.1.11_UX_REMEDIATION.md` @ `b7e842419bef` | [docs/history/POST_0.1.11_UX_REMEDIATION.md](history/POST_0.1.11_UX_REMEDIATION.md) | `766a93b9c033e9b623afe682d0b7fab5bd8fc9b32f480acc757307273bfdda26` |
-| `docs/RELEASE_0.1.13.md` @ `b7e842419bef` | [docs/history/RELEASE_0.1.13.md](history/RELEASE_0.1.13.md) | `cb17777780ce59529ddf010a7eac74c73bc7f1a33dc2ea32da6e5c82c8e947ef` |
-
 | `TEST_MATRIX.md` @ `b7e842419bef` | [docs/history/TEST_MATRIX.md](history/TEST_MATRIX.md) | `8bb010300480cdbe648b5b63d783b4b44a015b867e24d191047afcad94ccd059` |
+| `AI_STATE.md` @ `a7bd48b` (checkpoint 0.1.21–0.1.26, tên game đã ẩn danh) | [docs/history/AI_STATE_2026-11-25.md](history/AI_STATE_2026-11-25.md) | — (không còn byte-identical vì đã ẩn danh) |
+| `docs/WORKFLOW.md` @ `a7bd48b` (mục bridge Codex) | [docs/history/WORKFLOW_codex_bridge.md](history/WORKFLOW_codex_bridge.md) | — (đoạn trích nguyên văn) |
 
 ## Duy trì bản đồ
 
 Khi thêm/đổi disposition tài liệu, cập nhật đúng hàng này và con trỏ task hiện hành; không thêm một tracker/summary thứ hai. Landing page giữ kết quả/contract còn hiệu lực và đường dẫn archive; archive bất biến, không làm mới chữ pending/current cũ. Lịch sử chưa tách vẫn tra theo heading/câu hỏi; không nhập toàn bộ vào session.
 
-## Audit implementation 2026-11-11
+## Audit 2026-11-11 (đã triển khai R01–R12)
 
 - [R01-R12 implementation ledger](audit-2026-11-11-implementation.md), [original review](audit-2026-11-11.html).
 - Contracts: [retention/budgets](contracts/artifact-retention.md), [epoch authority/history](contracts/registry-epoch.md), [DEV/game validation](contracts/dev-validation.md). Origin SHAs retained in each topic; CONTRACTS keeps compatibility section anchors.
 - WORKFLOW routes bounded operations to workflows/ by owner. No historical task resumes through a router.
 - [Platform dependency locks](../requirements/locks/README.md), [public gate runner](../tests/tools/audit_gates.py), [MT finite corpus](../tests/golden/mt-quality/corpus.json).
-| Release 0.1.19 (hotfix cập nhật) | docs/RELEASE_0.1.19.md | Receipt `TEST_RUN/agent-evidence/release-0.1.19/` |
-| Release 0.1.20 (đã phát hành) | docs/RELEASE_0.1.20.md | Receipt `TEST_RUN/agent-evidence/release-0.1.20/` |
-
-| Release0.1.21 updater hotfix (đang kiểm) | docs/RELEASE_0.1.21.md | TEST_RUN/agent-evidence/release-0.1.21/ |
-| Release 0.1.23 Ren'Py generated-font payload (đang chuẩn bị) | docs/RELEASE_0.1.23.md | TEST_RUN/agent-evidence/release-0.1.23/ |
-| Release 0.1.24 Ren'Py image overlay + Unity TMP adapter (đang kiểm gate) | docs/RELEASE_0.1.24.md | TEST_RUN/renpy-three-game-qa/ |
-| Release 0.1.27 cỡ chữ Ren'Py + Unity v22+ (đã phát hành) | docs/RELEASE_0.1.27.md | TEST_RUN/agent-evidence/release-0.1.27/ |
-| Release 0.1.28 hotfix khóa extract (đã phát hành) | docs/RELEASE_0.1.28.md | TEST_RUN/agent-evidence/release-0.1.28/ |
-| Release 0.1.29 khóa HĐH + audit block Ren'Py + report ẩn danh (đã phát hành) | docs/RELEASE_0.1.29.md | TEST_RUN/agent-evidence/release-0.1.29/ |
-| Release 0.1.30 hoàn thiện khóa/report/preview (đã phát hành) | docs/RELEASE_0.1.30.md | TEST_RUN/agent-evidence/release-0.1.30/ |
-| Release 0.1.31 nút báo lỗi khi bận + thông báo patch + giải phóng handle (đã phát hành) | docs/RELEASE_0.1.31.md | TEST_RUN/agent-evidence/release-0.1.31/ |
-| Release 0.1.32 nâng cấp patch một bước + nhật ký cài + phục hồi khi bị ngắt (đã phát hành) | docs/RELEASE_0.1.32.md | TEST_RUN/agent-evidence/release-0.1.32/ |
-| Release 0.1.33 an toàn nhật ký cài + khóa HĐH theo game + phục hồi cài dở (đã phát hành) | docs/RELEASE_0.1.33.md | TEST_RUN/agent-evidence/release-0.1.33/ |

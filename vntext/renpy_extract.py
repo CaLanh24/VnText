@@ -192,10 +192,6 @@ def _say_statement(value: str, *, comment: bool = False) -> tuple[str, str, str,
     return str(ast.literal_eval(text[quote_start:quote_end + 1])), speaker, expression, transition
 
 
-def _statement(value: str, *, comment: bool = False) -> tuple[str, str, str]:
-    return _say_statement(value,comment=comment)[:3]
-
-
 def _keyed_string(value: str) -> tuple[str, str]:
     match = _KEYED_QUOTE.fullmatch(value.strip())
     if not match:

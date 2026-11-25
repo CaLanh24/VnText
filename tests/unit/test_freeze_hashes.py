@@ -24,9 +24,10 @@ from pathlib import Path
 
 
 # SHA-256 of frozen files. addressables.py is still the Phase 0 bytes.
-# unity_fs.py: current no-TypeTree grow rebuild (VH-compatible directory patch).
+# unity_fs.py: no-TypeTree grow rebuild plus the SerializedFile v22+ 64-bit object
+# directory rewrite (4023c51, 2026-11-22); matches test_refactor_contract_baseline.
 FROZEN_SHA256 = {
-    "vntext/unity_fs.py": "2ef242485cbc91978e6ebd9bc54a13f3045c8752d06e0f86cf2138106b7dc15c",
+    "vntext/unity_fs.py": "1cb0f2a5933043506a651bc5fc01cde8a46791bcee9634288fca00292c854d6e",
     "vntext/addressables.py": "f2a22890da471a27f0980d71b705661855e5d3a1121b7998b701b75c9ea8030a",
 }
 

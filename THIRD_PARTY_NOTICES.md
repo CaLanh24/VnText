@@ -140,6 +140,10 @@ versioned upstream license files:
   [tokenizers license](https://github.com/huggingface/tokenizers/blob/v0.23.2/LICENSE)).
 
 
+#### Source change after release 0.1.33 (2026-11-25)
+
+The legacy Python UIs (Tk/Qt/QML), PyInstaller and the `build`/`legacy-qt` lock profiles were removed from the source tree. The Setup ships only the WPF app plus the `runtime` lock (`requirements/locks/windows-cp3xx-runtime.txt`). PySide6, PyInstaller, `pyinstaller_hooks_contrib`, `altgraph` and `pefile` are therefore no longer build or payload dependencies. The inventories below are historical point-in-time records; the next Setup must regenerate its exact payload inventory.
+
 #### Locked Python dependency inventory — release 0.1.19
 
 The 0.1.19 build uses the audited hash locks `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distributions; `tpk_ar` 0.2.4 is the only official source distribution, built with the locked setuptools). This replaces the earlier minimum-version statement for 0.1.18. The table is read from each installed distribution's own metadata (point-in-time, not a legal audit); each wheel's license files stay in its dist-info inside the payload. CTranslate2 (MIT), SentencePiece and Tokenizers (Apache-2.0) are covered by the notices above and `app/licenses`; the FMOD vendor-binary exclusion for `fmod_toolkit` is unchanged. The build-profile distributions (pyinstaller [GPLv2 with its bootloader exception], pyinstaller-hooks-contrib, altgraph, pefile, pywin32-ctypes) are build tools; whether any of them is present in a Setup payload is decided from that exact payload's inventory, not from this table. Tokenizers is 0.23.3 here (same Apache-2.0 license as the 0.23.2 notice).

@@ -70,7 +70,8 @@ def _copy_base_python(src_home: Path, dest: Path) -> None:
     for dll in src_home.glob("*.dll"):
         shutil.copy2(dll, dest / dll.name)
 
-    # Tcl/Tk data dirs required by tkinter (vntext_studio imports tkinter at load).
+    # Tcl/Tk data dirs: kept for packaging parity; the worker no longer imports
+    # tkinter (legacy Tk UI removed 2026-11-25). Drop only with a Setup build check.
     for folder in ("tcl", "tk"):
         src = src_home / folder
         if src.is_dir():

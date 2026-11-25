@@ -47,7 +47,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\release\publish.ps1 `
   -SkipWpfUpdatePackage
 ```
 
-Tùy chọn: `-SkipTests`, `-BuildLegacy`, `-FullAppUpdateBaselineRoot`. `-SkipBuild` không được hỗ trợ cho
+Tùy chọn: `-SkipTests`, `-FullAppUpdateBaselineRoot`. `-SkipBuild` không được hỗ trợ cho
 publish Setup chuẩn vì mỗi lượt phải dựng WPF Update mới.
 Publisher dùng SDK .NET 10 ở `.dev-env\dotnet-sdk-10`, target runtime .NET 8
 và đóng runtime riêng trong `app/dotnet/` để EXE chạy không cần cài .NET ngoài.

@@ -7,7 +7,7 @@ Trạng thái: **ĐÃ PHÁT HÀNH** — https://github.com/CaLanh24/VnText/relea
 
 ## Authority
 
-Owner2026-11-05 supersedes the earlier perfect-semantic-quality blocker:
+Owner 2026-11-05 supersedes the earlier perfect-semantic-quality blocker:
 deliver usable raw Vietnamese, free/offline, with idiom/context/style limits
 left for editing or external tools. App-induced word corruption is unacceptable.
 The confirmed homograph/cache and placeholder-echo defects must pass exact
