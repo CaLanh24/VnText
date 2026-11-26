@@ -31,3 +31,6 @@ Receipts in `TEST_RUN/agent-evidence/release-0.1.35/`. `tests/unit/test_report_u
 - build embedding for valid, empty, wrong and multi-line files and for a file inside the repository;
 - the app wiring (preview, then an explicit yes, then send);
 - a source scan for plain addresses.
+
+## Published
+Tag `v0.1.35` = `4841f18caa99b557f18dddb810a77319c85614a1` (rebuilt after the first UI smoke found the send button disabled once a game was chosen; epoch 077). Setup sha256 `745cb487aaf56873c01a4e9cc716219ceb4f5b35e000fe96982aaf33e1eb0b22` (GitHub = local, 5/5 assets). Update 0.1.34→0.1.35: 7341 files verified. Publisher log: endpoint CONFIGURED, payload scan clean, no address in the log. Smoke through the UI on the updated app (agent-desktop): extract → 'Gửi báo lỗi' enabled → preview with the privacy line → No → nothing sent (no send history). NOT_PROVEN: a real send to the Owner's channel (left for the Owner to try).
