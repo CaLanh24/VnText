@@ -611,10 +611,15 @@ public sealed partial class MainViewModel
                 "Tạo patch", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
-        if (PatchBlockedCount > 0 && AppDialogService.Show(
-                UiText.Msg("Tạo patch với {0} câu hợp lệ? {1} câu chưa đủ điều kiện sẽ được bỏ qua; game giữ nguyên các câu đó.", PatchEligibleCount, PatchBlockedCount),
-                "Tạo patch", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-            return;
+        while (PatchBlockedCount > 0)
+        {
+            var choice = PatchIssueText.ConfirmPatch(PatchConfirmMessage());
+            if (choice == 1) break;
+            if (choice != 2) return;
+            var list = PatchSkippedListText();
+            if (PatchIssueText.ShowList(list)) { OpenCsvPatchSkipped(); return; }
+        }
+        ClearPatchFailure();
         var csv = ResolveActiveCsvPath();
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
         BeginTask("patch", new
@@ -654,6 +659,7 @@ public sealed partial class MainViewModel
         var csv = ResolveActiveCsvPath();
         var manifest = Path.Combine(Path.GetDirectoryName(csv)!, "manifest.json");
         var preflight = PatchPreflightService.Run(csv, manifest, partialOverride: true);
+        RecordPatchPreflight(preflight);
         PatchEligibleCount = preflight.Eligible; PatchBlockedCount = preflight.Blocked;
         PatchPreflightMessage = preflight.DetailMessage;
         if (!preflight.Ok || preflight.Eligible <= 0)

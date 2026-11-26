@@ -312,6 +312,12 @@ public sealed partial class MainViewModel
                     PatchResultsAvailable = true;
                     PatchResultsExpanded = true;
                 }
+                if (completedTask == "patch")
+                {
+                    // The failure stays on the Patch screen, explained, next to the bug-report buttons (it used to live only in the log file).
+                    if (!cancelled && !evt.Ok) RecordPatchFailure(evt.Error ?? evt.Summary);
+                    else ClearPatchFailure();
+                }
                 var needsHumanReview = evt.HumanReviewRequiredCount > 0;
                 var isExternalTranslationImport = completedTask == "external_translation_import";
                 var externalRemaining = Math.Max(evt.Pending, evt.ReviewOnly);
@@ -332,6 +338,9 @@ public sealed partial class MainViewModel
                     : needsHumanReview
                     ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi Patch"
                     : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
+                // "Dịch đã chọn" always says what happened to the checked rows (Owner report 0.1.35: "hoàn tất" while nothing changed).
+                if (completedTask == "translate" && evt.OperationScope == "selected_rows")
+                    manualReviewText = SelectedTranslateText(evt);
                 var fullyComplete = isAnalyze
                     ? evt.Ok && !cancelled
                     : evt.Ok && (evt.Complete ?? evt.Ok)
@@ -389,7 +398,9 @@ public sealed partial class MainViewModel
                 }
                 else if (!evt.Ok && !partialOk)
                 {
-                    var errMsg = string.IsNullOrWhiteSpace(evt.Error) ? "Tác vụ thất bại" : evt.Error!;
+                    var errMsg = completedTask == "patch" ? PatchErrorText
+                        : completedTask == "translate" && evt.OperationScope == "selected_rows" ? SelectedTranslateText(evt)
+                        : string.IsNullOrWhiteSpace(evt.Error) ? "Tác vụ thất bại" : evt.Error!;
                     RequestCompletion("VNText Studio — Lỗi", errMsg, "error");
                     RecordPersistentError(completedTask, errMsg, RenpySdkAction is "missing" or "error"
                         ? "Mở Cài đặt › Dữ liệu để chuẩn bị hoặc chọn Ren'Py SDK, rồi lấy text lại."
@@ -402,6 +413,7 @@ public sealed partial class MainViewModel
                     var doneMsg = completedTask switch
                     {
                         "extract" => "Lấy text hoàn tất",
+                        "translate" when evt.OperationScope == "selected_rows" => SelectedTranslateText(evt),
                         "translate" => "Dịch tự động hoàn tất",
                         "cloud_export" => "Đã tạo gói Cloud Repair — tải ZIP lên dịch vụ bên ngoài.",
                         "cloud_import" => "Đã nhập Cloud Repair — CSV mới đã được kiểm tra.",
@@ -747,6 +759,17 @@ public sealed partial class MainViewModel
                 ? evt.PatchInstallInstructions!
                 : "Đã hủy tạo patch — thư mục xuất chưa được xác nhận là patch hoàn chỉnh; kiểm tra hoặc chọn thư mục xuất trống rồi tạo lại. Game gốc không bị thay đổi.";
         return "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp.";
+    }
+
+    /// <summary>The result of "Dịch đã chọn": the counts, then each distinct per-row outcome with how many rows it covers.</summary>
+    internal static string SelectedTranslateText(WorkerEvent evt)
+    {
+        var lines = new List<string> { string.IsNullOrWhiteSpace(evt.Summary) ? UiText.Translate("Đã chạy dịch các dòng đã chọn.") : UiText.TranslateDynamic(evt.Summary) };
+        foreach (var group in evt.SelectedMessages.Where(m => !string.IsNullOrWhiteSpace(m)).GroupBy(m => m).OrderByDescending(g => g.Count()).Take(6))
+            lines.Add(UiText.Msg("• {0} dòng: {1}", group.Count(), UiText.TranslateDynamic(group.Key)));
+        if (!string.IsNullOrWhiteSpace(evt.Error) && !evt.Ok)
+            lines.Add(UiText.Msg("Lỗi: {0}", UiText.TranslateDynamic(evt.Error)));
+        return UiText.Lines(lines.ToArray());
     }
 
     /// <summary>The delivery heading names the file the current build actually produced; no fixed stub name is assumed.</summary>

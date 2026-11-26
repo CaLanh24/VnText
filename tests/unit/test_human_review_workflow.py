@@ -249,7 +249,10 @@ class HumanReviewWorkflowTests(unittest.TestCase):
         _review_fields, review_rows = read_csv_rows_file(package / "review_only.csv")
         self.assertEqual({row["key"] for row in review_rows}, {"model"})
 
-    def test_human_review_toggle_off_does_not_promote_key_scoped_retry(self):
+    def test_human_review_toggle_off_translates_an_explicitly_selected_row(self):
+        """Owner report 0.1.35 (issue 3): rows left waiting for review by an earlier run stayed empty for ever, even when the person selected
+        them, turned human review off and pressed "Dịch đã chọn".  An explicit selection is translated through every normal check; with review
+        on the result goes back to the ledger as a draft (test_owner_report_0136 covers that half)."""
         package, csv_path = _write_package("human_review_retry_rerun", [_row("model", "Hello")])
 
         first = run_ct2_translate(
@@ -267,12 +270,12 @@ class HumanReviewWorkflowTests(unittest.TestCase):
             backup=False,
         )
 
-        self.assertFalse(retry["ok"], retry)
-        self.assertEqual(retry["human_review_required_count"], 1, retry)
+        self.assertTrue(retry["ok"], retry)
+        self.assertEqual(retry["human_review_required_count"], 0, retry)
         _fields, current = read_csv_rows_file(csv_path)
-        self.assertEqual(current[0]["translation"], "")
+        self.assertTrue(current[0]["translation"].strip())
         _review_fields, review_rows = read_csv_rows_file(package / "review_only.csv")
-        self.assertEqual({row["key"] for row in review_rows}, {"model"})
+        self.assertEqual({row["key"] for row in review_rows}, set())
 
     def test_copy_and_technical_routes_are_not_human_reviewed(self):
         rows = [

@@ -121,7 +121,7 @@ public sealed partial class MainViewModel
         if (_bugReportRunning || string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
         var package = WorkflowStatus.ResolvePackageDir(OutputPath);
         var parameters = new { src = InputPath, @out = Path.Combine(package, "bug-reports"), log_lines = LogLines.TakeLast(400).ToArray(),
-            analysis_report = ResolveAnalyzeReportPath(), extract_status = Path.Combine(package, "extract_status.json"), app_version = Version };
+            analysis_report = ResolveAnalyzeReportPath(), extract_status = Path.Combine(package, "extract_status.json"), app_version = Version, for_send = true };
         _bugReportRunning = true; CreateBugReportCommand?.RaiseCanExecuteChanged(); SendBugReportCommand?.RaiseCanExecuteChanged();
         try
         {

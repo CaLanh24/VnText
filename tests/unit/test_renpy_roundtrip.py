@@ -109,16 +109,18 @@ class RenPyRoundTripTests(unittest.TestCase):
             self.assertIn(prior,output)
             self.assertEqual(own.read_text(encoding='utf-8'),prior)
 
-    def test_existing_dialogue_conflict_refuses_before_writing(self):
+    def test_existing_dialogue_conflict_keeps_the_foreign_file_and_skips_only_that_line(self):
         with tempfile.TemporaryDirectory(dir=work_temp_dir('renpy-existing-conflict')) as tmp:
             base=Path(tmp);game,csv,manifest=patch_fixtures.RenPyPatchTests()._package(base)
             entry=next(e for e in json.loads(manifest.read_text(encoding='utf-8'))['entries']if e['import_method']=='renpy_dialogue')
             own=game/'game/tl/vietnamese/other.rpy';own.parent.mkdir(parents=True)
             speaker=entry.get('object_info')or''
             own.write_text(f'translate vietnamese {entry["locator"]["native_id"]}:\n    {speaker} "Khác nội dung"\n',encoding='utf-8')
-            with self.assertRaisesRegex(RenPyPatchError,'conflict'):
-                apply_renpy_translation_package(str(csv),str(manifest),str(game),str(base/'out'))
-            self.assertFalse((base/'out/COPY_TO_GAME_ROOT').exists())
+            before=own.read_bytes()
+            apply_renpy_translation_package(str(csv),str(manifest),str(game),str(base/'out'))
+            overlay=(base/'out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy').read_text(encoding='utf-8')
+            self.assertNotIn(f'translate vietnamese {entry["locator"]["native_id"]}:',overlay)
+            self.assertEqual(before,own.read_bytes())
 
     def test_added_target_during_staging_refuses_and_preserves_foreign_file(self):
         from vntext import patch_renpy

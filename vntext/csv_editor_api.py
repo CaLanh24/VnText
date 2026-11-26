@@ -16,8 +16,12 @@ from typing import Any
 from vntext.package_io import CSV_FIELDS, backup_translation_csv, read_csv_rows_file, write_csv_rows_file
 from vntext.patch_gate import (
     REASON_LABELS_VI,
+    RESOLVABLE_REVIEW_KINDS,
+    load_review_candidates,
+    load_review_kinds,
     load_review_only_issue_reasons,
     load_review_only_keys,
+    reason_action_vi,
     patch_skip_reason,
     reason_bucket,
     reason_label_vi,
@@ -627,10 +631,9 @@ def compute_row_reason(
 ) -> str:
     key = str(row.get("key") or "")
     trans = str(row.get("translation") or "")
-    if review_issue_reasons and key in review_issue_reasons:
-        return review_issue_reasons[key]
-    if key in review_keys:
-        return "review_only"
+    kind = (review_issue_reasons or {}).get(key) or ("review_only" if key in review_keys else "")
+    if kind and (kind not in RESOLVABLE_REVIEW_KINDS or not trans.strip()):
+        return kind
     if not trans.strip():
         return "no_translation"
     entry = _row_entry(row)
@@ -641,7 +644,7 @@ def compute_row_reason(
     reason = patch_skip_reason(entry, trans, whitelist) or ""
     if reason:
         return reason_bucket(reason)
-    return ""
+    return "review_resolved_unsaved" if kind else ""
 
 
 def is_batch_actionable(reason: str) -> bool:
@@ -659,7 +662,7 @@ def is_batch_actionable(reason: str) -> bool:
 
 def build_issues_by_key(rows: list[dict], package_dir: Path) -> dict[str, str]:
     review_keys = load_review_only_keys(package_dir)
-    review_issue_reasons = load_review_only_issue_reasons(package_dir)
+    review_issue_reasons = load_review_kinds(package_dir)
     whitelist = load_whitelist(package_dir)
     issues: dict[str, str] = {}
     for row in rows:
@@ -680,7 +683,7 @@ def _gate_counts(rows: list[dict], issues_by_key: dict[str, str]) -> dict[str, i
         key = str(row.get("key") or "")
         trans = str(row.get("translation") or "").strip()
         reason = issues_by_key.get(key, "")
-        if reason and reason != "no_translation":
+        if reason and reason not in ("no_translation", "review_resolved_unsaved"):
             blocked += 1
             if is_batch_actionable(reason):
                 actionable += 1
@@ -701,6 +704,9 @@ def validate_document(csv_path: str | Path, rows: list[dict] | None = None) -> d
 
     issues_by_key = build_issues_by_key(rows, package_dir)
     issues_display = {k: reason_label_vi(v) for k, v in issues_by_key.items()}
+    issues_action = {k: reason_action_vi(v) for k, v in issues_by_key.items() if v != "no_translation"}
+    candidates = load_review_candidates(package_dir)
+    review_candidates = {k: candidates[k] for k, v in issues_by_key.items() if v == "human_review" and k in candidates}
     counts: dict[str, int] = {}
     for reason in issues_by_key.values():
         counts[reason] = counts.get(reason, 0) + 1
@@ -722,7 +728,7 @@ def validate_document(csv_path: str | Path, rows: list[dict] | None = None) -> d
         )
 
     gate = _gate_counts(rows, issues_by_key)
-    hard = [c for c in counts if c not in {"no_translation", "review_only"}]
+    hard = [c for c in counts if c not in {"no_translation", "review_only", "review_resolved_unsaved"}]
     summary = _format_validate_summary(counts, gate)
     return {
         "ok": True,
@@ -731,6 +737,8 @@ def validate_document(csv_path: str | Path, rows: list[dict] | None = None) -> d
         "issues": issues,
         "issues_by_key": issues_by_key,
         "issues_display": issues_display,
+        "issues_action": issues_action,
+        "review_candidates": review_candidates,
         "has_warnings": len(hard) > 0,
         "summary": summary,
         "patch_eligible": gate["patch_eligible"],

@@ -17,6 +17,7 @@ public static class CsvFilterModes
     public const string Untranslated = "untranslated";
     public const string ReviewOnly = "review_only";
     public const string Errors = "errors";
+    public const string PatchSkipped = "patch_skipped";
 
     public static IReadOnlyList<CsvFilterOption> Options { get; } =
     [
@@ -24,5 +25,6 @@ public static class CsvFilterModes
         new(Untranslated, "Chưa dịch"),
         new(ReviewOnly, "Cần xem lại"),
         new(Errors, "Chỉ dòng lỗi"),
+        new(PatchSkipped, "Patch sẽ bỏ qua"),
     ];
 }

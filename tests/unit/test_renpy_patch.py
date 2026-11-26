@@ -516,32 +516,44 @@ class RenPyPatchTests(unittest.TestCase):
         self.assertEqual(string_result["reason"], "already_satisfied")
         self.assertEqual(string_result["target"], str(existing))
 
-    def test_different_existing_string_mapping_fails_closed_before_overlay(self):
+    def test_different_existing_string_mapping_in_another_file_is_kept_and_only_that_string_is_skipped(self):
+        """0.1.36 (Owner report: one conflicting line aborted the whole patch): the game's own mapping is kept byte for byte, the conflicting
+        string is omitted and counted, the rest of the patch is written."""
         with tempfile.TemporaryDirectory() as temp:
             base = Path(temp); game, csv, manifest = self._package(base)
             self._existing_string_mapping(game, "Open", "Khác")
-            with self.assertRaisesRegex(RenPyPatchError, "string mapping conflict"):
-                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
-            self.assertFalse((base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").exists())
+            existing = sorted((game / "game" / "tl" / "vietnamese").rglob("*.rpy"))
+            before = {path: path.read_bytes() for path in existing}
+            apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
+            overlay = (base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
+            self.assertNotIn('old "Open"', overlay)
+            self.assertIn("Xin chào [name]", overlay)
+            verification = json.loads((base / "out/patch_verification.json").read_text(encoding="utf-8"))
+            self.assertEqual(1, verification["omitted_by_reason"]["existing_translation_conflict"])
+            self.assertEqual(before, {path: path.read_bytes() for path in existing})
 
     def _existing_dialogue_mapping(self, game: Path, translation: str) -> None:
         path = game / "game" / "tl" / "vietnamese" / "existing.rpy"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('translate vietnamese start_a:\n\n    # "Hello [name]"\n    "' + translation + '"\n', encoding="utf-8")
 
-    def test_different_existing_dialogue_mapping_is_refused_and_a_vntext_install_explains_how_to_continue(self):
-        with tempfile.TemporaryDirectory() as temp:
-            base = Path(temp); game, csv, manifest = self._package(base)
-            self._existing_dialogue_mapping(game, "Khác [name]")
-            with self.assertRaisesRegex(RenPyPatchError, "mapping conflict") as plain:
+    def test_different_existing_dialogue_mapping_in_another_file_is_kept_and_only_that_line_is_skipped(self):
+        """0.1.36: the Owner's "Ren'Py dialogue mapping conflict: <id>" - a game that already translates a line differently in ITS OWN file keeps
+        that translation; the line is omitted and counted, with or without a VNText install receipt, and nothing competes with it."""
+        for receipt in (False, True):
+            with self.subTest(receipt=receipt), tempfile.TemporaryDirectory() as temp:
+                base = Path(temp); game, csv, manifest = self._package(base)
+                self._existing_dialogue_mapping(game, "Khác [name]")
+                if receipt:
+                    (game / ".vntext").mkdir()
+                    (game / ".vntext" / "ownership.json").write_text("{}", encoding="utf-8")
+                existing = game / "game" / "tl" / "vietnamese" / "existing.rpy"; before = existing.read_bytes()
                 apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
-            self.assertNotIn("Gỡ và hoàn nguyên", str(plain.exception))
-            (game / ".vntext").mkdir()
-            (game / ".vntext" / "ownership.json").write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(RenPyPatchError, "Gỡ và hoàn nguyên") as installed:
-                apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
-            self.assertIn("start_a", str(installed.exception))
-            self.assertFalse((base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").exists())
+                overlay = (base / "out/COPY_TO_GAME_ROOT/game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
+                self.assertNotIn("translate vietnamese start_a:", overlay)
+                verification = json.loads((base / "out/patch_verification.json").read_text(encoding="utf-8"))
+                self.assertEqual(1, len(verification["omitted_conflict_keys"]))
+                self.assertEqual(before, existing.read_bytes())
 
     def _installed_vntext_layer(self, game: Path, translation: str) -> Path:
         """A previous VNText patch exactly as the installer leaves it: the overlay plus a receipt layer proving its bytes."""
@@ -567,8 +579,9 @@ class RenPyPatchTests(unittest.TestCase):
             base = Path(temp); game, csv, manifest = self._package(base)
             overlay = self._installed_vntext_layer(game, "Khác [name]")
             overlay.write_text(overlay.read_text(encoding="utf-8") + "# edited\n", encoding="utf-8")
-            with self.assertRaisesRegex(RenPyPatchError, "mapping conflict"):
+            with self.assertRaisesRegex(RenPyPatchError, "mapping conflict") as installed:
                 apply_renpy_translation_package(str(csv), str(manifest), str(game), str(base / "out"))
+            self.assertIn("Gỡ và hoàn nguyên", str(installed.exception))      # the route out is named
 
     def test_unverifiable_existing_string_mapping_fails_closed(self):
         with tempfile.TemporaryDirectory() as temp:

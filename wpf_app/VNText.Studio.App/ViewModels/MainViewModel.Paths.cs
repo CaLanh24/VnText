@@ -378,6 +378,7 @@ public sealed partial class MainViewModel
         // Translation completion is advisory. The current CSV and manifest, not an
         // older MT run's pending/review counts, decide which rows can be patched.
         var result = PatchPreflightService.Run(csv, manifest, partialOverride: true);
+        RecordPatchPreflight(result);
         _patchSourceStale = false;
         PatchPreflightOk = result.Ok;
         ReadyForPatch = result.Ok;

@@ -28,7 +28,18 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     public int Index { get; init; }
     public string Key { get; init; } = "";
     public string SourceText { get; init; } = "";
-    public bool IsReviewOnly { get; init; }
+    private bool _isReviewOnly;
+    /// <summary>In the review ledger NOW.  Refreshed by every validation (a save that resolves a row removes it from the ledger; the flag read at
+    /// load must not keep the old "review" status - Owner report 0.1.35).</summary>
+    public bool IsReviewOnly
+    {
+        get => _isReviewOnly;
+        set { if (_isReviewOnly == value) return; _isReviewOnly = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsReviewOnly))); }
+    }
+    /// <summary>What the person can do about the current status (empty when there is nothing to do).</summary>
+    public string IssueAction { get; set; } = "";
+    /// <summary>Machine translation waiting for a human decision ("Chấp nhận đề xuất"), when there is one.</summary>
+    public string ReviewCandidate { get; set; } = "";
     public bool? CanTranslate { get; init; }
     public bool IsTechnical { get; init; }
     public string TranslationSkipReason { get; init; } = "";
@@ -86,6 +97,11 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
         "Mất/sai placeholder {…}" => "Sai placeholder",
         "Hỏng tag <…>" => "Sai tag",
         "Trong review_only.csv (cần xem lại thủ công)" => "Cần xem lại",
+        "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)" => "Không ghi được vào game",
+        "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch" => "Cần tự dịch",
+        "Bản dịch máy đang chờ bạn duyệt" => "Chờ duyệt",
+        "Đã dịch — bấm Lưu để đưa dòng này vào patch" => "Bấm Lưu",
+        "Game đã có bản dịch tiếng Việt khác cho câu này" => "Game đã có bản dịch",
         "Rác lặp từ/ký tự" => "Rác lặp",
         "HTML/entity rác" => "HTML rác",
         "Dòng synonym — dịch thủ công" => "Synonym thủ công",
@@ -111,6 +127,8 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     }
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Translation);
+    /// <summary>Tạo patch will leave this row out (same rule as the patch list): untranslated human text, or any status other than "ready".</summary>
+    public bool SkippedByPatch => !IsTechnical && (IsEmpty || (HasIssue && IssueLabel != "review_resolved_unsaved"));
     public bool HasIssue => !IsTechnical && !string.IsNullOrWhiteSpace(IssueLabel) && IssueLabel != "no_translation";
 
     public event PropertyChangedEventHandler? PropertyChanged;

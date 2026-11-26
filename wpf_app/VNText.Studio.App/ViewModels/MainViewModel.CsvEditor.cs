@@ -263,6 +263,10 @@ public sealed partial class MainViewModel
         CsvEditorWarningSummary = validationMessage;
     }
     internal void TestSetCsvBulkPreview(string text) => CsvBulkPreview = text;
+    /// <summary>Applies a validation result exactly as a save/validate does (harness hook; no worker).</summary>
+    internal void TestApplyValidation(CsvEditorValidateResult result) =>
+        ApplyValidationFromBatch(result.IssuesByKey, result.IssuesDisplayByKey, result.Summary, result.PatchEligible, result.PatchBlocked, result.BatchActionable,
+            result.IssuesAction, result.ReviewCandidates);
     internal void TestSetCsvSaveError(string reason) => SetCsvEditorSaveError(CsvEditorPath, reason, CsvSaveKeepsDraftRecovery);
     internal void TestSetCsvLoadError(string path, string reason) => FailCsvEditorLoad(path, reason);
     public string CsvEditorSelectionDetails => _csvEditorSelectedKeys.Count switch
@@ -631,6 +635,8 @@ public sealed partial class MainViewModel
             _ => !CsvEditorLoading && !_csvEditorValidating && !CsvEditorSaving && _csvEditorRows.Count > 0);
         OpenCsvEditorFromPatchCommand = new RelayCommand(_ => OpenCsvEditorFromPatch());
         InitCsvSelection();
+        InitCsvReview();
+        InitPatchIssues();
         ClearBlockedCsvCommand = new RelayCommand(_ => ClearBlockedCsvTranslations(), _ => CanRunCsvBatchAction());
         RetranslateBlockedCsvCommand = new RelayCommand(_ => _ = RetranslateBlockedCsvRowsAsync(), _ => CanRunCsvBatchAction(allowDirty: true) && !Busy);
         BulkReplaceCsvCommand = new RelayCommand(_ => PreviewBulkReplaceTranslation(), _ => CanRunCsvBatchAction() && !Busy && !string.IsNullOrWhiteSpace(CsvBulkFind));
@@ -648,6 +654,7 @@ public sealed partial class MainViewModel
         }
         Raise(nameof(CsvEditorSelectionDetails));
         Raise(nameof(CsvEditorSelectionDetailsVisible));
+        RaiseCsvFocusedIssue();
         ClearBlockedCsvCommand.RaiseCanExecuteChanged();
         RetranslateBlockedCsvCommand.RaiseCanExecuteChanged();
         ApproveCsvMemoryCommand.RaiseCanExecuteChanged();
@@ -1008,6 +1015,8 @@ public sealed partial class MainViewModel
         if (mode == CsvFilterModes.ReviewOnly && (!row.IsReviewOnly || row.IsTechnical))
             return false;
         if (mode == CsvFilterModes.Errors && !row.HasIssue)
+            return false;
+        if (mode == CsvFilterModes.PatchSkipped && !row.SkippedByPatch)
             return false;
 
         var q = (_csvEditorSearch ?? "").Trim();
@@ -1435,13 +1444,15 @@ public sealed partial class MainViewModel
         FinishValidateOnUi(result, showLog, gen, validateMs: 0, applyMs: 0);
     }
 
+    /// <summary>Statuses that mean "in the review ledger" (Cần xem lại).  The ledger, not the flag read at load, decides: a save that resolves a
+    /// row removes it, so the row must stop showing a review status at once (Owner report 0.1.35).</summary>
+    internal static readonly HashSet<string> ReviewIssueCodes = new(StringComparer.Ordinal) { "review_only", "mt_blocked", "human_review", "retranslate_blocked" };
+
     private static void ApplyIssueToRowSilent(CsvEditorRow row, CsvEditorValidateResult result)
     {
         string label;
         if (result.IssuesByKey.TryGetValue(row.Key, out var reason))
             label = reason;
-        else if (row.IsReviewOnly)
-            label = "review_only";
         else if (row.IsEmpty)
             label = "no_translation";
         else
@@ -1458,6 +1469,9 @@ public sealed partial class MainViewModel
             display = "";
 
         row.SetIssueSilent(label, display);
+        row.IsReviewOnly = ReviewIssueCodes.Contains(label);
+        row.IssueAction = result.IssuesAction is not null && result.IssuesAction.TryGetValue(row.Key, out var action) ? action : "";
+        row.ReviewCandidate = result.ReviewCandidates is not null && result.ReviewCandidates.TryGetValue(row.Key, out var candidate) ? candidate : "";
     }
 
     private static void ApplyIssueToRow(CsvEditorRow row, CsvEditorValidateResult result)
@@ -1624,7 +1638,7 @@ public sealed partial class MainViewModel
             : UiText.Msg("{0}; còn chỉnh sửa mới chưa lưu", savedMsg);
         if (unchanged)
             ApplyValidationFromBatch(validation.IssuesByKey, validation.IssuesDisplayByKey, validation.Summary,
-                validation.PatchEligible, validation.PatchBlocked, validation.BatchActionable);
+                validation.PatchEligible, validation.PatchBlocked, validation.BatchActionable, validation.IssuesAction, validation.ReviewCandidates);
         CsvEditorValidationMessage = validation.Summary;
         CsvEditorWarningSummary = BuildCsvWarningSummary(validation);
         StatusText = "Đã lưu CSV";
@@ -1860,14 +1874,14 @@ public sealed partial class MainViewModel
         string summary,
         int eligible,
         int blocked,
-        int actionable)
+        int actionable,
+        IReadOnlyDictionary<string, string>? issuesAction = null,
+        IReadOnlyDictionary<string, string>? reviewCandidates = null)
     {
         foreach (var row in _csvEditorRows)
         {
             if (issuesByKey.TryGetValue(row.Key, out var reason))
                 row.IssueLabel = reason;
-            else if (row.IsReviewOnly)
-                row.IssueLabel = "review_only";
             else if (row.IsEmpty)
                 row.IssueLabel = "no_translation";
             else
@@ -1883,6 +1897,11 @@ public sealed partial class MainViewModel
                 row.IssueDisplay = row.IssueLabel;
             else
                 row.IssueDisplay = "";
+            row.IsReviewOnly = ReviewIssueCodes.Contains(row.IssueLabel);
+            if (issuesAction is not null)
+                row.IssueAction = issuesAction.TryGetValue(row.Key, out var action) ? action : "";
+            if (reviewCandidates is not null)
+                row.ReviewCandidate = reviewCandidates.TryGetValue(row.Key, out var candidate) ? candidate : "";
         }
         CsvEditorPatchEligible = eligible;
         CsvEditorPatchBlocked = blocked;

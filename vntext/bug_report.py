@@ -228,12 +228,14 @@ def sanitise_text(text: str, game: Path, extra_names: set[str]) -> str:
     return re.sub(r"[A-Za-z]:[\\/][^\s\"']*", "<PATH>", result)
 
 
-def describe_report(target: str | Path) -> str:
+def describe_report(target: str | Path, *, for_send: bool = False) -> str:
     """Plain-language preview of a finished bundle (what each part holds and how large it is), shown before the user decides to send it."""
     target = Path(target)
     parts = {"report.json": "cấu trúc ẩn danh của thư mục game (kích thước, đuôi tệp, tên đã băm), kết luận nhận diện engine, thời gian từng bước",
              "log-tail.txt": "đoạn cuối Nhật ký đã che đường dẫn và tên tệp", "README.txt": "ghi chú về nội dung gói"}
-    lines = [f"Gói: {target.name} ({target.stat().st_size:,} byte). Gói CHƯA được gửi đi; hãy xem rồi tự đính kèm nếu muốn.".replace(",", ".")]
+    # The preview before "Gửi báo lỗi" asks whether to send; "not sent, attach it yourself" belongs to the manual route only (Owner report 0.1.35).
+    status = ("Gói chỉ được gửi khi bạn bấm Có ở dưới." if for_send else "Gói CHƯA được gửi đi; hãy xem rồi tự đính kèm nếu muốn.")
+    lines = [f"Gói: {target.name} ({target.stat().st_size:,} byte). {status}".replace(",", ".")]
     with zipfile.ZipFile(target) as archive:
         for info in archive.infolist():
             lines.append(f"- {info.filename}: {info.file_size:,} byte — {parts.get(info.filename, 'tệp phụ')}".replace(",", "."))

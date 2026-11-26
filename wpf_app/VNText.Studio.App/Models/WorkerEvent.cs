@@ -31,6 +31,9 @@ public sealed class WorkerEvent
     public bool ImageScanPending { get; set; }
     public int Applied { get; set; }
     public int HumanReviewRequiredCount { get; set; }
+    /// <summary>"selected_rows" for "Dịch đã chọn"; its per-row outcomes (plain Vietnamese) are in <see cref="SelectedMessages"/>.</summary>
+    public string OperationScope { get; set; } = "";
+    public List<string> SelectedMessages { get; } = new();
     public string Summary { get; set; } = "";
     public string Error { get; set; } = "";
     public string? DiagnosticPath { get; set; }
@@ -83,6 +86,11 @@ public sealed class WorkerEvent
             if (root.TryGetProperty("translated", out var trEl)) evt.Translated = trEl.GetInt32();
             if (root.TryGetProperty("applied", out var appliedEl)) evt.Applied = appliedEl.GetInt32();
             if (root.TryGetProperty("human_review_required_count", out var hrEl)) evt.HumanReviewRequiredCount = hrEl.GetInt32();
+            if (root.TryGetProperty("operation_scope", out var scopeOpEl) && scopeOpEl.ValueKind == JsonValueKind.String) evt.OperationScope = scopeOpEl.GetString() ?? "";
+            if (root.TryGetProperty("selected_outcomes", out var outcomesEl) && outcomesEl.ValueKind == JsonValueKind.Array)
+                foreach (var outcome in outcomesEl.EnumerateArray())
+                    if (outcome.TryGetProperty("message", out var outcomeMsgEl) && outcomeMsgEl.ValueKind == JsonValueKind.String)
+                        evt.SelectedMessages.Add(outcomeMsgEl.GetString() ?? "");
             if (root.TryGetProperty("summary", out var sumEl)) evt.Summary = sumEl.GetString() ?? "";
             if (root.TryGetProperty("extract_status", out var extractEl)) evt.ExtractStatus = extractEl.GetString() ?? "";
             if (root.TryGetProperty("patch_scope", out var scopeEl)) evt.PatchScope = scopeEl.GetString() ?? "";

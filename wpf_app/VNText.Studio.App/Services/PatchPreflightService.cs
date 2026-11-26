@@ -15,8 +15,14 @@ public sealed record PatchPreflightResult(
     IReadOnlyDictionary<string, int> ReasonCounts,
     string CsvPath,
     string? ManifestPath,
-    string? Error = null)
+    string? Error = null,
+    IReadOnlyList<PatchSkippedItem>? Items = null,
+    bool ItemsTruncated = false,
+    int UserExcluded = 0,
+    int OutsideCsvReview = 0)
 {
+    public IReadOnlyList<PatchSkippedItem> SkippedItems => Items ?? Array.Empty<PatchSkippedItem>();
+
     public string DetailMessage
     {
         get
@@ -24,6 +30,8 @@ public sealed record PatchPreflightResult(
             if (!string.IsNullOrWhiteSpace(Error))
                 return Error;
             var summary = Ok ? UiText.Msg("{0} câu sẵn sàng; {1} câu sẽ được bỏ qua.", Eligible, Blocked) : Summary;
+            if (UserExcluded > 0 || OutsideCsvReview > 0)
+                summary = UiText.Lines(summary, UiText.Msg("Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài CSV (không dịch, không patch).", UserExcluded, OutsideCsvReview));
             if (ReasonCounts.Count == 0)
                 return summary;
             var parts = ReasonCounts
@@ -35,7 +43,10 @@ public sealed record PatchPreflightResult(
 
     private static string FormatReason(string code) => code switch
     {
-        "review_only" => "Chưa có đường ghi lại vào game (bỏ qua)",
+        "review_only" => "Không ghi được vào game (bỏ qua)",
+        "mt_blocked" or "retranslate_blocked" => "Máy dịch không dịch được — cần tự dịch",
+        "human_review" => "Bản dịch máy chờ bạn duyệt",
+        "existing_translation_conflict" => "Game đã có bản dịch khác",
         "technical_control" => "Mã / định dạng của game (giữ nguyên)",
         "no_translation" => "Chưa có bản dịch",
         "garbage_repetition" => "Rác lặp từ/ký tự",
@@ -121,11 +132,25 @@ public static class PatchPreflightService
                 root.TryGetProperty("translated_rows", out var trEl) ? trEl.GetInt32() : 0,
                 reasons,
                 csv,
-                manifest);
+                manifest,
+                Items: ReadItems(root),
+                ItemsTruncated: root.TryGetProperty("items_truncated", out var itEl) && itEl.ValueKind == JsonValueKind.True,
+                UserExcluded: root.TryGetProperty("user_excluded", out var ueEl) && ueEl.TryGetInt32(out var ue) ? ue : 0,
+                OutsideCsvReview: root.TryGetProperty("outside_csv_review", out var ocEl) && ocEl.TryGetInt32(out var oc) ? oc : 0);
         }
         catch (Exception ex)
         {
             return PatchPreflightResult.Fail(csv, UiText.Msg("Lỗi kiểm tra patch: {0}", ex.Message));
         }
+    }
+
+    private static List<PatchSkippedItem> ReadItems(JsonElement root)
+    {
+        var items = new List<PatchSkippedItem>();
+        if (!root.TryGetProperty("items", out var el) || el.ValueKind != JsonValueKind.Array) return items;
+        static string Str(JsonElement item, string name) => item.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+        foreach (var item in el.EnumerateArray())
+            items.Add(new PatchSkippedItem(Str(item, "key"), Str(item, "source_text"), Str(item, "translation"), Str(item, "reason"), Str(item, "label"), Str(item, "action")));
+        return items;
     }
 }

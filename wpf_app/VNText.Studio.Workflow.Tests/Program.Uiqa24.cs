@@ -39,7 +39,7 @@ internal static partial class Program
                 Require(!technical.NeedsTranslation && humanReview.NeedsTranslation, "Only technical rows leave the untranslated filter; human review remains visible");
                 Require(technical.IssueShort != humanReview.IssueShort, "Technical skip is distinct from human review");
                 UiText.SetLanguage("en");
-                var summary = UiText.TranslateDynamic("Đã dịch và lưu 1; bỏ qua 2; cần sửa bản dịch 0; lỗi 0 dòng. Xem lý do từng dòng trong Nhật ký. Bản nháp đã lưu; Patch sẽ bỏ qua 3 dòng khác chưa đủ điều kiện (chưa dịch hoặc chưa có đường ghi được chứng minh).");
+                var summary = UiText.TranslateDynamic("Đã dịch và lưu 1; bỏ qua 2; chờ bạn duyệt 0; chưa dịch được 0 dòng. Xem lý do từng dòng trong Nhật ký. Bản nháp đã lưu; Patch sẽ bỏ qua 3 dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game).");
                 Require(summary.Contains("Translated and saved: 1") && summary.Contains("omit 3") && !summary.Contains("Bản nháp"), "Selected-job summary and optional omission clause are English");
                 UiText.SetLanguage("vi");
 

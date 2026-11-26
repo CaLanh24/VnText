@@ -286,7 +286,9 @@ class PatchPreflightTests(unittest.TestCase):
             )
             audit = audit_patch_package(csv_path, manifest_path)
             self.assertEqual(audit["eligible"], 1)
-            self.assertEqual(audit["reason_counts"].get("review_only"), 1)
+            # 0.1.36: the review ledger says WHY (machine translation blocked -> translate by hand), not one generic "review_only".
+            self.assertEqual(audit["reason_counts"].get("mt_blocked"), 1)
+            self.assertEqual(audit["blocked"], 1)
             self.assertEqual(load_review_only_keys(root), {"k2"})
 
     def test_audit_does_not_mutate_translation_csv(self):

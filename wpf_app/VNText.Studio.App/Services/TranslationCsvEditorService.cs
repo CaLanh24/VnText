@@ -37,7 +37,9 @@ public sealed record CsvEditorValidateResult(
     int PatchBlocked,
     int BatchActionable,
     bool HasWarnings,
-    string? Error = null);
+    string? Error = null,
+    IReadOnlyDictionary<string, string>? IssuesAction = null,
+    IReadOnlyDictionary<string, string>? ReviewCandidates = null);
 
 public sealed record CsvEditorBatchPreviewResult(
     bool Ok,
@@ -395,7 +397,8 @@ public static class TranslationCsvEditorService
         var eligible = root.TryGetProperty("patch_eligible", out var peEl) ? peEl.GetInt32() : 0;
         var blocked = root.TryGetProperty("patch_blocked", out var pbEl) ? pbEl.GetInt32() : 0;
         var actionable = root.TryGetProperty("batch_actionable", out var baEl) ? baEl.GetInt32() : 0;
-        return new CsvEditorValidateResult(true, summary, issueCount, counts, issuesByKey, issuesDisplay, eligible, blocked, actionable, hasWarnings);
+        return new CsvEditorValidateResult(true, summary, issueCount, counts, issuesByKey, issuesDisplay, eligible, blocked, actionable, hasWarnings,
+            IssuesAction: ReadStringStringMap(root, "issues_action"), ReviewCandidates: ReadStringStringMap(root, "review_candidates"));
     }
 
     private static Dictionary<string, string> ReadIssuesFromArray(JsonElement root)

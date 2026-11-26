@@ -23,6 +23,50 @@ public static class UiText
         ["Mở thư mục patch"] = "Open patch folder",
         ["Chọn font Việt…"] = "Choose Vietnamese font…",
         ["Chọn dòng có thể dịch"] = "Select translatable rows",
+        ["Chọn chưa dịch"] = "Untranslated",
+        ["Chọn cần xem lại"] = "Needs review",
+        ["Tích chọn mọi dòng chưa có bản dịch (cả dòng đang bị bộ lọc ẩn) và lọc để chỉ hiện các dòng đó."] = "Check every row without a translation (including rows the filter hides) and filter to show only those rows.",
+        ["Tích chọn mọi dòng đang 'Cần xem lại' và lọc để chỉ hiện các dòng đó. Bấm vào một dòng để xem lý do và cách xử lý."] = "Check every row that needs review and filter to show only those rows. Click a row to see its reason and how to fix it.",
+        ["Lý do và cách xử lý dòng đang chọn"] = "Reason and fix for the selected row",
+        ["Chấp nhận đề xuất"] = "Accept proposal",
+        ["Dùng bản dịch máy đề xuất cho dòng này và lưu CSV."] = "Use the machine proposal for this row and save the CSV.",
+        ["Sửa bản dịch"] = "Edit translation",
+        ["Bỏ qua dòng này"] = "Skip this row",
+        ["Xóa dòng này khỏi CSV: không dịch, không patch; game gốc không đổi."] = "Remove this row from the CSV: not translated, not patched; the original game is unchanged.",
+        ["Patch sẽ bỏ qua"] = "Skipped by the patch",
+        ["Lỗi tạo patch"] = "Patch build error",
+        ["Tạo patch không thành công"] = "The patch was not created",
+        ["Chi tiết lỗi tạo patch"] = "Patch build error details",
+        ["Game gốc không bị thay đổi."] = "The original game was not changed.",
+        ["Tạo gói báo lỗi ẩn danh, cho bạn xem trước, và chỉ gửi tới nhà phát triển khi bạn đồng ý."] = "Builds an anonymous bug report, shows it to you first, and sends it to the developer only if you agree.",
+        ["Tạo tệp zip ẩn danh để tự gửi; không tự gửi đi đâu."] = "Builds an anonymous zip for you to send yourself; nothing is sent.",
+        ["Mở Sửa CSV"] = "Open CSV editor",
+        ["Xem danh sách câu bị bỏ qua"] = "View skipped lines",
+        ["Từng câu Tạo patch sẽ bỏ qua, kèm lý do và cách xử lý."] = "Each line the patch will skip, with its reason and how to fix it.",
+        ["Xem danh sách"] = "View list",
+        ["Câu Tạo patch sẽ bỏ qua"] = "Lines the patch will skip",
+        ["Danh sách câu Tạo patch sẽ bỏ qua"] = "List of lines the patch will skip",
+        ["Bấm 'Xem danh sách' để xem từng câu, lý do và cách xử lý."] = "Press 'View list' to see each line, its reason and how to fix it.",
+        ["Lý do: {0}"] = "Reason: {0}",
+        ["Cách xử lý: {0}"] = "How to fix: {0}",
+        ["Đề xuất của máy: {0}"] = "Machine proposal: {0}",
+        ["Lý do: dòng này chưa có bản dịch nên Tạo patch sẽ bỏ qua."] = "Reason: this row has no translation, so the patch skips it.",
+        ["Không có dòng {0}."] = "No {0} rows.",
+        ["Đã chọn {0} dòng {1}."] = "Selected {0} {1} rows.",
+        ["chưa dịch"] = "untranslated",
+        ["cần xem lại"] = "needs-review",
+        ["• {0} dòng: {1}"] = "• {0} rows: {1}",
+        ["Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài CSV (không dịch, không patch)."] = "Not counted: {0} rows you removed, {1} review-only rows outside the CSV (not translated, not patched).",
+        ["Không ghi được vào game"] = "Cannot be written to the game",
+        ["Cần tự dịch"] = "Translate by hand",
+        ["Chờ duyệt"] = "Awaiting review",
+        ["Bấm Lưu"] = "Press Save",
+        ["Game đã có bản dịch"] = "Game already translated",
+        ["Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)"] = "Cannot be written to the game: no safe write location was found for this row, so the patch skips it (the translation is kept)",
+        ["Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch"] = "The machine translator gave no safe translation for this row; translate it by hand",
+        ["Bản dịch máy đang chờ bạn duyệt"] = "The machine translation is waiting for your review",
+        ["Đã dịch — bấm Lưu để đưa dòng này vào patch"] = "Translated — press Save to include this row in the patch",
+        ["Game đã có bản dịch tiếng Việt khác cho câu này"] = "The game already has a different Vietnamese translation for this line",
         ["Không cần dịch"] = "Not for translation",
         ["Font Việt tự động cho Ren’Py"] = "Automatic Vietnamese font for Ren’Py",
         ["Chưa chứng minh hiển thị font trong game."] = "In-game font rendering has not been verified.",
@@ -1168,8 +1212,8 @@ public static class UiText
     // (regex, English template, groups that are themselves app messages/labels)
     private static readonly (System.Text.RegularExpressions.Regex Pattern, string English, int[] Nested)[] DynamicPatterns =
     [
-        (new(@"^Đã dịch và lưu (\d+); bỏ qua (\d+); cần sửa bản dịch (\d+); lỗi (\d+) dòng\. Xem lý do từng dòng trong Nhật ký\.(?: (.*))?$"), "Translated and saved: {1}; skipped: {2}; review: {3}; failed: {4}. See per-row reasons in the log. {5}", [5]),
-        (new(@"^Bản nháp đã lưu; Patch sẽ bỏ qua (\d+) dòng khác chưa đủ điều kiện \(chưa dịch hoặc chưa có đường ghi được chứng minh\)\.$"), "Draft saved; the patch will omit {1} other rows without a translation or verified write route.", []),
+        (new(@"^Đã dịch và lưu (\d+); bỏ qua (\d+); chờ bạn duyệt (\d+); chưa dịch được (\d+) dòng\. Xem lý do từng dòng trong Nhật ký\.(?: (.*))?$"), "Translated and saved: {1}; skipped: {2}; awaiting your review: {3}; not translated: {4}. See per-row reasons in the log. {5}", [5]),
+        (new(@"^Bản nháp đã lưu; Patch sẽ bỏ qua (\d+) dòng khác chưa đủ điều kiện \(chưa dịch, chờ duyệt hoặc không ghi được vào game\)\.$"), "Draft saved; the patch will omit {1} other rows that are untranslated, awaiting review or cannot be written to the game.", []),
         (new(@"^(\d+)% • Bước: (.+?)(?: • Mục: (.+?))?(?: • ETA: (.+))?$"), "{1}% • Step: {2}{3}{4}", [2]),
         (new(@"^Đang chạy: (.+)\.$"), "Running: {1}.", [1]),
         (new(@"^Một tác vụ khác đang chạy \((.+)\) — chờ xong hoặc bấm Hủy trước khi dùng ảnh\.$"), "Another task is running ({1}) — wait for it to finish or press Cancel before using images.", [1]),
@@ -1316,7 +1360,7 @@ public static class UiText
     }
 
     private static readonly System.Text.RegularExpressions.Regex GateSummaryPattern = new(
-        @"^(?:(Hợp lệ (\d+), bị chặn (\d+)(?:, có thể xử lý hàng loạt (\d+))?)|(Kiểm tra patch — hợp lệ (\d+), bị chặn (\d+) \(manifest (\d+) dòng, translation\.csv có (\d+) bản dịch\)))(?: — (không phát hiện lỗi cấu trúc trên các dòng có bản dịch)\.|\. (.+))?$",
+        @"^(?:(Hợp lệ (\d+), bị chặn (\d+)(?:, có thể xử lý hàng loạt (\d+))?)|(Kiểm tra patch — hợp lệ (\d+), bị chặn (\d+) \(CSV (\d+) dòng, có (\d+) bản dịch\)))(?: — (không phát hiện lỗi cấu trúc trên các dòng có bản dịch)\.|\. (.+))?$",
         System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>The CSV-validation and patch-preflight summaries are built by the workers from fixed Vietnamese pieces: head + optional "reason: n; reason: n" tail.</summary>
@@ -1328,7 +1372,7 @@ public static class UiText
         if (m.Groups[1].Success)
             head = $"Eligible {m.Groups[2].Value}, blocked {m.Groups[3].Value}" + (m.Groups[4].Success ? $", {m.Groups[4].Value} can be handled in bulk" : "");
         else
-            head = $"Patch check — eligible {m.Groups[6].Value}, blocked {m.Groups[7].Value} (manifest {m.Groups[8].Value} rows, translation.csv has {m.Groups[9].Value} translations)";
+            head = $"Patch check — eligible {m.Groups[6].Value}, blocked {m.Groups[7].Value} (CSV {m.Groups[8].Value} rows, {m.Groups[9].Value} translated)";
         if (m.Groups[10].Success) return head + " — no structural errors found in the translated rows.";
         if (!m.Groups[11].Success) return head;
         var items = m.Groups[11].Value.Split("; ").Select(item =>

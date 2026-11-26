@@ -1455,8 +1455,8 @@ def _run_ct2_translate_keys_impl(
     for row in rows:
         if row["key"] not in keys_set:
             continue
-        if str(row.get("key") or "") in human_review_keys:
-            continue
+        # An explicitly selected row is translated even when an earlier run left it waiting for review (it stayed empty forever before);
+        # with human review on, the new machine result goes back to the review ledger as a draft, never straight into the patch.
         if not str(row.get("source_text") or "").strip():
             continue
         if mt_check.is_synonym_row(row):
@@ -1738,6 +1738,11 @@ def _run_ct2_translate_keys_impl(
     review_sink.flush(package_dir)
     if blocker_records:
         _merge_blocker_inventory(package_dir, blocker_records)
+    # The person asked for exactly these rows: a selected row that now holds a translation passing every patch check leaves the review ledger
+    # (Owner report 0.1.35: translated rows stayed "Cần xem lại" and Patch kept skipping them).  Unselected review rows stay as they are.
+    from vntext.mt_ct2_status import _prune_resolved_review_only
+    _prune_resolved_review_only(package_dir, [row for row in rows if row.get("key") in keys_set], emit,
+                                protected_review_keys=human_review_keys - keys_set)
     human_review_count = _count_human_review_rows(package_dir)
     summary = f"Dịch lại: applied={applied}, blocked={blocked}, tổng {len(mt_targets)} dòng gửi CT2"
     if human_review_count:

@@ -55,6 +55,16 @@ public partial class MainWindow : Window
             vm.JournalRequested += () => new JournalWindow(this,vm).ShowDialog();
             HookExtractLogFollow(vm);
             vm.InputChoiceRequested += ShowInputChoiceMenu;
+            vm.CsvEditFocusedRequested += row =>
+            {
+                // "Sửa bản dịch": put the caret in the translation cell of the focused row.
+                var column = CsvEditorGrid.Columns.OfType<DataGridBoundColumn>()
+                    .FirstOrDefault(c => (c.Binding as System.Windows.Data.Binding)?.Path?.Path == "Translation");
+                if (column is null) return;
+                CsvEditorGrid.CurrentCell = new DataGridCellInfo(row, column);
+                CsvEditorGrid.Focus();
+                CsvEditorGrid.BeginEdit();
+            };
             vm.ImageWorkspaceRequested += () =>
             {
                 vm.NavigateTab(WorkflowTabs.Images);

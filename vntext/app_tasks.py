@@ -846,10 +846,13 @@ def _trace_patch_finish(
     verification_by_key: dict[str, dict] = {}
     verification_counts: dict[str, int] = {}
     omitted_late: set[str] = set()
+    omitted_conflict: set[str] = set()
     if verification_path.is_file():
         try:
             verification_payload = json.loads(verification_path.read_text(encoding="utf-8"))
             omitted_late = {str(key) for key in (verification_payload.get("omitted_unlocatable_keys") or [])}
+            omitted_conflict = {str(key) for key in (verification_payload.get("omitted_conflict_keys") or [])}
+            omitted_late |= omitted_conflict
             verification_counts = {
                 str(key): int(value)
                 for key, value in (verification_payload.get("counts") or {}).items()
@@ -878,7 +881,7 @@ def _trace_patch_finish(
             verification = verification_by_key.get(f"{item['key']}:{item.get('duplicate_ordinal', 0)}")
             if verification is None and item["key"] in omitted_late:
                 # The patch writer omitted this row after the trace announced it (its source text could not be located literally): skipped, not failed.
-                trace.finish_event(item["action_id"], "ABORTED", payload={"reason": "source_text_not_locatable"})
+                trace.finish_event(item["action_id"], "ABORTED", payload={"reason": "existing_translation_conflict" if item["key"] in omitted_conflict else "source_text_not_locatable"})
                 trace.update_target(item["target_id"], status="SKIPPED", write_status="SKIPPED", final_verification="NOT_RUN")
                 trace.update_entry(item["trace_id"], patch_status="SKIPPED", final_verification="NOT_RUN")
                 item["finished"] = True
@@ -2017,6 +2020,27 @@ def run_translate_ct2_task(
         )
 
 
+_SELECTED_OUTCOME_VI = {
+    "translation_saved": "đã dịch và lưu",
+    "manual_review_protected": "bản dịch máy đang chờ bạn duyệt: bấm 'Chấp nhận đề xuất' hoặc tự sửa rồi Lưu",
+    "missing_key": "dòng không còn trong CSV (đã xóa, hoặc chỉ để xem lại); hãy tải lại CSV",
+    "translation_not_saved": "máy dịch không cho ra bản dịch an toàn; hãy tự gõ bản dịch rồi Lưu",
+    "machine_technical_excluded": "là mã/kỹ thuật của game, đã tự loại khỏi CSV",
+}
+
+
+def _selected_outcome_vi(outcome: dict) -> str:
+    """Plain Vietnamese for one selected-row outcome (Owner report 0.1.35: codes only, no way to tell why a row stayed empty)."""
+    reason = str(outcome.get("reason") or "")
+    if reason in _SELECTED_OUTCOME_VI:
+        return _SELECTED_OUTCOME_VI[reason]
+    if outcome.get("status") == "skipped":
+        return "không cần dịch (mã/định dạng của game, giữ nguyên)"
+    if outcome.get("status") == "review":
+        return "cần xem lại: dòng này không ghi được vào game nên Patch bỏ qua"
+    return "chưa dịch được; hãy tự gõ bản dịch rồi Lưu"
+
+
 def run_translate_keys_ct2_task(
     csv_path: Path,
     package_dir: Path,
@@ -2291,7 +2315,8 @@ def run_translate_keys_ct2_task(
             # Intentional classifier skips are terminal outcomes, not failed translations.
             selection_ok = counts["failed"] == 0
             for outcome in outcomes:
-                log(f"{outcome['key']}: {outcome['status']} — {outcome['reason']}")
+                outcome["message"] = _selected_outcome_vi(outcome)
+                log(f"{outcome['key']}: {outcome['status']} — {outcome['reason']} — {outcome['message']}")
             package_counts = {name: payload[name] for name in ("pending", "review_only", "blocked", "translated")}
             payload.update(operation_scope="selected_rows", selected_total=len(set(keys)), selected_done=selected_done,
                            selected_outcomes=outcomes[:100], selected_counts=counts,
@@ -2299,12 +2324,12 @@ def run_translate_keys_ct2_task(
                            pending=counts["failed"],
                            review_only=0, blocked=counts["failed"],
                            error="" if selection_ok else "Chưa dịch xong các dòng đã chọn.",
-                           summary=f"Đã dịch và lưu {selected_done}; bỏ qua {counts['skipped']}; cần sửa bản dịch {counts['review']}; lỗi {counts['failed']} dòng. Xem lý do từng dòng trong Nhật ký.")
+                           summary=f"Đã dịch và lưu {selected_done}; bỏ qua {counts['skipped']}; chờ bạn duyệt {counts['review']}; chưa dịch được {counts['failed']} dòng. Xem lý do từng dòng trong Nhật ký.")
             omitted = max(package_counts["pending"], package_counts["review_only"], package_counts["blocked"])
             if selection_ok and omitted > 0:
                 # Draft saved is one fact; "the patch will skip other rows" is another. Never an error for the selected draft, never patch proof.
                 payload["patch_omissions"] = omitted
-                payload["summary"] += f" Bản nháp đã lưu; Patch sẽ bỏ qua {omitted} dòng khác chưa đủ điều kiện (chưa dịch hoặc chưa có đường ghi được chứng minh)."
+                payload["summary"] += f" Bản nháp đã lưu; Patch sẽ bỏ qua {omitted} dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game)."
         complete(payload)
     except TranslateCancelled:
         _emit_complete(
@@ -2925,6 +2950,14 @@ def _run_patch_task_impl(
                 })
             (patch_out / "patch_coverage.json").write_text(json.dumps(coverage_doc, ensure_ascii=False, indent=2), encoding="utf-8")
             summary += f" Phạm vi: chỉ các dòng đã xác minh; {len(patch_excluded)} nhóm chưa phủ được ghi trong patch_coverage.json (không phải PASS toàn game)."
+        try:
+            _conflicts = json.loads((patch_out / "patch_verification.json").read_text(encoding="utf-8")).get("existing_translation_conflicts") or {}
+        except (OSError, ValueError, AttributeError):
+            _conflicts = {}
+        if int(_conflicts.get("count") or 0) > 0:
+            _files = ", ".join(sorted((_conflicts.get("files") or {}).keys())) or "game/tl/vietnamese"
+            summary += (f" Cảnh báo: {_conflicts['count']} câu đã có bản dịch tiếng Việt KHÁC sẵn trong game ({_files}); VNText giữ nguyên bản có sẵn"
+                        " và bỏ qua các câu này (game không lỗi). Muốn dùng bản dịch của bạn cho các câu đó: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo patch lại.")
         if late_cancel:
             # The cancel arrived after the output was complete and verified: say so instead of
             # reporting a cancellation over a finished patch.

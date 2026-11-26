@@ -18,7 +18,11 @@ from vntext.package_io import read_translation_rows
 
 REASON_LABELS_VI: dict[str, str] = {
     "eligible": "Sẽ patch",
-    "review_only": "Chưa có đường ghi patch được chứng minh; bản dịch vẫn được lưu trong tài liệu",
+    "review_only": "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)",
+    "mt_blocked": "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch",
+    "human_review": "Bản dịch máy đang chờ bạn duyệt",
+    "review_resolved_unsaved": "Đã dịch — bấm Lưu để đưa dòng này vào patch",
+    "existing_translation_conflict": "Game đã có bản dịch tiếng Việt khác cho câu này",
     "no_translation": "Chưa có bản dịch trong translation.csv",
     "garbage_repetition": "Rác lặp từ/ký tự",
     "html_garbage": "HTML/entity rác",
@@ -39,6 +43,76 @@ REASON_LABELS_VI: dict[str, str] = {
 }
 
 RETRANSLATE_STILL_BLOCKED_NOTE = "Dịch lại vẫn bị chặn"
+
+# What the person can DO about each reason (Owner report 0.1.35: a status without a way out is a dead end).  Shown next to the reason in
+# Sửa CSV and in the Tạo patch list; the codes are the same in both places so the two screens always count the same rows.
+REASON_ACTIONS_VI: dict[str, str] = {
+    "no_translation": "Dịch dòng này (tích chọn rồi 'Dịch đã chọn', hoặc gõ bản dịch) rồi bấm Lưu.",
+    "mt_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được patch. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
+    "retranslate_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được patch. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
+    "human_review": "Bấm 'Chấp nhận đề xuất' để dùng bản dịch máy, hoặc tự sửa rồi Lưu. Hoặc 'Bỏ qua dòng này'.",
+    "review_resolved_unsaved": "Bấm Lưu.",
+    "review_only": "Không cần làm gì: Patch bỏ qua dòng này, game giữ nguyên câu gốc. Nếu không muốn thấy nữa, bấm 'Bỏ qua dòng này' (xóa khỏi CSV).",
+    "existing_translation_conflict": "Game giữ bản dịch có sẵn. Muốn dùng bản của bạn: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo patch lại.",
+    "placeholder mismatch": "Sửa bản dịch cho giữ đúng các mục {…}/[…] như câu gốc rồi Lưu.",
+    "tag mismatch": "Sửa bản dịch cho giữ đúng các thẻ <…>/{…} như câu gốc rồi Lưu.",
+    "garbage_repetition": "Bản dịch bị lặp rác: sửa tay hoặc 'Dịch đã chọn' lại rồi Lưu.",
+    "html_garbage": "Bản dịch có mã HTML rác: sửa tay rồi Lưu.",
+    "synonym_manual": "Dòng nhiều biến thể: tự dịch từng biến thể rồi Lưu.",
+}
+_DEFAULT_ACTION_VI = "Sửa bản dịch trong Sửa CSV cho đúng rồi bấm Lưu; hoặc 'Bỏ qua dòng này' nếu không cần dịch."
+
+
+def reason_action_vi(reason: str) -> str:
+    bucket = reason_bucket(reason) if reason else ""
+    return REASON_ACTIONS_VI.get(bucket, REASON_ACTIONS_VI.get(reason, _DEFAULT_ACTION_VI))
+
+
+# Review-ledger kinds.  review_only.csv mixes rows with no proven write route (extraction evidence) and rows the machine translator could not
+# translate safely (or that wait for a human decision).  The second kind is resolved by a valid manual translation; the first never is.
+RESOLVABLE_REVIEW_KINDS = frozenset({"mt_blocked", "human_review", "retranslate_blocked"})
+
+
+def review_kind_for_note(note: str) -> str:
+    note = str(note or "")
+    if "HUMAN_REVIEW_REQUIRED" in note:
+        return "human_review"
+    if RETRANSLATE_STILL_BLOCKED_NOTE in note:
+        return "retranslate_blocked"
+    if note.startswith("MT blocked"):
+        return "mt_blocked"
+    return "review_only"
+
+
+def load_review_kinds(package_dir: Path) -> dict[str, str]:
+    """key -> review kind for every key of the review ledger (manifest review entries included)."""
+    kinds = {key: "review_only" for key in load_review_only_keys(package_dir)}
+    review_path = Path(package_dir) / "review_only.csv"
+    if review_path.is_file():
+        with review_path.open(encoding="utf-8-sig", newline="") as fh:
+            for row in csv.DictReader(fh):
+                key = str(row.get("key") or "")
+                if key:
+                    kinds[key] = review_kind_for_note(row.get("patch_note"))
+    try:
+        manifest = json.loads((Path(package_dir) / "manifest.json").read_text(encoding="utf-8-sig"))
+        for entry in manifest.get("entries", []) or []:
+            if isinstance(entry, dict) and entry.get("review_only") and entry.get("key"):
+                kinds[str(entry["key"])] = "review_only"      # extraction evidence never becomes resolvable by a translation
+    except (OSError, ValueError):
+        pass
+    return kinds
+
+
+def load_review_candidates(package_dir: Path) -> dict[str, str]:
+    """key -> the machine candidate waiting for a human decision (from the CT2 blocker inventory)."""
+    path = Path(package_dir) / ".mt" / "blocker_inventory.json"
+    try:
+        rows = json.loads(path.read_text(encoding="utf-8")).get("rows") or []
+    except (OSError, ValueError, AttributeError):
+        return {}
+    return {str(row.get("key")): str(row.get("candidate") or "") for row in rows
+            if isinstance(row, dict) and row.get("key") and str(row.get("candidate") or "").strip()}
 
 
 def load_review_only_keys(package_dir: Path) -> set[str]:
@@ -670,27 +744,45 @@ def audit_patch_package(
     validate_patch_package_identity(csv_path, manifest)
     blocked: Counter[str] = Counter()
     samples: dict[str, list[dict[str, str]]] = {}
+    items: list[dict[str, str]] = []
     eligible = 0
+    from vntext.package_io import read_csv_rows_file
+    from vntext.user_exclusions import load_exclusions
+    csv_keys = {str(row.get("key") or "") for row in read_csv_rows_file(csv_path)[1]}
+    excluded = set(load_exclusions(package_dir))
+    kinds = load_review_kinds(package_dir)
+    user_excluded = outside_csv = 0
+
+    def block(bucket, key, entry, trans, reason):
+        blocked[bucket] += 1
+        _add_sample(samples, bucket, key, entry, trans, reason)
+        if len(items) < ITEMS_CAP:
+            items.append({"key": key, "source_text": str(entry.get("source_text") or "")[:160], "translation": str(trans or "")[:160],
+                          "reason": bucket, "label": REASON_LABELS_VI.get(bucket, bucket), "action": reason_action_vi(bucket)})
 
     for entry in entries:
         key = str(entry.get("key") or "")
         if not key:
             continue
+        if key not in csv_keys:
+            # Not a row of the document the person edits: removed by them ("Xóa đã chọn") or extraction-only review evidence kept in
+            # review_only.csv.  Neither is a translatable row, so neither counts as "chưa đủ điều kiện"; both are reported apart.
+            if key in excluded:
+                user_excluded += 1
+            else:
+                outside_csv += 1
+            continue
+        trans = str(translations[key].get("translation") or "") if key in translations else ""
         if key in review_keys:
-            bucket = "review_only"
-            blocked[bucket] += 1
-            _add_sample(samples, bucket, key, entry, "", bucket)
+            kind = kinds.get(key, "review_only")
+            block(kind, key, entry, trans, kind)
             continue
         if key not in translations:
-            bucket = "no_translation"
-            blocked[bucket] += 1
+            block("no_translation", key, entry, "", "no_translation")
             continue
-        trans = str(translations[key].get("translation") or "")
         reason = patch_skip_reason(entry, trans, whitelist, allow_ct2_junk=allow_ct2_junk)
         if reason:
-            bucket = reason_bucket(reason)
-            blocked[bucket] += 1
-            _add_sample(samples, bucket, key, entry, trans, reason)
+            block(reason_bucket(reason), key, entry, trans, reason)
         else:
             eligible += 1
 
@@ -702,7 +794,7 @@ def audit_patch_package(
 
     summary = (
         f"Kiểm tra patch — hợp lệ {eligible}, bị chặn {blocked_total} "
-        f"(manifest {len(entries)} dòng, translation.csv có {len(translations)} bản dịch)"
+        f"(CSV {len(csv_keys)} dòng, có {len(translations)} bản dịch)"
     )
     if reason_lines:
         summary += ". " + "; ".join(reason_lines[:6])
@@ -718,11 +810,20 @@ def audit_patch_package(
         "review_only_keys": len(review_keys),
         "reason_counts": dict(blocked),
         "reason_labels": {k: REASON_LABELS_VI.get(k, k) for k in blocked},
+        "reason_actions": {k: reason_action_vi(k) for k in blocked},
         "samples": samples,
+        "items": items,
+        "items_truncated": blocked_total > len(items),
+        "csv_rows": len(csv_keys),
+        "user_excluded": user_excluded,
+        "outside_csv_review": outside_csv,
         "summary": summary,
         "csv_path": str(csv_path),
         "manifest_path": str(manifest_path),
     }
+
+
+ITEMS_CAP = 5000
 
 
 def _add_sample(

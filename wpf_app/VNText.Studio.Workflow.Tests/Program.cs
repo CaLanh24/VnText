@@ -155,6 +155,12 @@ internal static partial class Program
             var csvFailures = new List<string>();
             Run("CsvEditor_BulkRefusesChangedOpenedRevision", CsvEditor_BulkRefusesChangedOpenedRevision, csvFailures);
             Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, csvFailures);
+            Run("Owner0136_Issue1_SelectUntranslatedAndReviewCheckEveryMatchingRow", Owner0136_Issue1_SelectUntranslatedAndReviewCheckEveryMatchingRow, csvFailures);
+            Run("Owner0136_Issue2_SavedManualTranslationDropsTheStaleReviewStatus", Owner0136_Issue2_SavedManualTranslationDropsTheStaleReviewStatus, csvFailures);
+            Run("Owner0136_Issue3_SelectedTranslateResultNamesWhatHappenedToEachRow", Owner0136_Issue3_SelectedTranslateResultNamesWhatHappenedToEachRow, csvFailures);
+            Run("Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal", Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal, csvFailures);
+            Run("Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate", Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate, csvFailures);
+            Run("Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons", Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons, csvFailures);
             Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, csvFailures);
             Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, csvFailures);
             Run("CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate", CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate, csvFailures);
@@ -173,7 +179,7 @@ internal static partial class Program
             Run("CsvEditor_ClearBlockedBackup", CsvEditor_ClearBlockedBackup, csvFailures);
             if (csvFailures.Count == 0)
             {
-                Console.WriteLine("Focused CSV editor protection checks: PASS (15)");
+                Console.WriteLine($"Focused CSV editor protection checks: PASS ({_executed})");
                 return 0;
             }
             foreach (var failure in csvFailures) Console.Error.WriteLine(" - " + failure);
@@ -354,6 +360,12 @@ internal static partial class Program
         Run("CsvEditor_SearchFiltersRows", CsvEditor_SearchFiltersRows, failures);
         Run("CsvEditor_LoadSaveRoundtrip", CsvEditor_LoadSaveRoundtrip, failures);
         Run("CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected", CsvEditor_CheckboxSelectionIsSeparateAndDeleteIsConflictProtected, failures);
+        Run("Owner0136_Issue1_SelectUntranslatedAndReviewCheckEveryMatchingRow", Owner0136_Issue1_SelectUntranslatedAndReviewCheckEveryMatchingRow, failures);
+        Run("Owner0136_Issue2_SavedManualTranslationDropsTheStaleReviewStatus", Owner0136_Issue2_SavedManualTranslationDropsTheStaleReviewStatus, failures);
+        Run("Owner0136_Issue3_SelectedTranslateResultNamesWhatHappenedToEachRow", Owner0136_Issue3_SelectedTranslateResultNamesWhatHappenedToEachRow, failures);
+        Run("Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal", Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal, failures);
+        Run("Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate", Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate, failures);
+        Run("Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons", Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons, failures);
         Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, failures);
         Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, failures);
         Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
@@ -1827,9 +1839,11 @@ internal static partial class Program
         if (vm.ReadyForPatch != build) throw new InvalidOperationException(name + ": ReadyForPatch expected " + build + " (" + vm.PatchPreflightMessage + ")");
         if (vm.PatchPreflightOk != build) throw new InvalidOperationException(name + ": PatchPreflightOk expected " + build + " (" + vm.PatchPreflightMessage + ")");
         if (vm.RunPatchCommand.CanExecute(null) != build) throw new InvalidOperationException(name + ": Create Patch command expected enabled=" + build);
-        if (build && eligible >= 0 && (vm.PatchEligibleCount != eligible || vm.PatchBlockedCount != blocked))
-            throw new InvalidOperationException(name + ": expected " + eligible + " eligible / " + blocked + " review-excluded, got " + vm.PatchEligibleCount + " / " + vm.PatchBlockedCount);
-        if (build && vm.PatchBlockedCount < 1) throw new InvalidOperationException(name + ": review rows must stay reported as excluded");
+        // 0.1.36: review evidence outside the CSV is reported apart from the CSV rows the patch skips (Owner report: 22 vs 5); together they are the excluded total.
+        var excluded = vm.PatchBlockedCount + vm.PatchOutsideCsvReviewCount;
+        if (build && eligible >= 0 && (vm.PatchEligibleCount != eligible || excluded != blocked))
+            throw new InvalidOperationException(name + ": expected " + eligible + " eligible / " + blocked + " review-excluded, got " + vm.PatchEligibleCount + " / " + excluded);
+        if (build && excluded < 1) throw new InvalidOperationException(name + ": review rows must stay reported as excluded");
         if (!build && vm.PatchPreflightMessage.Length == 0) throw new InvalidOperationException(name + ": a blocked package must say why");
     }
 
@@ -2812,7 +2826,7 @@ internal static partial class Program
         AssertEqual("review_only", CsvFilterModes.ReviewOnly);
         AssertEqual("Cần xem lại", review.Label);
         Require(CsvFilterModes.Options.All(o => !o.Label.Contains('_')), "no filter label may show an internal name");
-        AssertEqual(4, CsvFilterModes.Options.Count);
+        AssertEqual(5, CsvFilterModes.Options.Count);                       // 0.1.36: + "Patch sẽ bỏ qua"
         var previous = UiText.Language;
         try
         {
@@ -3949,7 +3963,7 @@ internal static partial class Program
         AssertEqual("error", notifications[2].Kind);
         AssertTrue(notifications[0].Message.Contains("Lấy text"));
         AssertTrue(notifications[1].Message.Contains("chưa dịch 2"));
-        AssertEqual("CSV lỗi", notifications[2].Message);
+        AssertTrue(notifications[2].Message.Contains("CSV lỗi") && notifications[2].Message.Contains("Cách xử lý"));   // 0.1.36: a failed patch is explained
     }
 
     private static void ReleaseVerifyRunner_ValidatesExactPortablePythonHome()
