@@ -65,3 +65,6 @@ The Owner tried 0.1.35 on a real Ren'Py game and reported six problems in Sửa 
 - The 22-versus-5 gap is reproduced by structure (deleted rows plus review evidence outside the CSV), not with the Owner's numbers.
 - No real send to the Owner's Discord channel.
 - `test_renpy_roundtrip.test_own_overlay_reextract_keeps_authoritative_identity_and_source` fails on the previous HEAD as well, with the same error: its fixture translates CJK text that the bundled font lacks. It is outside the release gate and was left as it is.
+
+## Published
+Tag `v0.1.36` = `9d2dd33ce57ec750ac96aad62a46ef4db45a145d`. Setup sha256 `630f9da6a3389169b5f3ca5ec66ba8b97b3d0ddd6d453f652c557e914b2d5f6c` (GitHub = local, 5/5 assets). Update 0.1.35→0.1.36: 7341 files verified. Smoke through the UI on the updated app (agent-desktop, synthetic 9-row layout): bulk-select untranslated (9), "Dịch đã chọn" saved 9 including two rows left in the review ledger, Tạo patch succeeded, and an installed-then-edited VNText overlay produced the explained Vietnamese error on the Patch screen with "Gửi báo lỗi", "Tạo gói báo lỗi" and "Mở Sửa CSV". NOT_PROVEN through the UI: the send-preview dialog from the Patch screen, and Chấp nhận/Sửa/Bỏ qua on a live review row (harness only). No real send to the Owner's channel.
