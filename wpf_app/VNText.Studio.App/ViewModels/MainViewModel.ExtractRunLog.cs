@@ -85,6 +85,7 @@ public sealed partial class MainViewModel
         if (_bugReportRunning) return;
         _bugReportRunning = true;
         CreateBugReportCommand?.RaiseCanExecuteChanged();
+        SendBugReportCommand?.RaiseCanExecuteChanged();
         ShowToast("Đang tạo gói báo lỗi trong lúc tác vụ khác vẫn chạy…", "info");
         var folder = _bugReportFolder;
         _ = Task.Run(async () =>
@@ -101,6 +102,7 @@ public sealed partial class MainViewModel
                 }
                 else if (!result.Ok) ShowToast(result.Text, "error");
                 CreateBugReportCommand?.RaiseCanExecuteChanged();
+                SendBugReportCommand?.RaiseCanExecuteChanged();
             });
         });
     }

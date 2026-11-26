@@ -213,6 +213,15 @@ class AppWiringTests(unittest.TestCase):
         self.assertIn("SendBugReportCommand", xaml)
         self.assertIn("ReportSendAvailable", xaml)
 
+    def test_the_send_button_is_re_evaluated_wherever_the_create_button_is(self):
+        """Found by the 0.1.35 UI smoke: the send button stayed disabled because only 'Tạo gói báo lỗi' was re-evaluated when a game was chosen."""
+        import re
+        for path in (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels").glob("*.cs"):
+            text = path.read_text(encoding="utf-8")
+            create = len(re.findall(r"CreateBugReportCommand\??\.RaiseCanExecuteChanged\(\)", text))
+            send = len(re.findall(r"SendBugReportCommand\??\.RaiseCanExecuteChanged\(\)", text))
+            self.assertEqual(create, send, path.name)
+
     def test_the_source_tree_never_holds_a_plain_webhook_address(self):
         hits = []
         for path in list((ROOT / "vntext").rglob("*.py")) + list((ROOT / "wpf_app").rglob("*.cs")) + list((ROOT / "release").rglob("*.p*")):
