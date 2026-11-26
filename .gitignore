@@ -52,3 +52,6 @@ tests/**/game_test/
 /.agents/skills/*
 !/.agents/skills/vntext-ui/
 /.impeccable/
+
+# Embedded bug-report channel (release build only; never committed, see docs/REPORT_WEBHOOK.md)
+vntext/report_endpoint.bin
