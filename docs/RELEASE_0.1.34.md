@@ -19,3 +19,6 @@ Receipts in `TEST_RUN/agent-evidence/release-0.1.34/`. `tests/unit/test_native_a
 - with the real Ren'Py SDK: re-extraction after removals is COMPLETE with every bucket adding up;
 - an injected unknown loss gives PARTIAL, severity warning and 0 errors, with a masked unit in `native_accounting.json` and in the bug report;
 - property test: on 6 random layouts (dialogue, narration, menus, nvl, `_()` strings, a string duplicated across files, screen text, engine-common words, several files and folders, random removals) the buckets always equal `native_units`.
+
+## Published
+Tag `v0.1.34` = `d4c0c0a366bdb39fcd6dd97b51e5d6e2c1b5c629`. Setup sha256 `0ca3434dd688dbe24e98816d24489da33346a0f9f866e046187d0d6e1f79ba23` (GitHub = local, 5/5 assets). Update 0.1.33→0.1.34: 7338 files verified. Gate: 381 tests; 5 patch/installer tests failed on the first run only because the 2026-11-25 cleanup had removed the test copy of the patch installer, and passed after rebuilding it from the current source. Smoke through the UI on the updated app (agent-desktop, real Ren'Py SDK): extract → translate → 2 rows removed → re-extract COMPLETE (320 = 320, user_excluded 2) → patch → install → uninstall equal to the original. NOT_PROVEN: the Owner's game bundle (not received yet).

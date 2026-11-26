@@ -41,7 +41,7 @@
 
 ## Release ledger
 
-Mọi bản từ v0.1.6 tới v0.1.33 đều ĐÃ PHÁT HÀNH trên GitHub Releases (kiểm `gh release list` 2026-11-25); ledger là lịch sử, không tự mở lại quyền/task. Bản mới nhất là bản trong AI_STATE. v0.1.22 và v0.1.26 không có ledger riêng (xem checkpoint lưu trữ [AI_STATE 2026-11-25](history/AI_STATE_2026-11-25.md) và lịch sử Git của tag).
+Mọi bản từ v0.1.6 tới v0.1.34 đều ĐÃ PHÁT HÀNH trên GitHub Releases (kiểm `gh release list` 2026-11-25); ledger là lịch sử, không tự mở lại quyền/task. Bản mới nhất là bản trong AI_STATE. v0.1.22 và v0.1.26 không có ledger riêng (xem checkpoint lưu trữ [AI_STATE 2026-11-25](history/AI_STATE_2026-11-25.md) và lịch sử Git của tag).
 
 | Bản | Ledger | Ghi chú / receipt |
 |---|---|---|
