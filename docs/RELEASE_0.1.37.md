@@ -44,5 +44,8 @@ Earlier work removed every collapsible disclosure from the app. The Owner's UX r
 - WPF harness `Owner0137_Group1…3` (7 checks): plain translator text and the install button when missing, resource summary and the fix button, no internal token in the extract log or run list, a scan of every static string on the main window for developer terms, no old names left in code, step numbering and next-step logic, advanced options folded and bulk actions in one menu.
 - Updated harness and Python tests that pinned the old wording.
 
+## Published
+Tag `v0.1.37` = `2ed81a4f1df344edecbcae5714432624d1543b8e`. Setup sha256 `53e7e06cca7fe2858a6d218871093bb4ed04b0dbb2625a7f87e4d277af51d894` (GitHub = local, 5/5 assets). Update 0.1.36→0.1.37: 7341 files verified. UI smoke on the updated app (translator deliberately missing) covered all screens.
+
 ## Not done / not proven
-See the checkpoint in `AI_STATE.md`.
+See the checkpoint in `AI_STATE.md` (install buttons not clicked for real, Thao tác menu and Tiếp button checked by harness only, no full clean Python suite, no real Discord send).
