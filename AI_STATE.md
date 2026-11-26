@@ -1,4 +1,3 @@
-# Current checkpoint — Đã phát hành 0.1.36, 2026-11-26
 # Current checkpoint — Đã phát hành 0.1.37, 2026-11-27
 
 **Release 0.1.37:** tag `v0.1.37` = `2ed81a4f1df344edecbcae5714432624d1543b8e` (main + tag đã push). https://github.com/CaLanh24/VnText/releases/tag/v0.1.37. Digest GitHub = local 5/5: Setup `53e7e06cca7fe2858a6d218871093bb4ed04b0dbb2625a7f87e4d277af51d894`; full update `3b4c7045…`; from-0.1.36 `0f529194…`; hai `-current.json`. Cập nhật 0.1.36→0.1.37: 7341 tệp khớp.
