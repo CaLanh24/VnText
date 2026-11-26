@@ -45,6 +45,8 @@ Mọi bản từ v0.1.6 tới v0.1.34 đều ĐÃ PHÁT HÀNH trên GitHub Relea
 
 | Bản | Ledger | Ghi chú / receipt |
 |---|---|---|
+| 0.1.35 | [RELEASE_0.1.35](RELEASE_0.1.35.md) | nút Gửi báo lỗi (xem trước rồi mới gửi, kênh Discord; URL nhúng đã che, không trong repo) + che chuỗi trong log báo lỗi; `TEST_RUN/agent-evidence/release-0.1.35/` |
+| 0.1.34 | [RELEASE_0.1.34](RELEASE_0.1.34.md) | đếm đơn vị native Ren'Py luôn khớp (dòng đã loại, đối chiếu định danh, lệch → cảnh báo che tên); `TEST_RUN/agent-evidence/release-0.1.34/` |
 | 0.1.33 | [RELEASE_0.1.33](RELEASE_0.1.33.md) | an toàn nhật ký cài + khóa HĐH theo game + phục hồi cài dở; `TEST_RUN/agent-evidence/release-0.1.33/` |
 | 0.1.32 | [RELEASE_0.1.32](RELEASE_0.1.32.md) | nâng cấp patch một bước + nhật ký cài + phục hồi khi bị ngắt; `TEST_RUN/agent-evidence/release-0.1.32/` |
 | 0.1.31 | [RELEASE_0.1.31](RELEASE_0.1.31.md) | nút báo lỗi khi bận + thông báo patch + giải phóng handle; `TEST_RUN/agent-evidence/release-0.1.31/` |
