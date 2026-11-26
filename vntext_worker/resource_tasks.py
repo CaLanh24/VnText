@@ -1,8 +1,42 @@
 """Explicit resource setup, independent of game discovery/extraction."""
 from pathlib import Path
+import os
 import json
 import uuid
 from vntext_worker.protocol import emit_complete, emit_progress, emit_log
+
+
+class _online_for_model_download:
+    """The worker runs offline on purpose (HF_HUB_OFFLINE=1) so a translation never reaches the network.  The explicit "Sửa tự động" / "Cài bộ dịch" download is the one place the person asked for the network, so only that call lifts the offline switches and then restores them."""
+
+    _KEYS = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+
+    def __enter__(self):
+        self._saved = {key: os.environ.get(key) for key in self._KEYS}
+        for key in self._KEYS:
+            os.environ[key] = "0"
+        self._constant = None
+        try:
+            import huggingface_hub.constants as constants
+            self._constant = constants.HF_HUB_OFFLINE
+            constants.HF_HUB_OFFLINE = False
+        except Exception:
+            self._constant = None
+        return self
+
+    def __exit__(self, *exc):
+        for key, value in self._saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+        if self._constant is not None:
+            try:
+                import huggingface_hub.constants as constants
+                constants.HF_HUB_OFFLINE = self._constant
+            except Exception:
+                pass
+        return False
 
 
 def run_resources(task_id, params, is_cancelled):
@@ -22,7 +56,8 @@ def run_resources(task_id, params, is_cancelled):
             if name == 'model':
                 folder = resolve_model_dir()
                 if download:
-                    ensure_model(folder, download=True)
+                    with _online_for_model_download():
+                        ensure_model(folder, download=True)
                 status = model_status()
                 if not status.get('ready', False):
                     raise ValueError(str(status.get('message') or status.get('error') or 'Mô hình chưa sẵn sàng'))

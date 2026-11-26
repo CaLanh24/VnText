@@ -15,5 +15,11 @@ Follow-up the Owner asked for in chat on 2026-11-27 ("dọn hết… làm xong 0
 ## Checked in the real UI (dev build, agent-desktop, synthetic 8-row Ren'Py layout)
 "Thao tác" menu and its selection, "Chọn chưa dịch" (4 rows), step ✓ and "Tiếp: Dịch →" after extraction, the build page with filled paths and the closed advanced options, the confirmation with skipped lines and "Xem danh sách", the Settings component summary.
 
+## Published
+Tag `v0.1.38` = `b0c753e715448d0bca0bda10b5e65e5aa76cbe84`. Setup sha256 `7d89ec05d4f982691cd3b283dd49bcba1a35287fec5c262d93bfb39027a89157` (GitHub = local, 5/5 assets). Update 0.1.37→0.1.38: 7341 files verified.
+
+## Found after the build, not in this release
+In the real app, "Sửa tự động" installed the Ren'Py tools (hash checked) but could not download the translator model: the worker runs with `HF_HUB_OFFLINE=1`. The fix (`_online_for_model_download`, offline switches lifted only during the explicit download) is committed after the tag and ships with the next version.
+
 ## Not done / not proven
 See `AI_STATE.md`.
