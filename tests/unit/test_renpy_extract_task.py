@@ -524,7 +524,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
             # final Patch is refused by the extract status (and there is nothing to patch)
             with self.assertRaisesRegex(ValueError, "Extraction is incomplete; final Patch is blocked"):
                 validate_patch_package_identity(out / "translation.csv", manifest)
-            self.assertTrue(any("không có dòng nào được dịch hay patch" in line for line in logs))
+            self.assertTrue(any("không có dòng nào được dịch hay bản Việt hóa" in line for line in logs))
             self.assertEqual((root / "game" / "script.rpy").read_text(encoding="utf-8"), self.FIXTURE_SCRIPT)
 
     def test_no_sdk_static_export_with_zero_rows_is_still_partial_never_empty_or_complete(self):
@@ -574,7 +574,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
             done = completed[0]
             self.assertFalse(done["ok"])
             self.assertTrue(done["renpy_sdk_missing"])
-            self.assertIn("Tải SDK Ren'Py 8.5.3 chưa hoàn tất", done["error"])
+            self.assertIn("Tải công cụ Ren’Py 8.5.3 chưa hoàn tất", done["error"])
             self.assertIn("offline: connection refused", done["error"])
             self.assertEqual(done["review_only"], 0, "no evidence exists: the generic sentinel must not read as one review row")
             self.assertEqual(done["blocked"], 0)

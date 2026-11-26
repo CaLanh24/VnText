@@ -131,7 +131,7 @@ def _patch_content_label(patch_verification: dict | None) -> str:
     }
     methods.discard("")
     if methods and methods <= {"plain_text_line"}:
-        return "Patch văn bản thường"
+        return "Bản Việt hóa văn bản thường"
     if methods and all(method.startswith(("unity_", "naninovel_")) for method in methods):
         return "Patch Unity/Naninovel"
     return "Patch"
@@ -1073,7 +1073,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
         )
     payload = patch_out / "COPY_TO_GAME_ROOT"
     if not payload.is_dir():
-        raise RuntimeError("Ren'Py patch output thiếu COPY_TO_GAME_ROOT")
+        raise RuntimeError("Ren'Py bản Việt hóa output thiếu COPY_TO_GAME_ROOT")
     expected = {
         "game/tl/vietnamese/vntext.rpy",
         "game/zzz_vntext_vietnamese.rpy",
@@ -1134,7 +1134,7 @@ def _write_unity_analysis_report(report: dict, output_dir: str | Path) -> Path:
     except ValueError:
         pass
     else:
-        raise ValueError("Thư mục xuất analyzer phải nằm ngoài thư mục game đang phân tích")
+        raise ValueError("Nơi lưu bản dịch analyzer phải nằm ngoài thư mục game đang phân tích")
 
     out.mkdir(parents=True, exist_ok=True)
     report_path = out / "unity_analysis.json"
@@ -1260,7 +1260,7 @@ def run_extract_task(
     from vntext.renpy_adapter import find_nested_runtime
     try:
         if not Path(src).exists():
-            raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
+            raise ValueError("Không tìm thấy thư mục game đã chọn; hãy chọn lại đường dẫn.")
         nested = find_nested_runtime(src)
         if nested is not None:
             raise ValueError(f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
@@ -1303,7 +1303,7 @@ def _run_extract_task_impl(
             raise ValueError(f"Đây là thư mục chứa game. Hãy chọn thư mục game cụ thể, ví dụ: {nested}")
         engine = detect_engine(src)
         if not Path(src).exists():
-            raise ValueError("Không tìm thấy game / asset đã chọn; hãy chọn lại đường dẫn.")
+            raise ValueError("Không tìm thấy thư mục game đã chọn; hãy chọn lại đường dẫn.")
         if engine.engine == "RENPY_ARCHIVE_UNSUPPORTED":
             raise ValueError(f"Archive Ren'Py lỗi/không hỗ trợ; không fallback sang Unity. Chi tiết: {engine.reason}")
         if engine.engine == "MIXED":
@@ -1353,7 +1353,7 @@ def _run_extract_task_impl(
                     with tempfile.NamedTemporaryFile(prefix="renpy-sdk-", suffix=".zip", dir=out, delete=False) as temp_file:
                         archive = Path(temp_file.name)
                     try:
-                        log("Đang tải và xác minh Ren'Py SDK 8.5.3…")
+                        log("Đang tải và xác minh công cụ Ren’Py 8.5.3…")
                         def sdk_download_progress(received: int, total: int) -> None:
                             total_text = f"{total:,} byte" if total > 0 else "đang nhận dữ liệu"
                             progress({
@@ -1373,7 +1373,7 @@ def _run_extract_task_impl(
                     sdk = None
                 elif action == "existing":
                     if not selected:
-                        raise RenPyToolchainError("Hãy chọn thư mục Ren'Py SDK trước khi extract")
+                        raise RenPyToolchainError("Hãy chọn thư mục công cụ Ren’Py trước khi extract")
                     sdk = validate_sdk(selected)
                 else:
                     sdk = validate_sdk(selected) if selected else managed_sdk()
@@ -1382,19 +1382,19 @@ def _run_extract_task_impl(
                     renpy_sdk_missing = True
                     if action == "download":
                         raise RenPyToolchainError(
-                            f"Tải SDK Ren'Py 8.5.3 chưa hoàn tất; chưa tạo CSV. "
-                            f"Hãy thử tải lại hoặc chọn SDK đã cài. Chi tiết: {exc}"
+                            f"Tải công cụ Ren’Py 8.5.3 chưa hoàn tất; chưa tạo CSV. "
+                            f"Hãy thử tải lại hoặc chọn công cụ đã cài. Chi tiết: {exc}"
                         ) from exc
                     raise RenPyToolchainError(
-                        f"SDK Ren'Py đã chọn chưa hợp lệ; hãy chọn lại SDK hoặc thử tải SDK 8.5.3. Chi tiết: {exc}"
+                        f"SDK Ren'Py đã chọn chưa hợp lệ; hãy chọn lại SDK hoặc thử tải công cụ 8.5.3. Chi tiết: {exc}"
                     ) from exc
-                log(f"Ren'Py SDK managed không hợp lệ; tiếp tục không native patch: {exc}")
+                log(f"công cụ Ren’Py managed không hợp lệ; tiếp tục không native bản Việt hóa: {exc}")
             if sdk is None:
                 if engine.engine == "RENPY_ARCHIVE_SOURCE":
                     renpy_sdk_missing = True
                     raise RenPyToolchainError("Source Ren'Py trong RPA cần SDK 8.5.3 để tạo native identity; không thể trả kết quả loose-parser một phần.")
                 renpy_sdk_missing = True
-                log("Thiếu công cụ Ren'Py: chỉ quét tĩnh để xuất danh sách cần xem lại; không có dòng nào được dịch hay patch. Kết quả chưa đầy đủ.")
+                log("Thiếu công cụ Ren'Py: chỉ quét tĩnh để xuất danh sách cần xem lại; không có dòng nào được dịch hay bản Việt hóa. Kết quả chưa đầy đủ.")
                 main, review, stats = extract_loose_source(src, review_only=True)
             else:
                 Path(out).mkdir(parents=True, exist_ok=True)
@@ -1403,8 +1403,8 @@ def _run_extract_task_impl(
                     existing_target_snapshot = existing_translation_inventory(src)["snapshots"]
                     workspace = Path(temp) / "gamecopy"
                     inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled, translation_only=True)
-                    log(f"Ren'Py SDK workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
-                    with _Working(progress, "Ren'Py SDK đang tạo mẫu dịch", 35):
+                    log(f"công cụ Ren’Py workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
+                    with _Working(progress, "Công cụ Ren’Py đang tạo mẫu dịch", 35):
                         generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
                     with _Working(progress, "Đang đọc mẫu dịch Ren'Py", 70):
                         main, review, stats = extract_native_template_entries(
@@ -1415,7 +1415,7 @@ def _run_extract_task_impl(
                         )
                     if existing_translation_inventory(src)["snapshots"] != existing_target_snapshot:
                         raise RenPyToolchainError("Existing Ren'Py target mappings changed during extraction; retry with a new output")
-                log(f"Ren'Py SDK {sdk.version} đã tạo native template identity trên workspace tạm.")
+                log(f"công cụ Ren’Py {sdk.version} đã tạo native template identity trên workspace tạm.")
         else:
             file_inventory = None
             input_root = Path(src)
@@ -1504,7 +1504,7 @@ def _run_extract_task_impl(
             stats.setdefault("limitations", []).append({
                 "code": "NATIVE_ACCOUNTING_GAP", "count": int(gap),
                 "message": f"Đếm đơn vị native của Ren'Py lệch {gap} (native={native_units}, đã tính={native_accounted}): một số đơn vị không thuộc nhóm nào "
-                           "(dịch/xem lại/kỹ thuật/engine/đã loại). Mọi dòng đã tìm thấy vẫn có trong CSV; chi tiết đã che tên/nội dung ở native_accounting.json. "
+                           "(dịch/xem lại/kỹ thuật/engine/đã loại). Mọi dòng đã tìm thấy vẫn có trong bản dịch; chi tiết đã che tên/nội dung ở native_accounting.json. "
                            "Bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển."})
         # Expected limits of static extraction (dynamic runtime expressions, archive source with unproven runtime) are review warnings,
         # never discovery errors; only genuine failures stay in extract_errors.
@@ -1521,7 +1521,7 @@ def _run_extract_task_impl(
         screen_review = sum(1 for item in (review or []) if (item.get("import_method") if isinstance(item, dict) else getattr(item, "import_method", "")) == "renpy_screen_candidate")
         if review_count and screen_review == review_count and not renpy_sdk_missing:
             limitations.append({"code": "REVIEW_SCREEN_CANDIDATES_UNPROMOTED", "count": review_count,
-                                "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) được đánh dấu cần xem lại trong tài liệu; chưa thể tạo patch cho các dòng này."})
+                                "message": f"{review_count} chuỗi screen tĩnh chưa chứng minh được (định dạng/nhãn ngắn) được đánh dấu cần xem lại trong tài liệu; chưa thể tạo bản Việt hóa cho các dòng này."})
         dynamic_note = " ".join(str(item["message"]) for item in audit_notes + limitations)
         if technical_ui:
             (Path(out) / "renpy_technical_excluded.json").write_text(json.dumps(
@@ -1550,7 +1550,7 @@ def _run_extract_task_impl(
         elif renpy_sdk_missing:
             summary = (
                 f"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; "
-                f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
+                f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
             )
         empty = not (main_count or review_count)
         completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty or limitations)
@@ -1563,7 +1563,7 @@ def _run_extract_task_impl(
         elif renpy_sdk_missing:
             completion_error = (
                 "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. "
-                f"Đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo patch); chọn công cụ SDK và thư mục xuất mới rồi lấy text lại để nhận dạng đầy đủ."
+                f"Đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa); chọn công cụ SDK và nơi lưu bản dịch mới rồi lấy text lại để nhận dạng đầy đủ."
             )
         elif review_count:
             completion_error = (
@@ -1592,7 +1592,7 @@ def _run_extract_task_impl(
         if scoped_patch:
             completion_error = (
                 f"Đã lấy {main_count} dòng text có đủ bằng chứng để dịch; "
-                f"{review_count} dòng chỉ để xem lại được giữ riêng, không dịch và không patch. "
+                f"{review_count} dòng chỉ để xem lại được giữ riêng, không dịch và không bản Việt hóa. "
                 "Kết quả chưa bao phủ toàn bộ game (PARTIAL). "
                 + dynamic_note
             )
@@ -1642,7 +1642,7 @@ def _run_extract_task_impl(
             "limitations": limitations,
             "severity": "error" if extract_errors else "warning" if completion_blockers else "ok",
             "patch_scope": "VERIFIED_MAIN_SUBSET" if scoped_patch else "NONE",
-            "errors": len(extract_errors), "action": completion_error or "Mở CSV để kiểm tra text trước khi dịch / nhập bản dịch.",
+            "errors": len(extract_errors), "action": completion_error or "Mở bản dịch để kiểm tra text trước khi dịch / nhập bản dịch.",
         }, ensure_ascii=False, indent=2), encoding="utf-8")
         if extract_errors or review_count:
             payload.update(
@@ -1654,7 +1654,7 @@ def _run_extract_task_impl(
                     fallback_action=(
                         "Review discovery/extract errors before translating the package."
                         if extract_errors
-                        else "Chọn công cụ Ren'Py và thư mục xuất mới rồi lấy text lại để nhận dạng lời thoại đầy đủ."
+                        else "Chọn công cụ Ren'Py và nơi lưu bản dịch mới rồi lấy text lại để nhận dạng lời thoại đầy đủ."
                         if renpy_sdk_missing
                         else "Translate only verified MAIN rows; excluded coverage remains PARTIAL."
                         if scoped_patch
@@ -1793,13 +1793,13 @@ def _exclude_legacy_machine_rows(csv_path: Path, log: LogFn, expected_sha256: st
     if not Path(csv_path).is_file():
         return expected_sha256 or None                       # nothing to clean; the translation step reports a missing CSV itself
     if expected_sha256 and hashlib.sha256(Path(csv_path).read_bytes()).hexdigest() != str(expected_sha256).lower():
-        raise CsvRevisionConflict("CSV đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); không dịch và không thay đổi gì. Hãy tải lại CSV rồi chọn lại.")
+        raise CsvRevisionConflict("Bản dịch đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); không dịch và không thay đổi gì. Hãy tải lại bản dịch rồi chọn lại.")
     try:
         removed = exclude_machine_technical(csv_path)
     except ExclusionConflict as exc:
         raise CsvRevisionConflict(str(exc)) from exc
     if removed:
-        log(f"Đã tự loại {removed} dòng chỉ là cú pháp/kỹ thuật khỏi CSV (ghi trong user_exclusions.json); bạn không cần phân loại chúng.")
+        log(f"Đã tự loại {removed} dòng chỉ là cú pháp/kỹ thuật khỏi bản dịch (ghi trong user_exclusions.json); bạn không cần phân loại chúng.")
     if not expected_sha256:
         return None
     return hashlib.sha256(Path(csv_path).read_bytes()).hexdigest()
@@ -1861,7 +1861,7 @@ def run_translate_ct2_task(
         }
         human_review_count = payload["human_review_required_count"]
         if human_review_count:
-            payload["error"] = f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
+            payload["error"] = f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
         if not result.get("ok"):
             payload["ok"] = False
             payload["error"] = payload["error"] or result.get("error") or "Dịch không hoàn tất hoặc không có tiến độ"
@@ -1889,7 +1889,7 @@ def run_translate_ct2_task(
                     "diagnostic_stage": "TRANSLATE",
                     "diagnostic_root_cause": "HUMAN_REVIEW_REQUIRED",
                     "diagnostic_affected_count": human_review_count,
-                    "diagnostic_action": "Duyệt bản dịch trong review_only.csv rồi lưu translation.csv trước khi Patch.",
+                    "diagnostic_action": "Duyệt bản dịch trong review_only.csv rồi lưu translation.csv trước khi tạo bản Việt hóa.",
                     "diagnostic_status": "REVIEW_REQUIRED",
                 }
             )
@@ -2023,9 +2023,9 @@ def run_translate_ct2_task(
 _SELECTED_OUTCOME_VI = {
     "translation_saved": "đã dịch và lưu",
     "manual_review_protected": "bản dịch máy đang chờ bạn duyệt: bấm 'Chấp nhận đề xuất' hoặc tự sửa rồi Lưu",
-    "missing_key": "dòng không còn trong CSV (đã xóa, hoặc chỉ để xem lại); hãy tải lại CSV",
+    "missing_key": "dòng không còn trong bản dịch (đã xóa, hoặc chỉ để xem lại); hãy tải lại bản dịch",
     "translation_not_saved": "máy dịch không cho ra bản dịch an toàn; hãy tự gõ bản dịch rồi Lưu",
-    "machine_technical_excluded": "là mã/kỹ thuật của game, đã tự loại khỏi CSV",
+    "machine_technical_excluded": "là mã/kỹ thuật của game, đã tự loại khỏi bản dịch",
 }
 
 
@@ -2037,7 +2037,7 @@ def _selected_outcome_vi(outcome: dict) -> str:
     if outcome.get("status") == "skipped":
         return "không cần dịch (mã/định dạng của game, giữ nguyên)"
     if outcome.get("status") == "review":
-        return "cần xem lại: dòng này không ghi được vào game nên Patch bỏ qua"
+        return "cần xem lại: dòng này không ghi được vào game nên bị bỏ qua"
     return "chưa dịch được; hãy tự gõ bản dịch rồi Lưu"
 
 
@@ -2094,9 +2094,9 @@ def run_translate_keys_ct2_task(
 
             validation = validate_document(csv_path)
             if validation.get("summary"):
-                log(f"Kiểm tra lại CSV: {validation['summary']}")
+                log(f"Kiểm tra lại bản dịch: {validation['summary']}")
         except Exception as exc:
-            log(f"Không kiểm tra lại CSV được: {exc}")
+            log(f"Không kiểm tra lại bản dịch được: {exc}")
 
         # Retranslate is a scoped operation, but completion is a package-level
         # contract.  Read the current CSV/review ledgers so a retry-by-key
@@ -2233,7 +2233,7 @@ def run_translate_keys_ct2_task(
             payload["error"] = result.get("error") or "Dịch lại không thành công"
         elif validation is None:
             payload["ok"] = False
-            payload["error"] = "Không xác minh được CSV sau khi dịch lại"
+            payload["error"] = "Không xác minh được bản dịch sau khi dịch lại"
         else:
             payload["complete"] = (
                 payload["pending"] == 0
@@ -2248,12 +2248,12 @@ def run_translate_keys_ct2_task(
                     f"blocked={payload['blocked']}"
                 )
                 if human_review_count:
-                    payload["error"] = f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
+                    payload["error"] = f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
                 elif payload["pending"] == 0 and int(measured_status["review_only"]) == 0 and payload["review_only"] > 0:
                     # The measured package has NOTHING left to review: the remaining "review" rows are drafted rows whose writeback path is not proven
                     # (older package).  Say that, and what fixes it, instead of asking for a review that does not exist.
                     payload["error"] += (
-                        f" — bản nháp đã xong; {payload['review_only']} dòng chưa có đường ghi patch được chứng minh (gói trích xuất cũ) nên Patch sẽ bỏ qua. "
+                        f" — bản nháp đã xong; {payload['review_only']} dòng chưa có đường ghi bản Việt hóa được chứng minh (gói trích xuất cũ) nên bị bỏ qua. "
                         "Chạy lại Extract để có đường ghi đã chứng minh; không cần duyệt thủ công."
                     )
         if (
@@ -2280,7 +2280,7 @@ def run_translate_keys_ct2_task(
                     "diagnostic_stage": "TRANSLATE",
                     "diagnostic_root_cause": "HUMAN_REVIEW_REQUIRED",
                     "diagnostic_affected_count": human_review_count,
-                    "diagnostic_action": "Duyệt bản dịch trong review_only.csv rồi lưu translation.csv trước khi Patch.",
+                    "diagnostic_action": "Duyệt bản dịch trong review_only.csv rồi lưu translation.csv trước khi tạo bản Việt hóa.",
                     "diagnostic_status": "REVIEW_REQUIRED",
                 }
             )
@@ -2329,7 +2329,7 @@ def run_translate_keys_ct2_task(
             if selection_ok and omitted > 0:
                 # Draft saved is one fact; "the patch will skip other rows" is another. Never an error for the selected draft, never patch proof.
                 payload["patch_omissions"] = omitted
-                payload["summary"] += f" Bản nháp đã lưu; Patch sẽ bỏ qua {omitted} dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game)."
+                payload["summary"] += f" Bản nháp đã lưu; bỏ qua {omitted} dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game)."
         complete(payload)
     except TranslateCancelled:
         _emit_complete(
@@ -2570,7 +2570,7 @@ def run_cloud_repair_import_task(
             summary = (
                 f"Đã nhập Cloud Repair: {report.get('changed_count', 0)} dòng thay đổi, "
                 f"{report.get('expected_row_count', 0)} dòng đã kiểm tra. "
-                f"CSV mới: {output_csv}.{report_note}"
+                f"Bản dịch mới: {output_csv}.{report_note}"
             )
             log(summary)
             _emit_complete(
@@ -2646,9 +2646,9 @@ def run_external_translation_import_task(
             summary = (
                 f"Đã nhập {applied} dòng khớp an toàn từ bản dịch cũ. "
                 + (
-                    "Gói hiện tại đã sẵn sàng kiểm tra patch."
+                    "Gói hiện tại đã sẵn sàng kiểm tra bản Việt hóa."
                     if task_complete
-                    else f"Còn {unresolved} dòng cần xem trong Sửa CSV."
+                    else f"Còn {unresolved} dòng cần xem trong Sửa bản dịch."
                 )
                 + report_note
             )
@@ -2708,11 +2708,11 @@ def _cancelled_patch_output_statement(patch_out: Path | None) -> str:
     """
 
     if patch_out is None or not os.path.lexists(patch_out):
-        return "Đã hủy tạo patch trước khi ghi thư mục xuất. Game gốc không bị thay đổi."
+        return "Đã hủy tạo bản Việt hóa trước khi ghi nơi lưu bản dịch. Game gốc không bị thay đổi."
     return (
-        f"Đã hủy tạo patch. Thư mục xuất {patch_out} được GIỮ NGUYÊN, không dọn gì: có thể chứa patch dở hoặc đã ghi xong "
-        "nhưng chưa được xác nhận, nên không dùng làm patch hoàn chỉnh. Để tạo lại, chọn thư mục xuất trống mới. "
-        "Patch chỉ ghi vào thư mục xuất; game gốc không bị sửa bởi bước này."
+        f"Đã hủy tạo bản Việt hóa. Nơi lưu bản dịch {patch_out} được GIỮ NGUYÊN, không dọn gì: có thể chứa bản Việt hóa dở hoặc đã ghi xong "
+        "nhưng chưa được xác nhận, nên không dùng làm bản Việt hóa hoàn chỉnh. Để tạo lại, chọn nơi lưu bản dịch trống mới. "
+        "Bản Việt hóa chỉ ghi vào nơi lưu bản dịch; game gốc không bị sửa bởi bước này."
     )
 
 
@@ -2857,7 +2857,7 @@ def _run_patch_task_impl(
                 raise RuntimeError(
                     "Ren'Py patch output contains Unity-only artifacts; use a clean patch directory"
                 )
-        log(f"Đang tạo patch Việt hóa theo version: {patch_out}")
+        log(f"Đang tạo bản Việt hóa theo version: {patch_out}")
         if patch_engine == "unity":
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
@@ -2887,18 +2887,18 @@ def _run_patch_task_impl(
                     _copy_patch_installer(installer, patch_out)
                     log(f"Đã thêm installer: {target_installer}")
                 else:
-                    log("Cảnh báo: chưa tìm thấy VNTextPatchInstaller.exe; cần publish installer trước khi phát hành patch.")
+                    log("Cảnh báo: chưa tìm thấy VNTextPatchInstaller.exe; cần publish installer trước khi phát hành bản Việt hóa.")
             if write_manifest_file and (patch_out / "COPY_TO_GAME_ROOT").is_dir():
                 write_patch_manifest(patch_out, Path(src).resolve(), VERSION)
             elif write_manifest_file:
-                log("Cảnh báo: chưa tạo được patch_manifest.json vì patch output không có COPY_TO_GAME_ROOT.")
+                log("Cảnh báo: chưa tạo được patch_manifest.json vì bản Việt hóa output không có COPY_TO_GAME_ROOT.")
             patch_delivery = "unity_installer"
             patch_payload_path = str(patch_out / "COPY_TO_GAME_ROOT")
             patch_install_instructions = (
                 f"{_patch_content_label(patch_verification)} đã sẵn sàng tại {patch_out}. "
                 "Mở VNTextPatchInstaller.exe để cài/gỡ."
             )
-            summary = f"Xong: patch nằm tại {patch_out}. Mở VNTextPatchInstaller.exe để cài/gỡ."
+            summary = f"Xong: bản Việt hóa nằm tại {patch_out}. Mở VNTextPatchInstaller.exe để cài/gỡ."
             if not (patch_out / "VNTextPatchInstaller.exe").is_file():
                 patch_install_instructions = (
                     f"Payload đã qua read-back tại {patch_out}, nhưng thiếu installer. "
@@ -2929,7 +2929,7 @@ def _run_patch_task_impl(
                     _copy_patch_installer(installer, patch_out)
                     patch_delivery = "renpy_installer"
                     patch_install_instructions = (
-                        f"Patch tại {patch_out}. Mở VNTextPatchInstaller.exe, chọn trực tiếp thư mục game để cài/gỡ. "
+                        f"Bản Việt hóa tại {patch_out}. Mở VNTextPatchInstaller.exe, chọn trực tiếp thư mục game để cài/gỡ. "
                         "Chỉ các file bị thay đổi được sao lưu; không cần tạo bản sao toàn bộ game.")
                     summary = patch_install_instructions
                     (patch_out / "HUONG_DAN_CAI_PATCH.txt").write_text(patch_install_instructions + "\n", encoding="utf-8")
@@ -2957,11 +2957,11 @@ def _run_patch_task_impl(
         if int(_conflicts.get("count") or 0) > 0:
             _files = ", ".join(sorted((_conflicts.get("files") or {}).keys())) or "game/tl/vietnamese"
             summary += (f" Cảnh báo: {_conflicts['count']} câu đã có bản dịch tiếng Việt KHÁC sẵn trong game ({_files}); VNText giữ nguyên bản có sẵn"
-                        " và bỏ qua các câu này (game không lỗi). Muốn dùng bản dịch của bạn cho các câu đó: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo patch lại.")
+                        " và bỏ qua các câu này (game không lỗi). Muốn dùng bản dịch của bạn cho các câu đó: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo bản Việt hóa lại.")
         if late_cancel:
             # The cancel arrived after the output was complete and verified: say so instead of
             # reporting a cancellation over a finished patch.
-            summary = "Yêu cầu hủy đến quá muộn: patch đã hoàn tất và qua read-back. " + summary
+            summary = "Yêu cầu hủy đến quá muộn: bản Việt hóa đã hoàn tất và qua read-back. " + summary
         log(summary)
         if trace is not None:
             from vntext.traceability import EVENT_COMPLETED
@@ -2974,7 +2974,7 @@ def _run_patch_task_impl(
             )
             if patch_metrics.get("verification") != "PASS":
                 raise RuntimeError(
-                    "Patch chưa đạt read-back verification: "
+                    "Bản Việt hóa chưa đạt read-back verification: "
                     f"{patch_metrics.get('verification')}"
                 )
             trace.finish_run(EVENT_COMPLETED)
@@ -3114,7 +3114,7 @@ def _require_patch_readback_success(patch_out: Path) -> dict:
         detail = ", ".join(f"{key}={value}" for key, value in sorted(non_pass.items()))
         if detail:
             reason = f"{reason}; {detail}"
-        raise PatchReadbackError(f"Patch chưa đạt read-back verification: {reason}")
+        raise PatchReadbackError(f"Bản Việt hóa chưa đạt read-back verification: {reason}")
     return verification
 
 

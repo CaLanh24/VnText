@@ -31,7 +31,7 @@ public sealed record PatchPreflightResult(
                 return Error;
             var summary = Ok ? UiText.Msg("{0} câu sẵn sàng; {1} câu sẽ được bỏ qua.", Eligible, Blocked) : Summary;
             if (UserExcluded > 0 || OutsideCsvReview > 0)
-                summary = UiText.Lines(summary, UiText.Msg("Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài CSV (không dịch, không patch).", UserExcluded, OutsideCsvReview));
+                summary = UiText.Lines(summary, UiText.Msg("Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài bản dịch (không dịch, không bản Việt hóa).", UserExcluded, OutsideCsvReview));
             if (ReasonCounts.Count == 0)
                 return summary;
             var parts = ReasonCounts
@@ -75,7 +75,7 @@ public static class PatchPreflightService
         if (string.IsNullOrEmpty(manifest))
             manifest = Path.Combine(Path.GetDirectoryName(csv) ?? "", "manifest.json");
         if (!File.Exists(manifest))
-            return PatchPreflightResult.Fail(csv, "Thiếu manifest.json cùng thư mục");
+            return PatchPreflightResult.Fail(csv, "Thiếu tệp đi kèm manifest.json cùng thư mục");
 
         try
         {
@@ -97,14 +97,14 @@ public static class PatchPreflightService
 
             using var proc = Process.Start(psi);
             if (proc is null)
-                return PatchPreflightResult.Fail(csv, "Không khởi chạy được Python worker");
+                return PatchPreflightResult.Fail(csv, "Không khởi chạy được bộ xử lý nền");
 
             var stdout = proc.StandardOutput.ReadToEnd();
             var stderr = proc.StandardError.ReadToEnd();
             proc.WaitForExit(TimeSpan.FromMinutes(2));
 
             if (proc.ExitCode != 0 && string.IsNullOrWhiteSpace(stdout))
-                return PatchPreflightResult.Fail(csv, string.IsNullOrWhiteSpace(stderr) ? "Kiểm tra patch thất bại" : stderr.Trim());
+                return PatchPreflightResult.Fail(csv, string.IsNullOrWhiteSpace(stderr) ? "Kiểm tra bản Việt hóa thất bại" : stderr.Trim());
 
             var jsonText = stdout.Trim();
             var start = jsonText.IndexOf('{');
@@ -140,7 +140,7 @@ public static class PatchPreflightService
         }
         catch (Exception ex)
         {
-            return PatchPreflightResult.Fail(csv, UiText.Msg("Lỗi kiểm tra patch: {0}", ex.Message));
+            return PatchPreflightResult.Fail(csv, UiText.Msg("Lỗi kiểm tra bản Việt hóa: {0}", ex.Message));
         }
     }
 

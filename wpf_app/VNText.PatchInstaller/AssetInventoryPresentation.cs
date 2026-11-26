@@ -6,13 +6,13 @@ namespace VNText.PatchInstaller;
 /// (<c>font_outcomes</c>).  The app shows these directly; nobody has to open the JSON.  Evidence only: nothing here claims automatic text recognition in bitmaps.</summary>
 public static class AssetInventoryPresentation
 {
-    public const string ImageScopeNotice = "Chỉ phát hiện ảnh nút/menu theo khai báo trong script; chữ trong ảnh KHÔNG được nhận diện hay sửa tự động. Muốn dịch ảnh, hãy đính kèm file spec ảnh đã dựng sẵn ở bước Patch.";
+    public const string ImageScopeNotice = "Chỉ phát hiện ảnh nút/menu theo khai báo trong script; chữ trong ảnh KHÔNG được nhận diện hay sửa tự động. Muốn dịch ảnh, hãy đính kèm file spec ảnh đã dựng sẵn ở bước bản Việt hóa.";
 
     public static string OutcomeLabel(string outcome) => outcome switch
     {
         "OK" => "Đủ chữ Việt",
-        "WILL_REPLACE" => "Sẽ thay khi tạo patch",
-        "REPLACED" => "Đã thay trong patch",
+        "WILL_REPLACE" => "Sẽ thay khi tạo bản Việt hóa",
+        "REPLACED" => "Đã thay trong bản Việt hóa",
         "PRESERVED" => "Giữ nguyên",
         _ => "Chưa xử lý được",
     };
@@ -21,7 +21,7 @@ public static class AssetInventoryPresentation
     {
         "COVERS_TRANSLATION" => "font đã có đủ ký tự cần dùng",
         "ENGINE_DEFAULT" => "font mặc định của Ren'Py",
-        "NEEDS_VIETNAMESE_FONT" => outcome switch { "UNRESOLVED" => "không tạo được khóa thay thế an toàn (tên mơ hồ hoặc không hỗ trợ)", "REPLACED" => "thiếu chữ Việt; đã thay bằng font Việt khi chơi tiếng Việt", _ => "thiếu chữ Việt; sẽ thay bằng font Việt khi tạo patch" },
+        "NEEDS_VIETNAMESE_FONT" => outcome switch { "UNRESOLVED" => "không tạo được khóa thay thế an toàn (tên mơ hồ hoặc không hỗ trợ)", "REPLACED" => "thiếu chữ Việt; đã thay bằng font Việt khi chơi tiếng Việt", _ => "thiếu chữ Việt; sẽ thay bằng font Việt khi tạo bản Việt hóa" },
         "ICON_PRESERVED" => "font biểu tượng, không thay",
         "AMBIGUOUS_NAME" => "nhiều file cùng tên nên không thể chọn an toàn",
         "UNPARSABLE" => "không đọc được bảng ký tự của font",
@@ -108,13 +108,13 @@ public static class AssetInventoryPresentation
             var ordered = FontLines(outcomes).Zip(outcomes.EnumerateArray(), (line, row) => (line, rank: Str(row, "outcome") switch { "UNRESOLVED" => 0, "REPLACED" => 1, "WILL_REPLACE" => 1, _ => 2 }))
                 .Where(item => item.rank < 2).OrderBy(item => item.rank).Select(item => item.line).ToList();
             lines.AddRange(ordered.Take(maxFontRows));
-            if (ordered.Count > maxFontRows) lines.Add($"… và {ordered.Count - maxFontRows} font khác; xem font_preflight.json trong thư mục patch.");
+            if (ordered.Count > maxFontRows) lines.Add($"… và {ordered.Count - maxFontRows} font khác; xem font_preflight.json trong thư mục bản Việt hóa.");
         }
         if (evidence.TryGetProperty("glyph_fallback", out var fallback) && fallback.ValueKind == JsonValueKind.Object)
             lines.Add("Ký hiệu thiếu trong font đã chọn lấy từ font DejaVu đi kèm; mọi chữ còn lại dùng font đã chọn (chỉ kiểu chữ tĩnh).");
         if (evidence.TryGetProperty("image_candidates", out var images) && images.ValueKind == JsonValueKind.Object && images.TryGetProperty("candidates", out var rows)
             && rows.ValueKind == JsonValueKind.Array && rows.GetArrayLength() > 0)
-            lines.Add($"Ảnh nút/menu phát hiện: {rows.GetArrayLength()}; chữ trong ảnh không được nhận diện tự động (cần spec ảnh ở bước Patch).");
+            lines.Add($"Ảnh nút/menu phát hiện: {rows.GetArrayLength()}; chữ trong ảnh không được nhận diện tự động (cần spec ảnh ở bước bản Việt hóa).");
         return lines;
     }
 

@@ -228,11 +228,12 @@ internal static partial class Program
                             var buttons = FindVisualChildren<Button>(Named("ResourceErrorActions")).Select(b => b.Content as string).ToList();
                             Require(buttons.Contains(lang == "en" ? "View diagnostics" : "Xem chẩn đoán") && buttons.Contains(lang == "en" ? "Copy error" : "Chép lỗi"), "DQ3 " + lang + ": actions " + string.Join("|", buttons));
                         }
-                        vm.TestSetResourceStatus("Còn thiếu hoặc hỏng tài nguyên." + Environment.NewLine + "renpy: Chưa sẵn sàng · Chưa tải Ren'Py SDK 8.5.3");
-                        Require(vm.ResourceStatusAlreadyStates("renpy: Chưa tải Ren'Py SDK 8.5.3") && vm.ResourceStatusAlreadyStates("Chưa tải Ren'Py SDK 8.5.3") && !vm.ResourceStatusAlreadyStates("Lỗi mạng khác"), "DQ3: an error already stated by the per-resource line is not appended again, a different one is");
+                        vm.TestSetResourceStatus("Còn thiếu hoặc hỏng tài nguyên." + Environment.NewLine + "renpy: Chưa sẵn sàng · Chưa tải công cụ Ren’Py 8.5.3");
+                        Require(vm.ResourceStatusAlreadyStates("renpy: Chưa tải công cụ Ren’Py 8.5.3") && vm.ResourceStatusAlreadyStates("Chưa tải công cụ Ren’Py 8.5.3") && !vm.ResourceStatusAlreadyStates("Lỗi mạng khác"), "DQ3: an error already stated by the per-resource line is not appended again, a different one is");
                         // Patch font group
                         vm.NavigateTabCommand.Execute("patch"); vm.Language = "vi"; window.UpdateLayout(); PumpFixture(200);
-                        Require(vm.PatchFontModeText == "Font Việt đi kèm (mặc định)" && vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn game/asset", StringComparison.Ordinal) && !vm.PatchFontNoticeVisible, "DQ4: default font, no source, no notice");
+                        Require(vm.PatchFontModeText == "Font Việt đi kèm (mặc định)" && vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn thư mục game", StringComparison.Ordinal) && !vm.PatchFontNoticeVisible, "DQ4: default font, no source, no notice");
+                        ((System.Windows.Controls.Expander)Named("PatchAdvancedExpander")).IsExpanded = true; window.UpdateLayout(); PumpFixture(120);   // 0.1.37: font/size/image options sit in the closed advanced options
                         Require(Named("PatchFontGroup").IsVisible && Named("PatchFontModeText").IsVisible && Named("PatchFontStateText").IsVisible, "DQ4: the Vietnamese font group is drawn");
                         vm.ResetPatchFontCommand.Execute(null); window.UpdateLayout(); PumpFixture(100);
                         Require(vm.PatchFontNotice == "Đã chọn: Font Việt đi kèm." && Named("PatchFontNoticeText").IsVisible, "DQ4: choosing the bundled font is confirmed in place");
@@ -240,7 +241,7 @@ internal static partial class Program
                         try
                         {
                             vm.InputPath = srcDir; PumpFixture(80);
-                            Require(vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn CSV hợp lệ", StringComparison.Ordinal), "DQ4: with a source but no valid CSV the state names the missing step: " + vm.PatchFontStateText);
+                            Require(vm.PatchFontStateText.StartsWith("Chưa kiểm — chọn bản dịch hợp lệ", StringComparison.Ordinal), "DQ4: with a source but no valid CSV the state names the missing step: " + vm.PatchFontStateText);
                         }
                         finally { vm.InputPath = ""; Directory.Delete(srcDir, true); }
                         vm.Language = "en"; PumpFixture(100); window.UpdateLayout();
@@ -299,7 +300,7 @@ internal static partial class Program
                             dialog.RaiseEvent(new System.Windows.Input.KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(dialog)!, 0, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
                         };
                         var invoker = (Button)window.FindName("PatchInstalledFontButton")!;
-                        vm.NavigateTabCommand.Execute("patch"); window.UpdateLayout(); PumpFixture(150);
+                        vm.NavigateTabCommand.Execute("patch"); ((System.Windows.Controls.Expander)window.FindName("PatchAdvancedExpander")!).IsExpanded = true; window.UpdateLayout(); PumpFixture(150);
                         invoker.Focus(); Keyboard.Focus(invoker);
                         var modeBefore = vm.PatchFontModeText;
                         timer.Start();

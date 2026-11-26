@@ -294,7 +294,7 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").read_text(encoding="utf-8")
         styles = (ROOT / "wpf_app" / "VNText.Studio.App" / "Themes" / "ControlStyles.xaml").read_text(encoding="utf-8")
         self.assertNotIn('ToolTip="Dịch bằng mô hình đã có trên máy, không gửi nội dung lên mạng."', xaml)
-        self.assertIn('Text="Dịch Anh sang Việt trên máy" ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2."', xaml)
+        self.assertIn('Text="Dịch Anh → Việt trên máy" ToolTip="Dịch Anh → Việt ngay trên máy, không gửi dữ liệu đi đâu."', xaml)
         tooltip_style = styles.split('<Style TargetType="ToolTip">', 1)[1].split('</Style>', 1)[0]
         self.assertIn('Value="400"', tooltip_style)
         self.assertIn('CornerRadius="8"', tooltip_style)
@@ -331,11 +331,11 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn("Tách dòng cần duyệt", xaml)
         self.assertIn("RenpyGameDetector.HasSdkRecoveryEvidence", view_model)
         self.assertIn("Lấy text chưa đầy đủ do thiếu công cụ Ren'Py", worker)
-        self.assertIn("Chọn SDK đã cài…", xaml)      # choosing an installed SDK is a Settings > Data action
+        self.assertIn("Chọn công cụ…", xaml)      # choosing an installed SDK is a Settings > Data action
         self.assertNotIn("Tải công cụ rồi lấy text", xaml)
         self.assertNotIn("không dùng parser thay thế", xaml)
-        self.assertIn('"missing" => "Chưa dùng được SDK Ren\'Py 8.5.3.', recovery)
-        self.assertIn('"ready" => "Đã sẵn sàng SDK Ren\'Py 8.5.3."', recovery)
+        self.assertIn('"missing" => "Chưa dùng được công cụ Ren’Py 8.5.3.', recovery)
+        self.assertIn('"ready" => "Công cụ Ren’Py 8.5.3 đã sẵn sàng."', recovery)
         self.assertIn("RenpySdkRecovery.ResolveAction", worker)
         self.assertIn("RenpySdkRecovery_StatusRequiresSuccessfulEvidence", workflow_tests)
 
@@ -343,7 +343,7 @@ class WpfWorkflowTests(unittest.TestCase):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
         resources = (app / "ViewModels" / "MainViewModel.Resources.cs").read_text(encoding="utf-8")
-        card = xaml[xaml.index('Text="Chuẩn bị tài nguyên sau khi cài ứng dụng"'):xaml.index('x:Name="ResourceProgressText"')]
+        card = xaml[xaml.index('Text="Chuẩn bị thành phần sau khi cài ứng dụng"'):xaml.index('x:Name="ResourceProgressText"')]
         self.assertIn('Command="{Binding CancelResourcesCommand}"', card)
         self.assertNotIn('Command="{Binding CancelCommand}"', card)
         self.assertIn("Value=\"{Binding ResourceProgressPercent, Mode=OneWay}\"", card)
@@ -381,8 +381,12 @@ class WpfWorkflowTests(unittest.TestCase):
         xaml = (app / "MainWindow.xaml").read_text(encoding="utf-8")
         panel = (app / "Controls" / "ImageWorkspacePanel.xaml").read_text(encoding="utf-8")
         for name, text in (("MainWindow.xaml", xaml), ("ImageWorkspacePanel.xaml", panel)):
-            self.assertNotIn("<Expander", text, name)
-            self.assertNotIn("IsExpanded=", text, name)
+            # 0.1.37 (Owner UX review): the only disclosure is the closed "Tùy chọn nâng cao" on the build page.
+            self.assertEqual(1 if name == "MainWindow.xaml" else 0, text.count("<Expander"), name)
+            self.assertEqual(1 if name == "MainWindow.xaml" else 0, text.count("IsExpanded="), name)
+            if name == "MainWindow.xaml":
+                self.assertIn('<Expander x:Name="PatchAdvancedExpander"', text)
+                self.assertIn('IsExpanded="False"', text)
         for card in ("TranslateLogCard", "PatchLogCard"):
             block = xaml[xaml.index(f'x:Name="{card}"'):xaml.index(f'x:Name="{card}"') + 900]
             self.assertIn('Text="Nhật ký"', block)
@@ -570,7 +574,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('FontSize="{StaticResource UiDialogTitleSize}" FontWeight="Bold"', xaml)
         # (7) names
         self.assertNotIn("Dịch local", xaml)
-        self.assertNotIn("Chọn file CSV", xaml)
+        self.assertNotIn("Chọn tệp bản dịch", xaml)
         self.assertNotIn('Content="Chọn file"', xaml)
 
     def test_toast_severity_pairs_are_readable_in_both_themes_and_the_second_style_batch_is_wired(self):
@@ -624,9 +628,9 @@ class WpfWorkflowTests(unittest.TestCase):
         # (5) readable filter label with the stored value untouched; the Patch picker names its own step
         self.assertIn('public const string ReviewOnly = "review_only";', filters)
         self.assertIn('new(ReviewOnly, "Cần xem lại")', filters)
-        self.assertIn('PatchCsvPickerTitle = "Chọn CSV để tạo patch"', paths)
+        self.assertIn('PatchCsvPickerTitle = "Chọn bản dịch để tạo bản Việt hóa"', paths)
         self.assertIn("SelectedTab == WorkflowTabs.Patch ? PatchCsvPickerTitle : TranslateCsvPickerTitle", paths)
-        self.assertIn('TranslateCsvPickerTitle = "Chọn CSV cần dịch"', paths)
+        self.assertIn('TranslateCsvPickerTitle = "Chọn bản dịch cần dịch"', paths)
 
     def test_polish_batch_csv_collapse_empty_states_ocr_details_and_select_sizes_are_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
@@ -795,8 +799,8 @@ class WpfWorkflowTests(unittest.TestCase):
         # every status/summary message the view model and the model can show is in the catalog or matched by an anchored pattern
         for message in re.findall(r'"([^"]*[ăâđêôơưàáạảãầấậẩẫằắặẳẵèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ][^"]*)"', model):
             self.assertIn(message, keys, message)
-        for message in ("Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.", "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công.",
-                        "Review ảnh vượt 2 MiB.", "Ảnh nguồn đã đổi hoặc hash review không khớp.", "Chọn thư mục xuất trước.", "Đang xử lý text trong ảnh…"):
+        for message in ("Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo bản Việt hóa.", "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công.",
+                        "Review ảnh vượt 2 MiB.", "Ảnh nguồn đã đổi hoặc hash review không khớp.", "Chọn nơi lưu bản dịch trước.", "Đang xử lý text trong ảnh…"):
             self.assertIn(message, image_vm)
             self.assertIn(message, keys, message)
         # display-time translation: converter bindings in the panel, exact Vietnamese pass-through, anchored patterns, prefixes
@@ -1083,11 +1087,11 @@ class WpfWorkflowTests(unittest.TestCase):
         )
         self.assertNotIn("ExtractOptionsPanel", named)
         self.assertNotIn("RenpySdkOptionsPanel", named)
-        self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', xaml)
+        self.assertIn('ToolTip="Nếu bản dịch thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo bản Việt hóa."', xaml)
         self.assertIn('ToolTip="Chỉ nhập dòng khớp mã và câu gốc; dòng khác được giữ để sửa."', xaml)
-        self.assertIn('ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2."', xaml)
+        self.assertIn('ToolTip="Dịch Anh → Việt ngay trên máy, không gửi dữ liệu đi đâu."', xaml)
         self.assertNotIn("Chưa kiểm tra translation.csv", view_model)
-        self.assertNotIn("Chưa kiểm tra chất lượng patch", view_model)
+        self.assertNotIn("Chưa kiểm tra chất lượng bản Việt hóa", view_model)
         self.assertNotIn("Chưa có lỗi quét được ghi nhận.", analyze)
         self.assertNotIn("Báo cáo sẽ được ghi ngoài thư mục game.", analyze)
 
@@ -1253,7 +1257,7 @@ class WpfWorkflowTests(unittest.TestCase):
         patch_page = xaml[xaml.index('<!-- Patch page -->'):]
         self.assertIn('Content="Xuất ZIP"', translate_page)
         self.assertNotIn("Nhập kết quả", translate_page)
-        self.assertIn('ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."', patch_page)
+        self.assertIn('ToolTip="Nếu bản dịch thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo bản Việt hóa."', patch_page)
         self.assertIn('Command="{Binding ChooseTranslationCsvCommand}"', patch_page)
 
         page_root = ET.parse(ROOT / "wpf_app" / "VNText.Studio.App" / "MainWindow.xaml").getroot()
@@ -1342,7 +1346,7 @@ class WpfWorkflowTests(unittest.TestCase):
             self.assertRegex(panel, r'<RadioButton x:Name="%s" GroupName="RegionBackgroundMode"' % name)
         self.assertIn('x:Name="NoModeHint"', panel)
         # F7: the six sidebar buttons carry an accessible name that is the visible label
-        for label in ("Lấy text", "Dịch tự động", "Sửa CSV", "Tạo patch", "Nhật ký", "Cài đặt"):
+        for label in ("Lấy text", "Dịch tự động", "Sửa bản dịch", "Tạo bản Việt hóa", "Nhật ký", "Cài đặt"):
             self.assertIn('AutomationProperties.Name="%s"' % label, xaml)
         # F3: only a save of the CURRENT Patch csv drops the old results; another csv never re-points or resets them
         self.assertIn("SameCsvPath(patchSource, path)", csv_vm)

@@ -161,6 +161,13 @@ internal static partial class Program
             Run("Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal", Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal, csvFailures);
             Run("Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate", Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate, csvFailures);
             Run("Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons", Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons, csvFailures);
+            Run("Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton", Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton, csvFailures);
+            Run("Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton", Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton, csvFailures);
+            Run("Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames", Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames, csvFailures);
+            Run("Owner0137_Group2_NoDeveloperTermsOnAnyScreenAndOneNameForEachThing", Owner0137_Group2_NoDeveloperTermsOnAnyScreenAndOneNameForEachThing, csvFailures);
+            Run("Owner0137_Group2_RebuiltNamesAreUsedByEveryVisibleMessage", Owner0137_Group2_RebuiltNamesAreUsedByEveryVisibleMessage, csvFailures);
+            Run("Owner0137_Group3_StepsAreNumberedAndNextStepFollowsProgress", Owner0137_Group3_StepsAreNumberedAndNextStepFollowsProgress, csvFailures);
+            Run("Owner0137_Group3_AdvancedPatchOptionsAreFoldedAndBulkActionsLiveInOneMenu", Owner0137_Group3_AdvancedPatchOptionsAreFoldedAndBulkActionsLiveInOneMenu, csvFailures);
             Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, csvFailures);
             Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, csvFailures);
             Run("CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate", CsvEditor_RefreshesOnlyACleanMatchingEditorAfterTranslate, csvFailures);
@@ -194,7 +201,7 @@ internal static partial class Program
             Run("RenpySdkMissing_ReportsPartialExtraction", RenpySdkMissing_ReportsPartialExtraction, sdkFailures);
             if (sdkFailures.Count == 0)
             {
-                Console.WriteLine("Focused Ren'Py SDK recovery checks: PASS (3)");
+                Console.WriteLine("Focused công cụ Ren’Py recovery checks: PASS (3)");
                 return 0;
             }
             foreach (var failure in sdkFailures) Console.Error.WriteLine(" - " + failure);
@@ -366,6 +373,13 @@ internal static partial class Program
         Run("Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal", Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal, failures);
         Run("Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate", Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate, failures);
         Run("Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons", Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons, failures);
+        Run("Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton", Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton, failures);
+        Run("Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton", Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton, failures);
+        Run("Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames", Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames, failures);
+        Run("Owner0137_Group2_NoDeveloperTermsOnAnyScreenAndOneNameForEachThing", Owner0137_Group2_NoDeveloperTermsOnAnyScreenAndOneNameForEachThing, failures);
+        Run("Owner0137_Group2_RebuiltNamesAreUsedByEveryVisibleMessage", Owner0137_Group2_RebuiltNamesAreUsedByEveryVisibleMessage, failures);
+        Run("Owner0137_Group3_StepsAreNumberedAndNextStepFollowsProgress", Owner0137_Group3_StepsAreNumberedAndNextStepFollowsProgress, failures);
+        Run("Owner0137_Group3_AdvancedPatchOptionsAreFoldedAndBulkActionsLiveInOneMenu", Owner0137_Group3_AdvancedPatchOptionsAreFoldedAndBulkActionsLiveInOneMenu, failures);
         Run("Workflow_NoticesStayWithTheirOperationAndSurviveNavigation", Workflow_NoticesStayWithTheirOperationAndSurviveNavigation, failures);
         Run("CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue", CsvEditor_StatusTracksManualTranslationWithoutHidingStructuralIssue, failures);
         Run("CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces", CsvEditor_SaveAsyncKeepsDispatcherResponsiveAndCoalesces, failures);
@@ -644,7 +658,7 @@ internal static partial class Program
         vm.TestSetActiveTask("cancel-visible", "translate");
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="cancel_ack", Id="cancel-visible", State="accepted" });
         AssertTrue(vm.TranslateWorkflowStatusText.Contains("đã nhận yêu cầu hủy", StringComparison.OrdinalIgnoreCase));
-        AssertTrue(vm.LogLines.Any(line => line.Contains("Worker đã nhận yêu cầu hủy", StringComparison.Ordinal)));
+        AssertTrue(vm.LogLines.Any(line => line.Contains("Đã nhận yêu cầu hủy", StringComparison.Ordinal)));
         vm.TestReportCancelTimeout("cancel-visible");
         AssertTrue(vm.TranslateWorkflowStatusText.Contains("10 giây", StringComparison.Ordinal));
         AssertTrue(vm.TranslateWorkflowStatusText.Contains("dừng", StringComparison.Ordinal));
@@ -989,7 +1003,7 @@ internal static partial class Program
             vm.TestBeginTaskLog("patch-1", "patch");
             vm.TestSetActiveTask("patch-1", "patch");
             vm.TestHandleWorkerEvent(Cancelled("patch-1",
-                ",\"patch_engine\":\"unity\",\"patch_install_instructions\":\"Đã hủy tạo patch. Thư mục xuất X được GIỮ NGUYÊN, không dọn gì; không dùng làm patch hoàn chỉnh.\""));
+                ",\"patch_engine\":\"unity\",\"patch_install_instructions\":\"Đã hủy tạo bản Việt hóa. Nơi lưu bản dịch X được GIỮ NGUYÊN, không dọn gì; không dùng làm bản Việt hóa hoàn chỉnh.\""));
             AssertFalse(vm.Busy);
             AssertEqual("Đã hủy", vm.StatusText);
             AssertTrue(vm.LogLines.Any(l => l.Contains("GIỮ NGUYÊN", StringComparison.Ordinal)));
@@ -1003,7 +1017,7 @@ internal static partial class Program
             vm.TestBeginTaskLog("patch-2", "patch");
             vm.TestSetActiveTask("patch-2", "patch");
             vm.TestHandleWorkerEvent(Cancelled("patch-2", ""));
-            AssertTrue(vm.LogLines.Any(l => l.Contains("Đã hủy tạo patch", StringComparison.Ordinal)));
+            AssertTrue(vm.LogLines.Any(l => l.Contains("Đã hủy tạo bản Việt hóa", StringComparison.Ordinal)));
             AssertFalse(vm.LogLines.Any(l => l.Contains(TranslateCopy, StringComparison.Ordinal)));
         }
         // 3. a translate cancel keeps its own copy
@@ -1067,7 +1081,7 @@ internal static partial class Program
             AssertTrue(SpinWait.SpinUntil(() => vm.RunTranslateCommand.CanExecute(null), TimeSpan.FromSeconds(5)));
             AssertTrue(vm.CsvValidationOk);
             vm.OutputPath = package; vm.InputPath = package;
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
             AssertTrue(vm.PatchDeliveryReady);
             Require(!(vm.PatchArtifactBehindCsv), "expected false: vm.PatchArtifactBehindCsv");
 
@@ -1100,22 +1114,22 @@ internal static partial class Program
             using var vm = new MainViewModel(picker, new PythonWorkerHost(), startWorker:false);
             vm.TestSetTranslationModelReady(true);
             vm.ChooseTranslationCsvCommand.Execute(null);
-            AssertEqual("Chọn CSV cần dịch", picker.LastCsvTitle);
+            AssertEqual("Chọn bản dịch cần dịch", picker.LastCsvTitle);
             AssertFalse(picker.LastCsvTitle!.Contains("đã dịch", StringComparison.OrdinalIgnoreCase));
 
             picker.LastCsvTitle = null;
             vm.OpenCsvEditorFileCommand.Execute(null);
-            AssertEqual("Chọn CSV để sửa", picker.LastCsvTitle);
+            AssertEqual("Chọn bản dịch để sửa", picker.LastCsvTitle);
 
             picker.LastCsvTitle = null;
             vm.NavigateTabCommand.Execute("patch");
             vm.ChooseTranslationCsvCommand.Execute(null);
-            AssertEqual("Chọn CSV để tạo patch", picker.LastCsvTitle);
+            AssertEqual("Chọn bản dịch để tạo bản Việt hóa", picker.LastCsvTitle);
             AssertFalse(picker.LastCsvTitle!.Contains("cần dịch", StringComparison.Ordinal));
             vm.NavigateTabCommand.Execute("translate");
             picker.LastCsvTitle = null;
             vm.ChooseTranslationCsvCommand.Execute(null);
-            AssertEqual("Chọn CSV cần dịch", picker.LastCsvTitle);
+            AssertEqual("Chọn bản dịch cần dịch", picker.LastCsvTitle);
         }
         finally
         {
@@ -1567,12 +1581,12 @@ internal static partial class Program
             Pending = 0,
             ReviewOnly = 2,
             HumanReviewRequiredCount = 2,
-            Error = "Cần duyệt thủ công 2 dòng trước khi Patch",
+            Error = "Cần duyệt thủ công 2 dòng trước khi tạo bản Việt hóa",
         });
 
         AssertEqual("Dịch một phần", vm.StatusText);
-        AssertEqual("Cần duyệt thủ công 2 dòng trước khi Patch", vm.ProgressSubtitle);
-        AssertTrue(vm.StepStatusLine.Contains("Cần duyệt thủ công 2 dòng trước khi Patch"));
+        AssertEqual("Cần duyệt thủ công 2 dòng trước khi tạo bản Việt hóa", vm.ProgressSubtitle);
+        AssertTrue(vm.StepStatusLine.Contains("Cần duyệt thủ công 2 dòng trước khi tạo bản Việt hóa"));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —"));
     }
 
@@ -1859,7 +1873,7 @@ internal static partial class Program
             vm.ChooseTranslationCsvCommand.Execute(null);
             AssertTrue(vm.PatchPreflightOk && vm.PatchPartialReady);
             AssertEqual("BỎ QUA", vm.PatchBlockedLabel);            // omitted rows of a partial patch are not "blocked"
-            Require(vm.PatchStatusText.StartsWith("Sẵn sàng tạo patch", StringComparison.Ordinal) && vm.PatchStatusText.Contains("bỏ qua " + vm.PatchBlockedCount, StringComparison.Ordinal), "ready state: " + vm.PatchStatusText);
+            Require(vm.PatchStatusText.StartsWith("Sẵn sàng tạo bản Việt hóa", StringComparison.Ordinal) && vm.PatchStatusText.Contains("bỏ qua " + vm.PatchBlockedCount, StringComparison.Ordinal), "ready state: " + vm.PatchStatusText);
             foreach (var stale in new[] { "Bước", "pending", "review", "blocked" })
                 Require(!vm.PatchStatusText.Contains(stale, StringComparison.OrdinalIgnoreCase), "Translate-step wording on the Patch card: " + vm.PatchStatusText);
             // Validate alone never claims a build; only the patch task's own completion does.
@@ -1867,7 +1881,7 @@ internal static partial class Program
             var changed = new List<string>(); vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
             var exe = Path.Combine(root, "Patch_Viet_Hoa", "VNText-VietHoa.exe");
             vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "patch-status", Ok = true, Complete = true, PatchEngine = "renpy", PatchDelivery = "renpy_installer", PatchPayloadPath = exe, PatchInstallInstructions = "Đã tạo installer" });
-            Require(vm.PatchStatusText.StartsWith("Đã tạo patch từ CSV hiện tại", StringComparison.Ordinal), "built state: " + vm.PatchStatusText);
+            Require(vm.PatchStatusText.StartsWith("Đã tạo bản Việt hóa từ bản dịch hiện tại", StringComparison.Ordinal), "built state: " + vm.PatchStatusText);
             Require(changed.Contains(nameof(vm.PatchStatusText)), "the Patch status must notify");
             Require(vm.PatchDeliveryLabel.Contains("VNText-VietHoa.exe", StringComparison.Ordinal) && !vm.PatchDeliveryLabel.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal), "delivery heading: " + vm.PatchDeliveryLabel);
             vm.TestMarkTaskTerminal("patch-status");
@@ -1917,14 +1931,14 @@ internal static partial class Program
             using var vm = new MainViewModel(picker, worker, startWorker: false) { OutputPath = package };
             vm.NavigateTabCommand.Execute("patch");
             vm.ChooseTranslationCsvCommand.Execute(null);
-            var preflight = vm.LogLines.Last(l => l.Contains("Kiểm tra patch", StringComparison.Ordinal));
+            var preflight = vm.LogLines.Last(l => l.Contains("Kiểm tra bản Việt hóa", StringComparison.Ordinal));
             AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(preflight));
-            vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "sev-patch", Ok = true, Complete = true, PatchEngine = "renpy", PatchDelivery = "renpy_installer", PatchPayloadPath = Path.Combine(package, "Out", "VNText-VietHoa.exe"), PatchInstallInstructions = "Patch tại " + Path.Combine(package, "Out") + ". Mở VNText-VietHoa.exe." });
+            vm.TestSimulateTaskComplete("patch", new WorkerEvent { Type = "complete", Id = "sev-patch", Ok = true, Complete = true, PatchEngine = "renpy", PatchDelivery = "renpy_installer", PatchPayloadPath = Path.Combine(package, "Out", "VNText-VietHoa.exe"), PatchInstallInstructions = "Bản Việt hóa tại " + Path.Combine(package, "Out") + ". Mở VNText-VietHoa.exe." });
             vm.TestMarkTaskTerminal("sev-patch");
         }
         finally { Directory.Delete(package, true); }
         AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch read-back PASS — targets=300"));
-        AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Patch tại C:" + System.IO.Path.DirectorySeparatorChar + "Out. Mở VNText-VietHoa.exe"));
+        AssertEqual("SUCCESS", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] bản Việt hóa tại C:" + System.IO.Path.DirectorySeparatorChar + "Out. Mở VNText-VietHoa.exe"));
         AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity("[01:11:22] Ren'Py: overlay hợp lệ tại game/tl/vietnamese/"));
     }
 
@@ -1934,13 +1948,13 @@ internal static partial class Program
         using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
         vm.TestBeginTaskLog("sev-patch-log", "patch");
         // The exact protocol line the worker emits (emit_log with producer-known severity), through the real parser.
-        var warn = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Kiểm tra patch — hợp lệ 300, bị chặn 19\",\"severity\":\"warning\"}")!;
+        var warn = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Kiểm tra bản Việt hóa — hợp lệ 300, bị chặn 19\",\"severity\":\"warning\"}")!;
         var plain = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Ren'Py: đang tạo native overlay.\"}")!;
         vm.TestHandleWorkerEvent(warn);
         vm.TestHandleWorkerEvent(plain);
         var line = vm.PatchLogLines.Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal));
         AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(line));       // the Patch tab's own task log, not only LogLines
-        Require(line.EndsWith("] Kiểm tra patch — hợp lệ 300, bị chặn 19", StringComparison.Ordinal), "text unchanged: " + line);
+        Require(line.EndsWith("] Kiểm tra bản Việt hóa — hợp lệ 300, bị chặn 19", StringComparison.Ordinal), "text unchanged: " + line);
         AssertEqual("INFO", VNText.Studio.App.Converters.LogSeverityConverter.Severity(vm.PatchLogLines.Last(l => l.Contains("native overlay", StringComparison.Ordinal))));
         AssertEqual("WARN", VNText.Studio.App.Converters.LogSeverityConverter.Severity(vm.LogLines.Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal))));
         var persisted = vm.JournalStore.Read(vm.JournalStore.Files()[0]).Split('\n').Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal) && l.Contains("[task sev-patch-log", StringComparison.Ordinal));
@@ -2009,14 +2023,14 @@ internal static partial class Program
         try
         {
             VNText.Studio.App.Services.UiText.SetLanguage("en");
-            foreach (var text in new[] { "VNText Studio — Hoàn tất", "Đã tạo gói Cloud Repair — tải ZIP lên dịch vụ bên ngoài.", "Đã nhập bản dịch cũ — có thể tạo patch.", "Tạo patch hoàn tất", "Phân tích game hoàn tất" })
+            foreach (var text in new[] { "VNText Studio — Hoàn tất", "Đã tạo gói Cloud Repair — tải ZIP lên dịch vụ bên ngoài.", "Đã nhập bản dịch cũ — có thể tạo bản Việt hóa.", "Tạo bản Việt hóa hoàn tất", "Phân tích game hoàn tất" })
             {
                 var shown = VNText.Studio.App.Services.UiText.TranslateDynamic(text);
                 Require(shown != text && !System.Text.RegularExpressions.Regex.IsMatch(shown, "[À-ỹ]"), "completion text stays Vietnamese in English: " + shown);
             }
             AssertEqual("Hello đường dẫn", VNText.Studio.App.Services.UiText.TranslateDynamic("Hello đường dẫn"));   // user/unknown text is never rewritten
             AssertEqual("Safely imported 0 rows; 8 rows still need attention in the CSV editor.",
-                VNText.Studio.App.Services.UiText.TranslateDynamic(VNText.Studio.App.Services.UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong CSV", 0, 8)));
+                VNText.Studio.App.Services.UiText.TranslateDynamic(VNText.Studio.App.Services.UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong bản dịch", 0, 8)));
         }
         finally { VNText.Studio.App.Services.UiText.SetLanguage("vi"); }
     }
@@ -2087,13 +2101,13 @@ internal static partial class Program
             ExtractStatus = "PARTIAL",
             RenpySdkMissing = true,
             Summary = "Lấy text chưa đầy đủ do thiếu công cụ Ren'Py.",
-            Error = "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. Đã xuất 2 dòng chỉ để xem lại (không dịch, không tạo patch).",
+            Error = "Lấy text chưa đầy đủ do chưa có công cụ Ren'Py. Đã xuất 2 dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa).",
         });
 
         AssertEqual("Lấy text chưa đầy đủ", vm.StatusText);
         AssertTrue(vm.ProgressSubtitle.Contains("thiếu công cụ Ren'Py", StringComparison.Ordinal));
         AssertTrue(vm.StepStatusLine.Contains("đã xuất 2 dòng chỉ để xem lại", StringComparison.Ordinal));
-        AssertTrue(vm.StepStatusLine.Contains("không dịch, không tạo patch", StringComparison.Ordinal));
+        AssertTrue(vm.StepStatusLine.Contains("không dịch, không tạo bản Việt hóa", StringComparison.Ordinal));
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —", StringComparison.Ordinal));
         AssertTrue(vm.RenpySdkOptionsVisible);
         AssertEqual("missing", vm.RenpySdkAction);
@@ -2117,7 +2131,7 @@ internal static partial class Program
             ReviewOnly = 0,
             Blocked = 0,
             RenpySdkMissing = true,
-            Error = "Tải SDK Ren'Py 8.5.3 chưa hoàn tất; chưa tạo CSV. Hãy thử tải lại hoặc chọn SDK đã cài. Chi tiết: không có mạng",
+            Error = "Tải công cụ Ren’Py 8.5.3 chưa hoàn tất; chưa tạo CSV. Hãy thử tải lại hoặc chọn công cụ đã cài. Chi tiết: không có mạng",
         });
         Require(vm.StatusText == "Lấy text chưa đầy đủ", "status text: " + vm.StatusText);
         Require(vm.StepStatusLine.Contains("chưa tạo gói", StringComparison.Ordinal), "true#1: vm.StepStatusLine.Contains('chưa tạo gói', StringComparison.Ordinal)");
@@ -2315,7 +2329,7 @@ internal static partial class Program
             Type = "complete", Id = "patch-delivery-installer", Ok = true, Complete = true,
             PatchEngine = "unity", PatchDelivery = "unity_installer",
             PatchPayloadPath = @"C:\package\Patch_Viet_Hoa\COPY_TO_GAME_ROOT",
-            PatchInstallInstructions = "Patch văn bản thường đã sẵn sàng tại C:\\out. Mở VNTextPatchInstaller.exe để cài/gỡ.",
+            PatchInstallInstructions = "Bản Việt hóa văn bản thường đã sẵn sàng tại C:\\out. Mở VNTextPatchInstaller.exe để cài/gỡ.",
         });
         AssertTrue(vm.PatchDeliveryReady);
         AssertTrue(vm.PatchDeliveryLabel.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal));
@@ -2445,7 +2459,7 @@ internal static partial class Program
             vm.ChooseTranslationCsvCommand.Execute(null);
             AssertTrue(vm.CsvValidationOk && vm.PatchPreflightEvaluated && vm.PatchPreflightOk);
             AssertEqual(1, vm.PatchEligibleCount);
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
             AssertTrue(vm.PatchDeliveryReady);
             // Source B (valid CSV, but the preflight blocks it): nothing of A may make B look finished.
             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
@@ -2468,7 +2482,7 @@ internal static partial class Program
             AssertFalse(vm.PatchDeliveryReady);
             AssertEqual("", vm.PatchInstallInstructions);
             // A changed source with no new check yet: the old results are dropped and a fresh check is asked for.
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
             picker.TranslationCsv = null;
             vm.ChooseTranslationCsvCommand.Execute(null);                  // a cancelled pick keeps the current source and state
             AssertTrue(vm.PatchDeliveryReady && vm.PatchPreflightOk);
@@ -2502,7 +2516,7 @@ internal static partial class Program
             vm.NavigateTabCommand.Execute("patch");
             vm.ChooseTranslationCsvCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
 
             void EditAndSave(string csv, string translation)
             {
@@ -2524,7 +2538,7 @@ internal static partial class Program
             vm.TestSetTranslationCsvPath(csvC);
             vm.ValidateTranslationCsvCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_C");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_C");
             AssertTrue(vm.SaveCsvEditorAsync().GetAwaiter().GetResult());
             AssertEqual("ready", vm.PatchBadgeKind);
             AssertTrue(vm.PatchPreflightOk && vm.PatchDeliveryReady);
@@ -2533,7 +2547,7 @@ internal static partial class Program
             vm.OutputPath = packageA; picker.TranslationCsv = csvA; vm.ChooseTranslationCsvCommand.Execute(null);
             vm.OpenCsvEditorFileCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
 
             // An older Patch artifact exists on disk for package A (a Build ran for the previous revision).
             var artifactA = Path.Combine(packageA, "Patch_Viet_Hoa");
@@ -2549,7 +2563,7 @@ internal static partial class Program
             AssertEqual("stale", vm.PatchBadgeKind);
             AssertTrue(vm.PatchRecheckNeeded && vm.PatchCheckCardVisible);                  // a neutral "check again" cue is shown, not an empty page
             AssertFalse(vm.PatchResultsAvailable);
-            Require(vm.PatchPreflightMessage.StartsWith("CSV vừa được lưu", StringComparison.Ordinal), "the cue says the CSV was just saved and the old patch is the previous version");
+            Require(vm.PatchPreflightMessage.StartsWith("Bản dịch vừa được lưu", StringComparison.Ordinal), "the cue says the CSV was just saved and the old patch is the previous version");
             AssertTrue(vm.PatchArtifactBehindCsv);
             AssertTrue(File.Exists(Path.Combine(artifactA, "old-build.marker")));         // the old artifact stays on disk
             Require(vm.CurrentWorkflowStep != "done", "an artifact that exists is not proof the current CSV was built: workflow is not finished (" + vm.CurrentWorkflowStep + ")");
@@ -2594,7 +2608,7 @@ internal static partial class Program
             // A failed save (external change refused) keeps the draft and leaves the Patch results alone.
             picker.TranslationCsv = csvA; vm.OutputPath = packageA; vm.ChooseTranslationCsvCommand.Execute(null);
             AssertEqual("ready", vm.PatchBadgeKind);
-            vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
+            vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", @"Đã tạo tại C:\Output\Patch_A");
             vm.OpenCsvEditorFileCommand.Execute(null);
             File.AppendAllText(csvA, "k3,More,Thêm,UI:Text,game/data.unity3d,unity_ui_text"+(char)13+(char)10, Encoding.UTF8);
             vm.CsvEditorRows[0].Translation = "Bản nháp";
@@ -2628,12 +2642,12 @@ internal static partial class Program
             var (zipTitle, zipFilter) = WpfPathPickerService.CloudRepairSaveDialogSpec();
             Require(zipTitle != "Lưu gói Cloud Repair" && !zipTitle.Any(c => c > 0x7f) && zipFilter == "Cloud Repair ZIP (*.zip)|*.zip|All (*.*)|*.*", "the ZIP picker title/filter are English: " + zipTitle);
             UiText.SetLanguage("vi");
-            AssertEqual("Chọn CSV để sửa", WpfPathPickerService.TranslationCsvDialogSpec(MainViewModel.CsvEditorPickerTitle).Title);
+            AssertEqual("Chọn bản dịch để sửa", WpfPathPickerService.TranslationCsvDialogSpec(MainViewModel.CsvEditorPickerTitle).Title);
             AssertEqual("CSV (*.csv)|*.csv|Tất cả (*.*)|*.*", WpfPathPickerService.TranslationCsvDialogSpec(null).Filter.Replace("Tất cả", "Tất cả"));
             UiText.SetLanguage("en");
 
             // Known structured external-change reason is mapped; an unknown technical reason is shown as it is.
-            var known = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key("CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"), UiText.Key(" Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại."));
+            var known = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key("Bản dịch đã thay đổi bên ngoài — hãy tải lại trước khi lưu"), UiText.Key(" Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại."));
             Require(UiText.TranslateDynamic(known).StartsWith("Could not save: The CSV was changed outside the app", StringComparison.Ordinal) && !UiText.TranslateDynamic(known).Any(c => c > 0x7f && c != '—'), "the known external-change reason is English: " + UiText.TranslateDynamic(known));
             var unknown = UiText.Msg("Không lưu được: {0}.{1}", UiText.Key("PermissionError: [WinError 5] Từ chối truy cập 'C:\\Dữ liệu\\a.csv'"), UiText.Key(""));
             Require(UiText.TranslateDynamic(unknown).Contains("PermissionError: [WinError 5] Từ chối truy cập 'C:\\Dữ liệu\\a.csv'", StringComparison.Ordinal), "an unknown technical reason stays raw");
@@ -2648,7 +2662,7 @@ internal static partial class Program
             AssertEqual("Đã mở 3 dòng — Xóa", UiText.TranslateDynamic("Đã mở 3 dòng — Xóa"));
             // A Key(...) argument is the only argument that is translated, and a nested produced message is localized by its own key.
             AssertEqual("Opened 5 rows — Delete", UiText.TranslateDynamic(UiText.Msg("Đã mở {0} dòng — {1}", 5, UiText.Key("Xóa"))));
-            var nested = UiText.Msg("Không mở được {0}: {1} ({2}).", "Xóa.csv", UiText.Key("CSV trống"), UiText.Msg("đang giữ {0}", "a.csv"));
+            var nested = UiText.Msg("Không mở được {0}: {1} ({2}).", "Xóa.csv", UiText.Key("Bản dịch trống"), UiText.Msg("đang giữ {0}", "a.csv"));
             AssertEqual("Could not open Xóa.csv: The CSV is empty (keeping a.csv).", UiText.TranslateDynamic(nested));
             // Multi-line composite: each part by its own key, user text raw.
             var lines = UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", "4", "3"), "", UiText.Msg("Tìm: {0}" + "\n" + "Thay bằng: {1}", "Xóa", "Chưa bắt đầu"));
@@ -2681,7 +2695,7 @@ internal static partial class Program
             // f23 A1: the CSV passes but there is no game/asset: neutral "choose game", never the green ready; the guards are unchanged.
             AssertTrue(vm.PatchPreflightOk && !vm.HasPatchSource);
             AssertEqual("nosource", vm.PatchBadgeKind); AssertEqual("CẦN CHỌN GAME", vm.PatchBadgeText);
-            AssertEqual("CSV hợp lệ — chọn game/asset để tạo patch", vm.PatchStatusText);
+            AssertEqual("Bản dịch hợp lệ — chọn thư mục game để tạo bản Việt hóa", vm.PatchStatusText);
             AssertFalse(vm.RunPatchCommand.CanExecute(null));
             var seenA1 = new List<string>(); vm.PropertyChanged += (_, e) => seenA1.Add(e.PropertyName ?? "");
             vm.InputPath = Path.Combine(TestTempRoot(), "vntext_missing_" + Guid.NewGuid().ToString("N"));   // a path that does not exist is still no source
@@ -2694,7 +2708,7 @@ internal static partial class Program
             seenA1.Clear();
             vm.InputPath = packageA;                                             // N7: Build patch also needs an EXISTING game/asset source
             AssertEqual("ready", vm.PatchBadgeKind); AssertEqual("SẴN SÀNG", vm.PatchBadgeText);
-            AssertTrue(seenA1.Contains(nameof(vm.PatchBadgeKind)) && vm.PatchStatusText.StartsWith("Sẵn sàng tạo patch", StringComparison.Ordinal));
+            AssertTrue(seenA1.Contains(nameof(vm.PatchBadgeKind)) && vm.PatchStatusText.StartsWith("Sẵn sàng tạo bản Việt hóa", StringComparison.Ordinal));
             vm.InputPath = "";                                                   // the source disappears again: the badge follows, the CSV checks stay
             AssertEqual("nosource", vm.PatchBadgeKind); AssertTrue(vm.PatchPreflightOk);
             vm.InputPath = packageA;
@@ -2702,14 +2716,14 @@ internal static partial class Program
             vm.TestSetTranslationCsvPath(Path.Combine(packageB, "translation.csv"));   // source changed, nothing checked yet
             AssertEqual("stale", vm.PatchBadgeKind); AssertEqual("CẦN KIỂM TRA LẠI", vm.PatchBadgeText);
             AssertFalse(vm.PatchPreflightOk);
-            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // a source/font change leaves "Tạo patch" available; it re-checks by itself
+            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // a source/font change leaves "Tạo bản Việt hóa" available; it re-checks by itself
             vm.ResetPatchFontCommand.Execute(null);                              // changing the font invalidates the check but never blocks building
             AssertTrue(vm.RunPatchCommand.CanExecute(null));
             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
             vm.ChooseTranslationCsvCommand.Execute(null);                       // B: judged and blocked
             AssertEqual("review", vm.PatchBadgeKind); AssertEqual("CẦN XEM LẠI", vm.PatchBadgeText);
             AssertFalse(vm.PatchPreflightOk);
-            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // "Tạo patch" stays available: pressing it re-checks and names the concrete problem (no manual "Kiểm tra" step)
+            AssertTrue(vm.RunPatchCommand.CanExecute(null));                     // "Tạo bản Việt hóa" stays available: pressing it re-checks and names the concrete problem (no manual "Kiểm tra" step)
             AssertFalse(vm.PatchPreflightOk);                                    // ...while the badge keeps saying the current check is blocked
             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
             vm.ChooseTranslationCsvCommand.Execute(null);                       // back to A: green only after its own current check
@@ -2826,7 +2840,7 @@ internal static partial class Program
         AssertEqual("review_only", CsvFilterModes.ReviewOnly);
         AssertEqual("Cần xem lại", review.Label);
         Require(CsvFilterModes.Options.All(o => !o.Label.Contains('_')), "no filter label may show an internal name");
-        AssertEqual(5, CsvFilterModes.Options.Count);                       // 0.1.36: + "Patch sẽ bỏ qua"
+        AssertEqual(5, CsvFilterModes.Options.Count);                       // 0.1.36: + "Dòng sẽ bị bỏ qua"
         var previous = UiText.Language;
         try
         {
@@ -2841,8 +2855,8 @@ internal static partial class Program
         var xaml = File.ReadAllText(Path.Combine(RepoRoot(), "wpf_app", "VNText.Studio.App", "MainWindow.xaml"), Encoding.UTF8);
         Require(!xaml.Contains("Dịch local", StringComparison.Ordinal), "the sidebar must use the heading name, not Dịch local");
         Require(xaml.Contains("<TextBlock Text=\"Dịch tự động\" />", StringComparison.Ordinal), "the sidebar must say Dịch tự động");
-        Require(!xaml.Contains("Chọn file CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn file\"", StringComparison.Ordinal), "CSV pickers must not use the longer or generic names");
-        AssertEqual(4, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn CSV\"").Count);   // editor header, empty state, Translate, Patch
+        Require(!xaml.Contains("Chọn tệp bản dịch", StringComparison.Ordinal) && !xaml.Contains("Chọn file CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn file\"", StringComparison.Ordinal), "translation pickers must not use the longer or generic names");
+        AssertEqual(4, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn bản dịch\"").Count);   // editor header, empty state, Translate, Patch
     }
 
     private static void ModelStatus_PresentsThePathOnceAndKeepsFailureContext()
@@ -2855,19 +2869,20 @@ internal static partial class Program
         {
             UiText.SetLanguage("vi");
             vm.TestSetModelStatus("Model OPUS-MT INT8 sẵn sàng: " + path, path);
-            AssertEqual("Model OPUS-MT INT8 sẵn sàng.", vm.ModelStatusDisplay);
+            AssertEqual("Bộ dịch đã sẵn sàng.", vm.ModelStatusDisplay);
             AssertEqual(path, vm.ModelFolder);                                   // the folder line keeps the real path
             AssertTrue(vm.ModelStatus.Contains(path, StringComparison.Ordinal)); // the raw diagnostic keeps it too
 
             vm.TestSetModelStatus("Model CTranslate2 chưa có tại " + path + ". Cần tải model OPUS-MT en→vi INT8 trước khi dịch.", path);
+            AssertEqual(PlainLanguage.EngineMissingText, vm.ModelStatusDisplay);          // plain words, no model name, no path
             Require(!vm.ModelStatusDisplay.Contains(path, StringComparison.Ordinal), "path once: " + vm.ModelStatusDisplay);
-            Require(vm.ModelStatusDisplay.Contains("Cần tải model OPUS-MT", StringComparison.Ordinal), "the instruction stays: " + vm.ModelStatusDisplay);
             Require(vm.ModelStatus.Contains(path, StringComparison.Ordinal), "raw status keeps the path");
 
-            // real failures are never trimmed: runtime errors and unknown messages stay whole, even when they mention the path
+            // a runtime that cannot load reads as "not installed" on the screen; the raw cause stays in ModelStatus (tooltip / diagnostics)
             var runtime = "Không nạp được runtime CTranslate2 (ImportError: DLL load failed); Dịch tự động đang bị khóa.";
             vm.TestSetModelStatus(runtime, path);
-            AssertEqual(runtime, vm.ModelStatusDisplay);
+            AssertEqual(PlainLanguage.EngineMissingText, vm.ModelStatusDisplay);
+            Require(vm.ModelStatus.Contains("ImportError", StringComparison.Ordinal), "raw cause kept for diagnostics");
             var unknown = "Không đọc được " + path + " vì file bị khóa bởi tiến trình khác";
             vm.TestSetModelStatus(unknown, path);
             AssertEqual(unknown, vm.ModelStatusDisplay);
@@ -2886,7 +2901,7 @@ internal static partial class Program
 
             UiText.SetLanguage("en");
             vm.TestSetModelStatus("Model OPUS-MT INT8 sẵn sàng: " + path, path);
-            AssertEqual("OPUS-MT INT8 model ready.", vm.ModelStatusDisplay);
+            AssertEqual("Translator ready.", vm.ModelStatusDisplay);
         }
         finally { UiText.SetLanguage(previous); }
     }
@@ -3230,7 +3245,7 @@ internal static partial class Program
             AssertFalse(vm.Busy);
             AssertEqual(WorkflowTabs.Extract, vm.SelectedTab);
             AssertEqual("DETECTED", vm.AnalyzeUnityStatus);
-            AssertEqual("Engine: Unity + Ren’Py evidence", vm.AnalyzeEngineSummary);
+            AssertEqual("Loại game: Unity + Ren’Py", vm.AnalyzeEngineSummary);
             AssertTrue(vm.AnalyzeEngineDetails.Contains(".rpy/.rpym", StringComparison.Ordinal));
             AssertTrue(vm.AnalyzeEngineDetails.Contains("chưa xác minh patch/write-back", StringComparison.Ordinal));
             AssertTrue(vm.AnalyzeInventoryComplete);
@@ -3283,7 +3298,7 @@ internal static partial class Program
             AssertEqual("Đầu vào đã đổi • cần phân tích lại", vm.AnalyzeStatusText);
             AssertEqual(0, vm.AnalyzeResourceCount);
             AssertEqual(0, vm.AnalyzeTextCandidateCount);
-            AssertEqual("Chưa xác định engine", vm.AnalyzeEngineSummary);
+            AssertEqual("Chưa xác định loại game", vm.AnalyzeEngineSummary);
             AssertEqual("NOT_DETECTED", vm.AnalyzeUnityStatus);
             AssertFalse(vm.AnalyzeHasReport);
             AssertFalse(vm.AnalyzeResultsExpanded);
@@ -3345,7 +3360,7 @@ internal static partial class Program
             AssertEqual("Tiến trình quét", vm.ExtractProgressHeading);
             vm.TestSetRenpySdkAction("download");
             vm.TestSetActiveTask("sdk-download", "extract");
-            AssertEqual("Tiến trình tải SDK và lấy text", vm.ExtractProgressHeading);
+            AssertEqual("Tiến trình tải công cụ và lấy text", vm.ExtractProgressHeading);
             vm.TestMarkTaskTerminal("sdk-download");
             AssertEqual("Tiến trình quét", vm.ExtractProgressHeading);
         }
@@ -3602,7 +3617,7 @@ internal static partial class Program
             AssertEqual("Sẵn sàng lấy text", vm.ExtractStatusText);
             AssertTrue(changed.Contains(nameof(vm.ExtractStatusText)));
             vm.InputPath = "";
-            foreach (var message in new[] { "Đang quét", "Hoàn tất", "Đã hủy", "Lỗi worker" })
+            foreach (var message in new[] { "Đang quét", "Hoàn tất", "Đã hủy", "Lỗi bộ xử lý nền" })
             {
                 changed.Clear();
                 var taskId = "disclosure-" + message;
@@ -3618,7 +3633,7 @@ internal static partial class Program
             vm.ProgressSubtitle = "Chưa bắt đầu";
             vm.StatusText = "Sẵn sàng";
             vm.SelectedTab = WorkflowTabs.Patch;
-            AssertEqual("Chọn game và bản dịch để kiểm tra rồi đóng gói patch.", vm.HeroHint);
+            AssertEqual("Chọn game và bản dịch để kiểm tra rồi đóng gói bản Việt hóa.", vm.HeroHint);
             vm.SelectedTab = WorkflowTabs.Extract;
             AssertEqual("Chưa phân tích game", vm.AnalyzeStatusText);
             AssertEqual("", vm.AnalyzeScanErrorText);
@@ -3639,7 +3654,7 @@ internal static partial class Program
             AssertFalse(vm.PatchPreflightEvaluated);
             AssertFalse(vm.CsvValidationOk);
             AssertTrue(!string.IsNullOrWhiteSpace(vm.CsvValidationMessage));
-            AssertTrue(vm.PatchPreflightMessage.Contains("CSV hợp lệ", StringComparison.Ordinal));
+            AssertTrue(vm.PatchPreflightMessage.Contains("bản dịch hợp lệ", StringComparison.Ordinal));
 
             vm.TestSimulateTaskComplete("patch", new WorkerEvent
             {
@@ -3781,7 +3796,7 @@ internal static partial class Program
         var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false);
         vm.NavigateTabCommand.Execute(WorkflowTabs.EditCsv);
         AssertEqual(WorkflowTabs.EditCsv, vm.SelectedTab);
-        AssertEqual("Sửa CSV", vm.HeroTitle);
+        AssertEqual("Sửa bản dịch", vm.HeroTitle);
     }
 
     private static void AssertCsvEditorRetranslateDecision(
@@ -3823,7 +3838,7 @@ internal static partial class Program
                 promptCount++;
                 if (caption == "Xác nhận dịch lại dòng lỗi")
                     return MessageBoxResult.Yes;
-                if (caption == "Lưu CSV")
+                if (caption == "Lưu bản dịch")
                 {
                     if (failSave)
                         readLock = new FileStream(csv, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -3835,7 +3850,7 @@ internal static partial class Program
             vm.RetranslateBlockedCsvRowsAsync().GetAwaiter().GetResult();
 
             AssertEqual(2, promptCount);
-            var taskStarted = vm.LogLines.Any(line => line.Contains("Gửi lệnh worker: translate", StringComparison.Ordinal));
+            var taskStarted = vm.LogLines.Any(line => line.Contains("Gửi lệnh: translate", StringComparison.Ordinal));
             AssertEqual(expectStart, taskStarted);
             AssertEqual("Bản dịch chỉnh sửa", vm.CsvEditorRows[0].Translation);
             AssertEqual(expectSaved, !File.ReadAllBytes(csv).SequenceEqual(original));
@@ -3952,7 +3967,7 @@ internal static partial class Program
 
         var error = new WorkerEvent
         {
-            Type = "complete", Id = "completion-error", Ok = false, Error = "CSV lỗi",
+            Type = "complete", Id = "completion-error", Ok = false, Error = "Bản dịch lỗi",
         };
         vm.TestSimulateTaskComplete("patch", error);
         vm.TestHandleWorkerEvent(error);
@@ -3963,7 +3978,7 @@ internal static partial class Program
         AssertEqual("error", notifications[2].Kind);
         AssertTrue(notifications[0].Message.Contains("Lấy text"));
         AssertTrue(notifications[1].Message.Contains("chưa dịch 2"));
-        AssertTrue(notifications[2].Message.Contains("CSV lỗi") && notifications[2].Message.Contains("Cách xử lý"));   // 0.1.36: a failed patch is explained
+        AssertTrue(notifications[2].Message.Contains("Bản dịch lỗi") && notifications[2].Message.Contains("Cách xử lý"));   // 0.1.36: a failed patch is explained
     }
 
     private static void ReleaseVerifyRunner_ValidatesExactPortablePythonHome()

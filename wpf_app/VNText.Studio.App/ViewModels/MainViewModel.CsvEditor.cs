@@ -420,7 +420,7 @@ public sealed partial class MainViewModel
     public IReadOnlyList<CsvFilterOption> CsvBulkScopeOptions { get; } =
     [
         new("filtered", "Dòng đang lọc"),
-        new("all", "Toàn bộ CSV"),
+        new("all", "Toàn bộ bản dịch"),
     ];
 
     public string CsvBulkPreview
@@ -571,7 +571,7 @@ public sealed partial class MainViewModel
     public bool CsvEditorGridReadOnly => CsvEditorSaving || Busy;
 
     public string CsvEditorLockText => Busy && _csvEditorRows.Count > 0
-        ? "Đang chạy tác vụ — tạm khóa chỉnh sửa CSV để tác vụ không ghi đè thay đổi của bạn."
+        ? "Đang chạy tác vụ — tạm khóa chỉnh sửa bản dịch để tác vụ không ghi đè thay đổi của bạn."
         : "";
 
     public string CsvEditorSavingText => UiText.Msg("Đang kiểm tra và lưu {0} dòng…", _csvEditorRows.Count.ToString("N0"));
@@ -637,6 +637,7 @@ public sealed partial class MainViewModel
         InitCsvSelection();
         InitCsvReview();
         InitPatchIssues();
+        InitGuide();
         ClearBlockedCsvCommand = new RelayCommand(_ => ClearBlockedCsvTranslations(), _ => CanRunCsvBatchAction());
         RetranslateBlockedCsvCommand = new RelayCommand(_ => _ = RetranslateBlockedCsvRowsAsync(), _ => CanRunCsvBatchAction(allowDirty: true) && !Busy);
         BulkReplaceCsvCommand = new RelayCommand(_ => PreviewBulkReplaceTranslation(), _ => CanRunCsvBatchAction() && !Busy && !string.IsNullOrWhiteSpace(CsvBulkFind));
@@ -689,7 +690,7 @@ public sealed partial class MainViewModel
         if (CsvEditorLoading)
         {
             CsvEditorLoading = false;
-            CsvEditorStatus = UiText.Msg("Đã hủy tải CSV ({0})", UiText.Key(reason));
+            CsvEditorStatus = UiText.Msg("Đã hủy tải bản dịch ({0})", UiText.Key(reason));
             AppendLog($"[csv] Hủy tải: {reason}");
         }
     }
@@ -729,8 +730,8 @@ public sealed partial class MainViewModel
             return;
         if (CsvEditorDirty)
         {
-            var choice = CsvEditorMessageBox("CSV có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?",
-                "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+            var choice = CsvEditorMessageBox("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?",
+                "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
             if (choice == MessageBoxResult.Cancel)
                 return;
             if (choice == MessageBoxResult.Yes && !await SaveCsvEditorAsync())
@@ -750,7 +751,7 @@ public sealed partial class MainViewModel
         // or leave a title that names another file); ResetCsvEditorDocumentState runs when the new document is applied.
         CsvEditorLoading = true;
         CsvEditorLoadError = "";
-        CsvEditorStatus = "Đang tải CSV…";
+        CsvEditorStatus = "Đang tải bản dịch…";
         AppendLog($"[csv] Bắt đầu tải nền: {Path.GetFileName(pathCopy)} (gen={gen})");
 
         var dispatcher = Application.Current?.Dispatcher;
@@ -779,7 +780,7 @@ public sealed partial class MainViewModel
 
             if (!doc.Ok)
             {
-                var err = doc.Error ?? "Không mở được CSV";
+                var err = doc.Error ?? "Không mở được bản dịch";
                 dispatcher.BeginInvoke(() =>
                 {
                     if (gen != Volatile.Read(ref _csvLoadGeneration))
@@ -845,7 +846,7 @@ public sealed partial class MainViewModel
     private void FailCsvEditorLoad(string rejectedPath, string reason)
     {
         CsvEditorLoading = false;
-        object rejected = string.IsNullOrWhiteSpace(rejectedPath) ? UiText.Key("CSV đã chọn") : Path.GetFileName(rejectedPath);
+        object rejected = string.IsNullOrWhiteSpace(rejectedPath) ? UiText.Key("Bản dịch đã chọn") : Path.GetFileName(rejectedPath);
         var keeping = string.IsNullOrWhiteSpace(CsvEditorPath)
             ? "chưa có file nào đang mở"
             : UiText.Msg("đang giữ {0}", Path.GetFileName(CsvEditorPath));
@@ -876,7 +877,7 @@ public sealed partial class MainViewModel
     {
         if (!doc.Ok)
         {
-            FailCsvEditorLoad(doc.CsvPath, doc.Error ?? "Không mở được CSV");
+            FailCsvEditorLoad(doc.CsvPath, doc.Error ?? "Không mở được bản dịch");
             return;
         }
 
@@ -967,7 +968,7 @@ public sealed partial class MainViewModel
                 _csvEditorRows.AddSilent(built[i]);
                 if ((i + 1) % chunk == 0 || frameSw.ElapsedMilliseconds >= 12)
                 {
-                    CsvEditorStatus = UiText.Msg("Đang tải CSV… {0}/{1}", (i + 1).ToString("N0"), built.Count.ToString("N0"));
+                    CsvEditorStatus = UiText.Msg("Đang tải bản dịch… {0}/{1}", (i + 1).ToString("N0"), built.Count.ToString("N0"));
                     CsvEditorVisibleCount = i + 1;
                     frameSw.Restart();
                     // Background so Send-priority UI pings (watchdog) always cut through.
@@ -1054,7 +1055,7 @@ public sealed partial class MainViewModel
     private void MarkCsvEditorDirty()
     {
         Interlocked.Increment(ref _csvEditorEditGeneration);
-        if (_csvBulkPendingPreview is not null) InvalidateCsvBulkPreview("CSV đã được chỉnh sửa — hãy xem trước lại.");
+        if (_csvBulkPendingPreview is not null) InvalidateCsvBulkPreview("Bản dịch đã được chỉnh sửa — hãy xem trước lại.");
         CsvEditorDirty = true;
         SaveCsvEditorCommand.RaiseCanExecuteChanged();
     }
@@ -1130,7 +1131,7 @@ public sealed partial class MainViewModel
         ApplyBulkReplaceCsvCommand?.RaiseCanExecuteChanged();
         CsvBulkPreview = preview.Count == 0
             ? "Không tìm thấy chuỗi trong cột Bản dịch."
-            : BulkReplaceMsg("Sẽ thay {M} lần trong {R} dòng ({T0}).", preview.ReplacementCount, preview.Count, UiText.Key(keys is null ? "toàn bộ CSV" : "dòng đang lọc"));
+            : BulkReplaceMsg("Sẽ thay {M} lần trong {R} dòng ({T0}).", preview.ReplacementCount, preview.Count, UiText.Key(keys is null ? "toàn bộ bản dịch" : "dòng đang lọc"));
         if (preview.Count > 0)
         {
             var samples = rows.Where(row => row.TryGetValue("key", out var key) && preview.Keys.Contains(key))
@@ -1172,7 +1173,7 @@ public sealed partial class MainViewModel
         if (!preview.Ok || preview.Count != expectedPreview.Count || preview.ReplacementCount != expectedPreview.ReplacementCount ||
             !preview.Keys.SequenceEqual(expectedPreview.Keys, StringComparer.OrdinalIgnoreCase))
         {
-            InvalidateCsvBulkPreview(preview.Error ?? "CSV đã thay đổi — hãy xem trước thao tác lần nữa.");
+            InvalidateCsvBulkPreview(preview.Error ?? "Bản dịch đã thay đổi — hãy xem trước thao tác lần nữa.");
             return;
         }
         var confirm = UiText.Lines(
@@ -1238,7 +1239,7 @@ public sealed partial class MainViewModel
             ShowToast("Hãy lưu hoặc tải lại chỉnh sửa hiện tại trước khi hoàn tác.", "warning");
             return;
         }
-        if (AppDialogService.Show("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+        if (AppDialogService.Show("Khôi phục bản dịch về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         var (undoPath, undoBackup, undoSha256) = (CsvEditorPath, _csvBulkLastBackup, _csvEditorSourceSha256);
         var result = await RunCsvEditorBackgroundAsync(() => TranslationCsvEditorService.Undo(undoPath, undoBackup, undoSha256));
@@ -1304,7 +1305,7 @@ public sealed partial class MainViewModel
     {
         if (CsvEditorLoading)
         {
-            CsvEditorValidationMessage = "Đang tải CSV — chờ xong rồi kiểm tra.";
+            CsvEditorValidationMessage = "Đang tải bản dịch — chờ xong rồi kiểm tra.";
             return;
         }
         if (string.IsNullOrWhiteSpace(CsvEditorPath) || _csvEditorRows.Count == 0)
@@ -1322,7 +1323,7 @@ public sealed partial class MainViewModel
             dirtyPayload = BuildCsvSaveRowsFrom(rowSnap, _csvEditorFields.ToList());
 
         CsvEditorValidating = true;
-        CsvEditorValidationMessage = "Đang kiểm tra CSV…";
+        CsvEditorValidationMessage = "Đang kiểm tra bản dịch…";
         AppendLog($"[csv] Validate nền bắt đầu ({rowSnap.Count:N0} dòng, dirty={CsvEditorDirty})");
 
         var dispatcher = Application.Current?.Dispatcher;
@@ -1431,7 +1432,7 @@ public sealed partial class MainViewModel
             $"[csv-timing] validate_worker={validateMs}ms apply_bg={applyMs}ms " +
             $"bind={bindMs}ms refresh={filterMs}ms — {result.Summary}", "DEBUG");
         if (showLog)
-            AppendLog($"Kiểm tra CSV: {result.Summary}", result.PatchBlocked > 0 ? "WARN" : "INFO");
+            AppendLog($"Kiểm tra bản dịch: {result.Summary}", result.PatchBlocked > 0 ? "WARN" : "INFO");
     }
 
     private static List<Dictionary<string, string>> BuildCsvSaveRowsFrom(
@@ -1505,12 +1506,12 @@ public sealed partial class MainViewModel
             return true;
         if (CsvEditorLoading)
         {
-            ShowToast("Đang tải CSV — chưa thể lưu.", "warning");
+            ShowToast("Đang tải bản dịch — chưa thể lưu.", "warning");
             return false;
         }
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
         {
-            ShowToast("Chưa chọn file CSV để lưu.", "warning");
+            ShowToast("Chưa chọn bản dịch để lưu.", "warning");
             return false;
         }
 
@@ -1521,9 +1522,9 @@ public sealed partial class MainViewModel
         var expectedSha256 = _csvEditorSourceSha256;
         if (string.IsNullOrWhiteSpace(expectedSha256))
         {
-            CsvEditorStatus = "Chưa lưu — không xác minh được CSV gốc; hãy tải lại file.";
+            CsvEditorStatus = "Chưa lưu — không xác minh được bản dịch gốc; hãy tải lại file.";
             CsvEditorValidationMessage = CsvEditorStatus;
-            SetCsvEditorSaveError(path, "không xác minh được CSV gốc", CsvSaveKeepsDraftRecovery);
+            SetCsvEditorSaveError(path, "không xác minh được bản dịch gốc", CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
             return false;
         }
@@ -1541,7 +1542,7 @@ public sealed partial class MainViewModel
 
         CsvEditorSaving = true;
         CsvEditorStatus = UiText.Msg("Đang kiểm tra và lưu {0} dòng…", rows.Count.ToString("N0"));
-        CsvEditorValidationMessage = "Đang kiểm tra CSV trước khi lưu…";
+        CsvEditorValidationMessage = "Đang kiểm tra bản dịch trước khi lưu…";
         try
         {
             var attempt = await CsvEditorSaveExecutor(() => RunCsvEditorSave(path, fields, rows, expectedSha256));
@@ -1605,7 +1606,7 @@ public sealed partial class MainViewModel
 
         if (string.IsNullOrWhiteSpace(save.SourceSha256))
         {
-            CsvEditorStatus = "Lưu thất bại — không nhận được mã xác minh file đã lưu. Hãy tải lại CSV trước khi tiếp tục.";
+            CsvEditorStatus = "Lưu thất bại — không nhận được mã xác minh file đã lưu. Hãy tải lại bản dịch trước khi tiếp tục.";
             CsvEditorValidationMessage = CsvEditorStatus;
             AppendLog(CsvEditorStatus);
             SetCsvEditorSaveError(path, "không nhận được mã xác minh file đã lưu", CsvSaveKeepsDraftRecovery);
@@ -1641,7 +1642,7 @@ public sealed partial class MainViewModel
                 validation.PatchEligible, validation.PatchBlocked, validation.BatchActionable, validation.IssuesAction, validation.ReviewCandidates);
         CsvEditorValidationMessage = validation.Summary;
         CsvEditorWarningSummary = BuildCsvWarningSummary(validation);
-        StatusText = "Đã lưu CSV";
+        StatusText = "Đã lưu bản dịch";
         AppendLog($"Đã lưu translation.csv: {path}");
         if (validation.HasWarnings)
             AppendLog($"Cảnh báo trước khi lưu: {validation.Summary}");
@@ -1696,7 +1697,7 @@ public sealed partial class MainViewModel
         }
 
         var msg = UiText.Lines(
-            UiText.Msg("Xóa cột translation của {0} dòng bị Patch Gate chặn?", preview.Count.ToString("N0")),
+            UiText.Msg("Xóa cột translation của {0} dòng bị bản Việt hóa Gate chặn?", preview.Count.ToString("N0")),
             "",
             "Chỉ xóa bản dịch — giữ nguyên key và source.",
             "File backup sẽ được tạo trước khi ghi.");
@@ -1722,7 +1723,7 @@ public sealed partial class MainViewModel
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (Busy)
         {
-            ShowToast("Worker đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning");
+            ShowToast("Ứng dụng đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning");
             return;
         }
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
@@ -1750,15 +1751,15 @@ public sealed partial class MainViewModel
             UiText.Msg("Dịch lại {0} dòng bằng {1}?", preview.Count.ToString("N0"), engineLabel),
             "",
             "Chỉ các dòng đã chọn hoặc đang bị gate chặn (cấu trúc).",
-            "Backup CSV sẽ được tạo trước khi ghi. Validation chạy sau khi dịch.");
+            "Bản sao lưu sẽ được tạo trước khi ghi. Validation chạy sau khi dịch.");
         if (CsvEditorMessageBox(msg, "Xác nhận dịch lại dòng lỗi", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         if (CsvEditorDirty)
         {
             var saveFirst = CsvEditorMessageBox(
-                "CSV có thay đổi chưa lưu. Lưu trước khi dịch lại?",
-                "Lưu CSV",
+                "Bản dịch có thay đổi chưa lưu. Lưu trước khi dịch lại?",
+                "Lưu bản dịch",
                 MessageBoxButton.YesNoCancel,
                 MessageBoxImage.Warning);
             if (saveFirst == MessageBoxResult.Cancel)
@@ -1835,7 +1836,7 @@ public sealed partial class MainViewModel
         if (!unchangedSinceCompletion || CsvEditorDirty || CsvEditorLoading || CsvEditorSaving)
         {
             CsvEditorStaleOnDisk = true;
-            CsvEditorStatus = "File CSV đã đổi sau khi dịch xong — bấm Tải lại để xem bản mới (thay đổi chưa lưu được giữ nguyên).";
+            CsvEditorStatus = "Bản dịch đã đổi sau khi dịch xong — bấm Tải lại để xem bản mới (thay đổi chưa lưu được giữ nguyên).";
             AppendLog("[csv] Editor giữ nguyên vì có thay đổi/lần tải mới; đã đánh dấu cũ so với file trên đĩa.");
             return;
         }

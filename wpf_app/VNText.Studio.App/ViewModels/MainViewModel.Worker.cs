@@ -27,10 +27,10 @@ public sealed partial class MainViewModel
             "unity_classify" when task == "extract" => "Đang phân loại tài nguyên để lấy text",
             "unity_classify" => "Đang phân loại tài nguyên",
             "unity_hash" => "Đang kiểm tra tài nguyên",
-            "engine_detection" => "Đang nhận diện engine",
+            "engine_detection" => "Đang nhận diện loại game",
             "asset_scan" => "Đang kiểm tra font và ảnh của game",
             "report_write" => "Đang ghi báo cáo",
-            _ => value,
+            _ => PlainLanguage.StepLabel(value),
         };
     }
 
@@ -131,9 +131,9 @@ public sealed partial class MainViewModel
                 if (Busy && string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal)
                     && evt.State == "accepted")
                 {
-                    AppendLog("Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
-                    SetTaskLifecycleStatus("Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
-                    ProgressSubtitle = "Worker đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
+                    AppendLog("Đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
+                    SetTaskLifecycleStatus("Đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…");
+                    ProgressSubtitle = "Đã nhận yêu cầu hủy; đang chờ tác vụ dừng an toàn…";
                     SetOwnedProgress(_runningTask, text: ProgressSubtitle);
                     AddTaskProgress(evt.Id, ProgressSubtitle);
                 }
@@ -325,18 +325,18 @@ public sealed partial class MainViewModel
                 // failure (download, chosen SDK) carries no evidence count and must not invent one.
                 var manualReviewText = renpySdkIncomplete
                     ? !string.IsNullOrWhiteSpace(evt.ExtractStatus)
-                        ? $"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; đã xuất {evt.ReviewOnly} dòng chỉ để xem lại (không dịch, không tạo patch)."
-                        : "Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; chưa tạo gói. Chọn SDK đã cài hoặc thử tải lại."
+                        ? $"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; đã xuất {evt.ReviewOnly} dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa)."
+                        : "Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; chưa tạo gói. Chọn công cụ đã cài hoặc thử tải lại."
                     : extractionIncomplete
                     ? evt.ExtractStatus == "EMPTY"
                         ? "Không có text sử dụng được — xem report, kiểm input hoặc mức quét."
                         : evt.PatchScope == "VERIFIED_MAIN_SUBSET" && !string.IsNullOrWhiteSpace(evt.Error)
                         ? evt.Error
-                        : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở CSV/report và xử lý lỗi trước khi dịch."
+                        : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở bản dịch/report và xử lý lỗi trước khi dịch."
                     : isExternalTranslationImport
-                    ? UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong CSV", evt.Applied, externalRemaining)
+                    ? UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong bản dịch", evt.Applied, externalRemaining)
                     : needsHumanReview
-                    ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi Patch"
+                    ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi tạo bản Việt hóa"
                     : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
                 // "Dịch đã chọn" always says what happened to the checked rows (Owner report 0.1.35: "hoàn tất" while nothing changed).
                 if (completedTask == "translate" && evt.OperationScope == "selected_rows")
@@ -358,7 +358,7 @@ public sealed partial class MainViewModel
                 StatusText = cancelled ? "Đã hủy"
                     : isAnalyze ? (fullyComplete ? "Đã phân tích" : "Phân tích lỗi")
                     : fullyComplete ? "Hoàn tất"
-                    : partialOk ? (renpySdkIncomplete ? "Lấy text chưa đầy đủ" : extractionIncomplete ? (evt.ExtractStatus == "EMPTY" ? "Không có text" : "Lấy text một phần") : isExternalTranslationImport ? "Cần sửa CSV" : "Dịch một phần")
+                    : partialOk ? (renpySdkIncomplete ? "Lấy text chưa đầy đủ" : extractionIncomplete ? (evt.ExtractStatus == "EMPTY" ? "Không có text" : "Lấy text một phần") : isExternalTranslationImport ? "Cần sửa bản dịch" : "Dịch một phần")
                     : "Lỗi";
                 StepStatusLine = cancelled
                     ? "Đã hủy tác vụ"
@@ -376,7 +376,7 @@ public sealed partial class MainViewModel
                                 : isExternalTranslationImport
                                     ? manualReviewText
                                     : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}"
-                            : UiText.Msg("Lỗi — {0}", evt.Error ?? "worker báo lỗi");
+                            : UiText.Msg("Lỗi — {0}", evt.Error ?? "tác vụ báo lỗi");
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
                     AppendLog(cancelled
@@ -403,7 +403,7 @@ public sealed partial class MainViewModel
                         : string.IsNullOrWhiteSpace(evt.Error) ? "Tác vụ thất bại" : evt.Error!;
                     RequestCompletion("VNText Studio — Lỗi", errMsg, "error");
                     RecordPersistentError(completedTask, errMsg, RenpySdkAction is "missing" or "error"
-                        ? "Mở Cài đặt › Dữ liệu để chuẩn bị hoặc chọn Ren'Py SDK, rồi lấy text lại."
+                        ? "Mở Cài đặt › Dữ liệu để chuẩn bị hoặc chọn công cụ Ren’Py, rồi lấy text lại."
                         : "");      // the toast is transient; this stays until acknowledged
                     LogExpanded = true;
                 }
@@ -416,11 +416,11 @@ public sealed partial class MainViewModel
                         "translate" when evt.OperationScope == "selected_rows" => SelectedTranslateText(evt),
                         "translate" => "Dịch tự động hoàn tất",
                         "cloud_export" => "Đã tạo gói Cloud Repair — tải ZIP lên dịch vụ bên ngoài.",
-                        "cloud_import" => "Đã nhập Cloud Repair — CSV mới đã được kiểm tra.",
-                        "external_translation_import" => "Đã nhập bản dịch cũ — có thể tạo patch.",
+                        "cloud_import" => "Đã nhập Cloud Repair — Bản dịch mới đã được kiểm tra.",
+                        "external_translation_import" => "Đã nhập bản dịch cũ — có thể tạo bản Việt hóa.",
                         "patch" when string.Equals(evt.PatchEngine, "renpy", StringComparison.OrdinalIgnoreCase)
                             => "Tạo overlay Ren'Py hoàn tất",
-                        "patch" => "Tạo patch hoàn tất",
+                        "patch" => "Tạo bản Việt hóa hoàn tất",
                         "analyze" => "Phân tích game hoàn tất",
                         _ => string.IsNullOrWhiteSpace(evt.Summary) ? "Hoàn tất" : evt.Summary!,
                     };
@@ -491,26 +491,26 @@ public sealed partial class MainViewModel
                     else if (completedTask == "cloud_import" && fullyComplete)
                     {
                         SelectedTab = WorkflowTabs.Patch;
-                        AppendLog("Cloud Repair xong — chuyển sang tab Tạo patch.");
+                        AppendLog("Cloud Repair xong — chuyển sang tab Tạo bản Việt hóa.");
                     }
                     else if (completedTask == "external_translation_import")
                     {
                         SelectedTab = fullyComplete ? WorkflowTabs.Patch : WorkflowTabs.EditCsv;
                         AppendLog(fullyComplete
-                            ? "Đã nhập đủ bản dịch cũ — chuyển sang tab Tạo patch."
-                            : "Còn dòng chưa nhập được — chuyển sang tab Sửa CSV.");
+                            ? "Đã nhập đủ bản dịch cũ — chuyển sang tab Tạo bản Việt hóa."
+                            : "Còn dòng chưa nhập được — chuyển sang tab Sửa bản dịch.");
                     }
                     else if (completedTask == "translate" && fullyComplete)
                     {
                         if (_csvEditorRetranslatePending)
                         {
                             OnCsvEditorRetranslateComplete(true);
-                            AppendLog("Dịch lại dòng lỗi xong — đã tải lại CSV editor.");
+                            AppendLog("Dịch lại dòng lỗi xong — đã tải lại bản dịch editor.");
                         }
                         else
                         {
                             SelectedTab = WorkflowTabs.Patch;
-                            AppendLog("Dịch xong — chuyển sang tab Tạo patch.");
+                            AppendLog("Dịch xong — chuyển sang tab Tạo bản Việt hóa.");
                         }
                     }
                     else if (completedTask == "translate" && _csvEditorRetranslatePending)
@@ -559,8 +559,8 @@ public sealed partial class MainViewModel
                     PatchEligibleCount = 0;
                     PatchBlockedCount = 0;
                     PatchPreflightMessage = fullyComplete
-                        ? "CSV đã đổi sau dịch — kiểm tra lại trước khi Patch."
-                        : "Dịch chưa hoàn tất — chưa thể tạo Patch.";
+                        ? "Bản dịch đã đổi sau dịch — kiểm tra lại trước khi tạo bản Việt hóa."
+                        : "Dịch chưa hoàn tất — chưa thể tạo bản Việt hóa.";
                 }
                 RefreshWorkflow();
                 if (completedTask == "translate" && cancelled)
@@ -591,7 +591,7 @@ public sealed partial class MainViewModel
                 {
                     ProgressSubtitle = "Lỗi";
                     StatusText = "Lỗi";
-                    StepStatusLine = UiText.Msg("Lỗi — {0}", evt.Error ?? "worker báo lỗi");
+                    StepStatusLine = UiText.Msg("Lỗi — {0}", evt.Error ?? "tác vụ báo lỗi");
                 }
                 else if (fullyComplete)
                 {
@@ -611,7 +611,7 @@ public sealed partial class MainViewModel
                     StatusText = renpySdkIncomplete
                         ? "Lấy text chưa đầy đủ"
                         : extractionIncomplete ? (evt.ExtractStatus == "EMPTY" ? "Không có text" : "Lấy text một phần")
-                        : isExternalTranslationImport ? "Cần sửa CSV" : "Dịch một phần";
+                        : isExternalTranslationImport ? "Cần sửa bản dịch" : "Dịch một phần";
                     StepStatusLine =
                         (renpySdkIncomplete || extractionIncomplete
                             ? manualReviewText
@@ -642,8 +642,8 @@ public sealed partial class MainViewModel
                 if (Busy && (string.IsNullOrWhiteSpace(evt.Id)
                     || string.Equals(evt.Id, _activeTaskId, StringComparison.Ordinal)))
                 {
-                    StatusText = "Lỗi worker";
-                    ProgressSubtitle = "Worker báo lỗi; đang chờ kết quả cuối để dừng an toàn…";
+                    StatusText = "Lỗi bộ xử lý nền";
+                    ProgressSubtitle = "Tác vụ báo lỗi; đang chờ kết quả cuối để dừng an toàn…";
                     SetOwnedProgress(_runningTask, text: ProgressSubtitle);
                     AddTaskProgress(_activeTaskId, ProgressSubtitle);
                 }
@@ -668,14 +668,14 @@ public sealed partial class MainViewModel
         var path = _pendingCloudRepairImportOutputPath;
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            error = "Cloud Repair đã báo thành công nhưng không tìm thấy CSV output đã kiểm tra.";
+            error = "Cloud Repair đã báo thành công nhưng không tìm thấy bản dịch output đã kiểm tra.";
             return false;
         }
 
         var validation = CsvPackageValidator.Validate(path);
         if (!validation.Ok)
         {
-            error = $"CSV Cloud Repair sau khi nhập không hợp lệ: {validation.Message}";
+            error = $"Bản dịch Cloud Repair sau khi nhập không hợp lệ: {validation.Message}";
             return false;
         }
 
@@ -689,7 +689,7 @@ public sealed partial class MainViewModel
         PatchResultsExpanded = true;
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
-        PatchPreflightMessage = "Cloud Repair đã nhập; kiểm tra trước khi tạo patch.";
+        PatchPreflightMessage = "Cloud Repair đã nhập; kiểm tra trước khi tạo bản Việt hóa.";
         return true;
     }
 
@@ -720,7 +720,7 @@ public sealed partial class MainViewModel
         PatchResultsExpanded = true;
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
-        PatchPreflightMessage = "Đã nhập bản dịch cũ; kiểm tra trước khi tạo patch.";
+        PatchPreflightMessage = "Đã nhập bản dịch cũ; kiểm tra trước khi tạo bản Việt hóa.";
         return true;
     }
 
@@ -757,7 +757,7 @@ public sealed partial class MainViewModel
         if (string.Equals(task, "patch", StringComparison.Ordinal))
             return !string.IsNullOrWhiteSpace(evt.PatchInstallInstructions)
                 ? evt.PatchInstallInstructions!
-                : "Đã hủy tạo patch — thư mục xuất chưa được xác nhận là patch hoàn chỉnh; kiểm tra hoặc chọn thư mục xuất trống rồi tạo lại. Game gốc không bị thay đổi.";
+                : "Đã hủy tạo bản Việt hóa — nơi lưu bản dịch chưa được xác nhận là bản Việt hóa hoàn chỉnh; kiểm tra hoặc chọn nơi lưu bản dịch trống rồi tạo lại. Game gốc không bị thay đổi.";
         return "Đã hủy tác vụ — phần đã hoàn tất an toàn được giữ nguyên; chạy lại để dịch tiếp.";
     }
 
@@ -778,7 +778,7 @@ public sealed partial class MainViewModel
         var name = string.IsNullOrWhiteSpace(payloadPath) ? "" : Path.GetFileName(payloadPath.TrimEnd('\\', '/'));
         if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))      // folder payload: the installer the worker itself names in its instructions
             name = !string.IsNullOrEmpty(instructions) && instructions.Contains("VNTextPatchInstaller.exe", StringComparison.Ordinal) ? "VNTextPatchInstaller.exe" : "";
-        return name.Length > 0 ? UiText.Msg("Gói patch có installer — {0}", name) : "Gói patch có installer";
+        return name.Length > 0 ? UiText.Msg("Gói bản Việt hóa có installer — {0}", name) : "Gói bản Việt hóa có installer";
     }
 
     private void ApplyPatchDelivery(WorkerEvent evt)

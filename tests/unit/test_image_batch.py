@@ -292,7 +292,7 @@ class AutomaticImageTests(unittest.TestCase):
         self.assertFalse(scan.call_args.kwargs['translate'])
         self.assertTrue(events[0]['ok'])
         self.assertIn('Quét ảnh xong: 3 ảnh có chữ',events[0]['summary'])
-        self.assertIn('CSV text không bị ảnh hưởng',events[0]['summary'])
+        self.assertIn('Bản dịch text không bị ảnh hưởng',events[0]['summary'])
 
     def test_after_extract_image_task_handles_a_game_without_images(self):
         from vntext_worker import image_tasks

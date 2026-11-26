@@ -82,7 +82,7 @@ public sealed partial class MainViewModel
     {
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return false;
         if (!CsvEditorDirty) return true;
-        var choice = CsvEditorMessageBox(question, "Lưu CSV", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+        var choice = CsvEditorMessageBox(question, "Lưu bản dịch", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
         if (choice != MessageBoxResult.Yes) return false;
         return await SaveCsvEditorAsync();
     }
@@ -97,10 +97,10 @@ public sealed partial class MainViewModel
 
     private async Task TranslateCheckedCsvRowsCoreAsync()
     {
-        if (Busy) { ShowToast("Worker đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning"); return; }
+        if (Busy) { ShowToast("Ứng dụng đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning"); return; }
         var keys = CheckedCsvKeys();
         if (keys.Count == 0 || string.IsNullOrWhiteSpace(CsvEditorPath)) return;
-        if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("Bản dịch có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
         Dictionary<string, (bool Eligible, string Reason, bool Technical)> eligibility;
         var preflightPath = CsvEditorPath; var preflightHash = _csvEditorSourceSha256;
         try { eligibility = await Task.Run(() => TranslationCsvEditorService.Eligibility(preflightPath, preflightHash!)); }
@@ -109,16 +109,16 @@ public sealed partial class MainViewModel
         var skipped = keys.Count(key => eligibility.TryGetValue(key, out var row) && !row.Eligible);
         var overwritten = _csvEditorRows.Count(row => row.IsSelected && !string.IsNullOrWhiteSpace(row.Translation));
         var message = UiText.Lines(
-            UiText.Msg("Dịch {0} dòng đã chọn bằng OPUS-MT offline?", keys.Count.ToString("N0")),
+            UiText.Msg("Dịch {0} dòng đã chọn bằng bộ dịch trên máy?", keys.Count.ToString("N0")),
             UiText.Msg("{0} dòng kỹ thuật/không phù hợp sẽ được bỏ qua; lý do từng dòng có trong Nhật ký.", skipped.ToString("N0")),
             overwritten > 0 ? UiText.Msg("{0} dòng trong số đó đã có bản dịch và sẽ được dịch lại; các dòng không chọn giữ nguyên.", overwritten.ToString("N0"))
                             : UiText.Translate("Các dòng không chọn (kể cả bản dịch bạn đã sửa tay) giữ nguyên."),
-            "Kết quả được lưu vào chính file CSV này, có sao lưu và kiểm tra cấu trúc sau khi dịch.");
+            "Kết quả được lưu vào chính bản dịch này, có sao lưu và kiểm tra cấu trúc sau khi dịch.");
         if (CsvEditorMessageBox(message, "Dịch dòng đã chọn", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("Bản dịch có thay đổi chưa lưu. Lưu trước khi dịch các dòng đã chọn?")) return;
         if (string.IsNullOrWhiteSpace(_csvEditorSourceSha256) || !File.Exists(CsvEditorPath))
         {
-            ShowToast("Không xác minh được bản CSV đang mở; hãy tải lại CSV rồi chọn lại.", "error");
+            ShowToast("Không xác minh được bản bản dịch đang mở; hãy tải lại bản dịch rồi chọn lại.", "error");
             return;
         }
         _csvEditorRetranslatePending = true;
@@ -129,7 +129,7 @@ public sealed partial class MainViewModel
     private async Task SelectTranslatableAsync()
     {
         if (Busy || _csvSelectionPreparing) return;
-        if (!await EnsureCsvSavedBeforeBatchAsync("Lưu CSV trước khi phân loại dòng có thể dịch?")) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("Lưu bản dịch trước khi phân loại dòng có thể dịch?")) return;
         try
         {
             var path = CsvEditorPath; var hash = _csvEditorSourceSha256;
@@ -158,18 +158,18 @@ public sealed partial class MainViewModel
 
     internal async Task DeleteCheckedCsvRowsAsync()
     {
-        if (Busy) { ShowToast("Worker đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning"); return; }
+        if (Busy) { ShowToast("Ứng dụng đang bận — hãy đợi hoặc hủy tác vụ hiện tại.", "warning"); return; }
         var keys = CheckedCsvKeys();
         if (keys.Count == 0 || string.IsNullOrWhiteSpace(CsvEditorPath)) return;
         var message = UiText.Lines(
-            UiText.Msg("Xóa {0} dòng đã chọn khỏi CSV?", keys.Count.ToString("N0")),
-            "Dòng bị xóa sẽ không được dịch hay patch, và không hiện lại khi lấy text lại từ cùng nguồn.",
+            UiText.Msg("Xóa {0} dòng đã chọn khỏi bản dịch?", keys.Count.ToString("N0")),
+            "Dòng bị xóa sẽ không được dịch hay bản Việt hóa, và không hiện lại khi lấy text lại từ cùng nguồn.",
             "Nguyên bản game không bị thay đổi; quyết định được ghi lại trong user_exclusions.json.");
         if (CsvEditorMessageBox(message, "Xóa dòng đã chọn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
-        if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi xóa các dòng đã chọn?")) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("Bản dịch có thay đổi chưa lưu. Lưu trước khi xóa các dòng đã chọn?")) return;
         if (string.IsNullOrWhiteSpace(_csvEditorSourceSha256) || !File.Exists(CsvEditorPath))
         {
-            ShowToast("Không xác minh được bản CSV đang mở; hãy tải lại CSV rồi chọn lại.", "error");
+            ShowToast("Không xác minh được bản bản dịch đang mở; hãy tải lại bản dịch rồi chọn lại.", "error");
             return;
         }
         var result = TranslationCsvEditorService.ExcludeRows(CsvEditorPath, keys, _csvEditorSourceSha256!);
@@ -180,7 +180,7 @@ public sealed partial class MainViewModel
             return;
         }
         ShowToast(UiText.Msg("Đã xóa {0} dòng; còn {1} dòng.", result.Removed.ToString("N0"), result.Remaining.ToString("N0")), "success");
-        AppendLog(UiText.Msg("Đã xóa {0} dòng khỏi CSV (ghi trong user_exclusions.json).", result.Removed.ToString("N0")));
+        AppendLog(UiText.Msg("Đã xóa {0} dòng khỏi bản dịch (ghi trong user_exclusions.json).", result.Removed.ToString("N0")));
         SetCheckedForFiltered(false, all: true);
         CsvEditorDirty = false;
         LoadCsvEditor(CsvEditorPath, reload: true);

@@ -75,12 +75,12 @@ internal static partial class Program
                                 Button Named(string label) => buttons.Single(button => (button.Content as string) == label);
                                 if (step == 1)
                                 {
-                                    Require(Named("Cài patch").IsEnabled, "install is available for a valid, uninstalled game");
+                                    Require(Named("Cài bản Việt hóa").IsEnabled, "install is available for a valid, uninstalled game");
                                     Require(!Named("Gỡ và hoàn nguyên").IsEnabled && !Named("Về bản gốc sạch").IsEnabled, "uninstall actions are disabled before install");
                                     var text = string.Join("\n", Descendants<TextBlock>(window).Select(block => block.Text));
                                     Require(text.Contains("Font trong game:"), "per-font counts are shown in the dialog");
                                     Require(text.Contains("Chưa xử lý được · fonts/pack.ttc"), "an unresolved font is named with its outcome");
-                                    Require(text.Contains("Đã thay trong patch · fonts/Gothic.ttf"), "a replaced font is named with its outcome");
+                                    Require(text.Contains("Đã thay trong bản Việt hóa · fonts/Gothic.ttf"), "a replaced font is named with its outcome");
                                     Require(text.Contains("Font đủ ký tự bản dịch"), "PASS_WITH_FALLBACK counts as covered text");
                                     Shot(window, outDir, "install-dialog-ready.png");
                                     new InstallerService(patch).Install(game);                        // same service the dialog drives
@@ -88,7 +88,7 @@ internal static partial class Program
                                 }
                                 else if (step == 2)
                                 {
-                                    Require(!Named("Cài patch").IsEnabled && Named("Gỡ và hoàn nguyên").IsEnabled && Named("Về bản gốc sạch").IsEnabled, "installed state offers both uninstall modes");
+                                    Require(!Named("Cài bản Việt hóa").IsEnabled && Named("Gỡ và hoàn nguyên").IsEnabled && Named("Về bản gốc sạch").IsEnabled, "installed state offers both uninstall modes");
                                     Shot(window, outDir, "install-dialog-installed.png");
                                     var clean = Named("Về bản gốc sạch");
                                     window.Dispatcher.BeginInvoke(new Action(() => clean.RaiseEvent(new RoutedEventArgs(Button.ClickEvent))));   // the confirmation is modal: open it after this tick returns

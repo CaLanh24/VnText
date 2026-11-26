@@ -74,7 +74,7 @@ internal static class CsvFieldReader
         }
 
         if (inQuotes)
-            throw new InvalidDataException("CSV có dấu nháy chưa đóng");
+            throw new InvalidDataException("Bản dịch có dấu nháy chưa đóng");
         if (hasContent || fields.Count > 0 || current.Length > 0)
         {
             fields.Add(current.ToString());

@@ -8,7 +8,7 @@ from vntext.extract import format_duration
 
 PHASE_LABELS = {
     "extract": "Lấy text",
-    "patch": "Tạo patch",
+    "patch": "Tạo bản Việt hóa",
     "dump": "Dump / soi Unity",
     "asset_index": "Chỉ mục asset",
     "auto_raw": "Lọc raw tự động",

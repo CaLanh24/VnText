@@ -139,8 +139,8 @@ public sealed partial class InstallerService
     }
 
     private static string LeftoverNote(IReadOnlyList<string> leftovers) => leftovers.Count == 0 ? ""
-        : "CÒN LẠI trong game (giữ nguyên, không xác minh được ai cài hoặc có backup không; có thể là patch VNText cũ vẫn đang chạy và gây lỗi font): "
-          + string.Join("; ", leftovers) + ". Muốn gỡ sạch, hãy gỡ bằng đúng patch đã cài chúng hoặc xác minh lại game.";
+        : "CÒN LẠI trong game (giữ nguyên, không xác minh được ai cài hoặc có backup không; có thể là bản Việt hóa VNText cũ vẫn đang chạy và gây lỗi font): "
+          + string.Join("; ", leftovers) + ". Muốn gỡ sạch, hãy gỡ bằng đúng bản Việt hóa đã cài chúng hoặc xác minh lại game.";
 
     /// <summary>Human-readable truth about who owns the files this patch would write (shown before installing and by the CLI).</summary>
     public List<string> DescribeOwnership(string gameRoot)
@@ -156,13 +156,13 @@ public sealed partial class InstallerService
             {
                 var top = entry.Layers[^1];
                 notes.Add(File.Exists(target) && string.Equals(HashFile(target), top.InstalledSha256, StringComparison.OrdinalIgnoreCase)
-                    ? $"{file.Path}: đang do patch VNText {top.Version} quản lý ({entry.Layers.Count} lớp); cài patch này là nâng cấp, bản gốc đầu tiên ({DescribeOriginal(entry)}) được giữ."
-                    : $"{file.Path}: tệp do patch VNText {top.Version} quản lý đã bị sửa ngoài VNText; sẽ không cài chồng.");
+                    ? $"{file.Path}: đang do bản Việt hóa VNText {top.Version} quản lý ({entry.Layers.Count} lớp); cài bản Việt hóa này là nâng cấp, bản gốc đầu tiên ({DescribeOriginal(entry)}) được giữ."
+                    : $"{file.Path}: tệp do bản Việt hóa VNText {top.Version} quản lý đã bị sửa ngoài VNText; sẽ không cài chồng.");
             }
             else if (File.Exists(target))
             {
                 notes.Add(LooksLikeVnTextOverlay(target)
-                    ? $"{file.Path}: đã có bản Việt hóa VNText cũ không có biên nhận sở hữu; gỡ patch này chỉ đưa về đúng bản cũ đó (không chứng minh được game gốc sạch)."
+                    ? $"{file.Path}: đã có bản Việt hóa VNText cũ không có biên nhận sở hữu; gỡ bản Việt hóa này chỉ đưa về đúng bản cũ đó (không chứng minh được game gốc sạch)."
                     : $"{file.Path}: đã có tệp không do VNText quản lý; tệp được giữ nguyên làm bản gốc và sẽ được khôi phục khi gỡ.");
             }
         }
@@ -231,9 +231,9 @@ public sealed partial class InstallerService
             if (!receipt.Paths.TryGetValue(path, out var entry))
                 throw new InvalidOperationException($"Không có biên nhận sở hữu cho {path}; không chứng minh được bản gốc sạch. Hãy dùng \"Gỡ cài đặt\" thông thường.");
             if (entry.Provenance == "legacy_vntext_unreceipted")
-                throw new InvalidOperationException($"{path}: bản gốc đầu tiên là bản Việt hóa VNText cũ không có biên nhận, không phải game gốc sạch. Gỡ patch cũ sau khi gỡ patch này, hoặc xác minh lại game.");
+                throw new InvalidOperationException($"{path}: bản gốc đầu tiên là bản Việt hóa VNText cũ không có biên nhận, không phải game gốc sạch. Gỡ bản Việt hóa cũ sau khi gỡ bản Việt hóa này, hoặc xác minh lại game.");
             if (entry.Layers.Count == 0 || !string.Equals(entry.Layers[^1].PatchId, patchId, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"{path}: patch này không phải lớp VNText mới nhất; gỡ lớp mới nhất trước.");
+                throw new InvalidOperationException($"{path}: bản Việt hóa này không phải lớp VNText mới nhất; gỡ lớp mới nhất trước.");
             if (entry.FirstOriginalExists)
             {
                 var keep = ResolveSafe(OriginalsRoot(root), path);
@@ -254,7 +254,7 @@ public sealed partial class InstallerService
                     throw new InvalidOperationException($"Khôi phục bản gốc thất bại: {path}");
             }
             else if (File.Exists(target)) File.Delete(target);
-            if (entry.Layers.Count > 1) notes.Add($"{path}: đã gỡ cả {entry.Layers.Count - 1} lớp patch cũ hơn; tệp trạng thái của chúng sẽ báo đã bị thay thế.");
+            if (entry.Layers.Count > 1) notes.Add($"{path}: đã gỡ cả {entry.Layers.Count - 1} lớp bản Việt hóa cũ hơn; tệp trạng thái của chúng sẽ báo đã bị thay thế.");
             receipt.Paths.Remove(path);
             Fault("clean-restored:" + path);
         }
@@ -289,7 +289,7 @@ public sealed partial class InstallerService
         var receipt = LoadReceipt(root);
         var paths = receipt.Paths.Where(pair => pair.Value.Layers.Count > 0).Select(pair => pair.Key).OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToList();
         if (paths.Count == 0)
-            throw new InvalidOperationException("Game không có lớp patch VNText nào trong biên nhận; không còn gì để gỡ.");
+            throw new InvalidOperationException("Game không có lớp bản Việt hóa VNText nào trong biên nhận; không còn gì để gỡ.");
         foreach (var path in paths)
         {
             var entry = receipt.Paths[path];
@@ -303,7 +303,7 @@ public sealed partial class InstallerService
             var untouched = entry.Kind == "cache" || File.Exists(target)
                 && string.Equals(HashFile(target), entry.Layers[^1].InstalledSha256, StringComparison.OrdinalIgnoreCase);
             if (!atFirstOriginal && !untouched)
-                throw new InvalidOperationException($"{path}: tệp do patch VNText {entry.Layers[^1].Version} quản lý đã bị sửa ngoài VNText; không tự về bản gốc. Game chưa bị thay đổi.");
+                throw new InvalidOperationException($"{path}: tệp do bản Việt hóa VNText {entry.Layers[^1].Version} quản lý đã bị sửa ngoài VNText; không tự về bản gốc. Game chưa bị thay đổi.");
             if (entry.FirstOriginalExists)
             {
                 var keep = ResolveSafe(OriginalsRoot(root), path);
@@ -337,7 +337,7 @@ public sealed partial class InstallerService
             if (File.Exists(originalKeep)) File.Delete(originalKeep);
         }
         TryDeleteEmpty(OriginalsRoot(root)); TryDeleteEmpty(ReceiptDirectory(root));
-        notes.Add($"Đã về đúng bản gốc đầu tiên ghi trong biên nhận cho {paths.Count} tệp (hash đã khớp), gỡ {layers} lớp patch VNText; tệp trạng thái của các patch cũ sẽ báo đã bị thay thế.");
+        notes.Add($"Đã về đúng bản gốc đầu tiên ghi trong biên nhận cho {paths.Count} tệp (hash đã khớp), gỡ {layers} lớp bản Việt hóa VNText; tệp trạng thái của các bản Việt hóa cũ sẽ báo đã bị thay thế.");
         var leftovers = FindUnverifiedLeftovers(root, paths);
         if (leftovers.Count > 0) notes.Add(LeftoverNote(leftovers));
         return new UninstallResult(notes);

@@ -38,11 +38,11 @@ def run_resources(task_id, params, is_cancelled):
                     archive = app_data_root() / 'downloads' / ('renpy-sdk-' + uuid.uuid4().hex + '.zip')
                     try:
                         sdk = download_and_install_managed_sdk(archive, is_cancelled=is_cancelled,
-                            progress=lambda done, total: emit_progress(task_id, done=done, total=total, step="Tải Ren'Py SDK 8.5.3"))
+                            progress=lambda done, total: emit_progress(task_id, done=done, total=total, step="Tải công cụ Ren’Py 8.5.3"))
                     finally:
                         archive.unlink(missing_ok=True)
                 if sdk is None:
-                    raise ValueError("Chưa tải Ren'Py SDK 8.5.3")
+                    raise ValueError("Chưa tải công cụ Ren’Py 8.5.3")
                 path = str(sdk.root)
             else:
                 import os

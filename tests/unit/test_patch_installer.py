@@ -216,7 +216,7 @@ class PatchInstallerTests(unittest.TestCase):
         candidates = self._installer_candidates()
         installer = next((p for p in candidates if p.is_file()), None)
         if installer is None:
-            self.skipTest("patch installer chưa được build")
+            self.skipTest("Bản Việt hóa installer chưa được build")
 
         case = WORK_ROOT / "bulk_glossary_installer" / "installer_roundtrip"
         if case.exists():
@@ -266,7 +266,7 @@ class PatchInstallerTests(unittest.TestCase):
         candidates = self._installer_candidates()
         installer = next((p for p in candidates if p.is_file()), None)
         if installer is None:
-            self.skipTest("patch installer chưa được build")
+            self.skipTest("Bản Việt hóa installer chưa được build")
 
         case = WORK_ROOT / "generic_unity_installer" / "installer_roundtrip"
         if case.exists():

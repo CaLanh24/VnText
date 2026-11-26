@@ -80,18 +80,18 @@ def _read_editor_csv_bytes(raw: bytes) -> tuple[list[str], list[dict]]:
             if (not {"key", "source_text", "translation"}.issubset(source_fields)
                     or any(not field or field != field.strip() for field in source_fields)
                     or len({field.casefold() for field in source_fields}) != len(source_fields)):
-                raise ValueError("Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ")
+                raise ValueError("Header bản dịch thiếu cột bắt buộc, trùng hoặc không hợp lệ")
             rows = []
             for number, record in enumerate(records, 2):
                 if not record:
                     continue
                 if len(record) != len(source_fields):
-                    raise ValueError(f"Dòng CSV {number} có số cột không khớp header")
+                    raise ValueError(f"Dòng bản dịch {number} có số cột không khớp header")
                 rows.append(dict(zip(source_fields, record)))
     except csv.Error as exc:
-        raise ValueError(f"CSV không hợp lệ: {exc}") from exc
+        raise ValueError(f"Bản dịch không hợp lệ: {exc}") from exc
     except UnicodeDecodeError as exc:
-        raise ValueError("CSV không dùng UTF-8 hợp lệ") from exc
+        raise ValueError("Bản dịch không dùng UTF-8 hợp lệ") from exc
     fields = list(source_fields)
     for field in CSV_FIELDS:
         if field not in fields:
@@ -101,7 +101,7 @@ def _read_editor_csv_bytes(raw: bytes) -> tuple[list[str], list[dict]]:
             row.setdefault(field, "")
     keys = [row["key"] for row in rows]
     if any(not key.strip() for key in keys) or len(set(keys)) != len(keys):
-        raise ValueError("CSV có key trống hoặc trùng")
+        raise ValueError("Bản dịch có key trống hoặc trùng")
     return fields, rows
 
 
@@ -272,7 +272,7 @@ def save_document(
     except OSError as exc:
         return {"ok": False, "error": str(exc)}
     if expected_sha256 and hashlib.sha256(baseline_bytes).hexdigest().casefold() != expected_sha256.casefold():
-        return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
+        return {"ok": False, "error": "Bản dịch đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
     expected_sha256 = expected_sha256 or hashlib.sha256(baseline_bytes).hexdigest()
     required = {"key", "source_text", "translation"}
     field_set = set(fields or [])
@@ -280,32 +280,32 @@ def save_document(
         missing = sorted(required - field_set)
         return {"ok": False, "error": f"Thiếu cột bắt buộc: {', '.join(missing)}"}
     if not rows:
-        return {"ok": False, "error": "CSV không có dòng dữ liệu"}
+        return {"ok": False, "error": "Bản dịch không có dòng dữ liệu"}
     keys = [str(r.get("key") or "").strip() for r in rows]
     if any(not k for k in keys):
         return {"ok": False, "error": "Có dòng thiếu key"}
     if len(set(keys)) != len(keys):
-        return {"ok": False, "error": "Trùng key trong CSV"}
+        return {"ok": False, "error": "Trùng key trong bản dịch"}
     try:
         baseline_fields, baseline_rows = _read_editor_csv_bytes(baseline_bytes)
     except (ValueError, OSError) as exc:
         return {"ok": False, "error": str(exc)}
     normalized_fields = fields + [field for field in CSV_FIELDS if field not in fields]
     if normalized_fields != baseline_fields or len(rows) != len(baseline_rows):
-        return {"ok": False, "error": "Không được đổi cột hoặc số dòng của CSV gốc"}
+        return {"ok": False, "error": "Không được đổi cột hoặc số dòng của bản dịch gốc"}
     for original, updated in zip(baseline_rows, rows):
         if any(updated.get(field, "") != original.get(field, "")
                for field in baseline_fields if field != "translation"):
-            return {"ok": False, "error": "Không được đổi key, thứ tự, source hoặc metadata của CSV gốc"}
+            return {"ok": False, "error": "Không được đổi key, thứ tự, source hoặc metadata của bản dịch gốc"}
     # Recheck before creating the backup. The atomic writer checks again after
     # serialization, immediately before replacing the source file.
     if expected_sha256:
         current_sha256 = hashlib.sha256(csv_path.read_bytes()).hexdigest()
         if current_sha256.casefold() != expected_sha256.casefold():
-            return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
+            return {"ok": False, "error": "Bản dịch đã thay đổi bên ngoài — hãy tải lại trước khi lưu"}
     backup_path = backup_translation_csv(csv_path)
     if backup_path.read_bytes() != baseline_bytes:
-        return {"ok": False, "error": "CSV đã thay đổi bên ngoài trong lúc sao lưu", "backup_path": str(backup_path), "rolled_back": False}
+        return {"ok": False, "error": "Bản dịch đã thay đổi bên ngoài trong lúc sao lưu", "backup_path": str(backup_path), "rolled_back": False}
     review_path = csv_path.parent / "review_only.csv"
     review_before = review_path.read_bytes() if review_path.is_file() else None
     saved_sha256: str | None = None
@@ -327,7 +327,7 @@ def save_document(
             _atomic_write_bytes(backup_path.with_suffix(backup_path.suffix + ".undo.json"), json.dumps(receipt).encode("utf8"))
     except Exception as exc:
         if isinstance(exc, CsvEditorExternalChange):
-            return {"ok": False, "error": "CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
+            return {"ok": False, "error": "Bản dịch đã thay đổi bên ngoài — hãy tải lại trước khi lưu",
                     "backup_path": str(backup_path)}
         if saved_sha256 is None:
             # The source file was never replaced by this save: nothing of ours to undo.
@@ -341,7 +341,7 @@ def save_document(
             return {"ok": False, "error": f"{exc}; rollback thất bại: {rollback_error}",
                     "backup_path": str(backup_path), "rolled_back": False, "rollback_failed": True}
         if not csv_restored:
-            return {"ok": False, "error": f"{exc}; CSV đã bị thay đổi bên ngoài sau khi lưu nên không rollback",
+            return {"ok": False, "error": f"{exc}; bản dịch đã bị thay đổi bên ngoài sau khi lưu nên không rollback",
                     "backup_path": str(backup_path), "rolled_back": False, "foreign_change_preserved": True}
         if review_before is not None:
             try:
@@ -462,7 +462,7 @@ def _atomic_write_csv(
         if expected_sha256:
             current_sha256 = hashlib.sha256(csv_path.read_bytes()).hexdigest()
             if current_sha256.casefold() != expected_sha256.casefold():
-                raise CsvEditorExternalChange("CSV đã thay đổi bên ngoài — hãy tải lại trước khi lưu")
+                raise CsvEditorExternalChange("Bản dịch đã thay đổi bên ngoài — hãy tải lại trước khi lưu")
         os.replace(tmp, csv_path)
         return written_sha256
     finally:
@@ -538,7 +538,7 @@ def replace_translation(
 
     before = validate_document(csv_path, rows)
     if not before.get("ok"):
-        return {"ok": False, "error": before.get("error") or "CSV hiện tại không hợp lệ"}
+        return {"ok": False, "error": before.get("error") or "Bản dịch hiện tại không hợp lệ"}
     # Legacy callers may intentionally pass an unsaved draft. Snapshot at entry
     # when they omit an expected hash; hash-aware callers retain their load-time CAS.
     expected_sha256 = expected_sha256 or hashlib.sha256(csv_path.read_bytes()).hexdigest()
@@ -590,9 +590,9 @@ def restore_backup(csv_path: str | Path, backup_path: str | Path, expected_sha25
         elif not expected_sha256:
             raise ValueError("Backup cũ cần expected_sha256 hiện tại trước khi undo")
         if current_sha.casefold() != expected_sha256.casefold():
-            raise ValueError("CSV đã thay đổi bên ngoài — không undo")
+            raise ValueError("Bản dịch đã thay đổi bên ngoài — không undo")
         if not _replace_bytes_if_unchanged(csv_path, current_sha, data):
-            raise ValueError("CSV đã thay đổi bên ngoài trong lúc undo")
+            raise ValueError("Bản dịch đã thay đổi bên ngoài trong lúc undo")
         try:
             if receipt and receipt["review_before"] is not None:
                 original_review = base64.b64decode(receipt["review_before"], validate=True)

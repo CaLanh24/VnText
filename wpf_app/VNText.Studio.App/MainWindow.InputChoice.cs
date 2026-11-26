@@ -27,7 +27,7 @@ public partial class MainWindow
             LayoutTransform = new System.Windows.Media.ScaleTransform(vm.UiScale, vm.UiScale)
         };
         menu.Items.Add(new MenuItem { Header = UiText.Translate("Chọn thư mục game…"), Command = vm.ChooseInputCommand });
-        menu.Items.Add(new MenuItem { Header = UiText.Translate("Chọn file asset / bundle…"), Command = vm.ChooseInputAssetCommand });
+        menu.Items.Add(new MenuItem { Header = UiText.Translate("Chọn tệp dữ liệu của game…"), Command = vm.ChooseInputAssetCommand });
         return menu;
     }
 }

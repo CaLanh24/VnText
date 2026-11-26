@@ -49,7 +49,7 @@ public sealed class LogSeverityConverter : IValueConverter
         }
         if (Regex.IsMatch(text, @"^(?:\[(?:error|lỗi)\]|── Lỗi|Lỗi(?:\b|:)|Error(?:\b|:)|Không thể|Không đọc được|Không ghi được)", RegexOptions.IgnoreCase)) return "ERROR";
         if (Regex.IsMatch(text, @"^(?:\[(?:warning|cảnh báo|stderr)\]|Cảnh báo|Warning|Lấy text một phần|── Lấy text một phần)", RegexOptions.IgnoreCase)) return "WARN";
-        if (Regex.IsMatch(text, @"^(?:\[success\]|CSV OK:|Extract xong|Dịch xong|Tạo patch xong|Đã hoàn tất|Hoàn tất(?:\b|:)|── Hoàn tất|Kiểm tra patch: [1-9]\d* hợp lệ, 0 bị chặn|Patch read-back PASS|Patch tại )", RegexOptions.IgnoreCase)) return "SUCCESS";
+        if (Regex.IsMatch(text, @"^(?:\[success\]|CSV OK:|Extract xong|Dịch xong|Tạo bản Việt hóa xong|Đã hoàn tất|Hoàn tất(?:\b|:)|── Hoàn tất|Kiểm tra bản Việt hóa: [1-9]\d* hợp lệ, 0 bị chặn|bản Việt hóa read-back PASS|bản Việt hóa tại )", RegexOptions.IgnoreCase)) return "SUCCESS";
         return "INFO";
     }
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => Severity(value as string);

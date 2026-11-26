@@ -17,11 +17,11 @@ from vntext.mt_check import is_synonym_row, load_whitelist, structural_problems
 from vntext.package_io import read_translation_rows
 
 REASON_LABELS_VI: dict[str, str] = {
-    "eligible": "Sẽ patch",
-    "review_only": "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)",
+    "eligible": "Sẽ bản Việt hóa",
+    "review_only": "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
     "mt_blocked": "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch",
     "human_review": "Bản dịch máy đang chờ bạn duyệt",
-    "review_resolved_unsaved": "Đã dịch — bấm Lưu để đưa dòng này vào patch",
+    "review_resolved_unsaved": "Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa",
     "existing_translation_conflict": "Game đã có bản dịch tiếng Việt khác cho câu này",
     "no_translation": "Chưa có bản dịch trong translation.csv",
     "garbage_repetition": "Rác lặp từ/ký tự",
@@ -38,29 +38,29 @@ REASON_LABELS_VI: dict[str, str] = {
     "english suffix after placeholder": "Hậu tố Anh sau placeholder",
     "validation": "Validation MT",
     "legacy_profile_unsupported": "Gói dùng profile legacy không được hỗ trợ; hãy extract lại",
-    "legacy_external_reference": "Locator tham chiếu ngoài không được hỗ trợ; hãy extract lại",
+    "legacy_external_reference": "Dòng này trỏ tới nơi ngoài game, chưa được hỗ trợ; hãy lấy text lại",
     "retranslate_blocked": "Dịch lại vẫn bị chặn",
 }
 
 RETRANSLATE_STILL_BLOCKED_NOTE = "Dịch lại vẫn bị chặn"
 
 # What the person can DO about each reason (Owner report 0.1.35: a status without a way out is a dead end).  Shown next to the reason in
-# Sửa CSV and in the Tạo patch list; the codes are the same in both places so the two screens always count the same rows.
+# Sửa bản dịch and in the Tạo bản Việt hóa list; the codes are the same in both places so the two screens always count the same rows.
 REASON_ACTIONS_VI: dict[str, str] = {
     "no_translation": "Dịch dòng này (tích chọn rồi 'Dịch đã chọn', hoặc gõ bản dịch) rồi bấm Lưu.",
-    "mt_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được patch. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
-    "retranslate_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được patch. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
+    "mt_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được bản Việt hóa. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
+    "retranslate_blocked": "Tự gõ bản dịch rồi bấm Lưu: dòng sẽ được bản Việt hóa. Hoặc 'Bỏ qua dòng này' nếu không cần dịch.",
     "human_review": "Bấm 'Chấp nhận đề xuất' để dùng bản dịch máy, hoặc tự sửa rồi Lưu. Hoặc 'Bỏ qua dòng này'.",
     "review_resolved_unsaved": "Bấm Lưu.",
-    "review_only": "Không cần làm gì: Patch bỏ qua dòng này, game giữ nguyên câu gốc. Nếu không muốn thấy nữa, bấm 'Bỏ qua dòng này' (xóa khỏi CSV).",
-    "existing_translation_conflict": "Game giữ bản dịch có sẵn. Muốn dùng bản của bạn: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo patch lại.",
+    "review_only": "Không cần làm gì: bản Việt hóa bỏ qua dòng này, game giữ nguyên câu gốc. Nếu không muốn thấy nữa, bấm 'Bỏ qua dòng này' (xóa khỏi bản dịch).",
+    "existing_translation_conflict": "Game giữ bản dịch có sẵn. Muốn dùng bản của bạn: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo bản Việt hóa lại.",
     "placeholder mismatch": "Sửa bản dịch cho giữ đúng các mục {…}/[…] như câu gốc rồi Lưu.",
     "tag mismatch": "Sửa bản dịch cho giữ đúng các thẻ <…>/{…} như câu gốc rồi Lưu.",
     "garbage_repetition": "Bản dịch bị lặp rác: sửa tay hoặc 'Dịch đã chọn' lại rồi Lưu.",
     "html_garbage": "Bản dịch có mã HTML rác: sửa tay rồi Lưu.",
     "synonym_manual": "Dòng nhiều biến thể: tự dịch từng biến thể rồi Lưu.",
 }
-_DEFAULT_ACTION_VI = "Sửa bản dịch trong Sửa CSV cho đúng rồi bấm Lưu; hoặc 'Bỏ qua dòng này' nếu không cần dịch."
+_DEFAULT_ACTION_VI = "Sửa bản dịch trong Sửa bản dịch cho đúng rồi bấm Lưu; hoặc 'Bỏ qua dòng này' nếu không cần dịch."
 
 
 def reason_action_vi(reason: str) -> str:
@@ -548,7 +548,7 @@ def translation_passes_patch_gate(
     *,
     allow_ct2_junk: bool = False,
 ) -> tuple[bool, str]:
-    """True khi bản dịch đủ điều kiện patch (Patch Gate đầy đủ)."""
+    """True khi bản dịch đủ điều kiện bản Việt hóa (Bản Việt hóa Gate đầy đủ)."""
     if not str(trans or "").strip():
         return False, "no_translation"
     gate_entry = dict(entry)
@@ -793,8 +793,8 @@ def audit_patch_package(
         reason_lines.append(f"{label}: {count}")
 
     summary = (
-        f"Kiểm tra patch — hợp lệ {eligible}, bị chặn {blocked_total} "
-        f"(CSV {len(csv_keys)} dòng, có {len(translations)} bản dịch)"
+        f"Kiểm tra bản Việt hóa — hợp lệ {eligible}, bị chặn {blocked_total} "
+        f"(Bản dịch {len(csv_keys)} dòng, có {len(translations)} bản dịch)"
     )
     if reason_lines:
         summary += ". " + "; ".join(reason_lines[:6])

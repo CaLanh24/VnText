@@ -97,7 +97,7 @@ internal static partial class Program
                         vm.CsvEditorRows[0].IsSelected = false;
                         AssertEqual(language == "vi" ? "Chưa chọn dòng nào" : "No rows selected", UiText.TranslateDynamic(vm.CsvCheckedText));
                         Require(language == "vi" || UiText.Translate("Chọn thư mục game") != "Chọn thư mục game", $"{tag} N5: the folder picker title is catalogued");
-                        Require(language == "vi" || (UiText.Translate("Chọn file asset / bundle") != "Chọn file asset / bundle" && UiText.Translate("Chọn thư mục xuất gói dịch") != "Chọn thư mục xuất gói dịch"), $"{tag} N5: the other picker titles are catalogued");
+                        Require(language == "vi" || (UiText.Translate("Chọn tệp dữ liệu của game") != "Chọn tệp dữ liệu của game" && UiText.Translate("Chọn nơi lưu bản dịch gói dịch") != "Chọn nơi lưu bản dịch gói dịch"), $"{tag} N5: the other picker titles are catalogued");
                         // user data is never translated: a CSV row whose text equals a catalog key stays exactly as the user has it
                         window.UpdateLayout(); PumpFixture(100);
                         var grid = (DataGrid)Named("CsvEditorGrid");
@@ -113,7 +113,7 @@ internal static partial class Program
                         window.UpdateLayout(); PumpFixture(120);
                         Require(!vm.RunPatchCommand.CanExecute(null), $"{tag} N7: no source -> Build patch is disabled");
                         var hint = (TextBlock)Named("PatchSourceHintText");
-                        Require(hint.IsVisible && hint.Text.Length > 10 && (language == "vi" ? hint.Text.Contains("Chọn game", StringComparison.Ordinal) : hint.Text.Contains("Choose a game", StringComparison.Ordinal)), $"{tag} N7: an actionable missing-source hint ('{hint.Text}')");
+                        Require(hint.IsVisible && hint.Text.Length > 10 && (language == "vi" ? hint.Text.Contains("Chọn thư mục game", StringComparison.Ordinal) : hint.Text.Contains("Choose a game", StringComparison.Ordinal)), $"{tag} N7: an actionable missing-source hint ('{hint.Text}')");
                         vm.InputPath = Path.Combine(work, "does-not-exist");
                         window.UpdateLayout(); PumpFixture(80);
                         Require(!vm.RunPatchCommand.CanExecute(null) && hint.IsVisible && (language == "vi" ? hint.Text.Contains("Không tìm thấy", StringComparison.Ordinal) : hint.Text.Contains("not found", StringComparison.Ordinal)), $"{tag} N7: a nonexistent source is not ready either ('{hint.Text}')");
@@ -151,7 +151,7 @@ internal static partial class Program
                         }
                         menu.IsOpen = false;
                         AssertEqual(language == "vi" ? "Chọn thư mục game…" : "Choose game folder…", (string)((MenuItem)menu.Items[0]).Header);
-                        AssertEqual(language == "vi" ? "Chọn file asset / bundle…" : "Choose asset / bundle file…", (string)((MenuItem)menu.Items[1]).Header);
+                        AssertEqual(language == "vi" ? "Chọn tệp dữ liệu của game…" : "Choose asset / bundle file…", (string)((MenuItem)menu.Items[1]).Header);
                         picker.AssetFile = picture;
                         ((MenuItem)menu.Items[1]).Command.Execute(null);
                         PumpFixture(120);

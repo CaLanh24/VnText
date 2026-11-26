@@ -72,15 +72,15 @@ def install_managed_sdk(archive: str | Path) -> RenPySdk:
     """Atomically install a previously user-approved official archive."""
     archive_path = Path(archive).resolve()
     if not archive_path.is_file() or _sha256(archive_path) != SDK_SHA256:
-        raise RenPyToolchainError("Ren'Py SDK archive hash mismatch")
+        raise RenPyToolchainError("công cụ Ren’Py archive hash mismatch")
     destination = managed_sdk_root(); parent = destination.parent
     repo = Path(__file__).resolve().parent.parent
     dev_cache = Path(__file__).resolve().parent.parent / ".dev-env" / "tools" / f"renpy-{SUPPORTED_VERSION}"
     if (repo / ".git").exists() and (destination == repo or repo in destination.parents) and destination != dev_cache:
-        raise RenPyToolchainError("managed Ren'Py SDK cache must not be inside the repository")
+        raise RenPyToolchainError("managed công cụ Ren’Py cache must not be inside the repository")
     for item in (destination, *destination.parents):
         if item.exists() and (item.is_symlink() or getattr(item.stat(), "st_file_attributes", 0) & 0x400):
-            raise RenPyToolchainError("managed Ren'Py SDK cache must not follow links")
+            raise RenPyToolchainError("managed công cụ Ren’Py cache must not follow links")
     parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=parent, prefix="renpy-install-") as temp:
         staging = Path(temp) / "payload"
@@ -88,11 +88,11 @@ def install_managed_sdk(archive: str | Path) -> RenPySdk:
             for info in bundle.infolist():
                 target = (staging / info.filename).resolve()
                 if staging.resolve() not in target.parents and target != staging.resolve():
-                    raise RenPyToolchainError("unsafe Ren'Py SDK archive path")
+                    raise RenPyToolchainError("unsafe công cụ Ren’Py archive path")
             bundle.extractall(staging)
         roots = [item for item in staging.iterdir() if item.is_dir()]
         if len(roots) != 1:
-            raise RenPyToolchainError("Ren'Py SDK archive has unexpected root layout")
+            raise RenPyToolchainError("công cụ Ren’Py archive has unexpected root layout")
         validate_sdk(roots[0])
         backup = destination.with_name(destination.name + ".previous")
         if backup.exists():
@@ -172,7 +172,7 @@ def _download_and_install_managed_sdk_once(
     except RenPyToolchainError:
         raise
     except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError) as exc:
-        raise RenPyToolchainError(f"Không tải được SDK Ren'Py 8.5.3: {exc}") from exc
+        raise RenPyToolchainError(f"Không tải được công cụ Ren’Py 8.5.3: {exc}") from exc
     finally:
         if partial is not None:
             partial.unlink(missing_ok=True)
@@ -200,7 +200,7 @@ def validate_sdk(path: str | Path) -> RenPySdk:
     renpy_py = root / "renpy.py"
     candidates = sorted((root / "lib").glob("py3-windows-*/python.exe"))
     if not renpy_py.is_file() or len(candidates) != 1:
-        raise RenPyToolchainError("supported Ren'Py SDK must contain renpy.py and one Windows runtime")
+        raise RenPyToolchainError("supported công cụ Ren’Py must contain renpy.py and one Windows runtime")
     python = candidates[0]
     probe = subprocess.run(
         [str(python), str(renpy_py), "--version"], cwd=root, text=True,
@@ -208,7 +208,7 @@ def validate_sdk(path: str | Path) -> RenPySdk:
     )
     text = (probe.stdout + "\n" + probe.stderr).strip()
     if probe.returncode or SUPPORTED_VERSION not in text:
-        raise RenPyToolchainError(f"Ren'Py SDK must be {SUPPORTED_VERSION}; probe returned: {text[:300]}")
+        raise RenPyToolchainError(f"công cụ Ren’Py must be {SUPPORTED_VERSION}; probe returned: {text[:300]}")
     return RenPySdk(root, python, renpy_py, SUPPORTED_VERSION)
 
 
@@ -216,7 +216,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
     """Isolated native workspace; optional translation slice excludes runtime/media."""
     source = Path(source).resolve(); target = Path(target).resolve()
     if target.is_relative_to(source):
-        raise RenPyToolchainError("Thư mục xuất phải nằm ngoài game để tạo workspace Ren'Py an toàn.")
+        raise RenPyToolchainError("Nơi lưu bản dịch phải nằm ngoài game để tạo workspace Ren'Py an toàn.")
     media = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".avif", ".svg", ".mp3", ".ogg", ".wav", ".flac", ".opus", ".m4a", ".mp4", ".webm", ".avi", ".ogv", ".mov"}
     def selected(p):
         if not translation_only: return True
@@ -275,7 +275,7 @@ def copy_template_workspace(source: str | Path, target: str | Path, *, is_cancel
         if total > 128 * 1024 * 1024:
             raise RenPyToolchainError("Archived Ren'Py source exceeds 128 MiB workspace limit")
     if shutil.disk_usage(target.parent).free < total + 16 * 1024 * 1024:
-        raise RenPyToolchainError(f"Không đủ dung lượng workspace Ren'Py ({total} bytes); chọn nơi xuất còn trống hoặc lấy text một phần không SDK.")
+        raise RenPyToolchainError(f"Không đủ dung lượng workspace Ren'Py ({total} bytes); chọn nơi xuất còn trống hoặc lấy text một phần không có công cụ.")
     repo = Path(__file__).resolve().parent.parent
     if (repo / ".git").exists() and target.is_relative_to(repo):
         # DEV reuses the canonical read-only inventory; installed apps have no test dependency.

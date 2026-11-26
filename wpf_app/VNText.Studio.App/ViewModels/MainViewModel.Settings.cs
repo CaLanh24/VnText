@@ -80,7 +80,10 @@ public sealed partial class MainViewModel
     public string ModelFolder => _modelFolder;
     public string ModelStatus => UiText.Translate(_modelStatus);
     /// <summary>Short status for the Settings row: the model path is shown once, in the folder line below it (the raw ModelStatus keeps it for diagnostics).</summary>
-    public string ModelStatusDisplay => UiText.Translate(PresentModelStatus(_modelStatus, _modelFolder));
+    public string ModelStatusDisplay => UiText.Translate(PlainLanguage.EngineStatus(_modelStatus, _modelFolder));
+    /// <summary>True when the translator is not usable here (model or its runtime missing): the Translate page and Settings then offer "Cài bộ dịch".</summary>
+    public bool TranslationEngineMissing => _translationModelChecked && _translationModelUnavailable && PlainLanguage.IsEngineMissing(_modelStatus);
+    public RelayCommand InstallEngineCommand => new(_ => StartResources(true), _ => !Busy);
 
     private const string ModelReadyPrefix = "Model OPUS-MT INT8 sẵn sàng: ";
     private const string ModelMissingPrefix = "Model CTranslate2 chưa có tại ";
@@ -109,8 +112,8 @@ public sealed partial class MainViewModel
     }
     public string WorkerStatus
     {
-        get { try { return UiText.Translate(File.Exists(WorkerPaths.PythonExecutable()) ? "Python worker có sẵn" : "Thiếu Python worker"); }
-              catch (Exception ex) { return UiText.Msg("Worker chưa sẵn sàng: {0}", ex.Message); } }
+        get { try { return UiText.Translate(PlainLanguage.WorkerStatus(File.Exists(WorkerPaths.PythonExecutable()))); }
+              catch (Exception ex) { return UiText.Msg("Bộ xử lý nền chưa sẵn sàng: {0}", ex.Message); } }
     }
     public RelayCommand OpenDataFolderCommand => new(_ => OpenSettingsFolder(DataFolder));
     public RelayCommand OpenModelFolderCommand => new(_ => OpenSettingsFolder(ModelFolder));
@@ -198,7 +201,8 @@ public sealed partial class MainViewModel
             _modelStatus = UiText.Msg("Không kiểm tra được mô hình dịch: {0}", ex.Message);
         }
         if (_disposed != 0) return;
-        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText));
+        Raise(nameof(ModelFolder)); Raise(nameof(ModelStatus)); Raise(nameof(ModelStatusDisplay)); Raise(nameof(TranslateReadinessText)); Raise(nameof(TranslateWorkflowStatusText)); Raise(nameof(TranslationEngineMissing));
+        if (_translationModelUnavailable) AppendLog(_modelStatus, "WARN");   // the technical cause stays in the diagnostics log
         RunTranslateCommand?.RaiseCanExecuteChanged();
     }
     private void OpenSettingsFolder(string path)

@@ -34,14 +34,14 @@ internal sealed class PatchInstallDialog
         var font = manifest.FontPreflight;
         _fontState = UiText.Translate(font is { } f && f.TryGetProperty("glyph_status", out var glyph) && glyph.GetString() is "PASS" or "PASS_WITH_FALLBACK"
             ? "Font đủ ký tự bản dịch. Chỉ áp dụng cho các kiểu chữ tĩnh đã nhận diện; chưa chứng minh hiển thị trong game."
-            : "Chưa xác minh được font của game. Cài patch chưa bảo đảm chữ Việt hiển thị đúng.");
+            : "Chưa xác minh được font của game. Cài bản Việt hóa chưa bảo đảm chữ Việt hiển thị đúng.");
         var stack = new StackPanel();
         stack.Children.Add(new TextBlock { Text = UiText.TranslateDynamic(UiText.Msg("Số file sẽ cài: {0}. Bản gốc được sao lưu.", manifest.Files.Count)), Margin = new Thickness(0,12,0,8), TextWrapping = TextWrapping.Wrap });
         stack.Children.Add(new TextBlock { Text = _fontState, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,0,0,12) });
         var fontLines = AssetInventoryPresentation.FromPatch(manifest.FontPreflight);
         if (fontLines.Count > 0)
         {
-            var shown = fontLines.Count <= FontLineCap ? fontLines : fontLines.Take(FontLineCap - 1).Append(UiText.Format("… và {0} dòng nữa; xem font_preflight.json trong thư mục patch.", fontLines.Count - (FontLineCap - 1))).ToList();
+            var shown = fontLines.Count <= FontLineCap ? fontLines : fontLines.Take(FontLineCap - 1).Append(UiText.Format("… và {0} dòng nữa; xem font_preflight.json trong thư mục bản Việt hóa.", fontLines.Count - (FontLineCap - 1))).ToList();
             var fonts = new TextBlock { Text = string.Join("\n", shown), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,0,0,12), FontSize = 12 };
             fonts.SetResourceReference(TextBlock.ForegroundProperty, "MutedBrush");
             System.Windows.Automation.AutomationProperties.SetName(fonts, UiText.Translate("Trạng thái font trong game"));
@@ -56,7 +56,7 @@ internal sealed class PatchInstallDialog
         _window = new AppDialogWindow(Application.Current.MainWindow, "Cài trong VNText", stack, width: 720);
         _clean = _window.AddButton("Về bản gốc sạch", () => _ = Run(Operation.CleanOriginal), closeOnClick: false);
         _restore = _window.AddButton("Gỡ và hoàn nguyên", () => _ = Run(Operation.Restore), closeOnClick: false);
-        _install = _window.AddButton("Cài patch", () => _ = Run(Operation.Install), primary: true, closeOnClick: false);
+        _install = _window.AddButton("Cài bản Việt hóa", () => _ = Run(Operation.Install), primary: true, closeOnClick: false);
         _browse.Click += (_, _) => { var picker = new Microsoft.Win32.OpenFolderDialog { Title = UiText.Translate("Chọn thư mục game") }; if (picker.ShowDialog(_window) == true) _target.Text = picker.FolderName; Refresh(); };
         _window.Closing += (_, e) => e.Cancel = _busy;
         Refresh();
@@ -73,10 +73,10 @@ internal sealed class PatchInstallDialog
                 // Describing ownership now would read the half-written files as if they were the game's: say what happened and that the next action recovers first.
                 _service.ValidateGame(_target.Text);
                 _install.IsEnabled = _revisionValid(); _restore.IsEnabled = false; _clean.IsEnabled = _revisionValid();
-                _status.Text = UiText.Translate("Lần cài patch VNText trước vào game này bị ngắt giữa chừng. Khi bạn bấm Cài patch hoặc Về bản gốc sạch, VNText sẽ đưa game về đúng trạng thái trước lần cài đó (kiểm hash từng tệp) rồi mới làm tiếp.");
+                _status.Text = UiText.Translate("Lần cài bản Việt hóa VNText trước vào game này bị ngắt giữa chừng. Khi bạn bấm Cài bản Việt hóa hoặc Về bản gốc sạch, VNText sẽ đưa game về đúng trạng thái trước lần cài đó (kiểm hash từng tệp) rồi mới làm tiếp.");
                 return;
             }
-            if (File.Exists(_service.StatePath)) { _service.ValidateInstalledState(_target.Text); _install.IsEnabled = false; _restore.IsEnabled = _clean.IsEnabled = true; _status.Text = UiText.Translate("Patch đã cài. Có thể gỡ (về trạng thái trước lần cài này) hoặc về bản gốc sạch."); }
+            if (File.Exists(_service.StatePath)) { _service.ValidateInstalledState(_target.Text); _install.IsEnabled = false; _restore.IsEnabled = _clean.IsEnabled = true; _status.Text = UiText.Translate("Bản Việt hóa đã cài. Có thể gỡ (về trạng thái trước lần cài này) hoặc về bản gốc sạch."); }
             else
             {
                 _service.ValidateGame(_target.Text); _install.IsEnabled = _revisionValid(); _restore.IsEnabled = false;
@@ -91,12 +91,12 @@ internal sealed class PatchInstallDialog
 
     private async Task Run(Operation operation)
     {
-        if (_busy || !_revisionValid()) { _status.Text = UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."); return; }
+        if (_busy || !_revisionValid()) { _status.Text = UiText.Translate("Bản dịch hoặc bản Việt hóa đã thay đổi. Hãy tạo lại bản Việt hóa."); return; }
         var question = operation switch
         {
-            Operation.Restore => "Gỡ patch và hoàn nguyên các file mà lần cài này đã thay?",
-            Operation.CleanOriginal => "Đưa game về bản gốc đầu tiên được ghi nhận trước mọi patch VNText (gỡ cả các lớp patch cũ hơn)? File có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.",
-            _ => "Cài patch vào thư mục game này? Bản gốc sẽ được sao lưu.",
+            Operation.Restore => "Gỡ bản Việt hóa và hoàn nguyên các file mà lần cài này đã thay?",
+            Operation.CleanOriginal => "Đưa game về bản gốc đầu tiên được ghi nhận trước mọi bản Việt hóa VNText (gỡ cả các lớp bản Việt hóa cũ hơn)? File có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.",
+            _ => "Cài bản Việt hóa vào thư mục game này? Bản gốc sẽ được sao lưu.",
         };
         var ownership = "";
         try { if (operation == Operation.Install) ownership = string.Join("\n", _service.DescribeOwnership(_target.Text)); } catch (Exception) { /* the install itself re-validates and reports */ }
@@ -110,14 +110,14 @@ internal sealed class PatchInstallDialog
         {
             using var manifestLease = new FileStream(_service.ManifestPath, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (!_revisionValid() || Convert.ToHexString(SHA256.HashData(manifestLease)) != _manifestHash)
-                throw new InvalidDataException(UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."));
+                throw new InvalidDataException(UiText.Translate("Bản dịch hoặc bản Việt hóa đã thay đổi. Hãy tạo lại bản Việt hóa."));
             List<string> notes = new();
             await Task.Run(() =>
             {
                 if (operation == Operation.Install) notes = _service.Install(game, Progress).Notes ?? new List<string>();
                 else notes = _service.Uninstall(game, Progress, operation == Operation.CleanOriginal ? UninstallMode.CleanOriginal : UninstallMode.Previous).Notes;
             });
-            _status.Text = UiText.Translate(operation switch { Operation.Restore => "Đã hoàn nguyên.", Operation.CleanOriginal => "Đã về bản gốc đầu tiên trước mọi patch VNText.", _ => "Đã cài patch và kiểm tra file." })
+            _status.Text = UiText.Translate(operation switch { Operation.Restore => "Đã hoàn nguyên.", Operation.CleanOriginal => "Đã về bản gốc đầu tiên trước mọi bản Việt hóa VNText.", _ => "Đã cài bản Việt hóa và kiểm tra file." })
                 + (notes.Count == 0 ? "" : "\n" + string.Join("\n", notes));
         }
         catch (Exception ex) { _status.Text = ex.Message; }

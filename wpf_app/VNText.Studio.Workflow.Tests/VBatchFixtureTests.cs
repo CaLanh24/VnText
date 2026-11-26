@@ -34,11 +34,11 @@ internal static partial class Program
                 try
                 {
                     // ---------------- V4: severity comes from the producer / structured result ----------------
-                    AssertEqual("INFO", AppJournalStore.Level("Kiểm tra CSV: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi"));      // a valid result that merely says "no error"
+                    AssertEqual("INFO", AppJournalStore.Level("Kiểm tra bản dịch: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi"));      // a valid result that merely says "no error"
                     AssertEqual("INFO", AppJournalStore.Level("Câu nguồn: The error in the sentence"));
                     AssertEqual("INFO", AppJournalStore.Level("Dịch xong 7 dòng, không có lỗi."));
                     AssertEqual("INFO", AppJournalStore.Level("Đã xóa bản dịch 4 dòng lỗi."));
-                    AssertEqual("ERROR", AppJournalStore.Level("Lỗi: không ghi được CSV"));                                   // genuine failures keep their level
+                    AssertEqual("ERROR", AppJournalStore.Level("Lỗi: không ghi được bản dịch"));                                   // genuine failures keep their level
                     AssertEqual("ERROR", AppJournalStore.Level("[error] worker exited"));
                     AssertEqual("ERROR", AppJournalStore.Level("Không đọc được trạng thái"));
                     AssertEqual("WARN", AppJournalStore.Level("Cảnh báo: 1 dòng cần xem lại"));
@@ -68,16 +68,16 @@ internal static partial class Program
                     AssertEqual("WARN", LogSeverityConverter.Severity("[12:34:56] [task fixture] [stderr] actual diagnostic"));
                     AssertEqual("ERROR", LogSeverityConverter.Severity("[12:34:56] Unity analyzer: NOT_DETECTED; scan_errors=2"));
                     // the page classifier agrees on the same wording (one anchored rule set)
-                    foreach (var line in new[] { "Kiểm tra CSV: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi", "Câu nguồn: The error in the sentence", "Lỗi: không ghi được CSV", "Cảnh báo: 1 dòng cần xem lại" })
+                    foreach (var line in new[] { "Kiểm tra bản dịch: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi", "Câu nguồn: The error in the sentence", "Lỗi: không ghi được bản dịch", "Cảnh báo: 1 dòng cần xem lại" })
                         AssertEqual(AppJournalStore.Level(line), LogSeverityConverter.Severity(line) == "SUCCESS" ? "INFO" : LogSeverityConverter.Severity(line));
                     // explicit producer levels reach BOTH the page and the saved journal, whatever the words say
                     using (var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false))
                     {
                         var tag = " [vb-" + Guid.NewGuid().ToString("N") + "]";      // the saved journal is shared across runs: find only THIS run's lines
                         vm.TestAppendLog("[csv-timing] validate_worker=3ms bind=1ms — 7 hợp lệ, không phát hiện lỗi" + tag + "c", "DEBUG");
-                        vm.TestAppendLog("Kiểm tra CSV: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi" + tag + "i", "INFO");
-                        vm.TestAppendLog("Kiểm tra CSV: 5 hợp lệ · 2 bị chặn" + tag + "w", "WARN");
-                        vm.TestAppendLog("Kiểm tra thất bại: CSV hỏng" + tag + "e", "ERROR");
+                        vm.TestAppendLog("Kiểm tra bản dịch: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi" + tag + "i", "INFO");
+                        vm.TestAppendLog("Kiểm tra bản dịch: 5 hợp lệ · 2 bị chặn" + tag + "w", "WARN");
+                        vm.TestAppendLog("Kiểm tra thất bại: bản dịch hỏng" + tag + "e", "ERROR");
                         vm.TestAppendLog("Câu nguồn chứa error và lỗi nhưng chỉ là nội dung" + tag + "u");                                // unmarked: no inference from the middle of a sentence
                         var shown = vm.LogLines.TakeLast(5).Select(LogSeverityConverter.Severity).ToArray();
                         AssertEqual("DEBUG,INFO,WARN,ERROR,INFO", string.Join(",", shown));

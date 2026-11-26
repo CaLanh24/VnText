@@ -28,7 +28,7 @@ public sealed class WpfPathPickerService : IPathPickerService
     {
         var fileDlg = new OpenFileDialog
         {
-            Title = UiText.Translate("Chọn file asset / bundle"),
+            Title = UiText.Translate("Chọn tệp dữ liệu của game"),
             CheckFileExists = true,
         };
         return fileDlg.ShowDialog() == true ? fileDlg.FileName : null;
@@ -38,7 +38,7 @@ public sealed class WpfPathPickerService : IPathPickerService
     {
         var dlg = new OpenFolderDialog
         {
-            Title = UiText.Translate("Chọn thư mục xuất gói dịch"),
+            Title = UiText.Translate("Chọn nơi lưu bản dịch gói dịch"),
             Multiselect = false,
         };
         return dlg.ShowDialog() == true ? dlg.FolderName : null;
@@ -58,7 +58,7 @@ public sealed class WpfPathPickerService : IPathPickerService
 
     /// <summary>Title and filter of the CSV picker in the current language (catalog keys; the file pattern itself is not text).</summary>
     internal static (string Title, string Filter) TranslationCsvDialogSpec(string? title) =>
-        (UiText.Translate(string.IsNullOrWhiteSpace(title) ? "Chọn tệp CSV" : title), "CSV (*.csv)|*.csv|" + UiText.Translate("Tất cả") + " (*.*)|*.*");
+        (UiText.Translate(string.IsNullOrWhiteSpace(title) ? "Chọn tệp bản dịch" : title), "CSV (*.csv)|*.csv|" + UiText.Translate("Tất cả") + " (*.*)|*.*");
 
     /// <summary>Title and filter of the Cloud Repair package save dialog in the current language.</summary>
     internal static (string Title, string Filter) CloudRepairSaveDialogSpec() =>

@@ -12,7 +12,7 @@ public sealed partial class MainViewModel
 {
     internal static readonly JsonSerializerOptions ImageJson = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, WriteIndented = true };
     private ImageTextDocument? _imageDocument;
-    internal const string DefaultImageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo patch.";
+    internal const string DefaultImageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo bản Việt hóa.";
     private string _imagePath = "", _imageStatus = DefaultImageStatus, _imageTaskRoot = "";
     private string _renderedImage = "", _imagePackage = "", _renderGameRoot = "";
     private JsonElement _renderedDocument;
@@ -157,10 +157,10 @@ public sealed partial class MainViewModel
         "image_delivery" => "tạo gói ảnh",
         "image_apply" => "cài gói vào game",
         "image_rollback" => "phục hồi giao dịch ảnh",
-        "translate" => "dịch text trong CSV",
+        "translate" => "dịch text trong bản dịch",
         "extract" => "lấy text",
         "analyze" => "phân tích game",
-        "patch" => "tạo patch",
+        "patch" => "tạo bản Việt hóa",
         null or "" => "tác vụ",
         _ => task,
     };
@@ -175,7 +175,7 @@ public sealed partial class MainViewModel
     private void StartBackgroundImageScan()
     {
         if (Busy || !Directory.Exists(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
-        AppendLog("CSV text đã sẵn sàng. Bắt đầu quét ảnh có chữ như một tác vụ riêng (hủy được, không ảnh hưởng CSV).");
+        AppendLog("Bản dịch text đã sẵn sàng. Bắt đầu quét ảnh có chữ như một tác vụ riêng (hủy được, không ảnh hưởng bản dịch).");
         BeginTask("image_batch", new { src = InputPath, @out = WorkflowStatus.ResolvePackageDir(OutputPath), after_extract = true }, "Đang quét ảnh có chữ (nền)…");
     }
 
@@ -198,8 +198,8 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(OutputPath))
         {
             ImageResults.Clear(); RaiseImageViewState();
-            SetImageSummary(static () => "Chưa chọn thư mục xuất.");
-            SetImagePage(ImagePageKind.NoOutput, static () => "Chưa chọn thư mục xuất.", static () => "Chọn thư mục xuất ở bước Lấy text; báo cáo ảnh nằm trong gói xuất.");
+            SetImageSummary(static () => "Chưa chọn nơi lưu bản dịch.");
+            SetImagePage(ImagePageKind.NoOutput, static () => "Chưa chọn nơi lưu bản dịch.", static () => "Chọn nơi lưu bản dịch ở bước Lấy text; báo cáo ảnh nằm trong gói xuất.");
             return;
         }
         var packageDir = WorkflowStatus.ResolvePackageDir(OutputPath);
@@ -234,7 +234,7 @@ public sealed partial class MainViewModel
         var resultsSummary = $"{images.Total:N0} ảnh có chữ · {images.TranslatedDrafts:N0} bản dịch nháp · {images.Total - images.TranslatedDrafts:N0} cần dịch / xem lại.\nKết quả: {Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "images")}\nBấm Dịch ở tab Dịch để dịch cả text và ảnh. Chọn một ảnh bên dưới để xem hoặc sửa.";
         SetImageSummary(() => resultsSummary);
     }
-    private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException(UiText.Msg("Chọn thư mục xuất trước.")) : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
+    private string NewImageRoot() => string.IsNullOrWhiteSpace(OutputPath) ? throw new InvalidOperationException(UiText.Msg("Chọn nơi lưu bản dịch trước.")) : Path.Combine(OutputPath, "image-review-" + Guid.NewGuid().ToString("N"));
     private void RefreshImageCommands()
     {
         Raise(nameof(ImageGridEnabled));
@@ -298,7 +298,7 @@ public sealed partial class MainViewModel
             // Old render/package files are kept as history; only their use is revoked.
             _renderedImage = ""; _imagePackage = ""; _renderedDocument = default;
             if (_imageSourcePreview is not null) ImagePreview = _imageSourcePreview;
-            ImageStatus = "Review đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các file đã dựng trước đó vẫn được giữ trong thư mục xuất.";
+            ImageStatus = "Review đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các file đã dựng trước đó vẫn được giữ trong nơi lưu bản dịch.";
         }
         RefreshImageCommands();
     }
@@ -358,7 +358,7 @@ public sealed partial class MainViewModel
     }
     private void StartImageTask(string task, string source)
     {
-        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
+        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn nơi lưu bản dịch trước."; return; }
         _imageTaskRoot = NewImageRoot();
         if (task == "image_extract") PrepareImageExtractState();
         MarkImageTaskIdentity();
@@ -477,7 +477,7 @@ public sealed partial class MainViewModel
     private void RenderReviewedImage()
     {
         if (RefuseDraftImageAction("dựng ảnh từ bản dịch đã duyệt")) return;
-        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn thư mục xuất trước."; return; }
+        if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn nơi lưu bản dịch trước."; return; }
         if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved, r.CloneBackgroundApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
         { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."; return; }
         _imageTaskRoot = NewImageRoot();
@@ -494,14 +494,14 @@ public sealed partial class MainViewModel
             // Cancellation is its own state: nothing returned by the cancelled task is applied to this screen, the review and the
             // chosen source are kept, and ordinary failures below still read as errors.  No rollback is promised: files a
             // task already wrote safely (for example earlier image_batch drafts) may remain in the output folder.
-            ImageStatus = UiText.Msg("Đã hủy {0}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong thư mục xuất.", UiText.Key(ImageTaskLabel(task)));
+            ImageStatus = UiText.Msg("Đã hủy {0}. Ảnh gốc được giữ nguyên; kết quả hủy không được áp dụng vào màn hình này, nhưng phần đã ghi an toàn (nếu có) có thể còn trong nơi lưu bản dịch.", UiText.Key(ImageTaskLabel(task)));
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
         }
         if (evt.Ok && task is "image_render" or "image_delivery"
             && _imageTaskReviewVersion is int startedAt && startedAt != _imageReviewVersion)
         {
-            ImageStatus = "Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong thư mục xuất), hãy dựng lại cho review hiện tại.";
+            ImageStatus = "Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong nơi lưu bản dịch), hãy dựng lại cho review hiện tại.";
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
         }

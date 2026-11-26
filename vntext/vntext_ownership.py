@@ -23,8 +23,8 @@ def _sha256(path: Path) -> str:
 
 
 PENDING = Path(".vntext") / "pending_install.json"
-PENDING_MESSAGE = ("Lần cài patch VNText trước vào game này bị ngắt giữa chừng (.vntext/pending_install.json): các tệp đang ở trạng thái cài dở nên không thể "
-                   "đọc như tệp của game. Mở 'Cài trong VNText' (hoặc chạy lại trình cài patch) để VNText phục hồi game trước, rồi lấy text/tạo patch lại.")
+PENDING_MESSAGE = ("Lần cài bản Việt hóa VNText trước vào game này bị ngắt giữa chừng (.vntext/pending_install.json): các tệp đang ở trạng thái cài dở nên không thể "
+                   "đọc như tệp của game. Mở 'Cài trong VNText' (hoặc chạy lại trình cài bản Việt hóa) để VNText phục hồi game trước, rồi lấy text/tạo bản Việt hóa lại.")
 
 
 class PendingInstallError(RuntimeError):

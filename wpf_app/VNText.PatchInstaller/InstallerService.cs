@@ -79,7 +79,7 @@ public sealed partial class InstallerService
         if (!File.Exists(ManifestPath)) throw new InvalidOperationException("Thiếu patch_manifest.json.");
         var manifest = JsonSerializer.Deserialize<PatchManifest>(File.ReadAllText(ManifestPath), JsonOptions);
         if (manifest is null || manifest.Files is null || manifest.Files.Count == 0)
-            throw new InvalidOperationException("patch_manifest.json không hợp lệ hoặc không có file patch.");
+            throw new InvalidOperationException("patch_manifest.json không hợp lệ hoặc không có file bản Việt hóa.");
         return manifest;
     }
 
@@ -89,7 +89,7 @@ public sealed partial class InstallerService
         var manifest = LoadManifest();
         if (manifest.FontPreflight is { } font && font.TryGetProperty("glyph_status", out var glyph)
             && glyph.GetString() == "MISSING")
-            throw new InvalidOperationException("Font thiếu ký tự bản dịch; hãy chọn font phù hợp và tạo lại patch.");
+            throw new InvalidOperationException("Font thiếu ký tự bản dịch; hãy chọn font phù hợp và tạo lại bản Việt hóa.");
         if (!Directory.Exists(root)) throw new InvalidOperationException("Thư mục game không tồn tại.");
         if (manifest.Engine == "renpy")
         {
@@ -114,7 +114,7 @@ public sealed partial class InstallerService
         if (!File.Exists(dataPath)) throw new InvalidOperationException("Sai game/data: không tìm thấy resource data theo manifest hoặc *_Data.");
         if (!string.IsNullOrWhiteSpace(manifest.GameDataSha256) &&
             !string.Equals(HashFile(dataPath), manifest.GameDataSha256, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Sai game/data: resource data không khớp bản game đã dùng để tạo patch.");
+            throw new InvalidOperationException("Sai game/data: resource data không khớp bản game đã dùng để tạo bản Việt hóa.");
         // Unity patches that depend on exact player assemblies (TMP runtime adapter) bind them here, as Ren'Py binds its source files.
         foreach (var check in manifest.GameChecks ?? new List<GameCheck>())
             if (!File.Exists(ResolveSafe(root, check.Path)) || !string.Equals(HashFile(ResolveSafe(root, check.Path)), check.Sha256, StringComparison.OrdinalIgnoreCase))
@@ -122,7 +122,7 @@ public sealed partial class InstallerService
         foreach (var file in manifest.Files)
         {
             var payload = ResolveSafe(PayloadDirectory, file.Path);
-            if (!File.Exists(payload)) throw new InvalidOperationException($"Patch thiếu payload: {file.Path}");
+            if (!File.Exists(payload)) throw new InvalidOperationException($"Bản Việt hóa thiếu payload: {file.Path}");
             if (!string.Equals(HashFile(payload), file.SourceSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Payload bị thay đổi hoặc hỏng: {file.Path}");
         }
@@ -140,8 +140,8 @@ public sealed partial class InstallerService
 
     /// <summary>Why this patch does not fit the game now.  A patch built while another VNText patch was installed fits only that state: say so and how to continue.</summary>
     private static string GameCheckMismatch(string path) => LooksLikeVnTextPath(path)
-        ? $"Sai bản game hoặc file nguồn đã thay đổi: {path}. Patch này được tạo khi game đang cài một patch VNText khác, nhưng game hiện không còn ở trạng thái đó "
-          + "(đã gỡ, đã về bản gốc sạch hoặc đã cài patch khác). Hãy bấm 'Tạo patch' lại từ game hiện tại rồi cài. Game chưa bị thay đổi."
+        ? $"Sai bản game hoặc file nguồn đã thay đổi: {path}. Bản Việt hóa này được tạo khi game đang cài một bản Việt hóa VNText khác, nhưng game hiện không còn ở trạng thái đó "
+          + "(đã gỡ, đã về bản gốc sạch hoặc đã cài bản Việt hóa khác). Hãy bấm 'Tạo bản Việt hóa' lại từ game hiện tại rồi cài. Game chưa bị thay đổi."
         : $"Sai bản game hoặc file nguồn đã thay đổi: {path}";
 
     public InstallState Install(string gameRoot, Action<string>? progress = null)
@@ -150,7 +150,7 @@ public sealed partial class InstallerService
         var recovered = JoinNotes(RecoverPendingInstall(gameRoot), RecoverInterruptedInstall());
         var root = ValidateGame(gameRoot);
         if (File.Exists(StatePath) && FinishCutUninstall() is { } finished) recovered = recovered is null ? finished : recovered + " " + finished;
-        if (File.Exists(StatePath)) throw new InvalidOperationException("Patch này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
+        if (File.Exists(StatePath)) throw new InvalidOperationException("Bản Việt hóa này đã được cài. Hãy Gỡ cài đặt trước khi cài lại.");
         var manifest = LoadManifest();
         if (Directory.Exists(BackupDirectory) && !RemoveStaleBackups(root))
             throw new InvalidOperationException("Thư mục backup đã tồn tại; giữ nguyên để phục hồi giao dịch trước.");
@@ -168,13 +168,13 @@ public sealed partial class InstallerService
             var target = ResolveSafe(root, file.Path);
             var owner = NewerOwner(receipt, file.Path, patchId);
             if (owner is null && receipt.Paths.TryGetValue(file.Path, out var same) && same.Layers.Count > 0)
-                throw new InvalidOperationException("Patch này đã được ghi nhận là đang cài ở game này.");
+                throw new InvalidOperationException("Bản Việt hóa này đã được ghi nhận là đang cài ở game này.");
             if (owner is null) continue;
             if (!File.Exists(target) || !string.Equals(HashFile(target), owner.InstalledSha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"{file.Path}: tệp do patch VNText {owner.Version} quản lý đã bị sửa ngoài VNText; không cài chồng. Gỡ hoặc khôi phục game trước.");
+                throw new InvalidOperationException($"{file.Path}: tệp do bản Việt hóa VNText {owner.Version} quản lý đã bị sửa ngoài VNText; không cài chồng. Gỡ hoặc khôi phục game trước.");
             if (!string.Equals(HashFile(target), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException($"{file.Path}: đang cài patch VNText {owner.Version} nhưng patch này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ patch hiện tại rồi cài lại, hoặc tạo patch mới từ game đang cài.");
-            notes.Add($"{file.Path}: nâng cấp từ patch VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
+                throw new InvalidOperationException($"{file.Path}: đang cài bản Việt hóa VNText {owner.Version} nhưng bản Việt hóa này được tạo từ trạng thái khác (không nâng cấp chứng minh được). Gỡ bản Việt hóa hiện tại rồi cài lại, hoặc tạo bản Việt hóa mới từ game đang cài.");
+            notes.Add($"{file.Path}: nâng cấp từ bản Việt hóa VNText {owner.Version}; bản gốc đầu tiên được giữ trong biên nhận.");
         }
         // The game itself records that an install is in flight (and which patch folder holds its journal) BEFORE the journal and any game write:
         // whichever VNText patch touches this game next - even one built later from a different package - recovers it first.
@@ -294,8 +294,8 @@ public sealed partial class InstallerService
 
     private void WriteJournal(InstallJournal journal) => WriteJsonAtomic(JournalPath, new JournalEnvelope(journal, JournalDigest(journal)));
 
-    private const string JournalUnreadable = "Nhật ký giao dịch cài đặt (install_journal.json trong thư mục patch) bị hỏng, cụt hoặc không thuộc patch này; VNText KHÔNG ghi hay xóa tệp game nào. "
-        + "Giữ nguyên thư mục patch và game, bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển. Chi tiết: ";
+    private const string JournalUnreadable = "Nhật ký giao dịch cài đặt (install_journal.json trong thư mục bản Việt hóa) bị hỏng, cụt hoặc không thuộc bản Việt hóa này; VNText KHÔNG ghi hay xóa tệp game nào. "
+        + "Giữ nguyên thư mục bản Việt hóa và game, bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển. Chi tiết: ";
 
     /// <summary>Reads the journal and proves it whole (checksum) and this patch's; anything else refuses before any game write.</summary>
     private InstallJournal ReadJournal()
@@ -313,7 +313,7 @@ public sealed partial class InstallerService
             }
             else journal = JsonSerializer.Deserialize<InstallJournal>(bytes, JsonOptions);     // 0.1.32 journal (no checksum): accepted only if every field validates below
             if (journal is null || string.IsNullOrWhiteSpace(journal.GameRoot) || journal.Files is not { Count: > 0 }) throw new InvalidDataException("thiếu trường bắt buộc");
-            if (!string.Equals(journal.PatchId, PatchId(), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("nhật ký của patch khác");
+            if (!string.Equals(journal.PatchId, PatchId(), StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("nhật ký của bản Việt hóa khác");
             var root = NormalizeGameRoot(journal.GameRoot);
             foreach (var file in journal.Files)
             {
@@ -457,15 +457,15 @@ public sealed partial class InstallerService
                 + "Bấm 'Tạo gói báo lỗi' để gửi cho nhà phát triển.");
         var owner = new InstallerService(pending.PatchDirectory);
         if (!Directory.Exists(owner.PatchDirectory) || !File.Exists(owner.ManifestPath))
-            throw new InvalidOperationException($"Lần cài patch VNText trước vào game này bị ngắt giữa chừng, nhưng thư mục patch giữ nhật ký và bản sao lưu ({owner.PatchDirectory}) không còn; "
-                + "VNText KHÔNG ghi hay xóa tệp game nào vì không chứng minh được bản trước khi cài. Hãy trả lại thư mục đó (hoặc chạy lại đúng trình cài patch đó), hoặc bấm 'Tạo gói báo lỗi'.");
+            throw new InvalidOperationException($"Lần cài bản Việt hóa VNText trước vào game này bị ngắt giữa chừng, nhưng thư mục bản Việt hóa giữ nhật ký và bản sao lưu ({owner.PatchDirectory}) không còn; "
+                + "VNText KHÔNG ghi hay xóa tệp game nào vì không chứng minh được bản trước khi cài. Hãy trả lại thư mục đó (hoặc chạy lại đúng trình cài bản Việt hóa đó), hoặc bấm 'Tạo gói báo lỗi'.");
         if (!File.Exists(owner.JournalPath))
         {
             ClearPending(root);
             return null;
         }
         if (!string.Equals(owner.PatchId(), pending.PatchId, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException(JournalUnreadable + "dấu cài dở trong game không khớp patch giữ nhật ký");
+            throw new InvalidOperationException(JournalUnreadable + "dấu cài dở trong game không khớp bản Việt hóa giữ nhật ký");
         var note = owner.RecoverInterruptedInstall();
         if (File.Exists(marker) && !File.Exists(owner.JournalPath)) ClearPending(root);
         return note;
@@ -571,7 +571,7 @@ public sealed partial class InstallerService
         var receipt = LoadReceipt(root);
         foreach (var entry in state.Files.Where(f => f.OriginalExists))
             if (receipt.Paths.TryGetValue(entry.Path, out var owned) && owned.Layers.Count == 1 && owned.Provenance == "legacy_vntext_unreceipted")
-                notes.Add($"{entry.Path}: đã khôi phục bản Việt hóa VNText cũ không có biên nhận (không phải game gốc sạch); gỡ tiếp patch cũ nếu cần.");
+                notes.Add($"{entry.Path}: đã khôi phục bản Việt hóa VNText cũ không có biên nhận (không phải game gốc sạch); gỡ tiếp bản Việt hóa cũ nếu cần.");
             else if (owned is not null && owned.Layers.Count == 1 && owned.Provenance == "unmanaged_existing")
                 notes.Add($"{entry.Path}: đã khôi phục tệp có sẵn không do VNText quản lý.");
         foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
@@ -615,12 +615,12 @@ public sealed partial class InstallerService
         var stillOwned = state.Files.Count(f => after.Paths.TryGetValue(f.Path, out var left) && left.Layers.Count > 0);
         var legacyRestored = notes.Any(n => n.Contains("không có biên nhận"));
         notes.Add(stillOwned > 0
-            ? $"Đã khôi phục bản VNText TRƯỚC ĐÓ cho {stillOwned} tệp (hash đã khớp); game vẫn là bản Việt hóa của patch trước, không phải game gốc sạch. Bấm «Về bản gốc sạch» để về game gốc (chứng minh bằng biên nhận)."
+            ? $"Đã khôi phục bản VNText TRƯỚC ĐÓ cho {stillOwned} tệp (hash đã khớp); game vẫn là bản Việt hóa của bản Việt hóa trước, không phải game gốc sạch. Bấm «Về bản gốc sạch» để về game gốc (chứng minh bằng biên nhận)."
             : legacyRestored
                 ? "Đã khôi phục tệp về bản Việt hóa VNText cũ không có biên nhận (hash đã khớp); đây KHÔNG phải game gốc sạch."
                 : state.Files.Any(f => f.OriginalExists)
-                    ? "Đã khôi phục các tệp về trạng thái trước khi cài patch này (hash đã khớp)."
-                    : "Đã gỡ các tệp của patch này; trước đó chúng không tồn tại (hash đã kiểm).");
+                    ? "Đã khôi phục các tệp về trạng thái trước khi cài bản Việt hóa này (hash đã khớp)."
+                    : "Đã gỡ các tệp của bản Việt hóa này; trước đó chúng không tồn tại (hash đã kiểm).");
         var leftovers = FindUnverifiedLeftovers(root, state.Files.Select(f => f.Path).Concat((state.CompiledCaches ?? new List<CompiledCache>()).Select(c => c.Path)));
         if (leftovers.Count > 0) notes.Add(LeftoverNote(leftovers));
         return new UninstallResult(notes);
@@ -654,14 +654,14 @@ public sealed partial class InstallerService
     {
         var root = ValidateGameIdentity(gameRoot);
         if (!File.Exists(StatePath))
-            throw new InvalidOperationException("Không tìm thấy install_state.json của patch này.");
+            throw new InvalidOperationException("Không tìm thấy install_state.json của bản Việt hóa này.");
 
         var state = JsonSerializer.Deserialize<InstallState>(File.ReadAllText(StatePath), JsonOptions)
             ?? throw new InvalidOperationException("install_state.json không hợp lệ.");
         if (state.Files is null || state.Files.Count == 0)
             throw new InvalidOperationException("install_state.json không có file đã cài.");
         if (!string.Equals(NormalizeGameRoot(state.GameRoot), root, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Bạn đang chọn khác thư mục game đã cài patch.");
+            throw new InvalidOperationException("Bạn đang chọn khác thư mục game đã cài bản Việt hóa.");
 
         var receipt = LoadReceipt(root);
         foreach (var file in state.Files)
@@ -685,10 +685,10 @@ public sealed partial class InstallerService
             if (!File.Exists(target) || !string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
             {
                 if (!string.IsNullOrEmpty(state.PatchId) && NewerOwner(receipt, file.Path, state.PatchId) is { } newer)
-                    throw new InvalidOperationException($"{file.Path}: patch VNText {newer.Version} mới hơn đang quản lý tệp này; gỡ patch đó trước (hoặc chọn Khôi phục bản gốc từ patch đó).");
+                    throw new InvalidOperationException($"{file.Path}: bản Việt hóa VNText {newer.Version} mới hơn đang quản lý tệp này; gỡ bản Việt hóa đó trước (hoặc chọn Khôi phục bản gốc từ bản Việt hóa đó).");
                 if (!string.IsNullOrEmpty(state.PatchId) && !(receipt.Paths.TryGetValue(file.Path, out var mine)
                     && mine.Layers.Any(layer => string.Equals(layer.PatchId, state.PatchId, StringComparison.OrdinalIgnoreCase))))
-                    throw new InvalidOperationException($"{file.Path}: patch này đã bị thay thế hoặc gỡ qua Khôi phục bản gốc; không còn gì để gỡ.");
+                    throw new InvalidOperationException($"{file.Path}: bản Việt hóa này đã bị thay thế hoặc gỡ qua Khôi phục bản gốc; không còn gì để gỡ.");
             }
             if (!File.Exists(target) || !string.Equals(HashFile(target), file.InstalledSha256, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"File đã bị thay đổi sau khi cài, không tự động khôi phục: {file.Path}");
@@ -698,14 +698,14 @@ public sealed partial class InstallerService
             {
                 var backup = ResolveSafe(BackupDirectory, file.BackupPath);
                 if (!File.Exists(backup) || !string.Equals(HashFile(backup), file.OriginalSha256, StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}. Game chưa bị thay đổi: các tệp patch vẫn ở nguyên vị trí và không có gì bị xóa.");
+                    throw new InvalidOperationException($"Backup thiếu hoặc đã thay đổi; không ghi vào game: {file.Path}. Game chưa bị thay đổi: các tệp bản Việt hóa vẫn ở nguyên vị trí và không có gì bị xóa.");
             }
         }
         foreach (var cache in state.CompiledCaches ?? new List<CompiledCache>())
         {
             if (!state.Files.Any(f => string.Equals(f.Path + "c", cache.Path, StringComparison.OrdinalIgnoreCase)
                 && f.Path.EndsWith(".rpy", StringComparison.OrdinalIgnoreCase)))
-                throw new InvalidOperationException("Cache không thuộc file patch đã cài.");
+                throw new InvalidOperationException("Cache không thuộc file bản Việt hóa đã cài.");
             var target = ResolveSafe(root, cache.Path);
             if (cache.OriginalExists)
             {
@@ -719,12 +719,12 @@ public sealed partial class InstallerService
             var header = new byte[10];
             var digest = new byte[16];
             if (stream.Length < 62 || stream.Read(header) != 10 || System.Text.Encoding.ASCII.GetString(header) != "RENPY RPC2")
-                throw new InvalidOperationException($"Cache đã thay đổi ngoài patch, không tự xóa: {cache.Path}");
+                throw new InvalidOperationException($"Cache đã thay đổi ngoài bản Việt hóa, không tự xóa: {cache.Path}");
             stream.Seek(-16, SeekOrigin.End);
             if (stream.Read(digest) != 16 || cache.SourceDigests is null
                 || !(cache.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase)
                 || (receipt.Paths.TryGetValue(cache.Path, out var known) && known.SourceDigests.Contains(Convert.ToHexString(digest), StringComparer.OrdinalIgnoreCase))))
-                throw new InvalidOperationException($"Cache không khớp nguồn patch, không tự xóa: {cache.Path}");
+                throw new InvalidOperationException($"Cache không khớp nguồn bản Việt hóa, không tự xóa: {cache.Path}");
         }
         return state;
     }

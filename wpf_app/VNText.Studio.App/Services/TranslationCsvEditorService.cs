@@ -141,20 +141,20 @@ public static class TranslationCsvEditorService
         using var reader = new StreamReader(stream, new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: true);
         using var records = CsvFieldReader.ReadRecords(reader).GetEnumerator();
         if (!records.MoveNext())
-            return new CsvEditorDocument(false, path, [], [], review, "CSV trống");
+            return new CsvEditorDocument(false, path, [], [], review, "Bản dịch trống");
 
         var fields = records.Current.ToList();
         if (fields.Any(f => string.IsNullOrWhiteSpace(f) || f != f.Trim())
             || fields.Distinct(StringComparer.OrdinalIgnoreCase).Count() != fields.Count
             || new[] { "key", "source_text", "translation" }.Any(f => !fields.Contains(f)))
-            throw new InvalidDataException("Header CSV thiếu cột bắt buộc, trùng hoặc không hợp lệ");
+            throw new InvalidDataException("Header bản dịch thiếu cột bắt buộc, trùng hoặc không hợp lệ");
 
         while (records.MoveNext())
             AppendCsvDataRow(rows, fields, records.Current);
 
         if (rows.Any(row => string.IsNullOrWhiteSpace(row["key"]))
             || rows.Select(row => row["key"]).Distinct(StringComparer.Ordinal).Count() != rows.Count)
-            throw new InvalidDataException("CSV có key trống hoặc trùng");
+            throw new InvalidDataException("Bản dịch có key trống hoặc trùng");
 
         IReadOnlyDictionary<string, (bool Eligible, string Reason, bool Technical)>? eligibility = null;
         try { eligibility = Eligibility(path, sourceSha256); }
@@ -170,7 +170,7 @@ public static class TranslationCsvEditorService
         if (parts.Count == 0)
             return;
         if (parts.Count != fields.Count)
-            throw new InvalidDataException("Dòng CSV có số cột không khớp header");
+            throw new InvalidDataException("Dòng bản dịch có số cột không khớp header");
         var row = new Dictionary<string, string>(fields.Count, StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < fields.Count; i++)
             row[fields[i]] = i < parts.Count ? parts[i] : "";
@@ -600,7 +600,7 @@ public static class TranslationCsvEditorService
         var root = doc.RootElement;
         if (!root.TryGetProperty("ok", out var okEl) || !okEl.GetBoolean())
         {
-            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Không đọc được CSV";
+            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Không đọc được bản dịch";
             return new CsvEditorDocument(false, path, [], [], new HashSet<string>(), err);
         }
         var fields = new List<string>();
@@ -690,7 +690,7 @@ public static class TranslationCsvEditorService
         var stderr = proc.StandardError.ReadToEnd();
         proc.WaitForExit(TimeSpan.FromMinutes(30));
         if (string.IsNullOrWhiteSpace(stdout))
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "CSV editor API không trả output" : stderr.Trim());
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Bản dịch editor API không trả output" : stderr.Trim());
         var jsonText = stdout.Trim();
         var start = jsonText.IndexOf('{');
         if (start > 0)

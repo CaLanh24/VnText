@@ -13,7 +13,7 @@ internal static class Program
         catch (Exception ex)
         {
             if (args.Length >= 2 && args[0].StartsWith("--", StringComparison.Ordinal)) { Console.Error.WriteLine(ex.Message); return 1; }     // scripted use never blocks on a dialog
-            MessageBox.Show(ex.Message, "Không mở được patch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(ex.Message, "Không mở được bản Việt hóa", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
         if (args.Length >= 2 && (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase) || args[0].Equals("--uninstall", StringComparison.OrdinalIgnoreCase)
@@ -25,7 +25,7 @@ internal static class Program
                 if (args[0].Equals("--status", StringComparison.OrdinalIgnoreCase))
                 {
                     var lines = service.DescribeOwnership(args[1]);
-                    Console.WriteLine(lines.Count == 0 ? "Không có tệp nào do VNText hoặc người dùng đang giữ ở các đường dẫn của patch này." : string.Join(Environment.NewLine, lines));
+                    Console.WriteLine(lines.Count == 0 ? "Không có tệp nào do VNText hoặc người dùng đang giữ ở các đường dẫn của bản Việt hóa này." : string.Join(Environment.NewLine, lines));
                 }
                 else if (args[0].Equals("--install", StringComparison.OrdinalIgnoreCase))
                 {

@@ -44,7 +44,7 @@ class PatchUpgradeTests(unittest.TestCase):
         self.assertEqual(0, done.returncode, done.stderr[-2000:])
         self.assertGreaterEqual(len(report["checks"]), 100)
 
-    @unittest.skipUnless((SDK / "renpy.exe").is_file(), "needs the local Ren'Py SDK")
+    @unittest.skipUnless((SDK / "renpy.exe").is_file(), "needs the local công cụ Ren’Py")
     def test_renpy_patch_b_built_from_the_installed_game_upgrades_a_in_one_step(self):
         from vntext.app_tasks import run_extract_task, run_patch_task
         import tests.unit.test_scan_layout_matrix as layouts

@@ -94,7 +94,7 @@ internal static class PatchOutputPickerProbe
         {
             ok,
             screenshots,
-            note = "Ảnh UI thật của tab Tạo patch ở 1440x920 và 1040x720; kiểm tra nút chọn game, chọn thư mục xuất và progress bar xanh lá.",
+            note = "Ảnh UI thật của tab Tạo bản Việt hóa ở 1440x920 và 1040x720; kiểm tra nút chọn game, chọn nơi lưu bản dịch và progress bar xanh lá.",
         };
         await File.WriteAllTextAsync(resultPath, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
         Log($"probe done ok={ok}");

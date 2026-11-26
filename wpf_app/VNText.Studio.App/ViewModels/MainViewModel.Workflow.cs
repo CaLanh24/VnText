@@ -84,11 +84,11 @@ public sealed partial class MainViewModel
             if (!_translationModelChecked)
                 return "Đang kiểm tra mô hình dịch…";
             if (_translationModelUnavailable)
-                return string.IsNullOrWhiteSpace(_modelStatus)
-                    ? "Không xác minh được runtime dịch; Dịch tự động đang bị khóa. Xem Cài đặt để biết chi tiết."
+                return PlainLanguage.IsEngineMissing(_modelStatus) || string.IsNullOrWhiteSpace(_modelStatus)
+                    ? PlainLanguage.EngineMissingText
                     : UiText.Msg("Dịch tự động đang bị khóa — {0}", UiText.Key(_modelStatus));
             if (_translatePackageChecking)
-                return "Đang kiểm tra translation.csv và manifest…";
+                return "Đang kiểm tra bản dịch…";
             if (!_translatePackageReady && _translatePackageMessage == CsvPackageValidator.NoDataRowsMessage)
             {
                 // Text-less container (for example OCR-only images): the CSV is legitimately empty.
@@ -102,7 +102,7 @@ public sealed partial class MainViewModel
             }
             if (!_translatePackageReady)
                 return string.IsNullOrWhiteSpace(_translatePackageMessage)
-                    ? "Chọn gói dịch có translation.csv và manifest.json hợp lệ."
+                    ? "Chọn bản dịch hợp lệ do VNText tạo ở bước Lấy text."
                     : _translatePackageMessage;
             var count = _translatePackageRowCount == 1 ? UiText.Key("1 dòng") : (object)UiText.Msg("{0} dòng", _translatePackageRowCount.ToString("N0"));
             var ready = UiText.Msg("Sẵn sàng dịch · {0} · đã có bản dịch {1}", count, _translatePackageTranslatedCount.ToString("N0"));
@@ -116,6 +116,7 @@ public sealed partial class MainViewModel
         _translationModelUnavailable = !ready;
         _modelStatus = ready ? "Mô hình dịch đã sẵn sàng." : message ?? "Chưa có mô hình dịch trên máy.";
         Raise(nameof(ModelStatus));
+        Raise(nameof(TranslationEngineMissing));
         Raise(nameof(TranslateReadinessText));
         Raise(nameof(TranslateWorkflowStatusText));
         RunTranslateCommand?.RaiseCanExecuteChanged();
@@ -162,7 +163,7 @@ public sealed partial class MainViewModel
         _translatePackageReady = false;
         _translatePackageChecking = true;
         _translatePackageImages = default;
-        _translatePackageMessage = "Đang kiểm tra translation.csv và manifest…";
+        _translatePackageMessage = "Đang kiểm tra bản dịch…";
         _translateReadinessPath = path;
         Raise(nameof(TranslateReadinessText));
         Raise(nameof(TranslateWorkflowStatusText));
@@ -224,7 +225,7 @@ public sealed partial class MainViewModel
             {
                 var (result, images) = task.Status == TaskStatus.RanToCompletion
                     ? task.Result
-                    : (new CsvValidationResult(false, "CSV chưa sẵn sàng", 0, 0, path, null), default(ImagePackageProbe.Summary));
+                    : (new CsvValidationResult(false, "Bản dịch chưa sẵn sàng", 0, 0, path, null), default(ImagePackageProbe.Summary));
                 if (!dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
                     dispatcher.BeginInvoke(() => Apply(result, images));
             }, TaskScheduler.Default);
@@ -277,24 +278,24 @@ public sealed partial class MainViewModel
                 HeroTitle = "Dịch tự động";
                 HeroIcon = "translate";
                 HeroHint = _hasTranslations
-                    ? "Có thể dịch tiếp hoặc chuyển sang Tạo patch."
-                    : "Dịch bằng mô hình local hoặc chọn CSV đã dịch.";
+                    ? "Có thể dịch tiếp hoặc chuyển sang Tạo bản Việt hóa."
+                    : "Dịch bằng mô hình local hoặc chọn bản dịch đã dịch.";
                 break;
             case WorkflowTabs.Patch:
-                HeroTitle = "Tạo patch";
+                HeroTitle = "Tạo bản Việt hóa";
                 HeroIcon = "patch";
                 HeroHint = PatchPreflightOk
                     ? UiText.Msg("Sẵn sàng đóng gói {0} dòng; {1} dòng bị chặn.", PatchEligibleCount, PatchBlockedCount)
                     : ReadyForPatch
-                        ? "Kiểm tra CSV để xem dòng hợp lệ / bị chặn trước khi patch."
-                        : "Chọn game và bản dịch để kiểm tra rồi đóng gói patch.";
+                        ? "Kiểm tra bản dịch để xem dòng hợp lệ / bị chặn trước khi tạo bản Việt hóa."
+                        : "Chọn game và bản dịch để kiểm tra rồi đóng gói bản Việt hóa.";
                 break;
             case WorkflowTabs.EditCsv:
-                HeroTitle = "Sửa CSV";
+                HeroTitle = "Sửa bản dịch";
                 HeroIcon = "copy";
                 HeroHint = CsvEditorDirty
-                    ? "Có thay đổi chưa lưu — bấm «Lưu CSV» trước khi patch."
-                    : "Chỉnh translation trực tiếp; Patch dùng file đã lưu.";
+                    ? "Có thay đổi chưa lưu — bấm «Lưu bản dịch» trước khi tạo bản Việt hóa."
+                    : "Chỉnh translation trực tiếp; bản Việt hóa dùng file đã lưu.";
                 break;
             case WorkflowTabs.Settings:
                 HeroTitle = "Cài đặt";
@@ -311,7 +312,7 @@ public sealed partial class MainViewModel
                 HeroIcon = "extract";
                 HeroHint = string.IsNullOrWhiteSpace(InputPath)
                     ? "Chọn game, rồi bấm Lấy text."
-                    : "Lấy text từ game đã chọn vào thư mục xuất.";
+                    : "Lấy text từ game đã chọn vào nơi lưu bản dịch.";
                 break;
         }
     }
@@ -360,7 +361,7 @@ public sealed partial class MainViewModel
             "cloud_export" => "Đang chạy: Tạo gói Cloud Repair…",
             "cloud_import" => "Đang chạy: Kiểm tra Cloud Repair…",
             "external_translation_import" => "Đang chạy: Đối chiếu bản dịch cũ…",
-            "patch" => "Đang chạy: Tạo patch…",
+            "patch" => "Đang chạy: Tạo bản Việt hóa…",
             _ => StepStatusLine,
         };
         TranslateButtonGreen = false;
@@ -376,15 +377,15 @@ public sealed partial class MainViewModel
         if (Busy) return;
         if (string.IsNullOrWhiteSpace(InputPath))
         {
-            AppendLog("Chọn game / asset trước khi extract.");
+            AppendLog("Chọn thư mục game trước khi lấy text.");
             StatusText = "Chưa chọn game";
             SelectedTab = WorkflowTabs.Extract;
             return;
         }
         if (string.IsNullOrWhiteSpace(OutputPath))
         {
-            AppendLog("Chọn thư mục xuất trước khi extract.");
-            StatusText = "Chưa chọn thư mục xuất";
+            AppendLog("Chọn nơi lưu bản dịch trước khi lấy text.");
+            StatusText = "Chưa chọn nơi lưu bản dịch";
             return;
         }
         if (DeferExtractUntilDetected()) return;
@@ -399,7 +400,7 @@ public sealed partial class MainViewModel
             separate_review = true,   // always on, whatever an older preference stored
             renpy_sdk_path = RenpySdkPath,
             renpy_sdk_action = RenpySdkRecovery.WorkerAction(RenpySdkAction),
-        }, RenpySdkAction == "download" ? "Đang tải Ren'Py SDK rồi lấy text…" : "Đang extract text…");
+        }, RenpySdkAction == "download" ? "Đang tải công cụ Ren’Py rồi lấy text…" : "Đang lấy text…");
     }
 
     private void RunRenpySdkAction(string action)
@@ -419,7 +420,7 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(csv))
         {
             AppendLog("Chọn thư mục gói dịch trước khi dịch.");
-            StatusText = "Chưa chọn thư mục xuất";
+            StatusText = "Chưa chọn nơi lưu bản dịch";
             return;
         }
         StatusText = "Đang kiểm tra gói dịch…";
@@ -438,7 +439,7 @@ public sealed partial class MainViewModel
         if (!validation.Ok && !imageOnly)
         {
             AppendLog($"Chưa thể dịch {csv}: {validation.Message}");
-            StatusText = "CSV chưa sẵn sàng";
+            StatusText = "Bản dịch chưa sẵn sàng";
             return;
         }
         TranslateButtonGreen = false;
@@ -498,7 +499,7 @@ public sealed partial class MainViewModel
     {
         if (string.IsNullOrWhiteSpace(CloudRepairPackagePath) || !File.Exists(CloudRepairPackagePath))
         {
-            const string message = "Hãy xuất gói dịch bên ngoài ở tab Dịch trước khi chọn CSV kết quả.";
+            const string message = "Hãy xuất gói dịch bên ngoài ở tab Dịch trước khi chọn bản dịch kết quả.";
             AppendLog(message);
             StatusText = "Chưa có gói Cloud Repair";
             ShowToast(message, "warning");
@@ -592,23 +593,23 @@ public sealed partial class MainViewModel
         SelectedTab = WorkflowTabs.Patch;
         if (string.IsNullOrWhiteSpace(InputPath))
         {
-            AppendLog("Chọn game / asset trước khi tạo patch.");
+            AppendLog("Chọn thư mục game trước khi tạo bản Việt hóa.");
             StatusText = "Chưa chọn game";
             return;
         }
         if (!EnsureNoInterruptedInstall(InputPath)) return;
         if (!ValidateTranslationCsv(silent: false))
         {
-            StatusText = "CSV chưa hợp lệ";
-            AppDialogService.Show(UiText.Msg("Chưa thể tạo patch: file bản dịch chưa hợp lệ. {0} Cách xử lý: mở «Sửa CSV», sửa các dòng báo lỗi rồi bấm Tạo patch lại.", CsvValidationMessage),
-                "Tạo patch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText = "Bản dịch chưa hợp lệ";
+            AppDialogService.Show(UiText.Msg("Chưa thể tạo bản Việt hóa: file bản dịch chưa hợp lệ. {0} Cách xử lý: mở «Sửa bản dịch», sửa các dòng báo lỗi rồi bấm Tạo bản Việt hóa lại.", CsvValidationMessage),
+                "Tạo bản Việt hóa", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!RunPatchPreflight(silent: false))
         {
-            StatusText = "Không có dòng hợp lệ để patch";
-            AppDialogService.Show(UiText.Msg("Chưa thể tạo patch: không có dòng nào đủ điều kiện. {0} Cách xử lý: dịch hoặc duyệt thêm dòng trong CSV rồi bấm Tạo patch lại.", PatchPreflightMessage),
-                "Tạo patch", MessageBoxButton.OK, MessageBoxImage.Warning);
+            StatusText = "Không có dòng hợp lệ để bản Việt hóa";
+            AppDialogService.Show(UiText.Msg("Chưa thể tạo bản Việt hóa: không có dòng nào đủ điều kiện. {0} Cách xử lý: dịch hoặc duyệt thêm dòng trong bản dịch rồi bấm Tạo bản Việt hóa lại.", PatchPreflightMessage),
+                "Tạo bản Việt hóa", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         while (PatchBlockedCount > 0)
@@ -632,7 +633,7 @@ public sealed partial class MainViewModel
             replacement_font = _replacementFont,
             image_overlay_spec = _imageOverlaySpec,
             font_scale = PatchFontScaleParameter,
-        }, "Đang tạo patch…");
+        }, "Đang tạo bản Việt hóa…");
     }
 
     /// <summary>
@@ -653,7 +654,7 @@ public sealed partial class MainViewModel
         SelectedTab = WorkflowTabs.Patch;
         if (!ValidateTranslationCsv(silent: false))
         {
-            StatusText = "CSV chưa hợp lệ";
+            StatusText = "Bản dịch chưa hợp lệ";
             return;
         }
         var csv = ResolveActiveCsvPath();
@@ -665,14 +666,14 @@ public sealed partial class MainViewModel
         if (!preflight.Ok || preflight.Eligible <= 0)
         {
             StatusText = "Chưa có dòng đủ điều kiện";
-            AppendLog(UiText.Msg("Không có dòng nào đủ điều kiện để patch an toàn. Hãy dịch hoặc duyệt thêm dòng trong CSV; sẽ không tạo patch rỗng. {0}", preflight.Error ?? preflight.Summary), "WARN");
-            AppDialogService.Show(UiText.Msg("Không có dòng nào đủ điều kiện để patch an toàn. Hãy dịch hoặc duyệt thêm dòng trong CSV; sẽ không tạo patch rỗng."),
-                "Patch phần an toàn", MessageBoxButton.OK, MessageBoxImage.Information);
+            AppendLog(UiText.Msg("Không có dòng nào đủ điều kiện để bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng. {0}", preflight.Error ?? preflight.Summary), "WARN");
+            AppDialogService.Show(UiText.Msg("Không có dòng nào đủ điều kiện để bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng."),
+                "Bản Việt hóa phần an toàn", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         if (AppDialogService.Show(
-                UiText.Msg("Chỉ patch {0} dòng đủ điều kiện (đã dịch và qua mọi kiểm tra). {1} dòng còn lại bị bỏ qua và game giữ nguyên các dòng đó; đây KHÔNG phải bản Việt hóa đầy đủ.", preflight.Eligible, preflight.Blocked),
-                "Patch phần an toàn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                UiText.Msg("Chỉ bản Việt hóa {0} dòng đủ điều kiện (đã dịch và qua mọi kiểm tra). {1} dòng còn lại bị bỏ qua và game giữ nguyên các dòng đó; đây KHÔNG phải bản Việt hóa đầy đủ.", preflight.Eligible, preflight.Blocked),
+                "Bản Việt hóa phần an toàn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         BeginTask("patch", new
         {
@@ -684,7 +685,7 @@ public sealed partial class MainViewModel
             replacement_font = _replacementFont,
             image_overlay_spec = _imageOverlaySpec,
             font_scale = PatchFontScaleParameter,
-        }, "Đang tạo patch phần an toàn…");
+        }, "Đang tạo bản Việt hóa phần an toàn…");
     }
 
     private string ResolveActiveCsvPath()
@@ -777,7 +778,7 @@ public sealed partial class MainViewModel
             Raise(nameof(TranslateProgressElapsed));
         }
         SetOwnedProgress(task, 0, statusLabel);
-        AppendLog($"Gửi lệnh worker: {task}");
+        AppendLog($"Gửi lệnh: {task}");
         try
         {
             _worker.RunTask(_activeTaskId, workerTask ?? task, parameters);
@@ -819,7 +820,7 @@ public sealed partial class MainViewModel
         if (!Busy) return;
         AppendLog("Yêu cầu hủy tác vụ…");
         SetTaskLifecycleStatus("Đang hủy…");
-        ProgressSubtitle = "Đã yêu cầu hủy; đang chờ worker xác nhận…";
+        ProgressSubtitle = "Đã yêu cầu hủy; đang chờ tác vụ xác nhận…";
         var taskId = _activeTaskId;
         SetOwnedProgress(_runningTask, text: ProgressSubtitle);
         try
@@ -921,7 +922,7 @@ public sealed partial class MainViewModel
             && string.Equals(taskId, _activeTaskId, StringComparison.Ordinal))
         {
             SetTaskLifecycleStatus("Tác vụ không phản hồi yêu cầu hủy; đang dừng cưỡng bức");
-            ProgressSubtitle = $"Chưa có kết quả sau {CancelGraceSeconds} giây; dừng worker. Dữ liệu đã lưu trước đó được giữ nguyên.";
+            ProgressSubtitle = $"Chưa có kết quả sau {CancelGraceSeconds} giây; dừng tác vụ. Dữ liệu đã lưu trước đó được giữ nguyên.";
             SetOwnedProgress(_runningTask, text: ProgressSubtitle);
             AddTaskProgress(taskId, ProgressSubtitle);
             if (_worker.ForceStopWorker())      // the exit handler publishes the terminal "cancelled" event, releasing the task

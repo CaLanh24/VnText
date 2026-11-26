@@ -69,7 +69,7 @@ internal static partial class Program
                 vm.Language = "en"; window.UpdateLayout(); PumpFixture(300);
                 void VerifySidebarNames()
                 {
-                    foreach (var (route, label) in new[] { ("extract", "Lấy text"), ("translate", "Dịch tự động"), ("editcsv", "Sửa CSV"), ("patch", "Tạo patch"), ("journal", "Nhật ký"), ("settings", "Cài đặt") })
+                    foreach (var (route, label) in new[] { ("extract", "Lấy text"), ("translate", "Dịch tự động"), ("editcsv", "Sửa bản dịch"), ("patch", "Tạo bản Việt hóa"), ("journal", "Nhật ký"), ("settings", "Cài đặt") })
                     {
                         var button = FindVisualChildren<Button>(window).Single(b => ReferenceEquals(b.Command, vm.NavigateTabCommand) && b.CommandParameter as string == route);
                         AssertEqual(UiText.Translate(label), new System.Windows.Automation.Peers.ButtonAutomationPeer(button).GetName());
@@ -101,7 +101,7 @@ internal static partial class Program
                 var rows = new List<CsvEditorRow>
                 {
                     new() { Index = 1, Key = "k1", SourceText = "Hello, {name}.", Translation = "Xin chào.", IssueLabel = "placeholder mismatch", IssueDisplay = "Mất/sai placeholder {…}" },
-                    new() { Index = 2, Key = "k2", SourceText = "Bye.", Translation = "Tạm biệt.", IssueLabel = "review_only", IssueDisplay = "Trong review_only.csv (cần xem lại thủ công)" },
+                    new() { Index = 2, Key = "k2", SourceText = "Bye.", Translation = "Tạm biệt.", IssueLabel = "review_only", IssueDisplay = "Trong danh sách cần xem lại thủ công" },
                     new() { Index = 3, Key = "k3", SourceText = "Thanks.", Translation = "Cảm ơn." },
                 };
                 vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", 2, UiText.Msg("{0}× {1}", 1, UiText.Key("Mất/sai placeholder {…}"))));
@@ -113,11 +113,11 @@ internal static partial class Program
                 vm.Language = "vi"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Không lưu được:", StringComparison.Ordinal), "Vietnamese save-error toast updates in place");
                 vm.Language = "en"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Could not save:", StringComparison.Ordinal), "English save-error toast updates in place");
                 Scan("csv toast hot language switch", CsvScope());
-                vm.TestSetCsvLoadError(Path.Combine(packageA, "translation.csv"), "CSV trống"); Scan("csv load error", CsvScope());
+                vm.TestSetCsvLoadError(Path.Combine(packageA, "translation.csv"), "Bản dịch trống"); Scan("csv load error", CsvScope());
                 // Patch: idle / valid / blocked / delivery
                 vm.NavigateTabCommand.Execute("patch"); picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
                 vm.ValidateTranslationCsvCommand.Execute(null); Scan("patch validated", PatchScope());
-                vm.ChooseTranslationCsvCommand.Execute(null); vm.TestSetPatchDelivery("Gói patch có installer — VNTextPatchInstaller.exe", "Created at C:\\Out\\Patch_A"); Scan("patch ready + delivery", PatchScope());
+                vm.ChooseTranslationCsvCommand.Execute(null); vm.TestSetPatchDelivery("Gói bản Việt hóa có installer — VNTextPatchInstaller.exe", "Created at C:\\Out\\Patch_A"); Scan("patch ready + delivery", PatchScope());
                 picker.TranslationCsv = Path.Combine(packageB, "translation.csv"); vm.ChooseTranslationCsvCommand.Execute(null); Scan("patch blocked", PatchScope());
                 vm.TestSetTranslationCsvPath(Path.Combine(packageA, "translation.csv")); Scan("patch source changed", PatchScope());
                 // glossary overlay content is part of the window tree; Journal; release notes; confirmation dialogs
@@ -154,9 +154,9 @@ internal static partial class Program
                 notes.Close();
                 foreach (var (message, caption, buttons) in new[]
                 {
-                    ("CSV có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?", "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel),
+                    ("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?", "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel),
                     (UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", 4, 3), "", UiText.Msg("Tìm: {0}\nThay bằng: {1}", "door", "gate"), "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.", "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu."), "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo),
-                    ("Khôi phục CSV về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo),
+                    ("Khôi phục bản dịch về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo),
                     (UiText.Msg("Xóa tệp nhật ký {0}?", "app.log.2026-10-31"), "Nhật ký", MessageBoxButton.YesNo),
                 })
                 {

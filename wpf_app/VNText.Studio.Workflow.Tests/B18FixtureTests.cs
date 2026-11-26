@@ -97,7 +97,7 @@ internal static partial class Program
                         var vmBad = Fresh("Sẵn sàng");
                         vmBad.TestClaimResourcesStatus(false); Finish(vmBad, false, "boom");
                         Require(vmBad.StatusText == "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." && Shown(vmBad).Length > 0 && (language == "vi" || !Shown(vmBad).Contains("Tài nguyên")), $"{language} Q1: error leaves a localized blocked line ('{Shown(vmBad)}')");
-                        Require(vmBad.ResourcesNeedRecovery && vmBad.ResourceStatus.Contains("boom", StringComparison.Ordinal), $"{language} Q1: the error detail stays in the resource status");
+                        Require(vmBad.ResourcesNeedRecovery && vmBad.ResourceStatus.Length > 0 && !vmBad.ResourceStatus.Contains("boom", StringComparison.Ordinal), $"{language} Q1: the status is plain words (the raw error goes to the journal)");
                         var vmMissing = Fresh("Sẵn sàng");
                         vmMissing.TestClaimResourcesStatus(false); Finish(vmMissing, true);
                         Require(vmMissing.StatusText == "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu." && vmMissing.ResourcesNeedRecovery, $"{language} Q1: a completed check that finds missing resources says so (not 'ready', not running)");

@@ -285,7 +285,7 @@ def run_extract_worker(
         emit_complete(task_id, ok=False, error="Thiếu params.src")
         return
     if not out:
-        emit_error(task_id, "Thiếu params.out (thư mục xuất)")
+        emit_error(task_id, "Thiếu params.out (nơi lưu bản dịch)")
         emit_complete(task_id, ok=False, error="Thiếu params.out")
         return
 
@@ -337,7 +337,7 @@ def run_translate_worker(
             return
         resolved = resolve_package_with_csv(out)
         if resolved is None:
-            msg = "Không tìm thấy translation.csv trong thư mục xuất"
+            msg = "Không tìm thấy translation.csv trong nơi lưu bản dịch"
             emit_error(task_id, msg)
             emit_complete(task_id, ok=False, error=msg)
             return
@@ -447,7 +447,7 @@ def run_patch_worker(
     else:
         resolved = resolve_package_with_manifest(out)
         if resolved is None:
-            msg = "Không tìm thấy translation.csv + manifest.json trong thư mục xuất"
+            msg = "Không tìm thấy translation.csv + manifest.json trong nơi lưu bản dịch"
             emit_error(task_id, msg)
             emit_complete(task_id, ok=False, error=msg)
             return
@@ -455,7 +455,7 @@ def run_patch_worker(
         patch_out = str(package_dir / "Patch_Viet_Hoa")
 
     if not has_translations(csv_path):
-        msg = "translation.csv chưa có bản dịch — hãy dịch trước khi tạo patch"
+        msg = "translation.csv chưa có bản dịch — hãy dịch trước khi tạo bản Việt hóa"
         emit_error(task_id, msg)
         emit_complete(task_id, ok=False, error=msg)
         return
@@ -477,12 +477,12 @@ def run_patch_worker(
         else:
             log(preflight_text)
         if preflight.get("eligible", 0) <= 0:
-            msg = "Không có dòng đủ điều kiện để patch sau kiểm tra chất lượng. Hãy dịch hoặc duyệt thêm dòng trong CSV rồi thử lại; không tạo patch rỗng."
+            msg = "Không có dòng đủ điều kiện để bản Việt hóa sau kiểm tra chất lượng. Hãy dịch hoặc duyệt thêm dòng trong bản dịch rồi thử lại; không tạo bản Việt hóa rỗng."
             emit_error(task_id, msg)
             emit_complete(task_id, ok=False, error=msg)
             return
     except Exception as exc:
-        msg = f"Kiểm tra patch thất bại: {exc}"
+        msg = f"Kiểm tra bản Việt hóa thất bại: {exc}"
         emit_error(task_id, msg)
         emit_complete(task_id, ok=False, error=msg)
         return
@@ -626,6 +626,6 @@ def run_cloud_repair_worker(
             _finish_cancelled(task_id)
         return
 
-    msg = f"Thao tác nhập CSV không được hỗ trợ: {action or 'trống'}"
+    msg = f"Thao tác nhập bản dịch không được hỗ trợ: {action or 'trống'}"
     emit_error(task_id, msg)
     emit_complete(task_id, ok=False, error=msg)

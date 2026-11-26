@@ -25,6 +25,6 @@ public static class CsvFilterModes
         new(Untranslated, "Chưa dịch"),
         new(ReviewOnly, "Cần xem lại"),
         new(Errors, "Chỉ dòng lỗi"),
-        new(PatchSkipped, "Patch sẽ bỏ qua"),
+        new(PatchSkipped, "Dòng sẽ bị bỏ qua"),
     ];
 }

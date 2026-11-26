@@ -70,7 +70,7 @@ class StructuredCsvRoundtripTests(unittest.TestCase):
             write_package(str(package), main, review, stats, True, enforce_symmetry=True)
             fields, rows = read_csv_rows_file(package / "translation.csv")
             translations = {
-                "Hello from CSV": "Xin chào từ CSV",
+                "Hello from CSV": "Xin chào từ bản dịch",
                 "Short description": "Mô tả ngắn",
                 "Yes": "Có",
                 "No": "Không",
@@ -92,7 +92,7 @@ class StructuredCsvRoundtripTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), original_hash)
             with patched.open("r", encoding="utf-8-sig", newline="") as handle:
                 result = list(csv.DictReader(handle))
-            self.assertEqual(result[0]["text"], "Xin chào từ CSV")
+            self.assertEqual(result[0]["text"], "Xin chào từ bản dịch")
             self.assertEqual(result[0]["description"], "Mô tả ngắn")
             self.assertEqual(result[1]["text"], "Có")
             self.assertEqual(result[1]["description"], "Không")

@@ -134,7 +134,7 @@ public partial class MainWindow : Window
                         return;
                     }
                     var cancelAndExit = AppDialogService.Show(
-                        $"Tác vụ đang chạy. Chọn Có để hủy an toàn rồi thoát; nếu worker không phản hồi trong {MainViewModel.ExitHardLimitSeconds} giây, ứng dụng sẽ dừng cưỡng bức worker và thoát. Dữ liệu đã lưu được giữ nguyên.",
+                        $"Tác vụ đang chạy. Chọn Có để hủy an toàn rồi thoát; nếu tác vụ không phản hồi trong {MainViewModel.ExitHardLimitSeconds} giây, ứng dụng sẽ dừng cưỡng bức worker và thoát. Dữ liệu đã lưu được giữ nguyên.",
                         "Tác vụ chưa hoàn tất", MessageBoxButton.YesNo, MessageBoxImage.Question, this);
                     if (cancelAndExit == MessageBoxResult.Yes)
                     {
@@ -157,8 +157,8 @@ public partial class MainWindow : Window
                 {
                     e.Cancel = true;
                     var decision = AppDialogService.Show(
-                        "CSV có thay đổi chưa lưu. Chọn Lưu để kiểm tra và lưu trước khi thoát, Bỏ thay đổi để thoát và bỏ phần đang sửa, hoặc Hủy để tiếp tục làm việc.",
-                        "CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, this);
+                        "Bản dịch có thay đổi chưa lưu. Chọn Lưu để kiểm tra và lưu trước khi thoát, Bỏ thay đổi để thoát và bỏ phần đang sửa, hoặc Hủy để tiếp tục làm việc.",
+                        "Bản dịch chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, this);
                     if (decision == MessageBoxResult.Yes)
                     {
                         _closeDecisionPending = true;
@@ -315,6 +315,15 @@ public partial class MainWindow : Window
     {
         if (DataContext is MainViewModel vm)
             vm.EndCsvCellEdit(e.Row.Item as VNText.Studio.App.Models.CsvEditorRow, e.EditAction == DataGridEditAction.Cancel);
+    }
+
+    /// <summary>"Thao tác" opens the bulk-action menu under the button (a ContextMenu is not opened by a left click on its own).</summary>
+    private void CsvActionsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button) return;
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     private void CsvEditorGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)

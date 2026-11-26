@@ -217,11 +217,11 @@ public static class WorkflowStatus
         bool statusKnown = true)
     {
         if (!hasGame)
-            return "Bước 1/3: Chọn game — chưa có đường dẫn game / asset";
+            return "Bước 1/3: Chọn game — chưa chọn thư mục game";
 
         if (current == "translate" && hasTranslate && !translateComplete && !statusKnown)
         {
-            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể Patch", pending, reviewOnly);
+            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể bản Việt hóa", pending, reviewOnly);
         }
 
         if (current == "translate" && hasTranslate && !translateComplete)
@@ -233,9 +233,9 @@ public static class WorkflowStatus
         {
             "extract" when !hasExtract => "Bước 1/3: Lấy text — chưa có translation.csv",
             "translate" => "Bước 2/3: Dịch tự động — cần bản dịch trong translation.csv",
-            "patch" when !hasTranslate => "Bước 3/3: Tạo patch — cần translation.csv có bản dịch",
-            "patch" => "Bước 3/3: Tạo patch — đóng gói bản dịch",
-            "done" => "Hoàn tất — gói dịch và patch đã sẵn sàng",
+            "patch" when !hasTranslate => "Bước 3/3: Tạo bản Việt hóa — cần translation.csv có bản dịch",
+            "patch" => "Bước 3/3: Tạo bản Việt hóa — đóng gói bản dịch",
+            "done" => "Hoàn tất — gói dịch và bản Việt hóa đã sẵn sàng",
             _ => "Bước 1/3: Lấy text",
         };
     }
@@ -246,16 +246,16 @@ public static class WorkflowStatus
         {
             "translate" => (
                 "Dịch tự động",
-                "Dịch offline CTranslate2 + OPUS-MT en→vi (INT8) trên translation.csv.",
+                "Dịch Anh → Việt trên máy (dùng translation.csv).",
                 "Dịch tự động"),
             "patch" => (
-                "Tạo patch Việt hóa",
-                "Đóng gói bản dịch thành patch cài vào game.",
-                "Tạo patch"),
+                "Tạo bản Việt hóa",
+                "Đóng gói bản dịch thành bản Việt hóa cài vào game.",
+                "Tạo bản Việt hóa"),
             "done" => (
                 "Workflow hoàn tất",
-                "Gói dịch và patch đã sẵn sàng. Có thể chạy lại bất kỳ bước nào.",
-                "Tạo patch"),
+                "Gói dịch và bản Việt hóa đã sẵn sàng. Có thể chạy lại bất kỳ bước nào.",
+                "Tạo bản Việt hóa"),
             _ when !hasGame => (
                 "Chọn thư mục game",
                 "Chọn game bên dưới, rồi bấm «Lấy text» để xuất CSV.",

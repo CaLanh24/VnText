@@ -96,11 +96,11 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     {
         "Mất/sai placeholder {…}" => "Sai placeholder",
         "Hỏng tag <…>" => "Sai tag",
-        "Trong review_only.csv (cần xem lại thủ công)" => "Cần xem lại",
-        "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)" => "Không ghi được vào game",
+        "Trong danh sách cần xem lại thủ công" => "Cần xem lại",
+        "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)" => "Không ghi được vào game",
         "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch" => "Cần tự dịch",
         "Bản dịch máy đang chờ bạn duyệt" => "Chờ duyệt",
-        "Đã dịch — bấm Lưu để đưa dòng này vào patch" => "Bấm Lưu",
+        "Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa" => "Bấm Lưu",
         "Game đã có bản dịch tiếng Việt khác cho câu này" => "Game đã có bản dịch",
         "Rác lặp từ/ký tự" => "Rác lặp",
         "HTML/entity rác" => "HTML rác",
@@ -127,7 +127,7 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     }
 
     public bool IsEmpty => string.IsNullOrWhiteSpace(Translation);
-    /// <summary>Tạo patch will leave this row out (same rule as the patch list): untranslated human text, or any status other than "ready".</summary>
+    /// <summary>Tạo bản Việt hóa will leave this row out (same rule as the patch list): untranslated human text, or any status other than "ready".</summary>
     public bool SkippedByPatch => !IsTechnical && (IsEmpty || (HasIssue && IssueLabel != "review_resolved_unsaved"));
     public bool HasIssue => !IsTechnical && !string.IsNullOrWhiteSpace(IssueLabel) && IssueLabel != "no_translation";
 

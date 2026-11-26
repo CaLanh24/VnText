@@ -93,7 +93,7 @@ def _random_game(game: Path, rng: random.Random) -> None:
     (game / "game" / "extra_screens.rpy").write_text("\n".join(screen) + "\n", encoding="utf-8")
 
 
-@unittest.skipUnless((SDK / "renpy.exe").is_file(), "needs the local Ren'Py SDK")
+@unittest.skipUnless((SDK / "renpy.exe").is_file(), "needs the local công cụ Ren’Py")
 class NativeAccountingExtractTests(unittest.TestCase):
     def test_rows_removed_earlier_are_their_own_bucket_on_re_extraction(self):
         from vntext.user_exclusions import exclude_rows

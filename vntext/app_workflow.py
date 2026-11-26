@@ -58,8 +58,8 @@ def workflow_status(input_path: str, output_path: str) -> dict:
     hero_map = {
         "extract": ("Lấy text từ game", "Chọn game bên dưới, rồi bấm «Lấy text» để xuất CSV."),
         "translate": ("Dịch tự động", "Dịch translation.csv bằng CT2 / OPUS-MT offline."),
-        "patch": ("Tạo patch Việt hóa", "Đóng gói bản dịch thành patch cài vào game."),
-        "done": ("Workflow hoàn tất", "Gói dịch và patch đã sẵn sàng. Có thể chạy lại bất kỳ bước nào."),
+        "patch": ("Tạo bản Việt hóa", "Đóng gói bản dịch thành bản Việt hóa cài vào game."),
+        "done": ("Workflow hoàn tất", "Gói dịch và bản Việt hóa đã sẵn sàng. Có thể chạy lại bất kỳ bước nào."),
     }
     if not has_game:
         hero_map["extract"] = ("Chọn thư mục game", "Chọn game bên dưới, rồi bấm «Lấy text» để xuất CSV.")

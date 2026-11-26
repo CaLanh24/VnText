@@ -30,6 +30,8 @@ public sealed class ExtractRunInfo : INotifyPropertyChanged
         }
     }
     public string Title => Started.ToString("dd/MM HH:mm:ss") + (_status.Length == 0 ? "" : " · " + UiText.Translate(_status));
+    /// <summary>Screen readers and automation read the item through ToString(): never the type name.</summary>
+    public override string ToString() => Title;
     public void RefreshTitle() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Title)));
     public event PropertyChangedEventHandler? PropertyChanged;
 }

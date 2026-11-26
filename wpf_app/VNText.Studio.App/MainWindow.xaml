@@ -148,6 +148,7 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource SourceIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
+                            <TextBlock Text="{Binding StepMark1}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 1" />
                             <TextBlock Text="Lấy text" />
                         </StackPanel>
                     </Button>
@@ -162,6 +163,7 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
+                            <TextBlock Text="{Binding StepMark2}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 2" />
                             <TextBlock Text="Dịch tự động" />
                         </StackPanel>
                     </Button>
@@ -180,7 +182,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="editcsv" AutomationProperties.Name="Sửa CSV">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="editcsv" AutomationProperties.Name="Sửa bản dịch">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=editcsv}" />
@@ -190,11 +192,12 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="Sửa CSV" />
+                            <TextBlock Text="{Binding StepMark3}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 3" />
+                            <TextBlock Text="Sửa bản dịch" />
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="patch" AutomationProperties.Name="Tạo patch">
+                    <Button Command="{Binding NavigateTabCommand}" CommandParameter="patch" AutomationProperties.Name="Tạo bản Việt hóa">
                         <Button.Style>
                             <Style TargetType="Button" BasedOn="{StaticResource NavButtonStyle}">
                                 <Setter Property="Background" Value="{Binding SelectedTab, Converter={StaticResource NavBg}, ConverterParameter=patch}" />
@@ -204,7 +207,8 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource PatchIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="Tạo patch" />
+                            <TextBlock Text="{Binding StepMark4}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 4" />
+                            <TextBlock Text="Tạo bản Việt hóa" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -261,6 +265,8 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Content="Hủy tác vụ" Style="{StaticResource OutlineButton}" Margin="0,0,10,0"
                             Command="{Binding CancelCommand}" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
+                    <Button x:Name="NextStepButton" Content="{Binding NextStepLabel}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0"
+                            Command="{Binding NextStepCommand}" Visibility="{Binding HasNextStep, Converter={StaticResource BoolToVis}}" AutomationProperties.Name="Bước tiếp theo" />
                     <Border Background="{DynamicResource GreenSoftBrush}" CornerRadius="12" Padding="13,10">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse Width="8" Height="8" Fill="{DynamicResource GreenBrush}" VerticalAlignment="Center" />
@@ -345,8 +351,8 @@
                                         <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="17" Height="17" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
-                                        <TextBlock Text="Nguồn và gói dịch" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                        <TextBlock Text="Nguồn được giữ nguyên; gói dịch lưu riêng." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Thư mục game và nơi lưu bản dịch" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                        <TextBlock Text="Game gốc được giữ nguyên; bản dịch lưu riêng." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                 </Grid>
 
@@ -390,7 +396,7 @@
                                 </Border>
 
                                 <StackPanel Grid.Row="1" Margin="0,24,0,0">
-                                    <TextBlock Text="Game hoặc asset" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                    <TextBlock Text="Thư mục game" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -401,14 +407,14 @@
                                             <TextBlock Text="{Binding InputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                        Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                         </Border>
-                                        <Button x:Name="OpenInputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenInputCommand}" AutomationProperties.Name="Mở nguồn game hoặc asset">
+                                        <Button x:Name="OpenInputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenInputCommand}" AutomationProperties.Name="Mở thư mục game">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Mở" />
                                             </StackPanel>
                                         </Button>
                                         <Button x:Name="ChooseInputButton" Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseInputMenuCommand}"
-                                                CommandParameter="{Binding RelativeSource={RelativeSource Self}}" AutomationProperties.Name="Chọn nguồn game hoặc asset" ToolTip="Chọn thư mục game hoặc file asset / bundle">
+                                                CommandParameter="{Binding RelativeSource={RelativeSource Self}}" AutomationProperties.Name="Chọn thư mục game" ToolTip="Chọn thư mục game (hoặc một tệp dữ liệu của game)">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource SourceIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Chọn..." />
@@ -418,7 +424,7 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="2" Margin="0,24,0,0">
-                                    <TextBlock Text="Thư mục xuất" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                    <TextBlock Text="Nơi lưu bản dịch" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     <Grid Margin="0,8,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -429,13 +435,13 @@
                                             <TextBlock Text="{Binding OutputDisplay}" Margin="12,0" VerticalAlignment="Center" FontSize="{StaticResource UiBodySize}"
                                                        Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                         </Border>
-                                        <Button x:Name="OpenOutputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenOutputCommand}" AutomationProperties.Name="Mở thư mục xuất">
+                                        <Button x:Name="OpenOutputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0" Command="{Binding OpenOutputCommand}" AutomationProperties.Name="Mở nơi lưu bản dịch">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource OpenIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Mở" />
                                             </StackPanel>
                                         </Button>
-                                        <Button x:Name="ChooseOutputButton" Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseOutputCommand}" AutomationProperties.Name="Chọn thư mục xuất">
+                                        <Button x:Name="ChooseOutputButton" Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ChooseOutputCommand}" AutomationProperties.Name="Chọn nơi lưu bản dịch">
                                             <StackPanel Orientation="Horizontal">
                                                 <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                 <TextBlock Text="Chọn..." />
@@ -445,7 +451,7 @@
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="5" Margin="0,21,0,0" Visibility="Collapsed">
-                                    <TextBlock Text="Mức lọc văn bản thô" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                    <TextBlock Text="Mức lọc văn bản thô (càng sâu càng lấy nhiều)" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                     <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
                                         <RadioButton Content="Sạch" GroupName="ExtractFilter" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,0,25,0"
                                                      IsChecked="{Binding ExtractLevel, Mode=TwoWay, Converter={StaticResource StrMatch}, ConverterParameter=clean}" />
@@ -454,6 +460,7 @@
                                         <RadioButton Content="Quét sâu" GroupName="ExtractFilter" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}"
                                                      IsChecked="{Binding ExtractLevel, Mode=TwoWay, Converter={StaticResource StrMatch}, ConverterParameter=exhaustive}" />
                                     </StackPanel>
+                                    <TextBlock Text="Sạch: ít dòng, ít nhầm. Cân bằng: mặc định hợp lý. Quét sâu: lấy nhiều nhất, có thể kèm dòng thừa." TextWrapping="Wrap" Margin="0,8,0,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
                                 </StackPanel>
 
                                 <Grid Grid.Row="6" Margin="0,20,0,0" Visibility="{Binding ExtractProgressActive, Converter={StaticResource BoolToVis}}">
@@ -570,7 +577,7 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <TextBlock Text="Nguồn dịch" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                        <TextBlock Grid.Row="1" Text="File CSV cần xử lý" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Grid.Row="1" Text="Tệp bản dịch cần xử lý" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Grid.Row="2" Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -583,7 +590,7 @@
                                             </Border>
                                             <Button x:Name="ChooseTranslateCsvButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
                                                     Command="{Binding ChooseTranslationCsvCommand}">
-                                                <TextBlock Text="Chọn CSV" />
+                                                <TextBlock Text="Chọn bản dịch" />
                                             </Button>
                                         </Grid>
                                         <TextBlock Grid.Row="3" Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" Margin="0,8,0,0" FontSize="{StaticResource UiBodySize}"
@@ -593,9 +600,9 @@
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <StackPanel>
-                                                <TextBlock Text="Mô hình dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                                <TextBlock Text="Bộ dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="9" Padding="11,9" Margin="0,8,6,0">
-                                                <TextBlock Text="Dịch Anh sang Việt trên máy" ToolTip="Mô hình OPUS-MT · INT8 · CTranslate2." FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
+                                                <TextBlock Text="Dịch Anh → Việt trên máy" ToolTip="Dịch Anh → Việt ngay trên máy, không gửi dữ liệu đi đâu." FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" />
                                                 </Border>
                                             </StackPanel>
                                         </Grid>
@@ -654,6 +661,11 @@
                                                 <TextBlock Text="{Binding TranslateWorkflowStatusText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,12,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button x:Name="InstallEngineButton" Content="Cài bộ dịch" Style="{StaticResource PrimaryButton}" Command="{Binding InstallEngineCommand}" Margin="0,0,8,0"
+                                                        Visibility="{Binding TranslationEngineMissing, Converter={StaticResource BoolToVis}}"
+                                                        ToolTip="Tải và cài bộ dịch Anh → Việt chạy trên máy bạn. Cần mạng một lần; game không bị thay đổi." />
+                                                <Button x:Name="EngineDiagnosticsButton" Content="Xem chẩn đoán" Style="{StaticResource OutlineButton}" Command="{Binding OpenErrorJournalCommand}" Margin="0,0,8,0"
+                                                        Visibility="{Binding TranslationEngineMissing, Converter={StaticResource BoolToVis}}" />
                                                 <Button Content="Bắt đầu dịch" Style="{StaticResource PrimaryButton}" Command="{Binding RunTranslateCommand}" />
                                             </StackPanel>
                                         </Grid>
@@ -681,7 +693,7 @@
                                                 <TextBlock Text="{Binding CloudRepairPackageDisplay, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis"
                                                            Visibility="{Binding CloudRepairPackageReady, Converter={StaticResource BoolToVis}}" />
                                             </StackPanel>
-                                            <Button Grid.Column="1" Content="Xuất ZIP" ToolTip="Tạo gói dịch để dịch bằng công cụ bên ngoài; sau đó chọn CSV kết quả ở Tạo patch."
+                                            <Button Grid.Column="1" Content="Xuất ZIP" ToolTip="Xuất tệp để dịch bằng công cụ bên ngoài; sau đó chọn tệp kết quả ở Tạo bản Việt hóa."
                                                     Style="{StaticResource OutlineButton}" VerticalAlignment="Center" Command="{Binding ExportCloudRepairPackageCommand}" />
                                         </Grid>
                                         <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,16,0,0">
@@ -770,8 +782,8 @@
                                         <Path Data="{StaticResource PatchIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="18" Height="18" HorizontalAlignment="Center" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Margin="11,0,0,0" VerticalAlignment="Center">
-                                        <TextBlock Text="Tạo patch" Style="{StaticResource UiSectionTitleTextStyle}" />
-                                    <TextBlock Text="Kiểm tra CSV rồi đóng gói cho game." FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
+                                        <TextBlock Text="Tạo bản Việt hóa" Style="{StaticResource UiSectionTitleTextStyle}" />
+                                    <TextBlock Text="Kiểm tra bản dịch rồi tạo bản Việt hóa cho game." FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="2" Text="BƯỚC CUỐI" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" VerticalAlignment="Center" />
                                 </Grid>
@@ -779,7 +791,7 @@
                                 <Border Grid.Row="1" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0">
                                     <StackPanel>
                                         <TextBlock Text="Nguồn đóng gói" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
-                                        <TextBlock Text="Game / asset" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Text="Thư mục game" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -791,7 +803,7 @@
                                             </Border>
                                             <Button x:Name="ChoosePatchGameButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
                                                     Command="{Binding ChooseInputMenuCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"
-                                                    AutomationProperties.Name="Chọn nguồn game hoặc asset" ToolTip="Chọn thư mục game hoặc file asset / bundle">
+                                                    AutomationProperties.Name="Chọn thư mục game" ToolTip="Chọn thư mục game (hoặc một tệp dữ liệu của game)">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Data="{StaticResource GamepadIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                     <TextBlock Text="Chọn..." />
@@ -800,7 +812,7 @@
                                         </Grid>
                                         <TextBlock x:Name="PatchSourceHintText" Text="{Binding PatchSourceHint, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Margin="0,8,0,0"
                                                FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding PatchSourceHintVisible, Converter={StaticResource BoolToVis}}" />
-                                        <TextBlock Text="Thư mục xuất / gói dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
+                                        <TextBlock Text="Nơi lưu bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,15,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -811,7 +823,7 @@
                                                            Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button x:Name="ChoosePatchOutputButton" Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
-                                                    Command="{Binding ChooseOutputCommand}" AutomationProperties.Name="Chọn thư mục xuất">
+                                                    Command="{Binding ChooseOutputCommand}" AutomationProperties.Name="Chọn nơi lưu bản dịch">
                                                 <StackPanel Orientation="Horizontal">
                                                     <Path Data="{StaticResource FolderIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="14" Height="14" Margin="0,0,7,0" />
                                                     <TextBlock Text="Chọn..." />
@@ -830,9 +842,9 @@
                                                            Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" />
                                             </Border>
                                             <Button Grid.Column="1" Style="{StaticResource OutlineButton}" Margin="8,0,0,0"
-                                                    ToolTip="Nếu CSV thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo patch."
+                                                    ToolTip="Nếu bản dịch thuộc gói ZIP, ứng dụng đối chiếu gói trước khi tạo bản Việt hóa."
                                                     Command="{Binding ChooseTranslationCsvCommand}">
-                                                <TextBlock Text="Chọn CSV" />
+                                                <TextBlock Text="Chọn bản dịch" />
                                             </Button>
                                             <Button Grid.Column="2" Style="{StaticResource OutlineButton}" Margin="7,0,0,0" Command="{Binding ValidateTranslationCsvCommand}">
                                                 <TextBlock Text="Kiểm tra" />
@@ -841,11 +853,11 @@
                                         <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" Margin="0,10,0,0" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" />
                                         <WrapPanel Margin="0,10,0,0">
                                             <Button Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding OpenCsvEditorFromPatchCommand}">
-                                                <TextBlock Text="Mở trong Sửa CSV…" />
+                                                <TextBlock Text="Mở để sửa bản dịch…" />
                                             </Button>
-                                            <Button x:Name="PatchOpenOutputButton" Style="{StaticResource OutlineButton}" Command="{Binding OpenOutputCommand}" AutomationProperties.Name="Mở thư mục xuất"
-                                                    ToolTip="Mở thư mục xuất ngay cả khi chưa tạo patch.">
-                                                <TextBlock Text="Mở thư mục xuất" />
+                                            <Button x:Name="PatchOpenOutputButton" Style="{StaticResource OutlineButton}" Command="{Binding OpenOutputCommand}" AutomationProperties.Name="Mở nơi lưu bản dịch"
+                                                    ToolTip="Mở nơi lưu bản dịch ngay cả khi chưa tạo bản Việt hóa.">
+                                                <TextBlock Text="Mở nơi lưu bản dịch" />
                                             </Button>
                                         </WrapPanel>
                                     </StackPanel>
@@ -883,7 +895,9 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <Border x:Name="PatchFontGroup" Grid.ColumnSpan="2" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
+                                    <Expander x:Name="PatchAdvancedExpander" Grid.ColumnSpan="2" Header="Tùy chọn nâng cao (font chữ, cỡ chữ, ảnh)" IsExpanded="False" Margin="0,0,0,12" AutomationProperties.Name="Tùy chọn nâng cao">
+<StackPanel>
+<Border x:Name="PatchFontGroup" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
                                         <StackPanel>
                                             <TextBlock Text="Font tiếng Việt" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
                                             <TextBlock x:Name="PatchFontModeText" Text="{Binding PatchFontModeText, Converter={StaticResource UiTextDynamic}}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
@@ -906,7 +920,7 @@
                                             <TextBlock Text="{Binding PatchFontScaleHelpText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
                                         </StackPanel>
                                     </Border>
-                                    <Border x:Name="PatchImageGroup" Grid.Row="1" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,12,0">
+                                    <Border x:Name="PatchImageGroup" Style="{StaticResource SubtlePanelBorder}" Padding="14,10" Margin="0,0,0,12">
                                         <StackPanel>
                                             <TextBlock Text="Ảnh có chữ (tùy chọn)" FontSize="{StaticResource UiCaptionSize}" FontWeight="Bold" Foreground="{DynamicResource SoftTextBrush}" />
                                             <TextBlock x:Name="PatchImageSpecText" Text="{Binding ImageSpecLabel, Converter={StaticResource UiTextDynamic}}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
@@ -917,7 +931,9 @@
                                             </WrapPanel>
                                         </StackPanel>
                                     </Border>
-                                    <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Tạo patch" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
+                                    </StackPanel>
+</Expander>
+                                    <Button x:Name="PatchBuildButton" Grid.Row="1" Grid.Column="1" Content="Tạo bản Việt hóa" Style="{StaticResource PrimaryButton}" Command="{Binding RunPatchCommand}" />
                                 </Grid>
 
                                 <Border x:Name="PatchDeliveryInstructionsPanel" Grid.Row="4" Style="{StaticResource SubtlePanelBorder}" Margin="0,24,0,0"
@@ -927,7 +943,7 @@
                                         <TextBlock Text="{Binding PatchInstallInstructions, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0" TextWrapping="Wrap" />
                                         <WrapPanel Margin="0,12,0,0">
                                             <Button Content="Cài trong VNText" Style="{StaticResource PrimaryButton}" Command="{Binding InstallDeliveredPatchCommand}" Margin="0,0,10,0" />
-                                            <Button Content="Mở thư mục patch" Style="{StaticResource OutlineButton}" Command="{Binding OpenDeliveredPatchCommand}" />
+                                            <Button Content="Mở thư mục bản Việt hóa" Style="{StaticResource OutlineButton}" Command="{Binding OpenDeliveredPatchCommand}" />
                                         </WrapPanel>
                                     </StackPanel>
                                 </Border>
@@ -949,7 +965,7 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="Kiểm tra trước khi build" Style="{StaticResource UiSectionTitleTextStyle}" />
+                                        <TextBlock Text="Kiểm tra" Style="{StaticResource UiSectionTitleTextStyle}" />
                                     </StackPanel>
                                     <Border x:Name="PatchBadge" Grid.Column="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding PatchCheckCardVisible, Converter={StaticResource BoolToVis}}">
@@ -991,11 +1007,11 @@
                                   <TextBlock Text="Kết quả kiểm tra" FontSize="{StaticResource UiSectionTitleSize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                   <Border x:Name="PatchErrorPanel" Margin="0,16,0,0" Padding="14,12" CornerRadius="12" BorderThickness="1"
                                           BorderBrush="{DynamicResource ErrorBrush}" Background="{DynamicResource ToastErrorBackgroundBrush}"
-                                          Visibility="{Binding HasPatchError, Converter={StaticResource BoolToVis}}" AutomationProperties.Name="Lỗi tạo patch">
+                                          Visibility="{Binding HasPatchError, Converter={StaticResource BoolToVis}}" AutomationProperties.Name="Lỗi tạo bản Việt hóa">
                                       <StackPanel>
-                                          <TextBlock Text="Tạo patch không thành công" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
+                                          <TextBlock Text="Tạo bản Việt hóa không thành công" FontSize="{StaticResource UiBodySize}" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" />
                                           <TextBox x:Name="PatchErrorText" Text="{Binding PatchErrorText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent"
-                                                   FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" AutomationProperties.Name="Chi tiết lỗi tạo patch" />
+                                                   FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource InkBrush}" Margin="0,4,0,0" AutomationProperties.Name="Chi tiết lỗi tạo bản Việt hóa" />
                                           <TextBlock Text="Game gốc không bị thay đổi." FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0" />
                                           <WrapPanel Margin="0,8,0,0">
                                               <Button x:Name="PatchErrorSendButton" Content="Gửi báo lỗi" Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding SendBugReportCommand}"
@@ -1003,7 +1019,7 @@
                                                       ToolTip="Tạo gói báo lỗi ẩn danh, cho bạn xem trước, và chỉ gửi tới nhà phát triển khi bạn đồng ý." />
                                               <Button x:Name="PatchErrorBugReportButton" Content="Tạo gói báo lỗi" Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding CreateBugReportCommand}"
                                                       ToolTip="Tạo tệp zip ẩn danh để tự gửi; không tự gửi đi đâu." />
-                                              <Button x:Name="PatchErrorOpenCsvButton" Content="Mở Sửa CSV" Style="{StaticResource OutlineButton}" Command="{Binding OpenCsvPatchSkippedCommand}" />
+                                              <Button x:Name="PatchErrorOpenCsvButton" Content="Mở Sửa bản dịch" Style="{StaticResource OutlineButton}" Command="{Binding OpenCsvPatchSkippedCommand}" />
                                           </WrapPanel>
                                       </StackPanel>
                                   </Border>
@@ -1016,7 +1032,7 @@
                                                 <Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="!" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding CsvValidationOk}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Path Data="{StaticResource CheckIconGeometry}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" Stretch="Uniform" StrokeThickness="2"><Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding CsvValidationOk}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Path.Style></Path></Grid>
                                                 </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                                <TextBlock Text="CSV / preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                                <TextBlock Text="Bản dịch và kiểm tra" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding CsvValidationMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Grid>
@@ -1029,10 +1045,10 @@
                                                 <Grid><TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="!" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"><TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding PatchPreflightOk}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock><Path Data="{StaticResource CheckIconGeometry}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" Stretch="Uniform" StrokeThickness="2"><Path.Style><Style TargetType="Path"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding PatchPreflightOk}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Path.Style></Path></Grid>
                                                 </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                                <TextBlock Text="Patch preflight" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                                <TextBlock Text="Kết quả kiểm tra" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                                 <Button x:Name="PatchShowSkippedButton" Content="Xem danh sách câu bị bỏ qua" Style="{StaticResource CompactOutlineButton}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                        Command="{Binding ShowPatchSkippedCommand}" ToolTip="Từng câu Tạo patch sẽ bỏ qua, kèm lý do và cách xử lý." />
+                                                        Command="{Binding ShowPatchSkippedCommand}" ToolTip="Từng câu Tạo bản Việt hóa sẽ bỏ qua, kèm lý do và cách xử lý." />
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -1043,7 +1059,7 @@
                                                 <Path Data="{StaticResource CheckIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource GreenBrush}" Width="15" Height="15" HorizontalAlignment="Center" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                                <TextBlock Text="Thư mục xuất" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                                <TextBlock Text="Nơi lưu bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding OutputDisplay}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                         </Grid>
@@ -1301,10 +1317,10 @@
                                                 </Grid>
                                             </Border>
                                         </Border>
-                                        <HeaderedContentControl Style="{StaticResource SettingsSectionHeaderStyle}" Header="Tài nguyên xử lý trên máy" Margin="0,0,0,16" />
+                                        <HeaderedContentControl Style="{StaticResource SettingsSectionHeaderStyle}" Header="Thành phần cần có trên máy" Margin="0,0,0,16" />
                                         <Border Style="{StaticResource SettingsCardStyle}" Margin="0,0,0,16">
                                             <StackPanel>
-                                                <TextBlock Text="Chuẩn bị tài nguyên sau khi cài ứng dụng" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                                                <TextBlock Text="Chuẩn bị thành phần sau khi cài ứng dụng" Style="{StaticResource SettingsRowLabelTextStyle}" />
                                                 <TextBlock x:Name="ResourceStatusText" Text="{Binding ResourceStatus}" TextWrapping="Wrap" Foreground="{DynamicResource InkBrush}" Margin="0,8,0,12" />
                                                 <!-- Design QA: the failure is summarised HERE once (the status above); the banner that used to sit above the header is not shown on Settings. Full detail stays in the Journal. -->
                                                 <WrapPanel x:Name="ResourceErrorActions" Margin="0,0,0,4" Visibility="{Binding HasPagePersistentError, Converter={StaticResource BoolToVis}}">
@@ -1314,10 +1330,10 @@
                                                     <Button Content="Đã xem" Command="{Binding DismissErrorCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                 </WrapPanel>
                                                 <WrapPanel>
-                                                    <Button Content="Sửa/tải tài nguyên còn thiếu" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
+                                                    <Button Content="Sửa tự động" Command="{Binding DownloadResourcesCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8"
                                                             Visibility="{Binding ResourcesNeedRecovery, Converter={StaticResource BoolToVis}}" />
-                                                    <Button Content="Kiểm tra tài nguyên" Command="{Binding CheckResourcesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-                                                    <Button Content="Chọn SDK đã cài…" Command="{Binding ChooseRenpySdkCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                    <Button Content="Kiểm tra lại" Command="{Binding CheckResourcesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+                                                    <Button Content="Chọn công cụ…" Command="{Binding ChooseRenpySdkCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                     <Button x:Name="ResourceCancelButton" Content="Hủy" Command="{Binding CancelResourcesCommand}" Visibility="{Binding ResourcesActive, Converter={StaticResource BoolToVis}}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
                                                 </WrapPanel>
                                                 <ProgressBar x:Name="ResourceProgressBar" Minimum="0" Maximum="100" Value="{Binding ResourceProgressPercent, Mode=OneWay}"
@@ -1333,7 +1349,7 @@
                                                         <Grid Style="{StaticResource SettingsDataRowStyle}">
                                                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                                             <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
-                                                                <TextBlock Text="Python worker" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                                                                <TextBlock Text="Bộ xử lý nền" Style="{StaticResource SettingsRowLabelTextStyle}" />
                                                                 <TextBlock Text="Thực thi các tác vụ xử lý trên máy." Style="{StaticResource SettingsRowHelperTextStyle}" />
                                                             </StackPanel>
                                                             <Border Grid.Column="1" Background="{DynamicResource SubtlePanelBrush}" CornerRadius="10" Padding="10,6" VerticalAlignment="Center">
@@ -1346,7 +1362,7 @@
                                                     <Grid Style="{StaticResource SettingsDataRowStyle}">
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                                                         <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
-                                                            <TextBlock Text="Mô hình dịch trên máy" Style="{StaticResource SettingsRowLabelTextStyle}" />
+                                                            <TextBlock Text="Bộ dịch Anh → Việt trên máy" Style="{StaticResource SettingsRowLabelTextStyle}" />
                                                             <TextBlock Text="{Binding ModelStatusDisplay}" ToolTip="{Binding ModelStatus}" Style="{StaticResource SettingsRowHelperTextStyle}" />
                                                             <TextBlock Text="{Binding ModelFolder}" Style="{StaticResource SettingsRowHelperTextStyle}" Margin="0,4,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding ModelFolder}" />
                                                         </StackPanel>
@@ -1423,7 +1439,7 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         </Border>
-                                        <TextBlock Grid.Row="3" Text="VNText hỗ trợ quy trình lấy text, chỉnh CSV và đóng gói patch."
+                                        <TextBlock Grid.Row="3" Text="VNText hỗ trợ quy trình lấy text, dịch, sửa bản dịch và tạo bản Việt hóa."
                                                    Style="{StaticResource UiBodyTextStyle}" Foreground="{DynamicResource MutedBrush}"
                                                    TextAlignment="Center" HorizontalAlignment="Center" Margin="0,14,0,0" />
                                         <Grid x:Name="AboutDestinationsGrid" Grid.Row="4" Margin="0,40,0,0">
@@ -1481,8 +1497,8 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Tìm trong CSV" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
-                                <TextBox Grid.Column="1" x:Name="CsvEditorSearchBox" AutomationProperties.Name="Tìm trong toàn bộ CSV"
+                                <TextBlock Text="Tìm trong bản dịch" VerticalAlignment="Center" FontSize="{StaticResource UiCaptionSize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
+                                <TextBox Grid.Column="1" x:Name="CsvEditorSearchBox" AutomationProperties.Name="Tìm trong toàn bộ bản dịch"
                                          Text="{Binding CsvEditorSearch, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Style="{StaticResource CompactFieldTextBoxStyle}" Margin="8,0,0,0" Height="{StaticResource UiControlHeightStandard}" />
                                 <ComboBox Grid.Column="2" Margin="8,0,0,0" Width="150" Height="{StaticResource UiControlHeightStandard}" Style="{StaticResource SettingsCombo}"
@@ -1529,7 +1545,7 @@
                                         <TextBlock Text="{Binding CsvEditorLockText, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}"
                                                    TextWrapping="Wrap" Visibility="{Binding Busy, Converter={StaticResource BoolToVis}}" />
                                     </StackPanel>
-                                    <Button x:Name="CsvChooseHeaderButton" Grid.Column="2" Content="Chọn CSV" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}"
+                                    <Button x:Name="CsvChooseHeaderButton" Grid.Column="2" Content="Chọn bản dịch" Style="{StaticResource OutlineButton}" Margin="8,0,8,0" Command="{Binding OpenCsvEditorFileCommand}"
                                             Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}" />
                                     <Border Grid.Column="3" Background="{DynamicResource WarningSoftBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="9,5"
                                             Visibility="{Binding CsvEditorDirty, Converter={StaticResource BoolToVis}}">
@@ -1710,18 +1726,27 @@
                                 <Border x:Name="CsvSelectionBar" Grid.Row="1" Background="{DynamicResource SurfaceBrush}" CornerRadius="14" Padding="{Binding CsvSelectionBarPadding}" Margin="{Binding CsvSelectionBarMargin}"
                                         BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Visibility="{Binding CsvEditorHasDocument, Converter={StaticResource BoolToVis}}">
                                     <WrapPanel VerticalAlignment="Center">
-                                        <Button Content="Chọn đang lọc" ToolTip="Chọn tất cả đang lọc" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectAllFilteredCommand}" />
-                                        <Button x:Name="CsvSelectUntranslatedButton" Content="Chọn chưa dịch" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectUntranslatedCommand}"
-                                                ToolTip="Tích chọn mọi dòng chưa có bản dịch (cả dòng đang bị bộ lọc ẩn) và lọc để chỉ hiện các dòng đó." />
-                                        <Button x:Name="CsvSelectReviewButton" Content="Chọn cần xem lại" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectReviewCommand}"
-                                                ToolTip="Tích chọn mọi dòng đang 'Cần xem lại' và lọc để chỉ hiện các dòng đó. Bấm vào một dòng để xem lý do và cách xử lý." />
-                                        <Button Content="Chọn dòng có thể dịch" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSelectTranslatableCommand}" />
-                                        <Button Content="Bỏ chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvClearCheckedCommand}" />
+                                        <Button x:Name="CsvActionsButton" Content="Thao tác ▾" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Click="CsvActionsButton_Click"
+                                                AutomationProperties.Name="Thao tác" ToolTip="Chọn hàng loạt các dòng: đang lọc, chưa dịch, cần xem lại, có thể dịch; bỏ chọn; xóa dòng đã chọn.">
+                                            <Button.ContextMenu>
+                                                <ContextMenu x:Name="CsvActionsMenu" DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                    <MenuItem Header="Chọn đang lọc" ToolTip="Chọn tất cả đang lọc" Command="{Binding CsvSelectAllFilteredCommand}" />
+                                                    <MenuItem x:Name="CsvSelectUntranslatedItem" Header="Chọn chưa dịch" Command="{Binding CsvSelectUntranslatedCommand}"
+                                                              ToolTip="Tích chọn mọi dòng chưa có bản dịch (cả dòng đang bị bộ lọc ẩn) và lọc để chỉ hiện các dòng đó." />
+                                                    <MenuItem x:Name="CsvSelectReviewItem" Header="Chọn cần xem lại" Command="{Binding CsvSelectReviewCommand}"
+                                                              ToolTip="Tích chọn mọi dòng đang 'Cần xem lại' và lọc để chỉ hiện các dòng đó. Bấm vào một dòng để xem lý do và cách xử lý." />
+                                                    <MenuItem Header="Chọn dòng có thể dịch" Command="{Binding CsvSelectTranslatableCommand}" />
+                                                    <MenuItem Header="Bỏ chọn" Command="{Binding CsvClearCheckedCommand}" />
+                                                    <Separator />
+                                                    <MenuItem x:Name="CsvDeleteCheckedItem" Header="Xóa đã chọn" Command="{Binding CsvDeleteCheckedCommand}"
+                                                              ToolTip="Xóa các dòng đã tích khỏi bản dịch (không phải text game); không hiện lại khi lấy text lại." />
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
                                         <TextBlock Text="{Binding CsvCheckedText, Converter={StaticResource UiTextDynamic}}" VerticalAlignment="Center" Margin="0,0,14,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" />
                                         <Button Content="Dịch đã chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvTranslateCheckedCommand}"
-                                                ToolTip="Dịch offline (OPUS-MT) chỉ các dòng đã tích; lưu vào chính file CSV này." />
-                                        <Button Content="Xóa đã chọn" Style="{StaticResource CompactOutlineButton}" Margin="0,2,0,2" Command="{Binding CsvDeleteCheckedCommand}"
-                                                ToolTip="Xóa các dòng đã tích khỏi CSV (không phải text game); không hiện lại khi lấy text lại." />
+                                                ToolTip="Dịch trên máy chỉ các dòng đã tích; lưu vào chính bản dịch này." />
+
                                     </WrapPanel>
                                 </Border>
 
@@ -1731,9 +1756,9 @@
                                         <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource BlueSoftBrush}" HorizontalAlignment="Center">
                                             <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource VectorIconStyle}" Stroke="{DynamicResource BlueBrush}" Width="20" Height="20" HorizontalAlignment="Center" />
                                         </Border>
-                                        <TextBlock Text="Chọn file translation.csv để xem và sửa bản dịch." TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,10" MaxWidth="420"
+                                        <TextBlock Text="Chọn bản dịch để xem và sửa." TextWrapping="Wrap" TextAlignment="Center" Margin="0,10,0,10" MaxWidth="420"
                                                    Foreground="{DynamicResource MutedBrush}" />
-                                        <Button x:Name="CsvEmptyChooseButton" Content="Chọn CSV" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
+                                        <Button x:Name="CsvEmptyChooseButton" Content="Chọn bản dịch" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Center" Command="{Binding OpenCsvEditorFileCommand}" />
                                     </StackPanel>
                                 </Border>
                                 <DataGrid Grid.Row="2" x:Name="CsvEditorGrid" Margin="{Binding CsvGridMargin}" MinHeight="0"
@@ -1845,7 +1870,7 @@
                     Visibility="{Binding CsvFocusedHasCandidate, Converter={StaticResource BoolToVis}}" ToolTip="Dùng bản dịch máy đề xuất cho dòng này và lưu CSV." />
             <Button x:Name="CsvEditFocusedButton" Content="Sửa bản dịch" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvEditFocusedCommand}" />
             <Button x:Name="CsvSkipFocusedButton" Content="Bỏ qua dòng này" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSkipFocusedCommand}"
-                    ToolTip="Xóa dòng này khỏi CSV: không dịch, không patch; game gốc không đổi." />
+                    ToolTip="Xóa dòng này khỏi bản dịch: không dịch, không bản Việt hóa; game gốc không đổi." />
         </WrapPanel>
     </StackPanel>
 </Border>

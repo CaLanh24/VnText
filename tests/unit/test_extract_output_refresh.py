@@ -82,7 +82,7 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             root = Path(temp)
             source = root / "game"
             source.mkdir()
-            with self.assertRaisesRegex(ValueError, "Thư mục xuất"):
+            with self.assertRaisesRegex(ValueError, "Nơi lưu bản dịch"):
                 refresh_extract(source, root, self.generated, lambda _: None, lambda _: None)
             self.assertEqual([source], list(root.iterdir()))
 
@@ -230,7 +230,7 @@ class ExtractOutputRefreshTests(unittest.TestCase):
             else:
                 with self.assertRaises(ValueError) as caught:
                     refresh_extract(source, out, self.generated, results.append, lambda _: None)
-                self.assertIn("Thư mục xuất", str(caught.exception))
+                self.assertIn("Nơi lưu bản dịch", str(caught.exception))
                 self.assertTrue(lock.exists())
             self.assertEqual(b"user data", (out / "notes.txt").read_bytes())
         self.run_case(run)

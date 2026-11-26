@@ -29,13 +29,13 @@ public sealed partial class MainViewModel
     }
     public bool PatchFontScaleIsSet => Math.Abs(_patchFontScale - 1.0) > 0.0001;
     public string PatchFontScaleText => PatchFontScaleIsSet ? UiText.Msg("Cỡ chữ: {0}%", (int)Math.Round(_patchFontScale * 100)) : "Cỡ chữ: giữ nguyên (100%)";
-    public string PatchFontScaleHelpText => "Chỉ áp dụng cho game Ren’Py và chỉ đổi cỡ của font Việt do VNText tạo; engine khác sẽ báo rõ là chưa hỗ trợ thay vì tạo patch sai.";
+    public string PatchFontScaleHelpText => "Chỉ áp dụng cho game Ren’Py và chỉ đổi cỡ của font Việt do VNText tạo; loại game khác sẽ báo rõ là chưa hỗ trợ thay vì tạo bản Việt hóa sai.";
     public RelayCommand ResetPatchFontScaleCommand { get; private set; } = null!;
     private string PatchFontScaleParameter => PatchFontScaleIsSet ? _patchFontScale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) : "";
     // Optional: a user-authored rendered-image spec (known imagemap/imagebutton assets, declared regions). The product validates it when the patch is built; nothing is recognised automatically.
     public bool ImageSpecIsSet => !string.IsNullOrEmpty(_imageOverlaySpec);
     public string ImageSpecLabel => ImageSpecIsSet ? UiText.Msg("Ảnh đã chọn: {0}", Path.GetFileName(_imageOverlaySpec)) : "Không dùng ảnh (tùy chọn)";
-    public string ImageSpecHelpText => "Bỏ qua nếu game không có ảnh chứa chữ. Nếu có, chọn tệp mô tả ảnh đã chỉnh sửa sẵn; ứng dụng kiểm tệp này khi tạo patch và không tự sửa chữ trong ảnh.";
+    public string ImageSpecHelpText => "Bỏ qua nếu game không có ảnh chứa chữ. Nếu có, chọn tệp mô tả ảnh đã chỉnh sửa sẵn; ứng dụng kiểm tệp này khi tạo bản Việt hóa và không tự sửa chữ trong ảnh.";
     private void RaiseImageSpec() { Raise(nameof(ImageSpecIsSet)); Raise(nameof(ImageSpecLabel)); }
     public RelayCommand ChooseImageSpecCommand { get; private set; } = null!;
     public RelayCommand ResetImageSpecCommand { get; private set; } = null!;
@@ -45,10 +45,10 @@ public sealed partial class MainViewModel
     public bool PatchFontIsCustom => !string.IsNullOrEmpty(_replacementFont);
     public string PatchFontModeText => PatchFontIsCustom ? UiText.Msg("Font tùy chọn: {0}", Path.GetFileName(_replacementFont)) : "Font Việt đi kèm (mặc định)";
     public string PatchFontStateText =>
-        !HasPatchSource ? "Chưa kiểm — chọn game/asset ở bước Lấy text; glyph và mapping font được kiểm khi đóng gói."
-        : !CsvValidationOk ? "Chưa kiểm — chọn CSV hợp lệ; glyph và mapping font được kiểm khi đóng gói."
-        : PatchDeliveryReady && !_patchArtifactBehindCsv ? "Patch gần nhất được đóng gói với lựa chọn này; mapping trong game được kiểm riêng khi cài."
-        : "Sẽ kiểm glyph và mapping font khi đóng gói patch.";
+        !HasPatchSource ? "Chưa kiểm — chọn thư mục game ở bước Lấy text; font có đủ dấu tiếng Việt sẽ được kiểm khi tạo bản Việt hóa."
+        : !CsvValidationOk ? "Chưa kiểm — chọn bản dịch hợp lệ; font có đủ dấu tiếng Việt sẽ được kiểm khi tạo bản Việt hóa."
+        : PatchDeliveryReady && !_patchArtifactBehindCsv ? "Bản Việt hóa gần nhất được tạo với lựa chọn này; việc game dùng đúng font được kiểm riêng khi cài."
+        : "Sẽ kiểm font có đủ dấu tiếng Việt khi tạo bản Việt hóa.";
     public string PatchFontNotice => _patchFontNotice;
     public bool PatchFontNoticeVisible => _patchFontNotice.Length > 0;
     private void SetPatchFontNotice(string text) { _patchFontNotice = text; RaisePatchFont(); }
@@ -196,7 +196,7 @@ public sealed partial class MainViewModel
         if (sample.Length > 2000) sample = sample[..2000];
         var preview = new System.Windows.Controls.TextBlock
         {
-            Text = "Đặng, Nguyễn — Ă Â Ê Ô Ơ Ư Đ · ă â ê ô ơ ư đ\nTiếng Việt có dấu: Xin chào!\n\n" + sample + "\n\n" + UiText.Translate("Đây là bản xem trước trên máy; mapping font trong game được kiểm riêng."),
+            Text = "Đặng, Nguyễn — Ă Â Ê Ô Ơ Ư Đ · ă â ê ô ơ ư đ\nTiếng Việt có dấu: Xin chào!\n\n" + sample + "\n\n" + UiText.Translate("Đây là bản xem trước trên máy; việc game dùng đúng font được kiểm riêng."),
             TextWrapping = TextWrapping.Wrap, FontSize = 21,
             FontFamily = new System.Windows.Media.FontFamily(new Uri(Path.GetDirectoryName(path)! + Path.DirectorySeparatorChar), "./" + Path.GetFileName(path) + "#" + family)
         };
@@ -248,7 +248,7 @@ public sealed partial class MainViewModel
         if (Busy) return;
         try
         {
-            if (!DeliveredRevisionValid()) throw new InvalidDataException(UiText.Translate("CSV hoặc patch đã thay đổi. Hãy tạo lại patch."));
+            if (!DeliveredRevisionValid()) throw new InvalidDataException(UiText.Translate("Bản dịch hoặc bản Việt hóa đã thay đổi. Hãy tạo lại bản Việt hóa."));
             // Hold the verified EXE against replacement while its extracted transaction is open.
             using var lease = new FileStream(_deliveredPatch, FileMode.Open, FileAccess.Read, FileShare.Read);
             var root = EmbeddedPatch.Open(_deliveredPatch, WorkerPaths.AppDataRoot());

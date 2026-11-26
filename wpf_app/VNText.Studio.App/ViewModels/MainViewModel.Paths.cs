@@ -20,7 +20,7 @@ public sealed partial class MainViewModel
     {
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return false;
         if (!CsvEditorDirty) return true;
-        var choice = CsvEditorMessageBox("CSV có thay đổi chưa lưu. Lưu trước khi đổi nguồn hoặc thư mục xuất?", "Thay đổi CSV chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+        var choice = CsvEditorMessageBox("Bản dịch có thay đổi chưa lưu. Lưu trước khi đổi nguồn hoặc nơi lưu bản dịch?", "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
         if (choice == MessageBoxResult.Cancel) return false;
         if (choice == MessageBoxResult.Yes) return await SaveCsvEditorAsync();
         DiscardCsvEditorChanges();
@@ -54,9 +54,9 @@ public sealed partial class MainViewModel
 
     // The same dialog serves different intents; a title that says "đã dịch" on the
     // translate input made a blank CSV look invalid.
-    internal const string TranslateCsvPickerTitle = "Chọn CSV cần dịch";
-    internal const string CsvEditorPickerTitle = "Chọn CSV để sửa";
-    internal const string PatchCsvPickerTitle = "Chọn CSV để tạo patch";
+    internal const string TranslateCsvPickerTitle = "Chọn bản dịch cần dịch";
+    internal const string CsvEditorPickerTitle = "Chọn bản dịch để sửa";
+    internal const string PatchCsvPickerTitle = "Chọn bản dịch để tạo bản Việt hóa";
     internal const string ImportTranslatedCsvPickerTitle = "Chọn translation.csv đã dịch để nhập";
 
     /// <summary>
@@ -110,17 +110,17 @@ public sealed partial class MainViewModel
     {
         get
         {
-            if (Busy && _runningTask == "patch") return "Đang tạo patch…";
-            if (!PatchPreflightEvaluated) return "Cần kiểm tra lại CSV hiện tại";
-            if (!PatchPreflightOk) return "Chưa thể tạo patch — không có dòng nào đủ điều kiện";
-            if (PatchNeedsSource) return "CSV hợp lệ — chọn game/asset để tạo patch";
+            if (Busy && _runningTask == "patch") return "Đang tạo bản Việt hóa…";
+            if (!PatchPreflightEvaluated) return "Cần kiểm tra lại bản dịch hiện tại";
+            if (!PatchPreflightOk) return "Chưa thể tạo bản Việt hóa — không có dòng nào đủ điều kiện";
+            if (PatchNeedsSource) return "Bản dịch hợp lệ — chọn thư mục game để tạo bản Việt hóa";
             if (PatchDeliveryReady && !_patchArtifactBehindCsv)
                 return PatchBlockedCount > 0
-                    ? UiText.Msg("Đã tạo patch từ CSV hiện tại — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
-                    : UiText.Msg("Đã tạo patch từ CSV hiện tại — ghi {0} dòng", PatchEligibleCount);
+                    ? UiText.Msg("Đã tạo bản Việt hóa từ bản dịch hiện tại — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
+                    : UiText.Msg("Đã tạo bản Việt hóa từ bản dịch hiện tại — ghi {0} dòng", PatchEligibleCount);
             return PatchBlockedCount > 0
-                ? UiText.Msg("Sẵn sàng tạo patch — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
-                : UiText.Msg("Sẵn sàng tạo patch — ghi {0} dòng", PatchEligibleCount);
+                ? UiText.Msg("Sẵn sàng tạo bản Việt hóa — ghi {0} dòng, bỏ qua {1}", PatchEligibleCount, PatchBlockedCount)
+                : UiText.Msg("Sẵn sàng tạo bản Việt hóa — ghi {0} dòng", PatchEligibleCount);
         }
     }
 
@@ -165,8 +165,8 @@ public sealed partial class MainViewModel
         PatchEligibleCount = 0;
         PatchBlockedCount = 0;
         PatchPreflightMessage = csvRevisionChanged
-            ? "CSV vừa được lưu — hãy kiểm tra lại. Patch cũ còn trên đĩa là của bản trước; cần đóng gói lại cho bản này."
-            : "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo patch.";
+            ? "Bản dịch vừa được lưu — hãy kiểm tra lại. Bản Việt hóa cũ còn trên đĩa là của bản trước; cần đóng gói lại cho bản này."
+            : "Nguồn bản dịch đã đổi — hãy kiểm tra lại trước khi tạo bản Việt hóa.";
         PatchResultsAvailable = false;
         PatchResultsExpanded = false;
         RaisePatchBadge();
@@ -318,7 +318,7 @@ public sealed partial class MainViewModel
             PatchPreflightEvaluated = false;
             PatchEligibleCount = 0;
             PatchBlockedCount = 0;
-            PatchPreflightMessage = "Cần CSV hợp lệ trước khi kiểm tra chất lượng patch.";
+            PatchPreflightMessage = "Cần bản dịch hợp lệ trước khi kiểm tra chất lượng bản Việt hóa.";
         }
         if (!silent)
         {
@@ -326,7 +326,7 @@ public sealed partial class MainViewModel
             if (result.Ok)
                 AppendLog(PatchPreflightMessage.Replace("\r\n", " | ").Replace("\n", " | "), PatchBlockedCount > 0 ? "WARN" : null);   // an eligible subset still builds, but rows are omitted
             if (result.Ok && SelectedTab != WorkflowTabs.Patch)
-                AppendLog("Có thể chuyển sang tab «Tạo patch».");
+                AppendLog("Có thể chuyển sang tab «Tạo bản Việt hóa».");
         }
         return result.Ok;
     }
@@ -349,7 +349,7 @@ public sealed partial class MainViewModel
         catch (Exception ex)
         {
             CsvValidationOk = false;
-            CsvValidationMessage = UiText.Msg("Không thể cập nhật trạng thái CSV: {0}", ex.Message);
+            CsvValidationMessage = UiText.Msg("Không thể cập nhật trạng thái bản dịch: {0}", ex.Message);
             ReadyForPatch = false;
             return;
         }
@@ -365,7 +365,7 @@ public sealed partial class MainViewModel
             PatchPreflightEvaluated = false;
             PatchEligibleCount = 0;
             PatchBlockedCount = 0;
-            PatchPreflightMessage = "Cần CSV hợp lệ trước khi kiểm tra chất lượng patch.";
+            PatchPreflightMessage = "Cần bản dịch hợp lệ trước khi kiểm tra chất lượng bản Việt hóa.";
         }
     }
 
@@ -391,8 +391,8 @@ public sealed partial class MainViewModel
         PatchPreflightMessage = result.DetailMessage;
         if (!silent)
             AppendLog(result.Ok
-                ? $"Kiểm tra patch: {result.Eligible} hợp lệ, {result.Blocked} bị chặn."
-                : $"Kiểm tra patch: {result.Error ?? result.Summary}", result.Ok ? (result.Blocked > 0 ? "WARN" : null) : "ERROR");
+                ? $"Kiểm tra bản Việt hóa: {result.Eligible} hợp lệ, {result.Blocked} bị chặn."
+                : $"Kiểm tra bản Việt hóa: {result.Error ?? result.Summary}", result.Ok ? (result.Blocked > 0 ? "WARN" : null) : "ERROR");
         if (SelectedTab == WorkflowTabs.Patch)
             UpdateHeroForTab();
         return result.Ok;
@@ -407,7 +407,7 @@ public sealed partial class MainViewModel
     private void OpenOutput()
     {
         if (!_pathPicker.OpenPath(OutputPath))
-            AppendLog("Không mở được thư mục xuất — kiểm tra lại đường dẫn.");
+            AppendLog("Không mở được nơi lưu bản dịch — kiểm tra lại đường dẫn.");
     }
 
     private bool CanOpenInput() => !string.IsNullOrWhiteSpace(InputPath);

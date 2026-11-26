@@ -50,7 +50,7 @@ def _tokens(text):
     return sorted(re.findall(r"\[[^\[\]]+\]|\{[^{}]*\}", text))
 
 
-@unittest.skipUnless(SDK_OK, "Official Ren'Py SDK absent")
+@unittest.skipUnless(SDK_OK, "Official công cụ Ren’Py absent")
 class RenPyOwnerFlowTests(unittest.TestCase):
     def extract(self, script=SCRIPT):
         from vntext.app_tasks import run_extract_task

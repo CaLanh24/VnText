@@ -107,7 +107,7 @@
             <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
                        Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào thư mục xuất riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào nơi lưu bản dịch riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
             </StackPanel>
         </Border>
 

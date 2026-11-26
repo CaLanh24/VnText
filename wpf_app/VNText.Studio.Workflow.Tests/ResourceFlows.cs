@@ -97,7 +97,7 @@ internal static partial class Program
             vm.TestSetActiveTask("res-1","resources");
             AssertTrue(vm.ResourcesActive);
             AssertTrue(vm.CancelResourcesCommand.CanExecute(null));
-            vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="res-1",Done=50,Total=100,Step="Tải Ren'Py SDK 8.5.3"});
+            vm.TestHandleWorkerEvent(new WorkerEvent {Type="progress",Id="res-1",Done=50,Total=100,Step="Tải công cụ Ren’Py 8.5.3"});
             AssertTrue(vm.ResourceProgressPercent>0);
             AssertTrue(vm.ResourceProgressText.Length>0);
             vm.TestHandleWorkerEvent(new WorkerEvent {Type="complete",Id="res-1",Ok=false,Error="cancelled"});
@@ -199,7 +199,7 @@ internal static partial class Program
                 AssertEqual(1,completions);                                                              // exactly one completion notice for a finished analysis
                 AssertFalse(vm.AnalyzeBusy);
                 AssertTrue(vm.AnalyzeNextActionText.Contains("Đã nhận diện",StringComparison.Ordinal));
-                AssertTrue(vm.AnalyzeNextActionText.Contains("chưa xác minh khả năng tạo patch",StringComparison.Ordinal));
+                AssertTrue(vm.AnalyzeNextActionText.Contains("chưa xác minh khả năng tạo bản Việt hóa",StringComparison.Ordinal));
                 AssertEqual(1,vm.ExtractRuns.Count);
                 vm.TestMarkTaskTerminal("an-ok");
                 AssertTrue(ReadShared(vm.ExtractRuns[0].FilePath).Any(s=>s.Contains("item-ok")));        // durable file, same as extraction runs

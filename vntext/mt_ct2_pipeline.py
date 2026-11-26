@@ -869,13 +869,13 @@ def _run_ct2_translate_impl(
         review_total = _count_review_only_rows(package_dir)
         human_review_count = _count_human_review_rows(package_dir)
         if human_review_count:
-            emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch")
+            emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa")
         summary = (
             f"Không còn dòng cần dịch MT. Tổng {translated_count}/{len(rows)} có translation; "
             f"copy_vi={copied_vi}, skip_ky_thuat={skipped_technical}, pending={pending}, review={review_total}"
         )
         if human_review_count:
-            summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
+            summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
         emit(summary)
         build_translation_memory(rows, package_dir)
         if blocker_records or not review_total:
@@ -1320,8 +1320,8 @@ def _run_ct2_translate_impl(
         f"tổng {sum(1 for r in rows if str(r.get('translation') or '').strip())}/{len(rows)} có translation"
     )
     if human_review_count:
-        summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
-        emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch")
+        summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
+        emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa")
     emit(summary)
     result = _build_translate_result(
         package_dir,
@@ -1368,7 +1368,7 @@ def _run_ct2_translate_keys_impl(
     progress: ProgressFn | None = None,
     log: LogFn | None = None,
 ) -> dict:
-    """Dịch lại một tập key — dùng cho tab Sửa CSV (xử lý dòng bị gate chặn)."""
+    """Dịch lại một tập key — dùng cho tab Sửa bản dịch (xử lý dòng bị gate chặn)."""
     from vntext.mt_ct2_io import _ReviewSink, _apply_mapping_memory, _batch_translate_chunk, _flush_csv_atomic, _load_csv
     from vntext.mt_ct2_model import CsvRevisionConflict, EmptyCsvError, TranslateCancelled, _flush_every_rows, get_translator
     from vntext.mt_ct2_status import _load_human_review_keys, _safe_candidate
@@ -1398,7 +1398,7 @@ def _run_ct2_translate_keys_impl(
         return hashlib.sha256(csv_path.read_bytes()).hexdigest()
 
     def conflict() -> CsvRevisionConflict:
-        return CsvRevisionConflict("CSV đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); dừng dịch và KHÔNG ghi đè. Hãy tải lại CSV rồi chọn lại.")
+        return CsvRevisionConflict("Bản dịch đã thay đổi ngoài ứng dụng (khác bản bạn đã mở); dừng dịch và KHÔNG ghi đè. Hãy tải lại bản dịch rồi chọn lại.")
 
     if revision["sha"] is not None and disk_sha() != revision["sha"]:
         raise conflict()
@@ -1490,7 +1490,7 @@ def _run_ct2_translate_keys_impl(
             "selected_applied_keys": sorted(selected_applied_keys),
             "blocked": selected_copy_blocked,
             "summary": (
-                f"Không có dòng MT để dịch lại. Cần duyệt thủ công {existing_review_count} dòng trước khi Patch"
+                f"Không có dòng MT để dịch lại. Cần duyệt thủ công {existing_review_count} dòng trước khi tạo bản Việt hóa"
                 if existing_review_count
                 else "Không có dòng MT để dịch lại."
             ),
@@ -1746,8 +1746,8 @@ def _run_ct2_translate_keys_impl(
     human_review_count = _count_human_review_rows(package_dir)
     summary = f"Dịch lại: applied={applied}, blocked={blocked}, tổng {len(mt_targets)} dòng gửi CT2"
     if human_review_count:
-        summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
-        emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch")
+        summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
+        emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa")
     emit(summary)
     result = {
         "ok": applied > 0 and human_review_count == 0,
@@ -1756,9 +1756,9 @@ def _run_ct2_translate_keys_impl(
         "summary": summary,
         "total": len(mt_targets),
         "error": (
-            f"Cần duyệt thủ công {human_review_count} dòng trước khi Patch"
+            f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
             if human_review_count
-            else ("" if applied > 0 else "Dịch lại vẫn bị chặn — không dòng nào vượt Patch Gate")
+            else ("" if applied > 0 else "Dịch lại vẫn bị chặn — không dòng nào vượt bản Việt hóa Gate")
         ),
         "pipeline_liveness": True,
         "human_review_required_count": human_review_count,

@@ -133,7 +133,7 @@ internal static class Harness
             CompileCache(game, Overlay, v25);
             var result = next.Uninstall(game, null, UninstallMode.CleanOriginal);
             Check("clean-original restore returns the game byte-identical to before any VNText patch", Snapshot(game) == original, Snapshot(game));
-            Check("clean-original restore reports the removed older layer", string.Join("|", result.Notes).Contains("lớp patch cũ hơn"));
+            Check("clean-original restore reports the removed older layer", string.Join("|", result.Notes).Contains("lớp bản Việt hóa cũ hơn"));
             var cleaned = Snapshot(game);
             var leftover = Throws(() => old.Uninstall(game), "đã bị thay thế", out var m2)
                 || (m2 == "no exception" && !File.Exists(old.StatePath));
@@ -638,7 +638,7 @@ internal static class Harness
             File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest with { GameChecks = manifest.GameChecks.Append(new GameCheck(Activation, Sha(Bytes(act)))).ToList() }));
             b = new InstallerService(Path.GetDirectoryName(b.JournalPath)!);
             a.Uninstall(game);
-            var refused = Throws(() => b.Install(game), "Tạo patch' lại", out var m18);
+            var refused = Throws(() => b.Install(game), "Tạo bản Việt hóa' lại", out var m18);
             Check("a patch built over another installed VNText patch, offered to the clean game, says to build the patch again", refused && m18.Contains(Activation), m18);
             Check("that refusal wrote nothing", Snapshot(game) == original);
         }

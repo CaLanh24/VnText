@@ -6,7 +6,7 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
-    private string _resourceStatus = "Chuẩn bị mô hình dịch và Ren’Py SDK trước khi chọn game. OCR dùng gói tiếng Anh của Windows.";
+    private string _resourceStatus = "Cần có bộ dịch và công cụ cho game Ren’Py trước khi bắt đầu. Nhận diện chữ trong ảnh dùng gói tiếng Anh của Windows.";
     public string ResourceStatus { get => UiText.TranslateDynamic(_resourceStatus); private set => Set(ref _resourceStatus, value); }
     public RelayCommand CheckResourcesCommand { get; private set; } = null!;
     public RelayCommand DownloadResourcesCommand { get; private set; } = null!;
@@ -124,12 +124,12 @@ public sealed partial class MainViewModel
             if (string.IsNullOrWhiteSpace(dataRoot)) dataRoot = WorkerPaths.AppDataRoot();
             using var report = JsonDocument.Parse(File.ReadAllText(Path.Combine(dataRoot, "resource-status.json")));
             var lines = new List<string>();
-            var allReady = true; var count = 0;
+            var allReady = true; var count = 0; var missingIds = new List<string>();
             foreach (var resource in report.RootElement.GetProperty("resources").EnumerateArray())
             {
                 var name = resource.GetProperty("resource").GetString();
                 var ready = resource.GetProperty("ready").GetBoolean();
-                allReady &= ready; count++;
+                allReady &= ready; count++; if (!ready) missingIds.Add(name ?? "");
                 var detail = ready ? resource.GetProperty("path").GetString() : resource.GetProperty("error").GetString();
                 lines.Add($"{name}: {(ready ? "Sẵn sàng" : "Chưa sẵn sàng")} · {detail}");
                 if (name == "renpy" && ready) { RenpySdkPath = detail ?? ""; RenpySdkAction = "existing"; RenpySdkError = ""; }
@@ -137,8 +137,8 @@ public sealed partial class MainViewModel
             _resourcesChecked = count > 0; _resourcesAllReady = count > 0 && allReady;
             AppendLog(string.Join("\n", lines));      // the per-resource detail stays in the log; the page shows one brief state
             ResourceStatus = _resourcesAllReady
-                ? "Sẵn sàng · mô hình dịch, Ren’Py SDK và OCR đã cài trên máy."
-                : "Còn thiếu hoặc hỏng tài nguyên — dùng “Sửa/tải tài nguyên còn thiếu”. Phần đã cài được giữ nguyên.\n" + string.Join("\n", lines.Where(line => line.Contains("Chưa sẵn sàng")));
+                ? "Sẵn sàng · bộ dịch, công cụ cho game Ren’Py và nhận diện chữ đã cài trên máy."
+                : PlainLanguage.MissingSummary(missingIds) + " Bấm “Sửa tự động” để tải phần còn thiếu; phần đã cài được giữ nguyên. Chi tiết kỹ thuật ở “Xem chẩn đoán”.";
             RaiseResourceReadiness();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or KeyNotFoundException)
@@ -148,7 +148,7 @@ public sealed partial class MainViewModel
             RaiseResourceReadiness();
             AppendLog(ResourceStatus, "WARN");
         }
-        if (!evt.Ok) { if (!ResourceStatusAlreadyStates(evt.Error)) ResourceStatus += "\n" + evt.Error; RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
+        if (!evt.Ok) { AppendLog(evt.Error ?? "", "WARN"); RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);
         CheckResourcesCommand.RaiseCanExecuteChanged(); DownloadResourcesCommand.RaiseCanExecuteChanged();

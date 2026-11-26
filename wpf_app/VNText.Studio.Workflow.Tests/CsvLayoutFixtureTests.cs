@@ -48,7 +48,7 @@ internal static partial class Program
                     FrameworkElement Named(string name) => (FrameworkElement)(window.FindName(name) ?? throw new InvalidOperationException(name));
                     var grid = (DataGrid)Named("CsvEditorGrid");
 
-                    Require(Named("CsvEmptyState").IsVisible && Named("CsvEmptyChooseButton").IsVisible, "empty CSV shows its instruction and the Chọn CSV action");
+                    Require(Named("CsvEmptyState").IsVisible && Named("CsvEmptyChooseButton").IsVisible, "empty bản dịch shows its instruction and the Chọn bản dịch action");
                     Require(!Named("CsvBulkReplacePanel").IsVisible && !grid.IsVisible && !Named("CsvChooseHeaderButton").IsVisible,
                         "no CSV: bulk tools, table and the duplicate header action stay hidden");
                     var emptyHeight = Named("CsvEmptyState").ActualHeight;
@@ -273,7 +273,7 @@ internal static partial class Program
                             picker.TranslationCsv = Path.Combine(packageB, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
                             Badge("CẦN XEM LẠI", "ToastWarningBackgroundBrush", "ToastWarningForegroundBrush", "B blocked");
-                            // Owner 2026-11-21: "Tạo patch" stays available once a source is chosen (it re-checks on click and reports the concrete blocker), so a blocked package no longer disables it.
+                            // Owner 2026-11-21: "Tạo bản Việt hóa" stays available once a source is chosen (it re-checks on click and reports the concrete blocker), so a blocked package no longer disables it.
                             Require(Named("PatchBadge").IsVisible && vm.RunPatchCommand.CanExecute(null), $"{badgeTheme}: B shows the amber badge and packaging stays available to re-check");
                             picker.TranslationCsv = Path.Combine(packageA, "translation.csv");
                             vm.ChooseTranslationCsvCommand.Execute(null);
@@ -288,7 +288,7 @@ internal static partial class Program
                         Directory.Delete(packageB, true);
                     }
                     // ---- English sidebar at UI 100% / 120%, 1043x720 DIP: every label is fully inside its navigation button ----
-                    var navKeys = new[] { "Lấy text", "Dịch tự động", "Sửa CSV", "Tạo patch", "Nhật ký", "Cài đặt" };
+                    var navKeys = new[] { "Lấy text", "Dịch tự động", "Sửa bản dịch", "Tạo bản Việt hóa", "Nhật ký", "Cài đặt" };
                     var navReport = new List<string>();
                     foreach (var navScale in new[] { 1.2, 1.0 })
                     {

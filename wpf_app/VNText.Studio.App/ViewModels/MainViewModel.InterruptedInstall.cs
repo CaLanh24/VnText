@@ -25,7 +25,7 @@ public sealed partial class MainViewModel
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { return true; }
         const string caption = "Phục hồi lần cài bị ngắt";
-        if (InterruptedInstallMessageBox(UiText.Translate("Lần cài patch VNText trước vào game này bị ngắt giữa chừng (tắt máy hoặc ứng dụng bị đóng). Trước khi lấy text hay tạo patch, VNText cần đưa game về đúng trạng thái trước lần cài đó (kiểm hash từng tệp). Phục hồi ngay?"),
+        if (InterruptedInstallMessageBox(UiText.Translate("Lần cài bản Việt hóa VNText trước vào game này bị ngắt giữa chừng (tắt máy hoặc ứng dụng bị đóng). Trước khi lấy text hay tạo bản Việt hóa, VNText cần đưa game về đúng trạng thái trước lần cài đó (kiểm hash từng tệp). Phục hồi ngay?"),
                 UiText.Translate(caption), MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
         {
             StatusText = UiText.Translate("Chưa phục hồi lần cài bị ngắt");

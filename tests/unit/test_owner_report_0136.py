@@ -1,11 +1,11 @@
-"""Owner report on 0.1.35 (real Ren'Py game, Sửa CSV 977 rows + Tạo patch), reproduced on a SYNTHETIC Ren'Py layout (no game data):
+"""Owner report on 0.1.35 (real Ren'Py game, Sửa bản dịch 977 rows + Tạo bản Việt hóa), reproduced on a SYNTHETIC Ren'Py layout (no game data):
 
 1. no one-click way to check every untranslated / needs-review row            -> WPF harness (Program.Owner0136.cs) + filters here
-2. a hand-translated row kept "Đã dịch · Chưa có đường ghi patch được chứng minh…" (unexplained, no way out)
+2. a hand-translated row kept "Đã dịch · Chưa có đường ghi bản Việt hóa được chứng minh…" (unexplained, no way out)
 3. "Dịch đã chọn" changed nothing and said nothing (rows waiting for review were skipped forever)
 4. "Cần xem lại 5" with no reason or action per row
-5. Tạo patch said 22 ineligible while Sửa CSV said 5 (deleted rows and review evidence outside the CSV were counted)
-6. Tạo patch failed with "Ren'Py dialogue mapping conflict: <id>" (the game already had a different Vietnamese translation for that line)
+5. Tạo bản Việt hóa said 22 ineligible while Sửa bản dịch said 5 (deleted rows and review evidence outside the CSV were counted)
+6. Tạo bản Việt hóa failed with "Ren'Py dialogue mapping conflict: <id>" (the game already had a different Vietnamese translation for that line)
 
 Each test is named after the issue it pins.  The SDK/model gated tests skip (never pass) when the official SDK or the product model is absent."""
 import csv
@@ -42,7 +42,7 @@ screen ui():
     text "Disabled label" substitute False
     textbutton "Return" action NullAction()
 '''
-OLD_PHRASE = "Chưa có đường ghi patch được chứng minh"
+OLD_PHRASE = "Chưa có đường ghi bản Việt hóa được chứng minh"
 _TEMPLATE: dict = {}
 
 
@@ -58,7 +58,7 @@ def _write_rows(path: Path, fields: list[str], rows: list[dict]) -> None:
         writer.writeheader(); writer.writerows(rows)
 
 
-@unittest.skipUnless(SDK_OK, "Official Ren'Py SDK absent")
+@unittest.skipUnless(SDK_OK, "Official công cụ Ren’Py absent")
 class OwnerReport0136(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -141,7 +141,7 @@ class OwnerReport0136(unittest.TestCase):
         self.assertNotIn(key, validate_document(self.csv)["issues_by_key"])                # and now has no status at all
         from vntext.patch_gate import audit_patch_package
         audit = audit_patch_package(self.csv, self.package / "manifest.json")
-        self.assertNotIn(key, {item["key"] for item in audit["items"]})                    # Tạo patch includes it
+        self.assertNotIn(key, {item["key"] for item in audit["items"]})                    # Tạo bản Việt hóa includes it
 
     def test_issue2_row_without_a_write_route_explains_itself_in_plain_vietnamese(self):
         from vntext.patch_gate import REASON_LABELS_VI, reason_action_vi

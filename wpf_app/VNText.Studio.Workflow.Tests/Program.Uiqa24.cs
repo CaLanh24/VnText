@@ -29,17 +29,17 @@ internal static partial class Program
                         vm.TestMarkTaskTerminal(task + status);
                         Require(vm.ExtractStatusText == "Đã lấy text xong: 120 dòng", "Extract keeps its owned status after " + task + status);
                     }
-                vm.TestSetActiveTask("owned-error", "extract"); vm.StatusText = "Lỗi worker"; vm.TestMarkTaskTerminal("owned-error");
-                Require(vm.ExtractStatusText == "Lỗi worker", "Extract does retain its own failure");
+                vm.TestSetActiveTask("owned-error", "extract"); vm.StatusText = "Lỗi bộ xử lý nền"; vm.TestMarkTaskTerminal("owned-error");
+                Require(vm.ExtractStatusText == "Lỗi bộ xử lý nền", "Extract does retain its own failure");
                 vm.InputPath = Path.Combine(TestTempRoot(), "different-game");
-                Require(vm.ExtractStatusText != "Lỗi worker", "A new source never inherits another source's status");
+                Require(vm.ExtractStatusText != "Lỗi bộ xử lý nền", "A new source never inherits another source's status");
                 Console.WriteLine("PASS task-owned Extract status");
                 var technical = new VNText.Studio.App.Models.CsvEditorRow { SourceText = "[page]", CanTranslate = false, IsTechnical = true };
                 var humanReview = new VNText.Studio.App.Models.CsvEditorRow { SourceText = "Please wait.", CanTranslate = false, IsTechnical = false };
                 Require(!technical.NeedsTranslation && humanReview.NeedsTranslation, "Only technical rows leave the untranslated filter; human review remains visible");
                 Require(technical.IssueShort != humanReview.IssueShort, "Technical skip is distinct from human review");
                 UiText.SetLanguage("en");
-                var summary = UiText.TranslateDynamic("Đã dịch và lưu 1; bỏ qua 2; chờ bạn duyệt 0; chưa dịch được 0 dòng. Xem lý do từng dòng trong Nhật ký. Bản nháp đã lưu; Patch sẽ bỏ qua 3 dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game).");
+                var summary = UiText.TranslateDynamic("Đã dịch và lưu 1; bỏ qua 2; chờ bạn duyệt 0; chưa dịch được 0 dòng. Xem lý do từng dòng trong Nhật ký. Bản nháp đã lưu; bỏ qua 3 dòng khác chưa đủ điều kiện (chưa dịch, chờ duyệt hoặc không ghi được vào game).");
                 Require(summary.Contains("Translated and saved: 1") && summary.Contains("omit 3") && !summary.Contains("Bản nháp"), "Selected-job summary and optional omission clause are English");
                 UiText.SetLanguage("vi");
 

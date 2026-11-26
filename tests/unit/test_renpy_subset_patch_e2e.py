@@ -32,7 +32,7 @@ TRANSLATIONS = {"Welcome to the village, traveler.": "Chào mừng đến ngôi 
                 "Version [config.version!t]": "Phiên bản"}
 
 
-@unittest.skipUnless(SDK_OK, "Official Ren'Py SDK absent")
+@unittest.skipUnless(SDK_OK, "Official công cụ Ren’Py absent")
 class SubsetPatchE2ETests(unittest.TestCase):
     def setUp(self):
         from vntext.app_tasks import run_extract_task

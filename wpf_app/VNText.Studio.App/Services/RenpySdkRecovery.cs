@@ -24,13 +24,13 @@ internal static class RenpySdkRecovery
         var suffix = string.IsNullOrWhiteSpace(detail) ? "" : $" Chi tiết: {detail}";
         return action switch
         {
-            "download" => "Đang thử tải SDK Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn SDK đã cài.",
+            "download" => "Đang thử tải công cụ Ren'Py 8.5.3. Nếu lỗi hoặc hủy, bạn có thể thử lại hoặc chọn công cụ đã cài.",
             "existing" => "Đã chọn thư mục công cụ; sẽ kiểm tra khi lấy text.",
-            "none" => "Sẽ chỉ quét tĩnh để xuất danh sách cần xem lại; không dịch, không tạo patch và kết quả luôn chưa đầy đủ.",
-            "missing" => "Chưa dùng được SDK Ren'Py 8.5.3. Hãy chọn thư mục SDK hoặc thử tải lại; tiếp tục không SDK chỉ xuất danh sách cần xem lại (không dịch, không tạo patch)." + suffix,
-            "cancelled" => "Đã hủy bước lấy text/SDK. Chọn SDK đã cài hoặc thử tải lại khi sẵn sàng.",
-            "error" => "Không thể hoàn tất bước lấy text/SDK. Hãy xem lỗi, chọn SDK đã cài hoặc thử tải lại." + suffix,
-            "ready" => "Đã sẵn sàng SDK Ren'Py 8.5.3.",
+            "none" => "Sẽ chỉ quét tĩnh để xuất danh sách cần xem lại; không dịch, không tạo bản Việt hóa và kết quả luôn chưa đầy đủ.",
+            "missing" => "Chưa dùng được công cụ Ren’Py 8.5.3. Hãy chọn thư mục công cụ hoặc thử tải lại; tiếp tục không có công cụ chỉ xuất danh sách cần xem lại (không dịch, không tạo bản Việt hóa)." + suffix,
+            "cancelled" => "Đã hủy bước lấy text/tải công cụ. Chọn công cụ đã cài hoặc thử tải lại khi sẵn sàng.",
+            "error" => "Không thể hoàn tất bước lấy text/tải công cụ. Hãy xem lỗi, chọn công cụ đã cài hoặc thử tải lại." + suffix,
+            "ready" => "Công cụ Ren’Py 8.5.3 đã sẵn sàng.",
             _ => "Khi lấy text, app tự dùng công cụ đã có; nếu chưa có, kết quả sẽ được báo là chưa đầy đủ.",
         };
     }

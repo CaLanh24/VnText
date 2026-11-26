@@ -634,7 +634,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         eligible_entries.append(entry)
     entries = eligible_entries
     if not entries:
-        raise RenPyPatchError("Không có dòng nào đủ điều kiện để patch (chỉ có dòng xem lại/chưa chứng minh); hãy dịch/duyệt trong CSV rồi thử lại. [package has no eligible Ren'Py patchable entries]")
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để bản Việt hóa (chỉ có dòng xem lại/chưa chứng minh); hãy dịch/duyệt trong bản dịch rồi thử lại. [package has no eligible Ren'Py patchable entries]")
     dialogues: list[tuple[dict, str]] = []
     requested_strings: dict[tuple[str, str], str] = {}
     native_ids: set[str] = set()
@@ -765,7 +765,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             requested_strings[string_identity] = translation
     if not dialogues and not requested_strings:
         # Every row was omitted (untranslated / unsafe): there is nothing to write.  Never emit an empty overlay that could read back as a patch.
-        raise RenPyPatchError("Không có dòng nào đủ điều kiện để patch (chưa có dòng nào được dịch và qua kiểm tra); không tạo patch rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để bản Việt hóa (chưa có dòng nào được dịch và qua kiểm tra); không tạo bản Việt hóa rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
     for archive_path, expected_hash in archive_identities.items():
         if RenPyArchive(archive_path, fresh=True).container_sha256 != expected_hash:
             raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")
@@ -822,8 +822,8 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                     if installed_receipt:
                         # An INSTALLED VNText patch that was edited by hand after install: the hand edit is never overwritten silently.
                         raise RenPyPatchError(
-                            "Game đang có patch VNText cài trước đó với bản dịch khác cho cùng câu thoại "
-                            f"({entry['locator']['native_id']}). Hãy mở 'Cài trong VNText' → 'Gỡ và hoàn nguyên' (hoặc 'Về bản gốc sạch') rồi tạo patch lại. "
+                            "Game đang có bản Việt hóa VNText cài trước đó với bản dịch khác cho cùng câu thoại "
+                            f"({entry['locator']['native_id']}). Hãy mở 'Cài trong VNText' → 'Gỡ và hoàn nguyên' (hoặc 'Về bản gốc sạch') rồi tạo bản Việt hóa lại. "
                             "Ren'Py dialogue mapping conflict")
                     prior_rewrites[int(prior["line"])] = (prior["translation"], _say_line(entry, translation))
                     rewritten_ids.add(str(entry["locator"]["native_id"]))
@@ -848,8 +848,8 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             if Path(str(existing["path"])).resolve() == prior_overlay_path:
                 if installed_receipt:
                     raise RenPyPatchError(
-                        "Game đang có patch VNText cài trước đó với bản dịch khác cho cùng chuỗi giao diện. Hãy mở 'Cài trong VNText' → 'Gỡ và hoàn nguyên' "
-                        "(hoặc 'Về bản gốc sạch') rồi tạo patch lại. Ren'Py string mapping conflict")
+                        "Game đang có bản Việt hóa VNText cài trước đó với bản dịch khác cho cùng chuỗi giao diện. Hãy mở 'Cài trong VNText' → 'Gỡ và hoàn nguyên' "
+                        "(hoặc 'Về bản gốc sạch') rồi tạo bản Việt hóa lại. Ren'Py string mapping conflict")
                 prior_rewrites[int(existing["new_line"])] = (existing["translation"], f"    new {_quote(translation)}")
                 continue
             for entry in entries:
@@ -861,8 +861,8 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         already_satisfied[identity] = existing
     if not dialogues and not strings and not already_satisfied and not prior_rewrites:
         raise RenPyPatchError(
-            "Không tạo patch: mọi dòng đã dịch đều đã có bản dịch tiếng Việt KHÁC sẵn trong game (" + ", ".join(sorted(conflict_files)) + "); "
-            "VNText giữ nguyên bản có sẵn và không tạo patch rỗng. [existing_translation_conflict: " + str(len(conflict_keys)) + "]")
+            "Không tạo bản Việt hóa: mọi dòng đã dịch đều đã có bản dịch tiếng Việt KHÁC sẵn trong game (" + ", ".join(sorted(conflict_files)) + "); "
+            "VNText giữ nguyên bản có sẵn và không tạo bản Việt hóa rỗng. [existing_translation_conflict: " + str(len(conflict_keys)) + "]")
     target = output / "COPY_TO_GAME_ROOT" / "game" / "tl" / "vietnamese" / "vntext.rpy"
     activation = output / "COPY_TO_GAME_ROOT" / "game" / "zzz_vntext_vietnamese.rpy"
     if target == root or root in target.parents or activation == root or root in activation.parents:

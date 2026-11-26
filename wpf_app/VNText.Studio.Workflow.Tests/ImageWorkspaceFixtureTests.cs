@@ -120,7 +120,7 @@ internal static partial class Program
                 AssertFalse(B("DeliveryButton").IsEnabled);
                 AssertFalse(B("InstallButton").IsEnabled);
                 AssertTrue(vm.RunTranslateCommand.CanExecute(null));       // an image-only package still translates (straight to the OCR-detected images)
-                AssertTrue(vm.RunPatchCommand.CanExecute(null));           // "Tạo patch" stays available; with no text rows it re-checks and explains why nothing can be built
+                AssertTrue(vm.RunPatchCommand.CanExecute(null));           // "Tạo bản Việt hóa" stays available; with no text rows it re-checks and explains why nothing can be built
 
                 // Choosing a real game image enables OCR; a loaded review enables region editing, save and render.
                 vm.ImagePath = png;
@@ -279,7 +279,7 @@ internal static partial class Program
                     AssertTrue(vm.ImageStatus.Contains(label, StringComparison.Ordinal));
                     AssertFalse(vm.ImageStatus.Contains("cancelled", StringComparison.OrdinalIgnoreCase));
                     AssertTrue(vm.ImageStatus.Contains("Ảnh gốc được giữ nguyên", StringComparison.Ordinal));
-                    AssertTrue(vm.ImageStatus.Contains("có thể còn trong thư mục xuất", StringComparison.Ordinal));   // no rollback promise
+                    AssertTrue(vm.ImageStatus.Contains("có thể còn trong nơi lưu bản dịch", StringComparison.Ordinal));   // no rollback promise
                     AssertFalse(vm.ImageStatus.Contains("không áp dụng kết quả nào", StringComparison.Ordinal));
                     AssertFalse(vm.ImageStatus.Contains("Chưa hoàn tất", StringComparison.Ordinal));
                     AssertFalse(vm.ImageStatus.Contains("Đã render", StringComparison.Ordinal));

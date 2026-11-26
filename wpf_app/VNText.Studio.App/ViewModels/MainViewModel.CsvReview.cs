@@ -69,7 +69,7 @@ public sealed partial class MainViewModel
 
     public string CsvFocusedIssueReason => FocusedCsvRow is not { } row ? ""
         : row.HasIssue ? UiText.Msg("Lý do: {0}", UiText.TranslateDynamic(string.IsNullOrWhiteSpace(row.IssueDisplay) ? row.IssueLabel : row.IssueDisplay))
-        : row.IsEmpty ? UiText.Translate("Lý do: dòng này chưa có bản dịch nên Tạo patch sẽ bỏ qua.")
+        : row.IsEmpty ? UiText.Translate("Lý do: dòng này chưa có bản dịch nên Tạo bản Việt hóa sẽ bỏ qua.")
         : "";
 
     public string CsvFocusedIssueAction => FocusedCsvRow is not { } row ? ""
@@ -106,13 +106,13 @@ public sealed partial class MainViewModel
     {
         if (FocusedCsvRow is not { } row) return;
         if (CsvEditorMessageBox(UiText.Lines(
-                "Bỏ qua dòng này? Dòng sẽ được xóa khỏi CSV: không dịch, không patch, và không hiện lại khi lấy text lại.",
+                "Bỏ qua dòng này? Dòng sẽ được xóa khỏi bản dịch: không dịch, không bản Việt hóa, và không hiện lại khi lấy text lại.",
                 "Game gốc không bị thay đổi; quyết định được ghi trong user_exclusions.json."),
                 "Bỏ qua dòng này", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        if (!await EnsureCsvSavedBeforeBatchAsync("CSV có thay đổi chưa lưu. Lưu trước khi bỏ qua dòng này?")) return;
+        if (!await EnsureCsvSavedBeforeBatchAsync("Bản dịch có thay đổi chưa lưu. Lưu trước khi bỏ qua dòng này?")) return;
         if (string.IsNullOrWhiteSpace(_csvEditorSourceSha256) || !File.Exists(CsvEditorPath))
         {
-            ShowToast("Không xác minh được bản CSV đang mở; hãy tải lại CSV rồi chọn lại.", "error");
+            ShowToast("Không xác minh được bản bản dịch đang mở; hãy tải lại bản dịch rồi chọn lại.", "error");
             return;
         }
         var result = TranslationCsvEditorService.ExcludeRows(CsvEditorPath, new[] { row.Key }, _csvEditorSourceSha256!);
@@ -122,7 +122,7 @@ public sealed partial class MainViewModel
             AppendLog("Bỏ qua dòng thất bại: " + result.Error, "WARN");
             return;
         }
-        AppendLog(UiText.Msg("Đã bỏ qua (xóa) dòng {0} khỏi CSV (ghi trong user_exclusions.json).", row.Key));
+        AppendLog(UiText.Msg("Đã bỏ qua (xóa) dòng {0} khỏi bản dịch (ghi trong user_exclusions.json).", row.Key));
         ShowToast(UiText.Msg("Đã bỏ qua dòng; còn {0} dòng.", result.Remaining.ToString("N0")), "success");
         CsvEditorDirty = false;
         LoadCsvEditor(CsvEditorPath, reload: true);

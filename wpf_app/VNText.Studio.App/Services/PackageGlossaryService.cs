@@ -43,7 +43,7 @@ public static class PackageGlossaryService
     {
         var path = ResolvePath(csvPath);
         if (string.IsNullOrWhiteSpace(path))
-            throw new InvalidOperationException("Chưa chọn CSV để lưu glossary.");
+            throw new InvalidOperationException("Chưa chọn bản dịch để lưu glossary.");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var tmp = path + ".tmp";
         var json = JsonSerializer.Serialize(entries.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)

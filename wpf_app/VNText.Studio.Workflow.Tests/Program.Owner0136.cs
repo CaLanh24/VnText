@@ -5,7 +5,7 @@ using VNText.Studio.App.ViewModels;
 
 namespace VNText.Studio.Workflow.Tests;
 
-/// <summary>Owner report on 0.1.35 (Sửa CSV + Tạo patch on a real Ren'Py game), one named check per reported issue; synthetic rows only.</summary>
+/// <summary>Owner report on 0.1.35 (Sửa bản dịch + Tạo bản Việt hóa on a real Ren'Py game), one named check per reported issue; synthetic rows only.</summary>
 internal static partial class Program
 {
     private static List<CsvEditorRow> Owner0136Rows() => new()
@@ -23,7 +23,7 @@ internal static partial class Program
         var display = issues.ToDictionary(kv => kv.Key, kv => kv.Value switch
         {
             "human_review" => "Bản dịch máy đang chờ bạn duyệt",
-            "review_only" => "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)",
+            "review_only" => "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
             "mt_blocked" => "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch",
             _ => kv.Value,
         });
@@ -69,8 +69,8 @@ internal static partial class Program
         AssertEqual("", row.IssueLabel);
         AssertEqual(UiText.Translate("Đã dịch"), row.IssueShort);
         Require(!row.IssueShort.Contains("đường ghi"), "the old unexplained phrase is gone");
-        AssertEqual("Không ghi được vào game", CsvEditorRow.ShortenIssue("Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo patch sẽ bỏ qua (bản dịch vẫn được lưu)"));
-        AssertEqual("Bấm Lưu", CsvEditorRow.ShortenIssue("Đã dịch — bấm Lưu để đưa dòng này vào patch"));
+        AssertEqual("Không ghi được vào game", CsvEditorRow.ShortenIssue("Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)"));
+        AssertEqual("Bấm Lưu", CsvEditorRow.ShortenIssue("Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa"));
     }
 
     private static void Owner0136_Issue3_SelectedTranslateResultNamesWhatHappenedToEachRow()
@@ -90,7 +90,7 @@ internal static partial class Program
         var rows = Owner0136Rows();
         using var vm = Owner0136Vm(rows);
         vm.TestApplyValidation(Owner0136Validation(new() { ["r1"] = "human_review", ["r2"] = "review_only" },
-            new() { ["r1"] = "Bấm 'Chấp nhận đề xuất' để dùng bản dịch máy, hoặc tự sửa rồi Lưu. Hoặc 'Bỏ qua dòng này'.", ["r2"] = "Không cần làm gì: Patch bỏ qua dòng này." },
+            new() { ["r1"] = "Bấm 'Chấp nhận đề xuất' để dùng bản dịch máy, hoặc tự sửa rồi Lưu. Hoặc 'Bỏ qua dòng này'.", ["r2"] = "Không cần làm gì: bản Việt hóa bỏ qua dòng này." },
             new() { ["r1"] = "Bám chặt vào!" }));
         var r1 = rows.Single(r => r.Key == "r1");
         vm.UpdateCsvEditorSelection(new[] { r1 });

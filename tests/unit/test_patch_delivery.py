@@ -183,7 +183,7 @@ class PatchDeliveryTests(unittest.TestCase):
     def test_patch_content_label_names_what_was_patched_not_the_engine(self):
         from vntext.app_tasks import _patch_content_label
 
-        self.assertEqual("Patch văn bản thường", _patch_content_label({"results": [{"method": "plain_text_line"}]}))
+        self.assertEqual("Bản Việt hóa văn bản thường", _patch_content_label({"results": [{"method": "plain_text_line"}]}))
         self.assertEqual("Patch Unity/Naninovel", _patch_content_label(
             {"results": [{"method": "unity_textasset_line"}, {"method": "naninovel_script_string"}]}))
         self.assertEqual("Patch", _patch_content_label({"results": [{"method": "plain_text_line"}, {"method": "unity_ui_text"}]}))

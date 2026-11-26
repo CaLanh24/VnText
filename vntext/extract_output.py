@@ -130,7 +130,7 @@ def _take_lock(lock: Path, log=None) -> int:
     key = _held_key(lock)
     with _HELD_LOCKS_GUARD:
         held_here = key in _HELD_LOCKS
-    busy = ("Thư mục xuất đang được một lần lấy text khác sử dụng ({who}). Hãy đợi tác vụ đó xong hoặc hủy nó; "
+    busy = ("Nơi lưu bản dịch đang được một lần lấy text khác sử dụng ({who}). Hãy đợi tác vụ đó xong hoặc hủy nó; "
             "nếu không còn tác vụ nào chạy, hãy đóng VNText Studio rồi mở lại.")
     if held_here:
         raise ValueError(busy.format(who="chính tiến trình này"))
@@ -143,7 +143,7 @@ def _take_lock(lock: Path, log=None) -> int:
         except OSError:
             previous = b""
         if previous.strip() and log is not None:
-            log("Dọn nội dung khóa thư mục xuất của một tiến trình đã kết thúc.")
+            log("Dọn nội dung khóa nơi lưu bản dịch của một tiến trình đã kết thúc.")
         os.lseek(fd, 0, os.SEEK_SET)
         os.ftruncate(fd, 0)
         os.write(fd, json.dumps(owner_record()).encode())
@@ -176,7 +176,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
     source = Path(src).resolve()
     source = source if source.is_dir() else source.parent
     if root == source or root.is_relative_to(source) or source.is_relative_to(root):
-        raise ValueError("Thư mục xuất phải nằm riêng, không chứa hoặc nằm trong thư mục game.")
+        raise ValueError("Nơi lưu bản dịch phải nằm riêng, không chứa hoặc nằm trong thư mục game.")
     root.mkdir(parents=True, exist_ok=True)
     lock = root / ".vntext-extract.lock"
     fd = _take_lock(lock, log)

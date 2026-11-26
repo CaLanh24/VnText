@@ -121,7 +121,7 @@ def import_existing_translations(
     report = _report(target_input, source_input)
     try:
         if target_input.is_symlink() or source_input.is_symlink():
-            raise ExternalTranslationImportError("Không nhận file CSV liên kết")
+            raise ExternalTranslationImportError("Không nhận bản dịch liên kết")
         if not target_input.is_file() or not source_input.is_file():
             raise ExternalTranslationImportError("Không tìm thấy translation.csv đã chọn")
 

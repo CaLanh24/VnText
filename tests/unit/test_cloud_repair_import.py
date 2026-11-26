@@ -56,7 +56,7 @@ class CloudRepairImportTests(unittest.TestCase):
             "safety": "safe",
             "backend": "text",
             "byte_limit": "",
-            "patch_note": "Patch tự động",
+            "patch_note": "Bản Việt hóa tự động",
         }
 
     def _write_csv(self, path: Path, rows: list[dict[str, str]], fields: list[str] | None = None) -> bytes:

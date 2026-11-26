@@ -38,7 +38,7 @@ internal static class EmbeddedPatch
         var footer = new byte[FooterSize]; source.ReadExactly(footer);
         if (Encoding.ASCII.GetString(footer, 40, 17) != Magic) return AppContext.BaseDirectory;
         long length = BitConverter.ToInt64(footer, 32);
-        if (length < 22 || length > source.Length - FooterSize) throw new InvalidDataException("Payload patch không hợp lệ.");
+        if (length < 22 || length > source.Length - FooterSize) throw new InvalidDataException("Payload bản Việt hóa không hợp lệ.");
         var expected = footer.AsSpan(0, 32).ToArray();
         var id = Convert.ToHexString(expected).ToLowerInvariant();
         var local = !string.IsNullOrWhiteSpace(storageRoot) ? storageRoot : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -51,7 +51,7 @@ internal static class EmbeddedPatch
         {
             var buffer = new byte[1024 * 1024]; int read;
             while ((read = window.Read(buffer, 0, buffer.Length)) > 0) hash.AppendData(buffer, 0, read);
-            if (!hash.GetHashAndReset().AsSpan().SequenceEqual(expected)) throw new InvalidDataException("Hash payload patch không khớp.");
+            if (!hash.GetHashAndReset().AsSpan().SequenceEqual(expected)) throw new InvalidDataException("Hash payload bản Việt hóa không khớp.");
         }
         window.Position = 0;
 
@@ -59,14 +59,14 @@ internal static class EmbeddedPatch
         var mutex = new Mutex(false, "Local\\VNTextPatch-" + id);
         try
         {
-            if (!mutex.WaitOne(TimeSpan.FromSeconds(3))) { mutex.Dispose(); throw new IOException("Một installer khác đang mở patch này. Hãy đóng nó trước."); }
+            if (!mutex.WaitOne(TimeSpan.FromSeconds(3))) { mutex.Dispose(); throw new IOException("Một installer khác đang mở bản Việt hóa này. Hãy đóng nó trước."); }
         }
         catch (AbandonedMutexException) { }
         _instanceLock = mutex;
 
         Directory.CreateDirectory(root);
         using var zip = new ZipArchive(window, ZipArchiveMode.Read, leaveOpen: true);
-        if (zip.Entries.Count == 0 || zip.Entries.Count > MaxEntries) throw new InvalidDataException("Số file patch không hợp lệ.");
+        if (zip.Entries.Count == 0 || zip.Entries.Count > MaxEntries) throw new InvalidDataException("Số file bản Việt hóa không hợp lệ.");
         var names = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
         long total = 0;
         foreach (var entry in zip.Entries)
@@ -75,20 +75,20 @@ internal static class EmbeddedPatch
             if (name.EndsWith('/')) continue;
             if (!(name.StartsWith("COPY_TO_GAME_ROOT/", StringComparison.Ordinal) || AllowedRootFiles.Contains(name, StringComparer.Ordinal))
                 || name.Split('/').Any(p => p is "" or "." or ".." || p.Contains(':') || p.EndsWith('.') || p.EndsWith(' ')) || !names.TryAdd(name, entry))
-                throw new InvalidDataException("Đường dẫn payload patch không hợp lệ.");
-            if (entry.Length < 0 || entry.Length > MaxTotalBytes) throw new InvalidDataException("Kích thước file patch không hợp lệ.");
+                throw new InvalidDataException("Đường dẫn payload bản Việt hóa không hợp lệ.");
+            if (entry.Length < 0 || entry.Length > MaxTotalBytes) throw new InvalidDataException("Kích thước file bản Việt hóa không hợp lệ.");
             total = checked(total + entry.Length);
-            if (total > MaxTotalBytes) throw new InvalidDataException("Payload patch vượt giới hạn 64 GiB.");
+            if (total > MaxTotalBytes) throw new InvalidDataException("Payload bản Việt hóa vượt giới hạn 64 GiB.");
         }
-        if (!names.ContainsKey("patch_manifest.json")) throw new InvalidDataException("Thiếu manifest patch.");
+        if (!names.ContainsKey("patch_manifest.json")) throw new InvalidDataException("Thiếu manifest bản Việt hóa.");
         var free = new DriveInfo(Path.GetPathRoot(root)!).AvailableFreeSpace;
-        if (free < total + 256L * 1024 * 1024) throw new IOException("Không đủ dung lượng trống để chuẩn bị patch.");
+        if (free < total + 256L * 1024 * 1024) throw new IOException("Không đủ dung lượng trống để chuẩn bị bản Việt hóa.");
 
         // 3. Restore every payload file from the verified archive when it differs; remove anything unexpected from the payload tree.
         foreach (var (name, entry) in names)
         {
             var target = Path.GetFullPath(Path.Combine(root, name));
-            if (!target.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Payload ngoài thư mục patch.");
+            if (!target.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("Payload ngoài thư mục bản Việt hóa.");
             CheckPath(target, local);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             var temp = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
@@ -103,10 +103,10 @@ internal static class EmbeddedPatch
                     while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
                     {
                         copied += read;
-                        if (copied > entry.Length) throw new InvalidDataException("File patch lớn hơn kích thước khai báo.");
+                        if (copied > entry.Length) throw new InvalidDataException("File bản Việt hóa lớn hơn kích thước khai báo.");
                         hash.AppendData(buffer, 0, read); output.Write(buffer, 0, read);
                     }
-                    if (copied != entry.Length) throw new InvalidDataException("File patch ngắn hơn kích thước khai báo.");
+                    if (copied != entry.Length) throw new InvalidDataException("File bản Việt hóa ngắn hơn kích thước khai báo.");
                     digest = Convert.ToHexString(hash.GetHashAndReset());
                 }
                 if (File.Exists(target) && HashFile(target) == digest) { File.Delete(temp); continue; }
@@ -135,7 +135,7 @@ internal static class EmbeddedPatch
         var expected = new HashSet<string>(expectedNames.Select(n => Path.GetFullPath(Path.Combine(root, n))), StringComparer.OrdinalIgnoreCase);
         foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
         {
-            if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0) throw new IOException("Không dùng đường dẫn liên kết cho dữ liệu patch.");
+            if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0) throw new IOException("Không dùng đường dẫn liên kết cho dữ liệu bản Việt hóa.");
             if (!expected.Contains(Path.GetFullPath(file))) File.Delete(file);
         }
     }
@@ -147,7 +147,7 @@ internal static class EmbeddedPatch
         for (FileSystemInfo? part = new FileInfo(path); part is not null; part = part is FileInfo f ? f.Directory : ((DirectoryInfo)part).Parent)
         {
             if (string.Equals(part.FullName.TrimEnd(Path.DirectorySeparatorChar), stop, StringComparison.OrdinalIgnoreCase)) break;
-            if (part.Exists && (part.Attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Không dùng đường dẫn liên kết cho dữ liệu patch.");
+            if (part.Exists && (part.Attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Không dùng đường dẫn liên kết cho dữ liệu bản Việt hóa.");
         }
     }
 

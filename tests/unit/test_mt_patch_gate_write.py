@@ -1,4 +1,4 @@
-"""Patch Gate phải chặn ghi bản dịch rác vào CSV."""
+"""Bản Việt hóa Gate phải chặn ghi bản dịch rác vào CSV."""
 
 from __future__ import annotations
 

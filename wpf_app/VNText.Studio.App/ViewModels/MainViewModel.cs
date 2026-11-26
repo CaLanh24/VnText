@@ -25,7 +25,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _extractStepState = WorkflowStepState.Current;
     private string _translateStepState = WorkflowStepState.Pending;
     private string _patchStepState = WorkflowStepState.Pending;
-    private string _stepStatusLine = "Bước 1/3: Chọn game — chưa có đường dẫn game / asset";
+    private string _stepStatusLine = "Bước 1/3: Chọn game — chưa chọn thư mục game";
     private string _patchDeliveryLabel = "";
     private string _patchInstallInstructions = "";
     private string _diagnosticStatusLine = "";
@@ -176,7 +176,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         RunTranslateCommand = new RelayCommand(_ => RunTranslate(), _ => CanStartTranslate());
         ExportCloudRepairPackageCommand = new RelayCommand(_ => ExportCloudRepairPackage(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
         ImportExistingTranslationCommand = new RelayCommand(_ => ImportExistingTranslation(), _ => !Busy && !CsvEditorSaving && !CsvEditorDirty);
-        // "Tạo patch" is always available once a game is chosen: RunPatch saves the CSV, validates it and runs the patch check itself,
+        // "Tạo bản Việt hóa" is always available once a game is chosen: RunPatch saves the CSV, validates it and runs the patch check itself,
         // and reports the concrete problem when it cannot build.  The person never has to press "Kiểm tra" first (nor again after changing the font).
         RunPatchCommand = new RelayCommand(_ => RunPatch(), _ => !Busy && !CsvEditorSaving && HasPatchSource);
         RunPatchSafeSubsetCommand = new RelayCommand(_ => RunPatchSafeSubset(), _ => CanPatchSafeSubset);
@@ -268,8 +268,8 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     // RunPatch stays as defense).  Raised whenever the source changes.
     public bool HasPatchSource => !string.IsNullOrWhiteSpace(_inputPath) && (Directory.Exists(_inputPath.Trim().Trim('"')) || File.Exists(_inputPath.Trim().Trim('"')));
     public string PatchSourceHint => HasPatchSource ? ""
-        : string.IsNullOrWhiteSpace(_inputPath) ? "Chọn game hoặc asset ở bước Lấy text để tạo patch."
-        : "Không tìm thấy game/asset đã chọn; chọn lại ở bước Lấy text.";
+        : string.IsNullOrWhiteSpace(_inputPath) ? "Chọn thư mục game ở bước Lấy text để tạo bản Việt hóa."
+        : "Không tìm thấy thư mục game đã chọn; chọn lại ở bước Lấy text.";
     public bool PatchSourceHintVisible => !HasPatchSource;
     private void RaisePatchSource()
     {
@@ -322,8 +322,23 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string TranslationCsvDisplay =>
         string.IsNullOrWhiteSpace(TranslationCsvPath)
-            ? "Dùng translation.csv trong thư mục xuất…"
+            ? DefaultTranslationCsvDisplay()
             : TranslationCsvPath;
+
+    /// <summary>The step before already produced the translation file: show the real path it will use (filled in), not a vague hint.</summary>
+    private string DefaultTranslationCsvDisplay()
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(OutputPath))
+            {
+                var candidate = Path.Combine(WorkflowStatus.ResolvePackageDir(OutputPath), "translation.csv");
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException or NotSupportedException) { }
+        return "Dùng translation.csv trong nơi lưu bản dịch…";
+    }
 
     public string CloudRepairPackagePath
     {
@@ -411,7 +426,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     public string InputDisplay => string.IsNullOrWhiteSpace(InputPath) ? UiText.Translate("Chọn thư mục game...") : InputPath;
-    public string OutputDisplay => string.IsNullOrWhiteSpace(OutputPath) ? "Chọn thư mục xuất..." : OutputPath;
+    public string OutputDisplay => string.IsNullOrWhiteSpace(OutputPath) ? "Chọn nơi lưu bản dịch..." : OutputPath;
 
     public string CurrentWorkflowStep
     {
@@ -553,7 +568,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
 
     public string ExtractProgressSubtitle => _extractProgressText;
     public string ExtractProgressHeading => UiText.Translate(
-        Busy && _runningTask == "extract" && RenpySdkAction == "download" ? "Tiến trình tải SDK và lấy text" : "Tiến trình quét");
+        Busy && _runningTask == "extract" && RenpySdkAction == "download" ? "Tiến trình tải công cụ và lấy text" : "Tiến trình quét");
     public string ExtractProgressStep => _extractProgressStep;
     public string ExtractProgressItem => string.IsNullOrWhiteSpace(_extractProgressItem) ? "—" : _extractProgressItem;
     public string ExtractProgressEta => _extractProgressEta;
@@ -975,15 +990,15 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
         try
         {
             await _worker.StartAsync().ConfigureAwait(true);
-            AppendLog("Python worker sẵn sàng (JSON stdin/stdout).");
+            AppendLog("Bộ xử lý nền sẵn sàng.");
             if (WorkerPaths.IsReleaseLayout() && !File.Exists(Path.Combine(WorkerPaths.AppDataRoot(), "resource-status.json")))
                 SelectedTab = WorkflowTabs.Settings;
         }
         catch (Exception ex)
         {
-            AppendLog($"Không khởi động được worker: {ex.Message}");
-            StatusText = "Lỗi worker";
-            StepStatusLine = "Lỗi worker — không khởi động được Python worker";
+            AppendLog($"Không khởi động được bộ xử lý nền: {ex.Message}");
+            StatusText = "Lỗi bộ xử lý nền";
+            StepStatusLine = "Lỗi bộ xử lý nền — không khởi động được bộ xử lý nền";
         }
     }
 

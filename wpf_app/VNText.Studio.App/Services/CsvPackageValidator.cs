@@ -14,9 +14,9 @@ public sealed record CsvValidationResult(
 public static class CsvPackageValidator
 {
     public const string MissingFileMessage = "File không tồn tại";
-    public const string NoDataRowsMessage = "CSV không có dòng dữ liệu";
+    public const string NoDataRowsMessage = "Bản dịch không có dòng dữ liệu";
     // Shown instead of the bare missing-file text when the user has not picked any CSV yet.
-    public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn CSV” để chọn file cần dịch, hoặc Lấy text trước để tạo gói.";
+    public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn bản dịch” để chọn file cần dịch, hoặc Lấy text trước để tạo gói.";
 
     public static CsvValidationResult Validate(string? csvPath, bool requireTranslations = true)
     {
@@ -33,7 +33,7 @@ public static class CsvPackageValidator
         var dir = Path.GetDirectoryName(path) ?? "";
         var manifest = Path.Combine(dir, "manifest.json");
         if (!File.Exists(manifest))
-            return Fail(path, "Thiếu manifest.json cùng thư mục với translation.csv");
+            return Fail(path, "Bản dịch thiếu tệp đi kèm manifest.json cùng thư mục; hãy lấy text lại hoặc chọn đúng thư mục");
 
         try
         {
@@ -41,7 +41,7 @@ public static class CsvPackageValidator
             using var records = CsvFieldReader.ReadRecords(reader).GetEnumerator();
             if (!records.MoveNext() ||
                 (records.Current.Length == 1 && string.IsNullOrWhiteSpace(records.Current[0])))
-                return Fail(path, "CSV trống hoặc thiếu header");
+                return Fail(path, "Bản dịch trống hoặc thiếu header");
 
             var cols = records.Current;
             var keyIdx = IndexOf(cols, "key");
@@ -66,7 +66,7 @@ public static class CsvPackageValidator
                 return Fail(path, NoDataRowsMessage);
 
             if (translated == 0 && requireTranslations)
-                return Fail(path, UiText.Msg("CSV hợp lệ nhưng chưa có bản dịch (0/{0} dòng)", total));
+                return Fail(path, UiText.Msg("Bản dịch hợp lệ nhưng chưa có bản dịch (0/{0} dòng)", total));
 
             return new CsvValidationResult(
                 true,
@@ -78,7 +78,7 @@ public static class CsvPackageValidator
         }
         catch (Exception ex)
         {
-            return Fail(path, UiText.Msg("Không đọc được CSV: {0}", ex.Message));
+            return Fail(path, UiText.Msg("Không đọc được bản dịch: {0}", ex.Message));
         }
     }
 
@@ -86,7 +86,7 @@ public static class CsvPackageValidator
     {
         var package = WorkflowStatus.ResolvePackageDir(outputPath);
         if (string.IsNullOrEmpty(package))
-            return Fail("", "Chưa chọn thư mục xuất");
+            return Fail("", "Chưa chọn nơi lưu bản dịch");
         return Validate(Path.Combine(package, "translation.csv"));
     }
 

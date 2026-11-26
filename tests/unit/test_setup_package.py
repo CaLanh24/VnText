@@ -1153,12 +1153,12 @@ for line in sys.stdin:
         task = command["id"]
         if mode == "success":
             emit(type="progress", id=task, done=0, total=0, step="Kiểm tra tài nguyên", item="model")
-            emit(type="progress", id=task, done=5 * 1048576, total=10 * 1048576, step="Tải Ren'Py SDK 8.5.3")
+            emit(type="progress", id=task, done=5 * 1048576, total=10 * 1048576, step="Tải công cụ Ren’Py 8.5.3")
             emit(type="complete", id=task, ok=True, summary="Tài nguyên đã sẵn sàng.", error="")
             break
         if mode == "failure":
             emit(type="progress", id=task, done=0, total=0, step="Kiểm tra tài nguyên", item="renpy")
-            emit(type="complete", id=task, ok=False, summary="Tài nguyên chưa đầy đủ.", error="renpy: Không tải được SDK Ren'Py 8.5.3: offline")
+            emit(type="complete", id=task, ok=False, summary="Tài nguyên chưa đầy đủ.", error="renpy: Không tải được công cụ Ren’Py 8.5.3: offline")
             break
         if mode == "crash":
             sys.stderr.write("worker exploded"); sys.stderr.flush(); sys.exit(3)
@@ -1213,7 +1213,7 @@ internal static class ResourceHarness
         var progress = new List<string>();
         var r = Run(python, fake, work, Fake("success", null), progress, neverCancel, 30, 5);
         Require(Field<bool>(r, "Ok") && !Field<bool>(r, "Cancelled"), "success was not reported: " + Field<string>(r, "Error"));
-        Require(progress.Count == 2 && progress[1].StartsWith("5242880/10485760/Tải Ren'Py SDK"), "SDK download progress did not reach Setup: " + String.Join("|", progress.ToArray()));
+        Require(progress.Count == 2 && progress[1].StartsWith("5242880/10485760/Tải công cụ Ren’Py"), "SDK download progress did not reach Setup: " + String.Join("|", progress.ToArray()));
         Console.WriteLine("RES success PASS");
 
         r = Run(python, fake, work, Fake("failure", null), new List<string>(), neverCancel, 30, 5);
@@ -1283,7 +1283,7 @@ internal static class ResourceHarness
             var error = Field<string>(r, "Error");
             Console.WriteLine("REAL_CACHE ok=" + Field<bool>(r, "Ok") + " error=" + error.Replace("\r", " ").Replace("\n", " | "));
             Require(Field<bool>(r, "Ok") || (error.StartsWith("ocr:") && !error.Contains("renpy") && !error.Contains("model")), "cached model/SDK were not accepted as ready: " + error);
-            Require(!realProgress.Exists(delegate(string line) { return line.Contains("Tải Ren'Py SDK"); }), "a valid cached SDK was downloaded again");
+            Require(!realProgress.Exists(delegate(string line) { return line.Contains("Tải công cụ Ren’Py"); }), "a valid cached SDK was downloaded again");
             Console.WriteLine("RES real worker with local validated cache PASS");
 
             // Offline with no cached SDK: the real worker fails with a readable reason, and Setup does not call that ready.

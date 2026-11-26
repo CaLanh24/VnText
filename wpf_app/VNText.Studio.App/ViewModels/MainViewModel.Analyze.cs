@@ -12,7 +12,7 @@ public sealed partial class MainViewModel
     private bool _analyzeHasReport;
     private bool _analyzeResultsExpanded;
     private string _analyzeUnityStatus = "NOT_DETECTED";
-    private string _analyzeEngineSummary = "Chưa xác định engine";
+    private string _analyzeEngineSummary = "Chưa xác định loại game";
     private string _analyzeEngineDetails = "";
     private bool _analyzeInventoryComplete;
     private int _analyzeResourceCount;
@@ -27,7 +27,7 @@ public sealed partial class MainViewModel
     // result and makes the still-running analysis of the OLD input ignorable (late event).
     private string? _analyzeIdentity;
     private bool _analyzeRejectLate;
-    // What the inline summary under "Nguồn và gói dịch" reports for the CURRENT input.  Anything attributed to an older input is cleared by InvalidateAnalyzeIfInputsChanged.
+    // What the inline summary under "Thư mục game và nơi lưu bản dịch" reports for the CURRENT input.  Anything attributed to an older input is cleared by InvalidateAnalyzeIfInputsChanged.
     internal enum AnalyzeOutcome { None, Identified, IdentifiedIncomplete, Unsupported, Failed, Cancelled }
     private AnalyzeOutcome _analyzeOutcome;
     private string? _nestedRuntimePath;
@@ -52,7 +52,7 @@ public sealed partial class MainViewModel
         if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage))
         {
             AnalyzeStatusText = _gameFolderBoundaryMessage;
-            AnalyzeEngineSummary = "Chưa xác định engine";
+            AnalyzeEngineSummary = "Chưa xác định loại game";
             AnalyzeInventoryComplete = false;
         }
         Raise(nameof(ExtractStatusText));
@@ -100,7 +100,7 @@ public sealed partial class MainViewModel
         if (Busy && _runningTask == "analyze") AddExtractRunLine(_activeTaskId, "Đầu vào đã đổi: kết quả phân tích đang chạy sẽ bị bỏ.");
         AnalyzeInventoryComplete = false;
         AnalyzeUnityStatus = "NOT_DETECTED";
-        AnalyzeEngineSummary = "Chưa xác định engine";
+        AnalyzeEngineSummary = "Chưa xác định loại game";
         AnalyzeEngineDetails = "";
         AnalyzeAssetLines = Array.Empty<string>();
         AnalyzeResourceCount = 0;
@@ -125,14 +125,14 @@ public sealed partial class MainViewModel
         get
         {
             if (!string.IsNullOrEmpty(_gameFolderBoundaryMessage)) return UiText.Translate("Chọn thư mục game cụ thể để tiếp tục.");
-            if (AnalyzeBusy) return UiText.Translate("Đang nhận diện engine…");
-            if (string.IsNullOrWhiteSpace(InputPath)) return UiText.Translate("Chọn game / asset để tự nhận diện engine.");
-            if (_analyzeIdentity is null) return UiText.Translate("Đầu vào đã đổi; hệ thống sẽ nhận diện lại khi đủ nguồn và thư mục xuất.");
+            if (AnalyzeBusy) return UiText.Translate("Đang nhận diện loại game…");
+            if (string.IsNullOrWhiteSpace(InputPath)) return UiText.Translate("Chọn thư mục game để tự nhận diện loại game.");
+            if (_analyzeIdentity is null) return UiText.Translate("Đầu vào đã đổi; hệ thống sẽ nhận diện lại khi đủ nguồn và nơi lưu bản dịch.");
             return _analyzeOutcome switch
             {
-                AnalyzeOutcome.Identified => UiText.Format("{0} · Sẵn sàng lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
-                AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh mục tài nguyên chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "")),
-                AnalyzeOutcome.Unsupported => UiText.Translate("Chưa nhận diện được engine được hỗ trợ trong thư mục này. Kiểm tra lại thư mục game đã chọn."),
+                AnalyzeOutcome.Identified => UiText.Format("{0} · Sẵn sàng lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "").Replace("Loại game: ", "")),
+                AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh mục tài nguyên chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "").Replace("Loại game: ", "")),
+                AnalyzeOutcome.Unsupported => UiText.Translate("Chưa nhận diện được loại game được hỗ trợ trong thư mục này. Kiểm tra lại thư mục game đã chọn."),
                 AnalyzeOutcome.Failed => UiText.Translate("Phân tích không hoàn tất. Xem Nhật ký, rồi chọn lại nguồn để thử lại."),
                 AnalyzeOutcome.Cancelled => UiText.Translate("Đã hủy phân tích. Chọn lại nguồn để nhận diện lại."),
                 _ => "",
@@ -306,11 +306,11 @@ public sealed partial class MainViewModel
         if (string.IsNullOrWhiteSpace(OutputPath))
         {
             _autoAnalyzeDebouncing = false;
-            AnalyzeStatusText = "Chọn thư mục xuất để tự nhận diện engine";
+            AnalyzeStatusText = "Chọn nơi lưu bản dịch để tự nhận diện loại game";
             return;
         }
         _autoAnalyzeDebouncing = true;
-        AnalyzeStatusText = "Đang nhận diện engine…";
+        AnalyzeStatusText = "Đang nhận diện loại game…";
         await Task.Delay(AutoAnalyzeDebounceMilliseconds);
         if (revision != _autoAnalyzeRevision || _disposed != 0) return;
         _autoAnalyzeDebouncing = false;
@@ -348,7 +348,7 @@ public sealed partial class MainViewModel
     {
         if (!AnalysisInFlightOrPending) return false;
         _extractAfterAnalyze = true;
-        StatusText = "Đang nhận diện engine; sẽ lấy text ngay sau đó";
+        StatusText = "Đang nhận diện loại game; sẽ lấy text ngay sau đó";
         if (_autoAnalyzeDebouncing)
         {
             _autoAnalyzeRevision++;
@@ -375,19 +375,19 @@ public sealed partial class MainViewModel
         AnalyzeReportPath = "";
         if (string.IsNullOrWhiteSpace(InputPath))
         {
-            AnalyzeStatusText = "Chưa chọn game / asset";
+            AnalyzeStatusText = "Chưa chọn thư mục game";
             AnalyzeResultsExpanded = true;
             StatusText = "Chưa chọn game";
-            AppendLog("Chọn game / asset trước khi phân tích.");
+            AppendLog("Chọn thư mục game trước khi phân tích.");
             SelectedTab = WorkflowTabs.Extract;
             return;
         }
         if (string.IsNullOrWhiteSpace(OutputPath))
         {
-            AnalyzeStatusText = "Chưa chọn thư mục xuất";
+            AnalyzeStatusText = "Chưa chọn nơi lưu bản dịch";
             AnalyzeResultsExpanded = true;
-            StatusText = "Chưa chọn thư mục xuất";
-            AppendLog("Chọn thư mục xuất trước khi phân tích.");
+            StatusText = "Chưa chọn nơi lưu bản dịch";
+            AppendLog("Chọn nơi lưu bản dịch trước khi phân tích.");
             SelectedTab = WorkflowTabs.Extract;
             return;
         }
@@ -419,8 +419,8 @@ public sealed partial class MainViewModel
         {
             AnalyzeInventoryComplete = false;
             AnalyzeUnityStatus = "UNKNOWN";
-            AnalyzeEngineSummary = "Engine: chưa xác định";
-            AnalyzeEngineDetails = "Không đọc được báo cáo Unity; chưa có đủ bằng chứng để phân loại engine.";
+            AnalyzeEngineSummary = "Loại game: chưa xác định";
+            AnalyzeEngineDetails = "Không đọc được báo cáo Unity; chưa có đủ bằng chứng để xác định loại game.";
             _analyzeOutcome = AnalyzeOutcome.Failed;
             RaiseAnalyzeSummary();
             AnalyzeStatusText = evt.Ok
@@ -456,12 +456,12 @@ public sealed partial class MainViewModel
         }
         var unityDetected = snapshot.UnityStatus == "DETECTED" || snapshot.EngineDetection == "UNITY";
         AnalyzeEngineSummary = unityDetected && renpyEvidence is not ("none" or "assets_only")
-            ? "Engine: Unity + Ren’Py evidence"
+            ? "Loại game: Unity + Ren’Py"
             : unityDetected
-                ? "Engine: Unity"
+                ? "Loại game: Unity"
                 : renpyEvidence is "loose_source" or "compiled_source" or "archive_source" or "archive_unsupported" or "assets_only"
-                    ? "Engine: Ren’Py"
-                    : "Engine: chưa xác định";
+                    ? "Loại game: Ren’Py"
+                    : "Loại game: chưa xác định";
         AnalyzeEngineDetails = BuildAnalyzeEngineDetails(unityDetected ? "DETECTED" : snapshot.UnityStatus, renpyEvidence);
         AnalyzeAssetLines = CapAssetLines(snapshot.AssetLines);
         AnalyzeResourceCount = snapshot.ResourceCount;
@@ -494,7 +494,7 @@ public sealed partial class MainViewModel
     private void WriteAnalyzeDetailsToLog(UnityAnalysisReportSnapshot snapshot)
     {
         void Line(string text) { AppendLog(text); AddExtractRunLine(_activeTaskId, text); }
-        Line($"[quét] Engine: {_analyzeEngineSummary.Replace("Engine: ", "")} ({(string.IsNullOrEmpty(snapshot.EngineDetection) ? "báo cáo cũ" : snapshot.EngineDetection)}) — {snapshot.EngineDetectionReason}");
+        Line($"[quét] Loại game: {_analyzeEngineSummary.Replace("Engine: ", "").Replace("Loại game: ", "")} ({(string.IsNullOrEmpty(snapshot.EngineDetection) ? "báo cáo cũ" : snapshot.EngineDetection)}) — {snapshot.EngineDetectionReason}");
         Line($"[quét] Tài nguyên {snapshot.ResourceCount:N0}; có thể là văn bản {snapshot.TextCandidateCount:N0}; có đường ghi lại {snapshot.PatchableCount:N0}; chỉ lấy văn bản {snapshot.ExtractOnlyCount:N0}; cần xem lại/chưa hỗ trợ {snapshot.ReviewRiskCount:N0}; chưa xác định {snapshot.UnknownCount:N0}; lỗi quét {snapshot.ScanErrorCount:N0}.");
         foreach (var line in snapshot.AssetLines) Line("[quét] " + line);
         if (!string.IsNullOrEmpty(snapshot.TimingsText)) Line("[quét] Thời gian từng bước (giây): " + snapshot.TimingsText);
@@ -503,7 +503,7 @@ public sealed partial class MainViewModel
 
     private static string BuildAnalyzeEngineDetails(string unityStatus, string renpyEvidence)
     {
-        var unity = unityStatus == "DETECTED" ? "Unity: có bằng chứng trong báo cáo phân tích." : "Unity: báo cáo không xác nhận engine này.";
+        var unity = unityStatus == "DETECTED" ? "Unity: có bằng chứng trong báo cáo phân tích." : "Unity: báo cáo không xác nhận loại game này.";
         var renpy = renpyEvidence switch
         {
             "loose_source" => "Ren’Py: tìm thấy tệp .rpy/.rpym trong game/.",

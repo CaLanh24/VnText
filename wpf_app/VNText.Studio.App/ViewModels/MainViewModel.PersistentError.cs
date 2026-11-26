@@ -84,7 +84,7 @@ public sealed partial class MainViewModel
     {
         "extract" => "lấy text",
         "translate" => "dịch tự động",
-        "patch" => "tạo patch",
+        "patch" => "tạo bản Việt hóa",
         "analyze" => "phân tích game",
         "image_batch" or "image_inventory" or "image_extract" or "image_render" or "image_delivery" or "image_apply" or "image_rollback" => "dịch ảnh",
         "resources" => "tài nguyên",
@@ -101,6 +101,13 @@ public sealed partial class MainViewModel
     {
         var text = (message ?? "").Trim();
         if (text.Length == 0) return;
+        if (PlainLanguage.IsEngineMissing(text))
+        {
+            // The banner speaks plainly; the technical cause stays in the journal ("Xem chẩn đoán").
+            AppendLog(text, "WARN");
+            text = PlainLanguage.EngineMissingText;
+            if (string.IsNullOrWhiteSpace(hint)) hint = "Chi tiết kỹ thuật đã được ghi trong Nhật ký.";
+        }
         _persistentErrorText = text;
         _persistentErrorTask = task ?? "";
         _persistentErrorTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");

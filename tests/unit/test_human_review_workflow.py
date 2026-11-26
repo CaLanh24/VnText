@@ -392,7 +392,7 @@ class HumanReviewWorkflowTests(unittest.TestCase):
         self.assertFalse(result["ok"], result)
         self.assertFalse(result["complete"], result)
         self.assertEqual(result["human_review_required_count"], 1)
-        self.assertIn("Cần duyệt thủ công 1 dòng trước khi Patch", result["summary"])
+        self.assertIn("Cần duyệt thủ công 1 dòng trước khi tạo bản Việt hóa", result["summary"])
         inventory = json.loads((package / ".mt" / "blocker_inventory.json").read_text(encoding="utf-8"))
         self.assertEqual(inventory["rows"][0]["route"], "human_review_required")
 
@@ -477,7 +477,7 @@ class HumanReviewWorkflowTests(unittest.TestCase):
         self.assertEqual(event["review_only"], 1)
         self.assertEqual(event["human_review_required_count"], 1)
         self.assertEqual(event["diagnostic_root_cause"], "HUMAN_REVIEW_REQUIRED")
-        self.assertIn("Cần duyệt thủ công 1 dòng trước khi Patch", event["error"])
+        self.assertIn("Cần duyệt thủ công 1 dòng trước khi tạo bản Việt hóa", event["error"])
         status = json.loads((package / ".mt" / "translate_status.json").read_text(encoding="utf-8"))
         self.assertEqual(status["human_review_required_count"], 1)
 

@@ -174,7 +174,7 @@ class CancelledOutputTests(unittest.TestCase):
         self.assertEqual(completed[0]["error"], "cancelled")
         statement = completed[0]["patch_install_instructions"]
         self.assertIn("GIỮ NGUYÊN", statement)
-        self.assertIn("chọn thư mục xuất trống mới", statement)
+        self.assertIn("chọn nơi lưu bản dịch trống mới", statement)
         self.assertNotIn("đã được dọn", statement)
         self.assertNotIn("dịch tiếp", statement)
         self.assertEqual(_snapshot(out), before, "a cancel must leave the output exactly as it was")
@@ -256,8 +256,8 @@ class CancelledOutputTests(unittest.TestCase):
             text = _cancelled_patch_output_statement(out)
             self.assertEqual(_snapshot(out), before)
             self.assertIn("GIỮ NGUYÊN", text)
-            self.assertIn("trước khi ghi thư mục xuất", _cancelled_patch_output_statement(Path(tmp) / "never-created"))
-            self.assertIn("trước khi ghi thư mục xuất", _cancelled_patch_output_statement(None))
+            self.assertIn("trước khi ghi nơi lưu bản dịch", _cancelled_patch_output_statement(Path(tmp) / "never-created"))
+            self.assertIn("trước khi ghi nơi lưu bản dịch", _cancelled_patch_output_statement(None))
 
     def test_cancel_before_the_final_progress_is_still_a_cancel_and_keeps_the_output(self):
         with tempfile.TemporaryDirectory() as tmp:

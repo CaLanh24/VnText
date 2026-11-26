@@ -141,7 +141,7 @@ internal sealed class InstallerForm : Form
     private readonly RoundedButton _uninstall = new("Gỡ cài đặt") { Enabled = false };
     private readonly RoundedButton _restoreClean = new("Về bản gốc sạch") { Enabled = false };
     private readonly RoundedButton _confirm = new("Xác nhận gỡ", true) { Visible = false };
-    private readonly RoundedButton _cancelConfirm = new("Giữ patch") { Visible = false };
+    private readonly RoundedButton _cancelConfirm = new("Giữ bản Việt hóa") { Visible = false };
     private readonly RoundedButton _browse = new("Chọn game…") { Margin = new Padding(10, 0, 0, 0) };
     private readonly ProgressBar _busy = new() { Height = 4, Style = ProgressBarStyle.Marquee, MarqueeAnimationSpeed = 30, Visible = false, Dock = DockStyle.Top };
     private bool _working;
@@ -178,7 +178,7 @@ internal sealed class InstallerForm : Form
         var heading = new TableLayoutPanel { AutoSize = true, ColumnCount = 2, RowCount = 1, Dock = DockStyle.Top, BackColor = Surface };
         heading.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize)); heading.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         heading.Controls.Add(mark, 0, 0); heading.Controls.Add(title, 1, 0);
-        _description.Text = "Chọn thư mục gốc của game (Unity hoặc Ren'Py). Chỉ các file bị sửa được sao lưu, để có thể gỡ patch về đúng bản gốc.";
+        _description.Text = "Chọn thư mục gốc của game (Unity hoặc Ren'Py). Chỉ các file bị sửa được sao lưu, để có thể gỡ bản Việt hóa về đúng bản gốc.";
         _summary.Text = SummaryText();
 
         var label = new Label { Text = "Thư mục game", AutoSize = true, ForeColor = Muted, Margin = new Padding(0, 14, 0, 6) };
@@ -192,7 +192,7 @@ internal sealed class InstallerForm : Form
 
         _statusBox.Controls.Add(_status);
         // Footer: right-aligned like the in-app modal (outline actions, then the primary action last/right-most), directly under the content.
-        _install.Text = "Cài patch"; _uninstall.Text = "Gỡ và hoàn nguyên";
+        _install.Text = "Cài bản Việt hóa"; _uninstall.Text = "Gỡ và hoàn nguyên";
         var actions = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Top, FlowDirection = FlowDirection.RightToLeft, WrapContents = true, BackColor = Surface, Padding = new Padding(0, 6, 0, 0) };
         foreach (var button in new[] { _install, _confirm, _uninstall, _restoreClean, _cancelConfirm }) { button.Margin = new Padding(10, 0, 0, 0); actions.Controls.Add(button); }
 
@@ -214,7 +214,7 @@ internal sealed class InstallerForm : Form
                     var state = _service.Install(target);
                     return (Good, $"Đã cài bản Việt hóa ({state.Files.Count} file). Bản gốc được sao lưu để có thể gỡ cài đặt." + Environment.NewLine + string.Join(Environment.NewLine, state.Notes ?? new List<string>())); }
                 var result = _service.Uninstall(target, null, clean ? UninstallMode.CleanOriginal : UninstallMode.Previous);
-                return (Good, (clean ? "Đã khôi phục bản gốc đầu tiên trước mọi patch VNText." : "Đã gỡ patch và khôi phục đúng các file mà lần cài này đã thay.") + Environment.NewLine + string.Join(Environment.NewLine, result.Notes));
+                return (Good, (clean ? "Đã khôi phục bản gốc đầu tiên trước mọi bản Việt hóa VNText." : "Đã gỡ bản Việt hóa và khôi phục đúng các file mà lần cài này đã thay.") + Environment.NewLine + string.Join(Environment.NewLine, result.Notes));
             });
         };
         // Native keyboard: Tab follows reading order, Space/Enter act on the focused button, Escape backs out of a confirmation or closes an idle dialog.
@@ -299,9 +299,9 @@ internal sealed class InstallerForm : Form
         if (on)
         {
             _confirm.Text = _confirmingInstall ? "Xác nhận cài" : _cleanRequested ? "Xác nhận về gốc" : "Xác nhận gỡ";
-            _cancelConfirm.Text = _confirmingInstall ? "Quay lại" : "Giữ patch";
-            if (_cleanRequested) SetStatus(Warn, "Đưa các file về đúng bản gốc đầu tiên được ghi nhận trước mọi patch VNText (gỡ cả các lớp patch cũ hơn). File có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.");
-            else SetStatus(Warn, _confirmingInstall ? "Cài vào thư mục đã chọn và sao lưu bản gốc? Font/mapping trong game chưa được chứng minh đầy đủ." : "Khôi phục toàn bộ file gốc của patch này? Chỉ những file patch đã ghi được hoàn tác.");
+            _cancelConfirm.Text = _confirmingInstall ? "Quay lại" : "Giữ bản Việt hóa";
+            if (_cleanRequested) SetStatus(Warn, "Đưa các file về đúng bản gốc đầu tiên được ghi nhận trước mọi bản Việt hóa VNText (gỡ cả các lớp bản Việt hóa cũ hơn). File có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.");
+            else SetStatus(Warn, _confirmingInstall ? "Cài vào thư mục đã chọn và sao lưu bản gốc? Font/mapping trong game chưa được chứng minh đầy đủ." : "Khôi phục toàn bộ file gốc của bản Việt hóa này? Chỉ những file bản Việt hóa đã ghi được hoàn tác.");
             _cancelConfirm.Focus();
         }
         else { _confirmingInstall = false; _cleanRequested = false; RefreshState(); }
@@ -326,7 +326,7 @@ internal sealed class InstallerForm : Form
         _install.Enabled = false; _uninstall.Enabled = false; _restoreClean.Enabled = false; AcceptButton = null;
         if (string.IsNullOrWhiteSpace(_gamePath.Text))
         {
-            SetStatus(Warn, File.Exists(_service.StatePath) ? "Patch đã được cài. Chọn đúng thư mục game để kiểm tra và gỡ cài đặt." : "Chọn thư mục gốc của game để kiểm tra.");
+            SetStatus(Warn, File.Exists(_service.StatePath) ? "Bản Việt hóa đã được cài. Chọn đúng thư mục game để kiểm tra và gỡ cài đặt." : "Chọn thư mục gốc của game để kiểm tra.");
             return;
         }
         try

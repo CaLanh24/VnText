@@ -70,18 +70,18 @@ def exclude_rows(csv_path: str | Path, keys: list[str], expected_sha256: str, *,
         raise ExclusionConflict("Chưa chọn dòng nào để xóa.")
     raw = csv_path.read_bytes()
     if _sha(raw) != str(expected_sha256).lower():
-        raise ExclusionConflict("CSV đã thay đổi từ lần bạn mở; hãy tải lại CSV rồi chọn lại (không ghi đè).")
+        raise ExclusionConflict("Bản dịch đã thay đổi từ lần bạn mở; hãy tải lại bản dịch rồi chọn lại (không ghi đè).")
     has_bom = raw.startswith(b"\xef\xbb\xbf")
     text = raw.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text, newline=""))
     fields = list(reader.fieldnames or [])
     if "key" not in fields or "source_text" not in fields:
-        raise ExclusionConflict("CSV không đúng schema (thiếu cột key/source_text); không thay đổi gì.")
+        raise ExclusionConflict("Bản dịch không đúng schema (thiếu cột key/source_text); không thay đổi gì.")
     rows = list(reader)
     by_key = {row["key"]: row for row in rows}
     missing = [key for key in wanted if key not in by_key]
     if missing:
-        raise ExclusionConflict(f"{len(missing)} dòng đã chọn không còn trong CSV; hãy tải lại rồi chọn lại.")
+        raise ExclusionConflict(f"{len(missing)} dòng đã chọn không còn trong bản dịch; hãy tải lại rồi chọn lại.")
     removed = [by_key[key] for key in dict.fromkeys(wanted)]
     keep = [row for row in rows if row["key"] not in set(wanted)]
     out = io.StringIO(newline="")
@@ -115,7 +115,7 @@ def exclude_rows(csv_path: str | Path, keys: list[str], expected_sha256: str, *,
             else:
                 _atomic_write(ledger_path, previous_ledger)
         except OSError as rollback:
-            raise ExclusionConflict(f"Không ghi được CSV ({exc}) và cũng không hoàn tác được {EXCLUSIONS_FILE} ({rollback}); hãy kiểm tra thư mục package trước khi chạy lại.") from exc
+            raise ExclusionConflict(f"Không ghi được bản dịch ({exc}) và cũng không hoàn tác được {EXCLUSIONS_FILE} ({rollback}); hãy kiểm tra thư mục package trước khi chạy lại.") from exc
         raise
     return {"removed": len(removed), "remaining": len(keep), "csv_sha256": _sha(payload), "exclusions": len(previous)}
 

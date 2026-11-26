@@ -65,7 +65,7 @@
     <sys:Double x:Key="UiRowTitleSize">14</sys:Double>
     <sys:Double x:Key="UiSecondarySize">12</sys:Double>
 
-    <GridLength x:Key="UiSidebarWidth">206</GridLength>
+    <GridLength x:Key="UiSidebarWidth">218</GridLength>
     <Thickness x:Key="UiPageInset">24,0,32,30</Thickness>
     <Thickness x:Key="UiSidebarInset">16</Thickness>
     <sys:Double x:Key="UiNavRowHeight">42</sys:Double>

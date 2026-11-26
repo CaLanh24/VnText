@@ -1,4 +1,4 @@
-"""'Xóa dòng đã chọn': conflict-protected CSV row removal with a persisted, provenance-bearing decision."""
+"""'Xóa dòng đã chọn': conflict-protected bản dịch row removal with a persisted, provenance-bearing decision."""
 import csv
 import hashlib
 import json
@@ -72,7 +72,7 @@ class UserExclusionTests(unittest.TestCase):
         self.assertEqual(["k2"], [entry.key for entry in kept]); self.assertEqual([], dropped)
         self.assertEqual(([], []), (filter_excluded_entries([], self.package)))
 
-    @unittest.skipUnless((renpy_native_sdk() / "renpy.py").is_file(), "Official Ren'Py SDK absent")
+    @unittest.skipUnless((renpy_native_sdk() / "renpy.py").is_file(), "Official công cụ Ren’Py absent")
     def test_real_renpy_reextraction_into_the_same_package_honors_the_exclusion(self):
         from vntext.app_tasks import run_extract_task
         game = self.package / "source"; (game / "game").mkdir(parents=True)

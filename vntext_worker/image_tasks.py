@@ -25,7 +25,7 @@ def run_image_worker(task_id, task, params, is_cancelled):
                 is_cancelled=is_cancelled, translate=False, progress=lambda info: emit_progress(task_id, **info))
             failed = int(result.get('ocr_failed') or 0)         # the no-images shortcut result carries no failure count
             emit_log(task_id, f"Quét ảnh: {round(time.monotonic() - started, 1)} giây; {result['total']} ảnh có chữ, {failed} lỗi OCR.")
-            summary = (f"Quét ảnh xong: {result['total']} ảnh có chữ" if result['total'] else "Quét ảnh xong: không thấy ảnh có chữ")                 + (f"; {failed} ảnh lỗi OCR" if failed else "") + ". CSV text không bị ảnh hưởng."
+            summary = (f"Quét ảnh xong: {result['total']} ảnh có chữ" if result['total'] else "Quét ảnh xong: không thấy ảnh có chữ")                 + (f"; {failed} ảnh lỗi OCR" if failed else "") + ". Bản dịch text không bị ảnh hưởng."
             emit_complete(task_id, ok=not result['cancelled'], summary=summary, error='cancelled' if result['cancelled'] else '')
             return
         else:

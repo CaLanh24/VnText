@@ -163,7 +163,7 @@ class LegacyCsvSelectedTranslateTests(unittest.TestCase):
         self.assertEqual(1, done["selected_done"])
         self.assertEqual("", done["error"])
         self.assertIn("Bản nháp đã lưu", done["summary"])
-        self.assertIn("Patch sẽ bỏ qua", done["summary"])
+        self.assertIn("bỏ qua 1 dòng khác", done["summary"])
         self.assertTrue({r["key"]: r for r in self.rows()}["s1"]["translation"].strip())
         from vntext.patch_gate import audit_patch_package
         self.assertEqual(1, audit_patch_package(self.csv, self.package / "manifest.json")["eligible"])  # only the dialogue row d1; the drafted legacy row s1 is still not patch proof
