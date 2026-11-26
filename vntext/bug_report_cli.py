@@ -20,7 +20,8 @@ def run(params: dict) -> dict:
         target = build_report(src, out, log_lines=[str(x) for x in (params.get("log_lines") or [])],
                               analysis_report=params.get("analysis_report") or None, extract_status=params.get("extract_status") or None,
                               app_version=str(params.get("app_version") or ""))
-        return {"ok": True, "summary": f"Đã tạo gói báo lỗi ẩn danh: {target}\n{describe_report(target)}"}
+        return {"ok": True, "path": str(target), "summary": f"Đã tạo gói báo lỗi ẩn danh: {target}\n{describe_report(target)}\n"
+                "Gửi tệp này bằng nút 'Gửi báo lỗi' (nếu có), hoặc đính kèm vào một issue mới: https://github.com/CaLanh24/VnText/issues/new"}
     except Exception as exc:  # noqa: BLE001 - report the cause instead of dying silently
         return {"ok": False, "error": f"Không tạo được gói báo lỗi: {exc}"}
 

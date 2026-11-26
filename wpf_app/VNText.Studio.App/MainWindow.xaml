@@ -520,6 +520,9 @@
                                         <Button x:Name="ExtractLogCopyButton" Content="Chép nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding CopyExtractLogCommand}" />
                                         <Button x:Name="BugReportButton" Content="Tạo gói báo lỗi" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding CreateBugReportCommand}"
                                                 ToolTip="Tạo tệp zip ẩn danh (cấu trúc, kích thước, thời gian; không có nội dung hay tên tệp game) để gửi khi gặp lỗi. Không tự gửi đi đâu." />
+                                        <Button x:Name="SendBugReportButton" Content="Gửi báo lỗi" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding SendBugReportCommand}"
+                                                Visibility="{Binding ReportSendAvailable, Converter={StaticResource BoolToVis}}"
+                                                ToolTip="Tạo gói báo lỗi ẩn danh, cho bạn xem trước, và chỉ gửi tới nhà phát triển khi bạn đồng ý." />
                                     </StackPanel>
                                 </Grid>
                                 <Border Grid.Row="1" Style="{StaticResource LogPanelBorderStyle}" Height="260" Margin="0,16,0,0">

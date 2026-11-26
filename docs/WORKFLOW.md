@@ -51,3 +51,5 @@ Ghi chú bridge dành riêng cho Codex (`read_agent`/`functions.exec`) đã chuy
 ## Bằng chứng theo hành trình, không theo game
 
 Quy tắc dữ liệu game ở AGENTS.md. Công cụ: `tests/tools/journey_check.py` (hành trình quét → lấy text → quét ảnh → patch → cài trên bản link → gỡ → so hash, có ngân sách thời gian và phát hiện đứng; nhãn ẩn danh), `vntext/bug_report.py` (gói báo lỗi ẩn danh) và `tests/tools/synth_from_report.py` (dựng layout giả từ gói báo lỗi để tái hiện). Release receipt chỉ ghi nhãn ẩn danh, số mục đã chạy và phần chưa chạy.
+
+Gói tới qua nút 'Gửi báo lỗi' (kênh Discord, xem [REPORT_WEBHOOK](REPORT_WEBHOOK.md)) hoặc GitHub Issues: Owner tải zip về và báo Brain đường dẫn, Brain chuyển DEV. DEV đọc `report.json` (structure: khối Ren'Py chưa xử lý, `native_accounting` với đơn vị chưa tính đã che), chạy `python tests/tools/synth_from_report.py <zip> TEST_RUN/tmp/<nhãn>` để dựng layout giả rồi tái hiện bằng layout giả cộng dạng khối trong gói; không tải game, không ghi tên game hay nội dung vào tài liệu/receipt.

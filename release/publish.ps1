@@ -1179,6 +1179,11 @@ Copy-Item -LiteralPath $adapterBuilt -Destination $adapterDest -Force
 $installerDest = Join-Path $stagingWorker "vntext\tools\VNTextPatchInstaller.exe"
 New-Item -ItemType Directory -Path (Split-Path -Parent $installerDest) -Force | Out-Null
 Copy-Item -LiteralPath $installerBuiltExe -Destination $installerDest -Force
+# Bug-report channel: embedded (obfuscated) from the Owner's secrets file outside the repository, or absent (then the app hides "Gửi báo lỗi").
+# The script never prints the address; see docs/REPORT_WEBHOOK.md.
+$endpointOut = Join-Path $stagingWorker "vntext\report_endpoint.bin"
+& $Python -B (Join-Path $DevRoot "release\embed_report_endpoint.py") --out $endpointOut --worker-src (Join-Path $stagingWorker "vntext")
+if ($LASTEXITCODE -ne 0) { throw "Report endpoint embedding failed" }
 $studioPy = Join-Path $DevRoot "vntext_studio.py"
 Copy-Item -LiteralPath $studioPy -Destination (Join-Path $stagingWorker "vntext_studio.py") -Force
 $stagingWorkerEscaped = $stagingWorker.Replace("'", "''")
@@ -1419,6 +1424,8 @@ if ($FullAppUpdateBaselineRoot) {
     Write-Host "Full-app Updates package not built: no installed baseline supplied; releases without this feed require Setup for full-app changes." -ForegroundColor DarkYellow
 }
 
+& $Python -B (Join-Path $DevRoot "release\embed_report_endpoint.py") --scan $staging
+if ($LASTEXITCODE -ne 0) { throw "Release payload holds a plain report webhook address" }
 Write-Host "Build and hash-check the complete Setup payload..." -ForegroundColor Yellow
 $payloadBytes = [long](Get-ChildItem -LiteralPath $staging -Recurse -File -Force | Measure-Object Length -Sum).Sum
 $payloadCount = (Get-ChildItem -LiteralPath $staging -Recurse -File -Force).Count

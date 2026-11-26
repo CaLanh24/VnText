@@ -107,6 +107,42 @@ public sealed partial class MainViewModel
     private bool _bugReportRunning;
     private string _bugReportFolder = "";
 
+    public RelayCommand SendBugReportCommand { get; private set; } = null!;
+    /// <summary>Only builds that carry the report channel show the send button; every other route (Tạo gói báo lỗi) works everywhere.</summary>
+    public bool ReportSendAvailable { get; } = BugReportProcess.SendAvailable();
+
+    internal const string BugReportPrivacyLine = "Gói đã ẩn danh sẽ được gửi tới nhà phát triển. Không có tên game/tệp/nội dung thoại/đường dẫn.";
+
+    /// <summary>Builds the anonymous bundle, shows exactly what it holds, and posts it only after the person says yes.  Never automatic.</summary>
+    private async void SendBugReport()
+    {
+        if (_bugReportRunning || string.IsNullOrWhiteSpace(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
+        var package = WorkflowStatus.ResolvePackageDir(OutputPath);
+        var parameters = new { src = InputPath, @out = Path.Combine(package, "bug-reports"), log_lines = LogLines.TakeLast(400).ToArray(),
+            analysis_report = ResolveAnalyzeReportPath(), extract_status = Path.Combine(package, "extract_status.json"), app_version = Version };
+        _bugReportRunning = true; CreateBugReportCommand?.RaiseCanExecuteChanged(); SendBugReportCommand?.RaiseCanExecuteChanged();
+        try
+        {
+            ShowToast(UiText.Translate("Đang tạo gói báo lỗi…"), "info");
+            var built = await Task.Run(() => BugReportProcess.RunAsync(parameters));
+            AppendLog(built.Text);
+            if (!built.Ok || string.IsNullOrWhiteSpace(built.Path)) { ShowToast(built.Text, "error"); return; }
+            var preview = UiText.Translate(BugReportPrivacyLine) + "\n\n" + built.Text + "\n\n" + UiText.Translate("Gửi gói này tới nhà phát triển?");
+            if (AppDialogService.Show(preview, UiText.Translate("Gửi báo lỗi"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                AppendLog(UiText.Translate("Đã không gửi gói báo lỗi (bạn chọn Không); tệp vẫn ở thư mục bug-reports."));
+                return;
+            }
+            var sent = await Task.Run(() => BugReportProcess.SendAsync(built.Path));
+            AppendLog(sent.Text);
+            RequestCompletion(UiText.Translate("VNText Studio — Gửi báo lỗi"), sent.Text, sent.Ok ? "info" : "error");
+        }
+        finally
+        {
+            _bugReportRunning = false; CreateBugReportCommand?.RaiseCanExecuteChanged(); SendBugReportCommand?.RaiseCanExecuteChanged();
+        }
+    }
+
     public ExtractRunInfo? SelectedExtractRun
     {
         get => _selectedExtractRun;
@@ -124,6 +160,7 @@ public sealed partial class MainViewModel
     {
         CopyExtractLogCommand = new RelayCommand(_ => CopyExtractLog(), _ => ExtractLogShown.Count > 0);
         CreateBugReportCommand = new RelayCommand(_ => CreateBugReport(), _ => !_bugReportRunning && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
+        SendBugReportCommand = new RelayCommand(_ => SendBugReport(), _ => ReportSendAvailable && !_bugReportRunning && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         try
         {
             if (!Directory.Exists(ExtractRunsRoot)) return;

@@ -285,7 +285,8 @@ def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] 
     if structure is not None:
         data["structure"] = structure
     data["environment"] = {"app_version": app_version, "os": platform.platform(), "python": platform.python_version()}
-    tail = [sanitise_text(line, base, names) for line in (log_lines or [])[-MAX_LOG_LINES:]]
+    # Quoted segments in a log line can be game text (a dialogue line in an error); the bundle may be sent with one button, so they are masked too.
+    tail = [re.sub(r"\"[^\"]*\"|'[^']*'|“[^”]*”|«[^»]*»", "<TEXT>", sanitise_text(line, base, names)) for line in (log_lines or [])[-MAX_LOG_LINES:]]
     stamp = time.strftime("%Y%m%d-%H%M%S")
     target = out_dir / f"vntext-bug-report-{stamp}.zip"
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as archive:
