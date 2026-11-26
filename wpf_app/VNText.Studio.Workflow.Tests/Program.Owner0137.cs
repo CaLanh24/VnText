@@ -60,8 +60,8 @@ internal static partial class Program
 
     private static void Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton()
     {
-        AssertEqual("Thiếu 2 thành phần: bộ dịch, công cụ cho game Ren’Py.", PlainLanguage.MissingSummary(new[] { "model", "renpy" }));
-        AssertEqual("Thiếu 1 thành phần: bộ dịch.", PlainLanguage.MissingSummary(new[] { "model", "model" }));   // never listed twice
+        AssertEqual("Thiếu 2 thành phần: bộ dịch, công cụ cho game Ren’Py. Dung lượng tải khoảng 231 MB.", PlainLanguage.MissingSummary(new[] { "model", "renpy" }));
+        AssertEqual("Thiếu 1 thành phần: bộ dịch. Dung lượng tải khoảng 75 MB.", PlainLanguage.MissingSummary(new[] { "model", "model" }));   // never listed or counted twice   // never listed twice
         AssertEqual("Sẵn sàng", PlainLanguage.WorkerStatus(true));
         AssertEqual("Thiếu bộ xử lý nền", PlainLanguage.WorkerStatus(false));
         var xaml = MainWindowXaml();

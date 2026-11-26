@@ -23,7 +23,7 @@ internal static partial class Program
         var display = issues.ToDictionary(kv => kv.Key, kv => kv.Value switch
         {
             "human_review" => "Bản dịch máy đang chờ bạn duyệt",
-            "review_only" => "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
+            "review_only" => "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
             "mt_blocked" => "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch",
             _ => kv.Value,
         });
@@ -69,7 +69,7 @@ internal static partial class Program
         AssertEqual("", row.IssueLabel);
         AssertEqual(UiText.Translate("Đã dịch"), row.IssueShort);
         Require(!row.IssueShort.Contains("đường ghi"), "the old unexplained phrase is gone");
-        AssertEqual("Không ghi được vào game", CsvEditorRow.ShortenIssue("Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)"));
+        AssertEqual("Không ghi được vào game", CsvEditorRow.ShortenIssue("Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)"));
         AssertEqual("Bấm Lưu", CsvEditorRow.ShortenIssue("Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa"));
     }
 

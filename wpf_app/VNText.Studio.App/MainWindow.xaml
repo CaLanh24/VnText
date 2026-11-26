@@ -1048,7 +1048,7 @@
                                                 <TextBlock Text="Kết quả kiểm tra" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" />
                                                 <TextBlock Text="{Binding PatchPreflightMessage, Converter={StaticResource UiTextDynamic}}" FontSize="{StaticResource UiBodySize}" Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                                                 <Button x:Name="PatchShowSkippedButton" Content="Xem danh sách câu bị bỏ qua" Style="{StaticResource CompactOutlineButton}" HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                        Command="{Binding ShowPatchSkippedCommand}" ToolTip="Từng câu Tạo bản Việt hóa sẽ bỏ qua, kèm lý do và cách xử lý." />
+                                                        Command="{Binding ShowPatchSkippedCommand}" ToolTip="Từng câu bị bỏ qua, kèm lý do và cách xử lý." />
                                             </StackPanel>
                                         </Grid>
                                     </Border>
@@ -1870,7 +1870,7 @@
                     Visibility="{Binding CsvFocusedHasCandidate, Converter={StaticResource BoolToVis}}" ToolTip="Dùng bản dịch máy đề xuất cho dòng này và lưu CSV." />
             <Button x:Name="CsvEditFocusedButton" Content="Sửa bản dịch" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvEditFocusedCommand}" />
             <Button x:Name="CsvSkipFocusedButton" Content="Bỏ qua dòng này" Style="{StaticResource CompactOutlineButton}" Margin="0,2,8,2" Command="{Binding CsvSkipFocusedCommand}"
-                    ToolTip="Xóa dòng này khỏi bản dịch: không dịch, không bản Việt hóa; game gốc không đổi." />
+                    ToolTip="Xóa dòng này khỏi bản dịch: không dịch, không đưa vào bản Việt hóa; game gốc không đổi." />
         </WrapPanel>
     </StackPanel>
 </Border>

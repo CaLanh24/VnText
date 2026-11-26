@@ -89,22 +89,22 @@ public sealed class CsvEditorRow : INotifyPropertyChanged
     public string IssueShort => IsTechnical && IsEmpty ? UiText.Translate("Không cần dịch")
         : string.IsNullOrWhiteSpace(_issueLabel) || _issueLabel == "no_translation"
         ? UiText.Translate(IsEmpty ? "Chưa dịch" : "Đã dịch")
-        : IsEmpty || _issueDisplay == "Mất/sai placeholder {…}" ? UiText.TranslateDynamic(ShortenIssue(_issueDisplay))
+        : IsEmpty || _issueDisplay == "Mất/sai mã trong {…}" ? UiText.TranslateDynamic(ShortenIssue(_issueDisplay))
         : UiText.Translate("Đã dịch") + " · " + UiText.TranslateDynamic(ShortenIssue(_issueDisplay));
 
     internal static string ShortenIssue(string display) => display switch
     {
-        "Mất/sai placeholder {…}" => "Sai placeholder",
-        "Hỏng tag <…>" => "Sai tag",
+        "Mất/sai mã trong {…}" => "Sai placeholder",
+        "Hỏng thẻ <…>" => "Sai tag",
         "Trong danh sách cần xem lại thủ công" => "Cần xem lại",
-        "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)" => "Không ghi được vào game",
+        "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)" => "Không ghi được vào game",
         "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch" => "Cần tự dịch",
         "Bản dịch máy đang chờ bạn duyệt" => "Chờ duyệt",
         "Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa" => "Bấm Lưu",
         "Game đã có bản dịch tiếng Việt khác cho câu này" => "Game đã có bản dịch",
-        "Rác lặp từ/ký tự" => "Rác lặp",
-        "HTML/entity rác" => "HTML rác",
-        "Dòng synonym — dịch thủ công" => "Synonym thủ công",
+        "Lặp từ/ký tự bất thường" => "Rác lặp",
+        "Có mã HTML thừa" => "HTML rác",
+        "Dòng từ đồng nghĩa — dịch thủ công" => "Synonym thủ công",
         // The internal reason code is for diagnostics (tooltip/report/disk); the column says what it means to the person.
         "technical_control" => "Mã/định dạng game",
         _ => display,

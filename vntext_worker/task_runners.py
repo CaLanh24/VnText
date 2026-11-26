@@ -477,7 +477,7 @@ def run_patch_worker(
         else:
             log(preflight_text)
         if preflight.get("eligible", 0) <= 0:
-            msg = "Không có dòng đủ điều kiện để bản Việt hóa sau kiểm tra chất lượng. Hãy dịch hoặc duyệt thêm dòng trong bản dịch rồi thử lại; không tạo bản Việt hóa rỗng."
+            msg = "Không có dòng đủ điều kiện để đưa vào bản Việt hóa sau kiểm tra chất lượng. Hãy dịch hoặc duyệt thêm dòng trong bản dịch rồi thử lại; không tạo bản Việt hóa rỗng."
             emit_error(task_id, msg)
             emit_complete(task_id, ok=False, error=msg)
             return

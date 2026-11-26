@@ -38,7 +38,7 @@ public sealed class WpfPathPickerService : IPathPickerService
     {
         var dlg = new OpenFolderDialog
         {
-            Title = UiText.Translate("Chọn nơi lưu bản dịch gói dịch"),
+            Title = UiText.Translate("Chọn nơi lưu bản dịch"),
             Multiselect = false,
         };
         return dlg.ShowDialog() == true ? dlg.FolderName : null;

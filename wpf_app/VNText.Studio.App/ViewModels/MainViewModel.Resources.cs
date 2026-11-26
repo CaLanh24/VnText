@@ -144,9 +144,9 @@ public sealed partial class MainViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException or KeyNotFoundException)
         {
             _resourcesChecked = true; _resourcesAllReady = false;
-            ResourceStatus = UiText.Msg("Không đọc được trạng thái tài nguyên: {0}", ex.Message);
+            ResourceStatus = "Chưa đọc được kết quả kiểm tra thành phần. Bấm “Kiểm tra lại”; chi tiết kỹ thuật ở “Xem chẩn đoán”.";
             RaiseResourceReadiness();
-            AppendLog(ResourceStatus, "WARN");
+            AppendLog(ResourceStatus + " (" + ex.Message + ")", "WARN");
         }
         if (!evt.Ok) { AppendLog(evt.Error ?? "", "WARN"); RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
         else ResolvePersistentErrorIfSameTask("resources");

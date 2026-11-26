@@ -144,6 +144,61 @@ versioned upstream license files:
 
 The legacy Python UIs (Tk/Qt/QML), PyInstaller and the `build`/`legacy-qt` lock profiles were removed from the source tree. The Setup ships only the WPF app plus the `runtime` lock (`requirements/locks/windows-cp3xx-runtime.txt`). PySide6, PyInstaller, `pyinstaller_hooks_contrib`, `altgraph` and `pefile` are therefore no longer build or payload dependencies. The inventories below are historical point-in-time records; the next Setup must regenerate its exact payload inventory.
 
+
+#### Locked runtime dependency inventory — source of release 0.1.38
+
+Regenerated from `requirements/locks/windows-cp312-runtime.txt` (the only lock the Setup now uses; PyInstaller and its hooks are no longer a build or payload dependency). Licence text is read from each installed distribution's own metadata in the DEV release venv (point-in-time, not a legal audit); each wheel's licence files stay in its dist-info inside the payload. The exact payload inventory of a Setup is still decided from that Setup's own contents.
+
+| Distribution | Version | License (metadata) |
+|---|---|---|
+| annotated-doc | 0.0.6 | MIT |
+| annotated-types | 0.8.0 | MIT |
+| anyio | 4.16.0 | MIT |
+| archspec | 0.2.7 | Apache-2.0 OR MIT |
+| astc-encoder-py | 0.1.12 | MIT License |
+| attrs | 26.1.0 | MIT |
+| brotli | 1.2.1 | MIT |
+| click | 8.5.1 | BSD-3-Clause |
+| colorama | 0.4.6 | BSD License (classifier) |
+| ctranslate2 | 4.8.1 | MIT |
+| etcpak | 0.9.15 | MIT License |
+| filelock | 4.2.10 | MIT |
+| fmod_toolkit | 0.1.3 | MIT License |
+| fsspec | 2026.9.0 | BSD-3-Clause |
+| h11 | 0.16.0 | MIT |
+| hf-xet | 1.8.0 | Apache-2.0 |
+| httpcore2 | 2.16.0 | BSD-3-Clause |
+| httpx2 | 2.16.0 | BSD-3-Clause |
+| huggingface_hub | 2.2.0 | Apache-2.0 |
+| idna | 3.20 | BSD-3-Clause |
+| lz4 | 4.4.5 | BSD License (classifier) |
+| markdown-it-py | 4.3.0 | MIT License (classifier) |
+| mdurl | 0.1.2 | MIT License (classifier) |
+| numpy | 2.5.4 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 |
+| packaging | 26.3 | Apache-2.0 OR BSD-2-Clause |
+| pillow | 12.3.0 | MIT-CMU |
+| pydantic | 2.14.3 | MIT |
+| pydantic_core | 2.50.4 | MIT |
+| pyfmodex | 0.7.2 | MIT |
+| Pygments | 2.21.0 | BSD-2-Clause |
+| PyYAML | 6.0.3 | MIT |
+| regex | 2026.11.9 | Apache-2.0 AND CNRI-Python |
+| rich | 15.0.0 | MIT |
+| safetensors | 0.8.0 | Apache Software License (classifier) |
+| sentencepiece | 0.2.2 | Apache-2.0 |
+| setuptools | 84.2.1 | MIT |
+| shellingham | 1.5.4 | ISC License |
+| texture2ddecoder | 1.0.6 | MIT License |
+| tokenizers | 0.23.3 | Apache Software License (classifier) |
+| tpk_ar | 0.2.4 | MIT License |
+| tqdm | 4.70.1 | MPL-2.0 AND MIT |
+| transformers | 5.19.0 | Apache 2.0 License |
+| truststore | 0.10.5 | MIT |
+| typer | 0.29.1 | MIT |
+| typing-inspection | 0.4.5 | MIT |
+| typing_extensions | 4.16.0 | PSF-2.0 |
+| UnityPy | 1.25.4 | MIT License |
+
 #### Locked Python dependency inventory — release 0.1.19
 
 The 0.1.19 build uses the audited hash locks `requirements/locks/windows-cp312-{runtime,build}.txt` (52 distributions; `tpk_ar` 0.2.4 is the only official source distribution, built with the locked setuptools). This replaces the earlier minimum-version statement for 0.1.18. The table is read from each installed distribution's own metadata (point-in-time, not a legal audit); each wheel's license files stay in its dist-info inside the payload. CTranslate2 (MIT), SentencePiece and Tokenizers (Apache-2.0) are covered by the notices above and `app/licenses`; the FMOD vendor-binary exclusion for `fmod_toolkit` is unchanged. The build-profile distributions (pyinstaller [GPLv2 with its bootloader exception], pyinstaller-hooks-contrib, altgraph, pefile, pywin32-ctypes) are build tools; whether any of them is present in a Setup payload is decided from that exact payload's inventory, not from this table. Tokenizers is 0.23.3 here (same Apache-2.0 license as the 0.23.2 notice).

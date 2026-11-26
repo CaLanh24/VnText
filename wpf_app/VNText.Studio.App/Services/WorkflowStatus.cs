@@ -221,7 +221,7 @@ public static class WorkflowStatus
 
         if (current == "translate" && hasTranslate && !translateComplete && !statusKnown)
         {
-            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể bản Việt hóa", pending, reviewOnly);
+            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể đưa vào bản Việt hóa", pending, reviewOnly);
         }
 
         if (current == "translate" && hasTranslate && !translateComplete)

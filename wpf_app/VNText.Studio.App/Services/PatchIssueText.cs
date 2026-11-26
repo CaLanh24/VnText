@@ -115,9 +115,9 @@ internal static class PatchIssueText
             Foreground = app?.TryFindResource("InkBrush") as Brush ?? Brushes.Black, FontSize = 13, MaxHeight = 460,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
         };
-        System.Windows.Automation.AutomationProperties.SetName(box, UiText.Translate("Danh sách câu Tạo bản Việt hóa sẽ bỏ qua"));
+        System.Windows.Automation.AutomationProperties.SetName(box, UiText.Translate("Danh sách câu bị bỏ qua"));
         var openEditor = false;
-        var dialog = new AppDialogWindow(owner, UiText.Translate("Câu Tạo bản Việt hóa sẽ bỏ qua"), box, 720);
+        var dialog = new AppDialogWindow(owner, UiText.Translate("Các câu bị bỏ qua"), box, 720);
         dialog.AddButton("Đóng", () => { }, isDefault: true);
         dialog.AddButton("Mở Sửa bản dịch", () => openEditor = true, primary: true);
         dialog.ShowDialog();

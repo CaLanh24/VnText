@@ -40,7 +40,7 @@ class RenPyRoundTripTests(unittest.TestCase):
                 return json.loads((out/'manifest.json').read_text(encoding='utf-8'))
             first=extract(root/'first')
             fields,rows=read_csv_rows_file(root/'first/translation.csv')
-            for row in rows:row['translation']='VI '+row['source_text']
+            for row in rows:row['translation']='VI '+''.join(ch for ch in row['source_text'] if ord(ch)<0x250 or 0x1E00<=ord(ch)<0x1F00)   # the bundled Vietnamese font has no CJK glyphs, so the font gate rightly refuses a CJK translation: keep the fixture Vietnamese-renderable
             write_csv_rows_file(root/'first/translation.csv',fields,rows)
             apply_translation_package(str(root/'first/translation.csv'),str(root/'first/manifest.json'),str(game),str(root/'patch'))
             shutil.copytree(root/'patch/COPY_TO_GAME_ROOT',game,dirs_exist_ok=True)
@@ -52,7 +52,7 @@ class RenPyRoundTripTests(unittest.TestCase):
             self.assertEqual(script.read_bytes(),original)
             self.assertEqual(before,{p.relative_to(game).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()for p in game.rglob('*')if p.is_file()})
             fields,rows=read_csv_rows_file(root/'second/translation.csv')
-            for row in rows:row['translation']='VI '+row['source_text']
+            for row in rows:row['translation']='VI '+''.join(ch for ch in row['source_text'] if ord(ch)<0x250 or 0x1E00<=ord(ch)<0x1F00)   # the bundled Vietnamese font has no CJK glyphs, so the font gate rightly refuses a CJK translation: keep the fixture Vietnamese-renderable
             write_csv_rows_file(root/'second/translation.csv',fields,rows)
             apply_translation_package(str(root/'second/translation.csv'),str(root/'second/manifest.json'),str(game),str(root/'repatch'))
             verification=json.loads((root/'repatch/patch_verification.json').read_text(encoding='utf-8'))
@@ -82,8 +82,8 @@ class RenPyRoundTripTests(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stdout+result.stderr)
                 rb=json.loads((lookup/'readback.json').read_text(encoding='utf-8'))
                 prefix='VI 'if patched else ''
-                self.assertEqual(rb['dialogue'],{key:[prefix+value,patched]for key,value in expected_dialogue.items()})
-                self.assertEqual(rb['strings'],{key:prefix+value for key,value in expected_strings.items()})
+                self.assertEqual(rb['dialogue'],{key:[prefix+(value if not patched else ''.join(ch for ch in value if ord(ch)<0x250 or 0x1E00<=ord(ch)<0x1F00)),patched]for key,value in expected_dialogue.items()})
+                self.assertEqual(rb['strings'],{key:prefix+(value if not patched else ''.join(ch for ch in value if ord(ch)<0x250 or 0x1E00<=ord(ch)<0x1F00)) for key,value in expected_strings.items()})
                 shutil.rmtree(lookup)
 
     def test_existing_inventory_does_not_require_generated_provenance(self):

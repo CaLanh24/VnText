@@ -69,7 +69,7 @@ public sealed partial class MainViewModel
 
     public string CsvFocusedIssueReason => FocusedCsvRow is not { } row ? ""
         : row.HasIssue ? UiText.Msg("Lý do: {0}", UiText.TranslateDynamic(string.IsNullOrWhiteSpace(row.IssueDisplay) ? row.IssueLabel : row.IssueDisplay))
-        : row.IsEmpty ? UiText.Translate("Lý do: dòng này chưa có bản dịch nên Tạo bản Việt hóa sẽ bỏ qua.")
+        : row.IsEmpty ? UiText.Translate("Lý do: dòng này chưa có bản dịch nên bản Việt hóa sẽ bỏ qua.")
         : "";
 
     public string CsvFocusedIssueAction => FocusedCsvRow is not { } row ? ""
@@ -106,7 +106,7 @@ public sealed partial class MainViewModel
     {
         if (FocusedCsvRow is not { } row) return;
         if (CsvEditorMessageBox(UiText.Lines(
-                "Bỏ qua dòng này? Dòng sẽ được xóa khỏi bản dịch: không dịch, không bản Việt hóa, và không hiện lại khi lấy text lại.",
+                "Bỏ qua dòng này? Dòng sẽ được xóa khỏi bản dịch: không dịch, không đưa vào bản Việt hóa, và không hiện lại khi lấy text lại.",
                 "Game gốc không bị thay đổi; quyết định được ghi trong user_exclusions.json."),
                 "Bỏ qua dòng này", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         if (!await EnsureCsvSavedBeforeBatchAsync("Bản dịch có thay đổi chưa lưu. Lưu trước khi bỏ qua dòng này?")) return;

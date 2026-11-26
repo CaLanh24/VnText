@@ -870,7 +870,7 @@ public sealed partial class MainViewModel
             .Select(group => UiText.Msg("{0}× {1}", group.Count().ToString("N0"), UiText.Key(group.Key)))
             .ToList();
         object detail = reasons.Count > 0 ? UiText.Join("; ", reasons) : UiText.Key(validation.Summary);
-        return UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", validation.IssueCount.ToString("N0"), detail);
+        return UiText.Msg("Cảnh báo: {0} dòng cần chú ý — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", validation.IssueCount.ToString("N0"), detail);
     }
 
     private void ApplyCsvDocumentSync(CsvEditorDocument doc)

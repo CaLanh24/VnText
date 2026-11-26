@@ -607,7 +607,7 @@ public sealed partial class MainViewModel
         }
         if (!RunPatchPreflight(silent: false))
         {
-            StatusText = "Không có dòng hợp lệ để bản Việt hóa";
+            StatusText = "Không có dòng hợp lệ để tạo bản Việt hóa";
             AppDialogService.Show(UiText.Msg("Chưa thể tạo bản Việt hóa: không có dòng nào đủ điều kiện. {0} Cách xử lý: dịch hoặc duyệt thêm dòng trong bản dịch rồi bấm Tạo bản Việt hóa lại.", PatchPreflightMessage),
                 "Tạo bản Việt hóa", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
@@ -666,13 +666,13 @@ public sealed partial class MainViewModel
         if (!preflight.Ok || preflight.Eligible <= 0)
         {
             StatusText = "Chưa có dòng đủ điều kiện";
-            AppendLog(UiText.Msg("Không có dòng nào đủ điều kiện để bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng. {0}", preflight.Error ?? preflight.Summary), "WARN");
-            AppDialogService.Show(UiText.Msg("Không có dòng nào đủ điều kiện để bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng."),
+            AppendLog(UiText.Msg("Không có dòng nào đủ điều kiện để đưa vào bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng. {0}", preflight.Error ?? preflight.Summary), "WARN");
+            AppDialogService.Show(UiText.Msg("Không có dòng nào đủ điều kiện để đưa vào bản Việt hóa an toàn. Hãy dịch hoặc duyệt thêm dòng trong bản dịch; sẽ không tạo bản Việt hóa rỗng."),
                 "Bản Việt hóa phần an toàn", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         if (AppDialogService.Show(
-                UiText.Msg("Chỉ bản Việt hóa {0} dòng đủ điều kiện (đã dịch và qua mọi kiểm tra). {1} dòng còn lại bị bỏ qua và game giữ nguyên các dòng đó; đây KHÔNG phải bản Việt hóa đầy đủ.", preflight.Eligible, preflight.Blocked),
+                UiText.Msg("Chỉ đưa vào bản Việt hóa {0} dòng đủ điều kiện (đã dịch và qua mọi kiểm tra). {1} dòng còn lại bị bỏ qua và game giữ nguyên các dòng đó; đây KHÔNG phải bản Việt hóa đầy đủ.", preflight.Eligible, preflight.Blocked),
                 "Bản Việt hóa phần an toàn", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
         BeginTask("patch", new

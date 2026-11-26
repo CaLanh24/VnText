@@ -342,7 +342,7 @@ class CsvEditorApiTests(unittest.TestCase):
         self.assertGreater(val["reason_counts"].get("garbage_repetition", 0), 0)
         self.assertIn("k1", val["issues_by_key"])
         self.assertIn("garbage_repetition", val["issues_by_key"]["k1"])
-        self.assertIn("Rác lặp", val["issues_display"]["k1"])
+        self.assertIn("Lặp từ/ký tự", val["issues_display"]["k1"])
 
     def test_save_rejects_duplicate_keys(self):
         root = self._make_package()
@@ -487,7 +487,7 @@ class CsvEditorApiTests(unittest.TestCase):
         self.assertGreaterEqual(preview["count"], 0)
 
     def test_reason_label_vi(self):
-        self.assertIn("Rác", reason_label_vi("garbage_repetition"))
+        self.assertIn("Lặp từ/ký tự", reason_label_vi("garbage_repetition"))
         # Owner report 0.1.35: the label says, in plain words, that the row cannot be written to the game and that Patch skips it.
         self.assertIn("không ghi được vào game", reason_label_vi("review_only").lower())
         self.assertIn("bỏ qua", reason_label_vi("review_only").lower())

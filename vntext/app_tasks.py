@@ -1073,7 +1073,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
         )
     payload = patch_out / "COPY_TO_GAME_ROOT"
     if not payload.is_dir():
-        raise RuntimeError("Ren'Py bản Việt hóa output thiếu COPY_TO_GAME_ROOT")
+        raise RuntimeError("Đầu ra Ren'Py của bản Việt hóa thiếu COPY_TO_GAME_ROOT")
     expected = {
         "game/tl/vietnamese/vntext.rpy",
         "game/zzz_vntext_vietnamese.rpy",
@@ -1134,7 +1134,7 @@ def _write_unity_analysis_report(report: dict, output_dir: str | Path) -> Path:
     except ValueError:
         pass
     else:
-        raise ValueError("Nơi lưu bản dịch analyzer phải nằm ngoài thư mục game đang phân tích")
+        raise ValueError("Nơi lưu bản dịch phải nằm ngoài thư mục game đang phân tích")
 
     out.mkdir(parents=True, exist_ok=True)
     report_path = out / "unity_analysis.json"

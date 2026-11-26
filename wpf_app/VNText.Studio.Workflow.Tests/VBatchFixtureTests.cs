@@ -41,7 +41,7 @@ internal static partial class Program
                     AssertEqual("ERROR", AppJournalStore.Level("Lỗi: không ghi được bản dịch"));                                   // genuine failures keep their level
                     AssertEqual("ERROR", AppJournalStore.Level("[error] worker exited"));
                     AssertEqual("ERROR", AppJournalStore.Level("Không đọc được trạng thái"));
-                    AssertEqual("WARN", AppJournalStore.Level("Cảnh báo: 1 dòng cần xem lại"));
+                    AssertEqual("WARN", AppJournalStore.Level("Cảnh báo: 1 dòng cần chú ý"));
                     AssertEqual("WARN", AppJournalStore.Level("[stderr] something"));
                     AssertEqual("ERROR", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; scan_errors=2"));
                     AssertEqual("INFO", AppJournalStore.Level("Unity analyzer: NOT_DETECTED; scan_errors=0"));
@@ -68,7 +68,7 @@ internal static partial class Program
                     AssertEqual("WARN", LogSeverityConverter.Severity("[12:34:56] [task fixture] [stderr] actual diagnostic"));
                     AssertEqual("ERROR", LogSeverityConverter.Severity("[12:34:56] Unity analyzer: NOT_DETECTED; scan_errors=2"));
                     // the page classifier agrees on the same wording (one anchored rule set)
-                    foreach (var line in new[] { "Kiểm tra bản dịch: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi", "Câu nguồn: The error in the sentence", "Lỗi: không ghi được bản dịch", "Cảnh báo: 1 dòng cần xem lại" })
+                    foreach (var line in new[] { "Kiểm tra bản dịch: 7 hợp lệ · 0 bị chặn · không phát hiện lỗi", "Câu nguồn: The error in the sentence", "Lỗi: không ghi được bản dịch", "Cảnh báo: 1 dòng cần chú ý" })
                         AssertEqual(AppJournalStore.Level(line), LogSeverityConverter.Severity(line) == "SUCCESS" ? "INFO" : LogSeverityConverter.Severity(line));
                     // explicit producer levels reach BOTH the page and the saved journal, whatever the words say
                     using (var vm = new MainViewModel(new FakePathPicker(), new PythonWorkerHost(), startWorker: false))

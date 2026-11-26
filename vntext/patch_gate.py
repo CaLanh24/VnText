@@ -17,27 +17,38 @@ from vntext.mt_check import is_synonym_row, load_whitelist, structural_problems
 from vntext.package_io import read_translation_rows
 
 REASON_LABELS_VI: dict[str, str] = {
-    "eligible": "Sẽ bản Việt hóa",
-    "review_only": "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên Tạo bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
+    "eligible": "Sẽ đưa vào bản Việt hóa",
+    "review_only": "Không ghi được vào game: chưa tìm được vị trí ghi an toàn cho dòng này, nên bản Việt hóa sẽ bỏ qua (bản dịch vẫn được lưu)",
     "mt_blocked": "Máy dịch không cho ra bản dịch an toàn cho dòng này; cần tự dịch",
     "human_review": "Bản dịch máy đang chờ bạn duyệt",
     "review_resolved_unsaved": "Đã dịch — bấm Lưu để đưa dòng này vào bản Việt hóa",
     "existing_translation_conflict": "Game đã có bản dịch tiếng Việt khác cho câu này",
     "no_translation": "Chưa có bản dịch trong translation.csv",
-    "garbage_repetition": "Rác lặp từ/ký tự",
-    "html_garbage": "HTML/entity rác",
-    "synonym_manual": "Dòng synonym — dịch thủ công",
-    "placeholder mismatch": "Mất/sai placeholder {…}",
-    "tag mismatch": "Hỏng tag <…>",
-    "synonym prefix mismatch": "Synonym sai tiền tố",
-    "synonym variant count": "Synonym sai số biến thể",
-    "literal newline count": "Sai số \\n",
+    "garbage_repetition": "Lặp từ/ký tự bất thường",
+    "html_garbage": "Có mã HTML thừa",
+    "synonym_manual": "Dòng từ đồng nghĩa — dịch thủ công",
+    "placeholder mismatch": "Mất/sai mã trong {…}",
+    "tag mismatch": "Hỏng thẻ <…>",
+    "synonym prefix mismatch": "Sai tiền tố từ đồng nghĩa",
+    "synonym variant count": "Sai số biến thể từ đồng nghĩa",
+    "literal newline count": "Sai số ký tự \\n",
     "actual newline mismatch": "Sai xuống dòng",
     "heart glyph count": "Sai số ký hiệu ♡",
-    "RandPick variant count": "Sai số biến thể RandPick",
-    "english suffix after placeholder": "Hậu tố Anh sau placeholder",
-    "validation": "Validation MT",
-    "legacy_profile_unsupported": "Gói dùng profile legacy không được hỗ trợ; hãy extract lại",
+    "RandPick variant count": "Sai số biến thể ngẫu nhiên",
+    "english suffix after placeholder": "Còn hậu tố tiếng Anh sau mã {…}",
+    "validation": "Kiểm tra bản dịch máy",
+    "question mark lost": "Mất dấu hỏi “?” của câu hỏi",
+    "question split into separate sentences": "Câu hỏi bị tách thành nhiều câu",
+    "printf specifier mismatch": "Sai ký hiệu định dạng (như %s, %d)",
+    "parenthesis clause damaged": "Ngoặc đơn bị hỏng",
+    "parenthetical clause omitted": "Mất đoạn nằm trong ngoặc",
+    "money/percent mismatch": "Sai số tiền hoặc phần trăm",
+    "url mismatch": "Sai đường dẫn (URL)",
+    "date/time format directive mismatch": "Sai định dạng ngày giờ",
+    "date/time format punctuation mismatch": "Sai dấu trong định dạng ngày giờ",
+    "discount meaning omitted": "Mất ý giảm giá",
+    "tax meaning omitted": "Mất ý thuế",
+    "legacy_profile_unsupported": "Gói trích xuất cũ không còn được hỗ trợ; hãy lấy text lại",
     "legacy_external_reference": "Dòng này trỏ tới nơi ngoài game, chưa được hỗ trợ; hãy lấy text lại",
     "retranslate_blocked": "Dịch lại vẫn bị chặn",
 }
@@ -548,7 +559,7 @@ def translation_passes_patch_gate(
     *,
     allow_ct2_junk: bool = False,
 ) -> tuple[bool, str]:
-    """True khi bản dịch đủ điều kiện bản Việt hóa (Bản Việt hóa Gate đầy đủ)."""
+    """True khi bản dịch đủ điều kiện đưa vào bản Việt hóa (kiểm tra trước khi tạo đầy đủ)."""
     if not str(trans or "").strip():
         return False, "no_translation"
     gate_entry = dict(entry)

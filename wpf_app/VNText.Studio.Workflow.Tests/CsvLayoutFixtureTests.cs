@@ -91,7 +91,7 @@ internal static partial class Program
                     // ---- native stylefixed3 findings: a retained preview and a warning row at the same small size ----
                     CsvEditorRow Row(int index, string source, string translation, string label, string display) =>
                         new() { Index = index, Key = "k" + index, SourceText = source, Translation = translation, IssueLabel = label, IssueDisplay = display };
-                    const string placeholderDisplay = "Mất/sai placeholder {…}";
+                    const string placeholderDisplay = "Mất/sai mã trong {…}";
                     // the exact rows of the reviewed fx16\pkg-warn fixture (the third source wraps in the narrow source column)
                     var rows = new List<CsvEditorRow>
                     {
@@ -100,7 +100,7 @@ internal static partial class Program
                         Row(3, "The door is old and the door is heavy.", "Cánh cửa đã cũ và cửa rất nặng.", "", ""),
                         Row(4, "Close the door when you leave.", "Hãy đóng cửa khi bạn rời đi.", "", ""),
                     };
-                    var warning = "Cảnh báo: 1 dòng cần xem lại — 1× Mất/sai placeholder {...}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.";
+                    var warning = "Cảnh báo: 1 dòng cần chú ý — 1× Mất/sai mã trong {...}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.";
                     var examples = "Sẽ thay 4 lần trong 3 dòng (dòng đang lọc).\nTrước: Hãy mở cửa.\nSau: Hãy mở cổng.\nTrước: Cánh cửa đã cũ và cửa rất nặng.\nSau: Cánh cổng đã cũ và cổng rất nặng.\nTrước: Hãy đóng cửa khi bạn rời đi.\nSau: Hãy đóng cổng khi bạn rời đi.";
                     vm.CsvFilterMode = "all";
                     vm.CsvEditorSearch = "";
@@ -202,7 +202,7 @@ internal static partial class Program
                     var fullWarning = (TextBlock)Named("CsvEditorValidationText");
                     Require(shortWarning.IsVisible && !fullWarning.IsVisible, "collapsed tools show the one-line summary instead of the wrapped message");
                     Require(shortWarning.TextWrapping == TextWrapping.NoWrap && shortWarning.ActualHeight <= 20, "the summary is a single line (height " + shortWarning.ActualHeight + ")");
-                    AssertEqual("Cảnh báo: 1 dòng cần xem lại", shortWarning.Text);
+                    AssertEqual("Cảnh báo: 1 dòng cần chú ý", shortWarning.Text);
                     AssertEqual(warning, vm.CsvEditorUserValidationMessage);
                     AssertEqual(warning, shortWarning.ToolTip as string);
                     AssertEqual(warning, System.Windows.Automation.AutomationProperties.GetHelpText(shortWarning));
@@ -211,8 +211,8 @@ internal static partial class Program
                     AssertEqual("Sai placeholder", rows[0].IssueShort);
                     AssertEqual(placeholderDisplay, rows[0].IssueDisplay);
                     AssertEqual("placeholder mismatch", rows[0].IssueLabel);
-                    AssertEqual("Sai số \\n", CsvEditorRow.ShortenIssue("Sai số \\n"));            // unknown/other diagnostics pass through unchanged
-                    AssertEqual("Sai tag", CsvEditorRow.ShortenIssue("Hỏng tag <…>"));
+                    AssertEqual("Sai số ký tự \\n", CsvEditorRow.ShortenIssue("Sai số ký tự \\n"));            // unknown/other diagnostics pass through unchanged
+                    AssertEqual("Sai tag", CsvEditorRow.ShortenIssue("Hỏng thẻ <…>"));
                     Require(vm.CsvEditorValidationMessage == warning, "the full validation message is untouched");
                     // the examples are always visible, bounded, and never add table rows; normal height wraps the whole message
                     var rowsWithExamples = VisibleRows();

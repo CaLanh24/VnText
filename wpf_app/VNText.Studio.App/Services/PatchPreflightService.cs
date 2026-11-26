@@ -31,7 +31,7 @@ public sealed record PatchPreflightResult(
                 return Error;
             var summary = Ok ? UiText.Msg("{0} câu sẵn sàng; {1} câu sẽ được bỏ qua.", Eligible, Blocked) : Summary;
             if (UserExcluded > 0 || OutsideCsvReview > 0)
-                summary = UiText.Lines(summary, UiText.Msg("Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài bản dịch (không dịch, không bản Việt hóa).", UserExcluded, OutsideCsvReview));
+                summary = UiText.Lines(summary, UiText.Msg("Không tính: {0} dòng bạn đã xóa, {1} dòng chỉ để xem lại ngoài bản dịch (không dịch, không đưa vào bản Việt hóa).", UserExcluded, OutsideCsvReview));
             if (ReasonCounts.Count == 0)
                 return summary;
             var parts = ReasonCounts
@@ -49,8 +49,8 @@ public sealed record PatchPreflightResult(
         "existing_translation_conflict" => "Game đã có bản dịch khác",
         "technical_control" => "Mã / định dạng của game (giữ nguyên)",
         "no_translation" => "Chưa có bản dịch",
-        "garbage_repetition" => "Rác lặp từ/ký tự",
-        "html_garbage" => "HTML/entity rác",
+        "garbage_repetition" => "Lặp từ/ký tự bất thường",
+        "html_garbage" => "Có mã HTML thừa",
         "synonym_manual" => "Synonym — dịch thủ công",
         "tag mismatch" => "Hỏng tag",
         "placeholder mismatch" => "Sai placeholder",

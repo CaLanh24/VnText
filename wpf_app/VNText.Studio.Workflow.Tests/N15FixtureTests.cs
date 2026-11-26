@@ -97,7 +97,7 @@ internal static partial class Program
                         vm.CsvEditorRows[0].IsSelected = false;
                         AssertEqual(language == "vi" ? "Chưa chọn dòng nào" : "No rows selected", UiText.TranslateDynamic(vm.CsvCheckedText));
                         Require(language == "vi" || UiText.Translate("Chọn thư mục game") != "Chọn thư mục game", $"{tag} N5: the folder picker title is catalogued");
-                        Require(language == "vi" || (UiText.Translate("Chọn tệp dữ liệu của game") != "Chọn tệp dữ liệu của game" && UiText.Translate("Chọn nơi lưu bản dịch gói dịch") != "Chọn nơi lưu bản dịch gói dịch"), $"{tag} N5: the other picker titles are catalogued");
+                        Require(language == "vi" || (UiText.Translate("Chọn tệp dữ liệu của game") != "Chọn tệp dữ liệu của game" && UiText.Translate("Chọn nơi lưu bản dịch") != "Chọn nơi lưu bản dịch"), $"{tag} N5: the other picker titles are catalogued");
                         // user data is never translated: a CSV row whose text equals a catalog key stays exactly as the user has it
                         window.UpdateLayout(); PumpFixture(100);
                         var grid = (DataGrid)Named("CsvEditorGrid");

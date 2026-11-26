@@ -100,11 +100,11 @@ internal static partial class Program
                 vm.NavigateTabCommand.Execute("editcsv"); Scan("csv empty", CsvScope());
                 var rows = new List<CsvEditorRow>
                 {
-                    new() { Index = 1, Key = "k1", SourceText = "Hello, {name}.", Translation = "Xin chào.", IssueLabel = "placeholder mismatch", IssueDisplay = "Mất/sai placeholder {…}" },
+                    new() { Index = 1, Key = "k1", SourceText = "Hello, {name}.", Translation = "Xin chào.", IssueLabel = "placeholder mismatch", IssueDisplay = "Mất/sai mã trong {…}" },
                     new() { Index = 2, Key = "k2", SourceText = "Bye.", Translation = "Tạm biệt.", IssueLabel = "review_only", IssueDisplay = "Trong danh sách cần xem lại thủ công" },
                     new() { Index = 3, Key = "k3", SourceText = "Thanks.", Translation = "Cảm ơn." },
                 };
-                vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, UiText.Msg("Cảnh báo: {0} dòng cần xem lại — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", 2, UiText.Msg("{0}× {1}", 1, UiText.Key("Mất/sai placeholder {…}"))));
+                vm.TestLoadCsvRows(Path.Combine(packageA, "translation.csv"), rows, UiText.Msg("Cảnh báo: {0} dòng cần chú ý — {1}. Xem cột Trạng thái hoặc lọc “Chỉ dòng lỗi”.", 2, UiText.Msg("{0}× {1}", 1, UiText.Key("Mất/sai mã trong {…}"))));
                 vm.TestSetCsvBulkPreview(UiText.Lines(UiText.Msg("Sẽ thay {0} lần trong {1} dòng ({2}).", 4, 3, UiText.Key("dòng đang lọc")), UiText.Msg("Trước: {0}\nSau: {1}", "Open the door.", "Open the gate.")));
                 Scan("csv loaded + preview", CsvScope());
                  Scan("csv tools open + examples", CsvScope());

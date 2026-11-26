@@ -8,7 +8,7 @@ namespace VNText.Studio.App.Services;
 /// </summary>
 public static class PlainLanguage
 {
-    public const string EngineMissingText = "Chưa cài bộ dịch Anh → Việt trên máy. Bấm “Cài bộ dịch” để cài (cần mạng một lần); game không bị thay đổi.";
+    public const string EngineMissingText = "Chưa cài bộ dịch Anh → Việt trên máy. Bấm “Cài bộ dịch” để cài (cần mạng một lần, khoảng 75 MB); game không bị thay đổi.";
     public const string EngineChecking = "Đang kiểm tra bộ dịch…";
     public const string EngineReady = "Bộ dịch đã sẵn sàng.";
 
@@ -48,8 +48,13 @@ public static class PlainLanguage
     {
         var names = missingIds.Select(ResourceName).Where(n => n.Length > 0).Distinct(StringComparer.Ordinal).ToList();
         if (names.Count == 0) return "Đã đủ thành phần.";
-        return $"Thiếu {names.Count} thành phần: {string.Join(", ", names)}.";
+        var mb = missingIds.Select(id => (id ?? "").Trim().ToLowerInvariant()).Distinct().Select(DownloadMegabytes).Sum();
+        var size = mb > 0 ? $" Dung lượng tải khoảng {mb} MB." : "";
+        return $"Thiếu {names.Count} thành phần: {string.Join(", ", names)}.{size}";
     }
+
+    /// <summary>Measured public download sizes: the translator model folder is about 74 MB, the Ren’Py SDK archive is 155.5 MiB.  Windows OCR is a Windows language pack, not downloaded here.</summary>
+    public static int DownloadMegabytes(string? id) => (id ?? "").Trim().ToLowerInvariant() switch { "model" => 75, "renpy" => 156, _ => 0 };
 
     public static string WorkerStatus(bool present) => present ? "Sẵn sàng" : "Thiếu bộ xử lý nền";
 

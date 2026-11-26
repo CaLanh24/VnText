@@ -110,7 +110,7 @@ internal static partial class Program
                             using var vmUnreadable = Fresh("Sẵn sàng");
                             vmUnreadable.TestClaimResourcesStatus(false); Finish(vmUnreadable, true);
                             Require(vmUnreadable.ResourcesNeedRecovery && !vmUnreadable.ResourcesAllReady, "unreadable report clears stale readiness");
-                            Require(vmUnreadable.ResourceStatus.StartsWith(language == "vi" ? "Không đọc được trạng thái tài nguyên:" : "Could not read resource status:", StringComparison.Ordinal), "read failure has a localized diagnostic, not a successful summary");
+                            Require(vmUnreadable.ResourceStatus.StartsWith(language == "vi" ? "Chưa đọc được kết quả kiểm tra thành phần." : "Could not read the component check result.", StringComparison.Ordinal), "read failure has a localized diagnostic, not a successful summary");
                         }
                         File.WriteAllText(statusFile, Report(true), new UTF8Encoding(false));
 

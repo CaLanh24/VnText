@@ -52,7 +52,7 @@ internal static partial class Program
         AssertEqual(UiText.Translate("Chưa dịch"), row.IssueShort);
         row.Translation = "Xin chào";
         AssertEqual(UiText.Translate("Đã dịch"), row.IssueShort);
-        row.SetIssueSilent("placeholder", "Mất/sai placeholder {…}");
+        row.SetIssueSilent("placeholder", "Mất/sai mã trong {…}");
         AssertTrue(row.HasIssue);
         AssertEqual(UiText.Translate("Sai placeholder"), row.IssueShort);
     }

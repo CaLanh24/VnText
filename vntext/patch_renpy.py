@@ -634,7 +634,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
         eligible_entries.append(entry)
     entries = eligible_entries
     if not entries:
-        raise RenPyPatchError("Không có dòng nào đủ điều kiện để bản Việt hóa (chỉ có dòng xem lại/chưa chứng minh); hãy dịch/duyệt trong bản dịch rồi thử lại. [package has no eligible Ren'Py patchable entries]")
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để đưa vào bản Việt hóa (chỉ có dòng xem lại/chưa chứng minh); hãy dịch/duyệt trong bản dịch rồi thử lại. [package has no eligible Ren'Py patchable entries]")
     dialogues: list[tuple[dict, str]] = []
     requested_strings: dict[tuple[str, str], str] = {}
     native_ids: set[str] = set()
@@ -765,7 +765,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             requested_strings[string_identity] = translation
     if not dialogues and not requested_strings:
         # Every row was omitted (untranslated / unsafe): there is nothing to write.  Never emit an empty overlay that could read back as a patch.
-        raise RenPyPatchError("Không có dòng nào đủ điều kiện để bản Việt hóa (chưa có dòng nào được dịch và qua kiểm tra); không tạo bản Việt hóa rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
+        raise RenPyPatchError("Không có dòng nào đủ điều kiện để đưa vào bản Việt hóa (chưa có dòng nào được dịch và qua kiểm tra); không tạo bản Việt hóa rỗng. [no translated eligible rows: " + json.dumps(omitted_by_reason, sort_keys=True) + "]")
     for archive_path, expected_hash in archive_identities.items():
         if RenPyArchive(archive_path, fresh=True).container_sha256 != expected_hash:
             raise RenPyPatchError("Ren'Py RPA container changed during patch preflight")

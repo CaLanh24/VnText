@@ -698,11 +698,11 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('TextTrimming" Value="CharacterEllipsis"', col)
         self.assertIn('ToolTip" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}"', col)
         self.assertIn('AutomationProperties.HelpText" Value="{Binding IssueDisplay, Converter={StaticResource UiTextDynamic}}"', col)
-        self.assertIn('"Mất/sai placeholder {…}" => "Sai placeholder"', row)
+        self.assertIn('"Mất/sai mã trong {…}" => "Sai placeholder"', row)
         self.assertIn("_ => display,", row)                                     # every other diagnostic is passed through unchanged
         self.assertEqual(1, row.count('"Sai placeholder"'))
         patch_gate = (ROOT / "vntext" / "patch_gate.py").read_text(encoding="utf-8")
-        self.assertIn('"placeholder mismatch": "Mất/sai placeholder {…}",', patch_gate)
+        self.assertIn('"placeholder mismatch": "Mất/sai mã trong {…}",', patch_gate)
 
     def test_csv_validation_line_has_no_local_value_that_beats_its_style_and_low_height_gaps_are_bound(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
