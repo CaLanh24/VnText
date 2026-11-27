@@ -307,7 +307,7 @@ class WpfWorkflowTests(unittest.TestCase):
         glossary_probe = (ROOT / "wpf_app" / "VNText.Studio.App" / "Services" / "BulkGlossaryUiProbe.cs").read_text(encoding="utf-8")
         for option in (
             'Content="Ghi đè bản dịch cũ"',
-            'Content="Duyệt bản dịch trước khi đóng gói"',
+            'Content="Duyệt bản dịch trước khi tạo bản Việt hóa"',
         ):
             with self.subTest(option=option):
                 self.assertEqual(xaml.count(option), 1)
@@ -576,7 +576,7 @@ class WpfWorkflowTests(unittest.TestCase):
         # (7) names
         self.assertNotIn("Dịch local", xaml)
         self.assertNotIn("Chọn tệp bản dịch", xaml)
-        self.assertNotIn('Content="Chọn file"', xaml)
+        self.assertNotIn('Content="Chọn tệp"', xaml)
 
     def test_toast_severity_pairs_are_readable_in_both_themes_and_the_second_style_batch_is_wired(self):
         app = ROOT / "wpf_app" / "VNText.Studio.App"
@@ -664,7 +664,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn('x:Name="SafetyText"', panel)
         self.assertIn('<Border x:Name="IntroDetails"', panel)
         details = panel[panel.index('x:Name="IntroDetails"'):panel.index("</Border>", panel.index('x:Name="IntroDetails"'))]
-        for phrase in ("Tự nhận diện chữ tiếng Anh", "chỉ đọc ảnh gốc", "thư mục locale của game bạn chọn", "có nhật ký cài/gỡ và kiểm hash đọc lại"):
+        for phrase in ("Tự nhận diện chữ tiếng Anh", "chỉ đọc ảnh gốc", "thư mục ngôn ngữ của game bạn chọn", "có nhật ký cài/gỡ và kiểm tra lại các tệp đã ghi"):
             self.assertIn(phrase, details)
         # (N4) selects use the two shared sizes
         self.assertNotIn('Width="150" Height="34"', xaml)
@@ -774,10 +774,10 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("catch(ArgumentException ex)", journal)
         self.assertIn('_content.Text=UiText.Format("Không đọc được nhật ký: {0}",ex.Message);', journal)
         # (6) saved reviews explain the re-approval, failures keep their context, the guards are untouched
-        self.assertIn('"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', image_vm)
+        self.assertIn('"Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', image_vm)
         self.assertIn("TryLoadImageReview(p, fromSavedReview: true)", image_vm)
-        self.assertIn('ImageStatus = UiText.Msg("Không mở được review: {0}", e.Message)', image_vm)
-        for guard in ('throw new InvalidDataException(UiText.Msg("Review ảnh vượt 2 MiB."));', "document.Regions.Count > 500", "hash review không khớp", "region.Approved = false;"):
+        self.assertIn('ImageStatus = UiText.Msg("Không mở được bản xem lại: {0}", e.Message)', image_vm)
+        for guard in ('throw new InvalidDataException(UiText.Msg("Bản xem lại ảnh vượt 2 MiB."));', "document.Regions.Count > 500", "mã kiểm tra của bản xem lại không khớp", "region.Approved = false;"):
             self.assertIn(guard, image_vm)
 
     def test_ocr_workspace_text_is_fully_covered_by_the_english_catalog_without_touching_user_data(self):
@@ -800,8 +800,8 @@ class WpfWorkflowTests(unittest.TestCase):
         # every status/summary message the view model and the model can show is in the catalog or matched by an anchored pattern
         for message in re.findall(r'"([^"]*[ăâđêôơưàáạảãầấậẩẫằắặẳẵèéẹẻẽềếệểễìíịỉĩòóọỏõồốộổỗờớợởỡùúụủũừứựửữỳýỵỷỹ][^"]*)"', model):
             self.assertIn(message, keys, message)
-        for message in ("Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo bản Việt hóa.", "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công.",
-                        "Review ảnh vượt 2 MiB.", "Ảnh nguồn đã đổi hoặc hash review không khớp.", "Chọn nơi lưu bản dịch trước.", "Đang xử lý text trong ảnh…"):
+        for message in ("Chọn ảnh tĩnh để nhận dạng chữ; kết quả cần xem lại, không tự tạo bản Việt hóa.", "Không thấy chữ; chọn vùng cắt hoặc ảnh khác, hoặc thêm vùng chữ thủ công.",
+                        "Bản xem lại ảnh vượt 2 MiB.", "Ảnh nguồn đã đổi hoặc mã kiểm tra của bản xem lại không khớp.", "Chọn nơi lưu bản dịch trước.", "Đang xử lý chữ trong ảnh…"):
             self.assertIn(message, image_vm)
             self.assertIn(message, keys, message)
         # display-time translation: converter bindings in the panel, exact Vietnamese pass-through, anchored patterns, prefixes
@@ -815,7 +815,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("column.Header = Translate(original);", ui_text)
         self.assertIn("raw = element.GetValue(property)", ui_text)
         self.assertIn("UiText.Apply(this); AttachOverlay();", dialog)
-        self.assertIn('UiText.Translate(review ? "Mở review text ảnh" : "Chọn ảnh có chữ")', picker)
+        self.assertIn('UiText.Translate(review ? "Mở bản xem lại chữ trong ảnh" : "Chọn ảnh có chữ")', picker)
         # every Vietnamese literal the image workers can raise to the UI has a catalog entry (the technical tail of the OCR failure stays raw)
         worker_errors = 0
         for relative in ("vntext/image_text.py", "vntext/image_batch.py", "vntext_worker/image_tasks.py"):
@@ -824,12 +824,12 @@ class WpfWorkflowTests(unittest.TestCase):
                 worker_errors += 1
                 self.assertIn(match.group(2), keys, match.group(2))
         self.assertGreaterEqual(worker_errors, 45)
-        for phrase in ('("Windows OCR thất bại: ", "Windows OCR failed: ")', "{1}% • Step: {2}{3}{4}", "TranslateEta"):
+        for phrase in ('("Tính năng nhận dạng chữ của Windows báo lỗi: ", "Windows OCR failed: ")', "{1}% • Step: {2}{3}{4}", "TranslateEta"):
             self.assertIn(phrase, ui_text)
         # a language switch refreshes the bound OCR text
         self.assertIn("RaiseImageLanguageText();", (app / "ViewModels" / "MainViewModel.Settings.cs").read_text(encoding="utf-8"))
         # the Vietnamese UI strings themselves are unchanged
-        for exact in ('"Chọn ảnh để xem trước và OCR"', '"Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', '"Không mở được review: {0}"'):
+        for exact in ('"Chọn ảnh để xem trước và nhận dạng chữ"', '"Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."', '"Không mở được bản xem lại: {0}"'):
             self.assertIn(exact, image_vm)
 
     def test_csv_secondary_text_and_banners_meet_contrast_in_both_themes_and_save_error_is_wired(self):
@@ -870,7 +870,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertNotIn("CsvEditorSaveError = \"\"", csv_vm.split("private void ApplyValidationFromBatch")[1])   # validation never clears it
         # Settings: one short status + one ellipsized path with the full tooltip, raw diagnostic kept as the tooltip/ModelStatus
         self.assertIn('Text="{Binding ModelStatusDisplay}"', xaml)
-        self.assertIn('Text="{Binding ModelFolder}"', xaml)
+        self.assertIn('x:Name="ModelInstallButton"', xaml)       # the path leaves the row; the button follows the state
         self.assertIn("PresentModelStatus", settings_vm)
         body = settings_vm[settings_vm.index("internal static string PresentModelStatus"):settings_vm.index("internal void TestSetModelStatus")]
         self.assertNotIn("EndsWith(", body)      # exact known messages only, never a generic path pattern
@@ -1021,8 +1021,8 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("human_review_required = HumanReviewRequired", (ROOT / "wpf_app" / "VNText.Studio.App" / "ViewModels" / "MainViewModel.CsvEditor.cs").read_text(encoding="utf-8"))
         self.assertIn("public bool HumanReviewRequired", view_model)
         self.assertIn("public bool HumanReviewRequired", settings)
-        self.assertIn("Duyệt bản dịch trước khi đóng gói", xaml)
-        self.assertIn('Content="Duyệt bản dịch trước khi đóng gói"', xaml)
+        self.assertIn("Duyệt bản dịch trước khi tạo bản Việt hóa", xaml)
+        self.assertIn('Content="Duyệt bản dịch trước khi tạo bản Việt hóa"', xaml)
         self.assertNotIn('Text="Thiết bị"', xaml)
         self.assertNotIn('DataTrigger Binding="{Binding StatusText}" Value="Sẵn sàng"', xaml)
         self.assertIn('DataTrigger Binding="{Binding GlossaryStatus}" Value="Danh sách từ được lưu cùng gói dịch."', xaml)
@@ -1191,7 +1191,7 @@ class WpfWorkflowTests(unittest.TestCase):
         self.assertIn("_renderedReviewVersion == _imageReviewVersion", image_vm)
         self.assertIn("_packageReviewVersion == _imageReviewVersion", image_vm)
         self.assertIn("ImageRegions.CollectionChanged += OnImageRegionsChanged", image_vm)
-        self.assertIn("Review đã đổi trong lúc xử lý", image_vm)
+        self.assertIn("Bản xem lại đã đổi trong lúc xử lý", image_vm)
         # RelayCommand.Execute does not consult CanExecute: the delegates re-check before the picker / root / task.
         delivery = image_vm[image_vm.index("CreateImageDeliveryCommand = new RelayCommand"):image_vm.index("InstallImageDeliveryCommand = new RelayCommand")]
         self.assertLess(delivery.index("CanCreateImageDelivery()"), delivery.index("NewImageRoot()"))

@@ -58,6 +58,29 @@ public static class PlainLanguage
 
     public static string WorkerStatus(bool present) => present ? "Sẵn sàng" : "Thiếu bộ xử lý nền";
 
+    /// <summary>"3 câu chưa dịch, 2 câu cần xem lại, 1 câu bị chặn": only the counts that are not zero; every part has its own English entry.</summary>
+    public static string CountsPhrase(int pending, int review, int blocked, int translated = 0, bool sentenceStart = false)
+    {
+        var parts = new List<string>();
+        if (translated > 0) parts.Add(sentenceStart ? UiText.Msg("Đã dịch {0} câu", translated) : UiText.Msg("đã dịch {0} câu", translated));
+        if (pending > 0) parts.Add(UiText.Msg("{0} câu chưa dịch", pending));
+        if (review > 0) parts.Add(UiText.Msg("{0} câu cần xem lại", review));
+        if (blocked > 0) parts.Add(UiText.Msg("{0} câu bị chặn", blocked));
+        return parts.Count == 0 ? UiText.Msg("không còn câu nào cần xử lý") : UiText.Join(", ", parts);
+    }
+
+    private static readonly Regex SavedStepLine = new(@"^(?<lead>\s*(?:\[[^\]]*\]\s*)?)── (?<step>[a-z][a-z0-9_]*) ──\s*$", RegexOptions.Compiled);
+    private static readonly Regex SavedStepLabel = new(@"Bước: (?<step>[a-z][a-z0-9_]*)\b", RegexOptions.Compiled);
+
+    /// <summary>A log line saved by an older run may still show an internal step name ("── stale ──"); it is mapped when it is SHOWN, the saved file is not touched.</summary>
+    public static string DisplayLogLine(string line)
+    {
+        if (string.IsNullOrEmpty(line)) return line;
+        var m = SavedStepLine.Match(line);
+        if (m.Success) return m.Groups["lead"].Value + "── " + StepLabel(m.Groups["step"].Value) + " ──";
+        return SavedStepLabel.Replace(line, x => "Bước: " + StepLabel(x.Groups["step"].Value));
+    }
+
     private static readonly Regex InternalToken = new("^[a-z][a-z0-9_]*$", RegexOptions.Compiled);
 
     /// <summary>A worker step or run status that is still an internal token ("stale", "unity_hash"…) becomes ordinary words.</summary>
@@ -69,9 +92,9 @@ public static class PlainLanguage
         {
             "stale" => "Kết quả cũ đã được bỏ",
             "extract_inventory_boundary" or "discovery_inventory" => "Đang đọc danh sách tệp của game",
-            "unity_enumerate" => "Đang quét danh mục tài nguyên",
-            "unity_classify" => "Đang phân loại tài nguyên",
-            "unity_hash" => "Đang kiểm tra tài nguyên",
+            "unity_enumerate" => "Đang quét danh sách dữ liệu của game",
+            "unity_classify" => "Đang phân loại dữ liệu của game",
+            "unity_hash" => "Đang kiểm tra dữ liệu của game",
             "engine_detection" => "Đang nhận diện loại game",
             "asset_scan" => "Đang kiểm tra font và ảnh của game",
             "report_write" => "Đang ghi báo cáo",

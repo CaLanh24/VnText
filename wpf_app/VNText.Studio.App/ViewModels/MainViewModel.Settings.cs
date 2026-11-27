@@ -213,7 +213,7 @@ public sealed partial class MainViewModel
     private void SaveSettings()
     {
         try { AppSettingsStore.Save(_settings); SettingsStatus = ""; }
-        catch (Exception ex) { SettingsStatus = UiText.Msg("Không lưu được cài đặt; file hiện có được giữ nguyên: {0}", ex.Message); }
+        catch (Exception ex) { SettingsStatus = UiText.Msg("Không lưu được cài đặt; tệp hiện có được giữ nguyên: {0}", ex.Message); }
     }
     internal void RestoreWindow(Window window)
     {

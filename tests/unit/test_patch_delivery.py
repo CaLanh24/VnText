@@ -118,7 +118,7 @@ class PatchDeliveryTests(unittest.TestCase):
             self.assertNotIn("VNTextPatchInstaller.exe", completed[0]["patch_install_instructions"])
             self.assertNotIn("Unity", completed[0]["patch_install_instructions"])
             self.assertNotIn("installer", completed[0]["patch_install_instructions"].casefold())
-            self.assertTrue(any("overlay hợp lệ" in line for line in logs))
+            self.assertTrue(any("thư mục bản Việt hóa hợp lệ" in line for line in logs))
 
             installed = base / "approved-renpy-copy"
             shutil.copytree(payload, installed)

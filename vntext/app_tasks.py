@@ -1087,7 +1087,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
     }
     if files != expected:
         raise RuntimeError(
-            "Ren'Py native overlay layout không hợp lệ; expected="
+            "Cấu trúc thư mục bản Việt hóa Ren'Py không hợp lệ; mong đợi="
             + ", ".join(sorted(expected))
             + "; actual="
             + ", ".join(sorted(files))
@@ -1192,7 +1192,7 @@ def _run_unity_preflight(
             for item in report.get("scan_errors", [])[:3]
         )
         raise RuntimeError(
-            "Unity preflight chưa hoàn tất; dừng extract để tránh bỏ sót resource"
+            "Chưa kiểm tra xong dữ liệu Unity; dừng Lấy text để không bỏ sót dữ liệu"
             + (f": {errors}" if errors else "")
         )
 
@@ -1403,7 +1403,7 @@ def _run_extract_task_impl(
                     existing_target_snapshot = existing_translation_inventory(src)["snapshots"]
                     workspace = Path(temp) / "gamecopy"
                     inventory = copy_template_workspace(src, workspace, is_cancelled=is_cancelled, translation_only=True)
-                    log(f"công cụ Ren’Py workspace isolated: {inventory['files']} file(s), {inventory['bytes']} bytes; sẽ dọn khi terminal.")
+                    log(f"Thư mục làm việc tạm của công cụ Ren’Py: {inventory['files']} tệp, {inventory['bytes']} byte; sẽ được dọn khi tác vụ kết thúc.")
                     with _Working(progress, "Công cụ Ren’Py đang tạo mẫu dịch", 35):
                         generate_empty_vietnamese_template(sdk, workspace, is_cancelled=is_cancelled)
                     with _Working(progress, "Đang đọc mẫu dịch Ren'Py", 70):
@@ -1533,9 +1533,9 @@ def _run_extract_task_impl(
                 {"count": len(runtime_dynamic), "policy": "diagnostic only: never evaluated, never promoted to MAIN", "entries": runtime_dynamic},
                 ensure_ascii=False, indent=2), encoding="utf-8")
         if separate_review:
-            summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv, {review_count} review/extract-only. Xuất tại: {out}"
+            summary = f"Xong: {package_stats['translation_csv_entries']} dòng trong translation.csv, {review_count} dòng chỉ để xem lại. Lưu tại: {out}"
         else:
-            summary = f"Xong: {package_stats['translation_csv_entries']} dòng translation.csv. Xuất tại: {out}"
+            summary = f"Xong: {package_stats['translation_csv_entries']} dòng trong translation.csv. Lưu tại: {out}"
         if excluded_engine_common:
             summary += f"; đã loại {excluded_engine_common} chuỗi Ren'Py common khỏi phạm vi text của game"
         if technical_skipped:
@@ -1550,7 +1550,7 @@ def _run_extract_task_impl(
         elif renpy_sdk_missing:
             summary = (
                 f"Lấy text chưa đầy đủ do thiếu công cụ Ren'Py; "
-                f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa). Kết quả tại: {out}; chọn output mới khi lấy lại text với SDK."
+                f"đã xuất {review_count} dòng chỉ để xem lại (không dịch, không tạo bản Việt hóa). Kết quả tại: {out}; hãy chọn nơi lưu mới khi Lấy text lại với công cụ Ren’Py."
             )
         empty = not (main_count or review_count)
         completion_blockers = bool(extract_errors or review_count or renpy_sdk_missing or empty or limitations)
@@ -1568,7 +1568,7 @@ def _run_extract_task_impl(
         elif review_count:
             completion_error = (
                 "Extract chưa hoàn tất vì còn "
-                f"{review_count} dòng REVIEW/UNSUPPORTED cần xử lý trước khi dịch."
+                f"{review_count} dòng cần xem lại hoặc chưa hỗ trợ, cần xử lý trước khi dịch."
                 + (" Ngoài ra " + dynamic_note if dynamic_note else "")
             )
         elif limitations and not empty:
@@ -1774,7 +1774,7 @@ def run_asset_index_task(
         summary = f"Xong asset browser: {len(rows)} object. Xuất tại: {out}\\asset_index.csv"
         log(summary)
         if errors:
-            log(f"Có {len(errors)} file UnityPy không đọc được, xem extract_report/import_report nếu cần.")
+            log(f"Có {len(errors)} tệp mà UnityPy không đọc được, xem extract_report/import_report nếu cần.")
         _emit_complete(complete, ok=True, summary=summary)
     except Exception as exc:
         _emit_complete(complete, ok=False, error=str(exc))
@@ -2859,7 +2859,7 @@ def _run_patch_task_impl(
                 )
         log(f"Đang tạo bản Việt hóa theo version: {patch_out}")
         if patch_engine == "unity":
-            log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
+            log("Tệp data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
             log("Ren'Py: đang tạo bản Việt hóa.")
         # The writer reports little or no progress of its own on large games; keep the step visibly alive (name + elapsed seconds) until it returns.
@@ -2891,7 +2891,7 @@ def _run_patch_task_impl(
             if write_manifest_file and (patch_out / "COPY_TO_GAME_ROOT").is_dir():
                 write_patch_manifest(patch_out, Path(src).resolve(), VERSION)
             elif write_manifest_file:
-                log("Cảnh báo: chưa tạo được patch_manifest.json vì bản Việt hóa output không có COPY_TO_GAME_ROOT.")
+                log("Cảnh báo: chưa tạo được patch_manifest.json vì thư mục bản Việt hóa không có COPY_TO_GAME_ROOT.")
             patch_delivery = "unity_installer"
             patch_payload_path = str(patch_out / "COPY_TO_GAME_ROOT")
             patch_install_instructions = (
@@ -2917,7 +2917,7 @@ def _run_patch_task_impl(
                 patch_install_instructions + "\n",
                 encoding="utf-8",
             )
-            log("Ren'Py: overlay hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc native này để cài.")
+            log("Ren'Py: thư mục bản Việt hóa hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc này để cài.")
             summary = f"Xong: bản Việt hóa Ren'Py nằm tại {patch_out}. Chép nội dung COPY_TO_GAME_ROOT vào thư mục game."
             if include_installer and write_manifest_file:
                 installer = _find_patch_installer()
@@ -2930,7 +2930,7 @@ def _run_patch_task_impl(
                     patch_delivery = "renpy_installer"
                     patch_install_instructions = (
                         f"Bản Việt hóa tại {patch_out}. Mở VNTextPatchInstaller.exe, chọn trực tiếp thư mục game để cài/gỡ. "
-                        "Chỉ các file bị thay đổi được sao lưu; không cần tạo bản sao toàn bộ game.")
+                        "Chỉ các tệp bị thay đổi được sao lưu; không cần tạo bản sao toàn bộ game.")
                     summary = patch_install_instructions
                     (patch_out / "HUONG_DAN_CAI_PATCH.txt").write_text(patch_install_instructions + "\n", encoding="utf-8")
         if patch_excluded:

@@ -217,26 +217,26 @@ public static class WorkflowStatus
         bool statusKnown = true)
     {
         if (!hasGame)
-            return "Bước 1/3: Chọn game — chưa chọn thư mục game";
+            return "Chọn game — chưa chọn thư mục game";
 
         if (current == "translate" && hasTranslate && !translateComplete && !statusKnown)
         {
-            return UiText.Msg("Bước 2/3: Trạng thái dịch chưa được xác minh — pending {0}, review {1}; chưa thể đưa vào bản Việt hóa", pending, reviewOnly);
+            return UiText.Compose("Chưa xác minh được trạng thái dịch — ", PlainLanguage.CountsPhrase(pending, reviewOnly, 0), "; chưa thể đưa vào bản Việt hóa");
         }
 
         if (current == "translate" && hasTranslate && !translateComplete)
         {
-            return UiText.Msg("Bước 2/3: Dịch một phần — pending {0}, review {1}, blocked {2}", pending, reviewOnly, blocked);
+            return UiText.Compose("Dịch một phần — ", PlainLanguage.CountsPhrase(pending, reviewOnly, blocked));
         }
 
         return current switch
         {
-            "extract" when !hasExtract => "Bước 1/3: Lấy text — chưa có translation.csv",
-            "translate" => "Bước 2/3: Dịch tự động — cần bản dịch trong translation.csv",
-            "patch" when !hasTranslate => "Bước 3/3: Tạo bản Việt hóa — cần translation.csv có bản dịch",
-            "patch" => "Bước 3/3: Tạo bản Việt hóa — đóng gói bản dịch",
+            "extract" when !hasExtract => "Lấy text — chưa có tệp bản dịch",
+            "translate" => "Dịch tự động — cần bản dịch trong tệp bản dịch",
+            "patch" when !hasTranslate => "Tạo bản Việt hóa — tệp bản dịch cần có bản dịch",
+            "patch" => "Tạo bản Việt hóa — đóng gói bản dịch",
             "done" => "Hoàn tất — gói dịch và bản Việt hóa đã sẵn sàng",
-            _ => "Bước 1/3: Lấy text",
+            _ => "Lấy text",
         };
     }
 

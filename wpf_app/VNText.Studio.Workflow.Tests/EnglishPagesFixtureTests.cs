@@ -109,7 +109,7 @@ internal static partial class Program
                 Scan("csv loaded + preview", CsvScope());
                  Scan("csv tools open + examples", CsvScope());
                 rows[2].Translation = "Cảm ơn nhiều."; Scan("csv dirty", CsvScope());
-                vm.TestSetCsvSaveError("file đã đổi bên ngoài"); vm.ShowCompletionToast(new CompletionNotification("Lưu thất bại", vm.CsvEditorSaveError, "error")); Scan("csv save error", CsvScope());
+                vm.TestSetCsvSaveError("tệp đã đổi bên ngoài"); vm.ShowCompletionToast(new CompletionNotification("Lưu thất bại", vm.CsvEditorSaveError, "error")); Scan("csv save error", CsvScope());
                 vm.Language = "vi"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Không lưu được:", StringComparison.Ordinal), "Vietnamese save-error toast updates in place");
                 vm.Language = "en"; PumpFixture(100); Require(((TextBlock)Named("ToastText")).Text.StartsWith("Could not save:", StringComparison.Ordinal), "English save-error toast updates in place");
                 Scan("csv toast hot language switch", CsvScope());
@@ -154,8 +154,8 @@ internal static partial class Program
                 notes.Close();
                 foreach (var (message, caption, buttons) in new[]
                 {
-                    ("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?", "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel),
-                    (UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", 4, 3), "", UiText.Msg("Tìm: {0}\nThay bằng: {1}", "door", "gate"), "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.", "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu."), "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo),
+                    ("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn tệp khác?", "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel),
+                    (UiText.Lines(UiText.Msg("Thay thế {0} lần trong {1} dòng?", 4, 3), "", UiText.Msg("Tìm: {0}\nThay bằng: {1}", "door", "gate"), "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.", "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra tệp sau khi lưu."), "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo),
                     ("Khôi phục bản dịch về trước lần thay thế hàng loạt gần nhất?", "Xác nhận hoàn tác", MessageBoxButton.YesNo),
                     (UiText.Msg("Xóa tệp nhật ký {0}?", "app.log.2026-10-31"), "Nhật ký", MessageBoxButton.YesNo),
                 })

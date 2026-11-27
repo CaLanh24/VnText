@@ -501,7 +501,7 @@ def run_patch_worker(
                     shutil.copytree(build_dir, delivery_dir, dirs_exist_ok=True)
                 except OSError as exc:
                     payload = dict(payload)
-                    payload.update(ok=False, complete=False, error=f'Chưa bàn giao được patch: {exc}')
+                    payload.update(ok=False, complete=False, error=f'Chưa bàn giao được bản Việt hóa: {exc}')
                 complete(payload)
                 return
             if payload.get('ok'):
@@ -509,7 +509,7 @@ def run_patch_worker(
                     from vntext.patch_bundle import bundle_patch, verify_bundle
                     stub = build_dir / 'VNTextPatchInstaller.exe'
                     if not stub.is_file():
-                        raise ValueError('Thiếu installer patch tự chứa; chưa thể bàn giao.')
+                        raise ValueError('Thiếu bộ cài tự chứa của bản Việt hóa; chưa thể bàn giao.')
                     executable = bundle_patch(stub, build_dir, delivery_dir / 'VNText-VietHoa.exe')
                     verify_bundle(executable)
                 except Exception as exc:       # a failed hand-off is an error, never a half-written success
@@ -520,7 +520,7 @@ def run_patch_worker(
                 payload = dict(payload)
                 payload.update(patch_payload_path=str(executable),
                     patch_install_instructions='Mở VNText-VietHoa.exe, chọn thư mục game để cài hoặc gỡ bản Việt hóa.',
-                    summary=f'Đã tạo installer Việt hóa: {executable}. Mở file này để cài hoặc gỡ patch.')
+                    summary=f'Đã tạo installer Việt hóa: {executable}. Mở tệp này để cài hoặc gỡ bản Việt hóa.')
             complete(payload)
         run_patch_task(
             csv_path,

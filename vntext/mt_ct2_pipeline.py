@@ -805,7 +805,7 @@ def _run_ct2_translate_impl(
         )
         copied_vi += copy_applied
         if copy_blocked:
-            emit(f"Cảnh báo: {copy_blocked} dòng copy_vi bị chặn")
+            emit(f"Cảnh báo: {copy_blocked} dòng sao chép bản tiếng Việt bị chặn")
         for row, attempted, reasons in copy_review:
             blocker_records.append(
                 _blocker_record(
@@ -1744,7 +1744,7 @@ def _run_ct2_translate_keys_impl(
     _prune_resolved_review_only(package_dir, [row for row in rows if row.get("key") in keys_set], emit,
                                 protected_review_keys=human_review_keys - keys_set)
     human_review_count = _count_human_review_rows(package_dir)
-    summary = f"Dịch lại: applied={applied}, blocked={blocked}, tổng {len(mt_targets)} dòng gửi CT2"
+    summary = f"Dịch lại: đã áp dụng {applied}, bị chặn {blocked}, tổng {len(mt_targets)} dòng gửi cho bộ dịch"
     if human_review_count:
         summary += f". Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa"
         emit(f"Cần duyệt thủ công {human_review_count} dòng trước khi tạo bản Việt hóa")

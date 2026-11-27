@@ -741,7 +741,7 @@ class TraceStoreTests(unittest.TestCase):
         self.assertFalse(completed[0]["ok"])
         self.assertFalse(completed[0]["complete"])
         self.assertEqual(completed[0]["review_only"], 1)
-        self.assertIn("REVIEW", completed[0]["error"])
+        self.assertIn("xem lại", completed[0]["error"])
 
     def test_traced_translation_persists_per_entry_cache_fingerprint(self):
         entry = _entry("translation-cache-fingerprint")

@@ -95,7 +95,7 @@ public static class AppSettingsStore
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
-            error = "Không đọc được cài đặt. File hiện có được giữ nguyên: " + ex.Message;
+            error = "Không đọc được cài đặt. Tệp hiện có được giữ nguyên: " + ex.Message;
             return new AppSettings();
         }
     }

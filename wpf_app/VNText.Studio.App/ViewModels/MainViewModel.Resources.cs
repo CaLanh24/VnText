@@ -58,7 +58,7 @@ public sealed partial class MainViewModel
     private void StartResources(bool download)
     {
         if (Busy) return;
-        ResourceStatus = download ? "Đang chuẩn bị tài nguyên… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra tài nguyên…";
+        ResourceStatus = download ? "Đang chuẩn bị thành phần… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra thành phần…";
         _statusBeforeResources = StatusText;                 // Q1: what the status line said before this task claimed it
         BeginTask("resources", new { download }, ResourceStatus);
         _resourcesRunningStatus = StatusText;                // the exact text THIS task published (identity of its ownership)
@@ -78,7 +78,7 @@ public sealed partial class MainViewModel
     internal void TestClaimResourcesStatus(bool download)
     {
         TestSetActiveTask("test-resources-" + Guid.NewGuid().ToString("N"), "resources");
-        ResourceStatus = download ? "Đang chuẩn bị tài nguyên… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra tài nguyên…";
+        ResourceStatus = download ? "Đang chuẩn bị thành phần… Có thể hủy và thử lại; game không bị thay đổi." : "Đang kiểm tra thành phần…";
         _statusBeforeResources = StatusText; StatusText = ResourceStatus; _resourcesRunningStatus = StatusText;
         _resourcesStatusTaskId = _activeTaskId ?? "";
     }
@@ -92,7 +92,7 @@ public sealed partial class MainViewModel
         _resourcesRunningStatus = ""; _statusBeforeResources = ""; _resourcesStatusTaskId = "";
         if (string.IsNullOrEmpty(owned) || StatusText != owned) return;
         var cancelled = !evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true;
-        StatusText = cancelled ? "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ."
+        StatusText = cancelled ? "Đã hủy chuẩn bị thành phần; có thể tải lại. Thành phần đã cài vẫn được giữ."
             : !evt.Ok || !_resourcesAllReady ? "Tài nguyên chưa sẵn sàng — xem Cài đặt › Dữ liệu."
             : !string.IsNullOrEmpty(before) && before != owned ? before : "Sẵn sàng";
     }
@@ -112,12 +112,12 @@ public sealed partial class MainViewModel
     {
         if (!evt.Ok && evt.Error?.Contains("cancelled", StringComparison.OrdinalIgnoreCase) == true)
         {
-            ResourceStatus = "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ.";
+            ResourceStatus = "Đã hủy chuẩn bị thành phần; có thể tải lại. Thành phần đã cài vẫn được giữ.";
             RaiseResourceReadiness();
             AppendLog(ResourceStatus);
             return;
         }
-        ResourceStatus = evt.Summary ?? "Đã kiểm tra tài nguyên.";
+        ResourceStatus = evt.Summary ?? "Đã kiểm tra thành phần.";
         try
         {
             var dataRoot = Environment.GetEnvironmentVariable("VNTEXT_DATA_ROOT");
@@ -148,7 +148,15 @@ public sealed partial class MainViewModel
             RaiseResourceReadiness();
             AppendLog(ResourceStatus + " (" + ex.Message + ")", "WARN");
         }
-        if (!evt.Ok) { AppendLog(evt.Error ?? "", "WARN"); RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được tài nguyên."); }
+        var workerMissing = false; try { workerMissing = !File.Exists(WorkerPaths.PythonExecutable()); } catch (Exception) { }
+        if (workerMissing)
+        {
+            // The background processor is missing too: one notice says both things (the component check cannot run without it).
+            ResourceStatus = "Chưa kiểm tra được thành phần vì thiếu bộ xử lý nền. Hãy mở lại ứng dụng hoặc cài lại ứng dụng, rồi bấm “Kiểm tra lại”.";
+            RaiseResourceReadiness();
+            AppendLog(evt.Error ?? "", "WARN");
+        }
+        else if (!evt.Ok) { AppendLog(evt.Error ?? "", "WARN"); RecordPersistentError("resources", evt.Error ?? "Không chuẩn bị được thành phần."); }
         else ResolvePersistentErrorIfSameTask("resources");
         if (!_resourcesAllReady) AppendLog(ResourceStatus);
         CheckResourcesCommand.RaiseCanExecuteChanged(); DownloadResourcesCommand.RaiseCanExecuteChanged();

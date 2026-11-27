@@ -25,7 +25,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     private string _extractStepState = WorkflowStepState.Current;
     private string _translateStepState = WorkflowStepState.Pending;
     private string _patchStepState = WorkflowStepState.Pending;
-    private string _stepStatusLine = "Bước 1/3: Chọn game — chưa chọn thư mục game";
+    private string _stepStatusLine = "Chọn game — chưa chọn thư mục game";
     private string _patchDeliveryLabel = "";
     private string _patchInstallInstructions = "";
     private string _diagnosticStatusLine = "";

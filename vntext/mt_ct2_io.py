@@ -384,7 +384,7 @@ class _ReviewSink:
         count = _append_review_rows(package_dir, self._buffer)
         hidden = self._total - self._logged
         if hidden > 0:
-            self._emit(f"REVIEW: thêm {hidden} dòng (tổng {self._total} trong lô) → review_only.csv")
+            self._emit(f"Cần xem lại: thêm {hidden} dòng (tổng {self._total} trong lô) → review_only.csv")
         self._buffer.clear()
         self._logged = 0
         self._total = 0

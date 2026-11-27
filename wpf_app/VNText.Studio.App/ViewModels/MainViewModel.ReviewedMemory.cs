@@ -34,7 +34,7 @@ public partial class MainViewModel
     private static bool ShowReviewMemoryPreview(ReviewedMemoryResult preview)
     {
         var explanation = string.Format(UiText.Translate("{0} dòng đã chọn."), preview.Count) + " "
-            + UiText.Translate("Chỉ gói hiện tại và đúng nguồn, file, ngữ cảnh, cách nhập; không dùng cho gói khác.")
+            + UiText.Translate("Chỉ gói hiện tại và đúng nguồn, tệp, ngữ cảnh, cách nhập; không dùng cho gói khác.")
             + "\n" + UiText.Translate("Không dùng để huấn luyện hoặc làm bản dịch mặc định toàn app.")
             + (preview.ConvertsLegacy ? "\n" + UiText.Translate("Bộ nhớ cũ sẽ được giữ bản sao; chỉ các dòng xác nhận được đưa vào bộ nhớ đã duyệt.") : "");
         var text = string.Join("\n\n", preview.Rows.Select(row =>

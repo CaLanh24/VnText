@@ -629,8 +629,8 @@ internal static partial class Program
 
         vm.TestSetActiveTask("renpy-extract", "extract");
         vm.TestHandleWorkerEvent(new WorkerEvent { Type="progress", Id="renpy-extract", Done=99, Total=100, Step="unity_classify", Item="game/script.rpy" });
-        AssertEqual("Đang phân loại tài nguyên để lấy text", vm.ExtractProgressStep);
-        AssertTrue(vm.ProgressSubtitle.Contains("Đang phân loại tài nguyên để lấy text", StringComparison.Ordinal));
+        AssertEqual("Đang phân loại dữ liệu của game để lấy text", vm.ExtractProgressStep);
+        AssertTrue(vm.ProgressSubtitle.Contains("Đang phân loại dữ liệu của game để lấy text", StringComparison.Ordinal));
         AssertFalse(vm.ProgressSubtitle.Contains("unity_classify", StringComparison.Ordinal));
 
         // A subsequent Translate owns and resets its own progress fields.
@@ -839,7 +839,7 @@ internal static partial class Program
                 () => vm.CsvValidationMessage.Contains("đã dịch an toàn 2/4", StringComparison.Ordinal),
                 TimeSpan.FromSeconds(5)));
             AssertTrue(vm.CsvValidationMessage.StartsWith("Đã hủy", StringComparison.Ordinal));
-            AssertFalse(vm.CsvValidationMessage.Contains("chưa dịch 1", StringComparison.Ordinal));
+            AssertFalse(vm.CsvValidationMessage.Contains("1 câu chưa dịch", StringComparison.Ordinal));
             AssertFalse(vm.CsvValidationMessage.Contains("Đã dịch 0", StringComparison.Ordinal));
             AssertFalse(vm.CsvValidationOk);
             // The prior cancelled run stays visible on the card instead of a bare "Sẵn sàng".
@@ -1324,11 +1324,11 @@ internal static partial class Program
             Summary = "partial translate",
         });
         AssertEqual("Dịch một phần", vm.StatusText);
-        AssertTrue(vm.ProgressSubtitle.Contains("pending 261"));
-        AssertTrue(vm.ProgressSubtitle.Contains("review 262"));
+        AssertTrue(vm.ProgressSubtitle.Contains("261 câu chưa dịch"));
+        AssertTrue(vm.ProgressSubtitle.Contains("262 câu cần xem lại"));
         AssertFalse(vm.ProgressSubtitle.Contains("Hoàn tất"));
         AssertTrue(vm.StepStatusLine.Contains("Dịch một phần"));
-        AssertTrue(vm.StepStatusLine.Contains("review 262"));
+        AssertTrue(vm.StepStatusLine.Contains("262 câu cần xem lại"));
     }
 
     private static void RenpyGameDetector_RequiresCredibleRecoveryEvidence()
@@ -2186,7 +2186,7 @@ internal static partial class Program
             AssertEqual(WorkflowStepState.Current, snap.TranslateState);
             AssertFalse(snap.TranslateState == WorkflowStepState.Done);
             Require(snap.StepStatusLine.Contains("Dịch một phần"), "step line: " + snap.StepStatusLine);
-            Require(snap.StepStatusLine.Contains("review"), "step line: " + snap.StepStatusLine);
+            Require(snap.StepStatusLine.Contains("xem lại"), "step line: " + snap.StepStatusLine);
             AssertTrue(snap.ReadyForPatch);          // advisory: translated rows exist, the preflight decides the eligible subset
             var picker = new FakePathPicker { TranslationCsv = Path.Combine(package, "translation.csv") };
             using var worker = new PythonWorkerHost();
@@ -2311,8 +2311,8 @@ internal static partial class Program
             AssertEqual("", vm.TranslationCsvPath);
             // The two user-visible lines name the same specific reason; the missing default file is never the story.
             Require(vm.TranslateReadinessText.Contains("manifest.json", StringComparison.Ordinal), "readiness line: " + vm.TranslateReadinessText);
-            Require(!vm.TranslateReadinessText.Contains("File không tồn tại", StringComparison.Ordinal), "no misleading default-file message: " + vm.TranslateReadinessText);
-            Require(!vm.TranslateWorkflowStatusText.Contains("File không tồn tại", StringComparison.Ordinal), "workflow status line: " + vm.TranslateWorkflowStatusText);
+            Require(!vm.TranslateReadinessText.Contains("Tệp không tồn tại", StringComparison.Ordinal), "no misleading default-file message: " + vm.TranslateReadinessText);
+            Require(!vm.TranslateWorkflowStatusText.Contains("Tệp không tồn tại", StringComparison.Ordinal), "workflow status line: " + vm.TranslateWorkflowStatusText);
             var result = CsvPackageValidator.Validate(csv, requireTranslations: false);
             AssertFalse(result.Ok);
             AssertTrue(result.Message.Contains("manifest.json", StringComparison.Ordinal));
@@ -2418,11 +2418,11 @@ internal static partial class Program
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? "");
         // Null / empty: one explanatory hint, nothing reserved for the preview or the grid.
         Require(vm.ImageShowEmptyState && !vm.ImageHasPreview && !vm.ImageHasRegions, "nothing selected must show only the hint");
-        AssertEqual("Chọn ảnh để xem trước và OCR", vm.ImageEmptyHint);
+        AssertEqual("Chọn ảnh để xem trước và nhận dạng chữ", vm.ImageEmptyHint);
         // Selected but not yet read (or the load failed): still no preview/rows, and the hint names the next step.
         vm.ImagePath = Path.Combine(Path.GetTempPath(), "does-not-exist.png");
         Require(vm.ImageShowEmptyState && !vm.ImageHasPreview && !vm.ImageHasRegions, "a selected image that failed to load must stay collapsed");
-        Require(vm.ImageEmptyHint.Contains("OCR ảnh đã chọn", StringComparison.Ordinal), "selected-image hint must name the OCR action");
+        Require(vm.ImageEmptyHint.Contains("Nhận dạng chữ trong ảnh đã chọn", StringComparison.Ordinal), "selected-image hint must name the OCR action");
         Require(changed.Contains("ImageEmptyHint") && changed.Contains("ImageShowEmptyState"), "the empty-state bindings must refresh when the path changes");
         // Loaded: preview and rows open, the hint goes away, and a new selection returns to the collapsed state.
         vm.TestSetImagePreview(System.Windows.Media.Imaging.BitmapSource.Create(2, 2, 96, 96, System.Windows.Media.PixelFormats.Gray8, null, new byte[4], 2));
@@ -2752,14 +2752,14 @@ internal static partial class Program
         try
         {
             UiText.SetLanguage("vi");
-            AssertEqual("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", UiText.TranslateDynamic("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."));
-            AssertEqual("Không mở được review: Review rỗng.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", UiText.Key("Review rỗng."))));   // Vietnamese is exact
+            AssertEqual("Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", UiText.TranslateDynamic("Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh."));
+            AssertEqual("Không mở được bản xem lại: Review rỗng.", UiText.TranslateDynamic(UiText.Msg("Không mở được bản xem lại: {0}", UiText.Key("Review rỗng."))));   // Vietnamese is exact
             UiText.SetLanguage("en");
-            AssertEqual("Could not open the review: The review is empty.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", UiText.Key("Review rỗng."))));
-            AssertEqual("Running: OCR images.", UiText.TranslateDynamic("Đang chạy: OCR ảnh."));
+            AssertEqual("Could not open the review: The review is empty.", UiText.TranslateDynamic(UiText.Msg("Không mở được bản xem lại: {0}", UiText.Key("Review rỗng."))));
+            AssertEqual("Running: OCR images.", UiText.TranslateDynamic("Đang chạy: nhận dạng chữ trong ảnh."));
             AssertEqual("3 regions need review; coordinates are in source-image pixels. Choose exactly one background mode for each region before rendering.",
-                UiText.TranslateDynamic("3 region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render."));
-            AssertEqual("Found 5 candidate images; text is not confirmed. Choose an image to OCR.", UiText.TranslateDynamic("Tìm thấy 5 ảnh ứng viên; chưa xác nhận có chữ. Chọn ảnh để OCR."));
+                UiText.TranslateDynamic("3 vùng chữ cần xem lại; tọa độ tính theo điểm ảnh của ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước khi dựng ảnh."));
+            AssertEqual("Found 5 candidate images; text is not confirmed. Choose an image to OCR.", UiText.TranslateDynamic("Tìm thấy 5 ảnh ứng viên; chưa xác nhận có chữ. Chọn ảnh để nhận dạng chữ."));
             // user data, paths, technical and unknown text stay untouched
             foreach (var userText in new[] { "Xin chào, nhà thám hiểm", @"C:\Trò chơi\Ảnh\ui_01.png", "System.IO.IOException: The process cannot access the file", "Hello", "Nền phẳng của tôi" })
                 AssertEqual(userText, UiText.TranslateDynamic(userText));
@@ -2784,16 +2784,16 @@ internal static partial class Program
             AssertEqual("Before: Xóa", UiText.TranslateDynamic(UiText.SplitFirstLine(UiText.Lines("Header", composed)).Remainder));
 
             // worker-owned image phrases: progress line, errors, prefixed raw technical tails
-            AssertEqual("45% • Step: OCR images • Item: Trò chơi.png • ETA: 2 minutes", UiText.TranslateDynamic("45% • Bước: OCR ảnh • Mục: Trò chơi.png • ETA: 2 phút"));
+            AssertEqual("45% • Step: OCR images • Item: Trò chơi.png • ETA: 2 minutes", UiText.TranslateDynamic("45% • Bước: nhận dạng chữ trong ảnh • Mục: Trò chơi.png • ETA: 2 phút"));
             AssertEqual("10% • Step: Translate image", UiText.TranslateDynamic("10% • Bước: Dịch ảnh"));
-            AssertEqual("99% • Step: OCR images • ETA: 1 hour 5 minutes", UiText.TranslateDynamic("99% • Bước: OCR ảnh • ETA: 1 giờ 5 phút"));
-            AssertEqual("5% • Step: OCR images • ETA: 12 seconds", UiText.TranslateDynamic("5% • Bước: OCR ảnh • ETA: 12 giây"));
-            AssertEqual("Not finished: The translation overflows the region; fix the line breaks/font/region and approve again.", UiText.TranslateDynamic(UiText.Msg("Chưa hoàn tất: {0}", UiText.Key("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại."))));
-            AssertEqual("Approve the text/crop before rendering.", UiText.TranslateDynamic("Cần duyệt text/crop trước render."));
-            AssertEqual("Windows OCR failed: 0x80070005 Access is denied", UiText.TranslateDynamic("Windows OCR thất bại: 0x80070005 Access is denied"));      // the technical tail stays raw
+            AssertEqual("99% • Step: OCR images • ETA: 1 hour 5 minutes", UiText.TranslateDynamic("99% • Bước: nhận dạng chữ trong ảnh • ETA: 1 giờ 5 phút"));
+            AssertEqual("5% • Step: OCR images • ETA: 12 seconds", UiText.TranslateDynamic("5% • Bước: nhận dạng chữ trong ảnh • ETA: 12 giây"));
+            AssertEqual("Not finished: The translation overflows the region; fix the line breaks/font/region and approve again.", UiText.TranslateDynamic(UiText.Msg("Chưa hoàn tất: {0}", UiText.Key("Bản dịch tràn vùng chữ; hãy sửa xuống dòng, phông chữ hoặc vùng rồi duyệt lại."))));
+            AssertEqual("Approve the text/crop before rendering.", UiText.TranslateDynamic("Cần duyệt chữ và vùng cắt trước khi dựng ảnh."));
+            AssertEqual("Windows OCR failed: 0x80070005 Access is denied", UiText.TranslateDynamic("Tính năng nhận dạng chữ của Windows báo lỗi: 0x80070005 Access is denied"));      // the technical tail stays raw
             AssertEqual("Images: 3 draft translations, 1 untranslated. C:\\Out\\Ảnh", UiText.TranslateDynamic("Ảnh: 3 bản dịch nháp, 1 chưa dịch. C:\\Out\\Ảnh"));   // the path stays raw
             AssertEqual("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG", UiText.TranslateDynamic("CHỈ LÀ NHÃN CỦA NGƯỜI DÙNG"));
-            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic(UiText.Msg("Không mở được review: {0}", "Access to the path 'C:\\x' is denied.")));
+            AssertEqual("Could not open the review: Access to the path 'C:\\x' is denied.", UiText.TranslateDynamic(UiText.Msg("Không mở được bản xem lại: {0}", "Access to the path 'C:\\x' is denied.")));
         }
         finally { UiText.SetLanguage(previous); }
     }
@@ -2823,7 +2823,7 @@ internal static partial class Program
             // Opened from a saved review: data kept, approvals reset (as before), and the next step is said out loud.
             AssertTrue(vm.TryLoadImageReview(Write("good.json", hash), fromSavedReview: true));
             AssertEqual(MainViewModel.SavedReviewOpenedMessage, vm.ImageStatus);
-            AssertEqual("Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", vm.ImageStatus);
+            AssertEqual("Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.", vm.ImageStatus);
             AssertEqual(1, vm.ImageRegions.Count);
             AssertEqual("Xin chào", vm.ImageRegions[0].Translation);
             AssertEqual("10,10,200,40", string.Join(",", vm.ImageRegions[0].Box));
@@ -2831,10 +2831,10 @@ internal static partial class Program
             AssertFalse(vm.ImageRegions[0].FlatBackgroundApproved);
             // A failing open keeps its own context and is never replaced by the success text.
             AssertFalse(vm.TryLoadImageReview(Write("bad.json", new string('0', 64)), fromSavedReview: true));
-            Require(vm.ImageStatus.StartsWith("Không mở được review:", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở review", StringComparison.Ordinal), "the failure keeps its own message");
+            Require(vm.ImageStatus.StartsWith("Không mở được bản xem lại:", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở bản xem lại", StringComparison.Ordinal), "the failure keeps its own message");
             // The OCR completion path keeps its existing wording.
             AssertTrue(vm.TryLoadImageReview(Write("ocr.json", hash)));
-            Require(vm.ImageStatus.Contains("region cần review", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở review", StringComparison.Ordinal), "the OCR path keeps its wording");
+            Require(vm.ImageStatus.Contains("vùng chữ cần xem lại", StringComparison.Ordinal) && !vm.ImageStatus.Contains("Đã mở bản xem lại", StringComparison.Ordinal), "the OCR path keeps its wording");
         }
         finally { Directory.Delete(root, true); }
     }
@@ -2860,7 +2860,7 @@ internal static partial class Program
         var xaml = File.ReadAllText(Path.Combine(RepoRoot(), "wpf_app", "VNText.Studio.App", "MainWindow.xaml"), Encoding.UTF8);
         Require(!xaml.Contains("Dịch local", StringComparison.Ordinal), "the sidebar must use the heading name, not Dịch local");
         Require(xaml.Contains("<TextBlock Text=\"Dịch tự động\" />", StringComparison.Ordinal), "the sidebar must say Dịch tự động");
-        Require(!xaml.Contains("Chọn tệp bản dịch", StringComparison.Ordinal) && !xaml.Contains("Chọn file CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn file\"", StringComparison.Ordinal), "translation pickers must not use the longer or generic names");
+        Require(!xaml.Contains("Chọn tệp bản dịch", StringComparison.Ordinal) && !xaml.Contains("Chọn tệp CSV", StringComparison.Ordinal) && !xaml.Contains("Content=\"Chọn tệp\"", StringComparison.Ordinal), "translation pickers must not use the longer or generic names");
         AssertEqual(4, System.Text.RegularExpressions.Regex.Matches(xaml, "(?:Text|Content)=\"Chọn bản dịch\"").Count);   // editor header, empty state, Translate, Patch
     }
 
@@ -2950,7 +2950,7 @@ internal static partial class Program
             var snapshot = WorkflowStatus.Evaluate(Path.Combine(root, "game"), root);
             AssertFalse(snapshot.TranslateComplete);
             AssertEqual("translate", snapshot.Current);
-            AssertTrue(snapshot.StepStatusLine.Contains("blocked 1"));
+            AssertTrue(snapshot.StepStatusLine.Contains("1 câu bị chặn"));
 
             var picker = new FakePathPicker();
             using var worker = new PythonWorkerHost();
@@ -2970,7 +2970,7 @@ internal static partial class Program
             });
             AssertEqual(WorkflowTabs.Translate, vm.SelectedTab);
             AssertEqual("Dịch một phần", vm.StatusText);
-            AssertTrue(vm.StepStatusLine.Contains("chưa thể dùng 1"));
+            AssertTrue(vm.StepStatusLine.Contains("1 câu bị chặn"));
         }
         finally
         {
@@ -3259,7 +3259,7 @@ internal static partial class Program
             AssertEqual(3, vm.AnalyzePatchableCount);
             AssertEqual(6, vm.AnalyzeReviewRiskCount);
             AssertEqual(2, vm.AnalyzeUnknownCount);
-            AssertTrue(vm.AnalyzeStatusText.Contains("danh mục tài nguyên đầy đủ", StringComparison.Ordinal));
+            AssertTrue(vm.AnalyzeStatusText.Contains("danh sách dữ liệu của game đầy đủ", StringComparison.Ordinal));
             AssertEqual("", vm.AnalyzeScanErrorText);   // a clean scan shows no extra line under the single engine/progress text
             AssertTrue(vm.AnalyzeResultsExpanded);
             AssertTrue(vm.AnalyzeHasReport);
@@ -3360,7 +3360,7 @@ internal static partial class Program
             vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
             AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
             AssertEqual(CsvPackageValidator.NoCsvChosenMessage, vm.TranslateReadinessText);
-            AssertFalse(vm.TranslateReadinessText.Contains("File không tồn tại", StringComparison.Ordinal));
+            AssertFalse(vm.TranslateReadinessText.Contains("Tệp không tồn tại", StringComparison.Ordinal));
 
             AssertEqual("Tiến trình quét", vm.ExtractProgressHeading);
             vm.TestSetRenpySdkAction("download");
@@ -3397,7 +3397,7 @@ internal static partial class Program
             vm.OutputPath = root;
             vm.NavigateTabCommand.Execute(WorkflowTabs.Translate);
             AssertTrue(SpinWait.SpinUntil(() => !vm.TranslateReadinessText.Contains("Đang kiểm tra", StringComparison.Ordinal), TimeSpan.FromSeconds(5)));
-            AssertTrue(vm.TranslateReadinessText.Contains("2 ảnh đã OCR", StringComparison.Ordinal));
+            AssertTrue(vm.TranslateReadinessText.Contains("2 ảnh đã nhận dạng chữ", StringComparison.Ordinal));
             AssertTrue(vm.TranslateReadinessText.Contains("bấm Dịch", StringComparison.Ordinal));
             AssertTrue(vm.RunTranslateCommand.CanExecute(null));    // no text rows, but the OCR-detected images are translated by the same Dịch button
             // No image report: the plain validator text stays (nothing invented).
@@ -3982,7 +3982,7 @@ internal static partial class Program
         AssertEqual("warning", notifications[1].Kind);
         AssertEqual("error", notifications[2].Kind);
         AssertTrue(notifications[0].Message.Contains("Lấy text"));
-        AssertTrue(notifications[1].Message.Contains("chưa dịch 2"));
+        AssertTrue(notifications[1].Message.Contains("2 câu chưa dịch"));
         AssertTrue(notifications[2].Message.Contains("Bản dịch lỗi") && notifications[2].Message.Contains("Cách xử lý"));   // 0.1.36: a failed patch is explained
     }
 

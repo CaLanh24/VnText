@@ -66,7 +66,7 @@ internal static partial class Program
         AssertEqual("Thiếu bộ xử lý nền", PlainLanguage.WorkerStatus(false));
         var xaml = MainWindowXaml();
         Require(xaml.Contains("Content=\"Sửa tự động\"", StringComparison.Ordinal), "Settings has Sửa tự động");
-        Require(!xaml.Contains("Sửa/tải tài nguyên còn thiếu", StringComparison.Ordinal), "the old developer label is gone");
+        Require(!xaml.Contains("Sửa/tải thành phần còn thiếu", StringComparison.Ordinal), "the old developer label is gone");
         Require(xaml.Contains("Content=\"Chọn công cụ…\"", StringComparison.Ordinal), "Chọn công cụ…");
         Require(!xaml.Contains("Python worker\" Style", StringComparison.Ordinal), "no Python worker label in Settings");
     }

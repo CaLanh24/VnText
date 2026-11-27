@@ -230,7 +230,7 @@ internal static partial class Program
                 AssertFalse(((ListBox)panel.FindName("ImageResultList")).IsEnabled);     // the source cannot change under a running task
                 AssertFalse(((FrameworkElement)panel.FindName("RegionDetails")).IsEnabled);
                 AssertTrue(((FrameworkElement)panel.FindName("TaskBanner")).IsVisible);
-                AssertTrue(((TextBlock)panel.FindName("TaskText")).Text.Contains("OCR ảnh", StringComparison.Ordinal));
+                AssertTrue(((TextBlock)panel.FindName("TaskText")).Text.Contains("nhận dạng chữ trong ảnh", StringComparison.Ordinal));
                 AssertTrue(((FrameworkElement)panel.FindName("TaskSpinner")).IsVisible);
                 AssertTrue(ReferenceEquals(B("CancelButton").Command, vm.CancelCommand));
                 AssertTrue(B("CancelButton").IsEnabled);
@@ -264,7 +264,7 @@ internal static partial class Program
                 // ---- cancel -> acknowledgement -> terminal for each image task: explicit Vietnamese "Đã hủy", nothing applied ----
                 void Terminal(string id, bool ok, string error) =>
                     vm.TestHandleWorkerEvent(new WorkerEvent { Type = "complete", Id = id, Ok = ok, Complete = ok, Error = error });
-                foreach (var (task, label) in new[] { ("image_extract", "OCR ảnh"), ("image_render", "dựng ảnh"), ("image_batch", "dịch nháp ảnh") })
+                foreach (var (task, label) in new[] { ("image_extract", "nhận dạng chữ trong ảnh"), ("image_render", "dựng ảnh"), ("image_batch", "dịch nháp ảnh") })
                 {
                     var id = "cancel-" + task;
                     vm.MarkReviewForTest();
@@ -282,7 +282,7 @@ internal static partial class Program
                     AssertTrue(vm.ImageStatus.Contains("có thể còn trong nơi lưu bản dịch", StringComparison.Ordinal));   // no rollback promise
                     AssertFalse(vm.ImageStatus.Contains("không áp dụng kết quả nào", StringComparison.Ordinal));
                     AssertFalse(vm.ImageStatus.Contains("Chưa hoàn tất", StringComparison.Ordinal));
-                    AssertFalse(vm.ImageStatus.Contains("Đã render", StringComparison.Ordinal));
+                    AssertFalse(vm.ImageStatus.Contains("Đã dựng ảnh", StringComparison.Ordinal));
                     AssertEqual(vm.ImageStatus, vm.StatusText);
                     AssertFalse(((FrameworkElement)panel.FindName("TaskBanner")).IsVisible);
                     AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));   // a cancelled render produced nothing to deliver
@@ -394,7 +394,7 @@ internal static partial class Program
                 live.Translation = "Bản dịch khác";
                 AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
                 AssertFalse(vm.InstallImageDeliveryCommand.CanExecute(null));
-                AssertTrue(vm.ImageStatus.StartsWith("Review đã đổi sau khi dựng ảnh", StringComparison.Ordinal));
+                AssertTrue(vm.ImageStatus.StartsWith("Bản xem lại đã đổi sau khi dựng ảnh", StringComparison.Ordinal));
                 AssertTrue(File.Exists(firstRender) && Directory.Exists(firstPackage));
                 // Direct Execute (it does not consult CanExecute) must be refused BEFORE the picker, a new root or a worker task.
                 var picksBefore = picker.InputPicks; var rootBefore = vm.ImageTaskRootForTest; var logBefore = vm.LogLines.Count;
@@ -402,7 +402,7 @@ internal static partial class Program
                 AssertEqual(picksBefore, picker.InputPicks);                         // no folder picker opened
                 AssertEqual(rootBefore, vm.ImageTaskRootForTest);                    // no new task root
                 AssertFalse(vm.Busy);                                                // no worker task started
-                AssertTrue(vm.ImageStatus.Contains("Dựng lại ảnh", StringComparison.Ordinal));
+                AssertTrue(vm.ImageStatus.Contains("dựng lại ảnh", StringComparison.Ordinal));
                 vm.CreateImageDeliveryCommand.Execute(null);
                 AssertEqual(rootBefore, vm.ImageTaskRootForTest);
                 AssertFalse(vm.Busy);
@@ -446,7 +446,7 @@ internal static partial class Program
                 live.Translation = "Đổi trong lúc dựng";                                 // review changes while the task is in flight
                 vm.TestSetActiveTask("render-late", "image_render");
                 Terminal("render-late", true, "");
-                AssertTrue(vm.ImageStatus.Contains("Review đã đổi trong lúc xử lý", StringComparison.Ordinal));
+                AssertTrue(vm.ImageStatus.Contains("Bản xem lại đã đổi trong lúc xử lý", StringComparison.Ordinal));
                 AssertFalse(vm.CreateImageDeliveryCommand.CanExecute(null));
                 AssertFalse(vm.InstallImageDeliveryCommand.CanExecute(null));
                 Approve(live, "Đổi trong lúc dựng");

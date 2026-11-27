@@ -130,7 +130,7 @@ def import_existing_translations(
         report["target_csv"] = str(target)
         report["source_csv"] = str(source)
         if target == source:
-            raise ExternalTranslationImportError("Bản dịch cũ phải là file khác gói hiện tại")
+            raise ExternalTranslationImportError("Bản dịch cũ phải là tệp khác gói hiện tại")
         if not (target.parent / "manifest.json").is_file():
             raise ExternalTranslationImportError("Gói hiện tại thiếu manifest.json")
 

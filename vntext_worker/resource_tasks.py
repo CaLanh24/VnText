@@ -51,7 +51,7 @@ def run_resources(task_id, params, is_cancelled):
     for name in ('model', 'renpy', 'ocr'):
         if is_cancelled():
             raise ValueError('cancelled')
-        emit_progress(task_id, done=0, total=0, step='Kiểm tra tài nguyên', item=name)
+        emit_progress(task_id, done=0, total=0, step='Kiểm tra thành phần', item=name)
         try:
             if name == 'model':
                 folder = resolve_model_dir()
@@ -83,11 +83,11 @@ def run_resources(task_id, params, is_cancelled):
                 import os
                 import subprocess
                 if os.name != 'nt':
-                    raise ValueError('OCR cần Windows với gói nhận diện tiếng Anh.')
+                    raise ValueError('Nhận dạng chữ trong ảnh cần Windows có gói nhận diện tiếng Anh.')
                 command = "[Windows.Media.Ocr.OcrEngine,Windows.Foundation,ContentType=WindowsRuntime] > $null; if (@([Windows.Media.Ocr.OcrEngine]::AvailableRecognizerLanguages | Where-Object {$_.LanguageTag -like 'en-*'}).Count -eq 0) { exit 2 }"
                 check = subprocess.run([str(Path(os.environ['SystemRoot']) / 'System32/WindowsPowerShell/v1.0/powershell.exe'), '-NoProfile', '-Command', command], capture_output=True, timeout=20)
                 if check.returncode:
-                    raise ValueError('Thiếu OCR tiếng Anh của Windows; cần cài gói ngôn ngữ tiếng Anh trong Windows trước khi xử lý ảnh.')
+                    raise ValueError('Windows chưa có tính năng nhận dạng chữ tiếng Anh; hãy cài gói ngôn ngữ tiếng Anh trong Windows trước khi xử lý ảnh.')
                 path = 'Windows OCR · English'
             results.append({'resource': name, 'ready': True, 'path': path})
             emit_log(task_id, f'{name}: sẵn sàng · {path}')

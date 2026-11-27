@@ -18,7 +18,7 @@ def _regular(path):
     path = Path(path).absolute()
     for part in (path, *path.parents):
         if part.exists() and (part.is_symlink() or getattr(part.stat(), "st_file_attributes", 0) & 0x400):
-            raise ValueError("Đường dẫn ảnh/output không được qua link hoặc reparse point.")
+            raise ValueError("Đường dẫn ảnh hoặc nơi lưu không được đi qua liên kết thư mục.")
     return path
 
 
@@ -28,12 +28,12 @@ def _image(source):
     if source.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
         raise ValueError("Chỉ hỗ trợ ảnh tĩnh PNG/JPEG/WebP; không xử lý ảnh động.")
     if source.stat().st_size > 32 * 1024 * 1024:
-        raise ValueError("Ảnh vượt 32 MiB; hãy chọn crop nhỏ hơn.")
+        raise ValueError("Ảnh vượt 32 MiB; hãy chọn vùng cắt nhỏ hơn.")
     with source.open("rb") as stream: content = stream.read(32 * 1024 * 1024 + 1)
     if len(content) > 32 * 1024 * 1024: raise ValueError("Ảnh tăng kích thước vượt budget; dừng đọc.")
     with Image.open(io.BytesIO(content)) as opened:
         if opened.width * opened.height > MAX_PIXELS or getattr(opened, "n_frames", 1) != 1:
-            raise ValueError("Ảnh quá lớn hoặc có nhiều frame; hãy chọn ảnh tĩnh/crop.")
+            raise ValueError("Ảnh quá lớn hoặc có nhiều khung hình; hãy chọn ảnh tĩnh hoặc vùng cắt.")
         opened.load()
         image = opened.convert("RGBA")
     return source, image, hashlib.sha256(content).hexdigest()
@@ -41,10 +41,10 @@ def _image(source):
 
 def _box(raw, size):
     if not isinstance(raw, list) or len(raw) != 4 or any(type(n) is not int for n in raw):
-        raise ValueError("Region cần x,y,width,height nguyên.")
+        raise ValueError("Vùng chữ cần x, y, rộng, cao là số nguyên.")
     x, y, w, h = raw
     if x < 0 or y < 0 or w <= 0 or h <= 0 or x + w > size[0] or y + h > size[1]:
-        raise ValueError("Region nằm ngoài ảnh hoặc kích thước không hợp lệ.")
+        raise ValueError("Vùng chữ nằm ngoài ảnh hoặc kích thước không hợp lệ.")
     return x, y, w, h
 
 
@@ -155,7 +155,7 @@ class _OcrServer:
         first = self._read(OCR_STARTUP_SECONDS, None)
         if first != "READY":
             self.close()
-            raise ValueError("Windows OCR không khởi động được: " + str(first)[:300])
+            raise ValueError("Không khởi động được tính năng nhận dạng chữ của Windows: " + str(first)[:300])
 
     def _read(self, seconds, is_cancelled):
         import queue
@@ -164,24 +164,24 @@ class _OcrServer:
             if is_cancelled and is_cancelled():
                 self.close(); raise ValueError("cancelled")
             if time.monotonic() >= deadline:
-                self.close(); raise ValueError("OCR quá %d giây; chưa có kết quả hoàn tất." % seconds)
+                self.close(); raise ValueError("Nhận dạng chữ quá %d giây; chưa có kết quả." % seconds)
             try:
                 line = self.lines.get(timeout=0.1)
             except queue.Empty:
                 continue
             if line is None:
-                self.close(); raise ValueError("Windows OCR đã dừng bất ngờ.")
+                self.close(); raise ValueError("Tính năng nhận dạng chữ của Windows đã dừng bất ngờ.")
             if line:
                 return line
 
     def request(self, path, is_cancelled):
         if self.proc.poll() is not None:
-            raise ValueError("Windows OCR đã dừng bất ngờ.")
+            raise ValueError("Tính năng nhận dạng chữ của Windows đã dừng bất ngờ.")
         self.proc.stdin.write((str(path) + "\n").encode("utf-8")); self.proc.stdin.flush()
         answer = self._read(OCR_REQUEST_SECONDS, is_cancelled)
         if answer.startswith("OK "):
             return json.loads(answer[3:])
-        raise ValueError("Windows OCR thất bại: " + answer[4:][-1500:])
+        raise ValueError("Tính năng nhận dạng chữ của Windows báo lỗi: " + answer[4:][-1500:])
 
     def close(self):
         try:
@@ -204,7 +204,7 @@ def shutdown_ocr_server():
 def _windows_ocr(source, is_cancelled=None):
     global _OCR_SERVER
     if os.name != "nt":
-        raise ValueError("OCR ảnh hiện cần Windows OCR và language pack tiếng Anh.")
+        raise ValueError("Nhận dạng chữ trong ảnh cần tính năng nhận dạng chữ của Windows và gói ngôn ngữ tiếng Anh.")
     if "\n" in str(source) or "\r" in str(source):
         raise ValueError("Đường dẫn ảnh không hợp lệ.")
     if _OCR_SERVER is None or _OCR_SERVER.proc.poll() is not None:
@@ -264,7 +264,7 @@ def recognize_image(source, *, is_cancelled=None):
         # independently measured as horizontal (|angle| <= HORIZONTAL_PROOF_DEGREES); rotated / unmeasurable text still needs a manual crop.
         skew = _horizontal_proof(image, raw)
         if skew is None:
-            raise ValueError("Chữ nghiêng cần xoay/crop và review thủ công trước OCR.")
+            raise ValueError("Chữ nghiêng cần xoay hoặc cắt và xem lại thủ công trước khi nhận dạng chữ.")
     regions = []
     for line in raw.get("lines", []):
         words = line["words"]
@@ -287,41 +287,41 @@ def recognize_image(source, *, is_cancelled=None):
 
 def render_image(document, output, font_path):
     from PIL import Image, ImageDraw, ImageFont, ImageColor
-    if document.get("schema") != 1: raise ValueError("Schema review ảnh không hợp lệ.")
+    if document.get("schema") != 1: raise ValueError("Bản xem lại ảnh không đúng định dạng.")
     source, image, digest = _image(document["source_path"])
     output = _regular(output)
     if output == source or output.exists() or output.suffix.lower() != ".png":
-        raise ValueError("Output phải là file PNG mới; không ghi đè ảnh gốc/output đã có.")
+        raise ValueError("Kết quả phải là tệp PNG mới; không ghi đè ảnh gốc hoặc kết quả đã có.")
     if digest != document["source_sha256"] or image.size != (document["width"], document["height"]):
-        raise ValueError("Ảnh nguồn đã thay đổi; OCR/review lại trước render.")
+        raise ValueError("Ảnh nguồn đã thay đổi; hãy nhận dạng chữ và xem lại trước khi dựng ảnh.")
     regions = document["regions"]
     if not regions or len(regions) > 500:
-        raise ValueError("Không có region đã duyệt hoặc quá 500 region.")
+        raise ValueError("Không có vùng chữ nào được duyệt, hoặc có quá 500 vùng.")
     original = image.copy()
     draw = ImageDraw.Draw(image); replacement_boxes = []
     used = []; deadline = time.monotonic() + 30
     for region in regions:
-        if time.monotonic() > deadline: raise ValueError("Render vượt 30 giây; giảm số region.")
+        if time.monotonic() > deadline: raise ValueError("Dựng ảnh quá 30 giây; hãy giảm số vùng chữ.")
         x, y, w, h = _box(region["box"], image.size)
         if any(x < a+c and a < x+w and y < b+d and b < y+h for a,b,c,d in used):
-            raise ValueError("Region chồng nhau; gộp/sửa crop rồi duyệt lại.")
+            raise ValueError("Các vùng chữ chồng nhau; hãy gộp hoặc sửa vùng cắt rồi duyệt lại.")
         used.append((x,y,w,h))
         replace_background = region.get("replacement_background_approved") is True
         transparent_text = region.get("transparent_text_approved") is True
         flat_background = region.get("flat_background_approved") is True
         clone_background = region.get("clone_background_approved") is True
         if sum((flat_background, replace_background, transparent_text, clone_background)) != 1:
-            raise ValueError("Chọn đúng một cách render: nền phẳng, chữ trong suốt, màu đặc, hoặc clone nền mẫu.")
+            raise ValueError("Chọn đúng một cách dựng: nền phẳng, chữ trong suốt, một màu, hoặc sao chép nền mẫu.")
         region_alpha = image.getchannel("A").crop((x,y,x+w,y+h))
         if transparent_text and (region_alpha.getextrema()[0] == 255 or region_alpha.getextrema()[1] == 0):
-            raise ValueError("Chế độ chữ trong suốt cần region có cả pixel trong suốt và glyph nhìn thấy.")
+            raise ValueError("Chế độ chữ trong suốt cần vùng có cả điểm ảnh trong suốt và nét chữ nhìn thấy.")
         if region_alpha.getextrema()[0] < 255 and not replace_background and not transparent_text and not clone_background:
-            raise ValueError("Vùng chữ có alpha trong suốt; chọn giữ nền trong suốt hoặc xác nhận thay nền region bằng màu đặc.")
+            raise ValueError("Vùng chữ có phần trong suốt; chọn giữ nền trong suốt hoặc xác nhận thay cả vùng bằng một màu.")
         if region.get("approved") is not True:
-            raise ValueError("Cần duyệt text/crop trước render.")
+            raise ValueError("Cần duyệt chữ và vùng cắt trước khi dựng ảnh.")
         text = region.get("translation", "")
         if not isinstance(text, str) or not text.strip() or len(text) > 2000:
-            raise ValueError("Bản dịch region cần text đã duyệt, tối đa 2000 ký tự.")
+            raise ValueError("Bản dịch của vùng cần chữ đã duyệt, tối đa 2000 ký tự.")
         size = region.get("font_size", 24)
         if type(size) is not int or not 6 <= size <= 144:
             raise ValueError("Font size phải từ 6 đến 144.")
@@ -330,13 +330,13 @@ def render_image(document, output, font_path):
         colors = image.crop((x,y,x+w,y+h)).convert("RGB").getcolors(4096)
         flat = sum(count for count,pixel in (colors or []) if max(abs(a-b) for a,b in zip(pixel,bg)) <= 8)
         if flat / (w*h) < .70 and not replace_background and not transparent_text and not clone_background:
-            raise ValueError("Nền region không đủ phẳng theo màu đã chọn; hãy crop/chuẩn bị nền thủ công.")
+            raise ValueError("Nền của vùng không đủ phẳng theo màu đã chọn; hãy cắt hoặc chuẩn bị nền thủ công.")
         if transparent_text:
             scale = 3
             font = ImageFont.truetype(str(_regular(font_path)), size * scale)
             bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2*scale)
             if bounds[2]-bounds[0] > w*scale or bounds[3]-bounds[1] > h*scale:
-                raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
+                raise ValueError("Bản dịch tràn vùng chữ; hãy sửa xuống dòng, phông chữ hoặc vùng rồi duyệt lại.")
             overlay = Image.new("RGBA", (w*scale,h*scale), (0,0,0,0))
             ImageDraw.Draw(overlay).multiline_text((-bounds[0],-bounds[1]),text,font=font,fill=(*fg,255),spacing=2*scale)
             overlay = overlay.resize((w,h),Image.Resampling.LANCZOS)
@@ -346,7 +346,7 @@ def render_image(document, output, font_path):
             font = ImageFont.truetype(str(_regular(font_path)), size)
             bounds = draw.multiline_textbbox((0,0),text,font=font,spacing=2)
             if bounds[2]-bounds[0] > w or bounds[3]-bounds[1] > h:
-                raise ValueError("Bản dịch tràn region; sửa xuống dòng/font/region rồi duyệt lại.")
+                raise ValueError("Bản dịch tràn vùng chữ; hãy sửa xuống dòng, phông chữ hoặc vùng rồi duyệt lại.")
             if clone_background:
                 dx, dy, _, _ = _box([region.get("donor_x"), region.get("donor_y"), w, h], image.size)
                 if x < dx+w and dx < x+w and y < dy+h and dy < y+h:
@@ -402,4 +402,4 @@ def discover_images(root, *, is_cancelled=None, exclude_roots=()):
                 except Exception as exc:
                     errors.append({"archive": str(item), "error": str(exc)[:500]})
     return {"source_root": str(root), "image_paths": sorted(paths), "complete": not errors, "errors": errors,
-            "note": "Ảnh ứng viên, chưa chứng minh có chữ; chọn từng ảnh để OCR/review. Archive dùng reader an toàn RPA 2.0/3.0."}
+            "note": "Ảnh có thể có chữ nhưng chưa được kiểm tra; hãy chọn từng ảnh để nhận dạng chữ và xem lại. Tệp đóng gói của game được đọc bằng trình đọc an toàn (RPA 2.0/3.0)."}

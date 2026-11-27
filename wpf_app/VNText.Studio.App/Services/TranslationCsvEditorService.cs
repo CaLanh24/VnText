@@ -131,7 +131,7 @@ public static class TranslationCsvEditorService
     private static CsvEditorDocument LoadNative(string path)
     {
         if (!File.Exists(path))
-            return new CsvEditorDocument(false, path, [], [], new HashSet<string>(), "File không tồn tại");
+            return new CsvEditorDocument(false, path, [], [], new HashSet<string>(), "Tệp không tồn tại");
 
         var sourceBytes = File.ReadAllBytes(path);
         var sourceSha256 = Convert.ToHexString(SHA256.HashData(sourceBytes));
@@ -443,7 +443,7 @@ public static class TranslationCsvEditorService
         var root = doc.RootElement;
         if (!root.TryGetProperty("ok", out var okEl) || !okEl.GetBoolean())
         {
-            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Preview thất bại";
+            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Xem trước thất bại";
             return new CsvEditorBatchPreviewResult(false, 0, [], err);
         }
         var count = root.TryGetProperty("count", out var cEl) ? cEl.GetInt32() : 0;
@@ -477,7 +477,7 @@ public static class TranslationCsvEditorService
         var root = doc.RootElement;
         if (!root.TryGetProperty("ok", out var okEl) || !okEl.GetBoolean())
         {
-            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Preview thay thế thất bại";
+            var err = root.TryGetProperty("error", out var errEl) ? errEl.GetString() : "Xem trước phần thay thế thất bại";
             return new CsvEditorReplacePreviewResult(false, 0, 0, [], err);
         }
         var count = root.TryGetProperty("count", out var cEl) ? cEl.GetInt32() : 0;
@@ -690,7 +690,7 @@ public static class TranslationCsvEditorService
         var stderr = proc.StandardError.ReadToEnd();
         proc.WaitForExit(TimeSpan.FromMinutes(30));
         if (string.IsNullOrWhiteSpace(stdout))
-            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Bản dịch editor API không trả output" : stderr.Trim());
+            throw new InvalidOperationException(string.IsNullOrWhiteSpace(stderr) ? "Trình sửa bản dịch không trả về kết quả" : stderr.Trim());
         var jsonText = stdout.Trim();
         var start = jsonText.IndexOf('{');
         if (start > 0)

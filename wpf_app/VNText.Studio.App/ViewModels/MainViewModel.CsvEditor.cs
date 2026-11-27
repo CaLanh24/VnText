@@ -81,7 +81,7 @@ public sealed partial class MainViewModel
     }
 
     public string CsvEditorPathDisplay =>
-        string.IsNullOrWhiteSpace(CsvEditorPath) ? "Chưa chọn file…" : Path.GetFileName(CsvEditorPath);
+        string.IsNullOrWhiteSpace(CsvEditorPath) ? "Chưa chọn tệp…" : Path.GetFileName(CsvEditorPath);
     public string CsvEditorPathToolTip => CsvEditorPath;
 
     /// <summary>A CSV is open (the path stays through a failed reload); without one the editor shows only its empty state.</summary>
@@ -312,7 +312,7 @@ public sealed partial class MainViewModel
 
     public bool HasCsvEditorSaveError => !string.IsNullOrEmpty(_csvEditorSaveError);
 
-    private const string CsvSaveKeepsDraftRecovery = " Bản nháp của bạn vẫn được giữ và file ngoài không bị ghi đè; bấm “Tải lại” để chọn Lưu, Bỏ hoặc Hủy.";
+    private const string CsvSaveKeepsDraftRecovery = " Bản nháp của bạn vẫn được giữ và tệp ngoài không bị ghi đè; bấm “Tải lại” để chọn Lưu, Bỏ hoặc Hủy.";
     private const string CsvSaveFixRecovery = " Bản nháp của bạn vẫn được giữ; sửa lỗi rồi lưu lại.";
 
     /// <summary>Records the refusal only for the document that is open (a stale or concurrent save of another path must not paint this one).</summary>
@@ -707,7 +707,7 @@ public sealed partial class MainViewModel
         var path = ResolveActiveCsvPath();
         if (!File.Exists(path))
         {
-            AppendLog("Chưa có translation.csv để sửa — hãy extract hoặc chọn file.");
+            AppendLog("Chưa có translation.csv để sửa — hãy Lấy text hoặc chọn tệp.");
             return;
         }
         LoadCsvEditor(path, reload: true);
@@ -730,7 +730,7 @@ public sealed partial class MainViewModel
             return;
         if (CsvEditorDirty)
         {
-            var choice = CsvEditorMessageBox("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn file khác?",
+            var choice = CsvEditorMessageBox("Bản dịch có thay đổi chưa lưu. Lưu trước khi mở lại hoặc chọn tệp khác?",
                 "Thay đổi bản dịch chưa lưu", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
             if (choice == MessageBoxResult.Cancel)
                 return;
@@ -848,7 +848,7 @@ public sealed partial class MainViewModel
         CsvEditorLoading = false;
         object rejected = string.IsNullOrWhiteSpace(rejectedPath) ? UiText.Key("Bản dịch đã chọn") : Path.GetFileName(rejectedPath);
         var keeping = string.IsNullOrWhiteSpace(CsvEditorPath)
-            ? "chưa có file nào đang mở"
+            ? "chưa có tệp nào đang mở"
             : UiText.Msg("đang giữ {0}", Path.GetFileName(CsvEditorPath));
         CsvEditorLoadError = UiText.Msg("Không mở được {0}: {1} ({2}).", rejected, UiText.Key(reason), UiText.Key(keeping));
         CsvEditorStatus = CsvEditorLoadError;
@@ -1099,7 +1099,7 @@ public sealed partial class MainViewModel
     {
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
         {
-            ShowToast("Chưa chọn file CSV.", "warning");
+            ShowToast("Chưa chọn tệp CSV.", "warning");
             return;
         }
         if (string.IsNullOrEmpty(CsvBulkFind))
@@ -1181,7 +1181,7 @@ public sealed partial class MainViewModel
             "",
             UiText.Msg("Tìm: {0}" + "\n" + "Thay bằng: {1}", applyFind, applyReplace),
             "Chỉ sửa cột Bản dịch; cột Nguyên bản/key giữ nguyên.",
-            "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra file sau khi lưu.");
+            "Ứng dụng sẽ tạo bản lưu khôi phục và kiểm tra tệp sau khi lưu.");
         if (AppDialogService.Show(confirm, "Xác nhận thay thế hàng loạt", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
         // The confirm dialog is modal but the boxes were editable before it opened; the exact
@@ -1522,7 +1522,7 @@ public sealed partial class MainViewModel
         var expectedSha256 = _csvEditorSourceSha256;
         if (string.IsNullOrWhiteSpace(expectedSha256))
         {
-            CsvEditorStatus = "Chưa lưu — không xác minh được bản dịch gốc; hãy tải lại file.";
+            CsvEditorStatus = "Chưa lưu — không xác minh được bản dịch gốc; hãy tải lại tệp.";
             CsvEditorValidationMessage = CsvEditorStatus;
             SetCsvEditorSaveError(path, "không xác minh được bản dịch gốc", CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
@@ -1613,10 +1613,10 @@ public sealed partial class MainViewModel
 
         if (string.IsNullOrWhiteSpace(save.SourceSha256))
         {
-            CsvEditorStatus = "Lưu thất bại — không nhận được mã xác minh file đã lưu. Hãy tải lại bản dịch trước khi tiếp tục.";
+            CsvEditorStatus = "Lưu thất bại — không nhận được mã xác minh tệp đã lưu. Hãy tải lại bản dịch trước khi tiếp tục.";
             CsvEditorValidationMessage = CsvEditorStatus;
             AppendLog(CsvEditorStatus);
-            SetCsvEditorSaveError(path, "không nhận được mã xác minh file đã lưu", CsvSaveKeepsDraftRecovery);
+            SetCsvEditorSaveError(path, "không nhận được mã xác minh tệp đã lưu", CsvSaveKeepsDraftRecovery);
             ShowToast(CsvEditorStatus, "error");
             return false;
         }
@@ -1681,7 +1681,7 @@ public sealed partial class MainViewModel
         if (CsvEditorSaving && !await WaitForCsvEditorSaveAsync()) return;
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
         {
-            ShowToast("Chưa chọn file CSV.", "warning");
+            ShowToast("Chưa chọn tệp CSV.", "warning");
             return;
         }
         if (CsvEditorDirty)
@@ -1707,7 +1707,7 @@ public sealed partial class MainViewModel
             UiText.Msg("Xóa cột translation của {0} dòng bị bản Việt hóa Gate chặn?", preview.Count.ToString("N0")),
             "",
             "Chỉ xóa bản dịch — giữ nguyên key và source.",
-            "File backup sẽ được tạo trước khi ghi.");
+            "Tệp sao lưu sẽ được tạo trước khi ghi.");
         if (AppDialogService.Show(msg, "Xác nhận xóa bản dịch lỗi", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
@@ -1735,7 +1735,7 @@ public sealed partial class MainViewModel
         }
         if (string.IsNullOrWhiteSpace(CsvEditorPath))
         {
-            ShowToast("Chưa chọn file CSV.", "warning");
+            ShowToast("Chưa chọn tệp CSV.", "warning");
             return;
         }
 
@@ -1844,10 +1844,10 @@ public sealed partial class MainViewModel
         {
             CsvEditorStaleOnDisk = true;
             CsvEditorStatus = "Bản dịch đã đổi sau khi dịch xong — bấm Tải lại để xem bản mới (thay đổi chưa lưu được giữ nguyên).";
-            AppendLog("[csv] Editor giữ nguyên vì có thay đổi/lần tải mới; đã đánh dấu cũ so với file trên đĩa.");
+            AppendLog("[csv] Trình sửa giữ nguyên vì có thay đổi/lần tải mới; đã đánh dấu cũ so với tệp trên đĩa.");
             return;
         }
-        AppendLog("[csv] Dịch xong — tải lại editor vì file trên đĩa đã đổi và editor chưa có thay đổi.");
+        AppendLog("[csv] Dịch xong — tải lại trình sửa vì tệp trên đĩa đã đổi và editor chưa có thay đổi.");
         LoadCsvEditor(a, reload: true);
     }
 

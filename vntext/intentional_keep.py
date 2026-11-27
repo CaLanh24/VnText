@@ -240,7 +240,7 @@ def apply_intentional_keep_batch(
     if emit:
         emit(
             f"intentional_keep: {len(applied)} dòng literal "
-            f"(ledger ghi thêm {recorded}, review_only gỡ {pruned}) → {ledger_path.name}"
+            f"(sổ ghi nhận thêm {recorded}, danh sách xem lại gỡ {pruned}) → {ledger_path.name}"
         )
     return {
         "applied": len(applied),
@@ -252,7 +252,7 @@ def apply_intentional_keep_batch(
 
 
 def classify_review_only_status(package_dir: Path | str) -> dict:
-    """Phân loại review_only còn lại: unresolved vs ledger/intentional."""
+    """Phân loại các dòng còn cần xem lại: chưa xử lý hoặc đã chủ động giữ."""
     pkg = Path(package_dir)
     ledger = load_intentional_keep_ledger(pkg)
     ledger_keys = set(ledger.get("keys") or {})

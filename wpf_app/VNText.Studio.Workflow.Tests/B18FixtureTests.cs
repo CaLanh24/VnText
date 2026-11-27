@@ -119,7 +119,7 @@ internal static partial class Program
                         vmCancel.TestClaimResourcesStatus(true);
                         Require(vmCancel.StatusText == vmCancel.ResourceStatus && vmCancel.StatusText != runningShown, $"{language} Q1: the prepare task publishes its own running text");
                         Finish(vmCancel, false, "cancelled");
-                        Require(vmCancel.StatusText == "Đã hủy chuẩn bị tài nguyên; có thể tải lại. Tài nguyên đã cài vẫn được giữ.", $"{language} Q1: cancel ends the running status ('{Shown(vmCancel)}')");
+                        Require(vmCancel.StatusText == "Đã hủy chuẩn bị thành phần; có thể tải lại. Thành phần đã cài vẫn được giữ.", $"{language} Q1: cancel ends the running status ('{Shown(vmCancel)}')");
                         // Exercise the real cancellation handlers, not just running -> complete.
                         using var vmLifecycle = Fresh("Sẵn sàng");
                         vmLifecycle.TestClaimResourcesStatus(true);

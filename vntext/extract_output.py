@@ -266,7 +266,7 @@ def _refresh_extract(src, out, produce, log, is_cancelled=None):
                 if relocated != document:
                     data = json.dumps(relocated, ensure_ascii=False, indent=2).encode("utf-8")
             _write(root / relative, data, expected[relative])
-        log("Đã cập nhật các file kết quả; giữ nguyên file không liên quan, không lưu bản sao cũ.")
+        log("Đã cập nhật các tệp kết quả; giữ nguyên tệp không liên quan, không lưu bản sao cũ.")
         result = relocate(result)
         for key in ("summary", "error", "diagnostic_action"):
             if isinstance(result.get(key), str):

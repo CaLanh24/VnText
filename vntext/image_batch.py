@@ -68,26 +68,26 @@ def translate_cached_images(package, *, source=None, is_cancelled=None, progress
         try:
             ocr = contained(item.get('ocr_result', ''))
             if not ocr.is_file() or ocr.stat().st_size > 4 * 1024 * 1024:
-                raise ValueError('Thiếu kết quả OCR hợp lệ; hãy lấy text lại.')
+                raise ValueError('Thiếu kết quả nhận dạng chữ hợp lệ; hãy Lấy text lại.')
             document = json.loads(ocr.read_text(encoding='utf-8'))
             if document.get('text_detection_policy') != OCR_TEXT_POLICY:
-                raise ValueError('Kết quả OCR cũ chưa xác nhận được chữ. Hãy lấy text lại để lọc ảnh; không tự dịch hoặc vẽ từ kết quả cũ.')
+                raise ValueError('Kết quả nhận dạng cũ chưa xác nhận được chữ. Hãy Lấy text lại để lọc ảnh; không tự dịch hoặc vẽ từ kết quả cũ.')
             original = contained(item['original'])
             _, _, digest = _image(original)
             if digest != item.get('source_sha256') or digest != document.get('source_sha256'):
                 raise ValueError('Ảnh nguồn đã đổi; hãy lấy text lại.')
             if Path(document.get('source_path', '')).resolve() != original.resolve():
-                raise ValueError('OCR không khớp ảnh trong gói.')
+                raise ValueError('Kết quả nhận dạng chữ không khớp ảnh trong gói.')
             regions = document.get('regions')
             if not isinstance(regions, list) or not regions or len(regions) > 500:
-                raise ValueError('Vùng OCR không hợp lệ.')
+                raise ValueError('Vùng chữ nhận dạng được không hợp lệ.')
             if item.get('status') == 'TRANSLATED_DRAFT':
                 continue
             if translator is None:
                 translator = _translator()
             values = translate_region_texts(translator, [r['source_text'] for r in regions])
             if len(values) != len(regions):
-                raise ValueError('Số dòng bản dịch không khớp OCR.')
+                raise ValueError('Số dòng bản dịch không khớp số dòng nhận dạng được.')
             for region, value in zip(regions, values):
                 if not isinstance(value, str) or not value.strip():
                     raise ValueError('Model chưa tạo được bản dịch.')
@@ -108,7 +108,7 @@ def translate_cached_images(package, *, source=None, is_cancelled=None, progress
         except Exception as exc:
             item.update(status='UNTRANSLATED', reason=str(exc)[:1000])
         if progress:
-            progress({'done': index + 1, 'total': len(positives), 'step': 'Dịch ảnh đã OCR', 'item': Path(item['source']).name})
+            progress({'done': index + 1, 'total': len(positives), 'step': 'Dịch ảnh đã nhận dạng chữ', 'item': Path(item['source']).name})
         save()
     report['translated'] = sum(i.get('status') == 'TRANSLATED_DRAFT' for i in positives)
     report['total'] = len(positives)
@@ -196,7 +196,7 @@ def _render_draft(document, output, font_path, is_cancelled):
     from PIL import Image, ImageDraw, ImageFont
     source, image, digest = _image(document['source_path'])
     if digest != document['source_sha256'] or image.size != (document['width'], document['height']):
-        raise ValueError('Ảnh nguồn đã thay đổi trong khi OCR.')
+        raise ValueError('Ảnh nguồn đã thay đổi trong khi nhận dạng chữ.')
     draw = ImageDraw.Draw(image)
     used = []
     for region in document['regions']:
@@ -204,9 +204,9 @@ def _render_draft(document, output, font_path, is_cancelled):
             raise InterruptedError('cancelled')
         x,y,w,h = _box(region['box'], image.size)
         if w*h > 1_000_000:
-            raise ValueError('Vùng OCR quá lớn để dựng ảnh tự động.')
+            raise ValueError('Vùng chữ nhận dạng được quá lớn để dựng ảnh tự động.')
         if any(x<a+c and a<x+w and y<b+d and b<y+h for a,b,c,d in used):
-            raise ValueError('Các vùng OCR chồng nhau.')
+            raise ValueError('Các vùng chữ nhận dạng được chồng nhau.')
         used.append((x,y,w,h))
         crop = image.crop((x,y,x+w,y+h))
         alpha = crop.getchannel('A').getextrema()
@@ -233,7 +233,7 @@ def _render_draft(document, output, font_path, is_cancelled):
             region['automatic_background_estimate']=True
         visible = [p for p in pixels if p[3]>128]
         if not visible:
-            raise ValueError('Vùng OCR không có chữ nhìn thấy.')
+            raise ValueError('Vùng chữ nhận dạng được không có chữ nhìn thấy.')
         fg = Counter(p[:3] for p in visible).most_common(1)[0][0] if transparent else max(visible,key=lambda p:sum((a-b)**2 for a,b in zip(p[:3],bg)))[:3]
         text = region['translation'].strip()
         if not text or len(text)>2000:
@@ -388,7 +388,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     if model_error: raise ValueError(model_error)
                     if cancelled(): raise InterruptedError('cancelled')
                     translations=translate_region_texts(translator,[r['source_text'] for r in regions])
-                    if len(translations)!=len(regions): raise ValueError('Số dòng bản dịch không khớp OCR.')
+                    if len(translations)!=len(regions): raise ValueError('Số dòng bản dịch không khớp số dòng nhận dạng được.')
                     for region,text in zip(regions,translations):
                         if not isinstance(text,str) or not text.strip() or text.strip().casefold()==region['source_text'].strip().casefold():
                             raise ValueError('Model chưa dịch được đầy đủ chữ trong ảnh.')
@@ -401,7 +401,7 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                     item['ocr_result']=str(ocr_path.relative_to(root))
                     item['background_estimated']=any(r.get('automatic_background_estimate') for r in regions)
                     if used_bytes+target.stat().st_size>MAX_BATCH_BYTES:
-                        target.unlink(); raise ValueError('Output ảnh vượt giới hạn 512 MiB.')
+                        target.unlink(); raise ValueError('Ảnh kết quả vượt giới hạn 512 MiB.')
                     used_bytes+=target.stat().st_size
                     item.update(status='TRANSLATED_DRAFT',translated=str(target.relative_to(root)),translated_sha256=hashlib.sha256(target.read_bytes()).hexdigest(),regions=[{'box':r['box'],'text':r['source_text'],'translation':r['translation']} for r in regions])
             except Exception as exc:
@@ -454,10 +454,10 @@ def run_image_batch(source, package, *, sources=None, is_cancelled=None, progres
                    f"Trạng thái: {report['status']}. Chưa xử lý: {remaining}.",'']
             lines.extend(f"{Path(item['source']).name}: {'Bỏ qua — không có chữ' if item['status']=='NO_TEXT' else 'Đã dịch nháp' if item['status']=='TRANSLATED_DRAFT' else 'Chưa dịch — '+item['reason']}" for item in report['items'])
         else:
-            lines=['KẾT QUẢ OCR ẢNH',
-                   f"Đã OCR {report['ocr_ready']} ảnh có chữ; bỏ qua {report['no_text']} ảnh không có chữ; {report['ocr_failed']} ảnh lỗi OCR.",
-                   'Ảnh gốc được giữ nguyên. Không chạy dịch máy hoặc render trong bước Lấy text.',
+            lines=['KẾT QUẢ NHẬN DẠNG CHỮ TRONG ẢNH',
+                   f"Đã nhận dạng chữ trong {report['ocr_ready']} ảnh; bỏ qua {report['no_text']} ảnh không có chữ; {report['ocr_failed']} ảnh chưa nhận dạng được.",
+                   'Ảnh gốc được giữ nguyên. Bước Lấy text không dịch máy và không dựng ảnh.',
                    f"Trạng thái: {report['status']}. Chưa xử lý: {remaining}.",'']
-            lines.extend(f"{Path(item['source']).name}: {'Bỏ qua — không có chữ' if item['status']=='NO_TEXT' else 'OCR sẵn sàng' if item['status']=='OCR_READY' else 'OCR chưa xong — '+item['reason']}" for item in report['items'])
+            lines.extend(f"{Path(item['source']).name}: {'Bỏ qua — không có chữ' if item['status']=='NO_TEXT' else 'Đã nhận dạng chữ' if item['status']=='OCR_READY' else 'Chưa nhận dạng được — '+item['reason']}" for item in report['items'])
         (root/'ket-qua.txt').write_text('\n'.join(lines),encoding='utf-8')
     return {k:report[k] for k in ('translated','untranslated','total','ocr_ready','ocr_failed')}|{'output':str(root),'cancelled':report['status']=='CANCELLED'}

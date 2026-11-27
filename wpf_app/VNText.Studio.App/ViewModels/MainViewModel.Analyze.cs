@@ -131,7 +131,7 @@ public sealed partial class MainViewModel
             return _analyzeOutcome switch
             {
                 AnalyzeOutcome.Identified => UiText.Format("{0} · Sẵn sàng lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "").Replace("Loại game: ", "")),
-                AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh mục tài nguyên chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "").Replace("Loại game: ", "")),
+                AnalyzeOutcome.IdentifiedIncomplete => UiText.Format("Đã nhận diện: {0}, nhưng danh sách dữ liệu của game chưa đầy đủ. Xem lỗi quét trước khi Lấy text.", UiText.Translate(_analyzeEngineSummary).Replace("Engine: ", "").Replace("Loại game: ", "")),
                 AnalyzeOutcome.Unsupported => UiText.Translate("Chưa nhận diện được loại game được hỗ trợ trong thư mục này. Kiểm tra lại thư mục game đã chọn."),
                 AnalyzeOutcome.Failed => UiText.Translate("Phân tích không hoàn tất. Xem Nhật ký, rồi chọn lại nguồn để thử lại."),
                 AnalyzeOutcome.Cancelled => UiText.Translate("Đã hủy phân tích. Chọn lại nguồn để nhận diện lại."),
@@ -428,7 +428,7 @@ public sealed partial class MainViewModel
                 : "Phân tích thất bại";
             AnalyzeReportPath = AnalyzeHasReport ? reportPath : "";
             AnalyzeScanErrorText = string.IsNullOrWhiteSpace(error)
-                ? "Không tìm thấy báo cáo unity_analysis.json; chưa xác minh đủ tài nguyên."
+                ? "Không tìm thấy báo cáo unity_analysis.json; chưa xác minh đủ dữ liệu của game."
                 : $"Không đọc được report: {error}";
             return;
         }
@@ -479,14 +479,14 @@ public sealed partial class MainViewModel
             : !engineKnown ? AnalyzeOutcome.Unsupported
             : AnalyzeInventoryComplete && !renpyScriptsUnproven ? AnalyzeOutcome.Identified : AnalyzeOutcome.IdentifiedIncomplete;
         AnalyzeStatusText = AnalyzeInventoryComplete
-            ? "Đã phân tích • danh mục tài nguyên đầy đủ"
-            : "Cần xem lại • danh mục tài nguyên chưa đầy đủ";
+            ? "Đã phân tích • danh sách dữ liệu của game đầy đủ"
+            : "Cần xem lại • danh sách dữ liệu của game chưa đầy đủ";
         RaiseAnalyzeSummary();
         AnalyzeScanErrorText = snapshot.ScanErrorCount == 0
             ? renpyEvidence == "archive_unsupported" ? "Archive RPA lỗi hoặc chưa hỗ trợ; xem Nhật ký."
               : renpyEvidence == "assets_only" ? "Chưa thấy script Ren’Py đọc được để lấy text; xem Nhật ký."
               : ""
-            : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh mục tài nguyên chưa đầy đủ.";
+            : $"Có {snapshot.ScanErrorCount:N0} lỗi quét — danh sách dữ liệu của game chưa đầy đủ.";
         WriteAnalyzeDetailsToLog(snapshot);
     }
 
@@ -495,7 +495,7 @@ public sealed partial class MainViewModel
     {
         void Line(string text) { AppendLog(text); AddExtractRunLine(_activeTaskId, text); }
         Line($"[quét] Loại game: {_analyzeEngineSummary.Replace("Engine: ", "").Replace("Loại game: ", "")} ({(string.IsNullOrEmpty(snapshot.EngineDetection) ? "báo cáo cũ" : snapshot.EngineDetection)}) — {snapshot.EngineDetectionReason}");
-        Line($"[quét] Tài nguyên {snapshot.ResourceCount:N0}; có thể là văn bản {snapshot.TextCandidateCount:N0}; có đường ghi lại {snapshot.PatchableCount:N0}; chỉ lấy văn bản {snapshot.ExtractOnlyCount:N0}; cần xem lại/chưa hỗ trợ {snapshot.ReviewRiskCount:N0}; chưa xác định {snapshot.UnknownCount:N0}; lỗi quét {snapshot.ScanErrorCount:N0}.");
+        Line($"[quét] Tệp dữ liệu {snapshot.ResourceCount:N0}; có thể là văn bản {snapshot.TextCandidateCount:N0}; có đường ghi lại {snapshot.PatchableCount:N0}; chỉ lấy văn bản {snapshot.ExtractOnlyCount:N0}; cần xem lại/chưa hỗ trợ {snapshot.ReviewRiskCount:N0}; chưa xác định {snapshot.UnknownCount:N0}; lỗi quét {snapshot.ScanErrorCount:N0}.");
         foreach (var line in snapshot.AssetLines) Line("[quét] " + line);
         if (!string.IsNullOrEmpty(snapshot.TimingsText)) Line("[quét] Thời gian từng bước (giây): " + snapshot.TimingsText);
         if (!string.IsNullOrEmpty(snapshot.ReportPath)) Line("[quét] Báo cáo đầy đủ: " + snapshot.ReportPath);

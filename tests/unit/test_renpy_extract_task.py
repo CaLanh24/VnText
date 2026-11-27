@@ -167,7 +167,7 @@ class RenPyExtractTaskTests(unittest.TestCase):
                 self.assertEqual(stats["translation_csv_entries"],len(rows))
                 self.assertEqual(status["main"],stats["main_entries"])
                 self.assertEqual(completed[-1]["review_only"],status["review"])
-                self.assertIn(str(len(rows))+" dòng translation.csv",completed[-1]["summary"])
+                self.assertIn(str(len(rows))+" dòng trong translation.csv",completed[-1]["summary"])
                 self.assertEqual((root/"story.txt").read_bytes(),before)
 
     def test_sdk_route_uses_native_units_without_source_parser_promotion(self):

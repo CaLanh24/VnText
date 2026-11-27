@@ -13,10 +13,10 @@ public sealed record CsvValidationResult(
 
 public static class CsvPackageValidator
 {
-    public const string MissingFileMessage = "File không tồn tại";
+    public const string MissingFileMessage = "Tệp không tồn tại";
     public const string NoDataRowsMessage = "Bản dịch không có dòng dữ liệu";
     // Shown instead of the bare missing-file text when the user has not picked any CSV yet.
-    public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn bản dịch” để chọn file cần dịch, hoặc Lấy text trước để tạo gói.";
+    public const string NoCsvChosenMessage = "Chưa có translation.csv — bấm “Chọn bản dịch” để chọn tệp cần dịch, hoặc Lấy text trước để tạo gói.";
 
     public static CsvValidationResult Validate(string? csvPath, bool requireTranslations = true)
     {
@@ -28,7 +28,7 @@ public static class CsvPackageValidator
             return Fail(path, MissingFileMessage);
 
         if (!string.Equals(Path.GetExtension(path), ".csv", StringComparison.OrdinalIgnoreCase))
-            return Fail(path, "Phải là file .csv");
+            return Fail(path, "Phải là tệp .csv");
 
         var dir = Path.GetDirectoryName(path) ?? "";
         var manifest = Path.Combine(dir, "manifest.json");

@@ -328,8 +328,8 @@ internal static partial class Program
             vm.RefreshImageWorkspace(); dialog.UpdateLayout(); PumpFixture(60);
             Require(vm.ImagePageHeadline.Length > 0, "the Images page always states ONE honest state (V5), never the old fixed claim");
             AssertEqual(vm.ImagePageHeadline, ((TextBlock)panel.FindName("LeadText")).Text);
-            Require(((TextBlock)panel.FindName("StatusLine")).Text.StartsWith("Không mở được review:", StringComparison.Ordinal), "Vietnamese status is exact after switching back");
-            Require(grid.Columns[0].Header as string == "TEXT OCR" && grid.Columns[1].Header as string == "BẢN DỊCH", "Vietnamese grid headers are exact");
+            Require(((TextBlock)panel.FindName("StatusLine")).Text.StartsWith("Không mở được bản xem lại:", StringComparison.Ordinal), "Vietnamese status is exact after switching back");
+            Require(grid.Columns[0].Header as string == "CHỮ GỐC" && grid.Columns[1].Header as string == "BẢN DỊCH", "Vietnamese grid headers are exact");
             UiText.SetLanguage("en"); UiText.Apply(dialog); vm.RaiseImageLanguageText(); dialog.UpdateLayout(); PumpFixture(80);
             Require(grid.Columns[0].Header as string == "OCR TEXT", "English grid header returns after the round trip");
             Require(((TextBlock)panel.FindName("LeadText")).Text == UiText.TranslateDynamic(vm.ImagePageHeadline) && ((TextBlock)panel.FindName("LeadText")).Text != vm.ImagePageHeadline, "English state headline returns after the round trip: " + ((TextBlock)panel.FindName("LeadText")).Text);

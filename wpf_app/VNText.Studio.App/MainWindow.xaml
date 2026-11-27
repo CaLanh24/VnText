@@ -644,7 +644,7 @@
                                         <TextBlock Text="Quy tắc dịch" Style="{StaticResource UiSectionTitleTextStyle}" />
                                         <StackPanel Grid.Row="1" Margin="0,13,0,0">
                                             <CheckBox Content="Ghi đè bản dịch cũ" IsChecked="{Binding OverwriteTranslation, Mode=TwoWay}" Style="{StaticResource SwitchStyle}" />
-                                            <CheckBox Content="Duyệt bản dịch trước khi đóng gói"
+                                            <CheckBox Content="Duyệt bản dịch trước khi tạo bản Việt hóa"
                                                       ToolTip="Khi bật, bản dịch cần được bạn xem và lưu xác nhận trước khi đưa vào gói dịch."
                                                       IsChecked="{Binding HumanReviewRequired, Mode=TwoWay}"
                                                       Style="{StaticResource SwitchStyle}" Margin="0,10,0,0" />
@@ -832,7 +832,7 @@
                                             </Button>
                                         </Grid>
                                         <TextBlock Text="{Binding CsvElsewhereNote, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding CsvElsewhereNoteVisible, Converter={StaticResource BoolToVis}}" />
-                                        <TextBlock Text="File bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,18,0,0" />
+                                        <TextBlock Text="Tệp bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,18,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -1366,9 +1366,9 @@
                                                         <StackPanel VerticalAlignment="Center" Margin="0,0,20,0">
                                                             <TextBlock Text="Bộ dịch Anh → Việt trên máy" Style="{StaticResource SettingsRowLabelTextStyle}" />
                                                             <TextBlock Text="{Binding ModelStatusDisplay}" ToolTip="{Binding ModelStatus}" Style="{StaticResource SettingsRowHelperTextStyle}" />
-                                                            <TextBlock Text="{Binding ModelFolder}" Style="{StaticResource SettingsRowHelperTextStyle}" Margin="0,4,0,0" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding ModelFolder}" />
                                                         </StackPanel>
-                                                        <Button Grid.Column="1" Content="Mở thư mục" Command="{Binding OpenModelFolderCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" />
+                                                        <Button x:Name="ModelInstallButton" Grid.Column="1" Content="Cài bộ dịch" Command="{Binding InstallEngineCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" Visibility="{Binding TranslationEngineMissing, Converter={StaticResource BoolToVis}}" />
+                                                        <Button x:Name="ModelOpenFolderButton" Grid.Column="1" Content="Mở thư mục" Command="{Binding OpenModelFolderCommand}" VerticalAlignment="Center" Style="{StaticResource OutlineButton}" Visibility="{Binding TranslationEngineMissing, Converter={StaticResource InvBoolToVis}}" />
                                                     </Grid>
                                                 </Border>
                                             </StackPanel>

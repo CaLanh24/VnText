@@ -24,8 +24,8 @@ def run_image_worker(task_id, task, params, is_cancelled):
             result = run_image_batch(params['src'], params['out'], sources=None if Path(params['src']).is_dir() else [params['src']],
                 is_cancelled=is_cancelled, translate=False, progress=lambda info: emit_progress(task_id, **info))
             failed = int(result.get('ocr_failed') or 0)         # the no-images shortcut result carries no failure count
-            emit_log(task_id, f"Quét ảnh: {round(time.monotonic() - started, 1)} giây; {result['total']} ảnh có chữ, {failed} lỗi OCR.")
-            summary = (f"Quét ảnh xong: {result['total']} ảnh có chữ" if result['total'] else "Quét ảnh xong: không thấy ảnh có chữ")                 + (f"; {failed} ảnh lỗi OCR" if failed else "") + ". Bản dịch text không bị ảnh hưởng."
+            emit_log(task_id, f"Quét ảnh: {round(time.monotonic() - started, 1)} giây; {result['total']} ảnh có chữ, {failed} ảnh chưa nhận dạng được.")
+            summary = (f"Quét ảnh xong: {result['total']} ảnh có chữ" if result['total'] else "Quét ảnh xong: không thấy ảnh có chữ")                 + (f"; {failed} ảnh chưa nhận dạng được" if failed else "") + ". Bản dịch text không bị ảnh hưởng."
             emit_complete(task_id, ok=not result['cancelled'], summary=summary, error='cancelled' if result['cancelled'] else '')
             return
         else:
@@ -37,7 +37,7 @@ def run_image_worker(task_id, task, params, is_cancelled):
         return
     root = _regular(params["out"])
     if root.exists():
-        raise ValueError("Thư mục review ảnh phải mới; giữ nguyên kết quả đã có.")
+        raise ValueError("Thư mục bản xem lại ảnh phải mới; kết quả đã có được giữ nguyên.")
     if is_cancelled(): raise ValueError("cancelled")
     if task in {"image_delivery", "image_apply", "image_rollback"}:
         from vntext.image_delivery import prepare_image_delivery, install_image_delivery, rollback_image_delivery
@@ -61,7 +61,7 @@ def run_image_worker(task_id, task, params, is_cancelled):
                      'complete': not result['cancelled'] and not result['ocr_failed'], 'errors': report.get('inventory_errors', [])}
         root.mkdir(parents=True, exist_ok=True)
         (root / "image_index.json").write_text(json.dumps(inventory,ensure_ascii=False,indent=2),encoding="utf-8")
-        qualifier = f"; inventory chưa đầy đủ do {len(inventory['errors'])} archive lỗi/không hỗ trợ" if not inventory["complete"] else ""
+        qualifier = f"; danh sách tệp chưa đầy đủ do {len(inventory['errors'])} tệp đóng gói lỗi hoặc không hỗ trợ" if not inventory["complete"] else ""
         summary = f"Tìm thấy {len(inventory['image_paths'])} ảnh có chữ{qualifier}. Các ảnh không phát hiện chữ không được xuất."
     elif task == "image_extract":
         archive_ref = parse_member_reference(params["src"])
@@ -82,14 +82,14 @@ def run_image_worker(task_id, task, params, is_cancelled):
                 document = recognize_image(params["src"], is_cancelled=is_cancelled)
                 root.mkdir(parents=True)
             source, image, digest = _image(document["source_path"])
-            if digest != document["source_sha256"]: raise ValueError("Ảnh thay đổi trong lúc OCR; hãy lấy lại text.")
+            if digest != document["source_sha256"]: raise ValueError("Ảnh thay đổi trong lúc nhận dạng chữ; hãy Lấy text lại.")
             if is_cancelled(): raise ValueError("cancelled")
             image.save(root / "source-preview.png")
             (root / "image_text.json").write_text(json.dumps(document,ensure_ascii=False,indent=2),encoding="utf-8")
         except Exception:
             if root.exists(): shutil.rmtree(root)
             raise
-        summary = "Không thấy text; kiểm ảnh/crop rồi thử lại." if not document["regions"] else f"OCR {len(document['regions'])} region — cần sửa text/tọa độ, duyệt nền phẳng và bản dịch trước render."
+        summary = "Không thấy chữ; hãy kiểm tra ảnh hoặc vùng cắt rồi thử lại." if not document["regions"] else f"Đã nhận dạng {len(document['regions'])} vùng chữ — cần sửa chữ và tọa độ, duyệt nền phẳng và bản dịch trước khi dựng ảnh."
     else:
         document = params["document"]
         if is_cancelled(): raise ValueError("cancelled")
@@ -98,11 +98,11 @@ def run_image_worker(task_id, task, params, is_cancelled):
             archive = RenPyArchive(container_path)
             current = archive.read_member(document.get("source_member_name", ""))
             if current["container_sha256"] != document.get("source_container_sha256") or current["member_sha256"] != document.get("source_member_sha256"):
-                raise ValueError("RPA container/member đã đổi; hãy tạo lại inventory và OCR.")
+                raise ValueError("Tệp đóng gói của game đã đổi; hãy Lấy text lại rồi nhận dạng chữ lại.")
         source, preview, digest = _image(document["source_path"])
-        if digest != document["source_sha256"]: raise ValueError("Ảnh nguồn đã thay đổi; review lại.")
+        if digest != document["source_sha256"]: raise ValueError("Ảnh nguồn đã thay đổi; hãy xem lại.")
         render_image(document, root / "translated.png", params["font_path"])
         preview.save(root / "source-preview.png")
         (root / "image_text.json").write_text(json.dumps(document,ensure_ascii=False,indent=2),encoding="utf-8")
-        summary = "Đã dựng ảnh từ bản dịch duyệt; mở preview để kiểm trước khi dùng. Ảnh nguồn giữ nguyên."
+        summary = "Đã dựng ảnh từ bản dịch đã duyệt; hãy mở ảnh xem trước để kiểm tra trước khi dùng. Ảnh nguồn giữ nguyên."
     emit_complete(task_id,ok=True,summary=summary)

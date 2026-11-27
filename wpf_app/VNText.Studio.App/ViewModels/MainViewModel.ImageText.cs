@@ -12,7 +12,7 @@ public sealed partial class MainViewModel
 {
     internal static readonly JsonSerializerOptions ImageJson = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower, WriteIndented = true };
     private ImageTextDocument? _imageDocument;
-    internal const string DefaultImageStatus = "Chọn ảnh tĩnh để OCR; kết quả cần review, không tự tạo bản Việt hóa.";
+    internal const string DefaultImageStatus = "Chọn ảnh tĩnh để nhận dạng chữ; kết quả cần xem lại, không tự tạo bản Việt hóa.";
     private string _imagePath = "", _imageStatus = DefaultImageStatus, _imageTaskRoot = "";
     private string _renderedImage = "", _imagePackage = "", _renderGameRoot = "";
     private JsonElement _renderedDocument;
@@ -57,8 +57,8 @@ public sealed partial class MainViewModel
         Raise(nameof(ImageResultsView)); Raise(nameof(ImageHasResults)); Raise(nameof(ImageHasUntranslated)); Raise(nameof(ImageShowOpenResults)); Raise(nameof(ImageShowResultText)); Raise(nameof(ImageResultTexts)); Raise(nameof(ImageShowStatus));
     }
     public string ImageEmptyHint => string.IsNullOrWhiteSpace(_imagePath)
-        ? "Chọn ảnh để xem trước và OCR"
-        : "Bấm “OCR ảnh đã chọn” để xem trước và đọc text trong ảnh này.";
+        ? "Chọn ảnh để xem trước và nhận dạng chữ"
+        : "Bấm “Nhận dạng chữ trong ảnh đã chọn” để xem trước và đọc chữ trong ảnh này.";
     internal void TestSetImagePreview(ImageSource? preview) => ImagePreview = preview;
     /// <summary>The OCR panel shows these through the display-time localizer; a language switch refreshes them.</summary>
     internal void RaiseImageLanguageText()
@@ -151,7 +151,7 @@ public sealed partial class MainViewModel
     private static string ImageTaskLabel(string? task) => task switch
     {
         "image_inventory" => "tìm ảnh trong thư mục game",
-        "image_extract" => "OCR ảnh",
+        "image_extract" => "nhận dạng chữ trong ảnh",
         "image_batch" => "dịch nháp ảnh",
         "image_render" => "dựng ảnh từ bản dịch đã duyệt",
         "image_delivery" => "tạo gói ảnh",
@@ -225,7 +225,7 @@ public sealed partial class MainViewModel
             case ImagePackageProbe.ReportKind.Valid when images.Total == 0:
                 var scannedText = report.Scanned.ToString("N0");
                 SetImageSummary(() => UiText.Msg("Đã quét {0} ảnh: không ảnh nào chứa chữ cần dịch.", scannedText));
-                SetImagePage(ImagePageKind.NoText, static () => "Quét xong: không có ảnh chứa chữ.", static () => "Không cần OCR hay dịch ảnh cho gói này. Bạn vẫn có thể sửa ảnh thủ công.");
+                SetImagePage(ImagePageKind.NoText, static () => "Quét xong: không có ảnh chứa chữ.", static () => "Không cần nhận dạng chữ hay dịch ảnh cho gói này. Bạn vẫn có thể sửa ảnh thủ công.");
                 return;
         }
         var detectedText = images.Total.ToString("N0");
@@ -285,7 +285,7 @@ public sealed partial class MainViewModel
     {
         ImageStatus = Busy
             ? UiText.Msg("Đang có tác vụ chạy; chưa thể {0}.", UiText.Key(action))
-            : UiText.Msg("Chưa thể {0}: chưa có ảnh dựng/gói khớp với review hiện tại. Dựng lại ảnh từ review đã duyệt trước.", UiText.Key(action));
+            : UiText.Msg("Chưa thể {0}: chưa có ảnh đã dựng khớp với bản xem lại hiện tại. Hãy dựng lại ảnh từ bản xem lại đã duyệt trước.", UiText.Key(action));
         StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
     }
     private void OnImageRegionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnImageReviewChanged();
@@ -298,7 +298,7 @@ public sealed partial class MainViewModel
             // Old render/package files are kept as history; only their use is revoked.
             _renderedImage = ""; _imagePackage = ""; _renderedDocument = default;
             if (_imageSourcePreview is not null) ImagePreview = _imageSourcePreview;
-            ImageStatus = "Review đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các file đã dựng trước đó vẫn được giữ trong nơi lưu bản dịch.";
+            ImageStatus = "Bản xem lại đã đổi sau khi dựng ảnh — hãy dựng lại trước khi tạo gói hoặc cài. Các tệp đã dựng trước đó vẫn được giữ trong nơi lưu bản dịch.";
         }
         RefreshImageCommands();
     }
@@ -325,7 +325,7 @@ public sealed partial class MainViewModel
             _imageTaskRoot = NewImageRoot();
             MarkImageTaskIdentity();
             BeginTask("image_delivery", new { document = _renderedDocument, rendered = _renderedImage,
-                game_root = _renderGameRoot, @out = _imageTaskRoot }, "Đang tạo gói ảnh locale…");
+                game_root = _renderGameRoot, @out = _imageTaskRoot }, "Đang tạo gói ảnh…");
         }, _ => CanCreateImageDelivery());
         InstallImageDeliveryCommand = new RelayCommand(_ =>
         {
@@ -347,7 +347,7 @@ public sealed partial class MainViewModel
         TranslateAllImagesCommand = new RelayCommand(_ =>
         {
             if (Busy || !Directory.Exists(InputPath) || string.IsNullOrWhiteSpace(OutputPath)) return;
-            BeginTask("image_batch", new { src = InputPath, @out = WorkflowStatus.ResolvePackageDir(OutputPath), cached_only = true }, "Đang dịch ảnh đã OCR…");
+            BeginTask("image_batch", new { src = InputPath, @out = WorkflowStatus.ResolvePackageDir(OutputPath), cached_only = true }, "Đang dịch ảnh đã nhận dạng chữ…");
         }, _ => !Busy && Directory.Exists(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         RunImageOcrCommand = new RelayCommand(_ => StartImageTask("image_extract", ImagePath), _ => !Busy && (File.Exists(ImagePath) || ImagePath.StartsWith("rpa-member://", StringComparison.Ordinal)));
         OpenImageReviewCommand = new RelayCommand(_ => { var p = _pathPicker.PickImageFile(review: true); if (p is not null) TryLoadImageReview(p, fromSavedReview: true); }, _ => !Busy);
@@ -362,7 +362,7 @@ public sealed partial class MainViewModel
         _imageTaskRoot = NewImageRoot();
         if (task == "image_extract") PrepareImageExtractState();
         MarkImageTaskIdentity();
-        BeginTask(task, new { src = source, @out = _imageTaskRoot }, "Đang xử lý text trong ảnh…");
+        BeginTask(task, new { src = source, @out = _imageTaskRoot }, "Đang xử lý chữ trong ảnh…");
     }
 
     /// <summary>
@@ -387,18 +387,18 @@ public sealed partial class MainViewModel
         if (ImageRegions.Count == 0 && !string.IsNullOrWhiteSpace(ImagePath))
             ImageRegions.Add(new ImageTextRegion { Id = "restored", Box = new[] { 10, 10, 200, 40 }, SourceText = "Hello" });
     }
-    internal const string SavedReviewOpenedMessage = "Đã mở review. Vì an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.";
+    internal const string SavedReviewOpenedMessage = "Đã mở bản xem lại. Để an toàn, hãy chọn lại chế độ nền và duyệt các vùng trước khi dựng ảnh.";
 
     internal bool TryLoadImageReview(string path, bool fromSavedReview = false)
     {
         try
         {
-            if (new FileInfo(path).Length > 2 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Review ảnh vượt 2 MiB."));
+            if (new FileInfo(path).Length > 2 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Bản xem lại ảnh vượt 2 MiB."));
             var document = JsonSerializer.Deserialize<ImageTextDocument>(File.ReadAllText(path), ImageJson) ?? throw new InvalidDataException(UiText.Msg("Review rỗng."));
             if (document.Schema != 1 || document.Width <= 0 || document.Height <= 0 || document.Regions is null || document.Regions.Count > 500
                 || document.Regions.Any(r => r.Box is null || r.Box.Length != 4 || r.Box[0] < 0 || r.Box[1] < 0 || r.Box[2] <= 0 || r.Box[3] <= 0
                     || (long)r.Box[0] + r.Box[2] > document.Width || (long)r.Box[1] + r.Box[3] > document.Height))
-                throw new InvalidDataException(UiText.Msg("Schema/region không hợp lệ."));
+                throw new InvalidDataException(UiText.Msg("Cấu trúc hoặc vùng chữ không hợp lệ."));
             var sourcePath = Path.GetFullPath(document.SourcePath);
             if (!string.IsNullOrWhiteSpace(document.SourceReference))
             {
@@ -413,23 +413,23 @@ public sealed partial class MainViewModel
                 throw new InvalidDataException(UiText.Msg("Ảnh nguồn không tồn tại hoặc vượt 32 MiB."));
             var sourceBytes = File.ReadAllBytes(sourcePath);
             if (sourceBytes.Length > 32 * 1024 * 1024 || !Convert.ToHexString(SHA256.HashData(sourceBytes)).Equals(document.SourceSha256, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException(UiText.Msg("Ảnh nguồn đã đổi hoặc hash review không khớp."));
+                throw new InvalidDataException(UiText.Msg("Ảnh nguồn đã đổi hoặc mã kiểm tra của bản xem lại không khớp."));
             var sourcePreview = LoadImagePreview(sourceBytes);
             if (sourcePreview.PixelWidth != document.Width || sourcePreview.PixelHeight != document.Height)
-                throw new InvalidDataException(UiText.Msg("Kích thước ảnh nguồn không khớp review."));
+                throw new InvalidDataException(UiText.Msg("Kích thước ảnh nguồn không khớp bản xem lại."));
             ClearImageReviewState();
             ImagePath = sourcePath;
             _imageDocument = document;
             foreach (var region in document.Regions) { region.Approved = false; region.FlatBackgroundApproved = false; region.ReplacementBackgroundApproved = false; region.TransparentTextApproved = false; region.CloneBackgroundApproved = false; ImageRegions.Add(region); }
             _imageSourcePreview = sourcePreview;
             ImagePreview = sourcePreview;
-            ImageStatus = ImageRegions.Count == 0 ? "Không thấy text; chọn crop/ảnh khác hoặc thêm region thủ công."
+            ImageStatus = ImageRegions.Count == 0 ? "Không thấy chữ; chọn vùng cắt hoặc ảnh khác, hoặc thêm vùng chữ thủ công."
                 : fromSavedReview ? UiText.Translate(SavedReviewOpenedMessage)     // the saved text/crop are loaded, the approvals are not: say what to do next
-                : UiText.Msg("{0} region cần review; tọa độ theo pixel ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước render.", ImageRegions.Count);
+                : UiText.Msg("{0} vùng chữ cần xem lại; tọa độ tính theo điểm ảnh của ảnh gốc. Chọn đúng một chế độ nền cho từng vùng trước khi dựng ảnh.", ImageRegions.Count);
             RefreshImageCommands();
             return true;
         }
-        catch (Exception e) { ClearImageReviewState(); ImageStatus = UiText.Msg("Không mở được review: {0}", e.Message); return false; }
+        catch (Exception e) { ClearImageReviewState(); ImageStatus = UiText.Msg("Không mở được bản xem lại: {0}", e.Message); return false; }
     }
     private void ClearImageReviewState()
     {
@@ -438,15 +438,15 @@ public sealed partial class MainViewModel
     }
     private static BitmapSource LoadImagePreview(string path)
     {
-        if (!File.Exists(path)) throw new FileNotFoundException(UiText.Msg("Không tìm thấy ảnh nguồn/preview."), path);
-        if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Preview vượt 32 MiB."));
+        if (!File.Exists(path)) throw new FileNotFoundException(UiText.Msg("Không tìm thấy ảnh nguồn hoặc ảnh xem trước."), path);
+        if (new FileInfo(path).Length > 32 * 1024 * 1024) throw new InvalidDataException(UiText.Msg("Ảnh xem trước vượt 32 MiB."));
         return LoadImagePreview(File.ReadAllBytes(path));
     }
     private static BitmapSource LoadImagePreview(byte[] bytes)
     {
         using var stream = new MemoryStream(bytes, writable: false);
         var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-        if (decoder.Frames.Count == 0 || (long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException(UiText.Msg("Preview không hợp lệ hoặc quá 16 triệu pixel."));
+        if (decoder.Frames.Count == 0 || (long)decoder.Frames[0].PixelWidth * decoder.Frames[0].PixelHeight > 16000000) throw new InvalidDataException(UiText.Msg("Ảnh xem trước không hợp lệ hoặc quá 16 triệu điểm ảnh."));
         stream.Position = 0;
         var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
         bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); return bitmap;
@@ -458,7 +458,7 @@ public sealed partial class MainViewModel
     }
     private void SaveImageReview()
     {
-        if (RefuseDraftImageAction("lưu review riêng")) return;          // RelayCommand.Execute does not consult CanExecute
+        if (RefuseDraftImageAction("lưu bản xem lại riêng")) return;          // RelayCommand.Execute does not consult CanExecute
         try
         {
             var root = NewImageRoot(); Directory.CreateDirectory(root);
@@ -470,16 +470,16 @@ public sealed partial class MainViewModel
                 using var preview = new FileStream(Path.Combine(root, "source-preview.png"), FileMode.CreateNew);
                 encoder.Save(preview);
             }
-            ImageStatus = UiText.Msg("Đã lưu review riêng: {0}", root);
+            ImageStatus = UiText.Msg("Đã lưu bản xem lại riêng: {0}", root);
         }
-        catch (Exception e) { ImageStatus = UiText.Msg("Lưu review lỗi: {0}", e.Message); }
+        catch (Exception e) { ImageStatus = UiText.Msg("Lưu bản xem lại bị lỗi: {0}", e.Message); }
     }
     private void RenderReviewedImage()
     {
         if (RefuseDraftImageAction("dựng ảnh từ bản dịch đã duyệt")) return;
         if (string.IsNullOrWhiteSpace(OutputPath)) { ImageStatus = "Chọn nơi lưu bản dịch trước."; return; }
         if (ImageRegions.Count == 0 || ImageRegions.Any(r => !r.Approved || new[] { r.FlatBackgroundApproved, r.ReplacementBackgroundApproved, r.TransparentTextApproved, r.CloneBackgroundApproved }.Count(value => value) != 1 || string.IsNullOrWhiteSpace(r.Translation)))
-        { ImageStatus = "Duyệt text/crop và chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay region bằng màu đặc, hoặc clone vùng nền sạch (tọa độ X/Y nền mẫu)."; return; }
+        { ImageStatus = "Duyệt chữ và vùng cắt, rồi chọn đúng một chế độ: nền phẳng, giữ chữ trong suốt, thay cả vùng bằng một màu, hoặc sao chép vùng nền sạch (tọa độ X/Y nền mẫu)."; return; }
         _imageTaskRoot = NewImageRoot();
         var document = JsonSerializer.SerializeToElement(CurrentImageReview(), ImageJson);
         _renderedImage = ""; _imagePackage = ""; _renderedDocument = document; _renderGameRoot = InputPath;
@@ -501,7 +501,7 @@ public sealed partial class MainViewModel
         if (evt.Ok && task is "image_render" or "image_delivery"
             && _imageTaskReviewVersion is int startedAt && startedAt != _imageReviewVersion)
         {
-            ImageStatus = "Review đã đổi trong lúc xử lý; kết quả cũ bị bỏ (file giữ trong nơi lưu bản dịch), hãy dựng lại cho review hiện tại.";
+            ImageStatus = "Bản xem lại đã đổi trong lúc xử lý; kết quả cũ bị bỏ (tệp vẫn nằm trong nơi lưu bản dịch), hãy dựng lại theo bản xem lại hiện tại.";
             StatusText = ImageStatus; AppendLog(ImageStatus); RefreshImageCommands();
             return;
         }
@@ -526,7 +526,7 @@ public sealed partial class MainViewModel
             {
                 using var index = JsonDocument.Parse(File.ReadAllText(Path.Combine(_imageTaskRoot, "image_index.json")));
                 ImageCandidates.Clear(); foreach (var item in index.RootElement.GetProperty("image_paths").EnumerateArray()) ImageCandidates.Add(item.GetString()!);
-                ImageStatus = evt.Summary ?? "Chọn ảnh để OCR.";
+                ImageStatus = evt.Summary ?? "Chọn ảnh để nhận dạng chữ.";
             }
             else if (task == "image_extract") TryLoadImageReview(Path.Combine(_imageTaskRoot, "image_text.json"));
             else if (task is "image_delivery" or "image_apply" or "image_rollback")
@@ -534,7 +534,7 @@ public sealed partial class MainViewModel
                 if (task == "image_delivery") { _imagePackage = _imageTaskRoot; _packageReviewVersion = _renderedReviewVersion; }
                 ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã xử lý gói ảnh"), _imageTaskRoot);
             }
-            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã render"), _imageTaskRoot); }
+            else { _renderedImage = Path.Combine(_imageTaskRoot, "translated.png"); _renderedReviewVersion = _imageTaskReviewVersion ?? _imageReviewVersion; ImagePreview = LoadImagePreview(Path.Combine(_imageTaskRoot, "translated.png")); ImageStatus = UiText.Msg("{0} {1}", UiText.Key(evt.Summary ?? "Đã dựng ảnh"), _imageTaskRoot); }
         }
         catch (Exception e) { ImageStatus = UiText.Msg("Không đọc được kết quả ảnh: {0}", e.Message); }
             finally { StatusText = ImageStatus; AppendLog(ImageStatus); SelectedTab = WorkflowTabs.Images; RefreshImageCommands(); }

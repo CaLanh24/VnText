@@ -27,10 +27,10 @@ public sealed partial class MainViewModel
 
         return value switch
         {
-            "unity_enumerate" => "Đang quét danh mục tài nguyên",
-            "unity_classify" when task == "extract" => "Đang phân loại tài nguyên để lấy text",
-            "unity_classify" => "Đang phân loại tài nguyên",
-            "unity_hash" => "Đang kiểm tra tài nguyên",
+            "unity_enumerate" => "Đang quét danh sách dữ liệu của game",
+            "unity_classify" when task == "extract" => "Đang phân loại dữ liệu của game để lấy text",
+            "unity_classify" => "Đang phân loại dữ liệu của game",
+            "unity_hash" => "Đang kiểm tra dữ liệu của game",
             "engine_detection" => "Đang nhận diện loại game",
             "asset_scan" => "Đang kiểm tra font và ảnh của game",
             "report_write" => "Đang ghi báo cáo",
@@ -342,12 +342,12 @@ public sealed partial class MainViewModel
                         ? "Không có text sử dụng được — xem report, kiểm input hoặc mức quét."
                         : evt.PatchScope == "VERIFIED_MAIN_SUBSET" && !string.IsNullOrWhiteSpace(evt.Error)
                         ? evt.Error
-                        : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở bản dịch/report và xử lý lỗi trước khi dịch."
+                        : $"Lấy text một phần — {evt.ReviewOnly} dòng cần xem lại; mở bản dịch và báo cáo, xử lý lỗi trước khi dịch."
                     : isExternalTranslationImport
                     ? UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong bản dịch", evt.Applied, externalRemaining)
                     : needsHumanReview
                     ? HumanReviewWaitingText(evt.HumanReviewRequiredCount)
-                    : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
+                    : UiText.Compose("Dịch một phần — ", PlainLanguage.CountsPhrase(evt.Pending, evt.ReviewOnly, evt.Blocked));
                 // "Dịch đã chọn" always says what happened to the checked rows (Owner report 0.1.35: "hoàn tất" while nothing changed).
                 if (completedTask == "translate" && evt.OperationScope == "selected_rows")
                     manualReviewText = SelectedTranslateText(evt);
@@ -375,7 +375,7 @@ public sealed partial class MainViewModel
                     : isAnalyze
                         ? fullyComplete
                             ? "Phân tích game hoàn tất — xem coverage trước khi Lấy text"
-                            : $"Phân tích game lỗi — {evt.Error ?? "inventory chưa đầy đủ"}"
+                            : $"Phân tích game lỗi — {evt.Error ?? "danh sách tệp chưa đầy đủ"}"
                     : fullyComplete
                         ? "Hoàn tất bước — cập nhật quy trình"
                         : partialOk
@@ -385,7 +385,7 @@ public sealed partial class MainViewModel
                                 ? manualReviewText
                                 : isExternalTranslationImport
                                     ? manualReviewText
-                                    : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}"
+                                    : UiText.Compose("Dịch một phần — ", PlainLanguage.CountsPhrase(evt.Pending, evt.ReviewOnly, evt.Blocked, evt.Translated))
                             : UiText.Msg("Lỗi — {0}", evt.Error ?? "tác vụ báo lỗi");
                 if (!string.IsNullOrWhiteSpace(evt.Summary)) AppendLog(evt.Summary);
                 if (!string.IsNullOrWhiteSpace(evt.Error))
@@ -562,7 +562,7 @@ public sealed partial class MainViewModel
                     // on-disk readiness refresh below supplies the truthful safe count.
                     CsvValidationMessage = cancelled
                         ? "Đã hủy — đang đọc lại số dòng đã dịch an toàn…"
-                        : $"Đã dịch {evt.Translated}; chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
+                        : PlainLanguage.CountsPhrase(evt.Pending, evt.ReviewOnly, evt.Blocked, evt.Translated, sentenceStart: true);
                     _translateLastRunCancelled = cancelled;
                     Raise(nameof(TranslateReadinessText));
                     PatchPreflightOk = false;
@@ -629,7 +629,7 @@ public sealed partial class MainViewModel
                             ? manualReviewText
                             : isExternalTranslationImport
                                 ? manualReviewText
-                                : $"Dịch một phần — đã dịch {evt.Translated}, chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}");
+                                : UiText.Compose("Dịch một phần — ", PlainLanguage.CountsPhrase(evt.Pending, evt.ReviewOnly, evt.Blocked, evt.Translated)));
                 }
                 if (!string.IsNullOrWhiteSpace(DiagnosticStatusLine))
                     StepStatusLine = $"{StepStatusLine} — {DiagnosticStatusLine}";
@@ -678,7 +678,7 @@ public sealed partial class MainViewModel
         var path = _pendingCloudRepairImportOutputPath;
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         {
-            error = "Cloud Repair đã báo thành công nhưng không tìm thấy bản dịch output đã kiểm tra.";
+            error = "Cloud Repair đã báo thành công nhưng không tìm thấy bản dịch kết quả đã kiểm tra.";
             return false;
         }
 

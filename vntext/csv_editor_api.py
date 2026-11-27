@@ -144,7 +144,7 @@ def _reviewed_memory_snapshot(csv_path: Path) -> dict:
             if ancestor.exists() and getattr(ancestor.lstat(),'st_file_attributes',0)&0x400:
                 raise ValueError('Không dùng dữ liệu gói qua reparse point')
         if path.is_symlink():
-            raise ValueError('Không dùng file liên kết để duyệt bản dịch')
+            raise ValueError('Không dùng tệp liên kết để duyệt bản dịch')
         if path.exists() and not path.is_file():
             raise ValueError('Dữ liệu gói không hợp lệ')
         if path.is_file() and path.stat().st_size>32*1024*1024:
@@ -195,7 +195,7 @@ def preview_reviewed_memory(csv_path: str | Path, keys: list[str]) -> dict[str, 
             row=by_key[key]
             if any(not str(row.get(k) or '').strip() for k in
                    ('source_text','translation','file_path','context','import_method')):
-                raise ValueError('Dòng duyệt phải có nguồn, bản dịch, file và ngữ cảnh đầy đủ')
+                raise ValueError('Dòng duyệt phải có nguồn, bản dịch, tệp và ngữ cảnh đầy đủ')
             scope=tuple(row[k] for k in ('source_text','file_path','context','import_method'))
             if scope in seen:
                 raise ValueError('Có nhiều dòng cùng phạm vi; cần xử lý trước khi duyệt')
@@ -222,7 +222,7 @@ def preview_reviewed_memory(csv_path: str | Path, keys: list[str]) -> dict[str, 
         return dict(ok=True,rows=selected,count=len(selected),preview_token=token,
                     _snapshot=before,
                     converts_legacy=not strict and before['.mt/translation_memory.json'] is not None,
-                    scope_summary='Chỉ gói hiện tại và đúng nguồn, file, ngữ cảnh, cách nhập; không dùng cho gói khác.')
+                    scope_summary='Chỉ gói hiện tại và đúng nguồn, tệp, ngữ cảnh, cách nhập; không dùng cho gói khác.')
     except (OSError,ValueError,TypeError,KeyError) as error:
         return dict(ok=False,error=str(error))
 
@@ -356,7 +356,7 @@ def save_document(
             except OSError as rollback_error:
                 # translation.csv is already back to its original bytes; the review ledger could not be
                 # restored and is left as it is, with the backup retained.
-                return {"ok": False, "error": f"{exc}; rollback review thất bại: {rollback_error}",
+                return {"ok": False, "error": f"{exc}; không khôi phục được danh sách xem lại: {rollback_error}",
                         "backup_path": str(backup_path), "rolled_back": True, "rollback_failed": True,
                         "review_rollback_failed": True}
         result = {"ok": False, "error": str(exc), "backup_path": str(backup_path), "rolled_back": True}
@@ -421,7 +421,7 @@ class _StagedReviewWriter:
             data = staging.read_bytes()
             current = self.review_path.read_bytes() if self.review_path.is_file() else None
             if current != self.expected_before:
-                raise CsvEditorReviewExternalChange("review_only.csv đã thay đổi bên ngoài trong lúc lưu")
+                raise CsvEditorReviewExternalChange("Tệp các dòng cần xem lại đã bị thay đổi bên ngoài trong lúc lưu")
             os.replace(staging, self.review_path)
             self.written.append(hashlib.sha256(data).hexdigest())
         finally:
@@ -570,7 +570,7 @@ def restore_backup(csv_path: str | Path, backup_path: str | Path, expected_sha25
     """
     csv_path, backup = Path(csv_path).resolve(), Path(backup_path).resolve()
     if not backup.is_file():
-        return {"ok": False, "error": "Không tìm thấy file backup để undo"}
+        return {"ok": False, "error": "Không tìm thấy tệp sao lưu để hoàn tác"}
     data = backup.read_bytes()
     try:
         _fields, rows = _read_editor_csv_bytes(data)
@@ -586,7 +586,7 @@ def restore_backup(csv_path: str | Path, backup_path: str | Path, expected_sha25
             expected_sha256 = expected_sha256 or receipt["committed_sha256"]
             review_sha = hashlib.sha256(review_now).hexdigest() if review_now is not None else None
             if review_sha != receipt["review_after_sha256"]:
-                raise ValueError("review_only.csv đã thay đổi bên ngoài — không undo")
+                raise ValueError("Tệp các dòng cần xem lại đã bị thay đổi bên ngoài — không hoàn tác")
         elif not expected_sha256:
             raise ValueError("Backup cũ cần expected_sha256 hiện tại trước khi undo")
         if current_sha.casefold() != expected_sha256.casefold():
@@ -597,11 +597,11 @@ def restore_backup(csv_path: str | Path, backup_path: str | Path, expected_sha25
             if receipt and receipt["review_before"] is not None:
                 original_review = base64.b64decode(receipt["review_before"], validate=True)
                 if review_now is None or not _replace_bytes_if_unchanged(review, hashlib.sha256(review_now).hexdigest(), original_review):
-                    raise ValueError("Review đã đổi trong lúc undo; giữ thay đổi ngoài")
+                    raise ValueError("Danh sách xem lại đã đổi trong lúc hoàn tác; giữ nguyên thay đổi bên ngoài")
         except Exception:
             # Restore only bytes this Undo owns, retaining a foreign edit.
             restored = _replace_bytes_if_unchanged(csv_path, hashlib.sha256(data).hexdigest(), current)
-            return {"ok": False, "error": "Không undo được review ledger", "rolled_back": restored,
+            return {"ok": False, "error": "Không hoàn tác được danh sách xem lại", "rolled_back": restored,
                     "rollback_failed": not restored, "backup_path": str(backup)}
         return {"ok": True, "csv_path": str(csv_path), "row_count": len(rows), "restored_from": str(backup), "source_sha256": hashlib.sha256(data).hexdigest()}
     except (OSError, ValueError, KeyError, TypeError) as exc:

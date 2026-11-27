@@ -44,7 +44,7 @@ public sealed partial class MainViewModel
         var path = PackageGlossaryService.ResolvePath(TranslationCsvPath);
         if (string.IsNullOrWhiteSpace(path))
         {
-            GlossaryStatus = "Chọn file dịch trước khi thêm thuật ngữ.";
+            GlossaryStatus = "Chọn tệp bản dịch trước khi thêm thuật ngữ.";
             return;
         }
         foreach (var item in PackageGlossaryService.Load(TranslationCsvPath)
@@ -61,7 +61,7 @@ public sealed partial class MainViewModel
         var translation = (GlossaryTranslation ?? "").Trim();
         if (string.IsNullOrWhiteSpace(TranslationCsvPath))
         {
-            ShowToast("Chọn file dịch trước khi thêm thuật ngữ.", "warning");
+            ShowToast("Chọn tệp bản dịch trước khi thêm thuật ngữ.", "warning");
             return;
         }
         if (string.IsNullOrWhiteSpace(term) || string.IsNullOrWhiteSpace(translation))

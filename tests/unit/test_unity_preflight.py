@@ -111,7 +111,7 @@ class UnityPreflightTests(unittest.TestCase):
 
             extract.assert_not_called()
             self.assertTrue(completed and not completed[-1]["ok"], completed)
-            self.assertIn("preflight", completed[-1]["error"].lower())
+            self.assertIn("chưa kiểm tra xong dữ liệu unity", completed[-1]["error"].lower())
             self.assertFalse((output / "manifest.json").exists())
 
     def test_enumeration_and_read_errors_still_fail_closed_without_hashing(self):
@@ -160,7 +160,7 @@ class UnityPreflightTests(unittest.TestCase):
                         hash_file.assert_not_called()
 
                     self.assertTrue(completed and not completed[-1]["ok"], completed)
-                    self.assertIn("preflight", completed[-1]["error"].lower())
+                    self.assertIn("chưa kiểm tra xong dữ liệu unity", completed[-1]["error"].lower())
                     self.assertFalse((output / "unity_analysis.json").exists())
                     self.assertFalse((output / "manifest.json").exists())
 

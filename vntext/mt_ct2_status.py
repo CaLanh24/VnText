@@ -222,7 +222,7 @@ def _prune_resolved_review_only(
     if removed:
         (write_rows or write_csv_rows_file)(review_path, fields or CSV_FIELDS, kept)
         if emit:
-            emit(f"review_only: gỡ {removed} key đã dịch hoặc được xác định là technical")
+            emit(f"Danh sách xem lại: gỡ {removed} dòng đã dịch hoặc được xác định là kỹ thuật")
     return removed
 
 
@@ -617,7 +617,7 @@ def _snapshot_translate_status_canonical(package_dir: Path, csv_path: Path | Non
     if status_info is not None:
         if not status_path.is_file():
             raise TranslateStatusError(
-                f"Trạng thái package {status_path} không phải file thường"
+                f"Trạng thái gói {status_path} không phải tệp thường"
             )
         try:
             persisted = json.loads(status_path.read_text(encoding="utf-8"))

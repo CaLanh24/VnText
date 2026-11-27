@@ -196,7 +196,7 @@ public sealed partial class MainViewModel
             using var stream = new FileStream(run.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using var reader = new StreamReader(stream, Encoding.UTF8);
             var all = new List<string>();
-            for (var line = reader.ReadLine(); line is not null; line = reader.ReadLine()) all.Add(line);
+            for (var line = reader.ReadLine(); line is not null; line = reader.ReadLine()) all.Add(PlainLanguage.DisplayLogLine(line));
             _extractHistoryLines = new ObservableCollection<string>(all);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

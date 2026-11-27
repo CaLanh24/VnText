@@ -96,7 +96,7 @@ public sealed partial class MainViewModel
                 var images = _translatePackageImages;
                 if (images.OcrReady + images.TranslatedDrafts > 0)
                     return UiText.Compose(
-                        UiText.Msg("Không có dòng text để dịch • {0} ảnh đã OCR", images.OcrReady.ToString("N0")),
+                        UiText.Msg("Không có dòng chữ nào để dịch • {0} ảnh đã nhận dạng chữ", images.OcrReady.ToString("N0")),
                         images.TranslatedDrafts > 0 ? UiText.Msg(", {0} bản dịch nháp", images.TranslatedDrafts.ToString("N0")) : "",
                         " — bấm Dịch để dịch ảnh tự động; duyệt, dựng và cài ảnh ngay bên dưới nếu cần.");
             }
@@ -295,7 +295,7 @@ public sealed partial class MainViewModel
                 HeroIcon = "copy";
                 HeroHint = CsvEditorDirty
                     ? "Có thay đổi chưa lưu — bấm «Lưu bản dịch» trước khi tạo bản Việt hóa."
-                    : "Chỉnh translation trực tiếp; bản Việt hóa dùng file đã lưu.";
+                    : "Chỉnh bản dịch trực tiếp; bản Việt hóa dùng tệp đã lưu.";
                 break;
             case WorkflowTabs.Settings:
                 HeroTitle = "Cài đặt";
@@ -460,7 +460,7 @@ public sealed partial class MainViewModel
         }
         if (!string.Equals(Path.GetFileName(csv), "translation.csv", StringComparison.OrdinalIgnoreCase))
         {
-            const string message = "Cloud Repair cần file translation.csv của gói hiện tại.";
+            const string message = "Cloud Repair cần tệp translation.csv của gói hiện tại.";
             AppendLog(message);
             StatusText = "Chưa thể tạo gói Cloud Repair";
             ShowToast(message, "warning");
@@ -601,7 +601,7 @@ public sealed partial class MainViewModel
         if (!ValidateTranslationCsv(silent: false))
         {
             StatusText = "Bản dịch chưa hợp lệ";
-            AppDialogService.Show(UiText.Msg("Chưa thể tạo bản Việt hóa: file bản dịch chưa hợp lệ. {0} Cách xử lý: mở «Sửa bản dịch», sửa các dòng báo lỗi rồi bấm Tạo bản Việt hóa lại.", CsvValidationMessage),
+            AppDialogService.Show(UiText.Msg("Chưa thể tạo bản Việt hóa: tệp bản dịch chưa hợp lệ. {0} Cách xử lý: mở «Sửa bản dịch», sửa các dòng báo lỗi rồi bấm Tạo bản Việt hóa lại.", CsvValidationMessage),
                 "Tạo bản Việt hóa", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }

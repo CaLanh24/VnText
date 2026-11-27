@@ -4,7 +4,7 @@ namespace VNText.Studio.App.ViewModels;
 
 /// <summary>
 /// Owner report (0.1.35): Tạo bản Việt hóa said "22 câu chưa đủ điều kiện" with no way to see them (Sửa bản dịch said 5), and a failed build showed no reason
-/// on the screen.  The skipped rows now come from the same patch gate list Sửa bản dịch filters on ("Patch sẽ bỏ qua"); a failure is explained in
+/// on the screen.  The skipped rows now come from the same patch gate list Sửa bản dịch filters on ("Bản Việt hóa sẽ bỏ qua"); a failure is explained in
 /// place with "Gửi báo lỗi" / "Tạo gói báo lỗi" next to it.
 /// </summary>
 public sealed partial class MainViewModel

@@ -105,9 +105,9 @@
         <Border x:Name="IntroDetails" Visibility="{Binding ImageDetailsOpen, Converter={StaticResource PanelBoolToVis}}" Margin="0,0,0,12" AutomationProperties.Name="Chi tiết an toàn và quy trình">
             <StackPanel>
             <TextBlock x:Name="SafetyText" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6"
-                       Text="OCR không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
+                       Text="Nhận dạng chữ không sửa game; bước cài ghi ảnh Việt hoá vào game bạn chọn và có thể gỡ lại." />
             <TextBlock x:Name="IntroText" Style="{StaticResource UiBodyTextStyle}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. OCR, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào nơi lưu bản dịch riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục locale của game bạn chọn, có nhật ký cài/gỡ và kiểm hash đọc lại; ảnh gốc được giữ nguyên." />
+                       Text="Ảnh tĩnh PNG/JPEG/WebP. Tự nhận diện chữ tiếng Anh, dịch và dựng bản nháp khi nền phù hợp. Chỉ xuất ảnh đã phát hiện chữ; nền phức tạp dùng bản nháp nền ước lượng được đánh dấu riêng để bạn xem kết quả. Nhận dạng chữ, duyệt và dựng ảnh chỉ đọc ảnh gốc và ghi kết quả vào nơi lưu bản dịch riêng. Chỉ bước “Cài gói vào game…” ghi ảnh Việt hoá vào thư mục ngôn ngữ của game bạn chọn, có nhật ký cài/gỡ và kiểm tra lại các tệp đã ghi; ảnh gốc được giữ nguyên." />
             </StackPanel>
         </Border>
 
@@ -149,12 +149,12 @@
 
         <!-- Edit view, part 1: choosing / OCR of a single image. -->
         <StackPanel x:Name="EditViewTop" Visibility="{Binding ImageEditMode, Converter={StaticResource PanelBoolToVis}}">
-        <TextBlock Text="1 · Chọn ảnh và OCR" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
+        <TextBlock Text="1 · Chọn ảnh và nhận dạng chữ" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
         <WrapPanel Margin="0,0,0,8">
             <Button x:Name="DiscoverButton" Visibility="Collapsed" Content="Chọn ảnh để sửa riêng" Command="{Binding DiscoverImagesCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="ChooseButton" Content="Chọn ảnh…" Command="{Binding ChooseOcrImageCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="OcrButton" Content="OCR ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
-            <Button x:Name="OpenReviewButton" Content="Mở review đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="OcrButton" Content="Nhận dạng chữ trong ảnh đã chọn" Command="{Binding RunImageOcrCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,8" />
+            <Button x:Name="OpenReviewButton" Content="Mở bản xem lại đã lưu…" Command="{Binding OpenImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
         <!-- N6: the chosen image is named (full path in the tooltip) BEFORE any OCR; this is identity only: no OCR/review result is reused or implied. -->
         <StackPanel x:Name="SelectedImageRow" Orientation="Horizontal" Margin="0,0,0,8" Visibility="{Binding ImageHasSelectedFile, Converter={StaticResource PanelBoolToVis}}">
@@ -215,7 +215,7 @@
                      the grid scrolls horizontally instead of clipping labels. -->
                 <!-- F2: a row previews at most 3 lines (ellipsis); the FULL text stays in the data, in the tooltip and in the keyboard-usable cell editor (F2 / Enter), and the text columns
                      get the width priority over the read-only mode summary so a long row cannot grow past the grid body. -->
-                <DataGridTextColumn Header="TEXT OCR" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="1.4*" MinWidth="96">
+                <DataGridTextColumn Header="CHỮ GỐC" Binding="{Binding SourceText, UpdateSourceTrigger=PropertyChanged}" Width="1.4*" MinWidth="96">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="TextWrapping" Value="Wrap" />
@@ -281,7 +281,7 @@
         <Border x:Name="RegionDetails" Style="{StaticResource SubtlePanelBorder}" Padding="14,12" Margin="0,8,0,8" IsEnabled="{Binding ImageGridEnabled}"
                 Visibility="{Binding ImageHasRegions, Converter={StaticResource PanelBoolToVis}}">
             <StackPanel>
-                <TextBlock x:Name="RegionDetailsHint" Text="Chọn một dòng trong bảng để sửa crop, cỡ chữ, màu và chế độ nền của vùng đó." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap">
+                <TextBlock x:Name="RegionDetailsHint" Text="Chọn một dòng trong bảng để sửa vùng cắt, cỡ chữ, màu và chế độ nền của vùng đó." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
@@ -294,10 +294,10 @@
                             Visibility="{Binding DataContext.HasSelectedImageRegion, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource PanelBoolToVis}}">
                     <TextBlock Text="Chi tiết vùng đang chọn" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,8" />
                     <WrapPanel>
-                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionXBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X của vùng, pixel gốc">
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X (điểm ảnh gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionXBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X của vùng, tính theo điểm ảnh gốc">
                             <TextBox.Text><Binding Path="X" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
-                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y (pixel gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionYBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y của vùng, pixel gốc">
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y (điểm ảnh gốc)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionYBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y của vùng, tính theo điểm ảnh gốc">
                             <TextBox.Text><Binding Path="Y" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
                         <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Rộng" Style="{StaticResource FieldLabel}" /><TextBox x:Name="RegionWidthBox" Width="80" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Chiều rộng của vùng">
@@ -315,29 +315,29 @@
                     <TextBlock Text="Chế độ nền — chọn đúng một" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,2,0,6" />
                     <TextBlock x:Name="NoModeHint" Text="Chưa chọn chế độ nền — hãy chọn một chế độ trước khi duyệt." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
                                Visibility="{Binding NoModeChosen, Converter={StaticResource PanelBoolToVis}}" />
-                    <TextBlock x:Name="ModeAmbiguousHint" Text="Review cũ có nhiều chế độ nền — hãy chọn đúng một chế độ." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
+                    <TextBlock x:Name="ModeAmbiguousHint" Text="Bản xem lại cũ có nhiều chế độ nền — hãy chọn đúng một chế độ." FontSize="12" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"
                                Visibility="{Binding ModeAmbiguous, Converter={StaticResource PanelBoolToVis}}" />
                     <WrapPanel>
                         <RadioButton x:Name="FlatModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Nền phẳng đã kiểm" IsChecked="{Binding FlatBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ nền phẳng đã kiểm" />
                         <RadioButton x:Name="TransparentModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Thay chữ trong suốt" IsChecked="{Binding TransparentTextApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay chữ trong suốt" />
-                        <RadioButton x:Name="SolidModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Thay region bằng màu đặc" IsChecked="{Binding ReplacementBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay region bằng màu đặc" />
-                        <RadioButton x:Name="CloneModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Clone nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ clone nền mẫu đã kiểm" />
+                        <RadioButton x:Name="SolidModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Thay cả vùng bằng một màu" IsChecked="{Binding ReplacementBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ thay cả vùng bằng một màu" />
+                        <RadioButton x:Name="CloneModeBox" GroupName="RegionBackgroundMode" Click="OnBackgroundModeClick" Content="Sao chép nền mẫu đã kiểm" IsChecked="{Binding CloneBackgroundApproved, Mode=OneWay}" Margin="0,0,18,8" AutomationProperties.Name="Chế độ sao chép nền mẫu đã kiểm" />
                     </WrapPanel>
                     <WrapPanel>
-                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X nền mẫu">
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="X nền mẫu (sao chép)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorXBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="X nền mẫu">
                             <TextBox.Text><Binding Path="DonorX" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
-                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y nền mẫu (clone)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorYBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y nền mẫu">
+                        <StackPanel Style="{StaticResource FormField}"><TextBlock Text="Y nền mẫu (sao chép)" Style="{StaticResource FieldLabel}" /><TextBox x:Name="DonorYBox" Width="90" Style="{StaticResource NumberFieldTextBox}" AutomationProperties.Name="Y nền mẫu">
                             <TextBox.Text><Binding Path="DonorY" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True"><Binding.ValidationRules><val:IntegerRangeRule Minimum="0" Maximum="99999" /></Binding.ValidationRules></Binding></TextBox.Text>
                         </TextBox></StackPanel>
-                        <CheckBox x:Name="ApproveBox" Style="{StaticResource ApproveBoxStyle}" Content="Duyệt text/crop của vùng này" IsChecked="{Binding Approved}" VerticalAlignment="Bottom" Margin="8,0,0,14" FontWeight="SemiBold" AutomationProperties.Name="Duyệt text và crop của vùng" />
+                        <CheckBox x:Name="ApproveBox" Style="{StaticResource ApproveBoxStyle}" Content="Duyệt chữ và vùng cắt của vùng này" IsChecked="{Binding Approved}" VerticalAlignment="Bottom" Margin="8,0,0,14" FontWeight="SemiBold" AutomationProperties.Name="Duyệt chữ và vùng cắt của vùng" />
                     </WrapPanel>
                 </StackPanel>
             </StackPanel>
         </Border>
         <WrapPanel Margin="0,2,0,12">
-            <Button x:Name="AddRegionButton" Content="Thêm region thủ công" Command="{Binding AddImageRegionCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="SaveReviewButton" Content="Lưu review riêng" Command="{Binding SaveImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="AddRegionButton" Content="Thêm vùng chữ thủ công" Command="{Binding AddImageRegionCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="SaveReviewButton" Content="Lưu bản xem lại riêng" Command="{Binding SaveImageReviewCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
 
         <TextBlock Text="3 · Dựng ảnh và gói cài" FontWeight="Bold" Foreground="{DynamicResource InkBrush}" Margin="0,0,0,6" />
@@ -346,7 +346,7 @@
             <Button x:Name="DeliveryButton" Content="Tạo gói ảnh Ren'Py" Command="{Binding CreateImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="InstallButton" Content="Cài gói vào game…" Command="{Binding InstallImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
             <Button x:Name="RecoverButton" Content="Phục hồi giao dịch ảnh…" Command="{Binding RecoverImageDeliveryCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
-            <Button x:Name="OpenOutputButton" Content="Mở thư mục output" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
+            <Button x:Name="OpenOutputButton" Content="Mở nơi lưu ảnh" Command="{Binding OpenOutputCommand}" Style="{StaticResource OutlineButton}" Margin="0,0,8,8" />
         </WrapPanel>
         </StackPanel>
         <TextBlock x:Name="StatusLine" Visibility="{Binding ImageShowStatus, Converter={StaticResource PanelBoolToVis}}" Text="{Binding ImageStatus, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}"

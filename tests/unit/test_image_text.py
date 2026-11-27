@@ -103,7 +103,7 @@ class ImageTextTests(unittest.TestCase):
         image=Image.new('RGBA',(300,120),(0,0,0,0))
         ImageDraw.Draw(image).text((10,10),'OLD',font=ImageFont.truetype(str(FONT),30),fill=(0,0,0,255));image.save(self.source)
         digest=hashlib.sha256(self.source.read_bytes()).hexdigest();self.document['source_sha256']=digest
-        with self.assertRaisesRegex(ValueError,'alpha trong suốt'):self.render()
+        with self.assertRaisesRegex(ValueError,'phần trong suốt'):self.render()
         self.assertFalse((self.root/'out.png').exists());self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(),digest)
     def test_transparent_glyph_replacement_keeps_alpha_and_pixels_outside_region(self):
         image=Image.new('RGBA',(300,120),(0,0,0,0))

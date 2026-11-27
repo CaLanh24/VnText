@@ -300,7 +300,7 @@ internal sealed class InstallerForm : Form
         {
             _confirm.Text = _confirmingInstall ? "Xác nhận cài" : _cleanRequested ? "Xác nhận về gốc" : "Xác nhận gỡ";
             _cancelConfirm.Text = _confirmingInstall ? "Quay lại" : "Giữ bản Việt hóa";
-            if (_cleanRequested) SetStatus(Warn, "Đưa các file về đúng bản gốc đầu tiên được ghi nhận trước mọi bản Việt hóa VNText (gỡ cả các lớp bản Việt hóa cũ hơn). File có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.");
+            if (_cleanRequested) SetStatus(Warn, "Đưa các file về đúng bản gốc đầu tiên được ghi nhận trước mọi bản Việt hóa VNText (gỡ cả các lớp bản Việt hóa cũ hơn). Tệp có sẵn không do VNText quản lý được trả lại nguyên trạng, không bị xóa.");
             else SetStatus(Warn, _confirmingInstall ? "Cài vào thư mục đã chọn và sao lưu bản gốc? Font/mapping trong game chưa được chứng minh đầy đủ." : "Khôi phục toàn bộ file gốc của bản Việt hóa này? Chỉ những file bản Việt hóa đã ghi được hoàn tác.");
             _cancelConfirm.Focus();
         }
