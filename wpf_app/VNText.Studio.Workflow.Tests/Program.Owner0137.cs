@@ -126,7 +126,7 @@ internal static partial class Program
         using var worker = new PythonWorkerHost();
         using var vm = new MainViewModel(new FakePathPicker(), worker, startWorker: false);
         vm.TestSetSteps(WorkflowTabs.Extract, WorkflowStepState.Current, WorkflowStepState.Pending, WorkflowStepState.Pending, false);
-        AssertEqual("1", vm.StepMark1); AssertEqual("2", vm.StepMark2); AssertEqual("3", vm.StepMark3); AssertEqual("4", vm.StepMark4);
+        AssertEqual("", vm.StepMark1); AssertEqual("", vm.StepMark2); AssertEqual("", vm.StepMark3); AssertEqual("", vm.StepMark4);   // no numbers on the sidebar, only a check when done
         AssertTrue(!vm.HasNextStep);
         vm.TestSetSteps(WorkflowTabs.Extract, WorkflowStepState.Done, WorkflowStepState.Pending, WorkflowStepState.Pending, false);
         AssertEqual("✓", vm.StepMark1);

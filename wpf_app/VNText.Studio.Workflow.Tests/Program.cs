@@ -1585,8 +1585,11 @@ internal static partial class Program
         });
 
         AssertEqual("Dịch một phần", vm.StatusText);
-        AssertEqual("Cần duyệt thủ công 2 dòng trước khi tạo bản Việt hóa", vm.ProgressSubtitle);
-        AssertTrue(vm.StepStatusLine.Contains("Cần duyệt thủ công 2 dòng trước khi tạo bản Việt hóa"));
+        AssertEqual(MainViewModel.HumanReviewWaitingText(2), vm.ProgressSubtitle);
+        AssertTrue(vm.StepStatusLine.Contains("đang chờ bạn duyệt"));
+        vm.SelectedTab = WorkflowTabs.Translate;
+        AssertTrue(vm.PersistentErrorIsWarning);                                              // waiting for review is a warning with the next step, not a red error
+        Require(!vm.PersistentErrorText.Contains("Lỗi", StringComparison.Ordinal) && vm.PersistentErrorText.Contains("Chấp nhận đề xuất", StringComparison.Ordinal), "the banner names the next step: " + vm.PersistentErrorText);
         AssertFalse(vm.StepStatusLine.Contains("Lỗi —"));
     }
 
@@ -1949,7 +1952,7 @@ internal static partial class Program
         vm.TestBeginTaskLog("sev-patch-log", "patch");
         // The exact protocol line the worker emits (emit_log with producer-known severity), through the real parser.
         var warn = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Kiểm tra bản Việt hóa — hợp lệ 300, bị chặn 19\",\"severity\":\"warning\"}")!;
-        var plain = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Ren'Py: đang tạo native overlay.\"}")!;
+        var plain = WorkerEvent.FromJson("{\"type\":\"log\",\"id\":\"sev-patch-log\",\"text\":\"Ren'Py: đang tạo bản Việt hóa.\"}")!;
         vm.TestHandleWorkerEvent(warn);
         vm.TestHandleWorkerEvent(plain);
         var line = vm.PatchLogLines.Last(l => l.Contains("bị chặn 19", StringComparison.Ordinal));

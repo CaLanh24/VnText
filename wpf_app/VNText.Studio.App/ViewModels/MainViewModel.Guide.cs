@@ -4,7 +4,7 @@ namespace VNText.Studio.App.ViewModels;
 
 /// <summary>
 /// 0.1.37 step guidance (external UX review: a newcomer could not tell the order of the four steps or what to press after one finished).
-/// The sidebar numbers the steps 1-4 (Lấy text → Dịch → Sửa bản dịch → Tạo bản Việt hóa), shows a check once a step is done, and a
+/// The sidebar lists the steps in order (Lấy text → Dịch → Sửa bản dịch → Tạo bản Việt hóa) without numbers and shows a check after a step that is done, and a
 /// "Tiếp: …→" button on the page header jumps to the next step.  Presentation only: no state of the workflow itself changes here.
 /// </summary>
 public sealed partial class MainViewModel
@@ -29,12 +29,12 @@ public sealed partial class MainViewModel
         NextStepCommand?.RaiseCanExecuteChanged();
     }
 
-    private static string Mark(string state, int number) => state == WorkflowStepState.Done ? "✓" : number.ToString();
-    public string StepMark1 => Mark(ExtractStepState, 1);
-    public string StepMark2 => Mark(TranslateStepState, 2);
+    private static string Mark(string state) => state == WorkflowStepState.Done ? "✓" : "";   // no step numbers on the sidebar (Owner 2026-11-27): only a check once a step is done
+    public string StepMark1 => Mark(ExtractStepState);
+    public string StepMark2 => Mark(TranslateStepState);
     /// <summary>Editing the translation is optional and has no state of its own: it counts as done once the whole chain reached the last step.</summary>
-    public string StepMark3 => Mark(PatchStepState, 3);
-    public string StepMark4 => Mark(PatchStepState, 4);
+    public string StepMark3 => Mark(PatchStepState);
+    public string StepMark4 => Mark(PatchStepState);
 
     /// <summary>The tab the person should visit next, or null when the current page is not a finished step.</summary>
     internal string? NextStepTarget()

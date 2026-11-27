@@ -1098,7 +1098,7 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
 def _renpy_patch_install_instructions(patch_out: Path, game_root: Path) -> str:
     payload = patch_out / "COPY_TO_GAME_ROOT"
     return (
-        "Ren'Py native overlay đã sẵn sàng.\n"
+        "Bản Việt hóa Ren'Py đã sẵn sàng.\n"
         "1. Đóng game.\n"
         f"2. Mở thư mục gói: {payload}\n"
         f"3. Copy toàn bộ nội dung bên trong vào game root: {game_root}\n"
@@ -2861,9 +2861,9 @@ def _run_patch_task_impl(
         if patch_engine == "unity":
             log("File data.unity3d lớn có thể mất 5–10 phút, xem thanh tiến trình.")
         else:
-            log("Ren'Py: đang tạo native overlay.")
+            log("Ren'Py: đang tạo bản Việt hóa.")
         # The writer reports little or no progress of its own on large games; keep the step visibly alive (name + elapsed seconds) until it returns.
-        beat = _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo native overlay Ren'Py", 40)
+        beat = _Working(progress, "Đang ghi dữ liệu Unity (có thể vài phút)" if patch_engine == "unity" else "Đang tạo bản Việt hóa cho game Ren'Py", 40)
         keepalive.append(beat)
         beat.__enter__()
         apply_translation_package(str(csv_path), str(manifest_path), src, str(patch_out), patch_progress, replacement_font=replacement_font, **({"image_overlay_spec": image_overlay_spec} if image_overlay_spec else {}), **({"font_scale": font_scale} if str(font_scale or "").strip() else {}))
@@ -2918,7 +2918,7 @@ def _run_patch_task_impl(
                 encoding="utf-8",
             )
             log("Ren'Py: overlay hợp lệ tại game/tl/vietnamese/; chỉ dùng cấu trúc native này để cài.")
-            summary = f"Xong: Ren'Py native overlay nằm tại {patch_out}. Copy nội dung COPY_TO_GAME_ROOT vào game root."
+            summary = f"Xong: bản Việt hóa Ren'Py nằm tại {patch_out}. Chép nội dung COPY_TO_GAME_ROOT vào thư mục game."
             if include_installer and write_manifest_file:
                 installer = _find_patch_installer()
                 if installer is not None:

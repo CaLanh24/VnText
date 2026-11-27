@@ -1,7 +1,7 @@
 # VNText Studio
 
 
-Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ. Bản phát hành hiện tại: **0.1.38**.
+Tải bản đã phát hành tại [**GitHub Releases**](https://github.com/CaLanh24/VnText/releases/latest). Từ 0.1.17, bộ cài có tên `VNTextStudio-<phiên bản>-Setup.exe`; các bản cũ giữ tên tệp cũ. Bản phát hành hiện tại: **0.1.39**.
 
 Đã cài VNText: mở **Cài đặt → Giới thiệu → Kiểm tra cập nhật**. Người mới tải bộ cài từ trang Releases.
 
@@ -34,9 +34,9 @@ Hỗ trợ các cấu trúc và asset Unity phù hợp, gồm những dạng vă
 
 1. Tải và chạy [Setup từ GitHub Releases](https://github.com/CaLanh24/VnText/releases).
 2. Cài ứng dụng trên Windows; Setup chuẩn bị tài nguyên cần thiết trước khi mở app. Sau đó chọn thư mục game. **Cài đặt → Dữ liệu** dùng để kiểm tra hoặc sửa tài nguyên khi cần.
-3. Bước 1 — **Lấy text**: app tự nhận diện loại game; chọn thư mục game và nơi lưu bản dịch rồi lấy văn bản.
-4. Bước 2 — **Dịch trong ứng dụng**, hoặc xuất, chỉnh sửa rồi nhập bản dịch dạng CSV lại.
-5. Bước 3 — **Sửa bản dịch**: rà soát, thêm thuật ngữ nếu cần. Bước 4 — **Tạo bản Việt hóa**: kiểm tra rồi tạo bản Việt hóa. Mỗi bước xong có nút “Tiếp: …” ở góc trên.
+3. **Lấy text**: app tự nhận diện loại game; chọn thư mục game và nơi lưu bản dịch rồi lấy văn bản.
+4. **Dịch trong ứng dụng**, hoặc xuất, chỉnh sửa rồi nhập bản dịch dạng CSV lại.
+5. **Sửa bản dịch**: rà soát, thêm thuật ngữ nếu cần. **Tạo bản Việt hóa**: kiểm tra rồi tạo bản Việt hóa. Mỗi bước xong có nút “Tiếp: …” ở góc trên.
 6. Với gói có installer, chọn thư mục game để cài/gỡ, rồi chạy game kiểm tra kết quả. Giữ các file sao lưu cho đến khi gỡ bản Việt hóa.
 
 ## Lưu ý

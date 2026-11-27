@@ -15,6 +15,10 @@ namespace VNText.Studio.App.ViewModels;
 
 public sealed partial class MainViewModel
 {
+    /// <summary>What the person sees when the machine translation is done but waiting for their review: the state and the next step, not an error.</summary>
+    internal static string HumanReviewWaitingText(int count) =>
+        UiText.Msg("Máy đã dịch xong; {0} dòng đang chờ bạn duyệt. Mở Sửa bản dịch → Thao tác → Chọn cần xem lại, bấm từng dòng rồi chọn Chấp nhận đề xuất, Sửa bản dịch hoặc Bỏ qua dòng này trước khi tạo bản Việt hóa.", count.ToString("N0"));
+
     private static string FormatUserProgressStep(string? step, string? task)
     {
         var value = step?.Trim() ?? "";
@@ -211,7 +215,13 @@ public sealed partial class MainViewModel
                         ? (evt.Severity == "warning" ? "[cảnh báo] " : "[lỗi] ") + evt.Error
                         : (evt.Severity == "warning" ? "[warning] " : evt.Ok || evt.Error.Contains("cancel", StringComparison.OrdinalIgnoreCase) ? "" : "[error] ") + evt.Error, completedTask);
                 if (!evt.Ok && !extractWarning && !string.IsNullOrWhiteSpace(evt.Error) && !evt.Error.Contains("cancelled", StringComparison.OrdinalIgnoreCase))
-                    RecordPersistentError(completedTask, evt.Error);
+                {
+                    // A translation that is waiting for the person's review is not a failure (real-UI finding, 0.1.39): a warning with the next step, not a red error.
+                    if (evt.HumanReviewRequiredCount > 0 && evt.Error.StartsWith("Cần duyệt thủ công", StringComparison.Ordinal))
+                        RecordPersistent(completedTask, HumanReviewWaitingText(evt.HumanReviewRequiredCount), "", warning: true);
+                    else
+                        RecordPersistentError(completedTask, evt.Error);
+                }
                 AddTaskProgress(evt.Id, evt.Ok && evt.Complete != false ? "Hoàn tất"
                     : extractWarning ? "Lấy text một phần — xem cảnh báo" : "Đã dừng — xem Nhật ký", completedTask);
                 if (completedTask != "analyze")      // the analysis run stays open until its result (or the stale-input verdict) has been written
@@ -336,7 +346,7 @@ public sealed partial class MainViewModel
                     : isExternalTranslationImport
                     ? UiText.Msg("Đã nhập {0} dòng an toàn; còn {1} dòng cần sửa trong bản dịch", evt.Applied, externalRemaining)
                     : needsHumanReview
-                    ? $"Cần duyệt thủ công {evt.HumanReviewRequiredCount} dòng trước khi tạo bản Việt hóa"
+                    ? HumanReviewWaitingText(evt.HumanReviewRequiredCount)
                     : $"Dịch một phần — chưa dịch {evt.Pending}, cần xem lại {evt.ReviewOnly}, chưa thể dùng {evt.Blocked}";
                 // "Dịch đã chọn" always says what happened to the checked rows (Owner report 0.1.35: "hoàn tất" while nothing changed).
                 if (completedTask == "translate" && evt.OperationScope == "selected_rows")
@@ -419,7 +429,7 @@ public sealed partial class MainViewModel
                         "cloud_import" => "Đã nhập Cloud Repair — Bản dịch mới đã được kiểm tra.",
                         "external_translation_import" => "Đã nhập bản dịch cũ — có thể tạo bản Việt hóa.",
                         "patch" when string.Equals(evt.PatchEngine, "renpy", StringComparison.OrdinalIgnoreCase)
-                            => "Tạo overlay Ren'Py hoàn tất",
+                            => "Đã tạo bản Việt hóa cho game Ren'Py",
                         "patch" => "Tạo bản Việt hóa hoàn tất",
                         "analyze" => "Phân tích game hoàn tất",
                         _ => string.IsNullOrWhiteSpace(evt.Summary) ? "Hoàn tất" : evt.Summary!,
@@ -785,10 +795,10 @@ public sealed partial class MainViewModel
     {
         if (string.Equals(evt.PatchDelivery, "renpy_native_overlay", StringComparison.OrdinalIgnoreCase))
         {
-            PatchDeliveryLabel = "Ren'Py — native overlay (copy vào game root)";
+            PatchDeliveryLabel = "Ren'Py — chép thư mục này vào thư mục game";
             PatchInstallInstructions = evt.PatchInstallInstructions ?? "";
             PatchDeliveryReady = true;
-            StepStatusLine = "Ren'Py overlay đã sẵn sàng — copy COPY_TO_GAME_ROOT vào game root.";
+            StepStatusLine = "Bản Việt hóa Ren'Py đã sẵn sàng — chép nội dung thư mục COPY_TO_GAME_ROOT vào thư mục game.";
         }
         else if (string.Equals(evt.PatchDelivery, "unity_installer", StringComparison.OrdinalIgnoreCase)
             || string.Equals(evt.PatchDelivery, "renpy_installer", StringComparison.OrdinalIgnoreCase))

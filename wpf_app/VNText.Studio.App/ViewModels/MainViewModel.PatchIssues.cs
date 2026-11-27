@@ -74,7 +74,7 @@ public sealed partial class MainViewModel
             foreach (var group in last.SkippedItems.GroupBy(item => item.Reason).OrderByDescending(g => g.Count()).Take(6))
                 lines.Add(UiText.Msg("• {0}: {1}", UiText.TranslateDynamic(group.First().Label), group.Count()));
         if (last is { UserExcluded: > 0 } || last is { OutsideCsvReview: > 0 })
-            lines.Add(UiText.Msg("(Không tính {0} dòng bạn đã xóa và {1} dòng chỉ để xem lại ngoài CSV.)", last!.UserExcluded, last.OutsideCsvReview));
+            lines.Add(UiText.Msg("(Không tính {0} dòng bạn đã xóa và {1} dòng chỉ để xem lại ngoài bản dịch.)", last!.UserExcluded, last.OutsideCsvReview));
         lines.Add(UiText.Translate("Bấm 'Xem danh sách' để xem từng câu, lý do và cách xử lý."));
         return UiText.Lines(lines.ToArray());
     }

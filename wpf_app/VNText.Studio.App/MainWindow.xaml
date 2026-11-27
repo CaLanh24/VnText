@@ -148,8 +148,8 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource SourceIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="{Binding StepMark1}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 1" />
                             <TextBlock Text="Lấy text" />
+                            <TextBlock Text="{Binding StepMark1}" FontWeight="Bold" Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>
 
@@ -163,8 +163,8 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource TranslateIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="{Binding StepMark2}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 2" />
                             <TextBlock Text="Dịch tự động" />
+                            <TextBlock Text="{Binding StepMark2}" FontWeight="Bold" Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>
 
@@ -192,8 +192,8 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource CsvIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="{Binding StepMark3}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 3" />
                             <TextBlock Text="Sửa bản dịch" />
+                            <TextBlock Text="{Binding StepMark3}" FontWeight="Bold" Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>
 
@@ -207,8 +207,8 @@
                         </Button.Style>
                         <StackPanel Orientation="Horizontal">
                             <Path Data="{StaticResource PatchIconGeometry}" Style="{StaticResource NavVectorIconStyle}" Width="18" Height="18" Margin="1,0,12,0" />
-                            <TextBlock Text="{Binding StepMark4}" FontWeight="Bold" MinWidth="12" Margin="0,0,4,0" AutomationProperties.Name="Bước 4" />
                             <TextBlock Text="Tạo bản Việt hóa" />
+                            <TextBlock Text="{Binding StepMark4}" FontWeight="Bold" Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>
                 </StackPanel>

@@ -1578,6 +1578,13 @@ public sealed partial class MainViewModel
         if (!validation.Ok)
             return new CsvEditorSaveAttempt(validation, null);
         var save = TranslationCsvEditorService.Save(path, fields, rows, expectedSha256);
+        // The pre-save validation still sees the rows the save just resolved in the review ledger ("bấm Lưu"); once the save pruned the
+        // ledger, validate again so row statuses and the review count describe what is on disk (real-UI finding, 0.1.39).
+        if (save.Ok)
+        {
+            var after = TranslationCsvEditorService.Validate(path, rows);
+            if (after.Ok) validation = after;
+        }
         return new CsvEditorSaveAttempt(validation, save);
     }
 
