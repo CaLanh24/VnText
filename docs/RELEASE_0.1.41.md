@@ -11,3 +11,6 @@ The Owner asked (chat, 2026-11-27, relayed by Brain) to handle every point of th
 
 ## Tests
 `tests/unit/test_user_strings_0141.py` scans every static string of every screen (all XAML), the Vietnamese literals of the app, the catalog keys, the English catalog values (no Vietnamese outside quoted button names) and the worker messages of the image and resource tasks for developer words. The WPF harness pins were moved to the new wording.
+
+## Published
+Tag `v0.1.41` = `8a01de0ffce7c85668488156df2142ef3e4a36cf`; Setup sha256 `b5855c9adb688af6528fb52a1e12989a4092d5c254a61a816d394ce6342d2ee3`; GitHub digests of the 5 assets equal the local files; update 0.1.40→0.1.41 read-back: 7341 files, 0 mismatches.
