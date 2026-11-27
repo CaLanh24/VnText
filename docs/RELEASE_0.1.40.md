@@ -15,4 +15,8 @@ Data rule (AGENTS 2026-11-21): the games were only read, or used through hard-li
 - **Tests:** the single-process run of the whole Python suite had ~33 order-dependent failures. Cause: a test helper re-patched `cleanup.ROOT` after its workspace had restored it, so the deleted fixture folder stayed the module root for every later test.
 
 ## Checked on real games
-See `AI_STATE.md` for the list of journeys, the numbers and what was not run.
+Three real games through scan → extract → (image scan) → patch → install on a hard-link copy → uninstall → hash comparison, plus a running Ren'Py game and the app driven through its real file dialogs. See `AI_STATE.md` for the numbers and for what was not run.
+
+## Published
+Tag `v0.1.40` = `5d370f24549a65bde7762663e90ae4896b7ebc9c`; Setup sha256 `da2f4bffcb9092c35e8b8b83723c9d3dc9d74feec5ea12817775bf38e88236d5`; GitHub digests of the 5 assets equal the local files; update 0.1.39→0.1.40 read-back: 7341 files, 0 mismatches.
+The `publish.ps1` fix for the preflight output (stdout only) is the commit right after the tag: the tagged source still has the `2>&1` variant that fails under Windows PowerShell 5.1 when Python writes a warning.
