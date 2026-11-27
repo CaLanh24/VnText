@@ -291,6 +291,19 @@ class RenPyExtractTaskTests(unittest.TestCase):
         self.assertEqual(2, [item for item in status["audit_notes"] if item["code"] == "NATIVE_TECHNICAL_BLOCK_SKIPPED"][0]["count"])
         self.assertNotIn("accounting mismatch", result.get("error", ""))
 
+    def test_bare_command_blocks_without_quoted_text_are_technical_not_unsupported(self):
+        # Real-game run (corpus-01): hundreds of `translate` blocks whose original statement is a bare command (nvl clear) were reported as
+        # "unsupported dialogue" and kept the extract PARTIAL although nothing readable is in them.
+        nl = chr(10)
+        template = self._native_template_with_blocks(
+            "# game/nvl.rpy:3", "translate vietnamese nvl_clear_aaaa1111:", "", "    # nvl clear", "    nvl clear", "")
+        result, status = self._run_sdk_extract(
+            {"script.rpy": 'label start:' + nl + '    "Native only"' + nl, "nvl.rpy": "label nv:" + nl + "    nvl clear" + nl}, template)
+        codes = {item["code"] for item in status["audit_notes"] + status["limitations"]}
+        self.assertNotIn("NATIVE_BLOCK_UNSUPPORTED", codes, status)
+        self.assertIn("NATIVE_TECHNICAL_BLOCK_SKIPPED", codes, status)
+        self.assertNotEqual("FAILED", result["extract_status"], result)
+
     def test_unknown_native_block_shapes_never_fail_the_extract_and_are_never_silent(self):
         nl = chr(10)
         template = self._native_template_with_blocks(

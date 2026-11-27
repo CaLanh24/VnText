@@ -1,6 +1,7 @@
 """Conservative loose-source Ren'Py extraction; IDs always come from Ren'Py."""
 from __future__ import annotations
 
+import bisect
 import ast
 from dataclasses import dataclass
 import hashlib
@@ -679,14 +680,27 @@ def _source_span(line_number: int, start: int, end: int) -> dict[str, int]:
     }
 
 
+_LABEL_INDEX: dict[int, tuple[list[str], list[int], list[str]]] = {}
+
+
 def _source_context_group(lines: list[str], line_number: int) -> str:
-    for raw in reversed(lines[: max(0, line_number - 1)]):
-        if raw[:1].isspace():
-            continue
-        label = _LABEL.fullmatch(raw.strip())
-        if label:
-            return f"label:{label.group('name')}"
-    return ""
+    """Nearest column-0 ``label`` strictly above ``line_number``.  The labels of a file are indexed once (the old per-unit backwards scan was quadratic on large scripts)."""
+    entry = _LABEL_INDEX.get(id(lines))
+    if entry is None or entry[0] is not lines:
+        positions: list[int] = []
+        names: list[str] = []
+        for index, raw in enumerate(lines):
+            if raw[:1].isspace():
+                continue
+            label = _LABEL.fullmatch(raw.strip())
+            if label:
+                positions.append(index)
+                names.append(label.group("name"))
+        entry = (lines, positions, names)
+        _LABEL_INDEX[id(lines)] = entry
+    _, positions, names = entry
+    found = bisect.bisect_left(positions, max(0, line_number - 1)) - 1
+    return f"label:{names[found]}" if found >= 0 else ""
 
 
 def _read_source_lines(path: Path, cache: dict[Path, list[str] | None]) -> list[str] | None:
@@ -985,6 +999,7 @@ def extract_native_template_entries(
     archive_sources: dict[str, dict] | None = None,
 ) -> tuple[list[Entry], list[Entry], dict]:
     """Build canonical Entries from authoritative generated Ren'Py units."""
+    _LABEL_INDEX.clear()
 
     game_root = Path(root).resolve()
     if not game_root.is_dir():
@@ -1031,7 +1046,8 @@ def extract_native_template_entries(
                 archived = archive_cache[normalized_source]
                 if archived["container_sha256"] != archive_source.get("archive_sha256") or archived["member_sha256"] != archive_source.get("member_sha256"):
                     raise RenPyTemplateParseError(f"RPA source precondition drift: {normalized_source}")
-                source_lines[source_path] = archived["content"].decode("utf-8").splitlines()
+                if source_path not in source_lines:      # decode/split once per archived script, not once per unit
+                    source_lines[source_path] = archived["content"].decode("utf-8").splitlines()
                 source_hashes[source_path] = archived["member_sha256"]
             except (OSError, UnicodeError, ValueError) as exc:
                 if isinstance(exc, RenPyTemplateParseError): raise
@@ -1150,7 +1166,10 @@ def extract_native_template_entries(
         string_owners[owner] = string_owners.get(owner, 0) + 1
         string_ledgers[ledger] = string_ledgers.get(ledger, 0) + 1
     # translate python / translate style blocks hold code and style, never player-readable text; any other unsupported shape could hide text.
-    technical_blocks=[item for item in unresolved if str(item.get("native_id") or "").split(" ")[0] in {"python","style"}]
+    def _no_display_text(item):
+        # A translate block whose original statement has no quoted string (nvl clear/show/hide and the like) has nothing the player reads.
+        return str(item.get("reason") or "").endswith("statement has no quoted text")
+    technical_blocks=[item for item in unresolved if str(item.get("native_id") or "").split(" ")[0] in {"python","style"} or _no_display_text(item)]
     ambiguous_blocks=[item for item in unresolved if item not in technical_blocks]
     string_reconciliation = {
         "total": string_count,
@@ -1209,7 +1228,7 @@ def extract_native_template_entries(
         return shown+("…" if len(items)>3 else "")
     if technical_blocks:
         stats["limitations"].append({"code":"NATIVE_TECHNICAL_BLOCK_SKIPPED","count":len(technical_blocks),
-            "message":f"{len(technical_blocks)} khối translate python/style ({_blocks_sample(technical_blocks)}) chỉ chứa mã hoặc kiểu, không có text hiển thị cho người chơi; "
+            "message":f"{len(technical_blocks)} khối translate chỉ có mã, kiểu hoặc lệnh không có chữ ({_blocks_sample(technical_blocks)}) không có text hiển thị cho người chơi; "
                       "đã ghi vào manifest (renpy_native_unresolved), không tạo dòng dịch và không sửa."})
     if ambiguous_blocks:
         stats["limitations"].append({"code":"NATIVE_BLOCK_UNSUPPORTED","count":len(ambiguous_blocks),

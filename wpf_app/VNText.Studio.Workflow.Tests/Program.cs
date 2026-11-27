@@ -161,6 +161,8 @@ internal static partial class Program
             Run("Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal", Owner0136_Issue4_FocusedReviewRowShowsReasonActionAndAcceptableProposal, csvFailures);
             Run("Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate", Owner0136_Issue5_PatchSkippedFilterAndListMatchTheGate, csvFailures);
             Run("Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons", Owner0136_Issue6_PatchFailureIsExplainedInPlaceWithBugReportButtons, csvFailures);
+            Run("Owner0140_ImageNamesShowThePathNotTheEncodedArchiveReference", Owner0140_ImageNamesShowThePathNotTheEncodedArchiveReference, csvFailures);
+            Run("Owner0140_CsvFromAnotherFolderIsSaidNextToTheOutputFolder", Owner0140_CsvFromAnotherFolderIsSaidNextToTheOutputFolder, csvFailures);
             Run("Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton", Owner0137_Group1_MissingTranslatorSaysItInPlainWordsWithInstallButton, csvFailures);
             Run("Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton", Owner0137_Group1_ResourcesAreSummarisedOnceWithAFixButton, csvFailures);
             Run("Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames", Owner0137_Group1_ExtractLogNeverShowsInternalStatesOrTypeNames, csvFailures);

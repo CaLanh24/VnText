@@ -130,7 +130,8 @@ def _run_harness(env: dict[str, str], artifacts_root: Path, args: list[str] | No
         text=True,
         encoding="utf-8",
         errors="replace",
-        timeout=300,
+        # The first window of a run in a fresh LOCALAPPDATA rebuilds the WPF font cache (224 s measured on a slow remote session), so 300 s timed out at random.
+        timeout=900,
     )
 
 

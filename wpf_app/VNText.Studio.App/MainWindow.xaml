@@ -448,6 +448,7 @@
                                             </StackPanel>
                                         </Button>
                                     </Grid>
+                                    <TextBlock Text="{Binding CsvElsewhereNote, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding CsvElsewhereNoteVisible, Converter={StaticResource BoolToVis}}" />
                                 </StackPanel>
 
                                 <StackPanel Grid.Row="5" Margin="0,21,0,0" Visibility="Collapsed">
@@ -830,6 +831,7 @@
                                                 </StackPanel>
                                             </Button>
                                         </Grid>
+                                        <TextBlock Text="{Binding CsvElsewhereNote, Converter={StaticResource UiTextDynamic}}" TextWrapping="Wrap" Margin="0,6,0,0" FontSize="{StaticResource UiCaptionSize}" Foreground="{DynamicResource MutedBrush}" Visibility="{Binding CsvElsewhereNoteVisible, Converter={StaticResource BoolToVis}}" />
                                         <TextBlock Text="File bản dịch" FontSize="{StaticResource UiBodySize}" FontWeight="SemiBold" Foreground="{DynamicResource InkBrush}" Margin="0,18,0,0" />
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>

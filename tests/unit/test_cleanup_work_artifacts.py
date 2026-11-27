@@ -3621,7 +3621,11 @@ class CleanupLifecycleTests(unittest.TestCase):
         (root / "VERSION.txt").write_text("0.1.17\n", encoding="utf-8")
         git_guard, incident_guard = self._epoch_guards()
         stack = contextlib.ExitStack()
-        stack.enter_context(git_guard); stack.enter_context(incident_guard); stack.enter_context(patch.object(cleanup, "ROOT", root))
+        stack.enter_context(git_guard); stack.enter_context(incident_guard)
+        # `stack` is closed by addCleanup, i.e. AFTER the caller's isolated_workspace() has already restored cleanup.ROOT.  Patching ROOT here again and
+        # restoring it later put the finished fixture directory back as the module ROOT for every later test of the same process.
+        if cleanup.ROOT != root:
+            stack.enter_context(patch.object(cleanup, "ROOT", root))
         stack.enter_context(patch.dict(os.environ, {"VNTEXT_RELEASE_TASK_ID": task_id}))
         self.addCleanup(stack.close)
         applied = cleanup.activate_prospective_epoch(dry_run=False, epoch_id="epoch-recovery", source_sha="test-sha", release_task_id=task_id)

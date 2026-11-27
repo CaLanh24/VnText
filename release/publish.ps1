@@ -75,7 +75,7 @@ function Resolve-IsolatedPublishArtifactRoot([string]$DevRoot, [string]$WorkRoot
         $expectedParent = [System.IO.Path]::GetFullPath((Split-Path -Parent $DevRoot)).TrimEnd('\')
         $expectedSource = [System.IO.Path]::GetFullPath((Join-Path $parent 'source'))
         if (-not $parent.Equals($expectedParent, [System.StringComparison]::OrdinalIgnoreCase) -or
-            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16', 'candidate-0.1.17', 'candidate-0.1.18', 'candidate-0.1.19', 'candidate-0.1.20', 'candidate-0.1.21', 'candidate-0.1.22', 'candidate-0.1.23', 'candidate-0.1.24', 'candidate-0.1.25', 'candidate-0.1.26', 'candidate-0.1.27', 'candidate-0.1.28', 'candidate-0.1.29', 'candidate-0.1.30', 'candidate-0.1.31', 'candidate-0.1.32', 'candidate-0.1.33', 'candidate-0.1.34', 'candidate-0.1.35', 'candidate-0.1.36', 'candidate-0.1.37', 'candidate-0.1.38', 'candidate-0.1.39') -or
+            (Split-Path -Leaf $parent) -notin @('candidate-0.1.5', 'candidate-0.1.6', 'candidate-0.1.7', 'candidate-0.1.8', 'candidate-0.1.9', 'candidate-0.1.10', 'candidate-0.1.11', 'candidate-0.1.12', 'candidate-0.1.13', 'candidate-0.1.14', 'candidate-0.1.15', 'candidate-0.1.16', 'candidate-0.1.17', 'candidate-0.1.18', 'candidate-0.1.19', 'candidate-0.1.20', 'candidate-0.1.21', 'candidate-0.1.22', 'candidate-0.1.23', 'candidate-0.1.24', 'candidate-0.1.25', 'candidate-0.1.26', 'candidate-0.1.27', 'candidate-0.1.28', 'candidate-0.1.29', 'candidate-0.1.30', 'candidate-0.1.31', 'candidate-0.1.32', 'candidate-0.1.33', 'candidate-0.1.34', 'candidate-0.1.35', 'candidate-0.1.36', 'candidate-0.1.37', 'candidate-0.1.38', 'candidate-0.1.39', 'candidate-0.1.40') -or
             -not $DevRoot.Equals($expectedSource, [System.StringComparison]::OrdinalIgnoreCase) -or
             -not $WorkRoot.Equals([System.IO.Path]::GetFullPath((Split-Path -Parent $parent)), [System.StringComparison]::OrdinalIgnoreCase)) {
             throw "ArtifactScopeParentRoot must be the registered release candidate parent containing this exact source snapshot."
@@ -265,7 +265,7 @@ if (-not [string]::IsNullOrWhiteSpace($ArtifactScopeParentRoot)) {
     $snapshotChanges = @(& git -C $DevRoot status --porcelain)
     $snapshotReleaseVersion = (Get-Content -LiteralPath (Join-Path $DevRoot 'VERSION.txt') -TotalCount 1).Trim()
     if ($LASTEXITCODE -ne 0 -or $snapshotHead -ne $SourceSha -or $snapshotChanges.Count -gt 0 -or
-        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16', '0.1.17', '0.1.18', '0.1.19', '0.1.20', '0.1.21', '0.1.22', '0.1.23', '0.1.24', '0.1.25', '0.1.26', '0.1.27', '0.1.28', '0.1.29', '0.1.30', '0.1.31', '0.1.32', '0.1.33', '0.1.34', '0.1.35', '0.1.36', '0.1.37', '0.1.38', '0.1.39') -or
+        $snapshotReleaseVersion -notin @('0.1.5', '0.1.6', '0.1.7', '0.1.8', '0.1.9', '0.1.10', '0.1.11', '0.1.12', '0.1.13', '0.1.14', '0.1.15', '0.1.16', '0.1.17', '0.1.18', '0.1.19', '0.1.20', '0.1.21', '0.1.22', '0.1.23', '0.1.24', '0.1.25', '0.1.26', '0.1.27', '0.1.28', '0.1.29', '0.1.30', '0.1.31', '0.1.32', '0.1.33', '0.1.34', '0.1.35', '0.1.36', '0.1.37', '0.1.38', '0.1.39', '0.1.40') -or
         (Split-Path -Leaf $ArtifactScopeParentRoot) -ne "candidate-$snapshotReleaseVersion") {
         throw "Nested candidate source must be a clean exact-SHA Release 0.1.5 snapshot."
     }
@@ -758,6 +758,8 @@ $preflightReport = Join-Path $WorkRoot ($publishScope + "-release_verify.json")
 Register-WorkPath $publishScope $publishArtifactRoot "isolated Setup publish and preflight run scope" "DISPOSABLE" $publishArtifactRoot
 Register-WorkPath ($publishScope + "-verify") $preflightRunRoot "isolated release_verify run scope" "DISPOSABLE" $publishArtifactRoot
 Register-WorkPath ($publishScope + "-verify") $preflightReport "retained release_verify preflight evidence" "RETAINED" $WorkRoot
+$preflightLog = Join-Path $WorkRoot ($publishScope + "-release_verify.log")
+Register-WorkPath ($publishScope + "-verify") $preflightLog "retained release_verify preflight log" "RETAINED" $WorkRoot
 $verifyEnvNames = @("VNTEXT_RELEASE_VERIFY_RUN_ROOT", "VNTEXT_ARTIFACT_SCOPE_ROOT", "VNTEXT_DEV_RUN_ROOT", "VNTEXT_WORK_ARTIFACTS_ROOT", "VNTEXT_CT2_MODEL")
 $verifyEnvPrevious = @{}
 foreach ($name in $verifyEnvNames) { $verifyEnvPrevious[$name] = [Environment]::GetEnvironmentVariable($name, "Process") }
@@ -771,7 +773,8 @@ try {
     $savedUserProfile = $env:USERPROFILE
     try {
         $env:USERPROFILE = Join-Path $DevRunRoot "Profile"
-        & $Python -B -c "from vntext.release_verify import run_release_verify; raise SystemExit(run_release_verify())" --report $preflightReport
+        # Keep the gate's own output: a failing pre-build gate used to end the publish with no visible cause.
+        & $Python -B -c "from vntext.release_verify import run_release_verify; raise SystemExit(run_release_verify())" --report $preflightReport 2>&1 | Tee-Object -FilePath $preflightLog
         $preflightCode = $LASTEXITCODE
     } finally {
         $env:USERPROFILE = $savedUserProfile
@@ -783,7 +786,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Preflight artifact cleanup did not complete; preserve fail-closed status" }
     foreach ($name in $verifyEnvNames) { [Environment]::SetEnvironmentVariable($name, $verifyEnvPrevious[$name], "Process") }
 }
-if ($preflightCode -ne 0) { throw "DEV release_verify failed - abort publish (exit $preflightCode)" }
+if ($preflightCode -ne 0) {
+    Write-Host "DEV release_verify FAILED (exit $preflightCode). Report: $preflightReport  Log: $preflightLog" -ForegroundColor Red
+    if (Test-Path -LiteralPath $preflightLog) { Get-Content -LiteralPath $preflightLog -Tail 40 | ForEach-Object { Write-Host $_ } }
+    throw "DEV release_verify failed - abort publish (exit $preflightCode)"
+}
 $env:VNTEXT_ARTIFACT_SCOPE_ID = $publishScope
 $env:VNTEXT_ARTIFACT_RUN_ID = $publishScope
 $env:VNTEXT_ARTIFACT_SCOPE_ROOT = $publishArtifactRoot

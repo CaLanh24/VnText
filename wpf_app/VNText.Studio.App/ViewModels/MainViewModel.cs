@@ -287,7 +287,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
             var previousOutput = _outputPath;
             if (Set(ref _outputPath, value))
             {
-                Raise(nameof(OutputDisplay));
+                Raise(nameof(OutputDisplay)); Raise(nameof(CsvElsewhereNote)); Raise(nameof(CsvElsewhereNoteVisible));
                 if (!TryReuseSourceAnalysisForNewOutput(previousOutput, value))
                 {
                     InvalidateAnalyzeIfInputsChanged();
@@ -313,7 +313,7 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
                 if (!SameCsvPath(previousPath ?? "", value ?? "")) _patchArtifactBehindCsv = false;   // another package has its own artifact
                 InvalidatePatchSourceState();
                 _translateLastRunCancelled = false;
-                Raise(nameof(TranslationCsvDisplay));
+                Raise(nameof(TranslationCsvDisplay)); Raise(nameof(CsvElsewhereNote)); Raise(nameof(CsvElsewhereNoteVisible));
                 LoadPackageGlossary();
                 RefreshTranslateReadiness();
             }
@@ -426,6 +426,25 @@ public sealed partial class MainViewModel : NotifyBase, IDisposable
     }
 
     public string InputDisplay => string.IsNullOrWhiteSpace(InputPath) ? UiText.Translate("Chọn thư mục game...") : InputPath;
+    /// <summary>A translation file picked from another folder is used as is; say so next to the output folder so the two paths are not mistaken for one.</summary>
+    public string CsvElsewhereNote
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(TranslationCsvPath) || string.IsNullOrWhiteSpace(OutputPath)) return "";
+            try
+            {
+                var csvDir = Path.GetDirectoryName(Path.GetFullPath(TranslationCsvPath)) ?? "";
+                var outDir = Path.GetFullPath(WorkflowStatus.ResolvePackageDir(OutputPath));
+                if (string.Equals(csvDir.TrimEnd(Path.DirectorySeparatorChar), outDir.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase)) return "";
+                return UiText.Msg("Bản dịch đang dùng nằm ở thư mục khác nơi lưu: {0}", csvDir);
+            }
+            catch (Exception) { return ""; }
+        }
+    }
+
+    public bool CsvElsewhereNoteVisible => CsvElsewhereNote.Length > 0;
+
     public string OutputDisplay => string.IsNullOrWhiteSpace(OutputPath) ? "Chọn nơi lưu bản dịch..." : OutputPath;
 
     public string CurrentWorkflowStep

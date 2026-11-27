@@ -597,8 +597,9 @@ def extract_unity_typetree(path: Path, root: Path, progress_callback=None):
     from vntext.unity_localization import is_unity_localization_table_class, iter_unity_localization_entries
     try:
         import UnityPy
-    except Exception:
-        return
+    except Exception as exc:
+        # A missing reader used to end here silently and the run reported "no text" with no error; say what is wrong instead.
+        raise RuntimeError(f"Thiếu thư viện đọc Unity (UnityPy): {exc}") from exc
 
     rel = rel_path(path, root)
     try:

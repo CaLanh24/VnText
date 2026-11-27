@@ -16,6 +16,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
+from collections.abc import Mapping as _AbcMapping
 from typing import Any, Iterator, Mapping, Protocol
 
 
@@ -140,12 +141,13 @@ class NullTraceSink:
 
 
 def _canonical_value(value: Any) -> Any:
-    if isinstance(value, Mapping):
+    # Scalars first and the abc class for isinstance: the typing alias made this the hottest function of a large extract (same result).
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, _AbcMapping):
         return {str(key): _canonical_value(value[key]) for key in sorted(value, key=lambda item: str(item))}
     if isinstance(value, (list, tuple)):
         return [_canonical_value(item) for item in value]
-    if isinstance(value, (str, int, float, bool)) or value is None:
-        return value
     return str(value)
 
 

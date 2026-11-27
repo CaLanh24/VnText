@@ -41,12 +41,24 @@ public static class ImagePackageProbe
             {
                 if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("text_detected", out var detected) || detected.ValueKind != JsonValueKind.True) continue;
                 string S(string name) => item.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString()! : "";
-                results.Add(new ImageResult(Path.GetFileName(S("source")), SafePath(S("ocr_result")), confirmed ? SafePath(S("translated")) : "",
+                results.Add(new ImageResult(FriendlyName(S("source")), SafePath(S("ocr_result")), confirmed ? SafePath(S("translated")) : "",
                     !confirmed ? "Kết quả cũ · lấy text lại để lọc ảnh" : S("status") == "TRANSLATED_DRAFT" ? "Đã dịch nháp" : "Cần dịch / xem lại"));
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException) { }
         return results;
+    }
+    /// <summary>An image inside a game archive is recorded as a percent-encoded "archive?member=path" reference; show only the image path.</summary>
+    public static string FriendlyName(string source)
+    {
+        try
+        {
+            var text = Uri.UnescapeDataString(source ?? "");
+            var at = text.IndexOf("?member=", StringComparison.Ordinal);
+            if (at >= 0) text = text[(at + 8)..];
+            return at >= 0 ? text : Path.GetFileName(text);
+        }
+        catch (Exception ex) when (ex is UriFormatException or ArgumentException) { return Path.GetFileName(source ?? ""); }
     }
     public readonly record struct Summary(int Total, int OcrReady, int TranslatedDrafts);
 
