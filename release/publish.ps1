@@ -773,8 +773,8 @@ try {
     $savedUserProfile = $env:USERPROFILE
     try {
         $env:USERPROFILE = Join-Path $DevRunRoot "Profile"
-        # Keep the gate's own output: a failing pre-build gate used to end the publish with no visible cause.
-        & $Python -B -c "from vntext.release_verify import run_release_verify; raise SystemExit(run_release_verify())" --report $preflightReport 2>&1 | Tee-Object -FilePath $preflightLog
+        # Keep the gate's own output (stdout only: merging stderr with 2>&1 turns a harmless Python warning into a terminating NativeCommandError under Windows PowerShell 5.1).
+        & $Python -B -c "from vntext.release_verify import run_release_verify; raise SystemExit(run_release_verify())" --report $preflightReport | Tee-Object -FilePath $preflightLog
         $preflightCode = $LASTEXITCODE
     } finally {
         $env:USERPROFILE = $savedUserProfile
