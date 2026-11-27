@@ -16,3 +16,6 @@ Model download; real translation with review on (4 rows → waiting); row detail
 
 ## Not done
 See `AI_STATE.md` for what was not run and why.
+
+## Published
+Tag `v0.1.39` = `30a630a47344fa2f5105303dff9680b3aed5b52e`; Setup sha256 `f517f99ae534331392eff3bc339d8c43420079dd000c143f0474e51ca4c8ee5c`; GitHub digests of the 5 assets equal the local files; update 0.1.38→0.1.39 read-back: 7341 files, 0 mismatches.
