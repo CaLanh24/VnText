@@ -255,6 +255,24 @@ def summarise_report(directory: Path) -> str:
     return "; ".join(parts)
 
 
+def debug_line(message: dict) -> str:
+    """Non-sensitive metadata of one message for diagnosing "no attachment": counts, kinds, lengths and flags - never the text, URLs or names of people."""
+    atts = [a for a in (message.get("attachments") or []) if isinstance(a, dict)]
+    author = message.get("author") if isinstance(message.get("author"), dict) else {}
+    parts = [
+        f"type={_clip(message.get('type'), 4)}", f"flags={_clip(message.get('flags'), 8)}",
+        f"webhook={'yes' if message.get('webhook_id') else 'no'}", f"bot_author={'yes' if author.get('bot') else 'no'}",
+        f"content_len={len(str(message.get('content') or ''))}", f"embeds={len(message.get('embeds') or [])}",
+        f"attachments={len(atts)}", f"components={len(message.get('components') or [])}",
+        f"keys={','.join(sorted(_clip(k, 20) for k in message))}",
+    ]
+    for att in atts:
+        parts.append(f"[att name={safe_name(att.get('filename'))} size={_clip(att.get('size'), 12)} type={_clip(att.get('content_type'), 30)}]")
+    if not atts and not message.get("content") and not message.get("embeds"):
+        parts.append("NOTE: content, embeds and attachments are all empty - Discord hides them from a bot WITHOUT the Message Content intent")
+    return "  debug: " + " ".join(parts)
+
+
 def load_cursor(path: Path) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -289,6 +307,9 @@ def run(args: argparse.Namespace, *, http: Http | None = None, out: Callable[[st
         newest = mid if newest is None or int(mid) > int(newest) else newest
         stamp = _clip(message.get("timestamp") or "?", 32)
         attachments = [a for a in (message.get("attachments") or []) if isinstance(a, dict)]
+        if args.debug:
+            out(f"- {mid} {stamp}")
+            out(debug_line(message))
         if not attachments:
             out(f"- {mid} {stamp} (no attachment)")
             continue
@@ -331,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
     group.add_argument("--since", default=None, help="only messages after this message id")
     ap.add_argument("--channel-id", default=None)
     ap.add_argument("--inbox", default=str(DEFAULT_INBOX))
+    ap.add_argument("--debug", action="store_true", help="print non-sensitive metadata of every message (counts, kinds, lengths; no text, no URLs)")
     ap.add_argument("--no-extract", action="store_true", help="save the zip but do not unpack it")
     args = ap.parse_args(argv)
     try:

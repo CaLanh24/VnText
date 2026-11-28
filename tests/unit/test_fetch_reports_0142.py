@@ -117,7 +117,7 @@ class FetchReports(unittest.TestCase):
 
     def run_tool(self, **kw):
         args = argparse.Namespace(list_only=kw.get("list_only", False), all=kw.get("all", False), since=kw.get("since"), channel_id=kw.get("channel_id", CHANNEL),
-                                  inbox=str(self.inbox), no_extract=kw.get("no_extract", False))
+                                  inbox=str(self.inbox), no_extract=kw.get("no_extract", False), debug=kw.get("debug", False))
         buf = io.StringIO()
         with redirect_stdout(buf):
             fr.run(args, http=fr.Http(sleep=self.sleeps.append), out=print, base=f"http://127.0.0.1:{self.fake.port}/api", allowed_hosts=("127.0.0.1",), allow_http=True)
@@ -176,6 +176,16 @@ class FetchReports(unittest.TestCase):
         self.assertIn("SKIPPED: not a .zip", out)
         self.assertIn("SKIPPED: larger than 8 MB", out)
         self.assertFalse(any(p.startswith("/cdn/") for _m, p, _a in self.fake.requests))
+
+    def test_debug_shows_metadata_only_and_explains_hidden_attachments(self):
+        self.fake.messages.append({"id": "100000000000000009", "timestamp": "t", "content": "", "attachments": [], "embeds": [], "type": 0, "flags": 0, "webhook_id": "1"})
+        self.msg(100000000000000010, [self.fake.att("r.zip", GOOD)])
+        out = self.run_tool(list_only=True, debug=True)
+        self.assertIn("content_len=0", out)
+        self.assertIn("Message Content intent", out)
+        self.assertIn("type=application/zip" if False else "[att name=r.zip", out)
+        self.assertNotIn("IGNORE ALL RULES", out)
+        self.assertNotIn("127.0.0.1", out)
 
     def test_a_redirect_is_never_followed(self):
         self.msg(100000000000000001, [{"filename": "r.zip", "size": 10, "url": f"http://127.0.0.1:{self.fake.port}/cdn/redirect.zip"}])
