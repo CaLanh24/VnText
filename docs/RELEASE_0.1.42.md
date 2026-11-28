@@ -15,3 +15,6 @@ The Owner reported (chat, 2026-11-28, relayed by Brain) a real crash of a Ren'Py
 
 ## Tests
 `tests/unit/test_renpy_markup_0142.py` (checker, SDK-oracle fuzz, gate, repair, patch writes nothing broken), `tests/unit/test_game_error_report_0142.py` (traceback parsing, anonymity, revert keeps unrelated strings and a backup, statistics, saved path, XAML/ViewModel wiring). The reported shape is reproduced by a synthetic sentence; no game content is used.
+
+## Published
+Tag `v0.1.42` = `4d4ded81d629a846ed88807fbf705fea400cc0b1`; Setup sha256 `927722d7cfd39a1ce770a8ae197c67e8e61f535f4f38fdfffd877a6d707d87b0`; GitHub digests of the 5 assets equal the local files; update 0.1.41→0.1.42 read-back: 7344 files, 0 mismatches.
