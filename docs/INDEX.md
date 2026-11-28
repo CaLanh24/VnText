@@ -52,6 +52,7 @@ Mọi bản từ v0.1.6 tới v0.1.35 đều ĐÃ PHÁT HÀNH trên GitHub Relea
 | 0.1.39 | [RELEASE_0.1.39](RELEASE_0.1.39.md) | Sửa lỗi 'Sửa tự động'/'Cài bộ dịch' không tải được model (worker chạy offline); `TEST_RUN/agent-evidence/release-0.1.39/` |
 | 0.1.40 | [RELEASE_0.1.40](RELEASE_0.1.40.md) | Chạy game thật (2 Ren'Py + 1 Unity) và sửa mọi phát hiện: cỡ chữ không tới worker, khối `nvl clear`, extract nhanh hơn, ghi chú đường CSV, bộ test 1 process sạch; `TEST_RUN/agent-evidence/release-0.1.40/` |
 | 0.1.41 | [RELEASE_0.1.41](RELEASE_0.1.41.md) | Chữ tiếng Việt thường trên trang Dịch ảnh và toàn app (đánh giá UX bên ngoài), dòng tiến độ dịch dở, hàng Bộ dịch ở Cài đặt, nhật ký cũ; `TEST_RUN/agent-evidence/release-0.1.41/` |
+| 0.1.42 | [RELEASE_0.1.42](RELEASE_0.1.42.md) | Kiểm dấu [ ] / thẻ { } của Ren'Py trước khi ghi vào game (sửa lỗi crash), kiểm lại tệp sinh ra, thống kê câu còn tiếng Anh, "Báo lỗi game" đọc traceback.txt, đường dẫn gói báo lỗi + nút mở thư mục; `TEST_RUN/agent-evidence/release-0.1.42/` |
 | 0.1.34 | [RELEASE_0.1.34](RELEASE_0.1.34.md) | đếm đơn vị native Ren'Py luôn khớp (dòng đã loại, đối chiếu định danh, lệch → cảnh báo che tên); `TEST_RUN/agent-evidence/release-0.1.34/` |
 | 0.1.33 | [RELEASE_0.1.33](RELEASE_0.1.33.md) | an toàn nhật ký cài + khóa HĐH theo game + phục hồi cài dở; `TEST_RUN/agent-evidence/release-0.1.33/` |
 | 0.1.32 | [RELEASE_0.1.32](RELEASE_0.1.32.md) | nâng cấp patch một bước + nhật ký cài + phục hồi khi bị ngắt; `TEST_RUN/agent-evidence/release-0.1.32/` |

@@ -258,6 +258,7 @@ public sealed partial class MainViewModel
                 {
                     StatusText = evt.Ok ? "Đã tạo gói báo lỗi" : "Chưa tạo được gói báo lỗi";
                     AppendLog(evt.Ok ? evt.Summary ?? "Đã tạo gói báo lỗi." : evt.Error ?? "Chưa tạo được gói báo lỗi.");
+                    if (evt.Ok) RememberBugReportZip(evt.Summary);
                     if (evt.Ok && !string.IsNullOrWhiteSpace(_bugReportFolder))
                     {
                         _pathPicker.OpenPath(_bugReportFolder);

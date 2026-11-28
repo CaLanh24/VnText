@@ -1092,6 +1092,15 @@ def _validate_renpy_overlay_output(patch_out: Path, *, installer_refresh: bool =
             + "; actual="
             + ", ".join(sorted(files))
         )
+    # 0.1.42: read the finished file back with the same parser rules Ren'Py uses; a line the game could not display is a failed patch, with its line number.
+    from vntext.renpy_markup import describe_overlay_problems, overlay_problems
+    written = (payload / "game/tl/vietnamese/vntext.rpy").read_text(encoding="utf-8")
+    broken = overlay_problems(written)
+    if broken:
+        raise RuntimeError(
+            "Bản Việt hóa CHƯA dùng được: tệp game/tl/vietnamese/vntext.rpy có chỗ game không đọc được ("
+            + describe_overlay_problems(broken) + "). Đừng chép vào game."
+        )
     return payload
 
 
@@ -2933,6 +2942,17 @@ def _run_patch_task_impl(
                         "Chỉ các tệp bị thay đổi được sao lưu; không cần tạo bản sao toàn bộ game.")
                     summary = patch_install_instructions
                     (patch_out / "HUONG_DAN_CAI_PATCH.txt").write_text(patch_install_instructions + "\n", encoding="utf-8")
+        patch_report: dict = {}
+        try:
+            from vntext.patch_report import write_patch_report
+            patch_report = write_patch_report(patch_out, Path(csv_path).parent / "extract_status.json")
+            for report_line in patch_report.get("lines", []):
+                log(report_line)
+            summary += " " + patch_report["lines"][0]
+            if patch_report.get("kept_english_in_patch") or patch_report.get("left_out_before_patch"):
+                summary += " Chi tiết câu còn tiếng Anh: tệp bao_cao_viet_hoa.txt cạnh bản Việt hóa."
+        except Exception as report_error:  # noqa: BLE001 - the statistics must never fail a finished patch
+            log(f"Chưa lập được báo cáo thống kê: {report_error}")
         if patch_excluded:
             coverage_doc: dict = {
                 "scope": "USER_SAFE_SUBSET" if patch_override_used else "VERIFIED_MAIN_SUBSET",

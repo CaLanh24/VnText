@@ -51,6 +51,7 @@ REASON_LABELS_VI: dict[str, str] = {
     "legacy_profile_unsupported": "Gói trích xuất cũ không còn được hỗ trợ; hãy lấy text lại",
     "legacy_external_reference": "Dòng này trỏ tới nơi ngoài game, chưa được hỗ trợ; hãy lấy text lại",
     "retranslate_blocked": "Dịch lại vẫn bị chặn",
+    "renpy_markup_invalid": "Dấu [ ] hoặc thẻ { } bị hỏng; game sẽ báo lỗi",
 }
 
 RETRANSLATE_STILL_BLOCKED_NOTE = "Dịch lại vẫn bị chặn"
@@ -67,6 +68,7 @@ REASON_ACTIONS_VI: dict[str, str] = {
     "existing_translation_conflict": "Game giữ bản dịch có sẵn. Muốn dùng bản của bạn: gỡ bản dịch có sẵn khỏi game (sao lưu trước) rồi tạo bản Việt hóa lại.",
     "placeholder mismatch": "Sửa bản dịch cho giữ đúng các mục {…}/[…] như câu gốc rồi Lưu.",
     "tag mismatch": "Sửa bản dịch cho giữ đúng các thẻ <…>/{…} như câu gốc rồi Lưu.",
+    "renpy_markup_invalid": "Sửa bản dịch cho giữ đúng các dấu [ ] và thẻ { } như câu gốc (không thừa, không thiếu) rồi Lưu. Cho tới lúc đó game giữ câu gốc.",
     "garbage_repetition": "Bản dịch bị lặp rác: sửa tay hoặc 'Dịch đã chọn' lại rồi Lưu.",
     "html_garbage": "Bản dịch có mã HTML rác: sửa tay rồi Lưu.",
     "synonym_manual": "Dòng nhiều biến thể: tự dịch từng biến thể rồi Lưu.",
@@ -530,6 +532,11 @@ def patch_skip_reason(
     problems = structural_problems(row, trans)
     if problems:
         return ";".join(problems)
+    if str(entry.get("import_method") or "").startswith("renpy_") and trans.strip() != src.strip():
+        from vntext.renpy_markup import REASON_BRACKET, has_markup_problem
+
+        if has_markup_problem(src, trans):
+            return REASON_BRACKET
     reasons = validate_candidate(row, trans, whitelist)
     if reasons:
         return "validation:" + ";".join(reasons)

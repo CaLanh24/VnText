@@ -97,6 +97,7 @@ public sealed partial class MainViewModel
             {
                 _bugReportRunning = false;
                 AppendLog(result.Text);
+                RememberBugReportZip(result.Text);
                 if (result.Ok && !string.IsNullOrWhiteSpace(folder))
                 {
                     _pathPicker.OpenPath(folder);
@@ -131,6 +132,7 @@ public sealed partial class MainViewModel
             var built = await Task.Run(() => BugReportProcess.RunAsync(parameters));
             AppendLog(built.Text);
             if (!built.Ok || string.IsNullOrWhiteSpace(built.Path)) { ShowToast(built.Text, "error"); return; }
+            _lastBugReportZip = built.Path; OpenBugReportFolderCommand?.RaiseCanExecuteChanged();
             var preview = UiText.Translate(BugReportPrivacyLine) + "\n\n" + built.Text + "\n\n" + UiText.Translate("Gửi gói này tới nhà phát triển?");
             if (AppDialogService.Show(preview, UiText.Translate("Gửi báo lỗi"), MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
@@ -138,8 +140,10 @@ public sealed partial class MainViewModel
                 return;
             }
             var sent = await Task.Run(() => BugReportProcess.SendAsync(built.Path));
-            AppendLog(sent.Text);
-            RequestCompletion(UiText.Translate("VNText Studio — Gửi báo lỗi"), sent.Text, sent.Ok ? "info" : "error");
+            var savedNote = UiText.Format("Gói cũng được lưu tại {0} — bạn có thể đưa đường dẫn này cho người hỗ trợ.", built.Path);
+            var sentText = sent.Text + "\n" + savedNote;
+            AppendLog(sentText);
+            RequestCompletion(UiText.Translate("VNText Studio — Gửi báo lỗi"), sentText, sent.Ok ? "info" : "error");
         }
         finally
         {
@@ -163,6 +167,7 @@ public sealed partial class MainViewModel
     private void InitializeExtractRuns()
     {
         CopyExtractLogCommand = new RelayCommand(_ => CopyExtractLog(), _ => ExtractLogShown.Count > 0);
+        InitializeGameErrorCommands();
         CreateBugReportCommand = new RelayCommand(_ => CreateBugReport(), _ => !_bugReportRunning && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         SendBugReportCommand = new RelayCommand(_ => SendBugReport(), _ => ReportSendAvailable && !_bugReportRunning && !string.IsNullOrWhiteSpace(InputPath) && !string.IsNullOrWhiteSpace(OutputPath));
         try

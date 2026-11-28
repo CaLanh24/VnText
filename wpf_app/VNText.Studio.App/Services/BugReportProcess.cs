@@ -11,7 +11,7 @@ namespace VNText.Studio.App.Services;
 /// </summary>
 public static class BugReportProcess
 {
-    public sealed record Result(bool Ok, string Text, string Path = "");
+    public sealed record Result(bool Ok, string Text, string Path = "", JsonElement? Json = null);
 
     /// <summary>True when this build carries the report channel (release builds made with the Owner's secrets file); the button is hidden otherwise.</summary>
     public static bool SendAvailable()
@@ -62,7 +62,7 @@ public static class BugReportProcess
             var ok = root.TryGetProperty("ok", out var okValue) && okValue.ValueKind == JsonValueKind.True;
             var text = root.TryGetProperty(ok ? (root.TryGetProperty("summary", out _) ? "summary" : "message") : failureKey, out var textValue) ? textValue.GetString() ?? "" : "";
             var path = root.TryGetProperty("path", out var pathValue) ? pathValue.GetString() ?? "" : "";
-            return new Result(ok, text, path);
+            return new Result(ok, text, path, root.Clone());
         }
         catch (Exception exc) when (exc is IOException or JsonException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {

@@ -528,6 +528,10 @@
                                         <Button x:Name="ExtractLogCopyButton" Content="Chép nhật ký" Style="{StaticResource OutlineButton}" Command="{Binding CopyExtractLogCommand}" />
                                         <Button x:Name="BugReportButton" Content="Tạo gói báo lỗi" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding CreateBugReportCommand}"
                                                 ToolTip="Tạo tệp zip ẩn danh (cấu trúc, kích thước, thời gian; không có nội dung hay tên tệp game) để gửi khi gặp lỗi. Không tự gửi đi đâu." />
+                                        <Button x:Name="OpenBugReportFolderButton" Content="Mở thư mục chứa gói" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding OpenBugReportFolderCommand}"
+                                                ToolTip="Mở thư mục có tệp zip báo lỗi đã tạo, để đưa đường dẫn hoặc tệp cho người hỗ trợ." />
+                                        <Button x:Name="ReportGameErrorButton" Content="Báo lỗi game" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding ReportGameErrorCommand}"
+                                                ToolTip="Đọc traceback.txt do game ghi (khi game báo lỗi), tìm dòng bản dịch gây lỗi và tạo gói báo lỗi ẩn danh. Có thể gỡ dòng gây lỗi khỏi game." />
                                         <Button x:Name="SendBugReportButton" Content="Gửi báo lỗi" Margin="8,0,0,0" Style="{StaticResource OutlineButton}" Command="{Binding SendBugReportCommand}"
                                                 Visibility="{Binding ReportSendAvailable, Converter={StaticResource BoolToVis}}"
                                                 ToolTip="Tạo gói báo lỗi ẩn danh, cho bạn xem trước, và chỉ gửi tới nhà phát triển khi bạn đồng ý." />
@@ -1021,6 +1025,8 @@
                                                       ToolTip="Tạo gói báo lỗi ẩn danh, cho bạn xem trước, và chỉ gửi tới nhà phát triển khi bạn đồng ý." />
                                               <Button x:Name="PatchErrorBugReportButton" Content="Tạo gói báo lỗi" Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding CreateBugReportCommand}"
                                                       ToolTip="Tạo tệp zip ẩn danh để tự gửi; không tự gửi đi đâu." />
+                                              <Button x:Name="PatchErrorOpenBugFolderButton" Content="Mở thư mục chứa gói" Style="{StaticResource OutlineButton}" Margin="0,0,8,0" Command="{Binding OpenBugReportFolderCommand}"
+                                                      ToolTip="Mở thư mục có tệp zip báo lỗi đã tạo." />
                                               <Button x:Name="PatchErrorOpenCsvButton" Content="Mở Sửa bản dịch" Style="{StaticResource OutlineButton}" Command="{Binding OpenCsvPatchSkippedCommand}" />
                                           </WrapPanel>
                                       </StackPanel>

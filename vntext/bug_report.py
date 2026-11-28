@@ -261,7 +261,8 @@ def describe_report(target: str | Path, *, for_send: bool = False) -> str:
 
 
 def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] | None = None, analysis_report: str | Path | None = None,
-                 extract_status: str | Path | None = None, app_version: str = "") -> Path:
+                 extract_status: str | Path | None = None, app_version: str = "", game_error: dict | None = None,
+                 patch_report: dict | None = None) -> Path:
     game = Path(game)
     base = game.parent if game.is_file() else game
     out_dir = Path(out_dir)
@@ -283,6 +284,10 @@ def build_report(game: str | Path, out_dir: str | Path, *, log_lines: list[str] 
             data["extract_status"] = json.loads(Path(extract_status).read_text(encoding="utf-8"))
         except (OSError, ValueError):
             data["extract_status"] = {"error": "unreadable"}
+    if game_error:
+        data["game_error"] = game_error             # anonymous by construction (vntext/game_error_report.py): kinds, line numbers, id hashes
+    if patch_report:
+        data["patch_report"] = patch_report         # counts and reason words only (vntext/patch_report.py)
     structure = collect_structure(out_dir)
     if structure is not None:
         data["structure"] = structure

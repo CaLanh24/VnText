@@ -643,6 +643,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     archive_cache: dict[Path, RenPyArchive] = {}
     archive_identities: dict[Path, str] = {}
     omitted_by_reason: dict[str, int] = {}
+    repaired_markup_keys: set[str] = set()
     omitted_keys: set[str] = set()
     unlocatable_keys: set[str] = set()      # omitted late (after the trace announced them as eligible); named in patch_verification.json
     for entry in entries:
@@ -654,6 +655,14 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
             omitted_keys.add(key)
             continue
         translation = str(row.get("translation") or "")
+        # 0.1.42: a line whose [ ] or { } the game cannot parse stops the game on display.  Try the safe repair (restore the source's markup) first;
+        # a line that cannot be repaired falls into the gate below and is OMITTED (the game keeps its original sentence).
+        from vntext.renpy_markup import has_markup_problem, repair_markup
+        if translation.strip() != str(entry.get("source_text") or "").strip() and has_markup_problem(str(entry.get("source_text") or ""), translation):
+            fixed_translation = repair_markup(str(entry.get("source_text") or ""), translation)
+            if fixed_translation:
+                translation = fixed_translation
+                repaired_markup_keys.add(key)
         skip_reason = patch_skip_reason(entry, translation, set())
         if skip_reason:
             # Partial patch: a row without a proven, reviewed-by-the-gate translation (untranslated, technical control, unsafe text) is OMITTED and counted;
@@ -1042,6 +1051,15 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
                     prior_payload = split[1]
             payload = prior_payload + "\n" + payload
         payload = font_support + payload
+        from vntext.renpy_markup import describe_overlay_problems, overlay_problems
+        overlay_markup_problems = overlay_problems(payload)
+        if overlay_markup_problems:
+            # Nothing is written: a broken line in game/tl would stop the game when it is shown.
+            raise RenPyPatchError(
+                "Tệp bản dịch sinh ra có chỗ game không đọc được, nên chưa ghi gì vào game — "
+                + describe_overlay_problems(overlay_markup_problems)
+                + ". Nếu dòng nằm trong bản Việt hóa cũ của game, gỡ bản cũ rồi tạo lại."
+            )
     except RenPyPatchError:
         raise
     except Exception as exc:  # noqa: BLE001 - fail closed at the patch boundary.
@@ -1113,6 +1131,7 @@ def apply_renpy_translation_package(csv_path: str, manifest_path: str, game_root
     )
     verification["review_only_skipped"] = excluded_review_only
     verification["omitted_by_reason"] = dict(omitted_by_reason)
+    verification["repaired_markup_keys"] = sorted(repaired_markup_keys)
     verification["omitted_unlocatable_keys"] = sorted(unlocatable_keys)
     verification["omitted_conflict_keys"] = sorted(conflict_keys)
     verification["existing_translation_conflicts"] = {"count": len(conflict_keys), "files": conflict_files}
